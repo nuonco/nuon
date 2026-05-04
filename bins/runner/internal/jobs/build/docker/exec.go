@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
 )
 
@@ -32,14 +33,18 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	// perform the build
 	l.Info("executing build")
-	localRef, err := h.buildWithKaniko(ctx, l, dockerfile, contextDir, h.state.cfg.BuildArgs)
+	buildCtx, endBuild := op.Tool(ctx, "docker", "build")
+	localRef, err := h.buildWithKaniko(buildCtx, l, dockerfile, contextDir, h.state.cfg.BuildArgs)
+	endBuild(err)
 	if err != nil {
 		h.writeErrorResult(ctx, "execute kaniko build", err)
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 
 	l.Info("pushing build to local registry")
-	err = h.pushWithKaniko(ctx, l, localRef)
+	pushCtx, endPush := op.Tool(ctx, "docker", "push")
+	err = h.pushWithKaniko(pushCtx, l, localRef)
+	endPush(err)
 	if err != nil {
 		h.writeErrorResult(ctx, "execute kaniko push", err)
 		return fmt.Errorf("unable to execute job: %w", err)

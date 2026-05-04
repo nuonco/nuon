@@ -101,10 +101,10 @@ func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportReques
 		resourceSchemaUrl := log.SchemaUrl()
 
 		// NOTE(fd): this is a well established convention.
-		var serviceName string
+		var resourceServiceName string
 		snVal, ok := resourceAttributes.Get("service.name")
 		if ok {
-			serviceName = snVal.AsString()
+			resourceServiceName = snVal.AsString()
 		}
 
 		scopeLogs := log.ScopeLogs()
@@ -122,6 +122,15 @@ func (s *service) toLogStreamLogs(logStreamID string, logs plogotlp.ExportReques
 				timestamp := log.Timestamp().AsTime()
 				logAttrs := log.Attributes()
 				logAttributesMap := otel.AttributesToMap(logAttrs)
+
+				// Allow per-record override of service.name via log attributes
+				// so handlers can tag logs with finer-grained service names
+				// (e.g. "runner.helm") via l.With("service.name", ...) without
+				// having to construct a separate LoggerProvider per tool.
+				serviceName := resourceServiceName
+				if v, ok := logAttributesMap["service.name"]; ok && v != "" {
+					serviceName = v
+				}
 
 				otelLogRecords = append(otelLogRecords, app.OtelLogRecord{
 					// runner info

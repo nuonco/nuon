@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewLogStreamReadLogsParams creates a new LogStreamReadLogsParams object,
@@ -67,6 +68,36 @@ type LogStreamReadLogsParams struct {
 	*/
 	XNuonAPIOffset *string
 
+	/* HelmOperation.
+
+	   filter by log_attributes['helm.operation']
+	*/
+	HelmOperation *string
+
+	/* HelmReleaseName.
+
+	   filter by log_attributes['helm.release_name']
+	*/
+	HelmReleaseName *string
+
+	/* K8sKind.
+
+	   filter by log_attributes['k8s.kind']
+	*/
+	K8sKind *string
+
+	/* K8sName.
+
+	   filter by log_attributes['k8s.name']
+	*/
+	K8sName *string
+
+	/* K8sNamespace.
+
+	   filter by log_attributes['k8s.namespace']
+	*/
+	K8sNamespace *string
+
 	/* LogStreamID.
 
 	   log stream ID
@@ -75,11 +106,65 @@ type LogStreamReadLogsParams struct {
 
 	/* Order.
 
-	   resource attribute filters
+	   sort direction
 
 	   Default: "asc"
 	*/
 	Order *string
+
+	/* Q.
+
+	   case-insensitive substring filter on log body
+	*/
+	Q *string
+
+	/* ScopeName.
+
+	   filter by scope_name (repeatable)
+	*/
+	ScopeName []string
+
+	/* ServiceName.
+
+	   filter by service_name (repeatable)
+	*/
+	ServiceName []string
+
+	/* SeverityText.
+
+	   filter by severity_text (repeatable)
+	*/
+	SeverityText []string
+
+	/* SpanID.
+
+	   filter by exact span_id (dedicated CH column)
+	*/
+	SpanID *string
+
+	/* TfOperation.
+
+	   filter by log_attributes['tf.operation']
+	*/
+	TfOperation *string
+
+	/* TfWorkspaceID.
+
+	   filter by log_attributes['tf.workspace_id']
+	*/
+	TfWorkspaceID *string
+
+	/* Tool.
+
+	   filter by log_attributes['nuon.tool']
+	*/
+	Tool *string
+
+	/* TraceID.
+
+	   filter by exact trace_id (dedicated CH column)
+	*/
+	TraceID *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -156,6 +241,61 @@ func (o *LogStreamReadLogsParams) SetXNuonAPIOffset(xNuonAPIOffset *string) {
 	o.XNuonAPIOffset = xNuonAPIOffset
 }
 
+// WithHelmOperation adds the helmOperation to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithHelmOperation(helmOperation *string) *LogStreamReadLogsParams {
+	o.SetHelmOperation(helmOperation)
+	return o
+}
+
+// SetHelmOperation adds the helmOperation to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetHelmOperation(helmOperation *string) {
+	o.HelmOperation = helmOperation
+}
+
+// WithHelmReleaseName adds the helmReleaseName to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithHelmReleaseName(helmReleaseName *string) *LogStreamReadLogsParams {
+	o.SetHelmReleaseName(helmReleaseName)
+	return o
+}
+
+// SetHelmReleaseName adds the helmReleaseName to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetHelmReleaseName(helmReleaseName *string) {
+	o.HelmReleaseName = helmReleaseName
+}
+
+// WithK8sKind adds the k8sKind to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithK8sKind(k8sKind *string) *LogStreamReadLogsParams {
+	o.SetK8sKind(k8sKind)
+	return o
+}
+
+// SetK8sKind adds the k8sKind to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetK8sKind(k8sKind *string) {
+	o.K8sKind = k8sKind
+}
+
+// WithK8sName adds the k8sName to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithK8sName(k8sName *string) *LogStreamReadLogsParams {
+	o.SetK8sName(k8sName)
+	return o
+}
+
+// SetK8sName adds the k8sName to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetK8sName(k8sName *string) {
+	o.K8sName = k8sName
+}
+
+// WithK8sNamespace adds the k8sNamespace to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithK8sNamespace(k8sNamespace *string) *LogStreamReadLogsParams {
+	o.SetK8sNamespace(k8sNamespace)
+	return o
+}
+
+// SetK8sNamespace adds the k8sNamespace to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetK8sNamespace(k8sNamespace *string) {
+	o.K8sNamespace = k8sNamespace
+}
+
 // WithLogStreamID adds the logStreamID to the log stream read logs params
 func (o *LogStreamReadLogsParams) WithLogStreamID(logStreamID string) *LogStreamReadLogsParams {
 	o.SetLogStreamID(logStreamID)
@@ -178,6 +318,105 @@ func (o *LogStreamReadLogsParams) SetOrder(order *string) {
 	o.Order = order
 }
 
+// WithQ adds the q to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithQ(q *string) *LogStreamReadLogsParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetQ(q *string) {
+	o.Q = q
+}
+
+// WithScopeName adds the scopeName to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithScopeName(scopeName []string) *LogStreamReadLogsParams {
+	o.SetScopeName(scopeName)
+	return o
+}
+
+// SetScopeName adds the scopeName to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetScopeName(scopeName []string) {
+	o.ScopeName = scopeName
+}
+
+// WithServiceName adds the serviceName to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithServiceName(serviceName []string) *LogStreamReadLogsParams {
+	o.SetServiceName(serviceName)
+	return o
+}
+
+// SetServiceName adds the serviceName to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetServiceName(serviceName []string) {
+	o.ServiceName = serviceName
+}
+
+// WithSeverityText adds the severityText to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithSeverityText(severityText []string) *LogStreamReadLogsParams {
+	o.SetSeverityText(severityText)
+	return o
+}
+
+// SetSeverityText adds the severityText to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetSeverityText(severityText []string) {
+	o.SeverityText = severityText
+}
+
+// WithSpanID adds the spanID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithSpanID(spanID *string) *LogStreamReadLogsParams {
+	o.SetSpanID(spanID)
+	return o
+}
+
+// SetSpanID adds the spanId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetSpanID(spanID *string) {
+	o.SpanID = spanID
+}
+
+// WithTfOperation adds the tfOperation to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithTfOperation(tfOperation *string) *LogStreamReadLogsParams {
+	o.SetTfOperation(tfOperation)
+	return o
+}
+
+// SetTfOperation adds the tfOperation to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetTfOperation(tfOperation *string) {
+	o.TfOperation = tfOperation
+}
+
+// WithTfWorkspaceID adds the tfWorkspaceID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithTfWorkspaceID(tfWorkspaceID *string) *LogStreamReadLogsParams {
+	o.SetTfWorkspaceID(tfWorkspaceID)
+	return o
+}
+
+// SetTfWorkspaceID adds the tfWorkspaceId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetTfWorkspaceID(tfWorkspaceID *string) {
+	o.TfWorkspaceID = tfWorkspaceID
+}
+
+// WithTool adds the tool to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithTool(tool *string) *LogStreamReadLogsParams {
+	o.SetTool(tool)
+	return o
+}
+
+// SetTool adds the tool to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetTool(tool *string) {
+	o.Tool = tool
+}
+
+// WithTraceID adds the traceID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithTraceID(traceID *string) *LogStreamReadLogsParams {
+	o.SetTraceID(traceID)
+	return o
+}
+
+// SetTraceID adds the traceId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetTraceID(traceID *string) {
+	o.TraceID = traceID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -191,6 +430,91 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		// header param X-Nuon-API-Offset
 		if err := r.SetHeaderParam("X-Nuon-API-Offset", *o.XNuonAPIOffset); err != nil {
 			return err
+		}
+	}
+
+	if o.HelmOperation != nil {
+
+		// query param helm_operation
+		var qrHelmOperation string
+
+		if o.HelmOperation != nil {
+			qrHelmOperation = *o.HelmOperation
+		}
+		qHelmOperation := qrHelmOperation
+		if qHelmOperation != "" {
+
+			if err := r.SetQueryParam("helm_operation", qHelmOperation); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmReleaseName != nil {
+
+		// query param helm_release_name
+		var qrHelmReleaseName string
+
+		if o.HelmReleaseName != nil {
+			qrHelmReleaseName = *o.HelmReleaseName
+		}
+		qHelmReleaseName := qrHelmReleaseName
+		if qHelmReleaseName != "" {
+
+			if err := r.SetQueryParam("helm_release_name", qHelmReleaseName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sKind != nil {
+
+		// query param k8s_kind
+		var qrK8sKind string
+
+		if o.K8sKind != nil {
+			qrK8sKind = *o.K8sKind
+		}
+		qK8sKind := qrK8sKind
+		if qK8sKind != "" {
+
+			if err := r.SetQueryParam("k8s_kind", qK8sKind); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sName != nil {
+
+		// query param k8s_name
+		var qrK8sName string
+
+		if o.K8sName != nil {
+			qrK8sName = *o.K8sName
+		}
+		qK8sName := qrK8sName
+		if qK8sName != "" {
+
+			if err := r.SetQueryParam("k8s_name", qK8sName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.K8sNamespace != nil {
+
+		// query param k8s_namespace
+		var qrK8sNamespace string
+
+		if o.K8sNamespace != nil {
+			qrK8sNamespace = *o.K8sNamespace
+		}
+		qK8sNamespace := qrK8sNamespace
+		if qK8sNamespace != "" {
+
+			if err := r.SetQueryParam("k8s_namespace", qK8sNamespace); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -216,8 +540,194 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		}
 	}
 
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ScopeName != nil {
+
+		// binding items for scope_name
+		joinedScopeName := o.bindParamScopeName(reg)
+
+		// query array param scope_name
+		if err := r.SetQueryParam("scope_name", joinedScopeName...); err != nil {
+			return err
+		}
+	}
+
+	if o.ServiceName != nil {
+
+		// binding items for service_name
+		joinedServiceName := o.bindParamServiceName(reg)
+
+		// query array param service_name
+		if err := r.SetQueryParam("service_name", joinedServiceName...); err != nil {
+			return err
+		}
+	}
+
+	if o.SeverityText != nil {
+
+		// binding items for severity_text
+		joinedSeverityText := o.bindParamSeverityText(reg)
+
+		// query array param severity_text
+		if err := r.SetQueryParam("severity_text", joinedSeverityText...); err != nil {
+			return err
+		}
+	}
+
+	if o.SpanID != nil {
+
+		// query param span_id
+		var qrSpanID string
+
+		if o.SpanID != nil {
+			qrSpanID = *o.SpanID
+		}
+		qSpanID := qrSpanID
+		if qSpanID != "" {
+
+			if err := r.SetQueryParam("span_id", qSpanID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TfOperation != nil {
+
+		// query param tf_operation
+		var qrTfOperation string
+
+		if o.TfOperation != nil {
+			qrTfOperation = *o.TfOperation
+		}
+		qTfOperation := qrTfOperation
+		if qTfOperation != "" {
+
+			if err := r.SetQueryParam("tf_operation", qTfOperation); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TfWorkspaceID != nil {
+
+		// query param tf_workspace_id
+		var qrTfWorkspaceID string
+
+		if o.TfWorkspaceID != nil {
+			qrTfWorkspaceID = *o.TfWorkspaceID
+		}
+		qTfWorkspaceID := qrTfWorkspaceID
+		if qTfWorkspaceID != "" {
+
+			if err := r.SetQueryParam("tf_workspace_id", qTfWorkspaceID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Tool != nil {
+
+		// query param tool
+		var qrTool string
+
+		if o.Tool != nil {
+			qrTool = *o.Tool
+		}
+		qTool := qrTool
+		if qTool != "" {
+
+			if err := r.SetQueryParam("tool", qTool); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TraceID != nil {
+
+		// query param trace_id
+		var qrTraceID string
+
+		if o.TraceID != nil {
+			qrTraceID = *o.TraceID
+		}
+		qTraceID := qrTraceID
+		if qTraceID != "" {
+
+			if err := r.SetQueryParam("trace_id", qTraceID); err != nil {
+				return err
+			}
+		}
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
+}
+
+// bindParamLogStreamReadLogs binds the parameter scope_name
+func (o *LogStreamReadLogsParams) bindParamScopeName(formats strfmt.Registry) []string {
+	scopeNameIR := o.ScopeName
+
+	var scopeNameIC []string
+	for _, scopeNameIIR := range scopeNameIR { // explode []string
+
+		scopeNameIIV := scopeNameIIR // string as string
+		scopeNameIC = append(scopeNameIC, scopeNameIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	scopeNameIS := swag.JoinByFormat(scopeNameIC, "csv")
+
+	return scopeNameIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter service_name
+func (o *LogStreamReadLogsParams) bindParamServiceName(formats strfmt.Registry) []string {
+	serviceNameIR := o.ServiceName
+
+	var serviceNameIC []string
+	for _, serviceNameIIR := range serviceNameIR { // explode []string
+
+		serviceNameIIV := serviceNameIIR // string as string
+		serviceNameIC = append(serviceNameIC, serviceNameIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	serviceNameIS := swag.JoinByFormat(serviceNameIC, "csv")
+
+	return serviceNameIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter severity_text
+func (o *LogStreamReadLogsParams) bindParamSeverityText(formats strfmt.Registry) []string {
+	severityTextIR := o.SeverityText
+
+	var severityTextIC []string
+	for _, severityTextIIR := range severityTextIR { // explode []string
+
+		severityTextIIV := severityTextIIR // string as string
+		severityTextIC = append(severityTextIC, severityTextIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	severityTextIS := swag.JoinByFormat(severityTextIC, "csv")
+
+	return severityTextIS
 }

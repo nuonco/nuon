@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/diff"
 	"github.com/nuonco/nuon/pkg/plans"
 	plantypes "github.com/nuonco/nuon/pkg/types/approvals"
@@ -46,6 +47,17 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return err
 	}
+
+	// Tag this handler's logger with semantic-convention attributes so every
+	// emitted record (including those from helpers further down the call tree
+	// that read the logger from ctx) carries them automatically.
+	l = l.With(
+		zap.String("service.name", "runner.kubernetes_manifest"),
+		zap.String("nuon.tool", "kubernetes_manifest"),
+		zap.String("nuon.deploy.kind", "kubernetes_manifest"),
+		zap.String("k8s.operation", string(job.Operation)),
+	)
+	ctx = pkgctx.SetLogger(ctx, l)
 
 	l.Debug("Starting Exec function",
 		zap.String("jobID", job.ID),
@@ -142,7 +154,7 @@ func (h *handler) fetchLiveResources(ctx context.Context, client dynamic.Interfa
 }
 
 // resourceDiffWithLive compares desired resources with live resources to determine what needs to be added/updated
-func (h *handler) resourceDiffWithLive(desired []*kubernetesResource, live []*kubernetesResource) []*kubernetesResource {
+func (h *handler) resourceDiffWithLive(l *zap.Logger, desired []*kubernetesResource, live []*kubernetesResource) []*kubernetesResource {
 	// Map of live resources by name+namespace+kind for quick lookup
 	liveMap := make(map[string]*kubernetesResource)
 	for _, res := range live {
@@ -193,8 +205,12 @@ func (h *handler) resourceDiffWithLive(desired []*kubernetesResource, live []*ku
 						pathsChanged = append(pathsChanged, entry.Path)
 					}
 
-					fmt.Printf("Resource %s/%s of kind %s has changes in paths: %v\n",
-						res.namespace, res.name, res.groupVersionKind.Kind, pathsChanged)
+					l.Info("resource has changes",
+						zap.String("kind", res.groupVersionKind.Kind),
+						zap.String("name", res.name),
+						zap.String("namespace", res.namespace),
+						zap.Strings("paths_changed", pathsChanged),
+					)
 
 					additions = append(additions, &updatedRes)
 				}
@@ -229,7 +245,7 @@ func (h *handler) handleCreateApplyPlan(
 
 	// Determine resources to add/update based on comparison with live resources
 	// note: we do not track deletions in this. Deletions are handled only in teardown plans.
-	resourcesToApply := h.resourceDiffWithLive(desiredResources, liveResources)
+	resourcesToApply := h.resourceDiffWithLive(l, desiredResources, liveResources)
 	l.Debug("Resource diff calculated against live cluster resources",
 		zap.Int("additions/updates", len(resourcesToApply)))
 
@@ -248,7 +264,9 @@ func (h *handler) handleCreateApplyPlan(
 	var resourceDiffs []diff.ResourceDiff
 
 	// Execute dry run apply to get detailed diffs
-	dryRunApplyOutput, err := h.execApply(ctx, k.client, resourcesToApply, true)
+	opCtx, end := op.Tool(ctx, "kubernetes_manifest", "apply_dry_run")
+	dryRunApplyOutput, err := h.execApply(opCtx, k.client, resourcesToApply, true)
+	end(err)
 	if err != nil {
 		l.Error("Kubernetes manifest dry run apply failed", zap.Error(err))
 		return fmt.Errorf("kubernetes manifest dry run apply failed: %w", err)
@@ -327,7 +345,9 @@ func (h *handler) handleCreateTeardownPlan(
 	manifestPlan.Op = plantypes.KubernetesManifestPlanOperationDelete
 
 	l.Info("Performing dry run delete for teardown plan")
-	dryRunDeleteOutput, err := h.execDelete(ctx, k.client, currentResources, true)
+	opCtx, end := op.Tool(ctx, "kubernetes_manifest", "delete_dry_run")
+	dryRunDeleteOutput, err := h.execDelete(opCtx, k.client, currentResources, true)
+	end(err)
 	if err != nil {
 		l.Error("Kubernetes manifest dry run delete failed", zap.Error(err))
 		return fmt.Errorf("kubernetes manifest dry run delete failed: %w", err)
@@ -417,7 +437,9 @@ func (h *handler) handleApplyPlan(
 			zap.Int("resourceCount", len(desiredKubernetesResources)))
 
 		// Execute delete operation for all resources
-		deleteOutput, err := h.execDelete(ctx, k.client, desiredKubernetesResources, false)
+		opCtx, end := op.Tool(ctx, "kubernetes_manifest", "delete")
+		deleteOutput, err := h.execDelete(opCtx, k.client, desiredKubernetesResources, false)
+		end(err)
 		if err != nil {
 			h.writeErrorResult(ctx, err)
 			l.Error("Failed to delete resources", zap.Error(err))
@@ -439,7 +461,9 @@ func (h *handler) handleApplyPlan(
 			zap.Int("resourceCount", len(desiredKubernetesResources)))
 
 		// Execute apply operation for all resources
-		applyOutput, err := h.execApply(ctx, k.client, desiredKubernetesResources, false)
+		opCtx, end := op.Tool(ctx, "kubernetes_manifest", "apply")
+		applyOutput, err := h.execApply(opCtx, k.client, desiredKubernetesResources, false)
+		end(err)
 		if err != nil {
 			h.writeErrorResult(ctx, err)
 			l.Error("Failed to apply resources", zap.Error(err))
@@ -475,10 +499,11 @@ func (h *handler) handleApplyPlan(
 }
 
 func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resources []*kubernetesResource, dryRun bool) (*[]diff.ResourceDiff, error) {
-	l, err := pkgctx.Logger(ctx)
+	parentL, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get logger: %w", err)
 	}
+	l := parentL
 
 	output := make([]diff.ResourceDiff, 0, len(resources))
 	fieldManager := "kube-apply"
@@ -495,9 +520,17 @@ func (h *handler) execApply(ctx context.Context, client dynamic.Interface, resou
 
 	for _, resource := range resources {
 		if resource == nil {
-			l.Warn("Skipping nil resource in execApply")
+			parentL.Warn("Skipping nil resource in execApply")
 			continue
 		}
+
+		// Per-resource logger carries k8s.* semantic-convention attributes so
+		// every record emitted while processing this resource is tagged.
+		l = parentL.With(
+			zap.String("k8s.kind", resource.groupVersionKind.Kind),
+			zap.String("k8s.name", resource.name),
+			zap.String("k8s.namespace", resource.namespace),
+		)
 
 		if resource.obj == nil {
 			l.Error("Resource object is nil, cannot apply",

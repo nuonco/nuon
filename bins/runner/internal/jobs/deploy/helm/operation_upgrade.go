@@ -33,19 +33,21 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 		zap.Time("last_deployed", prevRel.Info.LastDeployed.Time),
 	)
 
-	l.Info("loading chart options")
+	l.Debug("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get chart")
 	}
 
-	l.Info("found default chart values", zap.Any("values", chart.Values))
-	l.Info("loading provided values")
+	l = l.With(zap.String("helm.chart_name", chart.Name()))
+
+	l.Debug("found default chart values", zap.Any("values", chart.Values))
+	l.Debug("loading provided values")
 	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}
-	l.Info("rendered values", zap.Any("values", values))
+	l.Debug("rendered values", zap.Any("values", values))
 
 	client := helm.DefaultUpgrade(actionCfg)
 	// configure the client with additional, chart and context -specific values

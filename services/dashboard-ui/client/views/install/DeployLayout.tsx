@@ -16,7 +16,10 @@ import type { TComponentType } from '@/types'
 import type { TNavLink } from '@/types'
 
 function getTabsForComponentType(type?: TComponentType): TNavLink[] {
-  const tabs: TNavLink[] = [{ path: '/', text: 'Logs' }]
+  const tabs: TNavLink[] = [
+    { path: '/', text: 'Logs' },
+    { path: '/trace', text: 'Trace' },
+  ]
 
   switch (type) {
     case 'terraform_module':

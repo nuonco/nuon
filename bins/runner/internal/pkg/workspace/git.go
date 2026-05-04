@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
@@ -35,7 +36,11 @@ func (w *workspace) isGit() bool {
 	return w.Src.URL != emptyGithubRepoURL
 }
 
-func (w *workspace) clone(ctx context.Context) error {
+func (w *workspace) clone(ctx context.Context) (retErr error) {
+	opCtx, end := op.Tool(ctx, "git", "clone")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
 	pWriter := zapwriter.New(w.L, zapcore.DebugLevel, "")
 
 	w.L.Info("cloning repository", zap.String("url", w.Src.URL))

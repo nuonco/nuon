@@ -12,13 +12,17 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 
 func Clone(ctx context.Context, rootDir string, src *plantypes.GitSource, l *zap.Logger) error {
+	opCtx, end := op.Tool(ctx, "git", "clone")
 	cl := &workspace{}
-	return cl.clone(ctx, rootDir, src, l)
+	err := cl.clone(opCtx, rootDir, src, l)
+	end(err)
+	return err
 }
 
 type workspace struct{}

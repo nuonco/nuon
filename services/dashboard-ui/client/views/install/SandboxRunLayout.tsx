@@ -16,6 +16,7 @@ import type { TNavLink } from '@/types'
 
 const sandboxTabs: TNavLink[] = [
   { path: '/', text: 'Logs' },
+  { path: '/trace', text: 'Trace' },
   { path: '/plan', text: 'Plan' },
   { path: '/variables', text: 'Variables' },
   { path: '/state', text: 'State' },

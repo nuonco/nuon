@@ -2,10 +2,12 @@ import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
+import { TraceView } from '@/components/spans/TraceView'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TInstallDeploy } from '@/types'
@@ -48,7 +50,17 @@ export const DeployApply = ({
             <LogStreamProvider shouldPoll logStreamId={deploy?.log_stream?.id}>
               <UnifiedLogsProvider>
                 <LogViewerProvider>
-                  <SSELogs />
+                  <Tabs
+                    tabs={{
+                      logs: <SSELogs />,
+                      trace: (
+                        <TraceView
+                          logStreamId={deploy.log_stream.id}
+                          shouldPoll={deploy.log_stream.open}
+                        />
+                      ),
+                    }}
+                  />
                 </LogViewerProvider>
               </UnifiedLogsProvider>
             </LogStreamProvider>

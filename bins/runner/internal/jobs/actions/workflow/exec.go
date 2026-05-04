@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -56,8 +58,32 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	timeout := 5 * time.Minute
-	if h.state.plan.Timeout > 0 {
+	// Tag this handler's logger with semantic-convention attributes so every
+	// emitted record (including from helpers further down the call tree) carries
+	// them automatically.
+	installID := ""
+	if h.state.plan != nil {
+		installID = h.state.plan.InstallID
+	}
+	actionRunID := ""
+	actionWorkflowID := ""
+	if h.state.run != nil {
+		actionRunID = h.state.run.ID
+		actionWorkflowID = h.state.run.InstallActionWorkflowID
+	}
+	l = l.With(
+		zap.String("service.name", "runner.action"),
+		zap.String("nuon.tool", "action"),
+		zap.String("action.operation", string(job.Operation)),
+		zap.String("action.run_id", actionRunID),
+		zap.String("action.workflow_id", actionWorkflowID),
+		zap.String("install.id", installID),
+	)
+	ctx = pkgctx.SetLogger(ctx, l)
+
+	// For adhoc runs, workflowCfg is nil - use a default timeout
+	timeout := 5 * time.Minute // default timeout
+	if h.state.plan != nil && h.state.plan.Timeout > 0 {
 		timeout = h.state.plan.Timeout
 	} else if h.state.workflowCfg != nil && h.state.workflowCfg.Timeout > 0 {
 		timeout = time.Duration(h.state.workflowCfg.Timeout)
@@ -77,7 +103,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 		l.Info(fmt.Sprintf("executing step %s (%d of %d)", stepName, idx+1, len(h.state.run.Steps)))
-		err := h.executeWorkflowStep(ctx, execCtx, step, stepCfg, stepPlan)
+		opExecCtx, end := op.Tool(execCtx, "action", "exec_step")
+		err := h.executeWorkflowStep(ctx, opExecCtx, step, stepCfg, stepPlan)
+		end(err)
 		if err == nil {
 			continue
 		}

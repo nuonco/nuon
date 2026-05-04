@@ -8,6 +8,8 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
+
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 )
 
 const (
@@ -21,7 +23,11 @@ type FileRef struct {
 	FileType string `mapstructure:"file_type,omitempty"`
 }
 
-func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef) error {
+func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef) (retErr error) {
+	opCtx, end := op.Tool(ctx, "oci", "pack")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
 	fileDescriptors := make([]v1.Descriptor, 0, len(filePaths))
 
 	for _, f := range filePaths {

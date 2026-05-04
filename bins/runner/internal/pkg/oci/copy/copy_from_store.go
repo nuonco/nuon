@@ -7,10 +7,15 @@ import (
 	"oras.land/oras-go/v2"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
-func (c *copier) CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
+func (c *copier) CopyFromStore(ctx context.Context, store oras.ReadOnlyTarget, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (_ *ocispec.Descriptor, retErr error) {
+	opCtx, end := op.Tool(ctx, "oci", "copy_from_store")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
 	dstRepo, err := oci.GetRepo(ctx, dstCfg)
 	if err != nil {
 		return nil, err
