@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { getAllRunners } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { Pagination } from '@/components/common/Pagination'
 import { truncateId } from '@/utils/format'
 import type { TAllRunnerView } from '@/types/admin.types'
 
@@ -71,38 +72,23 @@ const PieChart = ({ data, title }: { data: { label: string; value: number }[]; t
 
 export const AllRunners = () => {
   const [orgId, setOrgId] = useState('')
+  const [page, setPage] = useState(1)
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['all-runners', orgId],
-    queryFn: () => getAllRunners({ org_id: orgId || undefined }),
+    queryKey: ['all-runners', orgId, page],
+    queryFn: () => getAllRunners({ org_id: orgId || undefined, page }),
     refetchInterval: 30000,
   })
 
   const runners = data?.runners || []
   const orgs = data?.orgs || []
-
-  const stats = useMemo(() => {
-    const groupTypeCounts: Record<string, number> = {}
-    const versionCounts: Record<string, number> = {}
-    const processTypeCounts: Record<string, number> = {}
-
-    for (const rv of runners) {
-      const gt = rv.group_type || 'unknown'
-      groupTypeCounts[gt] = (groupTypeCounts[gt] || 0) + 1
-
-      const v = rv.version || 'unknown'
-      versionCounts[v] = (versionCounts[v] || 0) + 1
-
-      const pt = rv.process_type || 'none'
-      processTypeCounts[pt] = (processTypeCounts[pt] || 0) + 1
-    }
-
-    return {
-      groupType: Object.entries(groupTypeCounts).map(([label, value]) => ({ label, value })),
-      version: Object.entries(versionCounts).map(([label, value]) => ({ label, value })),
-      processType: Object.entries(processTypeCounts).map(([label, value]) => ({ label, value })),
-    }
-  }, [runners])
+  const totalCount = data?.total_count ?? 0
+  const totalPages = data?.total_pages ?? 1
+  const stats = {
+    groupType: data?.stats?.group_type || [],
+    version: data?.stats?.version || [],
+    processType: data?.stats?.process_type || [],
+  }
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load runners'} />
@@ -111,13 +97,16 @@ export const AllRunners = () => {
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">All runners</h1>
-        <span className="text-sm text-gray-500">{runners.length} runners</span>
+        <span className="text-sm text-gray-500">{totalCount} runners</span>
       </div>
 
       <div className="mt-4">
         <select
           value={orgId}
-          onChange={(e) => setOrgId(e.target.value)}
+          onChange={(e) => {
+            setOrgId(e.target.value)
+            setPage(1)
+          }}
           className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
         >
           <option value="">All organizations</option>
@@ -127,7 +116,7 @@ export const AllRunners = () => {
         </select>
       </div>
 
-      {runners.length > 0 && (
+      {totalCount > 0 && (
         <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-3">
           <PieChart data={stats.groupType} title="Install vs org runners" />
           <PieChart data={stats.version} title="Versions" />
@@ -159,6 +148,10 @@ export const AllRunners = () => {
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4">
+        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </div>
   )

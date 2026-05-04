@@ -4,7 +4,7 @@ import type { TRunnersResponse, TRunnerDetailView, TAllRunnersResponse } from '@
 export const getRunners = () =>
   api<TRunnersResponse>({ path: 'runners' })
 
-export const getAllRunners = (params?: { org_id?: string }) =>
+export const getAllRunners = (params?: { org_id?: string; page?: number }) =>
   api<TAllRunnersResponse>({ path: 'runners/all', params })
 
 export const getRunnerDetail = (id: string) =>
