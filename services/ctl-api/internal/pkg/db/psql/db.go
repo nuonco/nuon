@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 )
 
 // database represents the set of configuration options for creating a database connection. If UseIAM is set, we will
@@ -37,7 +38,8 @@ type database struct {
 
 	Logger zapgorm2.Logger `validate:"required"`
 
-	MetricsWriter metrics.Writer `validate:"required"`
+	MetricsWriter  metrics.Writer `validate:"required"`
+	QueryCollector *querycollector.Collector
 
 	pool          *pgxpool.Pool
 	poolCtx       context.Context
@@ -84,6 +86,7 @@ func New(v *validator.Validate,
 	metricsWriter metrics.Writer,
 	lc fx.Lifecycle,
 	cfg *internal.Config,
+	qc *querycollector.Collector,
 ) (*gorm.DB, error) {
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
@@ -98,6 +101,7 @@ func New(v *validator.Validate,
 		Region:         cfg.DBRegion,
 		MaxConnections: cfg.DBMaxConnections,
 		MetricsWriter:  metricsWriter,
+		QueryCollector: qc,
 		poolCtx:        ctx,
 		poolCtxCancel:  cancelFn,
 	}
