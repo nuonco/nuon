@@ -1,5 +1,6 @@
 import { api } from '@/lib/api'
 import type { TInstallWorkflow } from '@/types'
+import { buildQueryParams } from '@/utils/build-query-params'
 
 export const getBranchWorkflowRuns = ({
   appId,
@@ -15,6 +16,6 @@ export const getBranchWorkflowRuns = ({
   offset?: number
 }) =>
   api<TInstallWorkflow[]>({
-    path: `apps/${appId}/branches/${branchId}/runs`,
+    path: `apps/${appId}/branches/${branchId}/runs${buildQueryParams({ limit, offset })}`,
     orgId,
   })

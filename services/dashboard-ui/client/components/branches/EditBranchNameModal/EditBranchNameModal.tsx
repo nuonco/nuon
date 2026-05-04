@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Input } from '@/components/common/form/Input'
 import { Select } from '@/components/common/form/Select'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-import { getVCSConnectionRepos, getConnectionBranches } from '@/lib'
 import type {
   TAppBranch,
   TAppBranchConfig,
@@ -27,8 +26,19 @@ export interface IEditBranchNameModalSubmitData {
 interface IEditBranchNameModal extends Omit<IModal, 'onSubmit'> {
   branch: TAppBranch
   currentConfig?: TAppBranchConfig
-  orgId: string
   vcsConnections: TVCSConnection[]
+  repos: TVCSConnectionRepo[]
+  branches: TVCSBranch[]
+  loadingRepos: boolean
+  loadingBranches: boolean
+  reposError: string | null
+  branchesError: string | null
+  selectedVcsConnectionId: string
+  onVcsConnectionChange: (id: string) => void
+  selectedRepo: TVCSConnectionRepo | null
+  onRepoChange: (repo: TVCSConnectionRepo | null) => void
+  selectedBranch: string
+  onBranchChange: (branch: string) => void
   isSubmitting: boolean
   validationError: string | null
   onSubmit: (data: IEditBranchNameModalSubmitData) => void
@@ -38,31 +48,28 @@ interface IEditBranchNameModal extends Omit<IModal, 'onSubmit'> {
 export const EditBranchNameModal = ({
   branch,
   currentConfig,
-  orgId,
   vcsConnections,
+  repos,
+  branches,
+  loadingRepos,
+  loadingBranches,
+  reposError,
+  branchesError,
+  selectedVcsConnectionId,
+  onVcsConnectionChange,
+  selectedRepo,
+  onRepoChange,
+  selectedBranch,
+  onBranchChange,
   isSubmitting,
   validationError: externalValidationError,
   onSubmit,
   onCancel,
   ...props
 }: IEditBranchNameModal) => {
-  const existingConnectionId =
-    currentConfig?.connected_github_vcs_config?.vcs_connection_id || ''
-
   const [branchName, setBranchName] = useState(branch.name || '')
   const [useVcs, setUseVcs] = useState(
     !!(currentConfig?.connected_github_vcs_config || currentConfig?.public_git_vcs_config)
-  )
-  const [selectedVcsConnectionId, setSelectedVcsConnectionId] = useState(
-    existingConnectionId || vcsConnections[0]?.id || ''
-  )
-  const [repos, setRepos] = useState<TVCSConnectionRepo[]>([])
-  const [selectedRepo, setSelectedRepo] = useState<TVCSConnectionRepo | null>(null)
-  const [branches, setBranches] = useState<TVCSBranch[]>([])
-  const [selectedBranch, setSelectedBranch] = useState(
-    currentConfig?.connected_github_vcs_config?.branch ||
-      currentConfig?.public_git_vcs_config?.branch ||
-      'main'
   )
   const [directory, setDirectory] = useState(
     currentConfig?.connected_github_vcs_config?.directory ||
@@ -74,126 +81,9 @@ export const EditBranchNameModal = ({
       currentConfig?.public_git_vcs_config?.path_filter ||
       ''
   )
-  const [loadingRepos, setLoadingRepos] = useState(false)
-  const [loadingBranches, setLoadingBranches] = useState(false)
-  const [reposError, setReposError] = useState<string | null>(null)
-  const [branchesError, setBranchesError] = useState<string | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
 
   const displayError = externalValidationError || validationError
-
-  useEffect(() => {
-    if (!selectedVcsConnectionId || !useVcs) {
-      setRepos([])
-      setSelectedRepo(null)
-      setReposError(null)
-      return
-    }
-
-    setSelectedRepo(null)
-
-    const existingRepo =
-      currentConfig?.connected_github_vcs_config?.repo ||
-      currentConfig?.public_git_vcs_config?.repo ||
-      ''
-
-    const fetchRepos = async () => {
-      setLoadingRepos(true)
-      setValidationError(null)
-      setReposError(null)
-
-      let lastErr: unknown
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt))
-        try {
-          const response = await getVCSConnectionRepos({
-            orgId,
-            connectionId: selectedVcsConnectionId,
-          })
-
-          if (response.repositories && Array.isArray(response.repositories)) {
-            const sorted = [...response.repositories].sort((a, b) =>
-              a.full_name.localeCompare(b.full_name)
-            )
-            setRepos(sorted)
-            setReposError(null)
-            const match = existingRepo
-              ? sorted.find((r) => r.full_name === existingRepo)
-              : null
-            setSelectedRepo(match ?? (sorted.length > 0 ? sorted[0] : null))
-          } else {
-            setRepos([])
-            setSelectedRepo(null)
-          }
-          setLoadingRepos(false)
-          return
-        } catch (err) {
-          lastErr = err
-        }
-      }
-
-      setReposError('Failed to load repositories. Please check your VCS connection.')
-      setRepos([])
-      setSelectedRepo(null)
-      setLoadingRepos(false)
-    }
-
-    fetchRepos()
-  }, [selectedVcsConnectionId, orgId, useVcs])
-
-  useEffect(() => {
-    if (!selectedRepo || !selectedVcsConnectionId || !useVcs) {
-      setBranches([])
-      setBranchesError(null)
-      return
-    }
-
-    const existingBranch =
-      currentConfig?.connected_github_vcs_config?.branch ||
-      currentConfig?.public_git_vcs_config?.branch ||
-      'main'
-
-    const [owner, repoName] = selectedRepo.full_name.split('/')
-    if (!owner || !repoName) return
-
-    const fetchBranches = async () => {
-      setLoadingBranches(true)
-      setValidationError(null)
-      setBranchesError(null)
-
-      let lastErr: unknown
-      for (let attempt = 0; attempt < 3; attempt++) {
-        if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt))
-        try {
-          const fetched = await getConnectionBranches(
-            orgId,
-            selectedVcsConnectionId,
-            owner,
-            repoName
-          )
-          setBranches(fetched)
-          setBranchesError(null)
-          const match = fetched.find((b) => b.name === existingBranch)
-          if (match) {
-            setSelectedBranch(match.name)
-          } else {
-            const main = fetched.find((b) => b.name === 'main')
-            setSelectedBranch(main ? 'main' : fetched.length > 0 ? fetched[0].name : 'main')
-          }
-          setLoadingBranches(false)
-          return
-        } catch (err) {
-          lastErr = err
-        }
-      }
-
-      setBranchesError('Failed to load branches. Please try again.')
-      setBranches([])
-      setLoadingBranches(false)
-    }
-
-    fetchBranches()
-  }, [selectedRepo, selectedVcsConnectionId, orgId, useVcs])
 
   const handleSubmit = () => {
     setValidationError(null)
@@ -221,10 +111,10 @@ export const EditBranchNameModal = ({
 
   return (
     <Modal
-      heading="Edit Branch"
+      heading="Edit branch"
       size="lg"
       primaryActionTrigger={{
-        children: isSubmitting ? 'Saving...' : 'Save Changes',
+        children: isSubmitting ? 'Saving...' : 'Save changes',
         onClick: handleSubmit,
         disabled: isSubmitting || !branchName.trim(),
         variant: 'primary',
@@ -251,7 +141,7 @@ export const EditBranchNameModal = ({
           placeholder="Enter branch name"
           disabled={isSubmitting}
           autoFocus
-          labelProps={{ labelText: 'Branch Name' }}
+          labelProps={{ labelText: 'Branch name' }}
         />
 
         <CheckboxInput
@@ -262,7 +152,7 @@ export const EditBranchNameModal = ({
             if (!e.target.checked) setValidationError(null)
           }}
           disabled={isSubmitting}
-          labelProps={{ labelText: 'Connect to Git Repository' }}
+          labelProps={{ labelText: 'Connect to git repository' }}
         />
 
         {useVcs && (
@@ -277,14 +167,14 @@ export const EditBranchNameModal = ({
                   <Select
                     id="vcs-connection"
                     value={selectedVcsConnectionId}
-                    onChange={(e) => setSelectedVcsConnectionId(e.target.value)}
+                    onChange={(e) => onVcsConnectionChange(e.target.value)}
                     disabled={isSubmitting || loadingRepos}
                     options={vcsConnections.map((conn) => ({
                       value: conn.id,
                       label:
                         conn.github_account_name || conn.github_install_id || conn.id,
                     }))}
-                    labelProps={{ labelText: 'VCS Connection' }}
+                    labelProps={{ labelText: 'VCS connection' }}
                   />
                 )}
 
@@ -314,7 +204,7 @@ export const EditBranchNameModal = ({
                     value={selectedRepo?.full_name || ''}
                     onChange={(e) => {
                       const r = repos.find((r) => r.full_name === e.target.value)
-                      setSelectedRepo(r || null)
+                      onRepoChange(r || null)
                     }}
                     disabled={isSubmitting || loadingRepos || loadingBranches}
                     options={repos.map((repo) => ({
@@ -342,33 +232,33 @@ export const EditBranchNameModal = ({
                       id="branch-select"
                       type="text"
                       value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      onChange={(e) => onBranchChange(e.target.value)}
                       placeholder="main"
                       disabled={isSubmitting}
-                      labelProps={{ labelText: 'Git Branch' }}
+                      labelProps={{ labelText: 'Git branch' }}
                     />
                   ) : branches.length === 0 && selectedRepo ? (
                     <Input
                       id="branch-select"
                       type="text"
                       value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      onChange={(e) => onBranchChange(e.target.value)}
                       placeholder="main"
                       disabled={isSubmitting}
-                      labelProps={{ labelText: 'Git Branch' }}
+                      labelProps={{ labelText: 'Git branch' }}
                       helperText="No branches found. Enter branch name manually."
                     />
                   ) : branches.length > 0 ? (
                     <Select
                       id="branch-select"
                       value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      onChange={(e) => onBranchChange(e.target.value)}
                       disabled={isSubmitting || loadingBranches}
                       options={branches.map((b) => ({
                         value: b.name,
                         label: b.name,
                       }))}
-                      labelProps={{ labelText: 'Git Branch' }}
+                      labelProps={{ labelText: 'Git branch' }}
                       searchable
                     />
                   ) : (
@@ -376,10 +266,10 @@ export const EditBranchNameModal = ({
                       id="branch-select"
                       type="text"
                       value={selectedBranch}
-                      onChange={(e) => setSelectedBranch(e.target.value)}
+                      onChange={(e) => onBranchChange(e.target.value)}
                       placeholder="main"
                       disabled={isSubmitting}
-                      labelProps={{ labelText: 'Git Branch' }}
+                      labelProps={{ labelText: 'Git branch' }}
                     />
                   ))}
 
@@ -401,7 +291,7 @@ export const EditBranchNameModal = ({
                   onChange={(e) => setPathFilter(e.target.value)}
                   placeholder="^(src/|config/).*"
                   disabled={isSubmitting}
-                  labelProps={{ labelText: 'Path Filter (Optional)' }}
+                  labelProps={{ labelText: 'Path filter (optional)' }}
                   helperText="Regex pattern to filter which file changes trigger workflow runs"
                 />
               </>
