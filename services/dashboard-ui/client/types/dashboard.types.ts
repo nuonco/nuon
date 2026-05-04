@@ -104,6 +104,7 @@ export type TNavItem = TNavLink | TNavSectionHeader
 export type TEmptyVariant =
   | '404'
   | 'actions'
+  | 'app'
   | 'diagram'
   | 'history'
   | 'policy'
