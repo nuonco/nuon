@@ -44,7 +44,8 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 	default:
 		// Clone the step. The sequential loop (in awaitUserAction) will
 		// pick up the clone on its next iteration.
-		if err := cloneStepForRetry(ctx, req.StepID, s.WorkflowID); err != nil {
+		// Manual retry — no backoff (user explicitly requested retry now).
+		if err := cloneStepForRetry(ctx, req.StepID, s.WorkflowID, nil); err != nil {
 			return nil, fmt.Errorf("unable to clone step for retry: %w", err)
 		}
 	}

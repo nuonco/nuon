@@ -719,6 +719,8 @@ type ClientService interface {
 
 	RestartRunnerInstall(params *RestartRunnerInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RestartRunnerInstallOK, error)
 
+	RetryNowWorkflowStep(params *RetryNowWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryNowWorkflowStepCreated, error)
+
 	RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error)
 
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
@@ -15385,6 +15387,56 @@ func (a *Client) RestartRunnerInstall(params *RestartRunnerInstallParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RestartRunnerInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	RetryNowWorkflowStep skips the auto retry backoff for a workflow step waiting to retry
+
+	Short-circuits the auto-retry backoff timer on a step
+
+currently in the waiting-to-retry state, causing the
+step to execute immediately instead of after the
+remaining backoff window.
+*/
+func (a *Client) RetryNowWorkflowStep(params *RetryNowWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryNowWorkflowStepCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRetryNowWorkflowStepParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RetryNowWorkflowStep",
+		Method:             "POST",
+		PathPattern:        "/v1/workflows/{workflow_id}/steps/{step_id}/retry-now",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RetryNowWorkflowStepReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RetryNowWorkflowStepCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RetryNowWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

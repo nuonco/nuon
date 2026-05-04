@@ -131,6 +131,13 @@ type WorkflowStep struct {
 	Retried    bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
 	RetryIndex int  `json:"retry_index" gorm:"default:0" temporaljson:"retry_index,omitzero,omitempty"`
 
+	// RetryNotBeforeAt is set on auto-retry clones to enforce an exponential
+	// backoff before the step actually executes. The clone is created in the
+	// pending state immediately so the dashboard can render a countdown, but
+	// the executeworkflowstep handler waits until this time (or a "retry-now"
+	// update from the user) before invoking the inner signal.
+	RetryNotBeforeAt *time.Time `json:"retry_not_before_at,omitempty" gorm:"default:null" temporaljson:"retry_not_before_at,omitzero,omitempty"`
+
 	// ResultDirective is set by the execute-workflow-step signal to communicate
 	// the step's outcome directive back to the group signal. Values: continue,
 	// stop, retry, retry-group, skip-group, await-approval.

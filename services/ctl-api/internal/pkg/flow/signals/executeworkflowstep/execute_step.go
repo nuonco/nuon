@@ -45,6 +45,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	// Auto-retry backoff: clones created by the group's DirectiveRetry path
+	// carry RetryNotBeforeAt to enforce exponential backoff. Gate execution
+	// on a timer + the "retry-now" update so users can short-circuit the wait.
+	if err := s.waitForRetryBackoff(ctx, l, step); err != nil {
+		return err
+	}
+	if ctx.Err() != nil || s.canceled {
+		return nil
+	}
+
 	defer func() {
 		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepFinishedAtByID(ctx, step.ID); err != nil {
 			l.Error("unable to update finished at", zap.Error(err))

@@ -95,6 +95,13 @@ type AppWorkflowStep struct {
 	// retry index
 	RetryIndex int64 `json:"retry_index,omitempty"`
 
+	// RetryNotBeforeAt is set on auto-retry clones to enforce an exponential
+	// backoff before the step actually executes. The clone is created in the
+	// pending state immediately so the dashboard can render a countdown, but
+	// the executeworkflowstep handler waits until this time (or a "retry-now"
+	// update from the user) before invoking the inner signal.
+	RetryNotBeforeAt string `json:"retry_not_before_at,omitempty"`
+
 	// retryable
 	Retryable bool `json:"retryable,omitempty"`
 

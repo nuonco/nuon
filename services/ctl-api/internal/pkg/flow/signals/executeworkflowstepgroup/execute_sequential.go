@@ -1,6 +1,8 @@
 package executeworkflowstepgroup
 
 import (
+	"time"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -31,8 +33,15 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 
 		case DirectiveRetry:
 			// Auto-retry: the step signal wrote the directive but the group
-			// owns cloning.
-			if err := cloneStepForRetry(ctx, step.ID, s.WorkflowID); err != nil {
+			// owns cloning. Stamp the clone with a backoff timestamp so the
+			// step handler waits before invoking the inner signal.
+			delay := computeAutoRetryBackoff(ctx, step.RetryIndex+1)
+			var notBefore *time.Time
+			if delay > 0 {
+				t := workflow.Now(ctx).Add(delay)
+				notBefore = &t
+			}
+			if err := cloneStepForRetry(ctx, step.ID, s.WorkflowID, notBefore); err != nil {
 				l.Warn("unable to clone step for retry", zap.String("step_id", step.ID), zap.Error(err))
 				return err
 			}

@@ -176,6 +176,7 @@ describe('workflow-utils', () => {
         approval: true,
         cancel: true,
         retry: false,
+        retryNow: false,
       })
     })
 
@@ -193,6 +194,7 @@ describe('workflow-utils', () => {
         approval: false,
         cancel: false,
         retry: true,
+        retryNow: false,
       })
     })
 
@@ -209,6 +211,7 @@ describe('workflow-utils', () => {
         approval: false,
         cancel: false,
         retry: false,
+        retryNow: false,
       })
     })
 
@@ -226,6 +229,7 @@ describe('workflow-utils', () => {
         approval: false,
         cancel: false,
         retry: false,
+        retryNow: false,
       })
     })
 
@@ -241,6 +245,7 @@ describe('workflow-utils', () => {
         approval: false,
         cancel: true,
         retry: false,
+        retryNow: false,
       })
     })
 
@@ -256,6 +261,7 @@ describe('workflow-utils', () => {
         approval: false,
         cancel: false,
         retry: false,
+        retryNow: false,
       })
     })
 
@@ -267,6 +273,40 @@ describe('workflow-utils', () => {
         approval: false,
         cancel: false,
         retry: false,
+        retryNow: false,
+      })
+    })
+
+    test('should show retryNow button for waiting-to-retry step', () => {
+      const step: TWorkflowStep = {
+        status: {
+          status: 'waiting-to-retry',
+        },
+        retry_not_before_at: '2026-04-30T15:00:00Z',
+      } as TWorkflowStep
+
+      const buttons = getStepButtons(step)
+      expect(buttons).toEqual({
+        approval: false,
+        cancel: false,
+        retry: false,
+        retryNow: true,
+      })
+    })
+
+    test('should not show retryNow without retry_not_before_at', () => {
+      const step: TWorkflowStep = {
+        status: {
+          status: 'waiting-to-retry',
+        },
+      } as TWorkflowStep
+
+      const buttons = getStepButtons(step)
+      expect(buttons).toEqual({
+        approval: false,
+        cancel: false,
+        retry: false,
+        retryNow: false,
       })
     })
   })

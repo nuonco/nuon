@@ -2572,6 +2572,16 @@ export interface paths {
      */
     post: operations["RetryWorkflowStep"];
   };
+  "/v1/workflows/{workflow_id}/steps/{step_id}/retry-now": {
+    /**
+     * skip the auto-retry backoff for a workflow step waiting to retry
+     * @description Short-circuits the auto-retry backoff timer on a step
+     * currently in the waiting-to-retry state, causing the
+     * step to execute immediately instead of after the
+     * remaining backoff window.
+     */
+    post: operations["RetryNowWorkflowStep"];
+  };
   "/v1/workflows/{workflow_id}/steps/{step_id}/skip": {
     /** skip a failed workflow step and continue the workflow */
     post: operations["SkipWorkflowStep"];
@@ -4596,7 +4606,7 @@ export interface components {
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "waiting-to-retry" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -4864,6 +4874,14 @@ export interface components {
       result_directive?: string;
       retried?: boolean;
       retry_index?: number;
+      /**
+       * @description RetryNotBeforeAt is set on auto-retry clones to enforce an exponential
+       * backoff before the step actually executes. The clone is created in the
+       * pending state immediately so the dashboard can render a countdown, but
+       * the executeworkflowstep handler waits until this time (or a "retry-now"
+       * update from the user) before invoking the inner signal.
+       */
+      retry_not_before_at?: string;
       retryable?: boolean;
       skippable?: boolean;
       started_at?: string;
@@ -6381,6 +6399,9 @@ export interface components {
       plan_only?: boolean;
       role?: string;
       skip_components?: boolean;
+    };
+    "service.RetryNowWorkflowStepResponse": {
+      workflow_id?: string;
     };
     "service.RetryWorkflowRequest": {
       /** @description Retry indicates whether to retry the current step or not */
@@ -24912,6 +24933,61 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["service.RetryWorkflowStepResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * skip the auto-retry backoff for a workflow step waiting to retry
+   * @description Short-circuits the auto-retry backoff timer on a step
+   * currently in the waiting-to-retry state, causing the
+   * step to execute immediately instead of after the
+   * remaining backoff window.
+   */
+  RetryNowWorkflowStep: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+        /** @description step ID */
+        step_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["service.RetryNowWorkflowStepResponse"];
         };
       };
       /** @description Bad Request */

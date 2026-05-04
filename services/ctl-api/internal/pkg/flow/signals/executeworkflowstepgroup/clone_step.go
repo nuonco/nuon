@@ -2,6 +2,7 @@ package executeworkflowstepgroup
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -13,7 +14,12 @@ import (
 // cloneStepForRetry fetches the step and workflow from DB, then creates a clone
 // within the same group. The step should already be marked as discarded before
 // this is called.
-func cloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) error {
+//
+// retryNotBeforeAt, when non-nil, is set on the new clone so the
+// executeworkflowstep handler waits until that time (or until a "retry-now"
+// update) before invoking the inner signal. Used to enforce exponential
+// backoff on auto-retries; manual retries should pass nil.
+func cloneStepForRetry(ctx workflow.Context, stepID string, workflowID string, retryNotBeforeAt *time.Time) error {
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, stepID)
 	if err != nil {
 		return fmt.Errorf("unable to get step %s: %w", stepID, err)
@@ -59,6 +65,7 @@ func cloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 				WorkflowStepGroupID: step.WorkflowStepGroupID,
 				StepTargetType:      step.StepTargetType,
 				RetryIndex:          newRetryIndex,
+				RetryNotBeforeAt:    retryNotBeforeAt,
 			},
 		},
 	})

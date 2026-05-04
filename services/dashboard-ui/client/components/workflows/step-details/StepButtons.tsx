@@ -6,6 +6,7 @@ import { DenyPlanButton } from '@/components/approvals/DenyPlan'
 import { useRespondedApprovals } from '@/hooks/use-responded-approvals'
 import type { TWorkflowStep } from '@/types'
 import { getStepButtons } from '@/utils/workflow-utils'
+import { RetryNowButton } from './RetryNow'
 import { RetryStepButton } from './RetryStep'
 import { SkipStepButton } from './SkipStep'
 
@@ -20,9 +21,12 @@ export const StepButtons = ({
   step: TWorkflowStep
 }) => {
   const { hasResponded } = useRespondedApprovals()
-  const { approval, retry } = getStepButtons(step)
+  const { approval, retry, retryNow } = getStepButtons(step)
   return (
     <div className="md:ml-auto flex items-center gap-4">
+      {retryNow ? (
+        <RetryNowButton size={buttonSize} variant="primary" step={step} />
+      ) : null}
       {retry ? (
         <>
           {step?.skippable ? (

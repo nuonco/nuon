@@ -23,6 +23,7 @@ const WORKFLOW_BADGE_MAP: Record<
   'not-attempted': { children: 'Not attempted' },
   noop: { children: 'NOOP' },
   cancelled: { children: 'Cancelled', theme: 'warn' },
+  'waiting-to-retry': { children: 'Waiting to retry', theme: 'warn' },
 }
 
 export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
@@ -80,12 +81,14 @@ export type TStepButtonsCfg = {
   cancel: boolean
   approval: boolean
   retry: boolean
+  retryNow: boolean
 }
 
 export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
   const status = step?.status?.status
   return {
     retry: status === 'error' && !!step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted && step?.status?.metadata?.retry_type !== 'auto',
+    retryNow: status === 'waiting-to-retry' && !!step?.retry_not_before_at,
     cancel: status === 'in-progress' || status === 'approval-awaiting',
     approval: status === 'approval-awaiting',
   }
