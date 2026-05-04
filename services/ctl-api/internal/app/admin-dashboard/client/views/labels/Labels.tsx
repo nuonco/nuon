@@ -36,12 +36,12 @@ export const Labels = () => {
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load labels'} />
 
-  const { results = [], all_keys = [], orgs = [], total_pages = 1 } = data || {}
+  const { results = [], all_keys = [], orgs = [], total_pages = 1, total_count = 0 } = data || {}
 
   return (
     <div>
       <h1 className="page-heading">Labels</h1>
-      <p className="mt-1 text-sm text-gray-500">{results.length} results{all_keys.length > 0 && ` across ${all_keys.length} label keys`}</p>
+      <p className="mt-1 text-sm text-gray-500">{total_count} results{all_keys.length > 0 && ` across ${all_keys.length} label keys`}</p>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="w-full sm:w-64">
