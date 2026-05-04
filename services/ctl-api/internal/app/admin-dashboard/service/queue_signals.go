@@ -23,8 +23,9 @@ func (s *service) QueueSignals(c *gin.Context) {
 	signalType := c.Query("signal_type")
 	status := c.Query("status")
 	namespace := c.Query("namespace")
+	enqueued := c.Query("enqueued")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -58,8 +59,9 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	signalType := c.Query("signal_type")
 	status := c.Query("status")
 	namespace := c.Query("namespace")
+	enqueued := c.Query("enqueued")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -88,7 +90,7 @@ func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	})
 }
 
-func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace string, page int) ([]app.QueueSignal, int, error) {
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued string, page int) ([]app.QueueSignal, int, error) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
@@ -108,6 +110,11 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 	}
 	if namespace != "" {
 		query = query.Where("workflow->>'namespace' = ?", namespace)
+	}
+	if enqueued == "true" {
+		query = query.Where("enqueued = ?", true)
+	} else if enqueued == "false" {
+		query = query.Where("enqueued = ?", false)
 	}
 
 	if err := query.Count(&totalCount).Error; err != nil {
