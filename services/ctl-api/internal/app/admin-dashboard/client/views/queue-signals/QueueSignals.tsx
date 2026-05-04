@@ -16,6 +16,7 @@ export const QueueSignals = () => {
   const [search, setSearch] = useState('')
   const [signalType, setSignalType] = useState('')
   const [namespace, setNamespace] = useState('')
+  const [enqueued, setEnqueued] = useState('')
   const [page, setPage] = useState(1)
 
   const { data: typeOptions } = useQuery({
@@ -24,11 +25,12 @@ export const QueueSignals = () => {
   })
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queue-signals-global', search, signalType, namespace, ownerID, page],
+    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, ownerID, page],
     queryFn: () => getQueueSignalsGlobal({
       search,
       signal_type: signalType || undefined,
       namespace: namespace || undefined,
+      enqueued: enqueued || undefined,
       owner_id: ownerID,
       page,
     }),
@@ -59,6 +61,15 @@ export const QueueSignals = () => {
           {signalTypes.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
+        </select>
+        <select
+          value={enqueued}
+          onChange={(e) => { setEnqueued(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+        >
+          <option value="">All signals</option>
+          <option value="false">Not enqueued</option>
+          <option value="true">Enqueued</option>
         </select>
       </div>
 
