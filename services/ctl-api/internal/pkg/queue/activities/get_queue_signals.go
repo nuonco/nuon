@@ -22,7 +22,8 @@ func (a *Activities) getQueueSignals(ctx context.Context, queueID string) ([]*ap
 		Path:     "status",
 		Value:    []string{string(app.StatusQueued), string(app.StatusInProgress)},
 	}).Where(app.QueueSignal{
-		QueueID: queueID,
+		QueueID:  queueID,
+		Enqueued: true,
 	}).Order("created_at asc").
 		Find(&queueSignals); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error, "unable to get queue signals")
