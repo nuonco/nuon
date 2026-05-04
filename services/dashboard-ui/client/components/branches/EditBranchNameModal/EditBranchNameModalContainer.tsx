@@ -9,8 +9,10 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
+import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
 import { createBranchConfig, updateBranch } from '@/lib'
-import type { TAppBranch, TAppBranchConfig } from '@/types'
+import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
+import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import {
   EditBranchNameModal,
   type IEditBranchNameModalSubmitData,
@@ -36,14 +38,35 @@ export const EditBranchNameModalContainer = ({
 
   const [validationError, setValidationError] = useState<string | null>(null)
 
-  const formatError = (err: any): string => {
-    if (!err) return 'An error occurred'
-    if (typeof err === 'string') return err
-    return (
-      err.user_error && typeof err.user_error === 'string'
-        ? err.user_error
-        : err.error || err.description || err.message || 'An error occurred'
-    )
+  const vcsConnections = org?.vcs_connections || []
+  const existingConnectionId =
+    currentConfig?.connected_github_vcs_config?.vcs_connection_id || ''
+  const [vcsConnectionId, setVcsConnectionId] = useState(
+    existingConnectionId || vcsConnections[0]?.id || ''
+  )
+
+  const existingRepo =
+    currentConfig?.connected_github_vcs_config?.repo ||
+    currentConfig?.public_git_vcs_config?.repo ||
+    ''
+  const existingBranch =
+    currentConfig?.connected_github_vcs_config?.branch ||
+    currentConfig?.public_git_vcs_config?.branch ||
+    'main'
+
+  const vcsBrowser = useVcsRepoBrowser({
+    orgId: org.id,
+    vcsConnectionId,
+    enabled: !!vcsConnectionId,
+    initialRepo: existingRepo,
+    initialBranch: existingBranch,
+  })
+
+  const formatError = (err: TAPIError | Error): string => {
+    if ('error' in err && typeof err.error === 'string') return err.error
+    if ('user_error' in err && typeof err.user_error === 'string') return err.user_error
+    if ('message' in err && typeof err.message === 'string') return err.message
+    return 'An error occurred'
   }
 
   const { mutate: handleSave, isPending: isSubmitting } = useMutation({
@@ -57,11 +80,11 @@ export const EditBranchNameModalContainer = ({
             request: { name: data.branchName },
           })
         } catch (err) {
-          throw new Error(formatError(err))
+          throw new Error(formatError(err as TAPIError))
         }
       }
 
-      const request: any = {}
+      const request: TCreateBranchConfigRequest = {}
 
       if (data.useVcs && data.selectedRepo) {
         if (data.selectedRepo.private) {
@@ -105,7 +128,7 @@ export const EditBranchNameModalContainer = ({
             request,
           })
         } catch (err) {
-          throw new Error(formatError(err))
+          throw new Error(formatError(err as TAPIError))
         }
       }
     },
@@ -134,8 +157,19 @@ export const EditBranchNameModalContainer = ({
     <EditBranchNameModal
       branch={branch}
       currentConfig={currentConfig}
-      orgId={org.id}
-      vcsConnections={org?.vcs_connections || []}
+      vcsConnections={vcsConnections}
+      repos={vcsBrowser.repos}
+      branches={vcsBrowser.branches}
+      loadingRepos={vcsBrowser.loadingRepos}
+      loadingBranches={vcsBrowser.loadingBranches}
+      reposError={vcsBrowser.reposError}
+      branchesError={vcsBrowser.branchesError}
+      selectedVcsConnectionId={vcsConnectionId}
+      onVcsConnectionChange={setVcsConnectionId}
+      selectedRepo={vcsBrowser.selectedRepo}
+      onRepoChange={vcsBrowser.setSelectedRepo}
+      selectedBranch={vcsBrowser.selectedBranch}
+      onBranchChange={vcsBrowser.setSelectedBranch}
       isSubmitting={isSubmitting}
       validationError={validationError}
       onSubmit={(data) => handleSave(data)}
