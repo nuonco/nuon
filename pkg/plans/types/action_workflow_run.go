@@ -1,6 +1,8 @@
 package plantypes
 
 import (
+	"time"
+
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
@@ -16,6 +18,7 @@ type ActionWorkflowRunPlan struct {
 	Steps           []*ActionWorkflowRunStepPlan `json:"steps"`
 	BuiltinEnvVars  map[string]string            `json:"builtin_env_vars"`
 	OverrideEnvVars map[string]string            `json:"override_env_vars"`
+	Timeout         time.Duration                `json:"timeout,omitempty"`
 
 	// optional fields based on the configuration
 	ClusterInfo *kube.ClusterInfo        `json:"cluster_info,block"`
