@@ -105,7 +105,7 @@ const BranchDetailContent = () => {
         <div>
           <div className="flex items-center justify-between mb-4">
             <Text variant="h3" weight="strong">
-              Install Groups
+              Install groups
             </Text>
             {currentConfig && (
               <Badge theme="info" size="sm">
@@ -148,9 +148,9 @@ const BranchDetailContent = () => {
           </div>
         ) : (
           <Timeline
-            events={runs as any}
+            events={runs}
             pagination={{ hasNext: false, offset: 0, limit: 5 }}
-            renderEvent={(run: any) => {
+            renderEvent={(run) => {
               const commitSha = run.app_branch_runs?.[0]?.commit_sha
               return (
                 <TimelineEvent
