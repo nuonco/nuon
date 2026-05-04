@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -73,7 +74,14 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		return errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
 	}
 
-	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID)
+	var awaitOpts []*workflow.ActivityOptions
+	if t, ok := signal.Signal(sig).(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
+		awaitOpts = append(awaitOpts, &workflow.ActivityOptions{
+			ScheduleToCloseTimeout: t.Timeout(),
+		})
+	}
+
+	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, awaitOpts...)
 	if err != nil {
 		// If the parent workflow was cancelled, propagate cancellation to the step signal
 		if ctx.Err() != nil {
