@@ -8,60 +8,93 @@ interface IManagementDropdown {
   runner: TRunner
   isInstallRunner?: boolean
   settings: TRunnerSettings
+  hasMngProcess?: boolean
+  hasInstanceProcess?: boolean
+}
+
+const buildRunnerTagAction = {
+  field: 'container_image_tag' as const,
+  label: 'Update runner tag',
+  modalHeading: 'Update runner tag',
+  inputLabel: "Enter the runner tag you'd like to update to.",
+  inputPlaceholder: 'runner tag',
+  submitLabel: 'Update runner tag',
+}
+
+const installManagerAction = {
+  field: 'binary_version' as const,
+  label: 'Update manager version',
+  modalHeading: 'Update manager version',
+  inputLabel: "Enter the manager version you'd like to update to.",
+  inputPlaceholder: 'manager version',
+  submitLabel: 'Update manager version',
+}
+
+const installInstanceAction = {
+  field: 'container_image_tag' as const,
+  label: 'Update instance version',
+  modalHeading: 'Update instance version',
+  inputLabel: "Enter the instance version you'd like to update to.",
+  inputPlaceholder: 'instance version',
+  submitLabel: 'Update instance version',
 }
 
 export const ManagementDropdown = ({
   runner,
   isInstallRunner = false,
   settings,
+  hasMngProcess,
+  hasInstanceProcess,
 }: IManagementDropdown) => {
+  if (!isInstallRunner) {
+    return (
+      <UpdateRunnerButton
+        settings={settings}
+        variant="primary"
+        {...buildRunnerTagAction}
+      />
+    )
+  }
+
+  const showMng = hasMngProcess !== false
+  const showInstance = hasInstanceProcess !== false
+  const actions = [
+    showMng ? installManagerAction : null,
+    showInstance ? installInstanceAction : null,
+  ].filter((a): a is NonNullable<typeof a> => !!a)
+
+  if (actions.length === 0) return null
+
+  if (actions.length === 1) {
+    return (
+      <UpdateRunnerButton
+        settings={settings}
+        variant="secondary"
+        {...actions[0]}
+      />
+    )
+  }
+
   return (
     <Dropdown
       id={`runner-${runner.id}-mgmt`}
       buttonText={
         <>
-          <Icon variant="SlidersHorizontalIcon" /> {isInstallRunner ? 'Manage install runner' : 'Manage build runner'}
+          <Icon variant="SlidersHorizontalIcon" /> Manage install runner
         </>
       }
       alignment="right"
-      variant={!isInstallRunner ? 'primary' : 'secondary'}
+      variant="secondary"
     >
       <Menu>
-        {!isInstallRunner ? (
+        {actions.map((action) => (
           <UpdateRunnerButton
+            key={action.field}
             settings={settings}
-            field="container_image_tag"
-            label="Update runner tag"
-            modalHeading="Update runner tag"
-            inputLabel="Enter the runner tag you'd like to update to."
-            inputPlaceholder="runner tag"
-            submitLabel="Update runner tag"
             isMenuButton
+            {...action}
           />
-        ) : (
-          <>
-            <UpdateRunnerButton
-              settings={settings}
-              field="binary_version"
-              label="Update manager version"
-              modalHeading="Update manager version"
-              inputLabel="Enter the manager version you'd like to update to."
-              inputPlaceholder="manager version"
-              submitLabel="Update manager version"
-              isMenuButton
-            />
-            <UpdateRunnerButton
-              settings={settings}
-              field="container_image_tag"
-              label="Update instance version"
-              modalHeading="Update instance version"
-              inputLabel="Enter the instance version you'd like to update to."
-              inputPlaceholder="instance version"
-              submitLabel="Update instance version"
-              isMenuButton
-            />
-          </>
-        )}
+        ))}
       </Menu>
     </Dropdown>
   )

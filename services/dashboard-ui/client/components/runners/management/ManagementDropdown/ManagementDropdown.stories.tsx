@@ -34,3 +34,27 @@ export const InstallRunner = () => (
     />
   </div>
 )
+
+export const InstallRunnerInstanceOnly = () => (
+  <div className="p-4">
+    <ManagementDropdown
+      runner={mockRunner}
+      isInstallRunner
+      settings={mockSettings}
+      hasMngProcess={false}
+      hasInstanceProcess
+    />
+  </div>
+)
+
+export const InstallRunnerManagerOnly = () => (
+  <div className="p-4">
+    <ManagementDropdown
+      runner={mockRunner}
+      isInstallRunner
+      settings={mockSettings}
+      hasMngProcess
+      hasInstanceProcess={false}
+    />
+  </div>
+)

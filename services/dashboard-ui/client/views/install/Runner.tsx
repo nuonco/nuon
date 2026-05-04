@@ -17,8 +17,9 @@ import { RunnerProvider } from '@/providers/runner-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useRunner } from '@/hooks/use-runner'
 import { getRunnerSettings, getRunnerProcesses } from '@/lib'
+
+const PROCESS_STATUS_FILTER = 'pending,active,offline,pending-shutdown'
 
 const RunnerContent = ({
   runnerId,
@@ -28,7 +29,6 @@ const RunnerContent = ({
   installId: string
 }) => {
   const { org } = useOrg()
-  const { runner } = useRunner()
 
   const { data: settings } = useQuery({
     queryKey: ['runner-settings', org?.id, runnerId],
@@ -36,20 +36,40 @@ const RunnerContent = ({
     enabled: !!org?.id && !!runnerId,
   })
 
-  const { data: processResult, isLoading: processesLoading } = useQuery({
-    queryKey: ['runner-processes-active', org?.id, runnerId],
+  const { data: mngResult, isLoading: mngLoading } = useQuery({
+    queryKey: ['runner-processes-active', org?.id, runnerId, 'mng'],
     queryFn: () =>
       getRunnerProcesses({
         orgId: org.id,
         runnerId,
-        status: 'pending,active,offline,pending-shutdown',
-        limit: 2,
+        type: 'mng',
+        status: PROCESS_STATUS_FILTER,
+        limit: 1,
       }),
     refetchInterval: 10000,
     enabled: !!org?.id && !!runnerId,
   })
 
-  const processes = processResult?.data ?? []
+  const { data: instanceResult, isLoading: instanceLoading } = useQuery({
+    queryKey: ['runner-processes-active', org?.id, runnerId, 'install'],
+    queryFn: () =>
+      getRunnerProcesses({
+        orgId: org.id,
+        runnerId,
+        type: 'install',
+        status: PROCESS_STATUS_FILTER,
+        limit: 1,
+      }),
+    refetchInterval: 10000,
+    enabled: !!org?.id && !!runnerId,
+  })
+
+  const mngProcess = mngResult?.data?.[0]
+  const instanceProcess = instanceResult?.data?.[0]
+  const processes = [mngProcess, instanceProcess].filter(
+    (p): p is NonNullable<typeof p> => !!p
+  )
+  const processesLoading = mngLoading || instanceLoading
 
   return (
     <>
@@ -61,7 +81,12 @@ const RunnerContent = ({
           <ID>{runnerId}</ID>
         </HeadingGroup>
         {settings && (
-          <ManagementDropdownContainer isInstallRunner settings={settings} />
+          <ManagementDropdownContainer
+            isInstallRunner
+            settings={settings}
+            hasMngProcess={!mngLoading ? !!mngProcess : undefined}
+            hasInstanceProcess={!instanceLoading ? !!instanceProcess : undefined}
+          />
         )}
       </div>
 

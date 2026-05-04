@@ -5,9 +5,13 @@ import type { TRunnerSettings } from '@/types'
 export const ManagementDropdownContainer = ({
   isInstallRunner = false,
   settings,
+  hasMngProcess,
+  hasInstanceProcess,
 }: {
   isInstallRunner?: boolean
   settings: TRunnerSettings
+  hasMngProcess?: boolean
+  hasInstanceProcess?: boolean
 }) => {
   const { runner } = useRunner()
   if (!runner) return null
@@ -17,6 +21,8 @@ export const ManagementDropdownContainer = ({
       runner={runner}
       isInstallRunner={isInstallRunner}
       settings={settings}
+      hasMngProcess={hasMngProcess}
+      hasInstanceProcess={hasInstanceProcess}
     />
   )
 }
