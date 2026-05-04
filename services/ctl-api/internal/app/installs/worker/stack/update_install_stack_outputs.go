@@ -20,19 +20,34 @@ import (
 // @execution-timeout 24h
 // @task-timeout 30s
 func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals.RequestSignal) error {
-	id := sreq.ID
-	if sreq.InstallStackID != "" {
-		id = sreq.InstallStackID
-	}
+	var err error
+	var install *app.Install
+	var version *app.InstallStackVersion
 
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, id)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install")
-	}
-
-	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install version")
+	if sreq.InstallStackVersionID != "" {
+		version, err = activities.AwaitGetInstallStackVersionByID(ctx, activities.GetInstallStackVersionByIDRequest{
+			VersionID: sreq.InstallStackVersionID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to get install stack version")
+		}
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, version.InstallStackID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+	} else {
+		id := sreq.ID
+		if sreq.InstallStackID != "" {
+			id = sreq.InstallStackID
+		}
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, id)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+		version, err = activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install version")
+		}
 	}
 
 	run, err := activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
