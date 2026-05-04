@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -8,7 +8,6 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
-import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAWSDetails extends IStackDetails {
@@ -85,7 +84,6 @@ export const AwaitAWSDetails = ({
             terraform: (
               <TerraformTab
                 tfvarsContent={tfvarsContent}
-                orgId={orgId}
                 installId={installId}
               />
             ),
@@ -254,40 +252,10 @@ const CloudFormationTab = ({
 
 interface ITerraformTab {
   tfvarsContent: string
-  orgId: string
   installId?: string
 }
 
-const TerraformTab = ({
-  tfvarsContent,
-  orgId,
-  installId,
-}: ITerraformTab) => {
-  const [isDownloading, setIsDownloading] = useState(false)
-
-  const handleDownload = async () => {
-    if (!orgId || !installId) return
-    setIsDownloading(true)
-    try {
-      const response = await fetch(
-        `/api/orgs/${orgId}/installs/${installId}/generate-terraform-installer-config`
-      )
-      if (!response.ok) {
-        throw new Error('Failed to generate terraform installer config')
-      }
-      const configData = await response.arrayBuffer()
-      createFileDownload(
-        configData,
-        'install.tfvars',
-        'application/octet-stream'
-      )
-    } catch (error) {
-      console.error('Error downloading terraform installer config:', error)
-    } finally {
-      setIsDownloading(false)
-    }
-  }
-
+const TerraformTab = ({ tfvarsContent, installId }: ITerraformTab) => {
   const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/aws`
 
@@ -344,20 +312,9 @@ cd install-stacks/aws`
         <Card>
           <span className="flex justify-between items-center">
             <Text>
-              Save this as <code>install.tfvars</code>, or download it
-              directly
+              Save this as <code>install.tfvars</code>
             </Text>
-            <span className="flex gap-2 items-center">
-              <ClickToCopyButton textToCopy={tfvarsContent} />
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={handleDownload}
-                disabled={isDownloading}
-              >
-                {isDownloading ? 'Downloading...' : 'Download'}
-              </Button>
-            </span>
+            <ClickToCopyButton textToCopy={tfvarsContent} />
           </span>
           <Code variant="preformated">{tfvarsContent}</Code>
         </Card>
