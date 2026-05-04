@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math"
 	"net/http"
 	"sort"
@@ -9,7 +11,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -26,7 +27,7 @@ func (s *service) LabelsPage(c *gin.Context) {
 	orgID := c.Query("org_id")
 	page := getPageFromQuery(c)
 
-	results, allKeys, totalPages, err := s.getLabelsData(ctx, search, entityType, orgID, page)
+	results, allKeys, totalPages, totalCount, err := s.getLabelsData(ctx, search, entityType, orgID, page)
 	if err != nil {
 		s.l.Error("failed to get labels data", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch labels data"})
@@ -51,6 +52,7 @@ func (s *service) LabelsPage(c *gin.Context) {
 		"orgs":        orgs,
 		"page":        page,
 		"total_pages": totalPages,
+		"total_count": totalCount,
 	})
 }
 
@@ -62,7 +64,7 @@ func (s *service) LabelsTable(c *gin.Context) {
 	orgID := c.Query("org_id")
 	page := getPageFromQuery(c)
 
-	results, _, totalPages, err := s.getLabelsData(ctx, search, entityType, orgID, page)
+	results, _, totalPages, totalCount, err := s.getLabelsData(ctx, search, entityType, orgID, page)
 	if err != nil {
 		s.l.Error("failed to get labels data", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch labels data"})
@@ -73,59 +75,170 @@ func (s *service) LabelsTable(c *gin.Context) {
 		"results":     results,
 		"page":        page,
 		"total_pages": totalPages,
+		"total_count": totalCount,
 	})
 }
 
 // LabelSearchResult represents a single entity with labels for the browse page.
 type LabelSearchResult = views.LabelSearchResult
 
-func (s *service) getLabelsData(ctx context.Context, search, entityType, orgID string, page int) ([]views.LabelSearchResult, []string, int, error) {
-	// 1. Get all distinct label keys across all entity types
+// labelTable describes one of the labelled tables that the labels-browse query
+// unions over. Per-table org filtering varies because components are scoped via
+// their parent app, not directly by org.
+type labelTable struct {
+	table         string
+	entityType    string
+	detailURLExpr string
+	orgClause     string
+}
+
+var allLabelTables = []labelTable{
+	{
+		table:         "installs",
+		entityType:    "install",
+		detailURLExpr: "'/installs/' || id",
+		orgClause:     "org_id = ?",
+	},
+	{
+		table:         "components",
+		entityType:    "component",
+		detailURLExpr: "''",
+		orgClause:     "app_id IN (SELECT id FROM apps WHERE org_id = ? AND deleted_at = 0)",
+	},
+	{
+		table:         "action_workflows",
+		entityType:    "action",
+		detailURLExpr: "''",
+		orgClause:     "org_id = ?",
+	},
+}
+
+func labelTablesFor(entityType string) []labelTable {
+	if entityType == "" {
+		return allLabelTables
+	}
+	for _, t := range allLabelTables {
+		if t.entityType == entityType {
+			return []labelTable{t}
+		}
+	}
+	return nil
+}
+
+// buildLabelFilterClauses turns a search string ("key:value", "key=value",
+// "k1:v1,k2:*", or a bare key) into SQL clause fragments and args that match
+// the same semantics as labels.WithLabels.
+func buildLabelFilterClauses(search string) ([]string, []any) {
+	search = strings.TrimSpace(search)
+	if search == "" {
+		return nil, nil
+	}
+
+	lbls := labels.ParseLabelsQuery(search)
+	if lbls == nil {
+		return []string{"jsonb_exists(labels, ?)"}, []any{search}
+	}
+
+	var clauses []string
+	var args []any
+
+	exact := make(labels.Labels)
+	var wildcardKeys []string
+	for k, v := range lbls {
+		if v == "*" {
+			wildcardKeys = append(wildcardKeys, k)
+		} else {
+			exact[k] = v
+		}
+	}
+
+	if len(exact) > 0 {
+		jsonBytes, err := json.Marshal(exact)
+		if err == nil {
+			clauses = append(clauses, "labels @> ?::jsonb")
+			args = append(args, string(jsonBytes))
+		}
+	}
+
+	sort.Strings(wildcardKeys)
+	for _, key := range wildcardKeys {
+		clauses = append(clauses, "jsonb_exists(labels, ?)")
+		args = append(args, key)
+	}
+
+	return clauses, args
+}
+
+func (s *service) getLabelsData(ctx context.Context, search, entityType, orgID string, page int) ([]views.LabelSearchResult, []string, int, int64, error) {
 	allKeys := s.getAllLabelKeys(ctx)
 
-	// 2. Query entities matching the search/filter
-	var results []views.LabelSearchResult
-
-	type queryFunc func(context.Context, string, string) ([]views.LabelSearchResult, error)
-	tables := []struct {
-		entityType string
-		query      queryFunc
-	}{
-		{"install", s.getInstallLabelResults},
-		{"component", s.getComponentLabelResults},
-		{"action", s.getActionLabelResults},
+	tables := labelTablesFor(entityType)
+	if len(tables) == 0 {
+		return []views.LabelSearchResult{}, allKeys, 1, 0, nil
 	}
+
+	labelClauses, labelArgs := buildLabelFilterClauses(search)
+
+	var dataSubqueries []string
+	var countSubqueries []string
+	var dataArgs []any
+	var countArgs []any
 
 	for _, t := range tables {
-		if entityType != "" && entityType != t.entityType {
-			continue
+		clauses := []string{
+			"deleted_at = 0",
+			"labels IS NOT NULL",
+			"labels != '{}'::jsonb",
 		}
-		rows, err := t.query(ctx, search, orgID)
-		if err != nil {
-			s.l.Warn("failed to get label results for "+t.entityType, zap.Error(err))
-			continue
+		var args []any
+		if orgID != "" {
+			clauses = append(clauses, t.orgClause)
+			args = append(args, orgID)
 		}
-		results = append(results, rows...)
+		clauses = append(clauses, labelClauses...)
+		args = append(args, labelArgs...)
+
+		where := strings.Join(clauses, " AND ")
+
+		dataSubqueries = append(dataSubqueries, fmt.Sprintf(
+			"SELECT '%s' AS entity_type, id AS entity_id, name AS entity_name, labels, created_at, %s AS detail_url FROM %s WHERE %s",
+			t.entityType, t.detailURLExpr, t.table, where,
+		))
+		countSubqueries = append(countSubqueries, fmt.Sprintf(
+			"SELECT 1 FROM %s WHERE %s", t.table, where,
+		))
+
+		dataArgs = append(dataArgs, args...)
+		countArgs = append(countArgs, args...)
 	}
 
-	// 3. Paginate
-	totalCount := len(results)
+	countSQL := "SELECT COUNT(*) FROM (" + strings.Join(countSubqueries, " UNION ALL ") + ") c"
+	var totalCount int64
+	if err := s.db.WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
+		return nil, allKeys, 1, 0, fmt.Errorf("unable to count labels: %w", err)
+	}
+
 	totalPages := int(math.Ceil(float64(totalCount) / float64(labelsPerPage)))
 	if totalPages == 0 {
 		totalPages = 1
 	}
 
 	offset := (page - 1) * labelsPerPage
-	if offset > len(results) {
-		offset = len(results)
-	}
-	end := offset + labelsPerPage
-	if end > len(results) {
-		end = len(results)
-	}
-	results = results[offset:end]
+	dataSQL := "SELECT entity_type, entity_id, entity_name, labels, detail_url FROM (" +
+		strings.Join(dataSubqueries, " UNION ALL ") +
+		") u ORDER BY u.created_at DESC LIMIT ? OFFSET ?"
+	dataArgs = append(dataArgs, labelsPerPage, offset)
 
-	return results, allKeys, totalPages, nil
+	var results []views.LabelSearchResult
+	if err := s.db.WithContext(ctx).Raw(dataSQL, dataArgs...).Scan(&results).Error; err != nil {
+		return nil, allKeys, 1, 0, fmt.Errorf("unable to query labels: %w", err)
+	}
+
+	if results == nil {
+		results = []views.LabelSearchResult{}
+	}
+
+	return results, allKeys, totalPages, totalCount, nil
 }
 
 func (s *service) getAllLabelKeys(ctx context.Context) []string {
@@ -169,100 +282,4 @@ func (s *service) getOrgOptions(ctx context.Context) []views.OrgOption {
 		opts = append(opts, views.OrgOption{ID: o.ID, Name: o.Name})
 	}
 	return opts
-}
-
-func (s *service) getInstallLabelResults(ctx context.Context, search, orgID string) ([]views.LabelSearchResult, error) {
-	var installs []app.Install
-	tx := s.db.WithContext(ctx).
-		Where("labels IS NOT NULL AND labels != '{}'::jsonb")
-
-	if orgID != "" {
-		tx = tx.Where("org_id = ?", orgID)
-	}
-	tx = applyLabelSearch(tx, search)
-
-	if err := tx.Find(&installs).Error; err != nil {
-		return nil, err
-	}
-
-	results := make([]views.LabelSearchResult, 0, len(installs))
-	for _, i := range installs {
-		results = append(results, views.LabelSearchResult{
-			EntityType: "install",
-			EntityID:   i.ID,
-			EntityName: i.Name,
-			Labels:     i.Labels,
-			DetailURL:  "/installs/" + i.ID,
-		})
-	}
-	return results, nil
-}
-
-func (s *service) getComponentLabelResults(ctx context.Context, search, orgID string) ([]views.LabelSearchResult, error) {
-	var components []app.Component
-	tx := s.db.WithContext(ctx).
-		Where("labels IS NOT NULL AND labels != '{}'::jsonb")
-
-	if orgID != "" {
-		tx = tx.Where("app_id IN (SELECT id FROM apps WHERE org_id = ?)", orgID)
-	}
-	tx = applyLabelSearch(tx, search)
-
-	if err := tx.Find(&components).Error; err != nil {
-		return nil, err
-	}
-
-	results := make([]views.LabelSearchResult, 0, len(components))
-	for _, c := range components {
-		results = append(results, views.LabelSearchResult{
-			EntityType: "component",
-			EntityID:   c.ID,
-			EntityName: c.Name,
-			Labels:     c.Labels,
-		})
-	}
-	return results, nil
-}
-
-func (s *service) getActionLabelResults(ctx context.Context, search, orgID string) ([]views.LabelSearchResult, error) {
-	var actions []app.ActionWorkflow
-	tx := s.db.WithContext(ctx).
-		Where("labels IS NOT NULL AND labels != '{}'::jsonb")
-
-	if orgID != "" {
-		tx = tx.Where("org_id = ?", orgID)
-	}
-	tx = applyLabelSearch(tx, search)
-
-	if err := tx.Find(&actions).Error; err != nil {
-		return nil, err
-	}
-
-	results := make([]views.LabelSearchResult, 0, len(actions))
-	for _, a := range actions {
-		results = append(results, views.LabelSearchResult{
-			EntityType: "action",
-			EntityID:   a.ID,
-			EntityName: a.Name,
-			Labels:     a.Labels,
-		})
-	}
-	return results, nil
-}
-
-// applyLabelSearch adds WHERE clauses for label search.
-// Supports "key:value" (exact match) or just "key" (key existence).
-func applyLabelSearch(tx *gorm.DB, search string) *gorm.DB {
-	search = strings.TrimSpace(search)
-	if search == "" {
-		return tx
-	}
-
-	lbls := labels.ParseLabelsQuery(search)
-	if lbls != nil {
-		return tx.Scopes(labels.WithLabels("labels", lbls))
-	}
-
-	// Treat as key-only search (check if key exists in JSONB)
-	return tx.Where("jsonb_exists(labels, ?)", search)
 }
