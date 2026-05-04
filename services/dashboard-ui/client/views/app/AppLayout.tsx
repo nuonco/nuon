@@ -35,13 +35,24 @@ const AppTemplate = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const isChildRoute = !!useMatch('/:orgId/apps/:appId/:section/:rest/*')
+  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
 
   if (!app) return null
 
   const navLinks = [
     { path: `/`, iconVariant: 'HouseSimple' as const, text: 'Overview' },
+    hasAppBranchesUI && {
+      path: `/sandbox`,
+      iconVariant: 'ShippingContainerIcon' as const,
+      text: 'Sandbox builds',
+    },
     { path: `/components`, iconVariant: 'Cards' as const, text: 'Components' },
     { path: `/actions`, iconVariant: 'TerminalWindow' as const, text: 'Actions' },
+    hasAppBranchesUI && {
+      path: `/branches`,
+      iconVariant: 'GitBranch' as const,
+      text: 'Branches',
+    },
     { path: `/roles`, iconVariant: 'FileLock' as const, text: 'Roles' },
     { path: `/policies`, iconVariant: 'ShieldCheck' as const, text: 'Policies' },
     { path: `/installs`, iconVariant: 'Cube' as const, text: 'Installs' },
