@@ -13,6 +13,7 @@ import (
 
 const SignalType signal.SignalType = "state-regenerate"
 
+// Signal generates state based on signal input
 type Signal struct {
 	InstallID        string
 	Targets          []state.PartialTarget

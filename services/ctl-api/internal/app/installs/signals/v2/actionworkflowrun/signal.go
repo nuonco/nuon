@@ -18,6 +18,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -169,7 +170,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.executeActionWorkflowRun(ctx, installActionWorkflow.InstallID, actionWorkflowRun.ID); err != nil {
+	if err := s.executeActionWorkflowRun(ctx, install, actionWorkflowRun.ID); err != nil {
 		return errors.Wrap(err, "unable to execute action workflow run")
 	}
 
@@ -204,10 +205,16 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 		}
 	}
 
-	return s.executeActionWorkflowRun(ctx, run.InstallID, run.ID)
+	install, err := activities.AwaitGetByInstallID(ctx, run.InstallID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install for adhoc run")
+	}
+
+	return s.executeActionWorkflowRun(ctx, install, run.ID)
 }
 
-func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actionWorkflowRunID string) error {
+func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Install, actionWorkflowRunID string) error {
+	installID := install.ID
 	l := workflow.GetLogger(ctx)
 
 	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, actionWorkflowRunID)
@@ -320,12 +327,13 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
 		return errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	if stateGenV2 {
-		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   installID,
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
@@ -337,8 +345,11 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 				TriggeredByType:  "install_action_workflow_runs",
 				StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
 			},
-		}); err != nil {
+		})
+		if err != nil {
 			l.Warn("unable to hint state manager", zap.Error(err))
+		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+			l.Warn("unable to await state generation", zap.Error(err))
 		}
 
 	} else {

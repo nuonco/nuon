@@ -19,6 +19,7 @@ import (
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -179,12 +180,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
 
-	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
 		return errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	if stateGenV2 {
-		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   install.ID,
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
@@ -196,8 +198,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				TriggeredByType:  "install_sandbox_runs",
 				StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
 			},
-		}); err != nil {
+		})
+		if err != nil {
 			l.Warn("unable to hint state manager", zap.Error(err))
+		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+			l.Warn("unable to await state generation", zap.Error(err))
 		}
 
 	} else {

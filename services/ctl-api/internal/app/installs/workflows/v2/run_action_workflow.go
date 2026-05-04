@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // createActionWorkflowStep creates a workflow step for executing an action workflow
@@ -75,12 +76,17 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
 	sg.nextGroupEager() // generate install state
-	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
-
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	if !stateGenV2 {
 		stateSignal := &generatestate.Signal{InstallID: installID}
 		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))

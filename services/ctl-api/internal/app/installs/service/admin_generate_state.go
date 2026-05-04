@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
 	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
@@ -33,27 +35,53 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 		return
 	}
 
-	queueID, err := s.getInstallStateManagerQueueID(ctx, install.ID)
+	stateGenV2, err := s.useStateGenV2(ctx, install)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get state-manager queue: %w", err))
+		ctx.Error(fmt.Errorf("unable to check state-gen-v2 feature: %w", err))
 		return
 	}
 
-	triggeredByID := ctx.GetHeader("X-Nuon-Admin-Email")
-	if triggeredByID == "" {
-		triggeredByID = install.ID
-	}
+	if stateGenV2 {
+		queueID, err := s.getInstallStateManagerQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get state-manager queue: %w", err))
+			return
+		}
 
-	if err := s.enqueueInstallSignal(ctx, queueID, &stateregenerate.Signal{
-		InstallID:        install.ID,
-		Targets:          state.AllPartialTargets(),
-		ForceAll:         true,
-		TriggeredByID:    triggeredByID,
-		TriggeredByType:  "installs",
-		StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
-	}, install.ID, "installs"); err != nil {
-		ctx.Error(fmt.Errorf("unable to enqueue force-regenerate: %w", err))
-		return
+		if err := s.enqueueInstallSignal(ctx, queueID, &stateregenerate.Signal{
+			InstallID:        install.ID,
+			Targets:          state.AllPartialTargets(),
+			ForceAll:         true,
+			TriggeredByID:    installID,
+			TriggeredByType:  "installs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		}, install.ID, "installs"); err != nil {
+			ctx.Error(fmt.Errorf("unable to enqueue force-regenerate: %w", err))
+			return
+		}
+	} else {
+		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+		if err != nil {
+			ctx.Error(fmt.Errorf("checking features: %w", err))
+			return
+		}
+		if useQueues {
+			queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+			if err != nil {
+				ctx.Error(err)
+				return
+			}
+			if err := s.enqueueInstallSignal(ctx, queueID, &generatestate.Signal{
+				InstallID: install.ID,
+			}, "", ""); err != nil {
+				ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+				return
+			}
+		} else {
+			s.evClient.Send(ctx, install.ID, &signals.Signal{
+				Type: signals.OperationGenerateState,
+			})
+		}
 	}
 
 	ctx.JSON(http.StatusOK, true)

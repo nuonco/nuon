@@ -88,11 +88,6 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
-
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get app config")

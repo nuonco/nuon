@@ -89,7 +89,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg, appConfig, awData)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, install, installID, flw, sg, appConfig, awData)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
 		}
@@ -109,10 +109,11 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps = append(steps, lifecycleSteps...)
 
 	sg.nextGroup() // refresh inputs partial in state
-	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	var stateSignal signal.Signal
 	if stateGenV2 {
 		stateSignal = &stateregenerate.Signal{

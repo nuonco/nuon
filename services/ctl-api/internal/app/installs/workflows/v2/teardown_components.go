@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentteardownsyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -52,10 +53,11 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroupEager() // generate install state
-	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 
 	if !stateGenV2 {
 		stateSignal := &generatestate.Signal{InstallID: installID}

@@ -30,11 +30,17 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 
 	sg := newStepGroup(flw)
 
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
 	sg.nextGroupEager()
-	stateGenV2, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	var stateSignal signal.Signal
 	if stateGenV2 {
 		stateSignal = &stateregenerate.Signal{
@@ -104,11 +110,6 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		return nil, err
 	}
 	steps = append(steps, step)
-
-	install, err := activities.AwaitGetByInstallID(ctx, installID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install")
-	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
