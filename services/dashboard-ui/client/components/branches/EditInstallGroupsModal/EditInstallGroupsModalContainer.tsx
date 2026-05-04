@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { createBranchConfig, getAppInstalls } from '@/lib'
+import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import type { TAppBranch, TAppBranchConfig, TInstall } from '@/types'
+import type { TAppBranch, TAppBranchConfig } from '@/types'
 import { EditInstallGroupsModal, type IInstallGroup } from './EditInstallGroupsModal'
 
 interface IEditInstallGroupsModalContainer extends IModal {
@@ -30,8 +30,13 @@ export const EditInstallGroupsModalContainer = ({
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
 
-  const [availableInstalls, setAvailableInstalls] = useState<TInstall[]>([])
-  const [loadingInstalls, setLoadingInstalls] = useState(false)
+  const { data: installsResult, isLoading: loadingInstalls } = useQuery({
+    queryKey: ['app-installs', org.id, app.id],
+    queryFn: () => getAppInstalls({ appId: app.id, orgId: org.id, limit: 100 }),
+    enabled: !!org.id && !!app.id,
+  })
+
+  const availableInstalls = installsResult?.data ?? []
 
   const initialGroups: IInstallGroup[] =
     currentConfig?.install_groups?.map((group, idx) => ({
@@ -43,25 +48,6 @@ export const EditInstallGroupsModalContainer = ({
       requires_approval: group.requires_approval || false,
       rollback_on_failure: group.rollback_on_failure || false,
     })) || []
-
-  useEffect(() => {
-    const fetchInstalls = async () => {
-      setLoadingInstalls(true)
-      try {
-        const { data } = await getAppInstalls({
-          appId: app.id,
-          orgId: org.id,
-          limit: 100,
-        })
-        setAvailableInstalls(data || [])
-      } catch {
-        // installs unavailable, leave list empty
-      }
-      setLoadingInstalls(false)
-    }
-
-    fetchInstalls()
-  }, [app.id, org.id])
 
   const { mutate: saveMutation, isPending: isSaving } = useMutation({
     mutationFn: async (groups: IInstallGroup[]) => {
@@ -82,7 +68,7 @@ export const EditInstallGroupsModalContainer = ({
         rollback_on_failure: group.rollback_on_failure || false,
       }))
 
-      const request: any = { install_groups: installGroupsForApi }
+      const request: TCreateBranchConfigRequest = { install_groups: installGroupsForApi }
 
       if (currentConfig?.connected_github_vcs_config) {
         request.connected_github_vcs_config = {

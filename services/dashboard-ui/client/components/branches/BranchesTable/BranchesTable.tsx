@@ -32,7 +32,7 @@ export function parseBranchesToTableData(
 const columns: ColumnDef<TBranchRow>[] = [
   {
     accessorKey: 'branchName',
-    header: 'Branch Name',
+    header: 'Branch name',
     cell: (info) => (
       <span>
         <Text variant="body">
