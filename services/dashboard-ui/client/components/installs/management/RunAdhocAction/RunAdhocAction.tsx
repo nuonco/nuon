@@ -201,7 +201,7 @@ export const RunAdhocActionModal = ({
             size="sm"
             onClick={() => setInputMode('command')}
           >
-            Single Command
+            Single command
           </Button>
           <Button
             type="button"
@@ -209,7 +209,7 @@ export const RunAdhocActionModal = ({
             size="sm"
             onClick={() => setInputMode('script')}
           >
-            Bash Script
+            Bash script
           </Button>
         </div>
 
@@ -233,7 +233,7 @@ export const RunAdhocActionModal = ({
         ) : (
           <label className="flex flex-col gap-1">
             <Text variant="label" weight="strong">
-              Bash Script *
+              Bash script *
             </Text>
             <Editor
               value={scriptContent}
@@ -270,7 +270,7 @@ export const RunAdhocActionModal = ({
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <Text variant="label" weight="strong">
-              Environment Variables
+              Environment variables
             </Text>
             <Button
               type="button"
