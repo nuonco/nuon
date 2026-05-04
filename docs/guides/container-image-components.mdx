@@ -2,14 +2,14 @@
 title: 'Container Image Components'
 description: "Container image components allow you to use prebuilt container images."
 icon: "box"
-keywords: ["components", "container image", "container image guide", "prebuilt image", "ECR", "container_image type", "external image", "image registry", "OCI image"]
+keywords: ["components", "container image", "container image guide", "prebuilt image", "ECR", "GAR", "Artifact Registry", "container_image type", "external image", "image registry", "OCI image"]
 ---
 
-Container images allow you to import prebuilt container images from public sources, and private ECR repositories.
+Container images allow you to import prebuilt container images from public sources, private AWS ECR repositories, and private GCP Artifact Registry (GAR) repositories.
 
 ## Container Images vs Docker Build images
 
-Container images are used to import _prebuilt_ images, that have already been pushed to either a public registry, or a private ECR repository.
+Container images are used to import _prebuilt_ images, that have already been pushed to either a public registry, a private AWS ECR repository, or a private GCP Artifact Registry repository.
 
 ### When to use a docker build component
 
@@ -27,7 +27,7 @@ Use a docker build component if:
 * you value building once, and using everywhere for consistency purposes
 
 <Note>
-If you have private prebuilt images in a registry other than AWS ECR, that you would like to use, [please get in touch](https://nuon.co/contact-us)!
+If you have private prebuilt images in a registry other than AWS ECR or GCP Artifact Registry, [please get in touch](https://nuon.co/contact-us)!
 </Note>
 
 ## Configuring a container image component
@@ -62,7 +62,28 @@ region       = "us-west-2"
 iam_role_arn = "arn:aws:iam::123927561584:role/nuon-container-image-access"
 ```
 
-To use an AWS ECR image, [please follow the directions](#ecr-access-iam-role) to setup an IAM role, granting access to Nuon to pull the image.
+To use an AWS ECR image, [follow the access setup directions](#granting-nuon-access-to-pull-images) — both Nuon-hosted (AWS) customers and self-hosted-on-GCP customers can pull from the same role.
+
+### Using a Private GCP GAR Image
+
+To use an image from a private Google Artifact Registry, configure the `gcp_gar` block.
+
+```toml components/gar_image.toml
+# container-image
+name   = "gar"
+type   = "container_image"
+
+[gcp_gar]
+image_url      = "us-central1-docker.pkg.dev/my-project/my-repo/my-image"
+tag            = "latest"
+region         = "us-central1"
+gcp_project_id = "my-project"
+
+# Optional — impersonate a service account when pulling
+service_account_email = "nuon-puller@my-project.iam.gserviceaccount.com"
+```
+
+To use a GAR image, [follow the access setup directions](#gcp-gar-access) to grant access. GAR images are pulled by self-hosted-on-GCP customers; reach out if you also need Nuon-hosted (AWS) customers to pull from GAR.
 
 ## Deployments
 
@@ -122,7 +143,20 @@ authentication or publishing public images. Any `Dockerfile` in a repo can be bu
 The sync process works by creating a 1-time authentication flow that grants the install runner access to pull the image
 from the org data plane, and copy it into the local registry.
 
-## AWS ECR Access IAM Role
+## Granting Nuon Access to Pull Images
+
+Nuon-hosted runs in AWS, and we also offer a [self-hosted BYOC deployment on GCP](/guides/self-hosted/gcp). Pick the
+section that matches your registry and the deployment kind your customers are using.
+
+| Image registry | Customer deployment | Setup |
+|---|---|---|
+| AWS ECR | Nuon-hosted (AWS) | [AWS ECR Access IAM Role](#aws-ecr-access-iam-role) |
+| AWS ECR | Self-hosted on GCP | [AWS ECR — self-hosted on GCP](#aws-ecr-from-a-gcp-runner) |
+| GCP Artifact Registry | Self-hosted on GCP | [GCP GAR Access](#gcp-gar-access) |
+
+If you have customers on both deployments, you can combine the inputs on a single ECR role — the module supports it.
+
+### AWS ECR Access IAM Role
 
 To use a private AWS ECR image, you must create an IAM role that grants Nuon access to pull your container image. When
 building your component, `nuon` will automatically assume the role and pull the image from your build runner.
@@ -146,9 +180,69 @@ If you are having trouble finding the repository ARN in the AWS console, you can
   print the ARNs of all repositories in your current context.
 </Note>
 
-## Importing Images Outside of AWS ECR
+### AWS ECR from a Self-Hosted-on-GCP Customer
 
-We currently _only_ support public container images and private container images pushed to AWS ECR private registries.
+If your customer is running a self-hosted Nuon deployment on GCP, the IAM role's trust policy needs to accept their
+ctl-api service account's OIDC token (via `accounts.google.com`) in addition to (or instead of) the Nuon-hosted AWS
+principal.
+
+Pass each self-hosted customer's GCP service account unique ID via `gcp_principals`:
+
+```hcl
+module "nuon_ecr_access" {
+  source  = "nuonco/ecr-access/aws"
+
+  repository_arns = ["<repository-arn>"]
+
+  gcp_principals = [
+    {
+      service_account_unique_id = "123456789012345678901"  # numeric uid of the customer's ctl-api SA
+      service_account_email     = "ctl-api-<install>@<customer-project>.iam.gserviceaccount.com"
+    },
+  ]
+}
+```
+
+The customer can find their ctl-api service account email in their self-hosted Nuon's GCP project. Run
+`gcloud iam service-accounts describe <email> --format='value(uniqueId)'` to get the numeric ID for the trust condition.
+
+<Note>
+The default Nuon-hosted (AWS) trust principal stays in place — adding `gcp_principals` is additive, so the same role
+works for both Nuon-hosted and self-hosted-on-GCP customers.
+</Note>
+
+### GCP GAR Access
+
+GAR images are pulled by self-hosted-on-GCP customers' ctl-api service accounts. You grant access by creating a reader
+service account on your GAR repository and allowing each customer's ctl-api SA to impersonate it.
+
+The easiest way to set this up is using our [Terraform Module](https://registry.terraform.io/modules/nuonco/gar-access/google):
+
+```hcl
+module "nuon_gar_access" {
+  source  = "nuonco/gar-access/google"
+
+  project_id          = "<your-gcp-project>"
+  repository_location = "us-central1"
+  repository_id       = "<repo-name>"
+
+  customer_principals = [
+    "serviceAccount:ctl-api-<install>@<customer-project>.iam.gserviceaccount.com",
+  ]
+}
+
+output "gar_access_sa_email" {
+  value = module.nuon_gar_access.service_account_email
+}
+```
+
+Then set `service_account_email` in your component's `gcp_gar` block to the SA email the module emits.
+
+See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
+
+## Importing Images Outside of Supported Registries
+
+We currently support public container images, private AWS ECR repositories, and private GCP Artifact Registry repositories.
 
 If your registry is supported by AWS ECR's [pull through
   cache](https://docs.aws.amazon.com/AmazonECR/latest/userguide/pull-through-cache-working.html), the easiest way to
@@ -157,5 +251,5 @@ If your registry is supported by AWS ECR's [pull through
 This works for [Docker Hub](https://hub.docker.com/), [Github Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) and [Microsoft Azure Container Registry](https://azure.microsoft.com/en-us/products/container-registry).
 
 <Note>
-If you would like to use a different private container registry than AWS ECR, we would love to know more. Please [get in touch](https://nuon.co/contact-us) to tell us more about your use case.
+If you would like to use a different private container registry, we would love to know more. Please [get in touch](https://nuon.co/contact-us) to tell us more about your use case.
 </Note>
