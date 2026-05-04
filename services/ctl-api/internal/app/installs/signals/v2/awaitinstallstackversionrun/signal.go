@@ -31,12 +31,17 @@ type Signal struct {
 	versionID string
 }
 
+const maxTimeout = 180 * 24 * time.Hour // 180 days
+
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithTimeout = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool { return true }
+
+func (s *Signal) Timeout() time.Duration { return maxTimeout }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -138,7 +143,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	v := validator.New()
 	var run *app.InstallStackVersionRun
 	if err := poll.Poll(ctx, v, poll.PollOpts{
-		MaxTS:           workflow.Now(ctx).Add(time.Hour * 24),
+		MaxTS:           workflow.Now(ctx).Add(maxTimeout),
 		InitialInterval: time.Second * 15,
 		MaxInterval:     time.Minute * 15,
 		BackoffFactor:   1.15,
@@ -156,7 +161,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: version.ID,
 				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusExpired, map[string]any{
-					"err_message": "cloudformation stack was not applied before expiring",
+					"err_message": "cloudformation stack was not applied within 180 days and expired",
 				}),
 			})
 
@@ -166,7 +171,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 					Status: app.CompositeStatus{
 						Status: app.StatusError,
 						Metadata: map[string]any{
-							"err_step_message": "Stack was not applied within 24hrs and expired. Please reprovision install.",
+							"err_step_message": "Stack was not applied within 180 days and expired. Please reprovision install.",
 						},
 					},
 				}); statusErr != nil {
