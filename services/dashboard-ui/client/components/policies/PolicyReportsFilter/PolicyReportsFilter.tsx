@@ -61,7 +61,6 @@ export function PolicyReportsFilter({
   return (
     <Dropdown
       alignment="right"
-      buttonClassName="!p-2"
       buttonText={
         <>
           <Icon variant="FunnelSimple" />
@@ -69,7 +68,7 @@ export function PolicyReportsFilter({
         </>
       }
       id="policy-reports-filter"
-      variant="ghost"
+      variant="secondary"
     >
       <Menu className="!p-0 !w-56">
         <form onReset={onClearFilters}>
