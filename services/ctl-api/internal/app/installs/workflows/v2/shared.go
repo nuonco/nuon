@@ -66,10 +66,8 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 	switch sigType {
 	case generateinstallstackversion.SignalType, awaitinstallstackversionrun.SignalType, updateinstallstackoutputs.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStackVersions)
-		meta.retryable = false
 	case awaitrunnerhealthy.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeRunners)
-		meta.retryable = false
 	case componentdeployapplyplan.SignalType, componentdeploysyncandplan.SignalType, componentsyncimage.SignalType,
 		componentteardownsyncandplan.SignalType, componentteardownapplyplan.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallDeploys)
