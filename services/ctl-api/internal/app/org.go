@@ -70,7 +70,7 @@ const (
 	// runner auto-detects the mirror at unpack time, so toggling this
 	// flag only affects the build runner.
 	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
-	OrgFeatureAppBranchesUI          OrgFeature = "app-branches-ui"
+	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
 )
 
 type Org struct {
@@ -186,7 +186,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureDeployOutputs:           false,
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
-		OrgFeatureAppBranchesUI:          false,
+		OrgFeatureAppBranchesUI:           false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -295,7 +295,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureInstallRename:           "Allow renaming installs from the dashboard edit install modal",
 		OrgFeatureDeployOutputs:           "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
 		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
-		OrgFeatureAppBranchesUI:          "Enable the app branches UI in the dashboard for managing and switching between app branches",
+		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
 	}
 }
 
