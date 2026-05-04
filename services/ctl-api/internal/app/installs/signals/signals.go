@@ -205,6 +205,8 @@ type Signal struct {
 
 	// used for install stack output update via phone home
 	InstallStackID string `json:"install_stack_id"`
+	// used for install stack output update via phone home
+	InstallStackVersionID string `json:"install_stack_version_id"`
 
 	// when true, skip triggering the input update workflow after updating install inputs from stack outputs
 	SkipInputUpdateWorkflow bool `json:"skip_input_update_workflow"`
