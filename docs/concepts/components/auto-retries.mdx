@@ -37,27 +37,21 @@ seo:
 ---
 
 When a [component](/concepts/components) fails to deploy due to a transient
-error — a flaky upstream registry, a rate-limited cloud API, an eventually
-consistent IAM propagation — you don't want a human paged. You also don't want
-an actually-broken component to retry forever.
+error, you don't want it to get stuck and fail. You also don't want an
+actually-broken component to retry forever.
 
 `max_auto_retries` gives each component a bounded retry budget. The runner
 will re-plan and re-apply the component up to that many times before surfacing
 the failure to the [workflow](/concepts/workflows). If the component succeeds
 on a retry, the workflow continues normally.
 
-<Note>
-This was shipped as part of the [033 changelog](/updates/033-Workflow-Policy-and-improved-cloud-support#automatic-retries) alongside parallel workflows.
-</Note>
-
 ## How it works
 
 Set `max_auto_retries` on any component TOML:
 
-- **`0`** (default) — auto-retry disabled. A failed deploy surfaces immediately.
-- **`N > 0`** — on a deploy failure, the runner re-plans and re-applies the
-  component up to `N` more times. After `N` failed attempts, the workflow
-  surfaces the failure as it would today.
+- On a deploy failure, the runner re-plans and re-applies the component up to
+  `N` more times. After `N` failed attempts, the workflow surfaces the failure
+  as it would today.
 
 Each retry is a fresh plan + apply, so it picks up any state that has settled
 since the previous attempt (e.g. a slow IAM role becoming consistent, an
@@ -112,38 +106,9 @@ domain_name = "{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}"
 
 Both examples are taken from the [penpot app config](https://github.com/nuonco/example-app-configs/tree/main/penpot/components).
 
-## Picking a value
-
-There is no universally correct number — the right value depends on what kind
-of transience you're absorbing.
-
-| Component type | Typical failure mode | Suggested `max_auto_retries` |
-| --- | --- | --- |
-| ACME / DNS-validated certificates | DNS propagation, ACME rate limits | `3` – `5` |
-| Cloud IAM / KMS Terraform | Eventual consistency on role/policy attach | `3` |
-| Helm charts pulling large images | Registry rate limits, network blips | `3` |
-| Kubernetes manifests dependent on operators | Operator CRDs not yet ready | `2` – `3` |
-| Idempotent infra you fully control | Rare — usually fine at `0` | `0` – `1` |
-
-Start small (`3`) and raise it only when you can point to a specific transient
-failure that's repeatedly costing on-call time. A high ceiling masks real
-problems and inflates deploy time.
-
-## When *not* to set this
-
-Auto-retries help with **transient** failures. They do not help with:
-
-- A misconfigured `values.yaml` or Terraform variable — every retry will fail.
-- A missing IAM permission the runner doesn't have — every retry will fail.
-- Drift caused by an out-of-band change — fix the drift, don't retry over it.
-
-If a component's failure mode isn't actually transient, retries just delay the
-inevitable surfacing of the real bug. Leave `max_auto_retries` at `0` until you
-have evidence the failures are recoverable.
-
 ## Reference
 
-Per-component-type schema, including `max_auto_retries`:
+Looking for something else? Full per-component-type schemas are found here:
 
 - [Helm chart](/config-ref/helm)
 - [Terraform module](/config-ref/terraform)
