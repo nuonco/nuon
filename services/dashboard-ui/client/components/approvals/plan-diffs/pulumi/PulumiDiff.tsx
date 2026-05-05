@@ -64,7 +64,7 @@ export function PulumiDiff({
                 View preview graph <Icon variant="NetworkXIcon" />
               </>
             ),
-            variant: 'ghost',
+            variant: 'secondary',
           }}
           size="xl"
         >
