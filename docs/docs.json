@@ -2,7 +2,16 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "aspen",
   "name": "Nuon documentation",
-  "description": "Deploy your software into customer cloud accounts without cross-account access. Nuon is the BYOC platform for software vendors.",
+  "description": "Nuon is the BYOC (bring-your-own-cloud) deployment platform for software vendors. Deploy applications — Terraform, Helm, Kubernetes manifests, container images — into customer AWS, Azure, or GCP accounts with no cross-account IAM. Includes runners, operation roles for least-privilege IAM, drift detection, approval workflows, and policies for compliance.",
+  "seo": {
+    "indexing": "all",
+    "metatags": {
+      "og:site_name": "Nuon Documentation",
+      "og:type": "website",
+      "twitter:card": "summary_large_image",
+      "twitter:site": "@nuonco"
+    }
+  },
   "contextual": {
     "options": ["copy", "view", "cursor", "chatgpt", "claude"]
   },
