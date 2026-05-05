@@ -337,7 +337,7 @@ export const SandboxMode = () => {
         {activeTab === 'stacks' && (
           <div>
             {stackConfig ? (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
                 <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Sandbox terraform config</h3>
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
                   <div><dt className="text-gray-500 dark:text-gray-400">Job type</dt><dd className="font-mono">{stackConfig.job_type}</dd></div>
@@ -358,7 +358,7 @@ export const SandboxMode = () => {
             {flowTemplates.length > 0 ? (
               <div className="space-y-2">
                 {flowTemplates.map((template: any, i: number) => (
-                  <div key={template.key || template.Key || i} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+                  <div key={template.key || template.Key || i} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 p-4">
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{template.name || template.Name || template.key || template.Key}</p>
                       {(template.description || template.Description) && (
@@ -573,7 +573,7 @@ function TypeCombobox({ value, onChange, options, placeholder }: { value: string
         className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2 font-mono"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg">
+        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-gray-200 dark:border-gray-800 shadow-lg">
           {filtered.map((opt) => (
             <button
               key={opt}
@@ -620,7 +620,7 @@ function DurationMsInput({ value, onChange }: { value: number; onChange: (v: num
             key={p.label}
             type="button"
             onClick={() => onChange(p.value)}
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           >
             {p.label}
           </button>
@@ -641,7 +641,7 @@ function DurationSecInput({ value, onChange }: { value: number; onChange: (v: nu
             key={p.label}
             type="button"
             onClick={() => onChange(p.value)}
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300' : 'border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           >
             {p.label}
           </button>

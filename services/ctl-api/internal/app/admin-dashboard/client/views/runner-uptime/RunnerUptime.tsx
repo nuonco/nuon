@@ -279,7 +279,7 @@ export const RunnerUptime = () => {
           const successRate = totalJobs > 0 ? ((finishedJobs / totalJobs) * 100).toFixed(1) : null
 
           return (
-            <div key={entry.install_id} className="rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <div key={entry.install_id} className="rounded-md border border-gray-200 dark:border-gray-800">
               <button
                 onClick={() => setExpanded(isExpanded ? null : entry.install_id)}
                 className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
