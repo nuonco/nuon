@@ -156,9 +156,24 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.validateRunnerGCPIdentity(reqCtx, runner, claims); err != nil {
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth gcp: failed to get install for runner",
+			zap.String("runner_id", runnerID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not associated with an install",
+		})
+		ctx.Abort()
+		return
+	}
+
+	if err := s.validateRunnerGCPIdentity(reqCtx, install, claims); err != nil {
 		s.l.Warn("runner auth gcp: identity validation failed",
 			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("install_name", install.Name),
 			zap.String("project_id", claims.projectID),
 			zap.String("service_account", claims.serviceAccount),
 			zap.Error(err))
@@ -182,6 +197,8 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 	}
 
 	s.l.Info("runner auth gcp: authentication successful",
+		zap.String("install_id", install.ID),
+		zap.String("install_name", install.Name),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", claims.instanceID),
 		zap.String("project_id", claims.projectID))
@@ -332,12 +349,7 @@ func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
 	return ""
 }
 
-func (s *service) validateRunnerGCPIdentity(ctx context.Context, runner *app.Runner, claims *gcpClaims) error {
-	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
-	}
-
+func (s *service) validateRunnerGCPIdentity(ctx context.Context, install *app.Install, claims *gcpClaims) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)

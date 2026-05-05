@@ -295,9 +295,24 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.validateRunnerAzureIdentity(reqCtx, runner, azClaims, subscriptionID); err != nil {
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth azure: failed to get install for runner",
+			zap.String("runner_id", runnerID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not associated with an install",
+		})
+		ctx.Abort()
+		return
+	}
+
+	if err := s.validateRunnerAzureIdentity(reqCtx, install, azClaims, subscriptionID); err != nil {
 		s.l.Warn("runner auth azure: identity validation failed",
 			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("install_name", install.Name),
 			zap.String("tenant_id", azClaims.TenantID),
 			zap.String("principal_id", azClaims.ObjectID),
 			zap.Error(err))
@@ -321,6 +336,8 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 	}
 
 	s.l.Info("runner auth azure: authentication successful",
+		zap.String("install_id", install.ID),
+		zap.String("install_name", install.Name),
 		zap.String("runner_id", runner.ID),
 		zap.String("tenant_id", azClaims.TenantID),
 		zap.String("principal_id", azClaims.ObjectID))
@@ -334,12 +351,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 	})
 }
 
-func (s *service) validateRunnerAzureIdentity(ctx context.Context, runner *app.Runner, claims *azureClaims, subscriptionID string) error {
-	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
-	}
-
+func (s *service) validateRunnerAzureIdentity(ctx context.Context, install *app.Install, claims *azureClaims, subscriptionID string) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)

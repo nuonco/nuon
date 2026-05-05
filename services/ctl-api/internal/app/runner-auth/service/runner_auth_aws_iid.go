@@ -98,9 +98,24 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 	}
 
 	reqCtx := ctx.Request.Context()
-	if err := s.validateRunnerAWSAccountID(reqCtx, runner, iid.AccountID); err != nil {
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth iid: failed to get install for runner",
+			zap.String("runner_id", req.RunnerID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not associated with an install",
+		})
+		ctx.Abort()
+		return
+	}
+
+	if err := s.validateRunnerAWSAccountID(reqCtx, install, iid.AccountID); err != nil {
 		s.l.Warn("runner auth iid: account validation failed",
 			zap.String("runner_id", req.RunnerID),
+			zap.String("install_id", install.ID),
+			zap.String("install_name", install.Name),
 			zap.String("iid_account_id", iid.AccountID),
 			zap.Error(err))
 		ctx.Error(stderr.ErrAuthorization{
@@ -123,10 +138,12 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 	}
 
 	s.l.Info("runner auth iid: authentication successful",
+		zap.String("install_id", install.ID),
+		zap.String("install_name", install.Name),
 		zap.String("runner_id", runner.ID),
-		zap.String("instance_id", iid.InstanceID),
 		zap.String("account_id", iid.AccountID),
-		zap.String("region", iid.Region))
+		zap.String("region", iid.Region),
+		zap.String("instance_id", iid.InstanceID))
 
 	ctx.JSON(http.StatusOK, RunnerAuthAWSIIDResponse{
 		Authenticated: true,
@@ -140,12 +157,7 @@ func (s *service) RunnerAuthAWSIID(ctx *gin.Context) {
 
 // validateRunnerAWSAccountID validates the IID account ID against the
 // install's stack outputs.
-func (s *service) validateRunnerAWSAccountID(ctx context.Context, runner *app.Runner, iidAccountID string) error {
-	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
-	}
-
+func (s *service) validateRunnerAWSAccountID(ctx context.Context, install *app.Install, iidAccountID string) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)

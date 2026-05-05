@@ -267,9 +267,24 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.validateRunnerAWSIdentity(reqCtx, runner, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth: failed to get install for runner",
+			zap.String("runner_id", runnerID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not associated with an install",
+		})
+		ctx.Abort()
+		return
+	}
+
+	if err := s.validateRunnerAWSIdentity(reqCtx, install, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
 		s.l.Warn("runner auth: AWS identity validation failed",
 			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("install_name", install.Name),
 			zap.String("caller_account", callerIdentity.Result.Account),
 			zap.String("caller_arn", callerIdentity.Result.Arn),
 			zap.Error(err))
@@ -293,6 +308,8 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 	}
 
 	s.l.Info("runner auth: authentication successful",
+		zap.String("install_id", install.ID),
+		zap.String("install_name", install.Name),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", instanceID),
 		zap.String("account_id", callerIdentity.Result.Account))
@@ -445,12 +462,7 @@ func (s *service) getInstallByRunnerGroup(ctx context.Context, runnerGroup *app.
 	return &install, nil
 }
 
-func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerARN string) error {
-	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
-	}
-
+func (s *service) validateRunnerAWSIdentity(ctx context.Context, install *app.Install, callerAccountID string, callerARN string) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
