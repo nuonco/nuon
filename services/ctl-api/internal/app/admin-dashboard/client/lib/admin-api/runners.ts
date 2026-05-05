@@ -1,8 +1,5 @@
 import { api } from '@/lib/api'
-import type { TRunnersResponse, TRunnerDetailView, TAllRunnersResponse } from '@/types/admin.types'
-
-export const getRunners = () =>
-  api<TRunnersResponse>({ path: 'runners' })
+import type { TRunnerDetailView, TAllRunnersResponse } from '@/types/admin.types'
 
 export const getAllRunners = (params?: { org_id?: string; page?: number }) =>
   api<TAllRunnersResponse>({ path: 'runners/all', params })

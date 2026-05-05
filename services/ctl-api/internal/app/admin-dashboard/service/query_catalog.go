@@ -20,23 +20,20 @@ var queryCatalog = []CatalogQuery{
 	{
 		ID:          "index-usage",
 		Name:        "Index usage (non-unique)",
-		Description: "Shows non-unique, non-primary indexes ordered by scan count. Requires idx_snap table from pg_stat_user_indexes snapshot.",
+		Description: "All non-unique, non-primary indexes with scan counts and sizes. Lowest-usage first, biggest within each scan count first.",
 		DBType:      "psql",
 		SQL: `SELECT
   s.schemaname,
-  s.relname        AS table_name,
-  s.indexrelname   AS index_name,
-  s.idx_scan       AS current_scans,
-  snap.idx_scan    AS prev_scans,
-  s.idx_scan - snap.idx_scan AS scans_in_window,
-  pg_size_pretty(pg_relation_size(s.indexrelid)) AS index_size
+  s.relname AS table_name,
+  s.indexrelname AS index_name,
+  s.idx_scan,
+  pg_size_pretty(pg_relation_size(s.indexrelid)) AS index_size,
+  pg_relation_size(s.indexrelid) AS index_size_bytes
 FROM pg_stat_user_indexes s
-JOIN pg_index i      ON s.indexrelid = i.indexrelid
-JOIN idx_snap snap   ON snap.indexrelid = s.indexrelid
+JOIN pg_index i ON s.indexrelid = i.indexrelid
 WHERE NOT i.indisunique
   AND NOT i.indisprimary
-  AND s.idx_scan > snap.idx_scan
-ORDER BY scans_in_window DESC`,
+ORDER BY s.idx_scan ASC, pg_relation_size(s.indexrelid) DESC`,
 	},
 	{
 		ID:          "table-sizes",
