@@ -61,13 +61,27 @@ const (
 // SubOps is the canonical sub-op vocabulary per resource. The classifier maps
 // real WorkflowType constants from internal/app/workflow.go onto these slugs.
 // UIs render checkbox lists from this map.
+//
+// Note: "drift" is intentionally NOT listed for components or sandboxes even
+// though the classifier still emits the slug. Drift workflow lifecycle events
+// are pure noise (one started/completed pair per cron tick per resource) and
+// are unconditionally suppressed in match.go. Subscribers opt into drift
+// notifications through DriftDetected, which gates the dedicated drift-detected
+// event that only fires when the plan-only check observes actual changes.
 var SubOps = map[ResourceKind][]string{
 	ResourceInstalls:              {"provision", "deprovision", "reprovision"},
-	ResourceComponents:            {"deploy", "teardown", "drift"},
-	ResourceSandboxes:             {"provision", "reprovision", "deprovision", "drift"},
+	ResourceComponents:            {"deploy", "teardown"},
+	ResourceSandboxes:             {"provision", "reprovision", "deprovision"},
 	ResourceInstallConfigurations: {"inputs", "secrets"},
 	ResourceRunners:               {"provision", "reprovision", "inactive"},
 	ResourceActions:               {"run"},
+}
+
+// SupportsDriftDetected reports whether DriftDetected is meaningful for the
+// given resource. Currently true for components and sandboxes — the only
+// resources whose workflows can produce a drift-detected event.
+func SupportsDriftDetected(kind ResourceKind) bool {
+	return kind == ResourceComponents || kind == ResourceSandboxes
 }
 
 // Interests is the full per-subscriber config. Stored as JSONB on both
@@ -92,8 +106,11 @@ type Interests struct {
 // DriftDetected is independent of Outcome too. It gates the drift_detected
 // event that fires from inside the plan-only check of a drift_run /
 // drift_run_reprovision_sandbox workflow when the plan has changes. Only
-// meaningful for resources whose SubOps include "drift" (components,
-// sandboxes); set on other resources is harmless but never matches.
+// meaningful for resources where SupportsDriftDetected returns true
+// (components, sandboxes); set on other resources is harmless but never
+// matches. Drift workflow lifecycle events themselves are unconditionally
+// suppressed by the matcher — DriftDetected is the only knob that surfaces
+// drift to subscribers.
 //
 // LOCKSTEP: changes to this struct's JSON shape must also update
 // bins/cli/cmd/orgs.go (interestsJSONHelp) and the "Filtering events with
