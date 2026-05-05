@@ -3872,6 +3872,14 @@ export interface components {
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
       template_url?: string;
+      terraform_checksum?: string;
+      /**
+       * @description On AWS, the install workflow renders BOTH a CloudFormation template and
+       * a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
+       * (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
+       * artifact lives below. The dashboard shows both during the await step.
+       */
+      terraform_contents?: string;
       updated_at?: string;
     };
     "app.InstallStackVersionRun": {

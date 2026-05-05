@@ -41,6 +41,13 @@ type InstallStackVersion struct {
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
 	QuickLinkURL  string `json:"quick_link_url,omitzero" temporaljson:"quick_link_url,omitzero,omitempty"`
+
+	// On AWS, the install workflow renders BOTH a CloudFormation template and
+	// a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
+	// (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
+	// artifact lives below. The dashboard shows both during the await step.
+	TerraformContents []byte `json:"terraform_contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"terraform_contents,omitzero,omitempty"`
+	TerraformChecksum string `json:"terraform_checksum,omitzero" temporaljson:"terraform_checksum,omitzero,omitempty"`
 }
 
 func (a *InstallStackVersion) Indexes(db *gorm.DB) []migrations.Index {
