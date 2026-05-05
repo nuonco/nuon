@@ -56,8 +56,8 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
 
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
   installs: 'Install provision, deprovision, reprovision lifecycle.',
-  components: 'Per-component deploy, teardown, and drift remediation.',
-  sandboxes: 'Sandbox provision, reprovision, deprovision, and drift remediation.',
+  components: 'Per-component deploy, teardown, and drift.',
+  sandboxes: 'Sandbox provision, reprovision, deprovision, and drift.',
   install_configurations: 'Install input updates and secret syncs.',
   runners: 'Runner provision and reprovision.',
   actions: 'Action workflow runs.',

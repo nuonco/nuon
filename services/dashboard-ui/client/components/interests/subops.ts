@@ -20,7 +20,7 @@ const SUB_OP_LABELS: Record<string, string> = {
   provision: 'Provision',
   deprovision: 'Deprovision',
   reprovision: 'Reprovision',
-  drift: 'Drift remediation',
+  drift: 'Drift',
   // components
   deploy: 'Deploy',
   teardown: 'Teardown',

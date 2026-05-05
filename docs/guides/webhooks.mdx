@@ -241,6 +241,11 @@ routing.
   "nuonorgid": "org_…",
   "nuonkind": "workflow",
   "nuontransition": "started",
+  "interests": [
+    "resource:installs",
+    "op:installs.provision",
+    "event:lifecycle.started"
+  ],
   "data": {
     "kind": "workflow",
     "transition": "started",
@@ -274,6 +279,12 @@ routing.
   "nuonorgid": "org_…",
   "nuonkind": "workflow_step",
   "nuontransition": "succeeded",
+  "interests": [
+    "resource:components",
+    "op:components.deploy",
+    "event:lifecycle.succeeded",
+    "outcome:completion"
+  ],
   "data": {
     "kind": "workflow_step",
     "transition": "succeeded",
@@ -326,6 +337,10 @@ deploy step), the child workflow's events include a `data.parent` block:
 
 | Field                          | Description                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `nuonorgid`                    | Org id this event belongs to. Nuon CloudEvents extension; mirrors `data.org_id`.             |
+| `nuonkind`                     | `workflow` or `workflow_step`. Mirrors `data.kind`.                                          |
+| `nuontransition`               | `started`, `succeeded`, `failed`, or `cancelled`. Mirrors `data.transition`.                 |
+| `interests`                    | Slug list produced by Nuon's classifier for this event. Always contains a `resource:<kind>` and `op:<kind>.<sub-op>` slug, plus an `event:<…>` slug identifying the transition (e.g. `event:lifecycle.succeeded`, `event:approval.request`, `event:drift.detected`) and zero or more `outcome:<…>` slugs (`outcome:completion` on terminal events, plus `outcome:failures` on failed or cancelled transitions). Consumers can route by slug prefix without re-implementing the classifier. |
 | `data.kind`                    | `workflow` or `workflow_step`.                                                               |
 | `data.transition`              | `started`, `succeeded`, `failed`, or `cancelled`.                                            |
 | `data.org_id`                  | Org id.                                                                                      |
