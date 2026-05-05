@@ -2,7 +2,13 @@ import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { StepBanner } from '../step-details/StepBanner'
+import {
+  StepDetailPanel,
+  getStepPanelSize,
+  getStepPanelDetails,
+} from '../step-details/StepDetailPanel'
 import { WorkflowHeaderContainer } from '../workflow-details/WorkflowHeader'
 import { WorkflowMetricsContainer } from '../workflow-details/WorkflowMetrics'
 import { WorkflowStatusSectionContainer } from '../workflow-details/WorkflowStatusSection'
@@ -20,7 +26,7 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
   const stopped = metadata?.stopped === true
 
   return (
-    <>
+    <div className="flex flex-col gap-2">
       {retriesExhausted && (
         <Banner theme="error">
           <div className="flex flex-col gap-1">
@@ -60,30 +66,63 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
       {failedSteps?.length > 0 && (
         <FailedStepBanners steps={failedSteps} />
       )}
-    </>
+    </div>
   )
 }
 
 const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
   const [expanded, setExpanded] = useState(false)
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const { addPanel } = useSurfaces()
 
-  if (steps.length === 0) return null
+  const visibleSteps = steps.filter((s) => !dismissed.has(s.id))
 
-  if (steps.length === 1) {
+  if (visibleSteps.length === 0) return null
+
+  const isRetried = (step: TWorkflowStep) =>
+    step?.status?.metadata?.auto_retried || step?.status?.metadata?.retried
+
+  const openPanel = (step: TWorkflowStep) => {
+    const panel = (
+      <StepDetailPanel
+        panelKey={step.id}
+        initStep={step}
+        size={getStepPanelSize(step)}
+        shouldPoll
+        planOnly
+      >
+        {getStepPanelDetails(step)}
+      </StepDetailPanel>
+    )
+    addPanel(panel, step.id)
+  }
+
+  if (visibleSteps.length === 1) {
+    const step = visibleSteps[0]
     return (
       <div className="flex flex-col gap-4 mt-2">
-        <StepBanner step={steps[0]} planOnly />
+        <StepBanner
+          step={step}
+          planOnly
+          onDismiss={isRetried(step) ? () => setDismissed((prev) => new Set(prev).add(step.id)) : undefined}
+          onViewDetails={() => openPanel(step)}
+        />
       </div>
     )
   }
 
-  const mostRecent = steps[steps.length - 1]
-  const olderSteps = steps.slice(0, -1)
+  const mostRecent = visibleSteps[visibleSteps.length - 1]
+  const olderSteps = visibleSteps.slice(0, -1)
 
   return (
     <div className="flex flex-col gap-2 mt-2">
       <div className="flex flex-col gap-4">
-        <StepBanner step={mostRecent} planOnly />
+        <StepBanner
+          step={mostRecent}
+          planOnly
+          onDismiss={isRetried(mostRecent) ? () => setDismissed((prev) => new Set(prev).add(mostRecent.id)) : undefined}
+          onViewDetails={() => openPanel(mostRecent)}
+        />
       </div>
 
       {olderSteps.length > 0 && (
@@ -102,7 +141,12 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
       {expanded &&
         olderSteps.map((step) => (
           <div key={step?.id} className="flex flex-col gap-4">
-            <StepBanner step={step} planOnly />
+            <StepBanner
+              step={step}
+              planOnly
+              onDismiss={isRetried(step) ? () => setDismissed((prev) => new Set(prev).add(step.id)) : undefined}
+              onViewDetails={() => openPanel(step)}
+            />
           </div>
         ))}
     </div>
