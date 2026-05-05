@@ -28,7 +28,7 @@ export const Home = () => {
       <h1 className="page-heading">Admin dashboard</h1>
       <p className="page-subheading">Internal operations dashboard for the Nuon platform</p>
 
-      <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+      <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Global actions</h2>
         <div className="mt-3 flex items-center gap-3">
           <button
@@ -75,7 +75,7 @@ export const Home = () => {
           <Link
             key={s.path}
             to={s.path}
-            className="group rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition-all duration-150 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-md"
+            className="group rounded-lg border border-gray-200 dark:border-gray-800 p-4 shadow-sm transition-all duration-150 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-md"
           >
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary-700 dark:group-hover:text-primary-300">{s.title}</h3>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{s.description}</p>

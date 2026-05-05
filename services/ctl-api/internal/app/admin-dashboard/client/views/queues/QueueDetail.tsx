@@ -122,19 +122,19 @@ export const QueueDetail = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Max Depth</div>
           <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{queue.max_depth}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Max In-Flight</div>
           <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{queue.max_in_flight}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Queue Depth</div>
           <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{status?.QueueDepthCount ?? '-'}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">In-Flight</div>
           <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{status?.InFlightCount ?? '-'}</div>
         </div>
@@ -142,7 +142,7 @@ export const QueueDetail = () => {
 
       {/* Status Timestamps */}
       {queue.metadata && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status Timestamps</h2>
           <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
@@ -198,7 +198,7 @@ export const QueueDetail = () => {
 
       {/* Queue Status (StatusV2) */}
       {queue.status_v2?.status && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Queue Status</h2>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Current status and history</p>
           <div className="mt-3">
@@ -208,11 +208,11 @@ export const QueueDetail = () => {
       )}
 
       {/* Emitters */}
-      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Emitters</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
@@ -226,7 +226,7 @@ export const QueueDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(queue.emitters || emittersData?.emitters || []).map((emitter: any) => (
                 <tr key={emitter.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -264,11 +264,11 @@ export const QueueDetail = () => {
       </div>
 
       {/* Recent Signals */}
-      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Signals</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
@@ -278,7 +278,7 @@ export const QueueDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(signals || []).map((signal: any) => (
                 <tr key={signal.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -310,7 +310,7 @@ export const QueueDetail = () => {
       </div>
 
       {/* In-Flight Signals */}
-      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           In-Flight Signals
           {(in_flight_signals || inFlightData?.signals || []).length > 0 && (
@@ -321,7 +321,7 @@ export const QueueDetail = () => {
         </h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
@@ -332,7 +332,7 @@ export const QueueDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(in_flight_signals || inFlightData?.signals || []).map((signal: any) => {
                 const createdMs = signal.created_at ? new Date(signal.created_at).getTime() : 0
                 const nowMs = Date.now()

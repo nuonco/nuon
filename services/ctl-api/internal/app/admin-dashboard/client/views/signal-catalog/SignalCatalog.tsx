@@ -100,9 +100,9 @@ export const SignalCatalog = () => {
               {ns}
               <span className="ml-2 font-normal text-gray-400 dark:text-gray-500">({signals.length})</span>
             </h2>
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</th>
                     <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Operation</th>
