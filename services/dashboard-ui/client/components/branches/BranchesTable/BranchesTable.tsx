@@ -3,6 +3,7 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
+import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TAppBranch } from '@/types'
@@ -83,7 +84,7 @@ interface IBranchesTable {
 
 export const BranchesTable = ({ data, isLoading, pagination }: IBranchesTable) => {
   if (isLoading) {
-    return <Text variant="body">Loading branches...</Text>
+    return <TableSkeleton columns={columns} skeletonRows={5} />
   }
 
   return (
