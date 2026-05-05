@@ -51,7 +51,7 @@ function AttributeTable({ title, attrs }: { title: string; attrs: Record<string,
       <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">{title}</h4>
       <div className="rounded border border-gray-200 dark:border-gray-800 overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead className="bg-gray-50 dark:bg-gray-900">
+          <thead className="">
             <tr>
               <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Key</th>
               <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Value</th>
@@ -135,7 +135,7 @@ export const LogStreamDetail = () => {
       </div>
 
       {/* Logs */}
-      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           Logs
           {logs.length > 0 && (
@@ -146,7 +146,7 @@ export const LogStreamDetail = () => {
         </h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="w-8 px-2 py-3"></th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Timestamp</th>
@@ -155,7 +155,7 @@ export const LogStreamDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Body</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {logs.map((log: any, i: number) => {
                 const isExpanded = expandedRows.has(i)
                 return (
@@ -185,7 +185,7 @@ export const LogStreamDetail = () => {
                     </tr>
                     {isExpanded && (
                       <tr key={`detail-${i}`}>
-                        <td colSpan={5} className="px-4 py-4 bg-gray-50 dark:bg-gray-900">
+                        <td colSpan={5} className="px-4 py-4">
                           <div className="space-y-4">
                             {/* Core details */}
                             <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -212,7 +212,7 @@ export const LogStreamDetail = () => {
                             {log.body && log.body.length > 80 && (
                               <div>
                                 <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Full Body</h4>
-                                <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-3 overflow-x-auto whitespace-pre-wrap break-all">
+                                <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800 rounded p-3 overflow-x-auto whitespace-pre-wrap break-all">
                                   {log.body}
                                 </pre>
                               </div>
