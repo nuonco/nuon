@@ -48,10 +48,20 @@
             "expanded": true,
             "pages": [
               "guides/nuon-cloud",
-              "guides/byoc",
+              {
+                "group": "Install Nuon BYOC",
+                "root": "guides/byoc",
+                "expanded": false,
+                "pages": [
+                  "guides/byoc/aws",
+                  "guides/byoc/azure",
+                  "guides/byoc/gcp"
+                ]
+              },
               {
                 "group": "Self-Hosted Nuon",
                 "root": "guides/self-hosted",
+                "expanded": false,
                 "pages": [
                   "guides/self-hosted/aws",
                   "guides/self-hosted/azure",
@@ -76,7 +86,15 @@
             "boost": 3,
             "pages": [
               "concepts/apps",
-              "concepts/components",
+              {
+                "group": "Components",
+                "root": "concepts/components",
+                "icon": "object-group",
+                "boost": 3,
+                "pages": [
+                  "concepts/components/auto-retries"
+                ]
+              },
               "concepts/sandboxes",
               "concepts/app-inputs",
               "concepts/app-secrets",

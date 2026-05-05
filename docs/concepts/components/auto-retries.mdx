@@ -1,0 +1,117 @@
+---
+title: "Auto Retries"
+sidebarTitle: "Auto Retries"
+icon: "rotate-right"
+description: "Configure components to automatically re-plan and re-apply on transient failures by setting max_auto_retries."
+keywords: [
+  "auto retry",
+  "auto retries",
+  "auto-retry",
+  "auto-retries",
+  "automatic retry",
+  "automatic retries",
+  "automatic deployment retries",
+  "max auto retries",
+  "max_auto_retries",
+  "maxAutoRetries",
+  "retry component",
+  "retry deploy",
+  "retry on failure",
+  "transient failure",
+  "transient errors",
+  "flaky deploy",
+  "self-healing components",
+  "deploy retries",
+  "component retries",
+  "Helm retry",
+  "Terraform retry",
+  "Kubernetes manifest retry",
+  "rate limit retry"
+]
+seo:
+  title: "Auto Retries for Components | Nuon"
+  description: "Bound automatic retries per component on transient deploy failures using max_auto_retries. Apply to Helm, Terraform, Kubernetes, Docker, and Container Image components."
+  metatags:
+    og:title: "Auto Retries for Nuon Components"
+    og:description: "Recover from transient deploy failures automatically with max_auto_retries — per-component retry budgets that stop runaway loops."
+---
+
+When a [component](/concepts/components) fails to deploy due to a transient
+error, you don't want it to get stuck and fail. You also don't want an
+actually-broken component to retry forever.
+
+`max_auto_retries` gives each component a bounded retry budget. The runner
+will re-plan and re-apply the component up to that many times before surfacing
+the failure to the [workflow](/concepts/workflows). If the component succeeds
+on a retry, the workflow continues normally.
+
+## How it works
+
+Set `max_auto_retries` on any component TOML:
+
+- On a deploy failure, the runner re-plans and re-applies the component up to
+  `N` more times. After `N` failed attempts, the workflow surfaces the failure
+  as it would today.
+
+Each retry is a fresh plan + apply, so it picks up any state that has settled
+since the previous attempt (e.g. a slow IAM role becoming consistent, an
+upstream registry recovering).
+
+## Configuring `max_auto_retries`
+
+`max_auto_retries` is supported on every component type: `helm_chart`,
+`terraform_module`, `kubernetes_manifest`, `docker_build`, `container_image`,
+and `pulumi`.
+
+### Helm chart
+
+```toml components/penpot.toml
+# helm
+name             = "penpot"
+type             = "helm_chart"
+chart_name       = "penpot"
+namespace        = "penpot"
+storage_driver   = "configmap"
+max_auto_retries = 5
+
+[public_repo]
+repo      = "penpot/penpot-helm"
+directory = "charts/penpot"
+branch    = "main"
+
+[[values_file]]
+contents = "./values/penpot.yaml"
+```
+
+### Terraform module
+
+```toml components/certificate.toml
+# terraform
+name              = "certificate"
+type              = "terraform_module"
+terraform_version = "1.11.3"
+max_auto_retries  = 5
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "penpot/src/components/certificate"
+branch    = "main"
+
+[vars]
+install_id  = "{{ .nuon.install.id }}"
+region      = "{{ .nuon.install_stack.outputs.region }}"
+zone_id     = "{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.zone_id }}"
+domain_name = "{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}"
+```
+
+Both examples are taken from the [penpot app config](https://github.com/nuonco/example-app-configs/tree/main/penpot/components).
+
+## Reference
+
+Looking for something else? Full per-component-type schemas are found here:
+
+- [Helm chart](/config-ref/helm)
+- [Terraform module](/config-ref/terraform)
+- [Kubernetes manifest](/config-ref/kubernetes-manifest)
+- [Docker build](/config-ref/docker-build)
+- [Container image](/config-ref/container-image)

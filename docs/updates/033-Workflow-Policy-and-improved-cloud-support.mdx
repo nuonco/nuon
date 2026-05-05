@@ -75,7 +75,38 @@ App secrets sync directly into Azure Key Vault, so workloads can consume them th
 
 ## GCP Improvements
 
-GCP runners now authenticate with [management-mode credentials](/guides/runner-management-mode) and ship with a default runner template, so spinning up a GCP install is a one-step flow.
+### BYOC on GCP
+
+Nuon BYOC is now available on Google Cloud. The control plane runs on GKE using GCP-native primitives — Cloud SQL for state, [Google Artifact Registry](https://cloud.google.com/artifact-registry) for builds, GCS for install stack templates, and [Secret Manager](https://cloud.google.com/security/products/secret-manager) for secrets — all wired together with Workload Identity. Managed remotely by Nuon the same way as the AWS BYOC offering.
+
+### Cross-cloud image sources
+
+- `aws_ecr` external images can now be pulled from GCP-managed runners. The runner exchanges its GCP OIDC token for AWS credentials via STS `AssumeRoleWithWebIdentity`, no shared secrets required.
+- New `gcp_gar` external image source mirrors `aws_ecr`. Vendors provide a service account email and workload identity provider; the control plane impersonates the SA via ADC on GCP, or via Workload Identity Federation when running on AWS.
+
+### Simpler install creation
+
+`project_id` and `region` are no longer required up front when creating a GCP install. Customers pick them when they install the stack, and can re-run the stack with a different project or region without recreating the install.
+
+### Runner authentication
+
+Runners on GCP authenticate to Nuon using [management-mode credentials](/guides/runner-management-mode) backed by Workload Identity. This removes shared secrets and matches the zero-trust posture already available on AWS and Azure.
+
+### Default runner template
+
+Spinning up a GCP install is a one-step flow — installs ship with a default runner template, no custom Terraform required.
+
+### First-class container registry support
+
+Builds, image syncs, and component deploys work seamlessly with [Google Artifact Registry](https://cloud.google.com/artifact-registry), with per-organization service accounts and Workload Identity bindings handled automatically.
+
+### Customer-managed secrets via Secret Manager
+
+App secrets sync directly into [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager), so workloads can consume them through native GCP mechanisms — the same pattern customers already use with AWS Secrets Manager and Azure Key Vault.
+
+### Start fast with proven app templates
+
+- [gke-simple](https://github.com/nuonco/example-app-configs/tree/main/gke-simple) for Kubernetes apps on GKE
 
 ## Other Updates
 
