@@ -57,7 +57,7 @@ export const AccountsList = () => {
 
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead className="bg-gray-50 dark:bg-gray-900">
+          <thead className="">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
@@ -66,7 +66,7 @@ export const AccountsList = () => {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {accounts.map((account) => (
               <tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="whitespace-nowrap px-4 py-3 text-sm">

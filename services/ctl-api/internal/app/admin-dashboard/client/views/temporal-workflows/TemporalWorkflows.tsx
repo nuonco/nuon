@@ -37,7 +37,7 @@ export const TemporalWorkflows = () => {
       <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Temporal Workflows</h1>
 
       {/* Search form */}
-      <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Workflow ID</label>
@@ -77,7 +77,7 @@ export const TemporalWorkflows = () => {
       {/* Workflow header */}
       {submitted && wfInfo && (
         <>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <h2 className="text-lg font-semibold">Workflow</h2>
               <Badge variant="status" status={wfInfo.status}>{wfInfo.status}</Badge>
@@ -146,19 +146,19 @@ export const TemporalWorkflows = () => {
                 {wfInfo.update_executions?.filter((ue: any) => ue.failure).map((ue: any, i: number) => (
                   <div key={`ue-${i}`}>
                     <Badge variant="status" status="failed">{ue.name}</Badge>
-                    <pre className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono whitespace-pre-wrap bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800 rounded p-2">{ue.failure}</pre>
+                    <pre className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono whitespace-pre-wrap border border-red-200 dark:border-red-800 rounded p-2">{ue.failure}</pre>
                   </div>
                 ))}
                 {wfInfo.orphan_activities?.filter((a: any) => a.failure).map((a: any, i: number) => (
                   <div key={`oa-${i}`}>
                     <Badge variant="status" status="failed">{a.name}</Badge>
-                    <pre className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono whitespace-pre-wrap bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800 rounded p-2">{a.failure}</pre>
+                    <pre className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono whitespace-pre-wrap border border-red-200 dark:border-red-800 rounded p-2">{a.failure}</pre>
                   </div>
                 ))}
                 {wfInfo.activities?.filter((a: any) => a.failure).map((a: any, i: number) => (
                   <div key={`a-${i}`}>
                     <Badge variant="status" status="failed">{a.name}</Badge>
-                    <pre className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono whitespace-pre-wrap bg-white dark:bg-gray-900 border border-red-200 dark:border-red-800 rounded p-2">{a.failure}</pre>
+                    <pre className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono whitespace-pre-wrap border border-red-200 dark:border-red-800 rounded p-2">{a.failure}</pre>
                   </div>
                 ))}
               </div>
@@ -167,7 +167,7 @@ export const TemporalWorkflows = () => {
 
           {/* Activities */}
           {wfInfo.activities?.length > 0 && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activities ({wfInfo.activities.length})</h2>
               <div className="mt-2 table-card">
                 <table>
@@ -194,7 +194,7 @@ export const TemporalWorkflows = () => {
 
           {/* Orphan activities (main workflow body) */}
           {wfInfo.orphan_activities?.length > 0 && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Orphan Activities ({wfInfo.orphan_activities.length})</h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">Activities not associated with any update execution (main workflow body)</p>
               <div className="table-card">
@@ -222,7 +222,7 @@ export const TemporalWorkflows = () => {
 
           {/* Update executions */}
           {wfInfo.update_executions?.length > 0 && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Update Executions ({wfInfo.update_executions.length})</h2>
               <div className="mt-2 space-y-2">
                 {wfInfo.update_executions.map((ue: any, i: number) => (
@@ -234,7 +234,7 @@ export const TemporalWorkflows = () => {
 
           {/* Child workflows */}
           {wfInfo.child_workflows?.length > 0 && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Child Workflows ({wfInfo.child_workflows.length})</h2>
               <div className="mt-2 table-card">
                 <table>
@@ -272,7 +272,7 @@ export const TemporalWorkflows = () => {
 
           {/* Awaited signals */}
           {wfInfo.awaited_signals?.length > 0 && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Awaited Signals ({wfInfo.awaited_signals.length})</h2>
               <div className="mt-2 table-card">
                 <table>
@@ -307,7 +307,7 @@ export const TemporalWorkflows = () => {
 
           {/* Update handlers */}
           {wfInfo.update_handlers?.length > 0 && (
-            <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Update Handlers</h2>
               <div className="mt-2 flex flex-wrap gap-2">
                 {wfInfo.update_handlers.map((h: string) => <Badge key={h}>{h}</Badge>)}
@@ -343,13 +343,13 @@ function UpdateExecutionCard({ ue }: { ue: any }) {
           {ue.input && (
             <div>
               <span className="text-gray-500 dark:text-gray-400">Input:</span>
-              <pre className="mt-0.5 font-mono bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-x-auto max-h-32">{ue.input}</pre>
+              <pre className="mt-0.5 font-mono rounded p-2 overflow-x-auto max-h-32">{ue.input}</pre>
             </div>
           )}
           {ue.result && (
             <div>
               <span className="text-gray-500 dark:text-gray-400">Result:</span>
-              <pre className="mt-0.5 font-mono bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-x-auto max-h-32">{ue.result}</pre>
+              <pre className="mt-0.5 font-mono rounded p-2 overflow-x-auto max-h-32">{ue.result}</pre>
             </div>
           )}
           {ue.failure && (

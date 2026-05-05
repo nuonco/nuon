@@ -285,7 +285,7 @@ export const InstallDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Active Deployments</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Component</th>
@@ -295,7 +295,7 @@ export const InstallDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(deploymentsData?.deployments || []).map((dep: any) => (
                 <tr key={dep.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">{truncateId(dep.id)}</td>
@@ -328,7 +328,7 @@ export const InstallDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflows</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
@@ -337,7 +337,7 @@ export const InstallDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(workflowsData?.workflows || []).map((wf: any) => {
                 const wfStatus = getStatus(wf.status)
                 const wfStatusDesc = getStatusDescription(wf.status)
@@ -403,7 +403,7 @@ export const InstallDetail = () => {
         </div>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entity Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
@@ -412,7 +412,7 @@ export const InstallDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(activityData?.activity_logs || []).map((entry: any, idx: number) => (
                 <tr key={entry.entity_id + '-' + idx}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">

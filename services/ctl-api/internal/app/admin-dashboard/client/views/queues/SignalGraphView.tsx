@@ -21,7 +21,7 @@ export const SignalGraphView = () => {
   return (
     <div className="-m-6 lg:-m-8 flex flex-col" style={{ height: 'calc(100vh - 3rem)' }}>
       {/* Compact toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
           <Link to={`/queues/${queueId}/signals/${signalId}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
             &larr; Signal {truncateId(signalId || '')}
