@@ -55,6 +55,11 @@ export const GenerateInstallConfigModal = ({
               variant: 'primary',
             }
       }
+      footerActions={
+        !isLoading && content ? (
+          <ClickToCopyButton textToCopy={content} className="w-fit" />
+        ) : null
+      }
       {...props}
     >
       <div className="flex flex-col gap-4">
@@ -65,24 +70,11 @@ export const GenerateInstallConfigModal = ({
         ) : null}
 
         {isLoading ? (
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-end">
-              <Skeleton width="26px" height="26px" />
-            </div>
-            <Skeleton width="100%" height="600px" />
-          </div>
+          <Skeleton width="100%" height="600px" />
         ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-end">
-              <ClickToCopyButton
-                textToCopy={content || ''}
-                className="w-fit"
-              />
-            </div>
-            <CodeBlock language="json" className="max-h-[600px]">
-              {content}
-            </CodeBlock>
-          </div>
+          <CodeBlock language="toml" className="max-h-[600px]">
+            {content}
+          </CodeBlock>
         )}
       </div>
     </Modal>

@@ -22,8 +22,12 @@ export const TemporalLink = ({
     `/admin/temporal/namespaces/${namespace}/workflows/event-loop-${eventLoopId}`
 
   return (
-    <Link className="text-xs" href={resolvedHref} target="_blank">
-      View in Temporal <Icon variant="ArrowSquareOutIcon" />
+    <Link
+      className="text-xs inline-flex items-center gap-1"
+      href={resolvedHref}
+      target="_blank"
+    >
+      admin <Icon variant="ArrowSquareOutIcon" size="14" />
     </Link>
   )
 }
