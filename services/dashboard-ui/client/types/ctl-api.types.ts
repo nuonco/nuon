@@ -128,6 +128,36 @@ export type TCreateWebhookBody = Omit<
   interests?: TInterests
 }
 
+// slack
+export type TSlackInstallation = components['schemas']['app.SlackInstallation']
+export type TSlackInstallationStatus =
+  components['schemas']['app.SlackInstallationStatus']
+export type TSlackOrgLink = components['schemas']['app.SlackOrgLink']
+export type TSlackOrgLinkStatus =
+  components['schemas']['app.SlackOrgLinkStatus']
+// `interests` is stamped `swaggertype:"object"` on the Go side, so the
+// generated SDK shape is a generic object. Re-cast to the hand-written
+// Interests type at the API boundary, matching TWebhook above.
+export type TSlackChannelSubscription = Omit<
+  components['schemas']['app.SlackChannelSubscription'],
+  'interests'
+> & {
+  interests?: TInterests
+}
+export type TSlackInstallURLResponse =
+  components['schemas']['service.GetInstallURLResponse']
+export type TSlackChannel = components['schemas']['client.Conversation']
+export type TSlackChannelsResponse =
+  components['schemas']['service.ListChannelsResponse']
+export type TCreateSlackOrgLinkBody =
+  components['schemas']['service.CreateOrgLinkRequest']
+export type TCreateSlackChannelSubscriptionBody = Omit<
+  components['schemas']['service.CreateChannelSubscriptionRequest'],
+  'interests'
+> & {
+  interests?: TInterests
+}
+
 // install
 export type TInstall = components['schemas']['app.Install'] & {
   app?: components['schemas']['app.App']

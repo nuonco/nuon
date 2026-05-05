@@ -335,3 +335,7 @@ func New(params Params) *service {
 		helpers:    params.Helpers,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

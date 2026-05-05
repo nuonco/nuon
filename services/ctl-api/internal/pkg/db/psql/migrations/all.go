@@ -76,5 +76,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "100-fix-approval-option-default",
 			Fn:   m.Migration100FixApprovalOptionDefault,
 		},
+		{
+			Name: "101-slack-channel-subs-creator-check",
+			Fn:   m.Migration101SlackChannelSubsCreatorCheck,
+		},
 	}
 }

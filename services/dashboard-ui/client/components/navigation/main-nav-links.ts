@@ -40,6 +40,11 @@ export const SETTINGS_LINKS: TNavLink[] = [
     text: 'Webhooks',
     shortcut: 'g w',
   },
+  {
+    iconVariant: 'SlackLogo',
+    path: `/slack`,
+    text: 'Slack notifications',
+  },
 ]
 
 export const SUPPORT_LINKS: TNavLink[] = [
