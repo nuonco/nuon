@@ -21,6 +21,10 @@ nuon orgs webhooks list
 # Create a webhook (URL is required, secret is optional)
 nuon orgs webhooks create --url https://example.com/webhooks/workflow/lifecycle --secret <shared-secret>
 
+# Update a webhook's interests filter and/or rotate its signing secret
+nuon orgs webhooks update --webhook-id <webhook_id> --interests-file ./interests.json
+nuon orgs webhooks update --webhook-id <webhook_id> --secret <new-shared-secret>
+
 # Delete a webhook
 nuon orgs webhooks delete --webhook-id <webhook_id>
 ```
@@ -31,7 +35,153 @@ A few constraints to be aware of:
 - Webhook URLs are unique per Org — registering the same URL twice returns a conflict.
 - The `--secret` is write-only. The API never returns it; responses include `has_secret: true|false` so you can tell
   whether one is configured.
-- There is no update endpoint. To rotate the URL or secret, delete the webhook and create a new one.
+- The webhook URL is part of the `(org_id, webhook_url)` unique index and cannot be changed in place. To rename it,
+  delete the webhook and create a new one. Use the dashboard's edit action (or `PATCH /v1/orgs/current/webhooks/{webhook_id}`)
+  to rotate the signing secret or update the [interests filter](#filtering-events-with-interests) without recreating
+  the webhook.
+
+## Filtering events with interests
+
+By default a new webhook receives **every** supported workflow, deploy, sandbox, runner, and approval event for the
+Org. To narrow that down, attach an `interests` filter on create or update. The filter is a structured object stored
+on each webhook and persisted as JSONB on the webhook row.
+
+If you omit `interests` entirely (and on legacy webhooks created before this filter shipped), Nuon treats the
+configuration as `{"all_events": true}` so deliveries don't silently stop. The list endpoint surfaces this same
+effective shape so the CLI/dashboard/SDK stay in sync with what's actually delivered.
+
+### Top-level shape
+
+A configuration is one of two shapes:
+
+```json
+{ "all_events": true }
+```
+
+```json
+{
+  "resources": {
+    "installs":               { "outcome": "completion", "approval_requests": true, "approval_responses": true },
+    "components":             { "ops": ["deploy", "drift"], "outcome": "all" },
+    "sandboxes":              { "outcome": "failures" },
+    "install_configurations": {},
+    "runners":                { "ops": ["provision"] }
+  }
+}
+```
+
+`all_events: true` is the new-subscription default and short-circuits everything else. To opt into a per-resource
+configuration, omit `all_events` (or set it to `false`) and populate `resources`. A resource missing from `resources`
+is **off** — no events of that kind are delivered.
+
+### Resource vocabulary
+
+Each resource accepts a list of sub-ops drawn from a fixed vocabulary:
+
+| Resource                 | Supported `ops`                                            |
+| ------------------------ | ---------------------------------------------------------- |
+| `installs`               | `provision`, `deprovision`, `reprovision`                  |
+| `components`             | `deploy`, `teardown`, `drift`                              |
+| `sandboxes`              | `provision`, `reprovision`, `deprovision`, `drift`         |
+| `install_configurations` | `inputs`, `secrets`                                        |
+| `runners`                | `provision`, `reprovision`, `inactive`                     |
+| `actions`                | `run`                                                      |
+
+
+### Per-resource fields
+
+| Field                | Type      | Default | Description                                                                                  |
+| -------------------- | --------- | ------- | -------------------------------------------------------------------------------------------- |
+| `ops`                | `[]string`| `[]`    | Sub-ops to subscribe to. An empty (or omitted) list means **every sub-op** for the resource. |
+| `outcome`            | `string`  | `"all"` | One of `all`, `completion`, or `failures`. Filters lifecycle events on terminal status.      |
+| `approval_requests`  | `bool`    | `false` | Deliver workflow-step approval **requests** for this resource.                               |
+| `approval_responses` | `bool`    | `false` | Deliver workflow-step approval **responses** (approved / rejected) for this resource.        |
+| `drift_detected`     | `bool`    | `false` | Deliver a notification **only when drift is actually detected** during a drift scan. Only meaningful for resources with a `drift` sub-op (`components`, `sandboxes`). |
+
+`outcome` semantics:
+
+- `all` — every `started` + terminal event for the matched ops.
+- `completion` — terminal events only (`succeeded`, `failed`, `cancelled`); suppress `started`.
+- `failures` — only `failed` and `cancelled` terminal events.
+
+Approval events do not have a started/succeeded/failed lifecycle, only a requested / approved / rejected handshake.
+They are gated **independently of `outcome`** by the `approval_requests` and `approval_responses` booleans.
+
+#### Runner inactivity
+
+Runners emit a `runners.inactive` lifecycle event when the control plane gives
+up on a runner-process — currently this fires after roughly 5 minutes of
+silence on the heartbeat channel for that process. It does **not** distinguish
+a true outage from routine churn (process restart, version upgrade, deliberate
+shutdown), so subscribers should expect to see it on normal operations as well.
+Subscribe by including `inactive` in the `runners` `ops` list (or by leaving
+`ops` empty to receive every runner sub-op).
+
+### Examples
+
+Subscribe to every supported event (this is the default if `interests` is omitted):
+
+```json
+{ "all_events": true }
+```
+
+Per-resource opt-in matching the dashboard's "opted-out-of-AllEvents" baseline — terminal events plus approval
+notifications for the four most common resources:
+
+```json
+{
+  "resources": {
+    "installs":               { "outcome": "completion", "approval_requests": true, "approval_responses": true },
+    "components":             { "outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true },
+    "sandboxes":              { "outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true },
+    "install_configurations": { "outcome": "completion", "approval_requests": true, "approval_responses": true }
+  }
+}
+```
+
+Narrowly scoped — only component deploy failures:
+
+```json
+{
+  "resources": {
+    "components": { "ops": ["deploy"], "outcome": "failures" }
+  }
+}
+```
+
+### Setting interests via the CLI
+
+`nuon orgs webhooks create` and `nuon orgs webhooks update` accept the configuration in three mutually exclusive ways:
+
+```sh
+# Default — subscribe to every supported event
+nuon orgs webhooks create --url https://example.com/hook
+
+# Inline JSON
+nuon orgs webhooks create --url https://example.com/hook \
+  --interests-json '{"resources":{"components":{"ops":["deploy"],"outcome":"failures"}}}'
+
+# From a file (recommended for non-trivial configs)
+nuon orgs webhooks create --url https://example.com/hook --interests-file ./interests.json
+
+# Replace the filter on an existing webhook
+nuon orgs webhooks update --webhook-id <webhook_id> --interests-file ./interests.json
+```
+
+`update` replaces the interests configuration wholesale — it is not a deep merge. Pass `--secret <new>` to rotate the
+signing secret at the same time; omit `--secret` to leave the existing secret unchanged. The webhook URL is immutable
+(it's part of the `(org_id, webhook_url)` unique index) — delete and recreate to rename.
+
+### Setting interests via the dashboard
+
+The dashboard's webhook create + edit forms expose the same filter as an inline picker. Toggling **Send all events**
+off materializes the per-resource baseline shown above so you land on a sensible starting point instead of an empty
+config that silently drops every event. Saving the form persists the same JSON shape documented here.
+
+> **Keep these in sync.** The vocabulary tables and example payloads above mirror
+> `services/ctl-api/internal/pkg/interests/types.go` (the `SubOps` map and `Outcome` constants) and the
+> `interestsJSONHelp` constant in `bins/cli/cmd/orgs.go`. If you add a new resource or sub-op, update all three in
+> lockstep.
 
 ## Two primitives: workflows and workflow steps
 
@@ -91,6 +241,11 @@ routing.
   "nuonorgid": "org_…",
   "nuonkind": "workflow",
   "nuontransition": "started",
+  "interests": [
+    "resource:installs",
+    "op:installs.provision",
+    "event:lifecycle.started"
+  ],
   "data": {
     "kind": "workflow",
     "transition": "started",
@@ -124,6 +279,12 @@ routing.
   "nuonorgid": "org_…",
   "nuonkind": "workflow_step",
   "nuontransition": "succeeded",
+  "interests": [
+    "resource:components",
+    "op:components.deploy",
+    "event:lifecycle.succeeded",
+    "outcome:completion"
+  ],
   "data": {
     "kind": "workflow_step",
     "transition": "succeeded",
@@ -176,6 +337,10 @@ deploy step), the child workflow's events include a `data.parent` block:
 
 | Field                          | Description                                                                                  |
 | ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `nuonorgid`                    | Org id this event belongs to. Nuon CloudEvents extension; mirrors `data.org_id`.             |
+| `nuonkind`                     | `workflow` or `workflow_step`. Mirrors `data.kind`.                                          |
+| `nuontransition`               | `started`, `succeeded`, `failed`, or `cancelled`. Mirrors `data.transition`.                 |
+| `interests`                    | Slug list produced by Nuon's classifier for this event. Always contains a `resource:<kind>` and `op:<kind>.<sub-op>` slug, plus an `event:<…>` slug identifying the transition (e.g. `event:lifecycle.succeeded`, `event:approval.request`, `event:drift.detected`) and zero or more `outcome:<…>` slugs (`outcome:completion` on terminal events, plus `outcome:failures` on failed or cancelled transitions). Consumers can route by slug prefix without re-implementing the classifier. |
 | `data.kind`                    | `workflow` or `workflow_step`.                                                               |
 | `data.transition`              | `started`, `succeeded`, `failed`, or `cancelled`.                                            |
 | `data.org_id`                  | Org id.                                                                                      |

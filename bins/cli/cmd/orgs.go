@@ -208,11 +208,69 @@ func (c *cli) orgsCmd() *cobra.Command {
 	return orgsCmd
 }
 
+// interestsJSONHelp documents the shape accepted by --interests-json /
+// --interests-file. Mirrors internal/pkg/interests/types.go (SubOps map and
+// Outcome constants) and the "Filtering events with interests" section of
+// docs/guides/webhooks.mdx; update all three in lockstep.
+const interestsJSONHelp = `INTERESTS JSON SHAPE
+
+  Top-level keys (one of):
+    all_events: bool             subscribe to every supported event
+    resources:  map<kind, cfg>   per-resource opt-in (omit kinds you don't want)
+
+  Resource kinds and the ops they support:
+    installs                provision, deprovision, reprovision
+    components              deploy, teardown, drift
+    sandboxes               provision, reprovision, deprovision, drift
+    install_configurations  inputs, secrets
+    runners                 provision, reprovision, inactive
+    actions                 run
+
+  Per-resource cfg fields (all optional):
+    ops                 list of sub-ops; empty/omitted = every sub-op
+    outcome             "all" (default) | "completion" | "failures"
+    approval_requests   bool, deliver workflow-step approval requests
+                        (independent of outcome)
+    approval_responses  bool, deliver workflow-step approval responses
+                        (independent of outcome)
+    drift_detected      bool, deliver a notification ONLY when drift is
+                        actually detected during a drift scan (independent
+                        of outcome). Only meaningful for resources with a
+                        "drift" sub-op (components, sandboxes).
+
+EXAMPLES
+
+  Subscribe to every supported event (the default if --interests-json/-file is
+  omitted):
+    {"all_events": true}
+
+  Per-resource opt-in matching the dashboard's "opted-out-of-AllEvents"
+  baseline:
+    {
+      "resources": {
+        "installs":               {"outcome": "completion", "approval_requests": true, "approval_responses": true},
+        "components":             {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
+        "sandboxes":              {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
+        "install_configurations": {"outcome": "completion", "approval_requests": true, "approval_responses": true}
+      }
+    }
+
+  Narrowly scoped — only component deploy failures:
+    {
+      "resources": {
+        "components": {"ops": ["deploy"], "outcome": "failures"}
+      }
+    }
+`
+
 func (c *cli) orgWebhooksCmd() *cobra.Command {
 	var (
 		webhookURL    string
 		webhookSecret string
 		webhookID     string
+
+		createInterests orgs.InterestsFlags
+		updateInterests orgs.InterestsFlags
 	)
 
 	webhooksCmd := &cobra.Command{
@@ -236,16 +294,49 @@ func (c *cli) orgWebhooksCmd() *cobra.Command {
 	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a webhook for the current org",
-		Long:  "Create a webhook subscription for operation lifecycle events on the current org",
+		Long: `Create a webhook subscription for operation lifecycle events on the current org.
+
+By default the webhook subscribes to every supported event. To filter, pass
+either --interests-json '<json>' or --interests-file path/to/interests.json.
+
+` + interestsJSONHelp,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			createInterests.AllEventsIsSet = cmd.Flags().Changed("all-events")
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateWebhook(cmd.Context(), webhookURL, webhookSecret, PrintJSON)
+			return svc.CreateWebhook(cmd.Context(), webhookURL, webhookSecret, createInterests, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&webhookURL, "url", "u", "", "Webhook URL (must be an absolute http/https URL)")
 	createCmd.MarkFlagRequired("url")
 	createCmd.Flags().StringVarP(&webhookSecret, "secret", "s", "", "Optional shared secret used to sign webhook payloads (HMAC-SHA256, X-Nuon-Signature header)")
+	createCmd.Flags().BoolVar(&createInterests.AllEvents, "all-events", true, "Subscribe to every supported event (default). Mutually exclusive with --interests-json/--interests-file")
+	createCmd.Flags().StringVar(&createInterests.InterestsJSON, "interests-json", "", "Inline JSON interests config (mutually exclusive with --all-events / --interests-file)")
+	createCmd.Flags().StringVar(&createInterests.InterestsFile, "interests-file", "", "Path to a JSON file containing the interests config (mutually exclusive with --all-events / --interests-json)")
 	webhooksCmd.AddCommand(createCmd)
+
+	updateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "Update a webhook for the current org",
+		Long: `Replace the interests filter on a webhook and optionally rotate its signing secret.
+
+The webhook URL is immutable — delete and recreate to rename. The signing
+secret is preserved unless --secret <new> is passed, in which case it is
+rotated to the provided value.
+
+` + interestsJSONHelp,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			updateInterests.AllEventsIsSet = cmd.Flags().Changed("all-events")
+			svc := orgs.New(c.apiClient, c.cfg)
+			return svc.UpdateWebhook(cmd.Context(), webhookID, webhookSecret, updateInterests, PrintJSON)
+		}),
+	}
+	updateCmd.Flags().StringVar(&webhookID, "webhook-id", "", "The ID of the webhook to update")
+	updateCmd.MarkFlagRequired("webhook-id")
+	updateCmd.Flags().StringVarP(&webhookSecret, "secret", "s", "", "New signing secret. Omit to keep the existing secret unchanged")
+	updateCmd.Flags().BoolVar(&updateInterests.AllEvents, "all-events", true, "Subscribe to every supported event. Mutually exclusive with --interests-json/--interests-file")
+	updateCmd.Flags().StringVar(&updateInterests.InterestsJSON, "interests-json", "", "Inline JSON interests config (mutually exclusive with --all-events / --interests-file)")
+	updateCmd.Flags().StringVar(&updateInterests.InterestsFile, "interests-file", "", "Path to a JSON file containing the interests config (mutually exclusive with --all-events / --interests-json)")
+	webhooksCmd.AddCommand(updateCmd)
 
 	deleteCmd := &cobra.Command{
 		Use:   "delete",
