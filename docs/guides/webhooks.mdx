@@ -62,8 +62,8 @@ A configuration is one of two shapes:
 {
   "resources": {
     "installs":               { "outcome": "completion", "approval_requests": true, "approval_responses": true },
-    "components":             { "ops": ["deploy", "drift"], "outcome": "all" },
-    "sandboxes":              { "outcome": "failures" },
+    "components":             { "ops": ["deploy"], "outcome": "all", "drift_detected": true },
+    "sandboxes":              { "outcome": "failures", "drift_detected": true },
     "install_configurations": {},
     "runners":                { "ops": ["provision"] }
   }
@@ -81,11 +81,15 @@ Each resource accepts a list of sub-ops drawn from a fixed vocabulary:
 | Resource                 | Supported `ops`                                            |
 | ------------------------ | ---------------------------------------------------------- |
 | `installs`               | `provision`, `deprovision`, `reprovision`                  |
-| `components`             | `deploy`, `teardown`, `drift`                              |
-| `sandboxes`              | `provision`, `reprovision`, `deprovision`, `drift`         |
+| `components`             | `deploy`, `teardown`                                       |
+| `sandboxes`              | `provision`, `reprovision`, `deprovision`                  |
 | `install_configurations` | `inputs`, `secrets`                                        |
 | `runners`                | `provision`, `reprovision`, `inactive`                     |
 | `actions`                | `run`                                                      |
+
+Drift workflow lifecycle events (`drift_run`, `drift_run_reprovision_sandbox`) are intentionally **not** part of the
+`ops` vocabulary — every cron tick fires a started/completed pair, which is pure noise on a clean scan. To subscribe to
+drift, set `drift_detected: true` on `components` and/or `sandboxes` (see below).
 
 
 ### Per-resource fields
@@ -96,7 +100,7 @@ Each resource accepts a list of sub-ops drawn from a fixed vocabulary:
 | `outcome`            | `string`  | `"all"` | One of `all`, `completion`, or `failures`. Filters lifecycle events on terminal status.      |
 | `approval_requests`  | `bool`    | `false` | Deliver workflow-step approval **requests** for this resource.                               |
 | `approval_responses` | `bool`    | `false` | Deliver workflow-step approval **responses** (approved / rejected) for this resource.        |
-| `drift_detected`     | `bool`    | `false` | Deliver a notification **only when drift is actually detected** during a drift scan. Only meaningful for resources with a `drift` sub-op (`components`, `sandboxes`). |
+| `drift_detected`     | `bool`    | `false` | Deliver a notification **only when drift is actually detected** during a drift scan. Only meaningful for `components` and `sandboxes`. |
 
 `outcome` semantics:
 
@@ -106,6 +110,14 @@ Each resource accepts a list of sub-ops drawn from a fixed vocabulary:
 
 Approval events do not have a started/succeeded/failed lifecycle, only a requested / approved / rejected handshake.
 They are gated **independently of `outcome`** by the `approval_requests` and `approval_responses` booleans.
+
+#### Drift detection
+
+To receive drift notifications, set `drift_detected: true` on `components` and/or `sandboxes`. The
+notification fires once per component (inside `drift_run`) or once per sandbox (inside
+`drift_run_reprovision_sandbox`) whenever the plan-only check finds non-no-op changes. It works for
+both manually triggered and scheduled drift scans, and is gated **independently of `outcome`** — the
+same way `approval_requests` / `approval_responses` are.
 
 #### Runner inactivity
 

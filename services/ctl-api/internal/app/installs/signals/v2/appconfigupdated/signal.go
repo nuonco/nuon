@@ -18,6 +18,12 @@ const SignalType signal.SignalType = "appconfig-updated"
 const (
 	actionCronEmitterPrefix = "action-cron-"
 	driftEmitterPrefix      = "drift-"
+	// driftSandboxEmitterPrefix is the per-install sandbox drift cron prefix.
+	// IMPORTANT: this string starts with the more generic `drift-` prefix —
+	// the splitting loop in Execute() must check for `drift-sandbox-` BEFORE
+	// the bare `drift-` case or sandbox emitters get classified as
+	// per-component drift emitters and reconciled against the wrong list.
+	driftSandboxEmitterPrefix = "drift-sandbox-"
 )
 
 type Signal struct {
@@ -75,11 +81,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get existing emitters: %w", err)
 	}
 
-	var actionEmitters, driftEmitters []app.QueueEmitter
+	var actionEmitters, driftEmitters, driftSandboxEmitters []app.QueueEmitter
 	for _, em := range existingEmitters {
 		switch {
 		case strings.HasPrefix(em.Name, actionCronEmitterPrefix):
 			actionEmitters = append(actionEmitters, em)
+		// Check the more specific `drift-sandbox-` prefix BEFORE the bare
+		// `drift-` case — otherwise sandbox emitters would be swept into
+		// the per-component drift bucket.
+		case strings.HasPrefix(em.Name, driftSandboxEmitterPrefix):
+			driftSandboxEmitters = append(driftSandboxEmitters, em)
 		case strings.HasPrefix(em.Name, driftEmitterPrefix):
 			driftEmitters = append(driftEmitters, em)
 		}
@@ -91,6 +102,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, queue, driftEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile drift emitters: %w", err)
+	}
+
+	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, queue, driftSandboxEmitters); err != nil {
+		return fmt.Errorf("unable to reconcile sandbox drift emitter: %w", err)
 	}
 
 	return nil

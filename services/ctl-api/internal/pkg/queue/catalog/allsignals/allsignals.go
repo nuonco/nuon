@@ -50,6 +50,8 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxapplyplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftcheck"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftchecksandbox"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftdetected"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
