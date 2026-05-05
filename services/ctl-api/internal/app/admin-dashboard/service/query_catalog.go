@@ -108,6 +108,34 @@ WHERE state = 'active'
   AND query_start < now() - interval '5 seconds'
 ORDER BY query_start`,
 	},
+	{
+		ID:          "seq-scans",
+		Name:        "Sequential scans on large tables",
+		Description: "Tables doing seq scans on big data — candidates for missing indexes.",
+		DBType:      "psql",
+		SQL: `SELECT
+  relname,
+  seq_scan,
+  seq_tup_read,
+  idx_scan,
+  n_live_tup
+FROM pg_stat_user_tables
+WHERE seq_scan > 0
+ORDER BY seq_tup_read DESC
+LIMIT 20`,
+	},
+	{
+		ID:          "cache-hit-ratio",
+		Name:        "Cache hit ratio",
+		Description: "Buffer cache hit ratio per table. Want >99% for hot tables.",
+		DBType:      "psql",
+		SQL: `SELECT relname,
+       heap_blks_read,
+       heap_blks_hit,
+       round(heap_blks_hit::numeric / nullif(heap_blks_hit + heap_blks_read, 0), 4) AS hit_ratio
+FROM pg_statio_user_tables
+ORDER BY heap_blks_read DESC`,
+	},
 }
 
 func (s *service) QueryCatalogList(c *gin.Context) {
