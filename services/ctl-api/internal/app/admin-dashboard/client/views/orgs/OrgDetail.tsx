@@ -106,7 +106,7 @@ export const OrgDetail = () => {
       </div>
 
       {/* Labels */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Labels</h2>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {[
@@ -187,7 +187,7 @@ export const OrgDetail = () => {
 
       {/* Most Recent App */}
       {recent_app && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Most Recent App</h2>
           <div className="mt-2 space-y-1">
             <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">{recent_app.name}</p>
@@ -201,7 +201,7 @@ export const OrgDetail = () => {
 
       {/* Component Graph */}
       {graph_dot && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Component dependency graph</h2>
           <div className="mt-2">
             <DotGraph dot={graph_dot} height="28rem" />
@@ -210,7 +210,7 @@ export const OrgDetail = () => {
       )}
 
       {/* Actions */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</h2>
         <div className="mt-2 flex gap-3">
           <div>
@@ -239,7 +239,7 @@ export const OrgDetail = () => {
       </div>
 
       {/* Installs */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Installs</h2>
         <div className="mt-2 table-card">
           <table>

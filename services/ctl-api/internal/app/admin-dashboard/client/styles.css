@@ -89,7 +89,7 @@ body {
 
 /* Card-style tables */
 .table-card {
-  @apply overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900;
+  @apply overflow-hidden rounded-lg border border-gray-200 shadow-sm dark:border-gray-800;
 }
 
 .table-card table {

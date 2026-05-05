@@ -72,7 +72,7 @@ export const OrgsList = () => {
 
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead className="bg-gray-50 dark:bg-gray-900">
+          <thead className="">
             <tr>
 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
@@ -83,7 +83,7 @@ export const OrgsList = () => {
 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {orgs.map((org) => {
               const orgLabels = org.labels || {}
               return (

@@ -94,7 +94,7 @@ export const AccountDetail = () => {
 
       {/* User Journey */}
       {Array.isArray(account.user_journeys) && account.user_journeys.length > 0 && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Journey</h2>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Onboarding progress and completion tracking</p>
           <div className="mt-3 space-y-4">
@@ -162,14 +162,14 @@ export const AccountDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Organizations</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Org Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {orgsList.map((o) => (
                 <tr key={o.org_id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -198,14 +198,14 @@ export const AccountDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Roles</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Org</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(account.roles || []).map((role: any) => (
                 <tr key={role.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -234,7 +234,7 @@ export const AccountDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Apps</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
@@ -244,7 +244,7 @@ export const AccountDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {apps.map((app: any) => (
                 <tr key={app.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{app.name}</td>
@@ -280,7 +280,7 @@ export const AccountDetail = () => {
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Installs</h2>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Organization</th>
@@ -292,7 +292,7 @@ export const AccountDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(installsData?.installs || accountInstalls).map((install: any) => {
                 const isDeleted = install.deleted_at && install.deleted_at > 0
                 return (
@@ -381,7 +381,7 @@ export const AccountDetail = () => {
         </div>
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Entity Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
@@ -391,7 +391,7 @@ export const AccountDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(auditData?.audit_logs || []).map((entry: any, idx: number) => {
                 const entityLink = entry.entity_type === 'workflow'
                   ? `/workflows/${entry.entity_id}`
