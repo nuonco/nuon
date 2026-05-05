@@ -258,6 +258,38 @@ output "gar_access_sa_email" {
 
 Then set `service_account_email` in your component's `gcp_gar` block to the SA email the module emits.
 
+#### GAR for Nuon-hosted (AWS) customers
+
+If some of your customers pull from this GAR repo via Nuon-hosted ctl-api running on AWS, pass each customer's AWS
+account ID via `aws_principals` instead of (or alongside) `customer_principals`. The module sets up a Workload Identity
+Pool + AWS Provider per account and lets the federated principal impersonate the GAR-access SA:
+
+```hcl
+module "nuon_gar_access" {
+  source = "nuonco/gar-access/google"
+
+  project_id          = "<your-gcp-project>"
+  repository_location = "us-central1"
+  repository_id       = "<repo-name>"
+
+  aws_principals = [
+    { aws_account_id = "123456789012" },
+  ]
+}
+
+output "workload_identity_provider_paths" {
+  value = module.nuon_gar_access.workload_identity_provider_paths
+}
+```
+
+<Note>
+Requires `nuonco/gar-access/google` version `0.2.0` or later.
+</Note>
+
+Set both `gcp_gar.service_account_email` (the GAR-access SA email) and `gcp_gar.workload_identity_provider` (the
+provider path keyed by AWS account ID, from the module's `workload_identity_provider_paths` output) in the customer's
+component config.
+
 See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
 
 ## Importing Images Outside of Supported Registries
