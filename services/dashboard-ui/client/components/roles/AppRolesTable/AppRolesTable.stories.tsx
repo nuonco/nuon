@@ -11,6 +11,7 @@ const mockSurfaces = {
   addModal: () => '',
   removeModal: () => {},
   addPanel: () => '',
+  updatePanel: () => {},
   removePanel: () => {},
   clearPanels: () => {},
 }
