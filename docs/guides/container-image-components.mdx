@@ -62,7 +62,7 @@ region       = "us-west-2"
 iam_role_arn = "arn:aws:iam::123927561584:role/nuon-container-image-access"
 ```
 
-To use an AWS ECR image, [follow the access setup directions](#granting-nuon-access-to-pull-images) — both Nuon-hosted (AWS) customers and self-hosted-on-GCP customers can pull from the same role.
+To use an AWS ECR image, [follow the access setup directions](#granting-nuon-access-to-pull-images). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same role.
 
 ### Using a Private GCP GAR Image
 
@@ -79,11 +79,17 @@ tag            = "latest"
 region         = "us-central1"
 gcp_project_id = "my-project"
 
-# Optional — impersonate a service account when pulling
+# Reader SA that Nuon impersonates to pull. Optional for self-hosted-on-GCP
+# customers if the customer's ctl-api SA already has artifactregistry.reader
+# directly on the repo; required for Nuon-hosted (AWS) customers.
 service_account_email = "nuon-puller@my-project.iam.gserviceaccount.com"
+
+# Required for Nuon-hosted (AWS) customers. Workload Identity Provider that
+# Nuon's AWS ctl-api federates against before impersonating the reader SA.
+workload_identity_provider = "projects/123456789/locations/global/workloadIdentityPools/nuon-aws/providers/aws-prod"
 ```
 
-To use a GAR image, [follow the access setup directions](#gcp-gar-access) to grant access. GAR images are pulled by self-hosted-on-GCP customers; reach out if you also need Nuon-hosted (AWS) customers to pull from GAR.
+To use a GAR image, [follow the access setup directions](#gcp-gar-access). Both Nuon-hosted (AWS) and self-hosted-on-GCP customers can pull from the same GAR repository.
 
 ## Deployments
 
@@ -151,10 +157,11 @@ section that matches your registry and the deployment kind your customers are us
 | Image registry | Customer deployment | Setup |
 |---|---|---|
 | AWS ECR | Nuon-hosted (AWS) | [AWS ECR Access IAM Role](#aws-ecr-access-iam-role) |
-| AWS ECR | Self-hosted on GCP | [AWS ECR — self-hosted on GCP](#aws-ecr-from-a-gcp-runner) |
+| AWS ECR | Self-hosted on GCP | [AWS ECR from a Self-Hosted-on-GCP Customer](#aws-ecr-from-a-self-hosted-on-gcp-customer) |
+| GCP Artifact Registry | Nuon-hosted (AWS) | [GAR for Nuon-hosted (AWS) customers](#gar-for-nuon-hosted-aws-customers) |
 | GCP Artifact Registry | Self-hosted on GCP | [GCP GAR Access](#gcp-gar-access) |
 
-If you have customers on both deployments, you can combine the inputs on a single ECR role — the module supports it.
+If you have customers on both deployments, you can set both inputs on the same role or service account. Both modules add the new principals alongside any existing ones.
 
 ### AWS ECR Access IAM Role
 
@@ -185,8 +192,8 @@ If you are having trouble finding the repository ARN in the AWS console, you can
 If your customer is running a self-hosted Nuon deployment on GCP, pass the customer's GCP service account unique IDs
 via `gcp_principals` so they can assume the role via Workload Identity Federation. Two SAs need to be listed:
 
-- The org runner SA (display name `Nuon org runner <org_id>`) — pulls source for builds.
-- The ctl-api SA (display name `ctl-api for <install_id>`) — fetches image metadata for `external_image` components.
+- The org runner SA, which pulls source for builds. Display name: `Nuon org runner <org_id>`.
+- The ctl-api SA, which fetches image metadata for `external_image` components. Display name: `ctl-api for <install_id>`.
 
 <Note>
 Requires `nuonco/ecr-access/aws` version `0.1.9` or later.
@@ -212,9 +219,9 @@ module "nuon_ecr_access" {
 ```
 
 <Note>
-Don't construct the SA emails by hand — Nuon truncates the org/install ID to fit GCP's 30-character SA name limit, and
-the truncation length varies. Look the SAs up directly in the customer's project; the full org/install ID is preserved
-in each SA's display name.
+Don't construct the SA emails by hand. Nuon truncates the org and install IDs to fit GCP's 30-character SA name limit,
+and the truncation length varies. Look the SAs up directly in the customer's project. The full org and install IDs are
+preserved in each SA's display name.
 </Note>
 
 Look them up with:
@@ -227,14 +234,15 @@ gcloud iam service-accounts list \
 ```
 
 <Note>
-The default Nuon-hosted (AWS) trust principal stays in place — adding `gcp_principals` is additive, so the same role
+The default Nuon-hosted (AWS) trust principal stays in place. Adding `gcp_principals` is additive, so the same role
 works for both Nuon-hosted and self-hosted-on-GCP customers.
 </Note>
 
 ### GCP GAR Access
 
-GAR images are pulled by self-hosted-on-GCP customers' ctl-api service accounts. You grant access by creating a reader
-service account on your GAR repository and allowing each customer's ctl-api SA to impersonate it.
+You grant access to a private GAR repository by creating a reader service account on the repo and allowing each
+customer's identity to impersonate it. The same module covers both customer-deployment kinds. Use
+`customer_principals` for self-hosted-on-GCP customers, `aws_principals` for Nuon-hosted (AWS) customers, or both.
 
 The easiest way to set this up is using our [Terraform Module](https://registry.terraform.io/modules/nuonco/gar-access/google):
 
@@ -257,6 +265,39 @@ output "gar_access_sa_email" {
 ```
 
 Then set `service_account_email` in your component's `gcp_gar` block to the SA email the module emits.
+
+#### GAR for Nuon-hosted (AWS) customers
+
+If some of your customers pull from this GAR repo via Nuon-hosted ctl-api running on AWS, pass each customer's AWS
+account ID via `aws_principals`. You can use it alongside `customer_principals` if you also have self-hosted-on-GCP
+customers. The module sets up a Workload Identity Pool and AWS Provider per account, and lets the federated principal
+impersonate the GAR-access SA.
+
+```hcl
+module "nuon_gar_access" {
+  source = "nuonco/gar-access/google"
+
+  project_id          = "<your-gcp-project>"
+  repository_location = "us-central1"
+  repository_id       = "<repo-name>"
+
+  aws_principals = [
+    { aws_account_id = "123456789012" },
+  ]
+}
+
+output "workload_identity_provider_paths" {
+  value = module.nuon_gar_access.workload_identity_provider_paths
+}
+```
+
+<Note>
+Requires `nuonco/gar-access/google` version `0.2.0` or later.
+</Note>
+
+In the customer's component config, set `gcp_gar.service_account_email` to the GAR-access SA email, and set
+`gcp_gar.workload_identity_provider` to the provider path for that customer's AWS account from the module's
+`workload_identity_provider_paths` output.
 
 See the full set of `gcp_gar` fields in the [container-image config reference](/config-ref/container-image#gcp_gar).
 
