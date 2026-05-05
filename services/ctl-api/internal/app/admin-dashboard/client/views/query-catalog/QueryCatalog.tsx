@@ -42,33 +42,33 @@ export const QueryCatalog = () => {
           const isRunning = runMutation.isPending && runMutation.variables === q.id
 
           return (
-            <div key={q.id} className="rounded-md border border-gray-200 bg-white">
+            <div key={q.id} className="rounded-md border border-gray-200 dark:border-gray-800">
               <button
                 onClick={() => setActiveQuery(isActive ? null : q.id)}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-gray-50"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
               >
-                <span className="font-medium text-gray-900">{q.name}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{q.name}</span>
                 <Badge>{q.db_type}</Badge>
-                <span className="ml-auto text-xs text-gray-400">{q.description}</span>
+                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{q.description}</span>
               </button>
               {isActive && (
-                <div className="border-t border-gray-100 px-3 py-3 space-y-3">
-                  <pre className="whitespace-pre-wrap text-xs text-gray-700 font-mono bg-gray-50 rounded p-2 max-h-40 overflow-auto">
+                <div className="border-t border-gray-100 dark:border-gray-800 px-3 py-3 space-y-3">
+                  <pre className="whitespace-pre-wrap text-xs text-gray-700 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-800 rounded p-2 max-h-40 overflow-auto">
                     {q.sql}
                   </pre>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => runMutation.mutate(q.id)}
                       disabled={isRunning}
-                      className="rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+                      className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50"
                     >
                       {isRunning ? 'Running...' : 'Run query'}
                     </button>
                     {results && results.query.id === q.id && (
-                      <span className="text-xs text-gray-500">{results.count} rows returned</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{results.count} rows returned</span>
                     )}
                     {runError && runMutation.variables === q.id && (
-                      <span className="text-xs text-red-600">{runError}</span>
+                      <span className="text-xs text-red-600 dark:text-red-400">{runError}</span>
                     )}
                   </div>
                 </div>
@@ -80,9 +80,9 @@ export const QueryCatalog = () => {
 
       {results && (
         <div className="mt-6">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Results: {results.query.name}
-            <span className="ml-2 font-normal text-gray-500">({results.count} rows)</span>
+            <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">({results.count} rows)</span>
           </h2>
           {results.rows.length > 0 ? (
             <div className="table-card overflow-x-auto">
@@ -94,12 +94,12 @@ export const QueryCatalog = () => {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {results.rows.map((row, i) => (
                     <tr key={i}>
                       {Object.values(row).map((val, j) => (
-                        <td key={j} className="text-xs font-mono text-gray-700 whitespace-nowrap">
-                          {val === null ? <span className="text-gray-300">null</span> : String(val)}
+                        <td key={j} className="text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          {val === null ? <span className="text-gray-300 dark:text-gray-600">null</span> : String(val)}
                         </td>
                       ))}
                     </tr>
@@ -108,7 +108,7 @@ export const QueryCatalog = () => {
               </table>
             </div>
           ) : (
-            <div className="text-sm text-gray-500 py-4">No results</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 py-4">No results</div>
           )}
         </div>
       )}

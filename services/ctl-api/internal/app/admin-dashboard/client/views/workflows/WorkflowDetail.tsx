@@ -70,7 +70,7 @@ function StepRow({ stepData }: { stepData: any }) {
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={8} className="bg-gray-50 dark:bg-gray-900 px-4 py-3">
+          <td colSpan={8} className="px-4 py-3">
             <div className="space-y-3 text-xs">
               {/* IDs */}
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -168,7 +168,7 @@ function StepGroupSection({ group }: { group: any }) {
   const groupSignal = g?.queue_signal
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-800">
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-800"
@@ -206,7 +206,7 @@ function StepGroupSection({ group }: { group: any }) {
       {expanded && steps.length > 0 && (
         <div className="border-t border-gray-200 dark:border-gray-800 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
-            <thead className="bg-gray-50/50 dark:bg-gray-900/50">
+            <thead className="">
               <tr>
                 <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase w-10">#</th>
                 <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase">Name</th>
@@ -296,7 +296,7 @@ export const WorkflowDetail = () => {
 
       {/* Generate steps signal */}
       {genSignal && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Generate steps signal</h2>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4 text-sm">
             <div>
@@ -325,7 +325,7 @@ export const WorkflowDetail = () => {
 
       {/* Workflow status history */}
       {wf?.status && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status history</h2>
           <div className="mt-2">
             <StatusHistory status={wf.status} maxCollapsed={5} />
@@ -343,7 +343,7 @@ export const WorkflowDetail = () => {
             ))}
           </div>
         ) : (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-sm text-gray-500 dark:text-gray-400">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 text-sm text-gray-500 dark:text-gray-400">
             No steps recorded
           </div>
         )}
@@ -354,7 +354,7 @@ export const WorkflowDetail = () => {
 
 function TimelineCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
       <p className="text-[11px] text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</p>
       <p className="mt-0.5 text-sm font-mono text-gray-900 dark:text-gray-100">{value}</p>
     </div>
