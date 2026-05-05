@@ -115,6 +115,61 @@ export const JSONViewer = ({
     return () => clearTimeout(timer)
   }, [data, colorScheme])
 
+  // The underlying web component copies string values via JSON.stringify, which
+  // wraps them in quotes. Intercept the click on per-row copy icons inside the
+  // shadow DOM and write the raw string (without the surrounding quotes).
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    let cleanup: (() => void) | undefined
+
+    const attach = () => {
+      const jsonViewer =
+        containerRef.current?.querySelector('andypf-json-viewer')
+      const shadowRoot = jsonViewer?.shadowRoot
+      if (!shadowRoot) return
+
+      const handler = (event: Event) => {
+        const path = event.composedPath()
+        const wrapper = path.find(
+          (el): el is HTMLElement =>
+            el instanceof HTMLElement &&
+            el.classList.contains('icon-wrapper') &&
+            !!el.querySelector(':scope > .copy.icon')
+        )
+        if (!wrapper) return
+
+        const dataRow = wrapper.closest('.data-row')
+        if (!dataRow) return
+
+        const valueData = dataRow.querySelector(
+          ':scope > .key-value-wrapper > .value.string > .value-data'
+        )
+        if (!valueData) return
+
+        const text = valueData.textContent ?? ''
+        const stripped =
+          text.startsWith('"') && text.endsWith('"') && text.length >= 2
+            ? text.slice(1, -1)
+            : text
+
+        navigator.clipboard.writeText(stripped)
+        event.stopImmediatePropagation()
+        event.preventDefault()
+      }
+
+      shadowRoot.addEventListener('click', handler, true)
+      cleanup = () => shadowRoot.removeEventListener('click', handler, true)
+    }
+
+    const timer = setTimeout(attach, 100)
+
+    return () => {
+      clearTimeout(timer)
+      cleanup?.()
+    }
+  }, [data])
+
   return (
     <div
       ref={containerRef}
