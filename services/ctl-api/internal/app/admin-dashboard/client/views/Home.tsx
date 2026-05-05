@@ -28,8 +28,8 @@ export const Home = () => {
       <h1 className="page-heading">Admin dashboard</h1>
       <p className="page-subheading">Internal operations dashboard for the Nuon platform</p>
 
-      <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-gray-900">Global actions</h2>
+      <div className="mt-6 rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Global actions</h2>
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={() => {
@@ -38,7 +38,7 @@ export const Home = () => {
               }
             }}
             disabled={promoteMutation.isPending}
-            className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50"
           >
             {promoteMutation.isPending ? 'Promoting...' : 'Promote'}
           </button>
@@ -49,23 +49,23 @@ export const Home = () => {
               }
             }}
             disabled={seedMutation.isPending}
-            className="rounded-md bg-yellow-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
+            className="rounded-md bg-yellow-600 dark:bg-yellow-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-yellow-700 dark:hover:bg-yellow-600 disabled:opacity-50"
           >
             {seedMutation.isPending ? 'Seeding...' : 'Seed'}
           </button>
           {promoteMutation.isSuccess && (
-            <span className="text-sm text-green-600">
+            <span className="text-sm text-green-600 dark:text-green-400">
               Promoted with tag: {promoteMutation.data.tag}
             </span>
           )}
           {promoteMutation.isError && (
-            <span className="text-sm text-red-600">Failed to promote</span>
+            <span className="text-sm text-red-600 dark:text-red-400">Failed to promote</span>
           )}
           {seedMutation.isSuccess && (
-            <span className="text-sm text-green-600">Seed triggered</span>
+            <span className="text-sm text-green-600 dark:text-green-400">Seed triggered</span>
           )}
           {seedMutation.isError && (
-            <span className="text-sm text-red-600">Failed to seed</span>
+            <span className="text-sm text-red-600 dark:text-red-400">Failed to seed</span>
           )}
         </div>
       </div>
@@ -75,10 +75,10 @@ export const Home = () => {
           <Link
             key={s.path}
             to={s.path}
-            className="group rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all duration-150 hover:border-primary-200 hover:shadow-md"
+            className="group rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition-all duration-150 hover:border-primary-200 dark:hover:border-primary-800 hover:shadow-md"
           >
-            <h3 className="text-sm font-semibold text-gray-900 group-hover:text-primary-700">{s.title}</h3>
-            <p className="mt-1 text-xs text-gray-500 leading-relaxed">{s.description}</p>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary-700 dark:group-hover:text-primary-300">{s.title}</h3>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{s.description}</p>
           </Link>
         ))}
       </div>

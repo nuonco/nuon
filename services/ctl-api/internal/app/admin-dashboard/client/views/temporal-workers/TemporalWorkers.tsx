@@ -37,7 +37,7 @@ export const TemporalWorkers = () => {
               <th>Health</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {workers.map((worker) => {
               const wfPollerCount = worker.workflow_pollers?.length ?? 0
               const actPollerCount = worker.activity_pollers?.length ?? 0
@@ -48,18 +48,18 @@ export const TemporalWorkers = () => {
                   <td>
                     <Link
                       to={`/temporal-workers/${encodeURIComponent(worker.namespace)}`}
-                      className="text-primary-600 hover:text-primary-700 font-medium"
+                      className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
                     >
                       {worker.namespace}
                     </Link>
                   </td>
-                  <td className="text-gray-500 font-mono text-xs">{worker.task_queue}</td>
-                  <td className="text-gray-900">{wfPollerCount}</td>
-                  <td className="text-gray-900">{actPollerCount}</td>
-                  <td className="text-gray-500 font-mono text-xs">
+                  <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{worker.task_queue}</td>
+                  <td className="text-gray-900 dark:text-gray-100">{wfPollerCount}</td>
+                  <td className="text-gray-900 dark:text-gray-100">{actPollerCount}</td>
+                  <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">
                     {worker.workflow_stats?.approximate_backlog_count ?? '-'}
                   </td>
-                  <td className="text-gray-500 font-mono text-xs">
+                  <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">
                     {worker.activity_stats?.approximate_backlog_count ?? '-'}
                   </td>
                   <td>
@@ -77,7 +77,7 @@ export const TemporalWorkers = () => {
             })}
             {workers.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center text-gray-500 py-6">No temporal workers found</td>
+                <td colSpan={7} className="text-center text-gray-500 dark:text-gray-400 py-6">No temporal workers found</td>
               </tr>
             )}
           </tbody>

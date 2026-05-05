@@ -22,45 +22,45 @@ export const LogStreams = () => {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Log Streams</h1>
+      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Log Streams</h1>
 
       <div className="mt-4 w-full sm:w-64">
         <SearchInput value={search} onChange={setSearch} placeholder="Search log streams..." />
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Org ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Org ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
             {logStreams.map((ls) => (
-              <tr key={ls.id} className="hover:bg-gray-50">
+              <tr key={ls.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Link to={`/log-streams/${ls.id}`} className="text-primary-600 hover:text-primary-800 font-mono">
+                  <Link to={`/log-streams/${ls.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">
                     {truncateId(ls.id)}
                   </Link>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Link to={`/orgs/${ls.org_id}`} className="text-primary-600 hover:text-primary-800 font-mono">
+                  <Link to={`/orgs/${ls.org_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">
                     {truncateId(ls.org_id)}
                   </Link>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                   <span className="font-mono text-xs">{truncateId(ls.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400">({ls.owner_type})</span>
+                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({ls.owner_type})</span>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(ls.created_at)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(ls.created_at)}</td>
               </tr>
             ))}
             {logStreams.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500">No log streams found</td>
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No log streams found</td>
               </tr>
             )}
           </tbody>

@@ -55,7 +55,7 @@ export const QueueSignals = () => {
         <select
           value={signalType}
           onChange={(e) => { setSignalType(e.target.value); setPage(1) }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
         >
           <option value="">All types</option>
           {signalTypes.map((t) => (
@@ -85,27 +85,27 @@ export const QueueSignals = () => {
               <th>Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {signals.map((signal) => (
               <tr key={signal.id}>
                 <td>
                   <SignalLink signalId={signal.id} queueId={signal.queue_id} />
                 </td>
                 <td><Badge>{signal.type}</Badge></td>
-                <td className="text-gray-500">
+                <td className="text-gray-500 dark:text-gray-400">
                   <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400">({signal.owner_type})</span>
+                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({signal.owner_type})</span>
                 </td>
-                <td className="text-gray-500 font-mono text-xs">{truncateId(signal.queue_id)}</td>
+                <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(signal.queue_id)}</td>
                 <td>
                   <Badge variant="status" status={String(signal.status?.status || signal.status)}>{String(signal.status?.status || signal.status)}</Badge>
                 </td>
-                <td className="text-gray-500">{formatDate(signal.created_at)}</td>
+                <td className="text-gray-500 dark:text-gray-400">{formatDate(signal.created_at)}</td>
               </tr>
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-gray-500 py-6">No signals found</td>
+                <td colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-6">No signals found</td>
               </tr>
             )}
           </tbody>

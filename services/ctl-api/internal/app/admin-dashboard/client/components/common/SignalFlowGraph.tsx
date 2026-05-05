@@ -355,7 +355,7 @@ export const SignalFlowGraph = ({ graphData, height = '36rem' }: ISignalFlowGrap
   if (!graphData || nodes.length === 0) return null
 
   return (
-    <div className="w-full border border-gray-200 rounded-lg overflow-hidden relative" style={{ height }}>
+    <div className="w-full border border-gray-200 rounded-lg overflow-hidden relative dark:border-gray-800" style={{ height }}>
       {loading && (
         <div className="absolute top-2 left-2 z-10 bg-gray-900 text-white text-xs px-3 py-1.5 rounded shadow-lg animate-pulse">
           Expanding signal...

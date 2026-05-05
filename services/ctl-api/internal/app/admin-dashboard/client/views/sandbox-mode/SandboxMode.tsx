@@ -161,7 +161,7 @@ export const SandboxMode = () => {
     <div>
       <h1 className="page-heading">Sandbox mode</h1>
 
-      <div className="mt-4 border-b border-gray-200">
+      <div className="mt-4 border-b border-gray-200 dark:border-gray-800">
         <nav className="flex -mb-px space-x-8">
           {tabs.map((tab) => (
             <button
@@ -169,8 +169,8 @@ export const SandboxMode = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium ${
                 activeTab === tab.key
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               {tab.label}
@@ -184,13 +184,13 @@ export const SandboxMode = () => {
         {activeTab === 'runner-jobs' && (
           <div>
             <div className="mb-3 flex gap-2">
-              <button onClick={openNewJob} className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
+              <button onClick={openNewJob} className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600">
                 New override
               </button>
               <button
                 onClick={() => disableJobsMutation.mutate()}
                 disabled={disableJobsMutation.isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
               >
                 Disable all
               </button>
@@ -227,23 +227,23 @@ export const SandboxMode = () => {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {runnerJobConfigs.map((config: any) => (
-                    <tr key={config.id || config.job_type} className={editingJobType === config.job_type ? 'bg-primary-50' : ''}>
-                      <td className="font-mono text-xs text-gray-900">{config.job_type}{config.operation ? ` (${config.operation})` : ''}</td>
+                    <tr key={config.id || config.job_type} className={editingJobType === config.job_type ? 'bg-primary-50 dark:bg-primary-950' : ''}>
+                      <td className="font-mono text-xs text-gray-900 dark:text-gray-100">{config.job_type}{config.operation ? ` (${config.operation})` : ''}</td>
                       <td><Badge variant="status" status={config.enabled ? 'online' : 'offline'}>{config.enabled ? 'Yes' : 'No'}</Badge></td>
-                      <td className="font-mono text-xs text-gray-500">{config.duration ? `${config.duration / 1_000_000}ms` : '-'}</td>
-                      <td className="font-mono text-xs text-gray-500">{config.sleep_duration ? `${config.sleep_duration / 1_000_000}ms` : '-'}</td>
+                      <td className="font-mono text-xs text-gray-500 dark:text-gray-400">{config.duration ? `${config.duration / 1_000_000}ms` : '-'}</td>
+                      <td className="font-mono text-xs text-gray-500 dark:text-gray-400">{config.sleep_duration ? `${config.sleep_duration / 1_000_000}ms` : '-'}</td>
                       <td className="text-xs">{config.should_error ? '✓' : '-'}</td>
                       <td className="text-xs">{config.panic ? '✓' : '-'}</td>
                       <td className="text-xs">{config.trigger_shutdown ? '✓' : '-'}</td>
-                      <td className="text-xs text-gray-500">
+                      <td className="text-xs text-gray-500 dark:text-gray-400">
                         {[config.log_template, config.plan_template, config.state_template, config.output_template].filter(Boolean).join(', ') || '-'}
                       </td>
                       <td>
                         <button
                           onClick={() => openEditJob(config)}
-                          className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                          className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-medium"
                         >
                           Edit
                         </button>
@@ -251,7 +251,7 @@ export const SandboxMode = () => {
                     </tr>
                   ))}
                   {runnerJobConfigs.length === 0 && (
-                    <tr><td colSpan={9} className="text-center text-gray-500 py-6">No runner job overrides</td></tr>
+                    <tr><td colSpan={9} className="text-center text-gray-500 dark:text-gray-400 py-6">No runner job overrides</td></tr>
                   )}
                 </tbody>
               </table>
@@ -263,13 +263,13 @@ export const SandboxMode = () => {
         {activeTab === 'signals' && (
           <div>
             <div className="mb-3 flex gap-2">
-              <button onClick={openNewSignal} className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700">
+              <button onClick={openNewSignal} className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600">
                 New override
               </button>
               <button
                 onClick={() => disableSignalsMutation.mutate()}
                 disabled={disableSignalsMutation.isPending}
-                className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
               >
                 Disable all
               </button>
@@ -304,20 +304,20 @@ export const SandboxMode = () => {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {signalConfigs.map((config: any) => (
-                    <tr key={config.id || config.signal_type} className={editingSignalType === config.signal_type ? 'bg-primary-50' : ''}>
-                      <td className="font-mono text-xs text-gray-900">{config.signal_type}</td>
+                    <tr key={config.id || config.signal_type} className={editingSignalType === config.signal_type ? 'bg-primary-50 dark:bg-primary-950' : ''}>
+                      <td className="font-mono text-xs text-gray-900 dark:text-gray-100">{config.signal_type}</td>
                       <td><Badge variant="status" status={config.enabled ? 'online' : 'offline'}>{config.enabled ? 'Yes' : 'No'}</Badge></td>
-                      <td className="font-mono text-xs text-gray-500">{config.deadlock_sleep ? `${config.deadlock_sleep / 1_000_000_000}s` : '-'}</td>
-                      <td className="font-mono text-xs text-gray-500">{config.workflow_sleep ? `${config.workflow_sleep / 1_000_000_000}s` : '-'}</td>
+                      <td className="font-mono text-xs text-gray-500 dark:text-gray-400">{config.deadlock_sleep ? `${config.deadlock_sleep / 1_000_000_000}s` : '-'}</td>
+                      <td className="font-mono text-xs text-gray-500 dark:text-gray-400">{config.workflow_sleep ? `${config.workflow_sleep / 1_000_000_000}s` : '-'}</td>
                       <td className="text-xs">{config.panic ? '✓' : '-'}</td>
-                      <td className="text-xs text-gray-500 max-w-[120px] truncate">{config.error || '-'}</td>
-                      <td className="text-xs text-gray-500 max-w-[120px] truncate">{config.validate_error || '-'}</td>
+                      <td className="text-xs text-gray-500 dark:text-gray-400 max-w-[120px] truncate">{config.error || '-'}</td>
+                      <td className="text-xs text-gray-500 dark:text-gray-400 max-w-[120px] truncate">{config.validate_error || '-'}</td>
                       <td>
                         <button
                           onClick={() => openEditSignal(config)}
-                          className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                          className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-medium"
                         >
                           Edit
                         </button>
@@ -325,7 +325,7 @@ export const SandboxMode = () => {
                     </tr>
                   ))}
                   {signalConfigs.length === 0 && (
-                    <tr><td colSpan={8} className="text-center text-gray-500 py-6">No signal overrides</td></tr>
+                    <tr><td colSpan={8} className="text-center text-gray-500 dark:text-gray-400 py-6">No signal overrides</td></tr>
                   )}
                 </tbody>
               </table>
@@ -337,17 +337,17 @@ export const SandboxMode = () => {
         {activeTab === 'stacks' && (
           <div>
             {stackConfig ? (
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <h3 className="text-sm font-medium text-gray-900">Sandbox terraform config</h3>
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+                <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Sandbox terraform config</h3>
                 <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div><dt className="text-gray-500">Job type</dt><dd className="font-mono">{stackConfig.job_type}</dd></div>
-                  <div><dt className="text-gray-500">Enabled</dt><dd><Badge variant="status" status={stackConfig.enabled ? 'online' : 'offline'}>{stackConfig.enabled ? 'Yes' : 'No'}</Badge></dd></div>
-                  <div><dt className="text-gray-500">Duration</dt><dd className="font-mono">{stackConfig.duration ? `${stackConfig.duration / 1_000_000}ms` : '-'}</dd></div>
-                  <div><dt className="text-gray-500">Should error</dt><dd>{stackConfig.should_error ? 'Yes' : 'No'}</dd></div>
+                  <div><dt className="text-gray-500 dark:text-gray-400">Job type</dt><dd className="font-mono">{stackConfig.job_type}</dd></div>
+                  <div><dt className="text-gray-500 dark:text-gray-400">Enabled</dt><dd><Badge variant="status" status={stackConfig.enabled ? 'online' : 'offline'}>{stackConfig.enabled ? 'Yes' : 'No'}</Badge></dd></div>
+                  <div><dt className="text-gray-500 dark:text-gray-400">Duration</dt><dd className="font-mono">{stackConfig.duration ? `${stackConfig.duration / 1_000_000}ms` : '-'}</dd></div>
+                  <div><dt className="text-gray-500 dark:text-gray-400">Should error</dt><dd>{stackConfig.should_error ? 'Yes' : 'No'}</dd></div>
                 </dl>
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No stack config</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No stack config</p>
             )}
           </div>
         )}
@@ -358,17 +358,17 @@ export const SandboxMode = () => {
             {flowTemplates.length > 0 ? (
               <div className="space-y-2">
                 {flowTemplates.map((template: any, i: number) => (
-                  <div key={template.key || template.Key || i} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                  <div key={template.key || template.Key || i} className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{template.name || template.Name || template.key || template.Key}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{template.name || template.Name || template.key || template.Key}</p>
                       {(template.description || template.Description) && (
-                        <p className="mt-0.5 text-xs text-gray-500">{template.description || template.Description}</p>
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{template.description || template.Description}</p>
                       )}
                     </div>
                     <button
                       onClick={() => applyTemplateMutation.mutate(template.key || template.Key)}
                       disabled={applyTemplateMutation.isPending}
-                      className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+                      className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50"
                     >
                       Apply
                     </button>
@@ -376,7 +376,7 @@ export const SandboxMode = () => {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">No flow templates</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No flow templates</p>
             )}
           </div>
         )}
@@ -411,8 +411,8 @@ function JobFormPanel({
   isPending: boolean
 }) {
   return (
-    <div className="mb-4 rounded-lg border border-primary-200 bg-primary-50/50 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+    <div className="mb-4 rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/30 p-4">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
         {isNew ? 'New runner job override' : `Edit: ${jobType}`}
       </h3>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -442,7 +442,7 @@ function JobFormPanel({
           <input type="checkbox" checked={form.trigger_shutdown} onChange={(e) => setForm((f) => ({ ...f, trigger_shutdown: e.target.checked }))} className="mt-1" />
         </Field>
         <Field label="Operation">
-          <input type="text" value={form.operation} onChange={(e) => setForm((f) => ({ ...f, operation: e.target.value }))} placeholder="optional" className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2" />
+          <input type="text" value={form.operation} onChange={(e) => setForm((f) => ({ ...f, operation: e.target.value }))} placeholder="optional" className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2" />
         </Field>
         <Field label="Log template">
           <TemplateSelect value={form.log_template} onChange={(v) => setForm((f) => ({ ...f, log_template: v }))} options={templateOptions} />
@@ -461,10 +461,10 @@ function JobFormPanel({
         </Field>
       </div>
       <div className="mt-3 flex gap-2">
-        <button onClick={onSave} disabled={isPending || (isNew && !jobType)} className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50">
+        <button onClick={onSave} disabled={isPending || (isNew && !jobType)} className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50">
           {isPending ? 'Saving...' : 'Save'}
         </button>
-        <button onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
+        <button onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
       </div>
     </div>
   )
@@ -492,8 +492,8 @@ function SignalFormPanel({
   isPending: boolean
 }) {
   return (
-    <div className="mb-4 rounded-lg border border-primary-200 bg-primary-50/50 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">
+    <div className="mb-4 rounded-lg border border-primary-200 dark:border-primary-800 bg-primary-50/50 dark:bg-primary-900/30 p-4">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
         {isNew ? 'New signal override' : `Edit: ${signalType}`}
       </h3>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -517,17 +517,17 @@ function SignalFormPanel({
           <input type="checkbox" checked={form.panic} onChange={(e) => setForm((f) => ({ ...f, panic: e.target.checked }))} className="mt-1" />
         </Field>
         <Field label="Error message">
-          <input type="text" value={form.error} onChange={(e) => setForm((f) => ({ ...f, error: e.target.value }))} placeholder="Execute error" className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2" />
+          <input type="text" value={form.error} onChange={(e) => setForm((f) => ({ ...f, error: e.target.value }))} placeholder="Execute error" className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2" />
         </Field>
         <Field label="Validate error">
-          <input type="text" value={form.validate_error} onChange={(e) => setForm((f) => ({ ...f, validate_error: e.target.value }))} placeholder="Validate error" className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2" />
+          <input type="text" value={form.validate_error} onChange={(e) => setForm((f) => ({ ...f, validate_error: e.target.value }))} placeholder="Validate error" className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2" />
         </Field>
       </div>
       <div className="mt-3 flex gap-2">
-        <button onClick={onSave} disabled={isPending || (isNew && !signalType)} className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50">
+        <button onClick={onSave} disabled={isPending || (isNew && !signalType)} className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50">
           {isPending ? 'Saving...' : 'Save'}
         </button>
-        <button onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100">Cancel</button>
+        <button onClick={onCancel} className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
       </div>
     </div>
   )
@@ -538,7 +538,7 @@ function SignalFormPanel({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       {children}
     </div>
   )
@@ -546,7 +546,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function TemplateSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: string[] }) {
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2">
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2">
       <option value="">None</option>
       {options.map((t) => <option key={t} value={t}>{t}</option>)}
     </select>
@@ -570,16 +570,16 @@ function TypeCombobox({ value, onChange, options, placeholder }: { value: string
         onChange={(e) => { setFilter(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2 font-mono"
+        className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2 font-mono"
       />
       {open && filtered.length > 0 && (
-        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
+        <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-lg">
           {filtered.map((opt) => (
             <button
               key={opt}
               type="button"
               onClick={() => { onChange(opt); setFilter(opt); setOpen(false) }}
-              className={`block w-full text-left px-2 py-1.5 text-xs font-mono hover:bg-primary-50 ${opt === value ? 'bg-primary-50 text-primary-700 font-medium' : 'text-gray-700'}`}
+              className={`block w-full text-left px-2 py-1.5 text-xs font-mono hover:bg-primary-50 dark:hover:bg-primary-900/30 ${opt === value ? 'bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 font-medium' : 'text-gray-700 dark:text-gray-300'}`}
             >
               {opt}
             </button>
@@ -613,14 +613,14 @@ const secPresets = [
 function DurationMsInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div>
-      <input type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2" />
+      <input type="number" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2" />
       <div className="mt-1 flex gap-1">
         {msPresets.map((p) => (
           <button
             key={p.label}
             type="button"
             onClick={() => onChange(p.value)}
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 border-primary-300 text-primary-700' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           >
             {p.label}
           </button>
@@ -634,14 +634,14 @@ function DurationMsInput({ value, onChange }: { value: number; onChange: (v: num
 function DurationSecInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
     <div>
-      <input type="number" step="0.1" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full rounded-md border-gray-300 text-sm py-1.5 px-2" />
+      <input type="number" step="0.1" value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2" />
       <div className="mt-1 flex gap-1">
         {secPresets.map((p) => (
           <button
             key={p.label}
             type="button"
             onClick={() => onChange(p.value)}
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 border-primary-300 text-primary-700' : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'}`}
+            className={`rounded px-1.5 py-0.5 text-[10px] font-medium border transition-colors ${value === p.value ? 'bg-primary-100 dark:bg-primary-900/50 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300' : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
           >
             {p.label}
           </button>

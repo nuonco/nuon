@@ -81,8 +81,8 @@ export const QueueDetail = () => {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <Link to="/queues" className="text-primary-600 hover:text-primary-800">Queues</Link>
+      <nav className="text-sm text-gray-500 dark:text-gray-400">
+        <Link to="/queues" className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">Queues</Link>
         <span className="mx-1">/</span>
         <span className="font-mono">{truncateId(queue.id)}</span>
       </nav>
@@ -91,7 +91,7 @@ export const QueueDetail = () => {
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-gray-900">{queue.name}</h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{queue.name}</h1>
             {queue.status_v2?.status && (
               <Badge variant="status" status={getStatus(queue.status_v2)}>
                 {getStatus(queue.status_v2)}
@@ -101,8 +101,8 @@ export const QueueDetail = () => {
               {queueStatusLabel(status)}
             </Badge>
           </div>
-          <p className="mt-1 text-sm text-gray-500 font-mono">{queue.id}</p>
-          <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{queue.id}</p>
+          <div className="mt-1 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <span>Owner:</span>
             <span className="font-mono text-xs">{truncateId(queue.owner_id)}</span>
             <Badge variant="default">{queue.owner_type}</Badge>
@@ -113,7 +113,7 @@ export const QueueDetail = () => {
             href={`${temporal_ui_url}/namespaces/components/workflows/${queue.workflow.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            className="rounded-md bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             View in Temporal
           </a>
@@ -122,28 +122,28 @@ export const QueueDetail = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase">Max Depth</div>
-          <div className="mt-1 text-2xl font-semibold text-gray-900">{queue.max_depth}</div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Max Depth</div>
+          <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{queue.max_depth}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase">Max In-Flight</div>
-          <div className="mt-1 text-2xl font-semibold text-gray-900">{queue.max_in_flight}</div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Max In-Flight</div>
+          <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{queue.max_in_flight}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase">Queue Depth</div>
-          <div className="mt-1 text-2xl font-semibold text-gray-900">{status?.QueueDepthCount ?? '-'}</div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Queue Depth</div>
+          <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{status?.QueueDepthCount ?? '-'}</div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <div className="text-xs font-medium text-gray-500 uppercase">In-Flight</div>
-          <div className="mt-1 text-2xl font-semibold text-gray-900">{status?.InFlightCount ?? '-'}</div>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">In-Flight</div>
+          <div className="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">{status?.InFlightCount ?? '-'}</div>
         </div>
       </div>
 
       {/* Status Timestamps */}
       {queue.metadata && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Status Timestamps</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status Timestamps</h2>
           <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3 lg:grid-cols-5">
             {[
               { label: 'Ready At', key: 'ready_at' },
@@ -153,8 +153,8 @@ export const QueueDetail = () => {
               { label: 'Finished At', key: 'finished_at' },
             ].map(({ label, key }) => (
               <div key={key}>
-                <div className="text-xs text-gray-500">{label}</div>
-                <div className="text-sm text-gray-900 font-mono">
+                <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+                <div className="text-sm text-gray-900 dark:text-gray-100 font-mono">
                   {queue.metadata?.[key] ? formatRelativeDate(queue.metadata[key]) : '-'}
                 </div>
               </div>
@@ -168,7 +168,7 @@ export const QueueDetail = () => {
         <button
           onClick={() => restartMutation.mutate()}
           disabled={restartMutation.isPending}
-          className="rounded-md bg-yellow-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-yellow-700 disabled:opacity-50"
+          className="rounded-md bg-yellow-600 dark:bg-yellow-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-yellow-700 dark:hover:bg-yellow-600 disabled:opacity-50"
         >
           {restartMutation.isPending ? 'Restarting...' : 'Restart Queue'}
         </button>
@@ -179,7 +179,7 @@ export const QueueDetail = () => {
             }
           }}
           disabled={forceRestartMutation.isPending}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
         >
           {forceRestartMutation.isPending ? 'Force restarting...' : 'Force Restart'}
         </button>
@@ -190,7 +190,7 @@ export const QueueDetail = () => {
             }
           }}
           disabled={clearMutation.isPending}
-          className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
         >
           {clearMutation.isPending ? 'Clearing...' : 'Clear Queue'}
         </button>
@@ -198,9 +198,9 @@ export const QueueDetail = () => {
 
       {/* Queue Status (StatusV2) */}
       {queue.status_v2?.status && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Queue Status</h2>
-          <p className="mt-0.5 text-xs text-gray-500">Current status and history</p>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Queue Status</h2>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Current status and history</p>
           <div className="mt-3">
             <StatusHistory status={queue.status_v2} defaultExpanded maxCollapsed={5} />
           </div>
@@ -208,51 +208,51 @@ export const QueueDetail = () => {
       )}
 
       {/* Emitters */}
-      <div className="table-card rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Emitters</h2>
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Emitters</h2>
         <div className="mt-2 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mode</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signal type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emit count</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last emitted</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mode</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Schedule</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Signal type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Emit count</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Last emitted</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
               {(queue.emitters || emittersData?.emitters || []).map((emitter: any) => (
-                <tr key={emitter.id} className="hover:bg-gray-50">
+                <tr key={emitter.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Link to={`/queues/${id}/emitters/${emitter.id}`} className="text-primary-600 hover:text-primary-800 font-mono">
+                    <Link to={`/queues/${id}/emitters/${emitter.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">
                       {truncateId(emitter.id)}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{emitter.name}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{emitter.mode || '-'}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{emitter.cron_schedule || '-'}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{emitter.signal_type || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{emitter.name}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{emitter.mode || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">{emitter.cron_schedule || '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{emitter.signal_type || '-'}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    {emitter.status?.status ? <Badge variant="status" status={getStatus(emitter.status)}>{getStatus(emitter.status)}</Badge> : <span className="text-gray-400">-</span>}
+                    {emitter.status?.status ? <Badge variant="status" status={getStatus(emitter.status)}>{getStatus(emitter.status)}</Badge> : <span className="text-gray-400 dark:text-gray-500">-</span>}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-mono">{emitter.emit_count ?? 0}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{emitter.last_emitted_at ? formatRelativeDate(emitter.last_emitted_at) : '-'}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{emitter.last_emitted_at ? formatRelativeDate(emitter.last_emitted_at) : '-'}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     <span className="font-mono text-xs">{truncateId(emitter.owner_id)}</span>
-                    <span className="ml-1 text-xs text-gray-400">({emitter.owner_type})</span>
+                    <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({emitter.owner_type})</span>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(emitter.created_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(emitter.created_at)}</td>
                 </tr>
               ))}
               {(!(queue.emitters || emittersData?.emitters) || (queue.emitters || emittersData?.emitters || []).length === 0) && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-500">No emitters</td>
+                  <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No emitters</td>
                 </tr>
               )}
             </tbody>
@@ -264,44 +264,44 @@ export const QueueDetail = () => {
       </div>
 
       {/* Recent Signals */}
-      <div className="table-card rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Recent Signals</h2>
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent Signals</h2>
         <div className="mt-2 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
               {(signals || []).map((signal: any) => (
-                <tr key={signal.id} className="hover:bg-gray-50">
+                <tr key={signal.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Link to={`/queues/${id}/signals/${signal.id}`} className="text-primary-600 hover:text-primary-800 font-mono">
+                    <Link to={`/queues/${id}/signals/${signal.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">
                       {truncateId(signal.id)}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{signal.type}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{signal.type}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <Badge variant="status" status={getStatus(signal.status)}>{getStatus(signal.status)}</Badge>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <Badge variant="default">{signal.owner_type}</Badge>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-mono text-gray-500">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
                     {truncateId(signal.owner_id)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(signal.created_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(signal.created_at)}</td>
                 </tr>
               ))}
               {(!signals || signals.length === 0) && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">No signals</td>
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No signals</td>
                 </tr>
               )}
             </tbody>
@@ -310,29 +310,29 @@ export const QueueDetail = () => {
       </div>
 
       {/* In-Flight Signals */}
-      <div className="table-card rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           In-Flight Signals
           {(in_flight_signals || inFlightData?.signals || []).length > 0 && (
-            <span className="ml-2 text-xs font-normal text-gray-500">
+            <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
               ({(in_flight_signals || inFlightData?.signals || []).length})
             </span>
           )}
         </h2>
         <div className="mt-2 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Owner ID</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Updated</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
               {(in_flight_signals || inFlightData?.signals || []).map((signal: any) => {
                 const createdMs = signal.created_at ? new Date(signal.created_at).getTime() : 0
                 const nowMs = Date.now()
@@ -345,26 +345,26 @@ export const QueueDetail = () => {
                       : `${Math.floor(durationMs / 3600000)}h ${Math.floor((durationMs % 3600000) / 60000)}m`
                   : '-'
                 return (
-                  <tr key={signal.id} className="hover:bg-gray-50">
+                  <tr key={signal.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
-                      <Link to={`/queues/${id}/signals/${signal.id}`} className="text-primary-600 hover:text-primary-800 font-mono">
+                      <Link to={`/queues/${id}/signals/${signal.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">
                         {truncateId(signal.id)}
                       </Link>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{signal.type}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{signal.type}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       <Badge variant="status" status={getStatus(signal.status)}>{getStatus(signal.status)}</Badge>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-sm">
                       <Badge variant="default">{signal.owner_type}</Badge>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-mono text-gray-500">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
                       {truncateId(signal.owner_id)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {formatRelativeDate(signal.updated_at)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">
                       {durationStr}
                     </td>
                   </tr>
@@ -372,7 +372,7 @@ export const QueueDetail = () => {
               })}
               {(!(in_flight_signals || inFlightData?.signals) || (in_flight_signals || inFlightData?.signals || []).length === 0) && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">No in-flight signals</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No in-flight signals</td>
                 </tr>
               )}
             </tbody>
