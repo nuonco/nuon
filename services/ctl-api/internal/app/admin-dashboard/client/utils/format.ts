@@ -22,9 +22,9 @@ export function formatDuration(nanos: number | undefined): string {
   return dur.toFormat("h'h' m'm'")
 }
 
-export function truncateId(id: string, len = 12): string {
+export function truncateId(id: string, _len = 12): string {
   if (!id) return '-'
-  return id.length > len ? id.slice(0, len) + '...' : id
+  return id
 }
 
 export function statusColor(status: string | undefined): string {
