@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -41,6 +42,8 @@ type Params struct {
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
 	TemporalCodecS3Payload    converter.PayloadCodec `name:"s3payload"`
+
+	QueryCollector *querycollector.Collector
 }
 
 type Service struct {
@@ -58,6 +61,7 @@ type Service struct {
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
 	codecs         []converter.PayloadCodec
+	queryCollector *querycollector.Collector
 }
 
 type service = Service
@@ -118,8 +122,6 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/orgs/table", s.OrgsTable)
 		api.GET("/orgs/:id", s.OrgDetail)
 		api.GET("/orgs/:id/status", s.OrgStatus)
-		api.POST("/orgs/:id/tags", s.UpdateOrgTags)
-		api.POST("/orgs/:id/tags/remove/:tag", s.RemoveSingleTag)
 		api.POST("/orgs/:id/labels", s.AddOrgLabels)
 		api.POST("/orgs/:id/labels/remove/:key", s.RemoveOrgLabel)
 		api.POST("/orgs/:id/support-users/add", s.ProxyAddSupportUsers)
@@ -132,6 +134,9 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/accounts/:id", s.AccountDetail)
 		api.GET("/accounts/:id/installs", s.AccountInstallsTable)
 		api.GET("/accounts/:id/audit-logs", s.AccountAuditLogsTable)
+
+		// Runner uptime
+		api.GET("/runner-uptime", s.RunnerUptime)
 
 		// Runners
 		api.GET("/runners", s.Runners)
@@ -221,6 +226,15 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
 
+		// Queries (dev-only)
+		api.GET("/queries", s.Queries)
+		api.POST("/queries/clear", s.ClearQueries)
+
+		// Query catalog
+		api.GET("/query-catalog", s.QueryCatalogList)
+		api.POST("/query-catalog/:query_id/run", s.QueryCatalogRun)
+		api.POST("/query-collector/toggle", s.QueryCollectorToggle)
+
 		// General actions
 		api.POST("/promote", s.Promote)
 		api.POST("/seed", s.ProxySeed)
@@ -248,6 +262,7 @@ func New(params Params) (*service, error) {
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
+		queryCollector: params.QueryCollector,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,

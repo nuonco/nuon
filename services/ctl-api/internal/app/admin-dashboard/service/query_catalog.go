@@ -1,0 +1,167 @@
+package service
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+)
+
+// CatalogQuery is a pre-defined SQL query that can be run from the admin dashboard.
+type CatalogQuery struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	SQL         string `json:"sql"`
+	DBType      string `json:"db_type"` // "psql" or "ch"
+}
+
+var queryCatalog = []CatalogQuery{
+	{
+		ID:          "index-usage",
+		Name:        "Index usage (non-unique)",
+		Description: "Shows non-unique, non-primary indexes ordered by scan count. Requires idx_snap table from pg_stat_user_indexes snapshot.",
+		DBType:      "psql",
+		SQL: `SELECT
+  s.schemaname,
+  s.relname        AS table_name,
+  s.indexrelname   AS index_name,
+  s.idx_scan       AS current_scans,
+  snap.idx_scan    AS prev_scans,
+  s.idx_scan - snap.idx_scan AS scans_in_window,
+  pg_size_pretty(pg_relation_size(s.indexrelid)) AS index_size
+FROM pg_stat_user_indexes s
+JOIN pg_index i      ON s.indexrelid = i.indexrelid
+JOIN idx_snap snap   ON snap.indexrelid = s.indexrelid
+WHERE NOT i.indisunique
+  AND NOT i.indisprimary
+  AND s.idx_scan > snap.idx_scan
+ORDER BY scans_in_window DESC`,
+	},
+	{
+		ID:          "table-sizes",
+		Name:        "Table sizes",
+		Description: "Shows all tables ordered by total size (table + indexes).",
+		DBType:      "psql",
+		SQL: `SELECT
+  schemaname,
+  relname AS table_name,
+  pg_size_pretty(pg_total_relation_size(relid)) AS total_size,
+  pg_size_pretty(pg_relation_size(relid)) AS table_size,
+  pg_size_pretty(pg_indexes_size(relid)) AS index_size,
+  n_live_tup AS row_estimate
+FROM pg_stat_user_tables
+ORDER BY pg_total_relation_size(relid) DESC`,
+	},
+	{
+		ID:          "unused-indexes",
+		Name:        "Unused indexes",
+		Description: "Non-unique indexes with zero scans. Candidates for removal.",
+		DBType:      "psql",
+		SQL: `SELECT
+  s.schemaname,
+  s.relname AS table_name,
+  s.indexrelname AS index_name,
+  s.idx_scan,
+  pg_size_pretty(pg_relation_size(s.indexrelid)) AS index_size
+FROM pg_stat_user_indexes s
+JOIN pg_index i ON s.indexrelid = i.indexrelid
+WHERE NOT i.indisunique
+  AND NOT i.indisprimary
+  AND s.idx_scan = 0
+ORDER BY pg_relation_size(s.indexrelid) DESC`,
+	},
+	{
+		ID:          "active-locks",
+		Name:        "Active locks",
+		Description: "Shows currently held locks with the associated query.",
+		DBType:      "psql",
+		SQL: `SELECT
+  l.locktype,
+  l.relation::regclass AS table_name,
+  l.mode,
+  l.granted,
+  a.usename,
+  a.query,
+  a.state,
+  a.query_start,
+  age(now(), a.query_start) AS duration
+FROM pg_locks l
+JOIN pg_stat_activity a ON l.pid = a.pid
+WHERE a.query NOT ILIKE '%pg_locks%'
+ORDER BY a.query_start`,
+	},
+	{
+		ID:          "long-running-queries",
+		Name:        "Long-running queries",
+		Description: "Active queries running longer than 5 seconds.",
+		DBType:      "psql",
+		SQL: `SELECT
+  pid,
+  usename,
+  state,
+  query,
+  query_start,
+  age(now(), query_start) AS duration
+FROM pg_stat_activity
+WHERE state = 'active'
+  AND query_start < now() - interval '5 seconds'
+ORDER BY query_start`,
+	},
+}
+
+func (s *service) QueryCatalogList(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"queries": queryCatalog,
+	})
+}
+
+func (s *service) QueryCatalogRun(c *gin.Context) {
+	id := c.Param("query_id")
+
+	var found *CatalogQuery
+	for i := range queryCatalog {
+		if queryCatalog[i].ID == id {
+			found = &queryCatalog[i]
+			break
+		}
+	}
+	if found == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "query not found"})
+		return
+	}
+
+	var db = s.db
+	if found.DBType == "ch" {
+		db = s.chDB
+	}
+
+	var results []map[string]any
+	if err := db.WithContext(c.Request.Context()).Raw(found.SQL).Scan(&results).Error; err != nil {
+		s.l.Error("catalog query failed", zap.String("query_id", id), zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"query":   found,
+		"results": results,
+		"count":   len(results),
+	})
+}
+
+func (s *service) QueryCollectorToggle(c *gin.Context) {
+	if s.queryCollector == nil {
+		c.JSON(http.StatusOK, gin.H{"enabled": false, "message": "collector not initialized (requires debug_enable_query_collector=true at startup)"})
+		return
+	}
+
+	action := c.Query("action")
+	switch action {
+	case "clear":
+		s.queryCollector.Clear()
+		c.JSON(http.StatusOK, gin.H{"enabled": true, "cleared": true})
+	default:
+		c.JSON(http.StatusOK, gin.H{"enabled": true, "total": s.queryCollector.Total()})
+	}
+}

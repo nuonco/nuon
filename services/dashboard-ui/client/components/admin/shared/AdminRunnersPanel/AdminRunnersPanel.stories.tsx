@@ -14,5 +14,6 @@ export const Default = () => (
     isRestarting={false}
     onRestartAll={() => {}}
     onRefreshInstalls={() => {}}
+    pagination={{ hasNext: false, offset: 0, limit: 10 }}
   />
 )

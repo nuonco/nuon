@@ -469,6 +469,7 @@ export type TLabelsResponse = {
   orgs: TOrgOption[]
   page: number
   total_pages: number
+  total_count: number
 }
 
 export type TLogStreamLogsResponse = {
@@ -564,9 +565,24 @@ export type TAllRunnerView = {
   install_name: string
 }
 
+export type TRunnerStatBucket = {
+  label: string
+  value: number
+}
+
+export type TAllRunnerStats = {
+  group_type: TRunnerStatBucket[]
+  version: TRunnerStatBucket[]
+  process_type: TRunnerStatBucket[]
+}
+
 export type TAllRunnersResponse = {
   runners: TAllRunnerView[]
   orgs: TOrgOption[]
+  stats: TAllRunnerStats
+  page: number
+  total_pages: number
+  total_count: number
 }
 
 export type TInstallActivityResponse = {

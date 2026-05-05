@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -36,26 +37,35 @@ func (s *service) registerStaticSPA(e *gin.Engine) {
 		hasDistDir = false
 	}
 
-	var indexHTML []byte
-	hasSPAFallback := false
+	var (
+		indexMu     sync.RWMutex
+		indexCached []byte
+	)
 
-	if hasDistDir {
-		if _, err := fs.Stat(distFS, "index.html"); err != nil {
-			s.l.Warn("no index.html in admin dashboard dist — SPA fallback disabled", zap.String("dist_dir", distDir))
-		} else {
-			raw, err := fs.ReadFile(distFS, "index.html")
-			if err != nil {
-				s.l.Error("failed to read admin dashboard index.html", zap.Error(err))
-			} else {
-				hasSPAFallback = true
-				cc := adminClientConfig{
-					AppURL: s.cfg.PublicAPIURL,
-				}
-				b, _ := json.Marshal(cc)
-				script := fmt.Sprintf(`<script id="admin-config">window.__ADMIN_CONFIG__=%s;</script>`, b)
-				indexHTML = bytes.Replace(raw, []byte("</head>"), []byte(script+"</head>"), 1)
-			}
+	loadIndex := func() []byte {
+		indexMu.RLock()
+		if indexCached != nil {
+			defer indexMu.RUnlock()
+			return indexCached
 		}
+		indexMu.RUnlock()
+
+		if !hasDistDir {
+			return nil
+		}
+		raw, err := fs.ReadFile(distFS, "index.html")
+		if err != nil {
+			return nil
+		}
+		cc := adminClientConfig{AppURL: s.cfg.PublicAPIURL}
+		b, _ := json.Marshal(cc)
+		script := fmt.Sprintf(`<script id="admin-config">window.__ADMIN_CONFIG__=%s;</script>`, b)
+		out := bytes.Replace(raw, []byte("</head>"), []byte(script+"</head>"), 1)
+
+		indexMu.Lock()
+		indexCached = out
+		indexMu.Unlock()
+		return out
 	}
 
 	var distFileServer http.Handler
@@ -87,7 +97,8 @@ func (s *service) registerStaticSPA(e *gin.Engine) {
 			}
 		}
 
-		if !hasSPAFallback {
+		indexHTML := loadIndex()
+		if indexHTML == nil {
 			c.Status(http.StatusNotFound)
 			return
 		}
