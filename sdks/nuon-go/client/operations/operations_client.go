@@ -759,6 +759,8 @@ type ClientService interface {
 
 	UpdateComponent(params *UpdateComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateComponentOK, error)
 
+	UpdateCurrentOrgWebhook(params *UpdateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateCurrentOrgWebhookOK, error)
+
 	UpdateInstall(params *UpdateInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallOK, error)
 
 	UpdateInstallConfig(params *UpdateInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallConfigCreated, error)
@@ -16291,6 +16293,52 @@ func (a *Client) UpdateComponent(params *UpdateComponentParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateCurrentOrgWebhook updates a webhook on the current org
+
+Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
+*/
+func (a *Client) UpdateCurrentOrgWebhook(params *UpdateCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateCurrentOrgWebhookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateCurrentOrgWebhookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateCurrentOrgWebhook",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/current/webhooks/{webhook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateCurrentOrgWebhookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateCurrentOrgWebhookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateCurrentOrgWebhook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
