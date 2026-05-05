@@ -11,10 +11,10 @@ or any components run. This feature is useful for setting up resources that must
 that require permissions the vendor does not need to retain throughout the remainder of an app's lifetime.
 
 <Warning>
-Custom nested stacks are **CloudFormation-only**. The Terraform install module generated for AWS installs does not
-include them — `custom_nested_stacks` entries in `stack.toml` are not translated. If you rely on this feature and your
-customers want to deploy via Terraform, fork [`install-stacks`](https://github.com/nuonco/install-stacks) and add the
-equivalent Terraform resources to your fork.
+Custom nested stacks are **CloudFormation-only**. The Terraform Stack templates do not include them or reference them. If you
+rely on this feature and your customers want to deploy via Terraform, see
+[Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates), to learn how make equivalent changes to
+the Terraform templates.
 </Warning>
 
 ## Use Cases
