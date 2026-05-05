@@ -57,7 +57,7 @@ export const WorkflowsList = () => {
         <select
           value={type}
           onChange={(e) => { setType(e.target.value); setPage(1) }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
         >
           <option value="">All types</option>
           {WORKFLOW_TYPES.map((t) => (
@@ -67,7 +67,7 @@ export const WorkflowsList = () => {
         <select
           value={sort}
           onChange={(e) => { setSort(e.target.value as 'newest' | 'oldest'); setPage(1) }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
         >
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
@@ -87,41 +87,41 @@ export const WorkflowsList = () => {
               <th>Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {workflows.map((wf: any) => {
               const status = getStatus(wf.status)
               return (
                 <tr key={wf.id}>
                   <td>
-                    <Link to={`/workflows/${wf.id}`} className="text-primary-600 hover:text-primary-700 font-mono text-xs">
+                    <Link to={`/workflows/${wf.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-mono text-xs">
                       {truncateId(wf.id)}
                     </Link>
                   </td>
-                  <td className="font-mono text-xs text-gray-900">{wf.type}</td>
-                  <td className="text-gray-500">
-                    <Link to={`/installs/${wf.owner_id}`} className="font-mono text-xs text-primary-600 hover:text-primary-700">
+                  <td className="font-mono text-xs text-gray-900 dark:text-gray-100">{wf.type}</td>
+                  <td className="text-gray-500 dark:text-gray-400">
+                    <Link to={`/installs/${wf.owner_id}`} className="font-mono text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
                       {truncateId(wf.owner_id)}
                     </Link>
-                    <span className="ml-1 text-[11px] text-gray-400">({wf.owner_type})</span>
+                    <span className="ml-1 text-[11px] text-gray-400 dark:text-gray-500">({wf.owner_type})</span>
                   </td>
-                  <td className="text-gray-500 text-xs">{wf.steps?.length ?? 0}</td>
+                  <td className="text-gray-500 dark:text-gray-400 text-xs">{wf.steps?.length ?? 0}</td>
                   <td>
                     <Badge variant="status" status={status}>{status || '-'}</Badge>
                   </td>
-                  <td className="text-gray-500 text-xs">
+                  <td className="text-gray-500 dark:text-gray-400 text-xs">
                     {wf.created_by?.email ? (
-                      <Link to={`/accounts/${wf.created_by_id}`} className="text-primary-600 hover:text-primary-700">{wf.created_by.email}</Link>
+                      <Link to={`/accounts/${wf.created_by_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{wf.created_by.email}</Link>
                     ) : (
                       <span className="font-mono">{truncateId(wf.created_by_id)}</span>
                     )}
                   </td>
-                  <td className="text-gray-500">{formatDate(wf.created_at)}</td>
+                  <td className="text-gray-500 dark:text-gray-400">{formatDate(wf.created_at)}</td>
                 </tr>
               )
             })}
             {workflows.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center text-gray-500 py-6">No workflows found</td>
+                <td colSpan={7} className="text-center text-gray-500 dark:text-gray-400 py-6">No workflows found</td>
               </tr>
             )}
           </tbody>

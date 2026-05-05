@@ -21,18 +21,18 @@ export const SignalGraphView = () => {
   return (
     <div className="-m-6 lg:-m-8 flex flex-col" style={{ height: 'calc(100vh - 3rem)' }}>
       {/* Compact toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white shrink-0">
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <Link to={`/queues/${queueId}/signals/${signalId}`} className="text-primary-600 hover:text-primary-700">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shrink-0">
+        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <Link to={`/queues/${queueId}/signals/${signalId}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
             &larr; Signal {truncateId(signalId || '')}
           </Link>
-          <span className="text-gray-300">|</span>
-          <span className="font-medium text-gray-900">Signal graph</span>
+          <span className="text-gray-300 dark:text-gray-400">|</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">Signal graph</span>
         </div>
         <div className="flex items-center gap-2">
           <Link
             to={`/queues/${queueId}/signals/${signalId}`}
-            className="rounded-md bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200"
+            className="rounded-md bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             Back to detail
           </Link>
@@ -44,7 +44,7 @@ export const SignalGraphView = () => {
         {data?.graph ? (
           <SignalFlowGraph graphData={data.graph} height="100%" />
         ) : (
-          <div className="flex items-center justify-center h-full text-sm text-gray-500">No graph data available</div>
+          <div className="flex items-center justify-center h-full text-sm text-gray-500 dark:text-gray-400">No graph data available</div>
         )}
       </div>
     </div>
