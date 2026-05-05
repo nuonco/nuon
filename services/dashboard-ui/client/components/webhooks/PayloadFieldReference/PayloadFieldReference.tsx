@@ -143,6 +143,28 @@ const ENVELOPE_FIELDS: FieldRow[] = [
     ),
   },
   {
+    field: 'interests',
+    type: 'string[]',
+    presence: 'when classified',
+    description: (
+      <>
+        Slug list produced by Nuon's classifier for this event. Always contains
+        a <span className="font-mono">resource:&lt;kind&gt;</span> and{' '}
+        <span className="font-mono">op:&lt;kind&gt;.&lt;sub-op&gt;</span> slug,
+        plus an <span className="font-mono">event:&lt;…&gt;</span> slug
+        identifying the transition (e.g.{' '}
+        <span className="font-mono">event:lifecycle.succeeded</span>,{' '}
+        <span className="font-mono">event:approval.request</span>,{' '}
+        <span className="font-mono">event:drift.detected</span>) and zero or
+        more <span className="font-mono">outcome:&lt;…&gt;</span> slugs (
+        <span className="font-mono">outcome:completion</span> on terminal
+        events, plus <span className="font-mono">outcome:failures</span> on
+        failed or cancelled transitions). Consumers can route by slug prefix
+        without re-implementing the classifier.
+      </>
+    ),
+  },
+  {
     field: 'data',
     type: 'object',
     presence: 'always',
