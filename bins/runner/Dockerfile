@@ -221,7 +221,8 @@ RUN apk add --no-cache \
     zip \
     openssl \
     helm \
-    python3
+    python3 \
+    oras-cli
 
 # add dependencies
 COPY --from=kaniko /kaniko/* /kaniko/
