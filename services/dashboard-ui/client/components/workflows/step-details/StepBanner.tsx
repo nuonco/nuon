@@ -1,5 +1,7 @@
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Banner } from '@/components/common/Banner'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
 import { getPolicyViolationCounts, getStepBanner } from '@/utils/workflow-utils'
@@ -9,9 +11,13 @@ import { PolicyViolations } from './PolicyViolations'
 export const StepBanner = ({
   step,
   planOnly = false,
+  onDismiss,
+  onViewDetails,
 }: {
   step: TWorkflowStep
   planOnly?: boolean
+  onDismiss?: () => void
+  onViewDetails?: () => void
 }) => {
   const hasApproval = Boolean(step?.approval)
   const bannerCfg = getStepBanner(step)
@@ -32,8 +38,8 @@ export const StepBanner = ({
       {hasApproval && !planOnly && !isTerminal ? (
         <ApprovalBanner step={step} />
       ) : bannerCfg ? (
-        <Banner theme={bannerCfg.theme}>
-          <div className="flex items-center justify-between gap-4">
+        <Banner theme={bannerCfg.theme} onDismiss={onDismiss}>
+          <div className="flex items-end justify-between gap-4">
             <div className="flex flex-col">
               <Text weight="strong">{bannerCfg.title}</Text>
               <Text variant="subtext" theme="neutral">
@@ -46,7 +52,12 @@ export const StepBanner = ({
               ) : null}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex items-end gap-4">
+              {onViewDetails ? (
+                <Button variant="ghost" size="md" onClick={onViewDetails}>
+                  View details <Icon variant="CaretRight" />
+                </Button>
+              ) : null}
               {bannerCfg.theme === 'error' ? (
                 <StepButtons buttonSize="md" step={step} />
               ) : null}
