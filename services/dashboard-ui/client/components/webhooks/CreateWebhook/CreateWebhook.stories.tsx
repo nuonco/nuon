@@ -48,3 +48,18 @@ export const WithGenericError = () => (
     />
   </ModalStory>
 )
+
+export const WithInterestsValidationError = () => (
+  <ModalStory>
+    <CreateWebhookModal
+      isPending={false}
+      error={{
+        error: 'invalid interests: unknown op "foo" for resource "installs"',
+        description: '',
+        user_error: true,
+        status: 400,
+      }}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
