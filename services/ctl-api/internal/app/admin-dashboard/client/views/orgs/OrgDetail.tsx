@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues, updateOrgTags } from '@/lib/admin-api'
+import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
@@ -16,16 +16,12 @@ function getStatus(s: any): string {
   return String(s)
 }
 
-const ORG_TAG_OPTIONS = ['Trial', 'Customer', 'Inactive', 'Priority', 'Demo', 'Employee']
-
 export const OrgDetail = () => {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
   const [installsPage, setInstallsPage] = useState(1)
   const [labelKey, setLabelKey] = useState('')
   const [labelValue, setLabelValue] = useState('')
-  const [editingTags, setEditingTags] = useState(false)
-  const [tagDraft, setTagDraft] = useState<string[]>([])
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['org', id, installsPage],
@@ -46,14 +42,6 @@ export const OrgDetail = () => {
   const removeLabelMutation = useMutation({
     mutationFn: (key: string) => removeOrgLabel(id!, key),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
-  })
-
-  const updateTagsMutation = useMutation({
-    mutationFn: (tags: string[]) => updateOrgTags(id!, tags),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['org', id] })
-      setEditingTags(false)
-    },
   })
 
   const supportMutation = useMutation({
@@ -117,76 +105,40 @@ export const OrgDetail = () => {
         </div>
       </div>
 
-      {/* Tags */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900">Tags</h2>
-          {!editingTags ? (
-            <button
-              onClick={() => {
-                setTagDraft(org.tags || [])
-                setEditingTags(true)
-              }}
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium"
-            >
-              Edit
-            </button>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setEditingTags(false)}
-                className="text-xs text-gray-500 hover:text-gray-700"
-                disabled={updateTagsMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => updateTagsMutation.mutate(tagDraft)}
-                disabled={updateTagsMutation.isPending}
-                className="rounded-md bg-primary-600 px-2 py-1 text-xs font-medium text-white hover:bg-primary-700 disabled:opacity-50"
-              >
-                {updateTagsMutation.isPending ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          )}
-        </div>
-        {!editingTags ? (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {(org.tags || []).map((tag: string) => (
-              <Badge key={tag}>{tag}</Badge>
-            ))}
-            {(org.tags || []).length === 0 && <span className="text-sm text-gray-500">No tags</span>}
-          </div>
-        ) : (
-          <div className="mt-2 grid grid-cols-2 gap-1 sm:grid-cols-3">
-            {ORG_TAG_OPTIONS.map((tag) => {
-              const checked = tagDraft.includes(tag)
-              return (
-                <label
-                  key={tag}
-                  className="flex cursor-pointer items-center gap-2 rounded border border-transparent px-2 py-1.5 text-sm hover:border-primary-200 hover:bg-primary-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) => {
-                      setTagDraft((curr) =>
-                        e.target.checked ? [...curr, tag] : curr.filter((t) => t !== tag),
-                      )
-                    }}
-                    className="rounded border-gray-300"
-                  />
-                  <span>{tag}</span>
-                </label>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Labels (editable) */}
+      {/* Labels */}
       <div className="rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-gray-900">Labels</h2>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[
+            { key: 'demo', label: 'Demo' },
+            { key: 'delete', label: 'Delete' },
+            { key: 'customer-poc', label: 'Customer POC' },
+            { key: 'customer-production', label: 'Customer Production' },
+            { key: 'internal-team', label: 'Internal Team' },
+          ].map(({ key, label }) => {
+            const isSet = orgLabels[key] === 'true'
+            return (
+              <button
+                key={key}
+                onClick={() => {
+                  if (isSet) {
+                    removeLabelMutation.mutate(key)
+                  } else {
+                    addLabelMutation.mutate({ [key]: 'true' })
+                  }
+                }}
+                disabled={addLabelMutation.isPending || removeLabelMutation.isPending}
+                className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
+                  isSet
+                    ? 'bg-primary-100 border-primary-300 text-primary-700'
+                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
         {Object.keys(orgLabels).length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-2">
             {Object.entries(orgLabels).map(([key, value]) => (

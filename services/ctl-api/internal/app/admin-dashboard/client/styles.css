@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SFMono-Regular', monospace;
@@ -64,6 +66,7 @@
   --ease-cubic: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
+/* ---- Light mode (default) ---- */
 body {
   min-height: 100vh;
   letter-spacing: -0.011em;
@@ -71,6 +74,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #FAFAFA;
   color: #272E35;
+}
+
+/* ---- Dark mode ---- */
+.dark body, body.dark {
+  background-color: #0f1117;
+  color: #d1d5db;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 #root {
@@ -81,27 +94,27 @@ body {
 
 /* Card-style tables */
 .table-card {
-  @apply overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm;
+  @apply overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800;
 }
 
 .table-card table {
-  @apply min-w-full divide-y divide-gray-200;
+  @apply min-w-full divide-y divide-gray-200 dark:divide-gray-700;
 }
 
 .table-card thead {
-  @apply bg-gray-50/80;
+  @apply bg-gray-50/80 dark:bg-gray-800/80;
 }
 
 .table-card th {
-  @apply px-4 py-2.5 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider;
+  @apply px-4 py-2.5 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider dark:text-gray-400;
 }
 
 .table-card td {
-  @apply px-4 py-2.5 text-sm;
+  @apply px-4 py-2.5 text-sm dark:text-gray-300;
 }
 
 .table-card tbody tr {
-  @apply transition-colors duration-100 hover:bg-gray-50/50;
+  @apply transition-colors duration-100 hover:bg-gray-50/50 dark:hover:bg-gray-700/50;
 }
 
 /* Better focus rings */
@@ -110,16 +123,153 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 1px white, 0 0 0 3px rgba(128, 64, 191, 0.4);
 }
 
+.dark input:focus, .dark select:focus, .dark textarea:focus {
+  box-shadow: 0 0 0 1px #1f2937, 0 0 0 3px rgba(173, 113, 234, 0.4);
+}
+
 /* Link styles */
 a.link {
-  @apply text-primary-600 hover:text-primary-700 transition-colors duration-100;
+  @apply text-primary-600 hover:text-primary-700 transition-colors duration-100 dark:text-primary-400 dark:hover:text-primary-300;
 }
 
 /* Subtle page heading */
 .page-heading {
-  @apply text-xl font-semibold tracking-tight text-gray-900;
+  @apply text-xl font-semibold tracking-tight text-gray-900 dark:text-gray-100;
 }
 
 .page-subheading {
-  @apply mt-1 text-sm text-gray-500;
+  @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
 }
+
+/* Dark mode overrides for common patterns */
+.dark input, .dark select, .dark textarea {
+  background-color: #1f2937;
+  color: #d1d5db;
+  border-color: #374151;
+  --tw-ring-color: #374151;
+  --tw-shadow-color: transparent;
+}
+
+.dark input::placeholder, .dark select::placeholder, .dark textarea::placeholder {
+  color: #6b7280;
+}
+
+/* Dark mode tables (non-.table-card) */
+.dark table thead {
+  @apply bg-gray-800;
+}
+
+.dark table tbody {
+  @apply divide-gray-700;
+}
+
+.dark table th {
+  @apply text-gray-400;
+}
+
+.dark table td {
+  @apply text-gray-300;
+}
+
+.dark table tbody tr:hover {
+  @apply bg-gray-800/50;
+}
+
+/* ---- Dark mode global overrides ---- */
+
+/* Text */
+.dark .text-gray-900 { color: #f9fafb; }
+.dark .text-gray-800 { color: #e5e7eb; }
+.dark .text-gray-700 { color: #d1d5db; }
+.dark .text-gray-600 { color: #9ca3af; }
+.dark .text-gray-500 { color: #9ca3af; }
+.dark .text-gray-400 { color: #6b7280; }
+
+/* Backgrounds */
+.dark .bg-white { background-color: #111827; }
+.dark .bg-gray-50 { background-color: #1a2332; }
+.dark .bg-gray-100 { background-color: #1f2937; }
+.dark .bg-gray-50\/80 { background-color: rgba(26, 35, 50, 0.8); }
+.dark .bg-gray-50\/50 { background-color: rgba(26, 35, 50, 0.5); }
+.dark .bg-gray-50\/30 { background-color: rgba(26, 35, 50, 0.3); }
+
+/* Borders & dividers */
+.dark .border-gray-200 { border-color: #2d3748; }
+.dark .border-gray-100 { border-color: #1f2937; }
+.dark .divide-gray-200 > :not(:last-child) { border-color: #2d3748; }
+.dark .divide-gray-50 > :not(:last-child) { border-color: #1f2937; }
+.dark .ring-gray-300 { --tw-ring-color: #374151; }
+
+/* Hover states */
+.dark [class*="hover:bg-gray-50"]:hover {
+  background-color: rgba(31, 41, 55, 0.6) !important;
+}
+
+/* Blue (labels, links) */
+.dark .bg-blue-50 { background-color: rgba(30, 80, 192, 0.2); }
+.dark .bg-blue-50\/30 { background-color: rgba(30, 80, 192, 0.15); }
+.dark .border-blue-200 { border-color: #2759cd; }
+.dark .border-blue-100 { border-color: #1e50c0; }
+.dark .text-blue-700 { color: #8db0fb; }
+.dark .text-blue-600 { color: #8db0fb; }
+.dark .text-blue-400 { color: #6792f4; }
+
+/* Purple (primary, mng panels) */
+.dark .bg-primary-50 { background-color: rgba(128, 64, 191, 0.15); }
+.dark .bg-primary-100 { background-color: rgba(128, 64, 191, 0.2); }
+.dark .bg-primary-600 { background-color: #7339ac; }
+.dark .bg-primary-600:hover { background-color: #8040bf; }
+.dark .border-primary-200 { border-color: #662f9d; }
+.dark .border-primary-300 { border-color: #7339ac; }
+.dark .text-primary-700 { color: #c494f4; }
+.dark .text-primary-600 { color: #c494f4; }
+.dark .bg-purple-50\/30 { background-color: rgba(128, 64, 191, 0.1); }
+.dark .border-purple-100 { border-color: #4c2277; }
+
+/* Green */
+.dark .bg-green-50 { background-color: rgba(30, 113, 74, 0.2); }
+.dark .bg-green-100 { background-color: rgba(30, 113, 74, 0.25); }
+.dark .text-green-700 { color: #75cc9e; }
+.dark .text-green-600 { color: #75cc9e; }
+
+/* Orange / Yellow */
+.dark .bg-orange-50 { background-color: rgba(180, 97, 14, 0.2); }
+.dark .bg-orange-100 { background-color: rgba(180, 97, 14, 0.25); }
+.dark .text-orange-700 { color: #feb872; }
+.dark .text-orange-600 { color: #feb872; }
+.dark .text-orange-500 { color: #feb872; }
+.dark .bg-yellow-50 { background-color: rgba(180, 97, 14, 0.15); }
+.dark .border-yellow-200 { border-color: #7a4510; }
+.dark .text-yellow-700, .dark .text-yellow-800 { color: #feb872; }
+
+/* Red */
+.dark .bg-red-50 { background-color: rgba(185, 28, 28, 0.2); }
+.dark .bg-red-100 { background-color: rgba(185, 28, 28, 0.25); }
+.dark .text-red-700 { color: #f87171; }
+.dark .text-red-600 { color: #f87171; }
+.dark .text-red-500 { color: #f87171; }
+
+/* SVG pie chart text */
+.dark svg text.fill-gray-700 { fill: #d1d5db; }
+.dark svg text { fill: #d1d5db; }
+.dark svg circle[stroke="#e5e7eb"] { stroke: #374151; }
+
+/* Code blocks */
+.dark pre, .dark code {
+  background-color: #1a2332;
+  color: #d1d5db;
+}
+
+/* Job bars */
+.dark .bg-gray-400 { background-color: #4b5563; }
+.dark .bg-blue-300 { background-color: #3062d4; }
+
+/* Pill toggle buttons (org labels) */
+.dark .bg-gray-50.border-gray-200 {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
+/* Scrollbar */
+.dark ::-webkit-scrollbar { background: #0f1117; }
+.dark ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
