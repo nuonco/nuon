@@ -247,10 +247,10 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 		return
 	}
 
-	// Re-read the saved config to get the full record
+	// Re-read the saved config to get the full record (match both job_type and operation)
 	var saved app.SandboxModeJobConfig
 	s.db.WithContext(c.Request.Context()).
-		Where(app.SandboxModeJobConfig{JobType: jobType}).
+		Where(map[string]interface{}{"job_type": jobType, "operation": req.Operation}).
 		First(&saved)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -268,6 +268,17 @@ func (s *service) SandboxModeDisableAllSignals(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "disabled"})
+}
+
+func (s *service) SandboxModeDeleteRunnerJobConfig(c *gin.Context) {
+	configID := c.Param("config_id")
+	if res := s.db.WithContext(c.Request.Context()).
+		Where("id = ?", configID).
+		Delete(&app.SandboxModeJobConfig{}); res.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": res.Error.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"deleted": true})
 }
 
 func (s *service) SandboxModeDisableAllRunnerJobs(c *gin.Context) {
