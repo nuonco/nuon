@@ -87,7 +87,7 @@ export const BuildDetail = () => {
   })
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div className="flex flex-col flex-1">
       <PageTitle title={`Build | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
