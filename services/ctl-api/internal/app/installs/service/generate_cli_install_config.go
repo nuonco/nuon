@@ -7,6 +7,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iancoleman/strcase"
@@ -52,8 +53,14 @@ func (s *service) GenerateCLIInstallConfig(ctx *gin.Context) {
 		return
 	}
 
+	// Add a comment above the approval_option field to document valid values
+	output := strings.Replace(response.String(),
+		"approval_option = ",
+		"# Valid options: 'prompt' (default, requires manual approval) or 'approve-all' (automatic approval)\napproval_option = ",
+		1)
+
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.toml\"", strcase.ToSnake(installCfg.Name)))
-	ctx.Data(http.StatusOK, "application/octet-stream", response.Bytes())
+	ctx.Data(http.StatusOK, "application/octet-stream", []byte(output))
 }
 
 func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*config.Install, error) {
@@ -79,7 +86,14 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	}
 
 	if installConfig != nil {
-		installCfg.ApprovalOption = config.InstallApprovalOption(installConfig.ApprovalOption)
+		// Normalize the approval option: "auto" and empty both map to "prompt" in the generated config.
+		approvalOpt := config.InstallApprovalOption(installConfig.ApprovalOption)
+		switch approvalOpt {
+		case config.InstallApprovalOptionApproveAll:
+			installCfg.ApprovalOption = config.InstallApprovalOptionApproveAll
+		default:
+			installCfg.ApprovalOption = config.InstallApprovalOptionPrompt
+		}
 
 		so := &config.InstallStackOverrides{}
 		if installConfig.VPCNestedTemplateURL != nil {

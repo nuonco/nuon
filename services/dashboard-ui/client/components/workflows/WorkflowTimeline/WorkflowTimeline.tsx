@@ -95,6 +95,16 @@ export const WorkflowTimeline = ({
                     cron scheduled
                   </Badge>
                 ) : null}
+                {workflow?.approval_option === 'approve-all' &&
+                workflow?.metadata?.approval_type ? (
+                  <Badge variant="code" size="sm">
+                    {workflow.metadata.approval_type === 'approve-workflow'
+                      ? 'auto-approve (workflow)'
+                      : workflow.metadata.approval_type === 'install-config'
+                        ? 'auto-approve (config)'
+                        : 'auto-approve'}
+                  </Badge>
+                ) : null}
               </span>
             }
             badge={getWorkflowBadge(workflow)}

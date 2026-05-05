@@ -37,6 +37,14 @@ func (s *Signal) runAutoApprovalCheck(ctx workflow.Context, step *app.WorkflowSt
 		return false, nil
 	}
 
+	// Determine the approval source from workflow status metadata
+	approvalType := "unknown"
+	if at, ok := flw.Status.Metadata["approval_type"]; ok {
+		if s, ok := at.(string); ok {
+			approvalType = s
+		}
+	}
+
 	// Create approval response
 	_, err := activities.AwaitCreateApprovalResponse(ctx, activities.CreateStepApprovalResponseRequest{
 		StepApprovalID: step.Approval.ID,
@@ -57,6 +65,7 @@ func (s *Signal) runAutoApprovalCheck(ctx workflow.Context, step *app.WorkflowSt
 				"step_idx":      step.Idx,
 				"status":        "auto-approved",
 				"auto_approved": true,
+				"approval_type": approvalType,
 			},
 		},
 	}); err != nil {
@@ -70,8 +79,9 @@ func (s *Signal) runAutoApprovalCheck(ctx workflow.Context, step *app.WorkflowSt
 			Status:                 app.StatusInProgress,
 			StatusHumanDescription: "auto-approved step " + strconv.Itoa(step.Idx+1),
 			Metadata: map[string]any{
-				"step_idx": step.Idx,
-				"status":   "auto-approved",
+				"step_idx":      step.Idx,
+				"status":        "auto-approved",
+				"approval_type": approvalType,
 			},
 		},
 	}); err != nil {

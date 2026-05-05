@@ -38,13 +38,14 @@ func (s *service) SandboxMode(c *gin.Context) {
 	stackConfig, _ := s.getSandboxStackConfig(ctx)
 
 	c.JSON(http.StatusOK, gin.H{
-		"runner_job_configs":   runnerJobConfigs,
-		"signal_configs":       signalConfigs,
-		"stack_config":         stackConfig,
-		"all_signal_types":     signals.AllSignalTypes(),
-		"all_runner_job_types": sandboxmode.AllRunnerJobTypes(),
-		"templates":            sbtemplates.AllTemplates(),
-		"flow_templates":       sbtemplates.FlowTemplates(),
+		"runner_job_configs":             runnerJobConfigs,
+		"signal_configs":                 signalConfigs,
+		"stack_config":                   stackConfig,
+		"all_signal_types":               signals.AllSignalTypes(),
+		"all_runner_job_types":           sandboxmode.AllRunnerJobTypes(),
+		"all_runner_job_operation_types": sandboxmode.AllRunnerJobOperationTypes(),
+		"templates":                      sbtemplates.AllTemplates(),
+		"flow_templates":                 sbtemplates.FlowTemplates(),
 	})
 }
 
