@@ -161,7 +161,7 @@ export const DotGraph = ({ dot, height = '24rem' }: IDotGraph) => {
   if (!dot) return null
   if (nodes.length === 0) {
     return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
         <p>No graph nodes found. Raw DOT:</p>
         <pre className="mt-2 text-xs font-mono overflow-x-auto max-h-32">{dot}</pre>
       </div>
@@ -169,7 +169,7 @@ export const DotGraph = ({ dot, height = '24rem' }: IDotGraph) => {
   }
 
   return (
-    <div className="w-full border border-gray-200 rounded-lg overflow-hidden" style={{ height }}>
+    <div className="w-full border border-gray-200 rounded-lg overflow-hidden dark:border-gray-800" style={{ height }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
