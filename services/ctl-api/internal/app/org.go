@@ -71,6 +71,7 @@ const (
 	// flag only affects the build runner.
 	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
+	OrgFeatureNativeAWSProvisioner    OrgFeature = "native-aws-provisioner"
 )
 
 type Org struct {
@@ -187,6 +188,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureAppBranchesUI:           false,
+		OrgFeatureNativeAWSProvisioner:    false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -261,6 +263,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDeployOutputs,
 		OrgFeatureTerraformProviderMirror,
 		OrgFeatureAppBranchesUI,
+		OrgFeatureNativeAWSProvisioner,
 	}
 }
 
@@ -296,6 +299,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureDeployOutputs:           "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
 		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
 		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
+		OrgFeatureNativeAWSProvisioner:    "When enabled, creating an install does not start a provision workflow. Persists the install and an install stack version only; the AWS-native SDK provisioner drives provisioning out-of-band.",
 	}
 }
 

@@ -81,6 +81,27 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
+	nativeProvisioner, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureNativeAWSProvisioner)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking native-aws-provisioner feature: %w", err))
+		return
+	}
+	if nativeProvisioner {
+		if _, err := s.helpers.CreateInstallStackVersionForInstall(ctx, install); err != nil {
+			ctx.Error(fmt.Errorf("create install stack version: %w", err))
+			return
+		}
+		// Update user journey step for first install creation (kept for parity).
+		user, err := cctx.AccountFromGinContext(ctx)
+		if err == nil {
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {
+				s.l.Warn("failed to update user journey for first install create", zap.Error(err))
+			}
+		}
+		ctx.JSON(http.StatusCreated, install)
+		return
+	}
+
 	workflow, err := s.helpers.CreateWorkflow(ctx,
 		install.ID,
 		app.WorkflowTypeProvision,
@@ -218,6 +239,26 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 	install, err := s.helpers.CreateInstall(ctx, appID, &req.CreateInstallParams)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
+		return
+	}
+
+	nativeProvisioner, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureNativeAWSProvisioner)
+	if err != nil {
+		ctx.Error(fmt.Errorf("checking native-aws-provisioner feature: %w", err))
+		return
+	}
+	if nativeProvisioner {
+		if _, err := s.helpers.CreateInstallStackVersionForInstall(ctx, install); err != nil {
+			ctx.Error(fmt.Errorf("create install stack version: %w", err))
+			return
+		}
+		user, err := cctx.AccountFromGinContext(ctx)
+		if err == nil {
+			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {
+				s.l.Warn("failed to update user journey for first install create", zap.Error(err))
+			}
+		}
+		ctx.JSON(http.StatusCreated, install)
 		return
 	}
 

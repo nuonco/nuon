@@ -10,6 +10,7 @@ import (
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -43,6 +44,7 @@ type Params struct {
 	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
 	FeaturesClient   *features.Features
+	AccountsClient   *account.Client
 }
 
 type Helpers struct {
@@ -55,6 +57,7 @@ type Helpers struct {
 	evClient         eventloop.Client
 	queueClient      *queueclient.Client
 	featuresClient   *features.Features
+	accountsClient   *account.Client
 }
 
 func New(params Params) *Helpers {
@@ -68,5 +71,6 @@ func New(params Params) *Helpers {
 		evClient:         params.EvClient,
 		queueClient:      params.QueueClient,
 		featuresClient:   params.FeaturesClient,
+		accountsClient:   params.AccountsClient,
 	}
 }
