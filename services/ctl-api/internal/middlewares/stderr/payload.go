@@ -2,6 +2,8 @@ package stderr
 
 import (
 	"errors"
+
+	"go.temporal.io/sdk/temporal"
 )
 
 // StepErrorPayload is the structured side-channel attached to a Temporal
@@ -114,6 +116,28 @@ func ErrUserFromMeta(meta map[string]any, msg string) (ErrUser, bool) {
 		return ErrUser{}, false
 	}
 	return ErrUserFromPayload(p, msg), true
+}
+
+// ExtractUserError recovers a typed ErrUser from err, walking both Go's
+// Unwrap chain (for direct ErrUser wraps) and Temporal's
+// ApplicationError.Details side-channel (used to ferry the typed payload
+// across the activity → workflow boundary). Returns the zero value and
+// false when err carries no user-error metadata.
+//
+// This is the single entry point conductor / step-handling code should
+// use; callers should not reach into temporal.ApplicationError directly.
+func ExtractUserError(err error) (ErrUser, bool) {
+	if u, ok := IsUserError(err); ok {
+		return u, true
+	}
+	var appErr *temporal.ApplicationError
+	if errors.As(err, &appErr) && appErr.HasDetails() {
+		var p StepErrorPayload
+		if dErr := appErr.Details(&p); dErr == nil && !p.IsZero() {
+			return ErrUserFromPayload(p, appErr.Message()), true
+		}
+	}
+	return ErrUser{}, false
 }
 
 // coerceStringMap converts a map-typed any into a map[string]string,

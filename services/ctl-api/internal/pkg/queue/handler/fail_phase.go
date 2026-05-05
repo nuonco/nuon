@@ -46,7 +46,11 @@ func (h *handler) failPhase(ctx workflow.Context, finishedAtKey string, wrapErr,
 		StatusDescription: humanDesc,
 		Metadata:          meta,
 	})
-	h.setFinishedWithMeta(app.StatusError, humanDesc, userMeta)
+	// Pass the full merged meta (including the finishedAt timestamp) so
+	// FinishedResponse.Metadata stays consistent with what we just
+	// persisted to the DB; AwaitSignal's fast path relies on that
+	// equivalence.
+	h.setFinishedWithMeta(app.StatusError, humanDesc, meta)
 
 	if payload.IsZero() {
 		return temporal.NewNonRetryableApplicationError("signal failure", humanDesc, wrapErr)

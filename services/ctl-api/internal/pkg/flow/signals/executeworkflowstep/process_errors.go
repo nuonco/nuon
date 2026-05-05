@@ -1,10 +1,7 @@
 package executeworkflowstep
 
 import (
-	stderrors "errors"
-
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -31,7 +28,7 @@ import (
 //
 //  3. Otherwise, mark the step failed and return the error.
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
-	if u, ok := extractUserError(stepErr); ok {
+	if u, ok := stderr.ExtractUserError(stepErr); ok {
 		switch u.Directive {
 		case stderr.StepDirectiveStop:
 			return s.markStepStopped(ctx, l, step, u, stepErr)
@@ -183,13 +180,10 @@ func (s *Signal) markStepStopped(ctx workflow.Context, l *zap.Logger, step *app.
 		desc = stepHumanDescription(stepErr)
 	}
 
-	meta := map[string]any{
+	meta := mergeUserMetadata(map[string]any{
 		"reason":   stepErr.Error(),
 		"terminal": true,
-	}
-	for k, v := range stderr.MetadataFromErrUser(u) {
-		meta[k] = v
-	}
+	}, u)
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
@@ -220,27 +214,21 @@ func (s *Signal) markStepSkippedFromUserError(ctx workflow.Context, l *zap.Logge
 	if u.Description != "" {
 		extra["description"] = u.Description
 	}
-	for k, v := range stderr.MetadataFromErrUser(u) {
-		extra[k] = v
-	}
+	extra = mergeUserMetadata(extra, u)
 
 	return writeDirective(ctx, step.ID, DirectiveContinue, extra)
 }
 
-// extractUserError recovers a typed stderr.ErrUser from stepErr, walking
-// both Go's Unwrap chain and the Temporal ApplicationError details set by
-// AwaitSignal. Returns the zero value and false when stepErr is not a user
-// error.
-func extractUserError(stepErr error) (stderr.ErrUser, bool) {
-	if u, ok := stderr.IsUserError(stepErr); ok {
-		return u, true
-	}
-	var appErr *temporal.ApplicationError
-	if stderrors.As(stepErr, &appErr) && appErr.HasDetails() {
-		var p stderr.StepErrorPayload
-		if err := appErr.Details(&p); err == nil && !p.IsZero() {
-			return stderr.ErrUserFromPayload(p, appErr.Message()), true
+// mergeUserMetadata copies the StepErrorPayload-derived metadata
+// (error_code / error_fields / step_directive) from u into base in place
+// and returns it. base must be non-nil. Existing keys in base are
+// preserved on collision (the caller's seed takes precedence).
+func mergeUserMetadata(base map[string]any, u stderr.ErrUser) map[string]any {
+	for k, v := range stderr.MetadataFromErrUser(u) {
+		if _, exists := base[k]; exists {
+			continue
 		}
+		base[k] = v
 	}
-	return stderr.ErrUser{}, false
+	return base
 }

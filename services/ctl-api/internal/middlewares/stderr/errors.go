@@ -39,8 +39,13 @@ type ErrUser struct {
 	Err         error
 	Description string
 	Code        string
-	Fields      map[string]string
-	Directive   StepDirective
+	// Fields may be nil when the producer supplied no structured context.
+	// Consumers MUST treat nil as equivalent to an empty map and MUST NOT
+	// write into Fields without first nil-checking and allocating — the
+	// map is shared across the error's lifetime (HTTP response, Temporal
+	// payload, DB metadata) and producers do not deep-copy it.
+	Fields    map[string]string
+	Directive StepDirective
 }
 
 func (u ErrUser) Error() string {
