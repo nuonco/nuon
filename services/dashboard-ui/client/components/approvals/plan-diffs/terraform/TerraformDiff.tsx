@@ -91,7 +91,7 @@ export function TerraformDiff({ plan }: { plan: TTerraformPlan | undefined }) {
               View plan graph <Icon variant="NetworkXIcon" />
             </>
           ),
-          variant: 'ghost',
+          variant: 'secondary',
         }}
         size="xl"
       >
