@@ -14,8 +14,8 @@ import (
 
 type AdminUpsertSandboxSignalConfigRequest struct {
 	Enabled       *bool         `json:"enabled"`
-	DeadlockSleep time.Duration `json:"deadlock_sleep"`
-	WorkflowSleep time.Duration `json:"workflow_sleep"`
+	DeadlockSleep time.Duration `json:"deadlock_sleep" swaggertype:"primitive,integer"`
+	WorkflowSleep time.Duration `json:"workflow_sleep" swaggertype:"primitive,integer"`
 	Panic         bool          `json:"panic"`
 	Error         string        `json:"error"`
 	ValidateError string        `json:"validate_error"`
