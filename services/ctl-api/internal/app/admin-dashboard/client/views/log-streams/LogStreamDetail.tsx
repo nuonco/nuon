@@ -12,17 +12,17 @@ function severityColor(severity: string): string {
   switch (severity?.toUpperCase()) {
     case 'ERROR':
     case 'FATAL':
-      return 'text-red-600'
+      return 'text-red-600 dark:text-red-400'
     case 'WARN':
     case 'WARNING':
       return 'text-orange-500'
     case 'INFO':
-      return 'text-blue-600'
+      return 'text-blue-600 dark:text-blue-400'
     case 'DEBUG':
     case 'TRACE':
-      return 'text-gray-400'
+      return 'text-gray-400 dark:text-gray-500'
     default:
-      return 'text-gray-600'
+      return 'text-gray-600 dark:text-gray-400'
   }
 }
 
@@ -48,20 +48,20 @@ function AttributeTable({ title, attrs }: { title: string; attrs: Record<string,
   if (!attrs || Object.keys(attrs).length === 0) return null
   return (
     <div>
-      <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">{title}</h4>
-      <div className="rounded border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">{title}</h4>
+      <div className="rounded border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500">Key</th>
-              <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500">Value</th>
+              <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Key</th>
+              <th className="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Value</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {Object.entries(attrs).map(([key, value]) => (
               <tr key={key}>
-                <td className="px-3 py-1.5 text-xs font-mono text-gray-700 whitespace-nowrap">{key}</td>
-                <td className="px-3 py-1.5 text-xs font-mono text-gray-900 break-all">{value}</td>
+                <td className="px-3 py-1.5 text-xs font-mono text-gray-700 dark:text-gray-300 whitespace-nowrap">{key}</td>
+                <td className="px-3 py-1.5 text-xs font-mono text-gray-900 dark:text-gray-100 break-all">{value}</td>
               </tr>
             ))}
           </tbody>
@@ -112,19 +112,19 @@ export const LogStreamDetail = () => {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="text-sm text-gray-500">
-        <Link to="/log-streams" className="text-primary-600 hover:text-primary-800">Log Streams</Link>
+      <nav className="text-sm text-gray-500 dark:text-gray-400">
+        <Link to="/log-streams" className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">Log Streams</Link>
         <span className="mx-1">/</span>
         <span className="font-mono">{truncateId(log_stream.id)}</span>
       </nav>
 
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Log Stream</h1>
-        <p className="mt-1 text-sm text-gray-500 font-mono">{log_stream.id}</p>
-        <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-4 text-sm text-gray-500">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Log Stream</h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{log_stream.id}</p>
+        <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-4 text-sm text-gray-500 dark:text-gray-400">
           <div>
-            Org: <Link to={`/orgs/${log_stream.org_id}`} className="text-primary-600 hover:text-primary-800 font-mono">{truncateId(log_stream.org_id)}</Link>
+            Org: <Link to={`/orgs/${log_stream.org_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-mono">{truncateId(log_stream.org_id)}</Link>
           </div>
           <div>
             Owner: <span className="font-mono text-xs">{truncateId(log_stream.owner_id)}</span>{' '}
@@ -135,40 +135,40 @@ export const LogStreamDetail = () => {
       </div>
 
       {/* Logs */}
-      <div className="table-card rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">
+      <div className="table-card rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
           Logs
           {logs.length > 0 && (
-            <span className="ml-2 text-xs font-normal text-gray-500">
+            <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
               (page {logsData?.page || data?.page || logsPage} of {totalPages})
             </span>
           )}
         </h2>
         <div className="mt-2 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+            <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="w-8 px-2 py-3"></th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Body</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Timestamp</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Severity</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Service</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Body</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
               {logs.map((log: any, i: number) => {
                 const isExpanded = expandedRows.has(i)
                 return (
                   <>
                     <tr
                       key={`row-${i}`}
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                       onClick={() => toggleRow(i)}
                     >
-                      <td className="px-2 py-3 text-xs text-gray-400">
+                      <td className="px-2 py-3 text-xs text-gray-400 dark:text-gray-500">
                         {isExpanded ? '\u25BC' : '\u25B6'}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 font-mono">
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 dark:text-gray-400 font-mono">
                         {formatDate(log.timestamp)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-xs">
@@ -176,16 +176,16 @@ export const LogStreamDetail = () => {
                           {log.severity_text || '-'}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-700 dark:text-gray-300">
                         {log.service_name || '-'}
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-900 max-w-lg truncate">
+                      <td className="px-4 py-3 text-xs text-gray-900 dark:text-gray-100 max-w-lg truncate">
                         {log.body}
                       </td>
                     </tr>
                     {isExpanded && (
                       <tr key={`detail-${i}`}>
-                        <td colSpan={5} className="px-4 py-4 bg-gray-50">
+                        <td colSpan={5} className="px-4 py-4 bg-gray-50 dark:bg-gray-900">
                           <div className="space-y-4">
                             {/* Core details */}
                             <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -202,8 +202,8 @@ export const LogStreamDetail = () => {
                                 .filter(({ value }) => value)
                                 .map(({ label, value }) => (
                                   <div key={label}>
-                                    <div className="text-xs text-gray-500">{label}</div>
-                                    <div className="text-xs font-mono text-gray-900 break-all">{value}</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
+                                    <div className="text-xs font-mono text-gray-900 dark:text-gray-100 break-all">{value}</div>
                                   </div>
                                 ))}
                             </div>
@@ -211,8 +211,8 @@ export const LogStreamDetail = () => {
                             {/* Full body */}
                             {log.body && log.body.length > 80 && (
                               <div>
-                                <h4 className="text-xs font-semibold text-gray-500 uppercase mb-1">Full Body</h4>
-                                <pre className="text-xs font-mono text-gray-900 bg-white border border-gray-200 rounded p-3 overflow-x-auto whitespace-pre-wrap break-all">
+                                <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-1">Full Body</h4>
+                                <pre className="text-xs font-mono text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded p-3 overflow-x-auto whitespace-pre-wrap break-all">
                                   {log.body}
                                 </pre>
                               </div>
@@ -231,7 +231,7 @@ export const LogStreamDetail = () => {
               })}
               {logs.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">No logs</td>
+                  <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No logs</td>
                 </tr>
               )}
             </tbody>

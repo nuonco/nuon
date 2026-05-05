@@ -32,7 +32,7 @@ export const AccountsList = () => {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Accounts</h1>
+      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Accounts</h1>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="w-full sm:w-64">
@@ -45,8 +45,8 @@ export const AccountsList = () => {
               onClick={() => { setAccountType(opt.value); setPage(1) }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                 accountType === opt.value
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {opt.label}
@@ -56,35 +56,35 @@ export const AccountsList = () => {
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Roles</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Roles</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
             {accounts.map((account) => (
-              <tr key={account.id} className="hover:bg-gray-50">
+              <tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
-                  <Link to={`/accounts/${account.id}`} className="text-primary-600 hover:text-primary-800 font-medium">
+                  <Link to={`/accounts/${account.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-medium">
                     {account.email}
                   </Link>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(account.id)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">{truncateId(account.id)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-sm">
                   <Badge>{account.account_type}</Badge>
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{account.roles?.length ?? 0}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(account.created_at)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{account.roles?.length ?? 0}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(account.created_at)}</td>
               </tr>
             ))}
             {accounts.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500">No accounts found</td>
+                <td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No accounts found</td>
               </tr>
             )}
           </tbody>

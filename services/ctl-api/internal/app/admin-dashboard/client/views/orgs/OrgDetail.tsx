@@ -69,10 +69,10 @@ export const OrgDetail = () => {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1 text-sm text-gray-500">
-        <Link to="/orgs" className="text-primary-600 hover:text-primary-700">Orgs</Link>
+      <nav className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
+        <Link to="/orgs" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">Orgs</Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{org.name}</span>
+        <span className="text-gray-900 dark:text-gray-100 font-medium">{org.name}</span>
       </nav>
 
       {/* Header */}
@@ -84,30 +84,30 @@ export const OrgDetail = () => {
               href={`${app_url}/${org.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700"
+              className="inline-flex items-center gap-1 rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600"
             >
               View Dashboard
             </a>
           )}
         </div>
-        <p className="mt-1 text-sm text-gray-500 font-mono">{org.id}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 font-mono">{org.id}</p>
         <div className="mt-2 flex items-center gap-2">
           {org.status && (
             <Badge variant="status" status={getStatus(org.status)}>{getStatus(org.status)}</Badge>
           )}
           {org.status_description && (
-            <span className="text-xs text-gray-500">{org.status_description}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">{org.status_description}</span>
           )}
         </div>
-        <div className="mt-2 text-xs text-gray-500 flex gap-4">
+        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex gap-4">
           <span>Created: {formatDate(org.created_at)}</span>
           <span>Updated: {formatDate(org.updated_at)}</span>
         </div>
       </div>
 
       {/* Labels */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Labels</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Labels</h2>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {[
             { key: 'demo', label: 'Demo' },
@@ -130,8 +130,8 @@ export const OrgDetail = () => {
                 disabled={addLabelMutation.isPending || removeLabelMutation.isPending}
                 className={`rounded-full px-3 py-1 text-xs font-medium border transition-colors ${
                   isSet
-                    ? 'bg-primary-100 border-primary-300 text-primary-700'
-                    : 'bg-gray-50 border-gray-200 text-gray-500 hover:border-gray-300'
+                    ? 'bg-primary-100 dark:bg-primary-900/40 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-300'
+                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 {label}
@@ -142,10 +142,10 @@ export const OrgDetail = () => {
         {Object.keys(orgLabels).length > 0 ? (
           <div className="mt-2 flex flex-wrap gap-2">
             {Object.entries(orgLabels).map(([key, value]) => (
-              <span key={key} className="inline-flex items-center gap-1 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-mono">
-                <span className="text-blue-700">{key}</span>
+              <span key={key} className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-xs font-mono">
+                <span className="text-blue-700 dark:text-blue-300">{key}</span>
                 <span className="text-blue-400">=</span>
-                <span className="text-blue-600">{String(value)}</span>
+                <span className="text-blue-600 dark:text-blue-400">{String(value)}</span>
                 <button
                   onClick={() => removeLabelMutation.mutate(key)}
                   disabled={removeLabelMutation.isPending}
@@ -157,7 +157,7 @@ export const OrgDetail = () => {
             ))}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-gray-500">No labels</p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No labels</p>
         )}
         <div className="mt-2 flex gap-2">
           <input
@@ -165,7 +165,7 @@ export const OrgDetail = () => {
             value={labelKey}
             onChange={(e) => setLabelKey(e.target.value)}
             placeholder="Key"
-            className="block w-32 rounded-md border-0 py-1.5 px-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400"
+            className="block w-32 rounded-md border-0 py-1.5 px-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 placeholder:text-gray-400"
           />
           <input
             type="text"
@@ -173,12 +173,12 @@ export const OrgDetail = () => {
             onChange={(e) => setLabelValue(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAddLabel()}
             placeholder="Value"
-            className="block w-40 rounded-md border-0 py-1.5 px-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400"
+            className="block w-40 rounded-md border-0 py-1.5 px-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 placeholder:text-gray-400"
           />
           <button
             onClick={handleAddLabel}
             disabled={addLabelMutation.isPending}
-            className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+            className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50"
           >
             Add
           </button>
@@ -187,11 +187,11 @@ export const OrgDetail = () => {
 
       {/* Most Recent App */}
       {recent_app && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Most Recent App</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Most Recent App</h2>
           <div className="mt-2 space-y-1">
-            <p className="text-sm text-gray-900 font-medium">{recent_app.name}</p>
-            <p className="text-xs text-gray-500 font-mono">{recent_app.id}</p>
+            <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">{recent_app.name}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{recent_app.id}</p>
             {recent_app.status && (
               <Badge variant="status" status={getStatus(recent_app.status)}>{getStatus(recent_app.status)}</Badge>
             )}
@@ -201,8 +201,8 @@ export const OrgDetail = () => {
 
       {/* Component Graph */}
       {graph_dot && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900">Component dependency graph</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Component dependency graph</h2>
           <div className="mt-2">
             <DotGraph dot={graph_dot} height="28rem" />
           </div>
@@ -210,37 +210,37 @@ export const OrgDetail = () => {
       )}
 
       {/* Actions */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Actions</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</h2>
         <div className="mt-2 flex gap-3">
           <div>
             <button
               onClick={() => supportMutation.mutate()}
               disabled={supportMutation.isPending}
-              className="rounded-md bg-primary-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+              className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50"
             >
               {supportMutation.isPending ? 'Adding...' : 'Add support users'}
             </button>
-            {supportMutation.isSuccess && <span className="ml-2 text-sm text-green-600">Done</span>}
-            {supportMutation.isError && <span className="ml-2 text-sm text-red-600">Failed</span>}
+            {supportMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Done</span>}
+            {supportMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
           </div>
           <div>
             <button
               onClick={() => migrateMutation.mutate()}
               disabled={migrateMutation.isPending}
-              className="rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+              className="rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 dark:hover:bg-orange-600 disabled:opacity-50"
             >
               {migrateMutation.isPending ? 'Migrating...' : 'Migrate queues'}
             </button>
-            {migrateMutation.isSuccess && <span className="ml-2 text-sm text-green-600">Migration started</span>}
-            {migrateMutation.isError && <span className="ml-2 text-sm text-red-600">Failed</span>}
+            {migrateMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Migration started</span>}
+            {migrateMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
           </div>
         </div>
       </div>
 
       {/* Installs */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Installs</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Installs</h2>
         <div className="mt-2 table-card">
           <table>
             <thead>
@@ -254,7 +254,7 @@ export const OrgDetail = () => {
                 <th>Created</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {installs.map((install: any) => {
                 const isDeleted = !!install.deleted_at
                 const runnerStatus = getStatus(install.runner_status)
@@ -264,14 +264,14 @@ export const OrgDetail = () => {
                   <tr key={install.id} className={isDeleted ? 'opacity-50' : ''}>
                     <td>
                       <div className="flex items-center gap-2">
-                        <Link to={`/installs/${install.id}`} className="text-primary-600 hover:text-primary-700 font-medium">
+                        <Link to={`/installs/${install.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
                           {install.name || truncateId(install.id)}
                         </Link>
                         {isDeleted && <Badge variant="status" status="error">Deleted</Badge>}
                       </div>
                     </td>
-                    <td className="text-gray-500 font-mono text-xs">{truncateId(install.id)}</td>
-                    <td className="text-sm text-gray-700">
+                    <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(install.id)}</td>
+                    <td className="text-sm text-gray-700 dark:text-gray-300">
                       {install.app?.name || truncateId(install.app_id || '')}
                     </td>
                     <td>
@@ -289,12 +289,12 @@ export const OrgDetail = () => {
                         <Badge variant="status" status={componentStatus}>{componentStatus}</Badge>
                       )}
                     </td>
-                    <td className="text-gray-500">{formatDate(install.created_at)}</td>
+                    <td className="text-gray-500 dark:text-gray-400">{formatDate(install.created_at)}</td>
                   </tr>
                 )
               })}
               {installs.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-gray-500 py-6">No installs found</td></tr>
+                <tr><td colSpan={7} className="text-center text-gray-500 dark:text-gray-400 py-6">No installs found</td></tr>
               )}
             </tbody>
           </table>

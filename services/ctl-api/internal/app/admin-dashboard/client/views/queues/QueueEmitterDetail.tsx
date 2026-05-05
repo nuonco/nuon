@@ -34,16 +34,16 @@ export const QueueEmitterDetail = () => {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex gap-2 text-xs text-gray-500">
-        <Link to="/queues" className="text-primary-600 hover:text-primary-700">Queues</Link>
+      <div className="flex gap-2 text-xs text-gray-500 dark:text-gray-400">
+        <Link to="/queues" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">Queues</Link>
         <span>&rarr;</span>
-        <Link to={`/queues/${queue?.id}`} className="text-primary-600 hover:text-primary-700">{truncateId(queue?.id)}</Link>
+        <Link to={`/queues/${queue?.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{truncateId(queue?.id)}</Link>
         <span>&rarr;</span>
         <span>Emitter</span>
       </div>
 
       {/* Header */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h1 className="text-lg font-semibold">{emitter.name || 'Emitter'}</h1>
           <Badge>{emitter.mode}</Badge>
@@ -53,23 +53,23 @@ export const QueueEmitterDetail = () => {
               href={`${temporalUIUrl}/namespaces/${emitter.workflow.namespace}/workflows/${emitter.workflow.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary-600 hover:text-primary-700"
+              className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
             >
               View in Temporal &rarr;
             </a>
           )}
         </div>
         <div className="space-y-1 text-xs">
-          <div><span className="text-gray-500 uppercase">Emitter ID:</span> <span className="font-mono select-all">{emitter.id}</span></div>
-          <div><span className="text-gray-500 uppercase">Queue ID:</span> <Link to={`/queues/${emitter.queue_id}`} className="font-mono text-primary-600 hover:text-primary-700">{emitter.queue_id}</Link></div>
+          <div><span className="text-gray-500 dark:text-gray-400 uppercase">Emitter ID:</span> <span className="font-mono select-all">{emitter.id}</span></div>
+          <div><span className="text-gray-500 dark:text-gray-400 uppercase">Queue ID:</span> <Link to={`/queues/${emitter.queue_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{emitter.queue_id}</Link></div>
         </div>
       </div>
 
       {/* Configuration + Runtime state */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Configuration */}
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Configuration</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Configuration</h2>
           <div className="space-y-2 text-xs">
             <InfoRow label="Signal type" value={emitter.signal_type} />
             <InfoRow label="Mode" value={emitter.mode} />
@@ -88,11 +88,11 @@ export const QueueEmitterDetail = () => {
         </div>
 
         {/* Runtime state */}
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Runtime State</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Runtime State</h2>
           <div className="space-y-2 text-xs">
             <div className="flex items-start gap-3">
-              <span className="text-gray-500 uppercase w-28 shrink-0">Status</span>
+              <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">Status</span>
               <Badge variant="status" status={status}>{status || 'unknown'}</Badge>
             </div>
             {emitter.status?.status_human_description && (
@@ -103,7 +103,7 @@ export const QueueEmitterDetail = () => {
             <InfoRow label="Next emit" value={formatDate(emitter.next_emit_at)} />
             {isFireOnce && (
               <div className="flex items-start gap-3">
-                <span className="text-gray-500 uppercase w-28 shrink-0">Fired</span>
+                <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">Fired</span>
                 <Badge variant="status" status={emitter.fired ? 'yes' : 'no'}>{emitter.fired ? 'Yes' : 'No'}</Badge>
               </div>
             )}
@@ -113,15 +113,15 @@ export const QueueEmitterDetail = () => {
 
       {/* Signal template */}
       {emitter.signal_template && (
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h2 className="text-sm font-semibold text-gray-900 mb-2">Signal Template</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Signal Template</h2>
           <JsonViewer data={emitter.signal_template} />
         </div>
       )}
 
       {/* Emitted signals */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Emitted Signals ({signals.length})</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Emitted Signals ({signals.length})</h2>
         {signals.length > 0 ? (
           <div className="mt-2 table-card">
             <table>
@@ -134,31 +134,31 @@ export const QueueEmitterDetail = () => {
                   <th>Created</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {signals.map((sig: any) => (
                   <tr key={sig.id}>
                     <td className="font-mono text-xs">
                       <Link
                         to={`/queues/${queueId}/signals/${sig.id}`}
-                        className="text-primary-600 hover:text-primary-700"
+                        className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                       >
                         {truncateId(sig.id)}
                       </Link>
                     </td>
                     <td className="text-xs"><Badge>{sig.type}</Badge></td>
                     <td><Badge variant="status" status={getStatus(sig.status)}>{getStatus(sig.status)}</Badge></td>
-                    <td className="text-xs text-gray-500">
+                    <td className="text-xs text-gray-500 dark:text-gray-400">
                       <span className="font-mono">{truncateId(sig.owner_id)}</span>
-                      {sig.owner_type && <span className="text-gray-400 ml-1">({sig.owner_type})</span>}
+                      {sig.owner_type && <span className="text-gray-400 dark:text-gray-500 ml-1">({sig.owner_type})</span>}
                     </td>
-                    <td className="text-xs text-gray-500 whitespace-nowrap">{formatDate(sig.created_at)}</td>
+                    <td className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(sig.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ) : (
-          <p className="mt-2 text-sm text-gray-500">No signals emitted yet</p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No signals emitted yet</p>
         )}
       </div>
     </div>
@@ -168,7 +168,7 @@ export const QueueEmitterDetail = () => {
 function InfoRow({ label, value }: { label: string; value?: string }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="text-gray-500 uppercase w-28 shrink-0">{label}</span>
+      <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">{label}</span>
       <span className="font-mono break-all">{value || '-'}</span>
     </div>
   )

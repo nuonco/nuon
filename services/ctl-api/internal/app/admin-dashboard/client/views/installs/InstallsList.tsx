@@ -54,7 +54,7 @@ export const InstallsList = () => {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900">Installs</h1>
+      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Installs</h1>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="w-full sm:w-64">
@@ -67,8 +67,8 @@ export const InstallsList = () => {
               onClick={() => { setCreatorType(opt.value); setPage(1) }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                 creatorType === opt.value
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {opt.label}
@@ -78,60 +78,60 @@ export const InstallsList = () => {
         <select
           value={sort}
           onChange={(e) => { setSort(e.target.value); setPage(1) }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
         >
           {SORT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1 text-sm text-gray-700 cursor-pointer">
+        <label className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
           <input
             type="checkbox"
             checked={showDeleted}
             onChange={(e) => { setShowDeleted(e.target.checked); setPage(1) }}
-            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            className="rounded border-gray-300 dark:border-gray-700 text-primary-600 dark:text-primary-400 focus:ring-primary-500"
           />
           Show deleted
         </label>
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Org</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">App</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Runner</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sandbox</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Components</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Org</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">App</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Runner</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sandbox</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Components</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
             {installs.map((install) => {
               const isDeleted = !!install.deleted_at
               const runnerStatus = getStatus(install.runner_status)
               const sandboxStatus = getStatus(install.sandbox_status)
               const componentStatus = getStatus(install.composite_component_status)
               return (
-                <tr key={install.id} className={`hover:bg-gray-50 ${isDeleted ? 'opacity-50' : ''}`}>
+                <tr key={install.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${isDeleted ? 'opacity-50' : ''}`}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     <div className="flex items-center gap-2">
-                      <Link to={`/installs/${install.id}`} className="text-primary-600 hover:text-primary-800 font-medium">
+                      <Link to={`/installs/${install.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-medium">
                         {install.name || truncateId(install.id)}
                       </Link>
                       {isDeleted && <Badge variant="status" status="error">Deleted</Badge>}
                     </div>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 font-mono">{truncateId(install.id)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400 font-mono">{truncateId(install.id)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
-                    <Link to={`/orgs/${install.org_id}`} className="text-primary-600 hover:text-primary-800">
+                    <Link to={`/orgs/${install.org_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">
                       {install.org?.name || truncateId(install.org_id)}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {install.app?.name || truncateId(install.app_id)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -143,13 +143,13 @@ export const InstallsList = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-sm">
                     {componentStatus && <Badge variant="status" status={componentStatus}>{componentStatus}</Badge>}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{formatDate(install.created_at)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{formatDate(install.created_at)}</td>
                 </tr>
               )
             })}
             {installs.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500">No installs found</td>
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No installs found</td>
               </tr>
             )}
           </tbody>
