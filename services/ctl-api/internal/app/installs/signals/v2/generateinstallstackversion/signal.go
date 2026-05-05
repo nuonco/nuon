@@ -15,6 +15,7 @@ import (
 	stackoverrides "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
+	awsstack "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -271,6 +272,33 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		tmplByts = renderedTemplate.RAWJson
 		checksum = renderedTemplate.Checksum
+
+		// Render the Terraform tfvars envelope alongside the CloudFormation
+		// template so the dashboard can offer both during the await step.
+		// Custom nested stacks aren't translated — vendors who extend their
+		// CFN stack are expected to fork install-stacks and add equivalent
+		// Terraform changes there.
+		inp.CloudFormationStackVersion = stackVersion
+		supportIAMRoleARN := ""
+		if s.cfg.RunnerEnableSupport {
+			supportIAMRoleARN = s.cfg.RunnerDefaultSupportIAMRole
+		}
+		tfvarsBytes, tfvarsChecksum, tfErr := awsstack.Render(inp, supportIAMRoleARN)
+		l := workflow.GetLogger(ctx)
+		if tfErr != nil {
+			l.Warn("aws terraform render skipped", "error", tfErr.Error(), "install_id", install.ID)
+		} else if len(tfvarsBytes) == 0 {
+			l.Warn("aws terraform render produced empty bytes", "install_id", install.ID)
+		} else {
+			l.Info("aws terraform render ok", "install_id", install.ID, "bytes", len(tfvarsBytes))
+			if err := activities.AwaitSaveInstallStackVersionTerraform(ctx, &activities.SaveInstallStackVersionTerraformRequest{
+				ID:       stackVersion.ID,
+				Template: tfvarsBytes,
+				Checksum: tfvarsChecksum,
+			}); err != nil {
+				return errors.Wrap(err, "unable to save aws tfvars")
+			}
+		}
 	case app.AppRunnerTypeAzure:
 		if cfg.RunnerConfig.InitScriptURL != "" {
 			inp.RunnerInitScriptURL = cfg.RunnerConfig.InitScriptURL
