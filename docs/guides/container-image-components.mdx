@@ -170,8 +170,8 @@ module "nuon_ecr_access" {
   repository_arns = ["<repository-arn>"]
 }
 
-output "ecr_access_iam_role" {
-  value = module.nuon_ecr_access.ecr_access_iam_role
+output "iam_role_arn" {
+  value = module.nuon_ecr_access.iam_role_arn
 }
 ```
 
@@ -185,6 +185,11 @@ If you are having trouble finding the repository ARN in the AWS console, you can
 If your customer is running a self-hosted Nuon deployment on GCP, the IAM role's trust policy needs to accept their
 ctl-api service account's OIDC token (via `accounts.google.com`) in addition to (or instead of) the Nuon-hosted AWS
 principal.
+
+<Note>
+The `gcp_principals` input requires `nuonco/ecr-access/aws` version `0.1.7` or later. Pin the version explicitly if you
+were previously using an older release.
+</Note>
 
 Pass each self-hosted customer's GCP service account unique ID via `gcp_principals`:
 
@@ -203,8 +208,25 @@ module "nuon_ecr_access" {
 }
 ```
 
-The customer can find their ctl-api service account email in their self-hosted Nuon's GCP project. Run
-`gcloud iam service-accounts describe <email> --format='value(uniqueId)'` to get the numeric ID for the trust condition.
+The customer can find their ctl-api service account email in their self-hosted Nuon's GCP project. The install creator
+truncates the install ID to fit GCP's 30-character service account `account_id` limit, so the email is
+`ctl-api-<first-12-chars-of-install-id>@<project>.iam.gserviceaccount.com` — not the full install ID. The full install
+ID appears in the SA's display name (`ctl-api for <full-install-id>`).
+
+The simplest way to find both the email and unique ID is:
+
+```bash
+gcloud iam service-accounts list \
+  --project=<customer-project> \
+  --filter='email~ctl-api' \
+  --format='table(email,uniqueId,displayName)'
+```
+
+Or, given a known email, fetch just the numeric UID:
+
+```bash
+gcloud iam service-accounts describe <email> --format='value(uniqueId)'
+```
 
 <Note>
 The default Nuon-hosted (AWS) trust principal stays in place — adding `gcp_principals` is additive, so the same role
