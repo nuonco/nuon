@@ -22,7 +22,12 @@ func (w *queue) requeueSignals(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get queue signals")
 	}
 	for _, queueSignal := range queueSignals {
+		if w.inFlightSignals[queueSignal.ID] {
+			l.Info("skipping already in-flight signal", zap.String("queue-signal-id", queueSignal.ID))
+			continue
+		}
 		l.Info("requeuing signal", zap.String("queue-signal-id", queueSignal.ID), zap.Any("type", queueSignal.Type))
+		w.inFlightSignals[queueSignal.ID] = true
 		w.ch.Send(ctx, QueueRef{
 			WorkflowID: queueSignal.Workflow.ID,
 			ID:         queueSignal.ID,
