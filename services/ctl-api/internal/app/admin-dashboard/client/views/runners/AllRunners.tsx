@@ -34,7 +34,7 @@ const PieChart = ({ data, title }: { data: { label: string; value: number }[]; t
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <h3 className="text-sm font-medium text-gray-700">{title}</h3>
+      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</h3>
       <div className="flex items-center gap-4">
         <svg width={140} height={140} viewBox="0 0 140 140">
           {slices.map((s, i) => {
@@ -61,7 +61,7 @@ const PieChart = ({ data, title }: { data: { label: string; value: number }[]; t
           {slices.map((s, i) => (
             <div key={i} className="flex items-center gap-2 text-xs">
               <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-              <span className="text-gray-600">{s.label}: {s.value}</span>
+              <span className="text-gray-600 dark:text-gray-400">{s.label}: {s.value}</span>
             </div>
           ))}
         </div>
@@ -96,8 +96,8 @@ export const AllRunners = () => {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">All runners</h1>
-        <span className="text-sm text-gray-500">{totalCount} runners</span>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">All runners</h1>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{totalCount} runners</span>
       </div>
 
       <div className="mt-4">
@@ -107,7 +107,7 @@ export const AllRunners = () => {
             setOrgId(e.target.value)
             setPage(1)
           }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
         >
           <option value="">All organizations</option>
           {orgs.map((org) => (
@@ -125,25 +125,25 @@ export const AllRunners = () => {
       )}
 
       <div className="mt-6 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+          <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Name</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Org</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Version</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Process</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Owner</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Org</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Version</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Process</th>
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Owner</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
             {runners.map((rv) => (
               <RunnerRow key={rv.runner.id} rv={rv} />
             ))}
             {runners.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">No runners found</td>
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No runners found</td>
               </tr>
             )}
           </tbody>
@@ -158,13 +158,13 @@ export const AllRunners = () => {
 }
 
 const RunnerRow = ({ rv }: { rv: TAllRunnerView }) => (
-  <tr className="hover:bg-gray-50">
+  <tr className="hover:bg-gray-50 dark:hover:bg-gray-800">
     <td className="whitespace-nowrap px-4 py-3 text-sm">
-      <Link to={`/runners/${rv.runner.id}`} className="font-medium text-primary-600 hover:text-primary-800">
+      <Link to={`/runners/${rv.runner.id}`} className="font-medium text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">
         {rv.runner.name || truncateId(rv.runner.id)}
       </Link>
     </td>
-    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{rv.org_name || '-'}</td>
+    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{rv.org_name || '-'}</td>
     <td className="whitespace-nowrap px-4 py-3 text-sm">
       <Badge variant="status" status={rv.group_type === 'install' ? 'info' : 'neutral'}>
         {rv.group_type || '-'}
@@ -175,15 +175,15 @@ const RunnerRow = ({ rv }: { rv: TAllRunnerView }) => (
         {rv.process_online ? 'Online' : 'Offline'}
       </Badge>
     </td>
-    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{rv.version || '-'}</td>
-    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">{rv.process_type || '-'}</td>
+    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{rv.version || '-'}</td>
+    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{rv.process_type || '-'}</td>
     <td className="whitespace-nowrap px-4 py-3 text-sm">
       {rv.install_id ? (
-        <Link to={`/installs/${rv.install_id}`} className="text-primary-600 hover:text-primary-800">
+        <Link to={`/installs/${rv.install_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200">
           {rv.install_name || truncateId(rv.install_id)}
         </Link>
       ) : (
-        <span className="text-gray-500">org</span>
+        <span className="text-gray-500 dark:text-gray-400">org</span>
       )}
     </td>
   </tr>

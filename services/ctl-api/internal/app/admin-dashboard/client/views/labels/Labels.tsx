@@ -41,7 +41,7 @@ export const Labels = () => {
   return (
     <div>
       <h1 className="page-heading">Labels</h1>
-      <p className="mt-1 text-sm text-gray-500">{total_count} results{all_keys.length > 0 && ` across ${all_keys.length} label keys`}</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{total_count} results{all_keys.length > 0 && ` across ${all_keys.length} label keys`}</p>
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="w-full sm:w-64">
@@ -59,8 +59,8 @@ export const Labels = () => {
               onClick={() => { setEntityType(opt.value); setPage(1) }}
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                 entityType === opt.value
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-primary-600 dark:bg-primary-500 text-white'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
             >
               {opt.label}
@@ -72,7 +72,7 @@ export const Labels = () => {
           <select
             value={orgId}
             onChange={(e) => { setOrgId(e.target.value); setPage(1) }}
-            className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-primary-600"
+            className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
           >
             <option value="">All organizations</option>
             {orgs.map((org) => (
@@ -88,7 +88,7 @@ export const Labels = () => {
             <button
               key={key}
               onClick={() => { setSearch(key); setPage(1) }}
-              className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-200"
+              className="rounded-md bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               {key}
             </button>
@@ -106,7 +106,7 @@ export const Labels = () => {
               <th>Labels</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {results.map((result) => (
               <tr key={`${result.entity_type}-${result.entity_id}`}>
                 <td>
@@ -114,21 +114,21 @@ export const Labels = () => {
                 </td>
                 <td>
                   {result.detail_url ? (
-                    <Link to={result.detail_url} className="text-primary-600 hover:text-primary-700 font-medium">
+                    <Link to={result.detail_url} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium">
                       {result.entity_name || truncateId(result.entity_id)}
                     </Link>
                   ) : (
-                    <span className="text-sm text-gray-900">{result.entity_name || truncateId(result.entity_id)}</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100">{result.entity_name || truncateId(result.entity_id)}</span>
                   )}
                 </td>
-                <td className="text-gray-500 font-mono text-xs">{truncateId(result.entity_id)}</td>
+                <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(result.entity_id)}</td>
                 <td>
                   <div className="flex flex-wrap gap-1">
                     {Object.entries(result.labels || {}).map(([key, value]) => (
-                      <span key={key} className="inline-flex items-center gap-0.5 rounded-md bg-blue-50 border border-blue-200 px-2 py-0.5 text-xs font-mono">
-                        <span className="text-blue-700">{key}</span>
+                      <span key={key} className="inline-flex items-center gap-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-xs font-mono">
+                        <span className="text-blue-700 dark:text-blue-300">{key}</span>
                         <span className="text-blue-400">=</span>
-                        <span className="text-blue-600">{String(value)}</span>
+                        <span className="text-blue-600 dark:text-blue-400">{String(value)}</span>
                       </span>
                     ))}
                   </div>
@@ -137,7 +137,7 @@ export const Labels = () => {
             ))}
             {results.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center text-gray-500 py-6">No labeled entities found</td>
+                <td colSpan={4} className="text-center text-gray-500 dark:text-gray-400 py-6">No labeled entities found</td>
               </tr>
             )}
           </tbody>

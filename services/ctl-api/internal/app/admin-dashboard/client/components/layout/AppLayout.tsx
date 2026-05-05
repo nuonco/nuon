@@ -77,7 +77,7 @@ export const AppLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+      <aside className="w-56 flex-shrink-0 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
         <div className="sticky top-0 flex h-screen flex-col overflow-y-auto">
           <div className="flex h-12 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
             <Link to="/" className="text-sm font-semibold tracking-tight text-primary-700 dark:text-primary-400">
@@ -112,8 +112,8 @@ export const AppLayout = () => {
                     const className = cn(
                       'block rounded-md px-2 py-1.5 text-[13px] font-medium transition-colors duration-100',
                       isActive(item)
-                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-400'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
+                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100',
                     )
                     if (item.external) {
                       return (
