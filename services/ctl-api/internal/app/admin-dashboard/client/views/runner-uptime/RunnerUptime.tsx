@@ -49,10 +49,10 @@ const PieChart = ({ value, max, label, color }: { value: number; max: number; la
 
 const statusColor = (s: string) => {
   switch (s) {
-    case 'active': return 'bg-green-100 text-green-700'
-    case 'inactive': case 'offline': return 'bg-gray-100 text-gray-600'
-    case 'error': return 'bg-red-100 text-red-700'
-    default: return 'bg-yellow-100 text-yellow-700'
+    case 'active': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+    case 'inactive': case 'offline': return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
+    case 'error': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+    default: return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
   }
 }
 
@@ -65,7 +65,7 @@ const processTypeLabel = (t: string) => {
 }
 
 const JobBar = ({ jobs }: { jobs: TJobSummary }) => {
-  if (jobs.total === 0) return <span className="text-xs text-gray-400">No jobs</span>
+  if (jobs.total === 0) return <span className="text-xs text-gray-400 dark:text-gray-500">No jobs</span>
   const segments = [
     { count: jobs.finished, color: 'bg-green-500', label: 'finished' },
     { count: jobs.failed, color: 'bg-red-500', label: 'failed' },
@@ -75,7 +75,7 @@ const JobBar = ({ jobs }: { jobs: TJobSummary }) => {
   ]
   return (
     <div>
-      <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-100">
+      <div className="flex h-2 w-full rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
         {segments.map((seg) =>
           seg.count > 0 ? (
             <div
@@ -87,11 +87,11 @@ const JobBar = ({ jobs }: { jobs: TJobSummary }) => {
           ) : null
         )}
       </div>
-      <div className="mt-1 flex gap-3 text-[10px] text-gray-500">
+      <div className="mt-1 flex gap-3 text-[10px] text-gray-500 dark:text-gray-400">
         <span>{jobs.total} total</span>
-        <span className="text-green-600">{jobs.finished} ok</span>
-        {jobs.failed > 0 && <span className="text-red-600">{jobs.failed} fail</span>}
-        {jobs.timed_out > 0 && <span className="text-yellow-600">{jobs.timed_out} timeout</span>}
+        <span className="text-green-600 dark:text-green-400">{jobs.finished} ok</span>
+        {jobs.failed > 0 && <span className="text-red-600 dark:text-red-400">{jobs.failed} fail</span>}
+        {jobs.timed_out > 0 && <span className="text-yellow-600 dark:text-yellow-400">{jobs.timed_out} timeout</span>}
       </div>
     </div>
   )
@@ -122,8 +122,8 @@ const MetricsPies = ({ m }: { m: TUptimeMetrics }) => {
           />
           {m.total_health_checks > 0 && (
             <div className="flex gap-1.5 text-[9px]">
-              <span className="text-green-600">{m.healthy_checks} ok</span>
-              {m.unhealthy_checks > 0 && <span className="text-red-600">{m.unhealthy_checks} bad</span>}
+              <span className="text-green-600 dark:text-green-400">{m.healthy_checks} ok</span>
+              {m.unhealthy_checks > 0 && <span className="text-red-600 dark:text-red-400">{m.unhealthy_checks} bad</span>}
             </div>
           )}
         </div>
@@ -140,37 +140,37 @@ const ProcessBlock = ({ procs, metrics, label, color }: {
 }) => {
   return (
     <div className={`rounded-md border p-3 ${color}`}>
-      <h4 className="text-xs font-semibold text-gray-700 mb-2">{label}</h4>
+      <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">{label}</h4>
       <MetricsPies m={metrics} />
       <div className="mt-2">
-        <h5 className="text-[10px] font-semibold text-gray-500 mb-1">Processes</h5>
+        <h5 className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 mb-1">Processes</h5>
         {procs.length > 0 ? (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-gray-800">
             {procs.map((p) => (
               <div key={p.process_id} className="flex items-center gap-3 py-1.5 text-xs">
                 <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${statusColor(p.status)}`}>
                   {p.status}
                 </span>
                 <Badge>{processTypeLabel(p.type)}</Badge>
-                <span className="font-mono text-gray-500 w-20" title="Process uptime">{p.uptime_str || '—'}</span>
-                {p.heartbeats > 0 && <span className="text-gray-400" title="Heartbeats">{p.heartbeats} hb</span>}
+                <span className="font-mono text-gray-500 dark:text-gray-400 w-20" title="Process uptime">{p.uptime_str || '—'}</span>
+                {p.heartbeats > 0 && <span className="text-gray-400 dark:text-gray-500" title="Heartbeats">{p.heartbeats} hb</span>}
                 {p.health_checks > 0 && (
-                  <span className="text-gray-400" title={`${p.healthy_checks} ok / ${p.unhealthy_checks} bad`}>
+                  <span className="text-gray-400 dark:text-gray-500" title={`${p.healthy_checks} ok / ${p.unhealthy_checks} bad`}>
                     {p.health_checks} hc
-                    {p.unhealthy_checks > 0 && <span className="text-red-500 ml-0.5">({p.unhealthy_checks} bad)</span>}
+                    {p.unhealthy_checks > 0 && <span className="text-red-500 dark:text-red-400 ml-0.5">({p.unhealthy_checks} bad)</span>}
                   </span>
                 )}
                 {p.last_heartbeat && (
-                  <span className="text-[10px] text-gray-400" title="Last heartbeat">
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500" title="Last heartbeat">
                     last hb {new Date(p.last_heartbeat).toLocaleTimeString()}
                   </span>
                 )}
-                <span className="text-gray-400 font-mono text-[10px] ml-auto">{p.version}</span>
+                <span className="text-gray-400 dark:text-gray-500 font-mono text-[10px] ml-auto">{p.version}</span>
               </div>
             ))}
           </div>
         ) : (
-          <span className="text-xs text-gray-400">No processes</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">No processes</span>
         )}
       </div>
     </div>
@@ -218,7 +218,7 @@ export const RunnerUptime = () => {
       <div className="flex items-center justify-between">
         <h1 className="page-heading">Runner uptime</h1>
         {since && (
-          <span className="text-xs text-gray-400">Since {new Date(since).toLocaleString()}</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">Since {new Date(since).toLocaleString()}</span>
         )}
       </div>
 
@@ -226,7 +226,7 @@ export const RunnerUptime = () => {
         <select
           value={orgId}
           onChange={(e) => setOrgId(e.target.value)}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
         >
           <option value="">All orgs</option>
           {orgs.map((o) => (
@@ -239,7 +239,7 @@ export const RunnerUptime = () => {
         <select
           value={labelKey}
           onChange={(e) => { setLabelKey(e.target.value); setLabelValue('') }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
         >
           <option value="">All labels</option>
           {labelOptions.map((l) => (
@@ -250,7 +250,7 @@ export const RunnerUptime = () => {
           <select
             value={labelValue}
             onChange={(e) => setLabelValue(e.target.value)}
-            className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+            className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
           >
             <option value="">Any value</option>
             {selectedLabelOption.values.map((v) => (
@@ -261,7 +261,7 @@ export const RunnerUptime = () => {
         <select
           value={window}
           onChange={(e) => setWindow(e.target.value)}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500"
         >
           {WINDOWS.map((w) => (
             <option key={w.value} value={w.value}>{w.label}</option>
@@ -279,44 +279,44 @@ export const RunnerUptime = () => {
           const successRate = totalJobs > 0 ? ((finishedJobs / totalJobs) * 100).toFixed(1) : null
 
           return (
-            <div key={entry.install_id} className="rounded-md border border-gray-200 bg-white">
+            <div key={entry.install_id} className="rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
               <button
                 onClick={() => setExpanded(isExpanded ? null : entry.install_id)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">{entry.install_name || '(unnamed)'}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{entry.install_name || '(unnamed)'}</span>
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">{entry.org_name}</div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{entry.org_name}</div>
                 </div>
                 <div className="flex items-center gap-5 flex-shrink-0 text-xs">
                   <div className="text-center">
-                    <div className="font-semibold text-blue-600">{activeInstall}</div>
-                    <div className="text-[10px] text-gray-400">install</div>
+                    <div className="font-semibold text-blue-600 dark:text-blue-400">{activeInstall}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500">install</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-purple-600">{activeMng}</div>
-                    <div className="text-[10px] text-gray-400">mng</div>
+                    <div className="font-semibold text-purple-600 dark:text-purple-400">{activeMng}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500">mng</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-semibold text-gray-700">{totalJobs}</div>
-                    <div className="text-[10px] text-gray-400">jobs</div>
+                    <div className="font-semibold text-gray-700 dark:text-gray-200">{totalJobs}</div>
+                    <div className="text-[10px] text-gray-400 dark:text-gray-500">jobs</div>
                   </div>
                   {successRate && (
                     <div className="text-center">
-                      <div className={`font-semibold ${Number(successRate) >= 95 ? 'text-green-600' : Number(successRate) >= 80 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      <div className={`font-semibold ${Number(successRate) >= 95 ? 'text-green-600 dark:text-green-400' : Number(successRate) >= 80 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
                         {successRate}%
                       </div>
-                      <div className="text-[10px] text-gray-400">success</div>
+                      <div className="text-[10px] text-gray-400 dark:text-gray-500">success</div>
                     </div>
                   )}
                 </div>
               </button>
               {isExpanded && (
-                <div className="border-t border-gray-100 px-4 py-3 space-y-4">
+                <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3 space-y-4">
                   {entry.runner_created_at && since && new Date(entry.runner_created_at).getTime() > new Date(since).getTime() && (
-                    <div className="rounded bg-yellow-50 border border-yellow-200 px-3 py-1.5 text-xs text-yellow-700">
+                    <div className="rounded bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 px-3 py-1.5 text-xs text-yellow-700 dark:text-yellow-300">
                       Runner created after window began ({new Date(entry.runner_created_at).toLocaleString()}) — stats reflect partial coverage
                     </div>
                   )}
@@ -325,20 +325,20 @@ export const RunnerUptime = () => {
                       procs={entry.install_processes}
                       metrics={entry.install_metrics}
                       label="Install process"
-                      color="border-blue-100 bg-blue-50/30"
+                      color="border-blue-100 bg-blue-50/30 dark:border-blue-900/50 dark:bg-blue-950/30"
                     />
                     <ProcessBlock
                       procs={entry.mng_processes}
                       metrics={entry.mng_metrics}
                       label="Management process (mng)"
-                      color="border-purple-100 bg-purple-50/30"
+                      color="border-purple-100 bg-purple-50/30 dark:border-purple-900/50 dark:bg-purple-950/30"
                     />
                   </div>
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-700 mb-1">Runner jobs (combined)</h4>
+                    <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1">Runner jobs (combined)</h4>
                     <JobBar jobs={entry.jobs} />
                   </div>
-                  <div className="text-[10px] text-gray-400 font-mono">
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 font-mono">
                     install: {entry.install_id} | org: {entry.org_id}
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export const RunnerUptime = () => {
           )
         })}
         {installs.length === 0 && (
-          <div className="text-center text-gray-500 py-8 text-sm">No installs found</div>
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">No installs found</div>
         )}
       </div>
     </div>

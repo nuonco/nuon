@@ -39,13 +39,13 @@ export const InFlightSignals = () => {
   return (
     <div>
       <h1 className="page-heading">In-flight signals</h1>
-      <p className="mt-1 text-sm text-gray-500">{signals.length} active signals (auto-refreshing)</p>
+      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{signals.length} active signals (auto-refreshing)</p>
 
       <div className="mt-3">
         <select
           value={namespace}
           onChange={(e) => setNamespace(e.target.value)}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
         >
           <option value="">All namespaces</option>
           {namespaces.map((n) => (
@@ -67,7 +67,7 @@ export const InFlightSignals = () => {
               <th>Updated</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {signals.map((signal) => (
               <tr key={signal.id}>
                 <td>
@@ -76,27 +76,27 @@ export const InFlightSignals = () => {
                 <td className="whitespace-nowrap text-sm">
                   <Badge>{signal.type}</Badge>
                 </td>
-                <td className="whitespace-nowrap text-sm text-gray-500">
+                <td className="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   <span className="font-mono text-xs">{truncateId(signal.owner_id)}</span>
-                  <span className="ml-1 text-xs text-gray-400">({signal.owner_type})</span>
+                  <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">({signal.owner_type})</span>
                 </td>
-                <td className="whitespace-nowrap text-sm text-gray-500 font-mono">
-                  <Link to={`/queues/${signal.queue_id}`} className="text-primary-600 hover:text-primary-700">
+                <td className="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
+                  <Link to={`/queues/${signal.queue_id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
                     {truncateId(signal.queue_id)}
                   </Link>
                 </td>
                 <td className="whitespace-nowrap text-sm">
                   <Badge variant="status" status={String(signal.status?.status || signal.status)}>{String(signal.status?.status || signal.status)}</Badge>
                 </td>
-                <td className="whitespace-nowrap text-sm text-gray-500 font-mono">
+                <td className="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
                   {getElapsed(signal.updated_at)}
                 </td>
-                <td className="whitespace-nowrap text-sm text-gray-500">{formatDate(signal.updated_at)}</td>
+                <td className="whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{formatDate(signal.updated_at)}</td>
               </tr>
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center text-gray-500 py-6">No in-flight signals</td>
+                <td colSpan={7} className="text-center text-gray-500 dark:text-gray-400 py-6">No in-flight signals</td>
               </tr>
             )}
           </tbody>

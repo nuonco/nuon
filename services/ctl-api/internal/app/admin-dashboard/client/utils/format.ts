@@ -30,19 +30,19 @@ export function truncateId(id: string, _len = 12): string {
 }
 
 export function statusColor(status: string | undefined): string {
-  if (!status) return 'bg-gray-100 text-gray-700'
+  if (!status) return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
   const s = status.toLowerCase()
   if (s.includes('running') || s.includes('active') || s.includes('online') || s.includes('healthy') || s.includes('completed') || s.includes('success')) {
-    return 'bg-green-100 text-green-800'
+    return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200'
   }
   if (s.includes('failed') || s.includes('error') || s.includes('offline') || s.includes('unhealthy')) {
-    return 'bg-red-100 text-red-800'
+    return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200'
   }
   if (s.includes('pending') || s.includes('queued') || s.includes('waiting')) {
-    return 'bg-yellow-100 text-yellow-800'
+    return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200'
   }
   if (s.includes('cancel')) {
-    return 'bg-orange-100 text-orange-800'
+    return 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200'
   }
-  return 'bg-gray-100 text-gray-700'
+  return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
 }

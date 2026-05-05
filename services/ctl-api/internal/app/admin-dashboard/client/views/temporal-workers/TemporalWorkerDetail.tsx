@@ -35,22 +35,22 @@ export const TemporalWorkerDetail = () => {
           <Badge variant="status" status={isHealthy ? 'healthy' : 'unhealthy'}>
             {isHealthy ? 'Healthy' : 'Unhealthy'}
           </Badge>
-          <span className="text-gray-500">Task queue: <span className="font-mono">{info.task_queue}</span></span>
-          <span className="text-gray-500">Pollers: {wfPollerCount + actPollerCount}</span>
+          <span className="text-gray-500 dark:text-gray-400">Task queue: <span className="font-mono">{info.task_queue}</span></span>
+          <span className="text-gray-500 dark:text-gray-400">Pollers: {wfPollerCount + actPollerCount}</span>
           {temporalUIUrl && (
-            <a href={`${temporalUIUrl}/namespaces/${namespace}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:text-primary-700 text-xs">
+            <a href={`${temporalUIUrl}/namespaces/${namespace}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-xs">
               Open in Temporal UI &rarr;
             </a>
           )}
         </div>
         {info.error && (
-          <div className="mt-2 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">{info.error}</div>
+          <div className="mt-2 rounded-md bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 p-3 text-sm text-red-700 dark:text-red-300">{info.error}</div>
         )}
       </div>
 
       {/* Workflow Pollers */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Workflow pollers ({wfPollerCount})</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflow pollers ({wfPollerCount})</h2>
         <div className="mt-2 table-card">
           <table>
             <thead>
@@ -60,16 +60,16 @@ export const TemporalWorkerDetail = () => {
                 <th>Rate/s</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(info.workflow_pollers || []).map((poller, i) => (
                 <tr key={i}>
-                  <td className="text-gray-900 break-all text-xs font-mono">{poller.identity}</td>
-                  <td className="text-gray-500">{formatDate(poller.last_access_time)}</td>
-                  <td className="text-gray-500 font-mono">{poller.rate_per_second?.toFixed(2)}</td>
+                  <td className="text-gray-900 dark:text-gray-100 break-all text-xs font-mono">{poller.identity}</td>
+                  <td className="text-gray-500 dark:text-gray-400">{formatDate(poller.last_access_time)}</td>
+                  <td className="text-gray-500 dark:text-gray-400 font-mono">{poller.rate_per_second?.toFixed(2)}</td>
                 </tr>
               ))}
               {wfPollerCount === 0 && (
-                <tr><td colSpan={3} className="text-center text-gray-500 py-4">No workflow pollers</td></tr>
+                <tr><td colSpan={3} className="text-center text-gray-500 dark:text-gray-400 py-4">No workflow pollers</td></tr>
               )}
             </tbody>
           </table>
@@ -77,8 +77,8 @@ export const TemporalWorkerDetail = () => {
       </div>
 
       {/* Activity Pollers */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Activity pollers ({actPollerCount})</h2>
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity pollers ({actPollerCount})</h2>
         <div className="mt-2 table-card">
           <table>
             <thead>
@@ -88,16 +88,16 @@ export const TemporalWorkerDetail = () => {
                 <th>Rate/s</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {(info.activity_pollers || []).map((poller, i) => (
                 <tr key={i}>
-                  <td className="text-gray-900 break-all text-xs font-mono">{poller.identity}</td>
-                  <td className="text-gray-500">{formatDate(poller.last_access_time)}</td>
-                  <td className="text-gray-500 font-mono">{poller.rate_per_second?.toFixed(2)}</td>
+                  <td className="text-gray-900 dark:text-gray-100 break-all text-xs font-mono">{poller.identity}</td>
+                  <td className="text-gray-500 dark:text-gray-400">{formatDate(poller.last_access_time)}</td>
+                  <td className="text-gray-500 dark:text-gray-400 font-mono">{poller.rate_per_second?.toFixed(2)}</td>
                 </tr>
               ))}
               {actPollerCount === 0 && (
-                <tr><td colSpan={3} className="text-center text-gray-500 py-4">No activity pollers</td></tr>
+                <tr><td colSpan={3} className="text-center text-gray-500 dark:text-gray-400 py-4">No activity pollers</td></tr>
               )}
             </tbody>
           </table>
@@ -107,53 +107,53 @@ export const TemporalWorkerDetail = () => {
       {/* Queue Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {info.workflow_stats && (
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-gray-900">Workflow queue stats</h2>
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflow queue stats</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-gray-500">Backlog count</dt>
-                <dd className="font-mono text-gray-900">{info.workflow_stats.approximate_backlog_count}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Backlog count</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.workflow_stats.approximate_backlog_count}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Backlog age</dt>
-                <dd className="font-mono text-gray-900">{info.workflow_stats.approximate_backlog_age ? `${(info.workflow_stats.approximate_backlog_age / 1000000000).toFixed(1)}s` : '-'}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Backlog age</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.workflow_stats.approximate_backlog_age ? `${(info.workflow_stats.approximate_backlog_age / 1000000000).toFixed(1)}s` : '-'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Tasks add rate</dt>
-                <dd className="font-mono text-gray-900">{info.workflow_stats.tasks_add_rate?.toFixed(2)}/s</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Tasks add rate</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.workflow_stats.tasks_add_rate?.toFixed(2)}/s</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Tasks dispatch rate</dt>
-                <dd className="font-mono text-gray-900">{info.workflow_stats.tasks_dispatch_rate?.toFixed(2)}/s</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Tasks dispatch rate</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.workflow_stats.tasks_dispatch_rate?.toFixed(2)}/s</dd>
               </div>
             </dl>
           </div>
         )}
         {info.activity_stats && (
-          <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-gray-900">Activity queue stats</h2>
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity queue stats</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-gray-500">Backlog count</dt>
-                <dd className="font-mono text-gray-900">{info.activity_stats.approximate_backlog_count}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Backlog count</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.activity_stats.approximate_backlog_count}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Backlog age</dt>
-                <dd className="font-mono text-gray-900">{info.activity_stats.approximate_backlog_age ? `${(info.activity_stats.approximate_backlog_age / 1000000000).toFixed(1)}s` : '-'}</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Backlog age</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.activity_stats.approximate_backlog_age ? `${(info.activity_stats.approximate_backlog_age / 1000000000).toFixed(1)}s` : '-'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Tasks add rate</dt>
-                <dd className="font-mono text-gray-900">{info.activity_stats.tasks_add_rate?.toFixed(2)}/s</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Tasks add rate</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.activity_stats.tasks_add_rate?.toFixed(2)}/s</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Tasks dispatch rate</dt>
-                <dd className="font-mono text-gray-900">{info.activity_stats.tasks_dispatch_rate?.toFixed(2)}/s</dd>
+                <dt className="text-gray-500 dark:text-gray-400">Tasks dispatch rate</dt>
+                <dd className="font-mono text-gray-900 dark:text-gray-100">{info.activity_stats.tasks_dispatch_rate?.toFixed(2)}/s</dd>
               </div>
             </dl>
           </div>
         )}
         {!info.workflow_stats && !info.activity_stats && (
-          <p className="text-sm text-gray-500">No queue stats available</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No queue stats available</p>
         )}
       </div>
     </div>
