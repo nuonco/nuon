@@ -5,10 +5,9 @@ import { useConfig } from '@/hooks/use-config'
 
 export const AdminDashboardLink = ({
   path,
-  label,
 }: {
   path: string
-  label: string
+  label?: string
 }) => {
   const { isAdmin } = useAuth()
   const config = useConfig()
@@ -20,8 +19,12 @@ export const AdminDashboardLink = ({
   const href = `${config.adminDashboardUrl}${path}`
 
   return (
-    <Link className="text-xs inline-flex items-center gap-1" href={href} target="_blank">
-      {label} <Icon variant="ArrowSquareOutIcon" size="14" />
+    <Link
+      className="text-xs inline-flex items-center gap-1"
+      href={href}
+      target="_blank"
+    >
+      admin <Icon variant="ArrowSquareOutIcon" size="14" />
     </Link>
   )
 }
