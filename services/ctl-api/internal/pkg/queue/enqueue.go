@@ -46,11 +46,21 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 		return nil, errors.Errorf("unable to queue item, depth of %d reached", w.maxDepth)
 	}
 
+	if w.inFlightSignals[input.QueueSignalID] {
+		l.Info("signal already in-flight via requeueSignals, skipping re-dispatch",
+			zap.String("queue-signal-id", input.QueueSignalID))
+		return &EnqueueResponse{
+			ID:         input.QueueSignalID,
+			WorkflowID: input.WorkflowID,
+		}, nil
+	}
+
 	handlerworkflow.StartHandler(ctx, input.WorkflowID, handlerworkflow.HandlerRequest{
 		QueueID:       w.queueID,
 		QueueSignalID: input.QueueSignalID,
 	})
 
+	w.inFlightSignals[input.QueueSignalID] = true
 	l.Info("queueing signal for processing", zap.String("workflow-id", input.WorkflowID))
 	if !w.ch.SendAsync(QueueRef{
 		WorkflowID: input.WorkflowID,
