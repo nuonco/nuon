@@ -89,7 +89,7 @@ export const QueueSignalDetail = () => {
       </div>
 
       {/* Header */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h1 className="text-lg font-semibold">Signal</h1>
           <Badge>{signal?.type}</Badge>
@@ -123,7 +123,7 @@ export const QueueSignalDetail = () => {
 
       {/* Signal attributes */}
       {attrs && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal attributes</h2>
           <div className="mt-2 flex flex-wrap gap-2 text-xs">
             {attrs.Namespace && <Badge>ns: {attrs.Namespace}</Badge>}
@@ -144,7 +144,7 @@ export const QueueSignalDetail = () => {
       )}
 
       {/* Timeline */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Timeline</h2>
         <div className="flex items-start justify-between">
           <TimelineStep label="Enqueued" value={enqueuedAt} active />
@@ -169,7 +169,7 @@ export const QueueSignalDetail = () => {
       </div>
 
       {/* Signals ahead */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signals ahead</h2>
         {signalsAhead.length > 0 ? (
           <div className="mt-2 space-y-1">
@@ -188,7 +188,7 @@ export const QueueSignalDetail = () => {
       </div>
 
       {/* Executions */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Executions</h2>
         <div className="mt-2 flex items-center gap-4">
           <div>
@@ -229,7 +229,7 @@ export const QueueSignalDetail = () => {
       </div>
 
       {/* Signal flow graph */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal flow graph</h2>
           <button
@@ -256,7 +256,7 @@ export const QueueSignalDetail = () => {
 
       {/* Update handlers */}
       {wfInfo?.update_handlers?.length > 0 && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Update handlers</h2>
           <div className="mt-2 flex flex-wrap gap-2">
             {wfInfo.update_handlers.map((h: string) => <Badge key={h}>{h}</Badge>)}
@@ -266,7 +266,7 @@ export const QueueSignalDetail = () => {
 
       {/* Signal info + Handler */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Signal info</h2>
           <div className="space-y-2 text-xs">
             <InfoRow label="Type" value={signal?.type} />
@@ -280,7 +280,7 @@ export const QueueSignalDetail = () => {
             ))}
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Handler</h2>
           <div className="space-y-2 text-xs">
             <InfoRow label="Owner type" value={signal?.owner_type} />
@@ -322,7 +322,7 @@ export const QueueSignalDetail = () => {
       </div>
 
       {/* Signal data */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal data</h2>
         <div className="mt-2">
           <JsonViewer data={signal?.signal || signal} />
@@ -330,7 +330,7 @@ export const QueueSignalDetail = () => {
       </div>
 
       {/* Status history */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Status history</h2>
         <div className="mt-2">
           <StatusHistory status={signal?.status} maxCollapsed={5} />
@@ -426,7 +426,7 @@ function ExecutionWaterfall({ wfInfo, temporalUIUrl, hideReady, setHideReady, so
   if (totalItems === 0) return null
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Execution waterfall</h2>
@@ -514,7 +514,7 @@ function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any
       <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
+          className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-left"
         >
           <div className="flex items-center gap-2 text-xs flex-wrap">
             <Badge variant="status" status={ue.status}>{ue.status}</Badge>
@@ -532,20 +532,20 @@ function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any
           <div className="border-t border-gray-200 dark:border-gray-800">
             {/* Update metadata */}
             {(ue.input || ue.result || ue.failure) && (
-              <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 text-xs space-y-1 bg-gray-50/50 dark:bg-gray-900/50">
+              <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-800 text-xs space-y-1">
                 {ue.failure && (
                   <pre className="font-mono text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded p-2 overflow-x-auto max-h-24 whitespace-pre-wrap">{ue.failure}</pre>
                 )}
                 {ue.input && (
                   <details className="group">
                     <summary className="text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200">Input</summary>
-                    <pre className="mt-1 font-mono bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-x-auto max-h-24 text-[10px]">{ue.input}</pre>
+                    <pre className="mt-1 font-mono rounded p-2 overflow-x-auto max-h-24 text-[10px]">{ue.input}</pre>
                   </details>
                 )}
                 {ue.result && (
                   <details className="group">
                     <summary className="text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200">Result</summary>
-                    <pre className="mt-1 font-mono bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-x-auto max-h-24 text-[10px]">{ue.result}</pre>
+                    <pre className="mt-1 font-mono rounded p-2 overflow-x-auto max-h-24 text-[10px]">{ue.result}</pre>
                   </details>
                 )}
               </div>
@@ -584,10 +584,10 @@ function WaterfallActivityRow({ act }: { act: any }) {
         {act.attempt > 1 && <span className="text-orange-500">×{act.attempt}</span>}
       </div>
       {showDetail && (
-        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900 text-[10px] space-y-1 border-t border-gray-100 dark:border-gray-800">
+        <div className="px-3 py-2 text-[10px] space-y-1 border-t border-gray-100 dark:border-gray-800">
           {act.failure && <pre className="font-mono text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded p-1.5 whitespace-pre-wrap">{act.failure}</pre>}
-          {act.input && <details><summary className="text-gray-500 dark:text-gray-400 cursor-pointer">Input</summary><pre className="mt-0.5 font-mono bg-white dark:bg-gray-900 rounded p-1.5 overflow-x-auto max-h-20">{act.input}</pre></details>}
-          {act.result && <details><summary className="text-gray-500 dark:text-gray-400 cursor-pointer">Result</summary><pre className="mt-0.5 font-mono bg-white dark:bg-gray-900 rounded p-1.5 overflow-x-auto max-h-20">{act.result}</pre></details>}
+          {act.input && <details><summary className="text-gray-500 dark:text-gray-400 cursor-pointer">Input</summary><pre className="mt-0.5 font-mono rounded p-1.5 overflow-x-auto max-h-20">{act.input}</pre></details>}
+          {act.result && <details><summary className="text-gray-500 dark:text-gray-400 cursor-pointer">Result</summary><pre className="mt-0.5 font-mono rounded p-1.5 overflow-x-auto max-h-20">{act.result}</pre></details>}
         </div>
       )}
     </>
@@ -665,7 +665,7 @@ function WaterfallSection({ icon, label, status, children }: { icon: string; lab
     <div className="relative pl-7">
       <div className="absolute left-1.5 top-2.5 w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 ring-2 ring-white dark:ring-gray-950" />
       <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
-        <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 text-left">
+        <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-left">
           <div className="flex items-center gap-2 text-xs">
             <span>{icon}</span>
             <span className="font-medium text-gray-700 dark:text-gray-300">{label}</span>

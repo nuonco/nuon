@@ -49,7 +49,7 @@ export const TemporalWorkerDetail = () => {
       </div>
 
       {/* Workflow Pollers */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflow pollers ({wfPollerCount})</h2>
         <div className="mt-2 table-card">
           <table>
@@ -77,7 +77,7 @@ export const TemporalWorkerDetail = () => {
       </div>
 
       {/* Activity Pollers */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity pollers ({actPollerCount})</h2>
         <div className="mt-2 table-card">
           <table>
@@ -107,7 +107,7 @@ export const TemporalWorkerDetail = () => {
       {/* Queue Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {info.workflow_stats && (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Workflow queue stats</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
@@ -130,7 +130,7 @@ export const TemporalWorkerDetail = () => {
           </div>
         )}
         {info.activity_stats && (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+          <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Activity queue stats</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
