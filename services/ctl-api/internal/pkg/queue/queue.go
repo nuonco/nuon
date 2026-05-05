@@ -38,11 +38,12 @@ type QueueState struct {
 // @memo type queue
 func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error {
 	q := &queue{
-		cfg:           w.cfg,
-		v:             w.v,
-		queueID:       req.QueueID,
-		state:         req.State,
-		releaseWindow: req.ReleaseWindow,
+		cfg:             w.cfg,
+		v:               w.v,
+		queueID:         req.QueueID,
+		state:           req.State,
+		releaseWindow:   req.ReleaseWindow,
+		inFlightSignals: make(map[string]bool),
 	}
 	if q.state == nil {
 		q.state = &QueueState{
@@ -103,6 +104,11 @@ type queue struct {
 	// activeWorkers tracks the number of workers currently processing a signal.
 	// Used to prevent continue-as-new while workers are mid-processing.
 	activeWorkers int
+
+	// inFlightSignals tracks signals currently in the dispatcher channel or being
+	// processed. Used to prevent double-dispatch when requeueSignals and enqueueHandler
+	// both try to dispatch the same signal.
+	inFlightSignals map[string]bool
 
 	// state is used to store state that will continue between continue-as-news
 	state *QueueState
