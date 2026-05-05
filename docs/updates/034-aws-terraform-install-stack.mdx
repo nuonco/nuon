@@ -1,0 +1,17 @@
+---
+title: '034 - Terraform Stacks for AWS'
+description: 'Provision Stacks in AWS using Terraform.'
+boost: 0.3
+---
+
+_May 4, 2026_
+
+## Terraform Stack template for AWS
+
+You can now provision [Stacks](/concepts/stacks) for AWS installs using Terraform.
+
+![aws await install stack screenshot](../images/changelog/034-aws-tf-stack-await-install-stack.png)
+
+Cloudformation is still supported, and you can choose either option when creating an install. The Terraform template will create the same resources as the Cloudformation template, and the resulting Stack will function exactly the same. The template is open source and can be found in the [nuonco/install-stacks](https://github.com/nuonco/install-stacks) repo.
+
+If you use [custom nested stacks](/guides/custom-nested-stacks) in the Cloudformation template, you can customize the Terraform template by forking the repo, just like you would for any other Terraform module. Read the [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates) guide for more details.
