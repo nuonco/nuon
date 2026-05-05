@@ -1,0 +1,154 @@
+---
+title: 'Customizing Terraform Stack Templates'
+description: 'Fork the open-source install-stacks repo to customize the Terraform install stack for your customers.'
+icon: "code-fork"
+keywords: ["installs", "stacks", "terraform", "install-stacks", "customize", "fork"]
+---
+
+The Terraform templates for provisioning Stacks live in the open-source
+[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) repo. The defaults work out of the box for most
+customers, but if you need to meet specific networking, compliance, or naming requirements you can fork the repo, modify
+the relevant cloud directory (`aws/` or `gcp/`), and point your customers at your fork.
+
+The runner has some requirements that the Stack must fulfill. Each cloud has its own contract — the
+shape is similar but the resource types and payload keys differ. As long as your fork preserves the contract for the
+clouds you support, you can change anything else freely.
+
+## AWS
+
+The AWS stack lives in [`install-stacks/aws/`](https://github.com/nuonco/install-stacks/tree/main/aws).
+
+### Runner instance
+
+- An EC2 instance (typically launched by an Auto Scaling Group) in a subnet with outbound HTTPS to the Nuon API and to
+  GitHub raw — the boot process downloads `init-mng-v2.sh` and the `runner` binary over the public internet.
+- **IMDSv2 must be enabled with required tokens.** The runner authenticates to ctl-api using its Instance Identity
+  Document, which is read from IMDS.
+- **Instance tags must include**:
+  - `nuon_runner_id`
+  - `nuon_runner_api_url`
+  - `nuon_install_id` — used in the per-install CloudWatch log group path.
+
+  `init-mng-v2.sh` reads these via `ec2:DescribeTags`. Missing or misnamed tags cause the runner to fail to start.
+- **`user_data` must export `RUNNER_AUTH_METHOD=iid`** before invoking the init script. The init script defaults to
+  `sts` auth (legacy) if this is not set.
+
+### Runner IAM role
+
+Attached to the instance via an instance profile. The inline policy must allow:
+
+- `sts:AssumeRole` on every operation, break-glass, and custom role the stack creates. The runner switches into these
+  roles to execute components.
+- `secretsmanager:GetSecretValue` and `secretsmanager:DescribeSecret` on the secret ARN pattern your stack uses (the
+  default stack uses `<prefix>-*`). Required for components that consume secrets.
+- `logs:CreateLogGroup`, `CreateLogStream`, `PutLogEvents`, `DescribeLogStreams` on `/nuon/<install_id>/*` and
+  `runner-*` log groups.
+- `ec2:DescribeTags` on `*` — the init script's tag lookups.
+
+### Operation, break-glass, and custom roles
+
+- One IAM role per `[operation_role]`, `[[break_glass_role]]`, and `[[custom_role]]` block declared in `stack.toml`.
+- Trust policy must allow `sts:AssumeRole` from:
+  - The runner role ARN — the runner assumes them when executing components or actions.
+  - The Nuon control-plane principals (`var.nuon_support_iam_role_arns`, falling back to account root) — used for
+    ad-hoc actions and break-glass operations initiated from ctl-api.
+- Permissions on each role come from your `stack.toml` (`provision_inline_policy`,
+  `provision_managed_policy_arns`, etc.). The stack's job is to translate those into IAM resources.
+- **Role names must match `each.key` from `stack.toml` verbatim.** ctl-api looks roles up by exact name, and the
+  default stack deliberately doesn't double-prefix break-glass / custom roles. If you rewrap names with a prefix you'll
+  hit the 64-character IAM role-name limit and break role lookups.
+
+### Phone-home payload
+
+After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_home_url`. ctl-api persists every key
+in this payload as an install stack output, accessible from app templates as
+`nuon.install_stack.outputs.<key>`.
+
+The required keys (matching the CloudFormation phone-home Lambda payload exactly):
+
+| Key | Notes |
+| --- | --- |
+| `request_type` | Always `"Create"` for the initial phone-home. |
+| `phone_home_type` | `"aws"`. |
+| `account_id`, `region` | AWS account and region the install lives in. |
+| `vpc_id` | The runner's VPC. |
+| `runner_subnet` | Single subnet ID where the runner lives. |
+| `public_subnets`, `private_subnets` | **Comma-joined strings**, not JSON arrays. ctl-api decodes these with `StringToSliceHookFunc(",")`. Sending a JSON list lands in postgres as the string `"[subnet-x subnet-y]"` and decodes to an empty list. |
+| `runner_security_group_id` | Runner SG — vendor sandboxes commonly add ingress rules pointing at this. |
+| `runner_iam_role_arn`, `runner_instance_profile` | Used for kube-runner / EKS access entries. |
+| `runner_asg_name`, `runner_log_group_name` | Used by the runner management UI. |
+| `provision_iam_role_arn`, `maintenance_iam_role_arn`, `deprovision_iam_role_arn` | Empty string when the corresponding role isn't declared. |
+| `break_glass_role_arns`, `custom_role_arns` | Maps of role-name → ARN. |
+| `install_inputs` | Echo of `var.install_inputs`. |
+| `<secret_name>_arn` | One key per secret declared in `stack.toml`, flattened into the top-level payload. |
+
+## GCP
+
+The GCP stack lives in [`install-stacks/gcp/`](https://github.com/nuonco/install-stacks/tree/main/gcp).
+
+### Runner instance
+
+- A `google_compute_instance` (or MIG) in a subnet with outbound HTTPS to the Nuon API and to GitHub raw.
+- The runner authenticates using the **runner service account's GCP-issued identity token** — no shared secrets in
+  metadata.
+- The same `init-mng-v2.sh` flow applies: instance metadata must carry `nuon_runner_id`, `nuon_runner_api_url`, and
+  `nuon_install_id` so the init script can read them.
+
+### Runner service account
+
+Attached to the runner instance. The IAM policy must allow:
+
+- `iam.serviceAccounts.getAccessToken` and `iam.serviceAccounts.signBlob` on every operation, break-glass, and custom
+  service account the stack creates — the runner impersonates these to execute components.
+- Read access to whatever Secret Manager secrets the stack provisions (the default stack scopes by name prefix).
+- `logging.logEntries.create` for runner logs.
+
+### Operation, break-glass, and custom service accounts
+
+- One service account per `[operation_role]`, `[[break_glass_role]]`, and `[[custom_role]]` block in `stack.toml`.
+- Each must grant the runner service account `roles/iam.serviceAccountTokenCreator` so the runner can impersonate it.
+- Permissions on each service account come from your `stack.toml` (inline + managed policies are translated into IAM
+  bindings on the project).
+- **Service account names must match `each.key` from `stack.toml` verbatim.** ctl-api looks them up by exact short
+  name (the part before `@<project>.iam.gserviceaccount.com`).
+
+### Phone-home payload
+
+After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_home_url`. Required keys:
+
+| Key | Notes |
+| --- | --- |
+| `request_type` | Always `"Create"` for the initial phone-home. |
+| `phone_home_type` | `"gcp"`. |
+| `project_id`, `region` | GCP project and region. |
+| `network_name`, `network_id` | The runner's VPC network. |
+| `public_subnet_name`, `private_subnet_name`, `runner_subnet_name` | Subnet names (not IDs — GCP subnets are referenced by name in most APIs). |
+| `runner_service_account_email` | Used for sandbox impersonation grants. |
+| `provision_sa_email`, `maintenance_sa_email`, `deprovision_sa_email` | Empty string when the corresponding role isn't declared. |
+| `break_glass_sa_emails`, `custom_sa_emails` | Maps of role-name → SA email. |
+| `gke_node_pool_sa_email` | Pre-existing GKE node pool SA, or one created by the stack when `var.gke_node_pool_sa_email` is empty. |
+| `install_inputs` | Echo of `var.install_inputs`. |
+| `<secret_name>` | One key per secret declared in `stack.toml`, flattened into the top-level payload (Secret Manager secret names, not ARNs). |
+
+## What you can customize freely
+
+- VPC / VNet / VPC layout, CIDRs, subnet count and sizes — as long as the runner subnet has working egress to the
+  Nuon API.
+- NAT vs public-subnet egress.
+- Instance type / machine type and image — anything that supports cloud-init and can run the `runner` binary works
+  (AL2023, Ubuntu LTS, Amazon Linux 2, Debian, COS).
+- Tags / labels, KMS keys, access logging, flow logs, private service endpoints, peering, transit gateways, DNS zones.
+- Wrapping the published module from a parent Terraform configuration instead of forking — `install-stacks/aws` and
+  `install-stacks/gcp` are normal Terraform modules and can be consumed directly:
+
+  ```hcl
+  module "nuon" {
+    source = "github.com/nuonco/install-stacks//aws"
+    # ...
+  }
+  ```
+
+## Contributing
+
+We welcome contributions to [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks). If you make any
+changes that you think others might find useful, please open a PR.
