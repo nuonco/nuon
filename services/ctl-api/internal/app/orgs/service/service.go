@@ -105,6 +105,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			// webhooks
 			current.GET("/webhooks", s.GetCurrentOrgWebhooks)
 			current.POST("/webhooks", s.CreateCurrentOrgWebhook)
+			current.PATCH("/webhooks/:webhook_id", s.UpdateCurrentOrgWebhook)
 			current.DELETE("/webhooks/:webhook_id", s.DeleteCurrentOrgWebhook)
 		}
 	}
