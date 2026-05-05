@@ -16,7 +16,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -103,6 +105,32 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	_, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	// Fail fast (no auto-retry) when the component has no usable build —
+	// a missing or errored build will not resolve mid-run; the user must
+	// trigger a new build.
+	if s.ComponentID != "" {
+		bld, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
+		if err != nil {
+			if generics.IsGormErrRecordNotFound(err) {
+				return stderr.NewStopError(
+					"no_component_build",
+					fmt.Sprintf("No active build found for component %s. Trigger a build before retrying.", s.ComponentID),
+					map[string]string{"component_id": s.ComponentID},
+					nil,
+				)
+			}
+			return fmt.Errorf("unable to get component build: %w", err)
+		}
+		if bld.Status == app.ComponentBuildStatusError {
+			return stderr.NewStopError(
+				"component_build_errored",
+				fmt.Sprintf("Component build %s for component %s is in an error state. Trigger a new build before retrying.", bld.ID, s.ComponentID),
+				map[string]string{"component_id": s.ComponentID, "build_id": bld.ID},
+				nil,
+			)
+		}
 	}
 	return nil
 }
