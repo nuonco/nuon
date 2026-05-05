@@ -26,11 +26,21 @@ func (e ErrAuthorization) Unwrap() error {
 	return e.Err
 }
 
-// A user error is a standard user error that denotes something about the user input was not valid
+// A user error is a standard user error that denotes something about the user input was not valid.
+//
+// ErrUser is also the canonical error type returned by signal Validate/Execute
+// and by activities they call, so the same well-formed user-facing error
+// travels both the HTTP path and the workflow path. The HTTP middleware
+// renders Description/Code only; the workflow path additionally honors
+// Directive (see step.go) to decide whether to stop, skip, or fall through
+// to normal auto-retry policy. Fields carry small structured context
+// (component_id, install_id, …) that the dashboard can render.
 type ErrUser struct {
 	Err         error
 	Description string
 	Code        string
+	Fields      map[string]string
+	Directive   StepDirective
 }
 
 func (u ErrUser) Error() string {

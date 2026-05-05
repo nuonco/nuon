@@ -1,20 +1,47 @@
 package executeworkflowstep
 
 import (
+	stderrors "errors"
+
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // handleStepError marks the step as errored and checks for auto-retry.
-// If the inner signal implements SignalWithAutoRetry and the retry budget
-// hasn't been exhausted, it writes a directive ("retry" or "retry-group")
-// and returns nil. The group reads the directive and handles cloning.
+//
+// Step-error processing happens in three layers:
+//
+//  1. If the underlying error carries an stderr.ErrUser (either as a direct
+//     wrap or via the stderr.StepErrorPayload attached as ApplicationError
+//     details by AwaitSignal), and that ErrUser has a non-default Directive,
+//     the directive determines the outcome:
+//     - StepDirectiveStop → mark error, no auto-retry, surface user copy.
+//     - StepDirectiveSkip → mark step as skipped (Success+continue), advance.
+//
+//  2. Otherwise, if the signal implements SignalWithAutoRetry and the retry
+//     budget hasn't been exhausted, write a "retry" / "retry-group"
+//     directive and return nil. The group reads the directive and clones.
+//
+//  3. Otherwise, mark the step failed and return the error.
 func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, stepErr error) error {
+	if u, ok := extractUserError(stepErr); ok {
+		switch u.Directive {
+		case stderr.StepDirectiveStop:
+			return s.markStepStopped(ctx, l, step, u, stepErr)
+		case stderr.StepDirectiveSkip:
+			return s.markStepSkippedFromUserError(ctx, l, step, u)
+		}
+		// StepDirectiveDefault and any future directive falls through to
+		// the existing auto-retry policy below.
+	}
+
 	sig := stepSignal(step)
 
 	// Check auto-retry on inner signal.
@@ -136,4 +163,84 @@ func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, st
 		return errors.Wrap(err, "unable to mark step as error")
 	}
 	return stepErr
+}
+
+// markStepStopped marks the step as errored with directive=Stop, skipping
+// the auto-retry path entirely. The user-facing copy on the step status is
+// taken from u.Description so the dashboard renders the curated message
+// rather than the raw cause.
+func (s *Signal) markStepStopped(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, u stderr.ErrUser, stepErr error) error {
+	l.Info("step error has Stop directive — skipping auto-retry",
+		zap.String("step_id", step.ID),
+		zap.String("reason_code", u.Code))
+
+	if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
+		return errors.Wrap(err, "unable to set stop directive")
+	}
+
+	desc := u.Description
+	if desc == "" {
+		desc = stepHumanDescription(stepErr)
+	}
+
+	meta := map[string]any{
+		"reason":   stepErr.Error(),
+		"terminal": true,
+	}
+	for k, v := range stderr.MetadataFromErrUser(u) {
+		meta[k] = v
+	}
+
+	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusError,
+			StatusHumanDescription: desc,
+			Metadata:               meta,
+		},
+	}); err != nil {
+		return errors.Wrap(err, "unable to mark step as stopped")
+	}
+	return stepErr
+}
+
+// markStepSkippedFromUserError marks the step as skipped with directive=Continue,
+// matching the existing single-step skip semantics used by approval_skip.go:
+// the step status is StatusSuccess with metadata.status="skipped". Returns
+// nil so the group continues to the next step.
+func (s *Signal) markStepSkippedFromUserError(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, u stderr.ErrUser) error {
+	l.Info("step error has Skip directive — marking step skipped",
+		zap.String("step_id", step.ID),
+		zap.String("reason_code", u.Code))
+
+	extra := map[string]any{
+		"step_idx": step.Idx,
+		"status":   "skipped",
+	}
+	if u.Description != "" {
+		extra["description"] = u.Description
+	}
+	for k, v := range stderr.MetadataFromErrUser(u) {
+		extra[k] = v
+	}
+
+	return writeDirective(ctx, step.ID, DirectiveContinue, extra)
+}
+
+// extractUserError recovers a typed stderr.ErrUser from stepErr, walking
+// both Go's Unwrap chain and the Temporal ApplicationError details set by
+// AwaitSignal. Returns the zero value and false when stepErr is not a user
+// error.
+func extractUserError(stepErr error) (stderr.ErrUser, bool) {
+	if u, ok := stderr.IsUserError(stepErr); ok {
+		return u, true
+	}
+	var appErr *temporal.ApplicationError
+	if stderrors.As(stepErr, &appErr) && appErr.HasDetails() {
+		var p stderr.StepErrorPayload
+		if err := appErr.Details(&p); err == nil && !p.IsZero() {
+			return stderr.ErrUserFromPayload(p, appErr.Message()), true
+		}
+	}
+	return stderr.ErrUser{}, false
 }

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -82,20 +81,7 @@ func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, erro
 		}
 
 		validateErr := &signal.SignalErrValidate{Err: err}
-		humanDesc := signal.HumanError(err)
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
-			QueueSignalID:     h.queueSignalID,
-			Status:            app.StatusError,
-			StatusDescription: humanDesc,
-			Metadata: map[string]any{
-				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
-			},
-		})
-		h.setFinished(app.StatusError, humanDesc)
-		return nil, temporal.NewNonRetryableApplicationError(
-			"signal failure",
-			humanDesc,
-			validateErr)
+		return nil, h.failPhase(ctx, "validate_finished_at", validateErr, err)
 	}
 
 	// record validate completion timestamp

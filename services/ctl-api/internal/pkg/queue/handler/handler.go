@@ -67,10 +67,13 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
-	// finishedStatus and finishedErr capture the terminal outcome so the
+	// finishedStatus, finishedErr, finishedMeta capture the terminal outcome so the
 	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
+	// finishedMeta carries the StepErrorPayload-shaped metadata (error code,
+	// fields, step directive) when the failure originated from an stderr.ErrUser.
 	finishedStatus app.Status
 	finishedErr    string
+	finishedMeta   map[string]any
 
 	// cancelable context for execution
 	executingCtx    workflow.Context
@@ -83,7 +86,15 @@ type handler struct {
 
 // setFinished marks the handler as finished with a terminal status and optional error description.
 func (h *handler) setFinished(status app.Status, errDesc string) {
+	h.setFinishedWithMeta(status, errDesc, nil)
+}
+
+// setFinishedWithMeta is like setFinished but also captures the
+// StepErrorPayload-shaped metadata produced by extractStepDirective so it
+// can be returned to AwaitSignal callers via FinishedResponse.Metadata.
+func (h *handler) setFinishedWithMeta(status app.Status, errDesc string, meta map[string]any) {
 	h.finished = true
 	h.finishedStatus = status
 	h.finishedErr = errDesc
+	h.finishedMeta = meta
 }
