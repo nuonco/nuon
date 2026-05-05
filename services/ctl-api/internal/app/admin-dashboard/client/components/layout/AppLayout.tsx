@@ -138,9 +138,7 @@ export const AppLayout = () => {
       {/* Main content */}
       <div className="flex-1 min-w-0">
         <main className="p-6 lg:p-8">
-          <div className="mx-auto max-w-6xl">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
       </div>
     </div>

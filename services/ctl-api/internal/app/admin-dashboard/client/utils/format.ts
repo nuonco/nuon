@@ -22,9 +22,11 @@ export function formatDuration(nanos: number | undefined): string {
   return dur.toFormat("h'h' m'm'")
 }
 
-export function truncateId(id: string, len = 12): string {
+// DEPRECATED: truncateId is pretty much redundant atm, it just returns same value,
+// it was added to truncate long ids but needed anymore. Usage to be removed.
+export function truncateId(id: string, _len = 12): string {
   if (!id) return '-'
-  return id.length > len ? id.slice(0, len) + '...' : id
+  return id
 }
 
 export function statusColor(status: string | undefined): string {
