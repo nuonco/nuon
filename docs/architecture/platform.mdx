@@ -7,7 +7,7 @@ keywords: ["control plane vs data plane", "Nuon control plane", "platform archit
 ---
 
 <Note>
-This page covers the internal architecture of the Nuon platform. For an overview of what gets deployed into a customer's cloud account, see [App Deployment Architecture](/architecture/byoc).
+For an overview of what gets deployed into a customer's cloud account, see [Your App Deployment Diagram](/architecture/app-deployment).
 </Note>
 
 The Nuon platform consists of a Control Plane that remotely orchestrates [Runners](/concepts/runners) deployed into customer accounts. Runners are egress-only: they poll the Control Plane for jobs rather than receiving inbound commands. This allows the Control Plane to coordinate work across all installs without any access to the accounts Runners are hosted in.

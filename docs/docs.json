@@ -255,7 +255,7 @@
             "boost": 1.5,
             "pages": [
               "architecture/platform",
-              "architecture/byoc",
+              "architecture/app-deployment",
               "architecture/runner-auth",
               "security"
             ]
@@ -363,6 +363,10 @@
     {
       "source": "/runner-architecture",
       "destination": "/architecture/platform"
+    },
+    {
+      "source": "/architecture/byoc",
+      "destination": "/architecture/app-deployment"
     },
     {
       "source": "/concepts/installs",

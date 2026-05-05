@@ -1,31 +1,39 @@
 ---
 title: 'Install Self-Hosted Nuon'
-description: 'Deploy Nuon in your own cloud account'
-icon: 'cloud-arrow-up'
-keywords: ['self-hosted Nuon']
+description: 'Run Nuon entirely within your own infrastructure, with no path for Nuon to reach in'
+icon: 'server'
+keywords: ['self-hosted Nuon', 'air-gapped Nuon', 'fully self-hosted', 'no remote management', 'compliance Nuon', 'sovereign Nuon']
 ---
 
-In addition to the Nuon BYOC offering, Nuon supports fully self-hosted deployments. The guides below cover cloud-specific setup.
+Self-Hosted Nuon is a single-tenant Nuon control plane running in your own AWS, Azure, or Google Cloud account, with no path for Nuon to reach in. It is the most disconnected deployment option: you install it, operate it, and upgrade it.
+
+This is the same software as [Nuon BYOC](/guides/byoc), but without the remote operator. There is no Nuon Runner in your account polling Nuon Cloud for jobs, no managed upgrades, and no remote troubleshooting. In exchange, the installation has no mechanism for Nuon to access — useful for compliance, sovereignty, or air-gap requirements where any remote-managed control plane (even a single-tenant one) is ruled out.
+
+Self-Hosted Nuon requires a paid license. [Contact sales](https://nuon.co/contact-sales) to get started.
 
 ## Architecture
 
+Your control plane runs in your cloud account with no connection to Nuon. Customer Runners poll your control plane for jobs and pull artifacts from your container registry — the same flow as every other deployment model.
+
 ```mermaid
 flowchart TD
-    subgraph CP["Control Plane — EKS"]
-        DASH["dashboard-ui"]
-        CTL["ctl-api"]
-        BR["Build Runner"]
+    subgraph YourCloud["Your Cloud Account — AWS · Azure · GCP"]
+        subgraph CP["Control Plane — EKS · AKS · GKE"]
+            DASH["dashboard-ui"]
+            CTL["ctl-api"]
+            BR["Build Runner"]
+        end
+
+        subgraph Deps["Dependencies"]
+            TMP["Temporal"]
+            CH["ClickHouse"]
+            DB[("Postgres")]
+            REG[("Container Registry")]
+            BLOB[("Blob Storage")]
+        end
     end
 
-    subgraph Deps["Dependencies"]
-        TMP["Temporal"]
-        CH["ClickHouse"]
-        RDS[("RDS")]
-        S3[("S3")]
-        ECR[("ECR")]
-    end
-
-    subgraph Customers["Customer Cloud — AWS · Azure · GCP"]
+    subgraph EndCustomers["Customer Clouds — AWS · Azure · GCP"]
         R["Nuon Runner"]
         I["Installs"]
     end
@@ -33,19 +41,27 @@ flowchart TD
     DASH -->|"API calls"| CTL
     CTL --> TMP
     CTL --> CH
-    CTL --> RDS
-    CTL --> S3
+    CTL --> DB
+    CTL --> BLOB
     CTL -->|"trigger builds"| BR
-    TMP --> RDS
-    BR -->|"push OCI artifacts"| ECR
+    BR -->|"push OCI artifacts"| REG
 
     R -->|"polls for jobs"| CTL
-    R -->|"pull artifacts"| ECR
+    R -->|"pull artifacts"| REG
     R -->|"deploys"| I
 ```
+
+## Operational Responsibility
+
+Self-hosting means you own the full lifecycle of the Nuon control plane:
+
+- **Upgrades** — you apply new Nuon releases. There is no Nuon Runner in your account to do this remotely.
+- **Backup and restore** — your Postgres, blob storage, and container registry are yours to back up and recover.
+- **Monitoring and alerting** — wire your own observability into the control plane services.
+- **Troubleshooting** — Nuon engineers cannot remotely inspect logs, run diagnostics, or apply hotfixes. Support is limited to guidance you can act on yourself.
 
 ## Supported Platforms
 
 - [AWS](/guides/self-hosted/aws) — Nuon deploys on EKS with RDS, ECR, Route 53, ACM, and Secrets Manager.
-- [Azure](/guides/self-hosted/azure) — Azure AKS support.
-- [GCP](/guides/self-hosted/gcp) — GCP support.
+- [Azure](/guides/self-hosted/azure) — AKS with Azure SQL, ACR, Blob Storage, and Key Vault.
+- [GCP](/guides/self-hosted/gcp) — GKE with Cloud SQL, GAR, GCS, and Secret Manager.
