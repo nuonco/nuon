@@ -291,3 +291,64 @@ body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* log panel cycle transitions */
+.animate-slide-in-from-bottom {
+  animation: slide-in-from-bottom 150ms var(--ease-cubic) forwards;
+}
+
+.animate-slide-in-from-top {
+  animation: slide-in-from-top 150ms var(--ease-cubic) forwards;
+}
+
+.animate-slide-exit-up {
+  animation: slide-exit-up 150ms var(--ease-cubic) forwards;
+}
+
+.animate-slide-exit-down {
+  animation: slide-exit-down 150ms var(--ease-cubic) forwards;
+}
+
+@keyframes slide-in-from-bottom {
+  from {
+    transform: translateY(1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    transform: translateY(-1.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-exit-up {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-1.5rem);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-exit-down {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(1.5rem);
+    opacity: 0;
+  }
+}
