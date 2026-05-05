@@ -122,8 +122,6 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/orgs/table", s.OrgsTable)
 		api.GET("/orgs/:id", s.OrgDetail)
 		api.GET("/orgs/:id/status", s.OrgStatus)
-		api.POST("/orgs/:id/tags", s.UpdateOrgTags)
-		api.POST("/orgs/:id/tags/remove/:tag", s.RemoveSingleTag)
 		api.POST("/orgs/:id/labels", s.AddOrgLabels)
 		api.POST("/orgs/:id/labels/remove/:key", s.RemoveOrgLabel)
 		api.POST("/orgs/:id/support-users/add", s.ProxyAddSupportUsers)
@@ -136,6 +134,9 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/accounts/:id", s.AccountDetail)
 		api.GET("/accounts/:id/installs", s.AccountInstallsTable)
 		api.GET("/accounts/:id/audit-logs", s.AccountAuditLogsTable)
+
+		// Runner uptime
+		api.GET("/runner-uptime", s.RunnerUptime)
 
 		// Runners
 		api.GET("/runners", s.Runners)

@@ -1,17 +1,16 @@
 import { api } from '@/lib/api'
-import type { TOrg, TOrgsResponse, TOrgDetailResponse } from '@/types/admin.types'
+import type { TOrg, TOrgDetailResponse } from '@/types/admin.types'
 
-export const getOrgs = (params: { search?: string; tag?: string[]; page?: number }) =>
-  api<TOrgsResponse>({ path: 'orgs', params })
+export const getOrgs = (params: { search?: string; label?: string; page?: number }) =>
+  api<{
+    orgs: TOrg[]
+    label_options: { key: string; values: string[] }[]
+    page: number
+    total_pages: number
+  }>({ path: 'orgs', params })
 
 export const getOrgDetail = (id: string, params?: { page?: number }) =>
   api<TOrgDetailResponse>({ path: `orgs/${id}`, params })
-
-export const updateOrgTags = (id: string, tags: string[]) =>
-  api<TOrg>({ path: `orgs/${id}/tags`, method: 'POST', body: { tags } })
-
-export const removeOrgTag = (id: string, tag: string) =>
-  api<TOrg>({ path: `orgs/${id}/tags/remove/${encodeURIComponent(tag)}`, method: 'POST' })
 
 export const addOrgLabels = (id: string, labels: Record<string, string>) =>
   api<TOrg>({ path: `orgs/${id}/labels`, method: 'POST', body: { labels } })
