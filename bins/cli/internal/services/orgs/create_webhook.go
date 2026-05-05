@@ -9,7 +9,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateWebhook(ctx context.Context, webhookURL, webhookSecret string, asJSON bool) error {
+func (s *Service) CreateWebhook(ctx context.Context, webhookURL, webhookSecret string, interests InterestsFlags, asJSON bool) error {
 	if s.cfg.OrgID == "" {
 		s.printOrgNotSetMsg()
 		return nil
@@ -20,9 +20,15 @@ func (s *Service) CreateWebhook(ctx context.Context, webhookURL, webhookSecret s
 		return view.Error(fmt.Errorf("webhook url is required"))
 	}
 
+	resolvedInterests, err := interests.Resolve()
+	if err != nil {
+		return view.Error(err)
+	}
+
 	webhook, err := s.api.CreateCurrentOrgWebhook(ctx, &models.ServiceCreateCurrentOrgWebhookRequest{
 		WebhookURL:    &webhookURL,
 		WebhookSecret: webhookSecret,
+		Interests:     resolvedInterests,
 	})
 	if err != nil {
 		return view.Error(err)

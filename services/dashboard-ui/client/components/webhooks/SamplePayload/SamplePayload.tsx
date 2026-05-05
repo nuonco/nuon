@@ -14,6 +14,12 @@ export const SAMPLE_PAYLOAD = `{
   "nuonorgid": "orgeovwzku7qimrb9lxhrowckg",
   "nuonkind": "workflow_step",
   "nuontransition": "succeeded",
+  "interests": [
+    "resource:components",
+    "op:components.deploy",
+    "event:lifecycle.succeeded",
+    "outcome:completion"
+  ],
   "data": {
     "kind": "workflow_step",
     "transition": "succeeded",
