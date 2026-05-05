@@ -170,8 +170,8 @@ module "nuon_ecr_access" {
   repository_arns = ["<repository-arn>"]
 }
 
-output "ecr_access_iam_role" {
-  value = module.nuon_ecr_access.ecr_access_iam_role
+output "iam_role_arn" {
+  value = module.nuon_ecr_access.iam_role_arn
 }
 ```
 
@@ -182,11 +182,15 @@ If you are having trouble finding the repository ARN in the AWS console, you can
 
 ### AWS ECR from a Self-Hosted-on-GCP Customer
 
-If your customer is running a self-hosted Nuon deployment on GCP, the IAM role's trust policy needs to accept their
-ctl-api service account's OIDC token (via `accounts.google.com`) in addition to (or instead of) the Nuon-hosted AWS
-principal.
+If your customer is running a self-hosted Nuon deployment on GCP, pass the customer's GCP service account unique IDs
+via `gcp_principals` so they can assume the role via Workload Identity Federation. Two SAs need to be listed:
 
-Pass each self-hosted customer's GCP service account unique ID via `gcp_principals`:
+- The org runner SA (display name `Nuon org runner <org_id>`) — pulls source for builds.
+- The ctl-api SA (display name `ctl-api for <install_id>`) — fetches image metadata for `external_image` components.
+
+<Note>
+Requires `nuonco/ecr-access/aws` version `0.1.9` or later.
+</Note>
 
 ```hcl
 module "nuon_ecr_access" {
@@ -196,15 +200,31 @@ module "nuon_ecr_access" {
 
   gcp_principals = [
     {
-      service_account_unique_id = "123456789012345678901"  # numeric uid of the customer's ctl-api SA
-      service_account_email     = "ctl-api-<install>@<customer-project>.iam.gserviceaccount.com"
+      service_account_unique_id = "123456789012345678901"  # org runner SA UID
+      service_account_email     = "<org-id-truncated>@<customer-project>.iam.gserviceaccount.com"
+    },
+    {
+      service_account_unique_id = "987654321098765432109"  # ctl-api SA UID
+      service_account_email     = "ctl-api-<install-id-truncated>@<customer-project>.iam.gserviceaccount.com"
     },
   ]
 }
 ```
 
-The customer can find their ctl-api service account email in their self-hosted Nuon's GCP project. Run
-`gcloud iam service-accounts describe <email> --format='value(uniqueId)'` to get the numeric ID for the trust condition.
+<Note>
+Don't construct the SA emails by hand — Nuon truncates the org/install ID to fit GCP's 30-character SA name limit, and
+the truncation length varies. Look the SAs up directly in the customer's project; the full org/install ID is preserved
+in each SA's display name.
+</Note>
+
+Look them up with:
+
+```bash
+gcloud iam service-accounts list \
+  --project=<customer-project> \
+  --filter='displayName~"Nuon org runner" OR displayName~"ctl-api for"' \
+  --format='table(email,uniqueId,displayName)'
+```
 
 <Note>
 The default Nuon-hosted (AWS) trust principal stays in place — adding `gcp_principals` is additive, so the same role
