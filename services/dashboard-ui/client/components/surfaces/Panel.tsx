@@ -16,10 +16,12 @@ type TPanelSize = 'default' | 'half' | '3/4' | 'full'
 
 export interface IPanel extends React.HTMLAttributes<HTMLDivElement> {
   childrenClassName?: string
+  defaultExpanded?: boolean
   heading?: React.ReactNode
   headerClassName?: string
   isVisible?: boolean
   onClose?: () => void
+  onSizeChange?: (size: TPanelSize) => void
   panelId?: string
   panelKey?: string
   size?: TPanelSize
@@ -30,16 +32,18 @@ export const PanelBase = ({
   className,
   children,
   childrenClassName,
+  defaultExpanded,
   heading,
   headerClassName,
   isVisible = false,
   onClose,
+  onSizeChange,
   panelId,
   panelKey,
   size: initSize = 'default',
   ...props
 }: Omit<IPanel, 'triggerButton'>) => {
-  const [size, setSize] = useState(initSize)
+  const [size, setSize] = useState(defaultExpanded ? 'full' : initSize)
   const { removePanel, panels } = useSurfaces()
   const handleClose = () => {
     if (onClose) onClose?.()
@@ -112,11 +116,9 @@ export const PanelBase = ({
                     variant="ghost"
                     onClick={() => {
                       setSize((prev: TPanelSize) => {
-                        if (prev === initSize) {
-                          return 'full'
-                        } else {
-                          return initSize
-                        }
+                        const next = prev === initSize ? 'full' : initSize
+                        onSizeChange?.(next)
+                        return next
                       })
                     }}
                     aria-label={

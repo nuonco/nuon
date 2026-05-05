@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
@@ -88,32 +88,47 @@ const LogPanelNavHint = () => (
   </div>
 )
 
+const ANIM_DURATION = 100
+
 type TCycleTransition = {
+  phase: 'exiting' | 'entering'
   prevLog: TOTELLog
   direction: 'up' | 'down'
 }
 
+const LOG_PANEL_FULLSCREEN_KEY = 'log-panel-fullscreen'
+
 export const LogPanel = ({ className, log, cycleDirection, ...props }: ILogPanel) => {
   const url = useFullUrl()
   const prevLogRef = useRef<TOTELLog>(log)
+  const isFullscreen = localStorage.getItem(LOG_PANEL_FULLSCREEN_KEY) === 'true'
   const [transition, setTransition] = useState<TCycleTransition | null>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (log.id !== prevLogRef.current.id && cycleDirection) {
-      setTransition({ prevLog: prevLogRef.current, direction: cycleDirection })
+      const prevLog = prevLogRef.current
       prevLogRef.current = log
-      const timer = setTimeout(() => setTransition(null), 150)
-      return () => clearTimeout(timer)
+      setTransition({ phase: 'exiting', prevLog, direction: cycleDirection })
+      const exitTimer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          setTransition({ phase: 'entering', prevLog, direction: cycleDirection })
+        })
+      }, ANIM_DURATION)
+      const enterTimer = setTimeout(() => {
+        requestAnimationFrame(() => {
+          setTransition(null)
+        })
+      }, ANIM_DURATION * 2)
+      return () => {
+        clearTimeout(exitTimer)
+        clearTimeout(enterTimer)
+      }
     }
     prevLogRef.current = log
   }, [log.id, cycleDirection])
 
-  const enterClass =
-    transition?.direction === 'down'
-      ? 'animate-slide-in-from-bottom'
-      : transition?.direction === 'up'
-        ? 'animate-slide-in-from-top'
-        : undefined
+  const isExiting = transition?.phase === 'exiting'
+  const isEntering = transition?.phase === 'entering'
 
   const exitClass =
     transition?.direction === 'down'
@@ -122,41 +137,47 @@ export const LogPanel = ({ className, log, cycleDirection, ...props }: ILogPanel
         ? 'animate-slide-exit-down'
         : undefined
 
+  const enterClass =
+    transition?.direction === 'down'
+      ? 'animate-slide-in-from-bottom'
+      : transition?.direction === 'up'
+        ? 'animate-slide-in-from-top'
+        : undefined
+
+  const displayLog = isExiting ? transition.prevLog : log
+
   return (
     <Panel
       className={cn(
         'border-t-6',
-        getSeverityBorderClasses(log.severity_number, 't'),
+        getSeverityBorderClasses(
+          (isExiting ? transition.prevLog : log).severity_number,
+          't'
+        ),
         className
       )}
       heading={
-        <div className="relative overflow-hidden">
-          {transition && (
-            <div className={cn('absolute inset-0', exitClass)}>
-              <LogPanelHeading log={transition.prevLog} />
-            </div>
-          )}
-          <div className={enterClass}>
-            <LogPanelHeading log={log} />
-          </div>
+        <div className={cn(
+          isExiting && 'animate-heading-exit',
+          isEntering && 'animate-heading-enter'
+        )}>
+          <LogPanelHeading log={displayLog} />
         </div>
       }
       size="half"
+      defaultExpanded={isFullscreen}
+      onSizeChange={(size) => {
+        localStorage.setItem(LOG_PANEL_FULLSCREEN_KEY, size === 'full' ? 'true' : 'false')
+      }}
       {...props}
     >
-      <div className="relative overflow-hidden flex flex-col flex-auto">
-        {transition && (
-          <div
-            className={cn(
-              'absolute inset-x-0 top-0 flex flex-col gap-4 md:gap-6',
-              exitClass
-            )}
-          >
-            <LogPanelBody log={transition.prevLog} url={url} />
-          </div>
-        )}
-        <div className={cn('flex flex-col flex-auto gap-4 md:gap-6', enterClass)}>
-          <LogPanelBody log={log} url={url} />
+      <div className="relative flex flex-col flex-auto">
+        <div className={cn(
+          'flex flex-col flex-auto gap-4 md:gap-6',
+          isExiting && exitClass,
+          isEntering && enterClass
+        )}>
+          <LogPanelBody log={displayLog} url={url} />
         </div>
       </div>
       <LogPanelNavHint />
