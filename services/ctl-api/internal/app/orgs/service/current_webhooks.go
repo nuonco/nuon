@@ -15,21 +15,34 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
 )
 
 type CurrentOrgWebhookResponse struct {
-	ID          string    `json:"id"`
-	OrgID       string    `json:"org_id"`
-	WebhookURL  string    `json:"webhook_url"`
-	CreatedByID string    `json:"created_by_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	HasSecret   bool      `json:"has_secret"`
+	ID          string              `json:"id"`
+	OrgID       string              `json:"org_id"`
+	WebhookURL  string              `json:"webhook_url"`
+	CreatedByID string              `json:"created_by_id"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+	HasSecret   bool                `json:"has_secret"`
+	Interests   interests.Interests `json:"interests" swaggertype:"object"`
 }
 
 type CreateCurrentOrgWebhookRequest struct {
-	WebhookURL    string `json:"webhook_url" binding:"required"`
-	WebhookSecret string `json:"webhook_secret"`
+	WebhookURL    string              `json:"webhook_url" binding:"required"`
+	WebhookSecret string              `json:"webhook_secret"`
+	Interests     interests.Interests `json:"interests" swaggertype:"object"`
+}
+
+// UpdateCurrentOrgWebhookRequest mutates a webhook's interests and/or secret.
+// WebhookURL is part of the (org_id, webhook_url) unique index and cannot be
+// changed in place — callers should delete + create to rename. Interests is
+// always replaced wholesale (PUT semantics for the field). WebhookSecret
+// pointer distinguishes "leave unchanged" (nil) from "clear" (empty string).
+type UpdateCurrentOrgWebhookRequest struct {
+	WebhookSecret *string             `json:"webhook_secret,omitempty"`
+	Interests     interests.Interests `json:"interests" swaggertype:"object"`
 }
 
 // @ID                                          GetCurrentOrgWebhooks
@@ -94,6 +107,10 @@ func (s *service) CreateCurrentOrgWebhook(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if err := interests.Validate(req.Interests); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
 
 	webhook, err := s.createCurrentOrgWebhook(ctx, org.ID, account.ID, &req)
 	if err != nil {
@@ -102,6 +119,88 @@ func (s *service) CreateCurrentOrgWebhook(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, toCurrentOrgWebhookResponse(*webhook))
+}
+
+// @ID                                          UpdateCurrentOrgWebhook
+// @Summary                             update a webhook for the current org
+// @Description                 Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
+// @Tags                                        orgs
+// @Accept                                      json
+// @Produce                             json
+// @Security                            APIKey
+// @Security                            OrgID
+// @Param                                       webhook_id      path            string                                              true    "webhook ID"
+// @Param                                       req                     body            UpdateCurrentOrgWebhookRequest      true    "Input"
+// @Success                             200             {object}        CurrentOrgWebhookResponse
+// @Failure                             400             {object}        stderr.ErrResponse
+// @Failure                             401             {object}        stderr.ErrResponse
+// @Failure                             403             {object}        stderr.ErrResponse
+// @Failure                             404             {object}        stderr.ErrResponse
+// @Failure                             500             {object}        stderr.ErrResponse
+// @Router                                      /v1/orgs/current/webhooks/{webhook_id} [PATCH]
+func (s *service) UpdateCurrentOrgWebhook(ctx *gin.Context) {
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	var req UpdateCurrentOrgWebhookRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+	if err := interests.Validate(req.Interests); err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
+	webhook, err := s.updateCurrentOrgWebhook(ctx, org.ID, ctx.Param("webhook_id"), &req)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toCurrentOrgWebhookResponse(*webhook))
+}
+
+func (s *service) updateCurrentOrgWebhook(ctx context.Context, orgID, webhookID string, req *UpdateCurrentOrgWebhookRequest) (*app.Webhook, error) {
+	trimmedWebhookID := strings.TrimSpace(webhookID)
+	if trimmedWebhookID == "" {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("webhook_id is required"),
+			Description: "webhook_id is required",
+		}
+	}
+
+	var webhook app.Webhook
+	res := s.db.WithContext(ctx).
+		Where(app.Webhook{ID: trimmedWebhookID, OrgID: orgID}).
+		First(&webhook)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return nil, stderr.ErrNotFound{
+			Err:         fmt.Errorf("webhook %q not found for org %q", trimmedWebhookID, orgID),
+			Description: "webhook not found",
+		}
+	}
+	if res.Error != nil {
+		return nil, fmt.Errorf("unable to load webhook: %w", res.Error)
+	}
+
+	updates := map[string]any{
+		"interests": req.Interests,
+	}
+	if req.WebhookSecret != nil {
+		updates["webhook_secret"] = strings.TrimSpace(*req.WebhookSecret)
+	}
+
+	if err := s.db.WithContext(ctx).
+		Model(&webhook).
+		Updates(updates).Error; err != nil {
+		return nil, fmt.Errorf("unable to update webhook: %w", err)
+	}
+
+	return &webhook, nil
 }
 
 // @ID                                          DeleteCurrentOrgWebhook
@@ -171,11 +270,20 @@ func (s *service) createCurrentOrgWebhook(ctx context.Context, orgID string, acc
 		return nil, fmt.Errorf("unable to verify existing webhooks: %w", err)
 	}
 
+	// Default new webhooks to AllEvents=true so they receive every supported
+	// event until the caller explicitly opts into a per-resource config.
+	// Mirrors the slack channel subscription create handler.
+	subInterests := req.Interests
+	if subInterests.IsZero() {
+		subInterests = interests.AllEvents()
+	}
+
 	webhook := app.Webhook{
 		OrgID:         orgID,
 		CreatedByID:   accountID,
 		WebhookURL:    normalizedWebhookURL,
 		WebhookSecret: normalizedWebhookSecret,
+		Interests:     subInterests,
 	}
 
 	if err := s.db.WithContext(ctx).Create(&webhook).Error; err != nil {
@@ -235,6 +343,16 @@ func normalizeWebhookURL(rawWebhookURL string) (string, error) {
 }
 
 func toCurrentOrgWebhookResponse(webhook app.Webhook) CurrentOrgWebhookResponse {
+	// Surface the effective interests config: rows persisted before the
+	// interests filter shipped store NULL/zero JSONB but are delivered as
+	// AllEvents=true (see hooks/webhook.go listOrgWebhookTargets). Returning
+	// the same shape here keeps the CLI/dashboard/SDK in sync with what's
+	// actually delivered.
+	effectiveInterests := webhook.Interests
+	if effectiveInterests.IsZero() {
+		effectiveInterests = interests.AllEvents()
+	}
+
 	return CurrentOrgWebhookResponse{
 		ID:          webhook.ID,
 		OrgID:       webhook.OrgID,
@@ -243,6 +361,7 @@ func toCurrentOrgWebhookResponse(webhook app.Webhook) CurrentOrgWebhookResponse 
 		CreatedAt:   webhook.CreatedAt,
 		UpdatedAt:   webhook.UpdatedAt,
 		HasSecret:   strings.TrimSpace(webhook.WebhookSecret) != "",
+		Interests:   effectiveInterests,
 	}
 }
 

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import type { Interests } from '@/components/interests'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -20,14 +21,17 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
     mutationFn: ({
       webhookUrl,
       webhookSecret,
+      interests,
     }: {
       webhookUrl: string
       webhookSecret: string
+      interests: Interests
     }) =>
       createCurrentOrgWebhook({
         body: {
           webhook_url: webhookUrl,
           ...(webhookSecret ? { webhook_secret: webhookSecret } : {}),
+          interests,
         },
         orgId: org.id,
       }),
@@ -69,8 +73,8 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
     <CreateWebhookModal
       isPending={isPending}
       error={errorWithFriendlyConflict}
-      onSubmit={({ webhookUrl, webhookSecret }) =>
-        mutate({ webhookUrl, webhookSecret })
+      onSubmit={({ webhookUrl, webhookSecret, interests }) =>
+        mutate({ webhookUrl, webhookSecret, interests })
       }
       {...props}
     />

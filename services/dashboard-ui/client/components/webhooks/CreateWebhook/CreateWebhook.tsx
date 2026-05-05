@@ -4,6 +4,11 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
 import { Label } from '@/components/common/form/Label'
+import {
+  InterestsPicker,
+  allEvents,
+  type Interests,
+} from '@/components/interests'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
 
@@ -15,10 +20,15 @@ export const CreateWebhookModal = ({
 }: {
   isPending: boolean
   error: TAPIError | null
-  onSubmit: (params: { webhookUrl: string; webhookSecret: string }) => void
+  onSubmit: (params: {
+    webhookUrl: string
+    webhookSecret: string
+    interests: Interests
+  }) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [webhookUrl, setWebhookUrl] = useState('')
   const [webhookSecret, setWebhookSecret] = useState('')
+  const [interests, setInterests] = useState<Interests>(() => allEvents())
 
   const trimmedUrl = webhookUrl.trim()
   const isValidUrl = /^https?:\/\/.+/i.test(trimmedUrl)
@@ -47,6 +57,7 @@ export const CreateWebhookModal = ({
           onSubmit({
             webhookUrl: trimmedUrl,
             webhookSecret: webhookSecret.trim(),
+            interests,
           }),
         variant: 'primary',
       }}
@@ -92,9 +103,18 @@ export const CreateWebhookModal = ({
             autoComplete="off"
           />
           <Text variant="subtext" theme="neutral">
-            The secret cannot be retrieved later. To rotate it, delete this
-            webhook and create a new one.
+            The secret cannot be retrieved later. Edit the webhook to rotate
+            it.
           </Text>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Events</Label>
+          <InterestsPicker
+            variant="webhook"
+            value={interests}
+            onChange={setInterests}
+          />
         </div>
       </div>
     </Modal>
