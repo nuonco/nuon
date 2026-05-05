@@ -139,7 +139,6 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/runner-uptime", s.RunnerUptime)
 
 		// Runners
-		api.GET("/runners", s.Runners)
 		api.GET("/runners/all", s.AllRunners)
 		api.GET("/runners/:id", s.RunnerDetail)
 		api.PUT("/runners/:id/configs", s.RunnerUpsertConfig)
