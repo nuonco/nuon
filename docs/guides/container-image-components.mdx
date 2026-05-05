@@ -182,16 +182,23 @@ If you are having trouble finding the repository ARN in the AWS console, you can
 
 ### AWS ECR from a Self-Hosted-on-GCP Customer
 
-If your customer is running a self-hosted Nuon deployment on GCP, the IAM role's trust policy needs to accept their
-ctl-api service account's OIDC token (via `accounts.google.com`) in addition to (or instead of) the Nuon-hosted AWS
-principal.
+If your customer is running a self-hosted Nuon deployment on GCP, the IAM role's trust policy needs to accept the OIDC
+token (via `accounts.google.com`) of the GCP service accounts that actually call AWS, in addition to (or instead of) the
+Nuon-hosted AWS principal.
+
+Two service accounts in the customer's GCP project hit `sts:AssumeRoleWithWebIdentity` against this role:
+
+- **Org runner SA** — the GKE runner pod is Workload-Identity-bound to a GCP SA named after the org ID. This is the SA
+  that pulls source for builds (the typical failure path). Display name: `Nuon org runner <org_id>`.
+- **ctl-api SA** — fetches image metadata when evaluating external image policies. Display name: `ctl-api for <install_id>`.
+
+Both must be present in `gcp_principals` for the build path to succeed end-to-end.
 
 <Note>
-The `gcp_principals` input requires `nuonco/ecr-access/aws` version `0.1.7` or later. Pin the version explicitly if you
-were previously using an older release.
+The `gcp_principals` input requires `nuonco/ecr-access/aws` version `0.1.8` or later. Earlier releases either lacked
+the input (`<= 0.1.6`) or shipped a trust policy that AWS silently rejects for non-Google-OAuth audiences (`0.1.7`).
+Pin the version explicitly if you were previously using an older release.
 </Note>
-
-Pass each self-hosted customer's GCP service account unique ID via `gcp_principals`:
 
 ```hcl
 module "nuon_ecr_access" {
@@ -201,24 +208,30 @@ module "nuon_ecr_access" {
 
   gcp_principals = [
     {
-      service_account_unique_id = "123456789012345678901"  # numeric uid of the customer's ctl-api SA
-      service_account_email     = "ctl-api-<install>@<customer-project>.iam.gserviceaccount.com"
+      service_account_unique_id = "123456789012345678901"  # org runner SA UID
+      service_account_email     = "<org-id-truncated>@<customer-project>.iam.gserviceaccount.com"
+    },
+    {
+      service_account_unique_id = "987654321098765432109"  # ctl-api SA UID
+      service_account_email     = "ctl-api-<install-id-truncated>@<customer-project>.iam.gserviceaccount.com"
     },
   ]
 }
 ```
 
-The customer can find their ctl-api service account email in their self-hosted Nuon's GCP project. The install creator
-truncates the install ID to fit GCP's 30-character service account `account_id` limit, so the email is
-`ctl-api-<first-12-chars-of-install-id>@<project>.iam.gserviceaccount.com` — not the full install ID. The full install
-ID appears in the SA's display name (`ctl-api for <full-install-id>`).
+<Note>
+The install creator truncates the org/install ID to fit GCP's 30-character service account `account_id` limit. The
+amount truncated depends on the prefix/suffix the SA uses, so don't try to construct emails by hand — the simplest path
+is to list the SAs in the customer's project and copy the values directly. The full org/install ID is preserved in the
+SA's display name (`Nuon org runner <full-org-id>`, `ctl-api for <full-install-id>`).
+</Note>
 
-The simplest way to find both the email and unique ID is:
+The simplest way to find both emails and unique IDs is:
 
 ```bash
 gcloud iam service-accounts list \
   --project=<customer-project> \
-  --filter='email~ctl-api' \
+  --filter='displayName~"Nuon org runner" OR displayName~"ctl-api for"' \
   --format='table(email,uniqueId,displayName)'
 ```
 
