@@ -27,7 +27,9 @@ export const SyncSecretsStepDetails = ({ step }: ISyncSecretsStepDetails) => {
           </UnifiedLogsProvider>
         </LogStreamProvider>
       ) : (
-        <LogsSkeleton />
+        <div className="flex flex-col divide-y">
+          <LogsSkeleton />
+        </div>
       )}
     </div>
   )

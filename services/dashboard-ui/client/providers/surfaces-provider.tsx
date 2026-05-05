@@ -34,6 +34,7 @@ type TSurfacesContext = {
   panels: TPanels
   modals: TModals
   addPanel: (content: TPanelEl, panelKey?: string, panelId?: string) => string
+  updatePanel: (id: string, content: TPanelEl) => void
   clearPanels: () => void
   removePanel: (id: string, panelKey?: string) => void
   addModal: (content: TModalEl, modalKey?: string) => string
@@ -69,6 +70,13 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
       return id
     },
     [navigate]
+  )
+
+  const updatePanel = useCallback(
+    (id: string, content: TPanelEl) => {
+      setPanels((ps) => ps.map((p) => (p.id === id ? { ...p, content } : p)))
+    },
+    []
   )
 
   const removePanel = useCallback(
@@ -141,6 +149,7 @@ export function SurfacesProvider({ children }: { children: ReactNode }) {
         panels,
         modals,
         addPanel,
+        updatePanel,
         clearPanels,
         removePanel,
         addModal,
