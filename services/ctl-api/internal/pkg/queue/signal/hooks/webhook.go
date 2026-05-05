@@ -25,16 +25,19 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// Public webhook primitives. Consumers reason about exactly two things:
-// the workflow lifecycle and the workflow step lifecycle. Operation taxonomy
-// (component-deploy, sandbox-provision, etc.), multi-phase concepts (plan/apply),
-// and inner signal type names are deliberately NOT exposed.
+// Public webhook primitives. Consumers reason about three things: the workflow
+// lifecycle, the workflow step lifecycle, and the approval handshake on a
+// step. Operation taxonomy (component-deploy, sandbox-provision, etc.),
+// multi-phase concepts (plan/apply), and inner signal type names are
+// deliberately NOT exposed.
 const (
-	cloudEventTypeWorkflow     = "com.nuon.workflow.lifecycle.v1"
-	cloudEventTypeWorkflowStep = "com.nuon.workflow_step.lifecycle.v1"
+	cloudEventTypeWorkflow             = "com.nuon.workflow.lifecycle.v1"
+	cloudEventTypeWorkflowStep         = "com.nuon.workflow_step.lifecycle.v1"
+	cloudEventTypeWorkflowStepApproval = "com.nuon.workflow_step.approval.v1"
 
-	kindWorkflow     = "workflow"
-	kindWorkflowStep = "workflow_step"
+	kindWorkflow             = "workflow"
+	kindWorkflowStep         = "workflow_step"
+	kindWorkflowStepApproval = "workflow_step_approval"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -45,23 +48,41 @@ const (
 	statusCanceled  = "cancelled"
 )
 
-// Transition values surfaced in `data.transition`. Mirrors statuses with the
-// same name; the dedicated field exists so consumers can switch on transitions
-// without reading the (potentially redundant) `status` field.
+// Transition values surfaced in `data.transition`. Workflow / step events
+// emit started / succeeded / failed / cancelled. Approval events emit a
+// distinct vocabulary — requested when the approval row is created and
+// approved / rejected when a response lands.
 const (
 	transitionStarted   = "started"
 	transitionSucceeded = "succeeded"
 	transitionFailed    = "failed"
 	transitionCanceled  = "cancelled"
+
+	transitionRequested = "requested"
+	transitionApproved  = "approved"
+	transitionRejected  = "rejected"
 )
 
 // signalTypeExecuteWorkflow matches the SignalType produced by
 // services/ctl-api/internal/pkg/flow/signals/executeflow. Duplicated as a string
 // constant to avoid importing the flow package and producing an import cycle.
+//
+// signalTypeWorkflowStepApprovalRequest / signalTypeWorkflowStepApprovalResponse
+// mirror the SignalTypes defined in
+// services/ctl-api/internal/app/installs/signals/v2/workflowstepapproval{request,response}.
+// Duplicated as string constants for the same reason — to avoid pulling the
+// installs/signals tree into the queue/signal/hooks package.
 const (
-	signalTypeExecuteWorkflow     signal.SignalType = "execute-workflow"
-	signalTypeExecuteWorkflowStep signal.SignalType = "execute-workflow-step"
+	signalTypeExecuteWorkflow              signal.SignalType = "execute-workflow"
+	signalTypeExecuteWorkflowStep          signal.SignalType = "execute-workflow-step"
+	signalTypeWorkflowStepApprovalRequest  signal.SignalType = "workflow-step-approval-request"
+	signalTypeWorkflowStepApprovalResponse signal.SignalType = "workflow-step-approval-response"
 )
+
+// approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
+// approval webhook payloads. Slack message limits and consumer log budgets
+// make truncation safer than shipping multi-MB plans inline.
+const approvalPlanExcerptMaxBytes = 8 * 1024
 
 type Params struct {
 	fx.In
@@ -72,11 +93,12 @@ type Params struct {
 }
 
 type WebhookSignalLifecycleHook struct {
-	l           *zap.Logger
-	httpClient  *http.Client
-	webhookURLs []string
-	db          *gorm.DB
-	appURL      string
+	l            *zap.Logger
+	httpClient   *http.Client
+	webhookURLs  []string
+	db           *gorm.DB
+	appURL       string
+	publicAPIURL string
 }
 
 var _ signal.SignalLifecycleHook = (*WebhookSignalLifecycleHook)(nil)
@@ -97,9 +119,11 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 
 	webhookURLs := []string{}
 	appURL := ""
+	publicAPIURL := ""
 	if params.Cfg != nil {
 		webhookURLs = params.Cfg.WebhookURLs
 		appURL = strings.TrimSpace(params.Cfg.AppURL)
+		publicAPIURL = strings.TrimSpace(params.Cfg.PublicAPIURL)
 	}
 
 	return &WebhookSignalLifecycleHook{
@@ -107,9 +131,10 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
-		webhookURLs: normalizeWebhookURLs(webhookURLs),
-		db:          params.DB,
-		appURL:      appURL,
+		webhookURLs:  normalizeWebhookURLs(webhookURLs),
+		db:           params.DB,
+		appURL:       appURL,
+		publicAPIURL: publicAPIURL,
 	}
 }
 
@@ -117,17 +142,22 @@ func (h *WebhookSignalLifecycleHook) Name() string {
 	return "workflow_lifecycle_webhook"
 }
 
-// Supports limits this hook to the two public lifecycle primitives:
-// execute-workflow (workflow lifecycle) and execute-workflow-step (step
-// lifecycle). Inner-signal events (plan/apply, component-deploy, etc.) are
-// deliberately ignored — consumers should reason in terms of workflow + step.
+// Supports limits this hook to the public lifecycle primitives:
+// execute-workflow (workflow lifecycle), execute-workflow-step (step
+// lifecycle), and the approval handshake signals (request / response) which
+// are projected as workflow_step.approval.v1 events. Inner-signal events
+// (plan/apply, component-deploy, etc.) are deliberately ignored — consumers
+// should reason in terms of workflow + step + approval.
 func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool {
 	if len(h.webhookURLs) == 0 && h.db == nil {
 		return false
 	}
 
 	switch event.SignalType {
-	case signalTypeExecuteWorkflow, signalTypeExecuteWorkflowStep:
+	case signalTypeExecuteWorkflow,
+		signalTypeExecuteWorkflowStep,
+		signalTypeWorkflowStepApprovalRequest,
+		signalTypeWorkflowStepApprovalResponse:
 		return true
 	default:
 		return false
@@ -140,10 +170,25 @@ func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event sign
 		return signal.AllowPhaseDecision(), nil
 	}
 
+	// Approval signals don't have a "started" semantic: a request has either
+	// happened (requested) or it hasn't, and a response is intrinsically
+	// terminal (approved / rejected). Skip the before-phase emission so
+	// consumers don't see a noisy intermediate event.
+	if isApprovalSignalType(event.SignalType) {
+		return signal.AllowPhaseDecision(), nil
+	}
+
 	if err := h.publish(ctx, event, nil); err != nil {
 		h.l.Debug("failed to publish workflow lifecycle started webhook", zap.Error(err))
 	}
 	return signal.AllowPhaseDecision(), nil
+}
+
+// isApprovalSignalType returns true for the approval handshake signals
+// (request / response) which feed the workflow_step.approval.v1 cloud event.
+func isApprovalSignalType(t signal.SignalType) bool {
+	return t == signalTypeWorkflowStepApprovalRequest ||
+		t == signalTypeWorkflowStepApprovalResponse
 }
 
 func (h *WebhookSignalLifecycleHook) AfterPhase(ctx context.Context, event signal.SignalPhaseEvent, outcome signal.SignalPhaseOutcome) error {
@@ -181,8 +226,8 @@ type cloudEvent struct {
 	Data lifecycleEventData `json:"data"`
 }
 
-// lifecycleEventData is the public webhook payload. It exposes only two
-// primitives — workflow and (optionally) step — alongside the transition,
+// lifecycleEventData is the public webhook payload. It exposes the workflow
+// (always) and optionally the step + approval blocks alongside the transition,
 // outcome, and dashboard links.
 type lifecycleEventData struct {
 	Kind       string `json:"kind"`
@@ -194,6 +239,7 @@ type lifecycleEventData struct {
 	Step     *workflowStepRef  `json:"step,omitempty"`
 	Parent   *parentRef        `json:"parent,omitempty"`
 	Outcome  *lifecycleOutcome `json:"outcome,omitempty"`
+	Approval *approvalRef      `json:"approval,omitempty"`
 	Links    *contextLinks     `json:"links,omitempty"`
 }
 
@@ -236,12 +282,24 @@ type lifecycleOutcome struct {
 	DurationMs int64  `json:"duration_ms,omitempty"`
 }
 
+// approvalRef is the public projection of an install workflow step approval.
+// The plan is truncated to approvalPlanExcerptMaxBytes; consumers that need
+// the full plan should follow the Approval link in contextLinks.
+type approvalRef struct {
+	ID          string `json:"id"`
+	Type        string `json:"type,omitempty"`
+	Plan        string `json:"plan,omitempty"`
+	RespondedBy string `json:"responded_by,omitempty"`
+}
+
 type contextLinks struct {
-	Org       string `json:"org,omitempty"`
-	Install   string `json:"install,omitempty"`
-	Workflow  string `json:"workflow,omitempty"`
-	Sandbox   string `json:"sandbox,omitempty"`
-	Component string `json:"component,omitempty"`
+	Org        string `json:"org,omitempty"`
+	Install    string `json:"install,omitempty"`
+	Workflow   string `json:"workflow,omitempty"`
+	Sandbox    string `json:"sandbox,omitempty"`
+	Component  string `json:"component,omitempty"`
+	Approval   string `json:"approval,omitempty"`
+	RespondAPI string `json:"respond_api,omitempty"`
 }
 
 type webhookTarget struct {
@@ -256,8 +314,11 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	}
 
 	ceType := cloudEventTypeWorkflow
-	if data.Kind == kindWorkflowStep {
+	switch data.Kind {
+	case kindWorkflowStep:
 		ceType = cloudEventTypeWorkflowStep
+	case kindWorkflowStepApproval:
+		ceType = cloudEventTypeWorkflowStepApproval
 	}
 
 	subject := buildSubject(event, data)
@@ -325,11 +386,15 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 }
 
 // buildEventData translates an internal SignalPhaseEvent into the public
-// workflow / workflow_step payload. Returns ok=false when there is nothing
-// to emit (e.g. missing identifiers).
+// workflow / workflow_step / workflow_step_approval payload. Returns ok=false
+// when there is nothing to emit (e.g. missing identifiers).
 func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
 	if event.WorkflowID == "" {
 		return lifecycleEventData{}, false
+	}
+
+	if isApprovalSignalType(event.SignalType) {
+		return h.buildApprovalEventData(ctx, event, outcome)
 	}
 
 	kind := kindWorkflow
@@ -399,6 +464,218 @@ func (h *WebhookSignalLifecycleHook) buildOutcome(event signal.SignalPhaseEvent,
 		out.Status = statusCanceled
 	}
 	return out
+}
+
+// buildApprovalEventData projects an approval-request / approval-response
+// signal event into a workflow_step.approval.v1 payload. We only emit on a
+// successful execute outcome — failures of the wrapper signal itself aren't
+// part of the public approval vocabulary, and consumers care about the
+// approval state transition, not the bookkeeping signal's lifecycle.
+func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	if event.StepID == "" || h.db == nil {
+		return lifecycleEventData{}, false
+	}
+	// Approval events are only emitted after the underlying signal's execute
+	// phase has succeeded. We deliberately drop validation, before-phase, and
+	// failure events for these signals.
+	if event.Phase != signal.SignalPhaseExecute || outcome == nil ||
+		outcome.Status != signal.SignalStatusSuccess {
+		return lifecycleEventData{}, false
+	}
+
+	approval, ok := h.lookupStepApproval(ctx, event.StepID)
+	if !ok {
+		return lifecycleEventData{}, false
+	}
+
+	var (
+		transition  string
+		respondedBy string
+	)
+	switch event.SignalType {
+	case signalTypeWorkflowStepApprovalRequest:
+		transition = transitionRequested
+	case signalTypeWorkflowStepApprovalResponse:
+		responseRow, found := h.lookupApprovalResponse(ctx, approval.ID)
+		if !found {
+			return lifecycleEventData{}, false
+		}
+		transition = mapApprovalResponseTransition(responseRow.Type)
+		if transition == "" {
+			// Retry / unknown response types don't surface as approval
+			// transitions — retry is handled by the step-group, not the
+			// approval vocabulary.
+			return lifecycleEventData{}, false
+		}
+		respondedBy = responseRow.RespondedBy
+	default:
+		return lifecycleEventData{}, false
+	}
+
+	stepRef, installName, emit := h.enrichStep(ctx, event.StepID)
+	if !emit {
+		return lifecycleEventData{}, false
+	}
+
+	data := lifecycleEventData{
+		Kind:       kindWorkflowStepApproval,
+		Transition: transition,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		Workflow: workflowRef{
+			ID:        event.WorkflowID,
+			Type:      event.WorkflowType,
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
+		},
+		Step: stepRef,
+		Approval: &approvalRef{
+			ID:          approval.ID,
+			Type:        string(approval.Type),
+			Plan:        truncateApprovalPlan(approval.Contents),
+			RespondedBy: respondedBy,
+		},
+	}
+
+	if installName != "" && data.Workflow.OwnerType == "installs" && data.Workflow.OwnerName == "" {
+		data.Workflow.OwnerName = installName
+	}
+
+	data.Parent = h.lookupParent(ctx, event.WorkflowID)
+	data.Links = h.buildContextLinks(event, data.Step)
+	if data.Links != nil {
+		// The dashboard SPA does not currently serve a per-step or
+		// per-approval route — step detail renders inline on the workflow
+		// page (see services/dashboard-ui/client/views/install/routes.tsx).
+		// Point links.approval at the workflow page so consumers land on a
+		// real, working URL where the approval is visible. When the
+		// dashboard adds a real /steps/:stepId/approvals/:approvalId route
+		// this can grow back into a true deep link without a wire-format
+		// change.
+		data.Links.Approval = data.Links.Workflow
+		data.Links.RespondAPI = h.respondAPIURL(event.WorkflowID, event.StepID, approval.ID)
+	}
+
+	return data, true
+}
+
+// mapApprovalResponseTransition translates a WorkflowStepResponseType into
+// the public approval transition vocabulary. Retry is intentionally excluded
+// — the create-approval-response handler routes retry through RetryStep
+// (see services/ctl-api/internal/app/installs/service/create_workflow_step_approval_response.go),
+// so the approval-response signal never carries a retry response type.
+func mapApprovalResponseTransition(t app.WorkflowStepResponseType) string {
+	switch t {
+	case app.WorkflowStepApprovalResponseTypeApprove,
+		app.WorkflowStepApprovalResponseTypeAutoApprove:
+		return transitionApproved
+	case app.WorkflowStepApprovalResponseTypeDeny,
+		app.WorkflowStepApprovalResponseTypeSkipCurrent,
+		app.WorkflowStepApprovalResponseTypeSkipCurrentAndDependents:
+		return transitionRejected
+	default:
+		return ""
+	}
+}
+
+// truncateApprovalPlan trims a plan blob to approvalPlanExcerptMaxBytes,
+// appending an explicit "(truncated)" marker when truncation occurred so the
+// receiving consumer can render the right indicator.
+func truncateApprovalPlan(plan string) string {
+	plan = strings.TrimSpace(plan)
+	if plan == "" {
+		return ""
+	}
+	if len(plan) <= approvalPlanExcerptMaxBytes {
+		return plan
+	}
+	return plan[:approvalPlanExcerptMaxBytes] + "\n... (truncated)"
+}
+
+// lookupStepApproval finds the (single) un-deleted approval row attached to a
+// workflow step. Returns ok=false when no approval exists or the lookup
+// fails.
+func (h *WebhookSignalLifecycleHook) lookupStepApproval(ctx context.Context, stepID string) (*app.WorkflowStepApproval, bool) {
+	if h.db == nil || stepID == "" {
+		return nil, false
+	}
+	var approval app.WorkflowStepApproval
+	if err := h.db.WithContext(ctx).
+		Where("install_workflow_step_id = ?", stepID).
+		Order("created_at DESC").
+		First(&approval).Error; err != nil {
+		h.l.Debug("failed to load workflow step approval for webhook enrichment",
+			zap.String("step_id", stepID),
+			zap.Error(err))
+		return nil, false
+	}
+	return &approval, true
+}
+
+// approvalResponseRow carries the response type plus the responder's display
+// label resolved by joining accounts to the response row.
+type approvalResponseRow struct {
+	Type        app.WorkflowStepResponseType
+	RespondedBy string
+}
+
+// lookupApprovalResponse fetches the response attached to an approval and the
+// human-readable identity of the responder. Best-effort: returns found=false
+// when the response can't be located.
+func (h *WebhookSignalLifecycleHook) lookupApprovalResponse(ctx context.Context, approvalID string) (approvalResponseRow, bool) {
+	if h.db == nil || approvalID == "" {
+		return approvalResponseRow{}, false
+	}
+	var row struct {
+		ResponseType string
+		RespondedBy  string
+	}
+	if err := h.db.WithContext(ctx).
+		Table("install_workflow_step_approval_responses AS r").
+		Select(`r.type AS response_type,
+			COALESCE(NULLIF(acc.email, ''), acc.id, '') AS responded_by`).
+		Joins("LEFT JOIN accounts AS acc ON acc.id = r.created_by_id").
+		Where("r.install_workflow_step_approval_id = ?", approvalID).
+		Order("r.created_at DESC").
+		Limit(1).
+		Scan(&row).Error; err != nil {
+		h.l.Debug("failed to load workflow step approval response for webhook enrichment",
+			zap.String("approval_id", approvalID),
+			zap.Error(err))
+		return approvalResponseRow{}, false
+	}
+	if row.ResponseType == "" {
+		return approvalResponseRow{}, false
+	}
+	return approvalResponseRow{
+		Type:        app.WorkflowStepResponseType(row.ResponseType),
+		RespondedBy: row.RespondedBy,
+	}, true
+}
+
+// respondAPIURL builds the ctl-api endpoint a consumer would POST to in order
+// to create an approval response. Returns "" when PublicAPIURL is
+// unconfigured.
+//
+// NOTE: today this is wire-format only. Slackbot doesn't yet have an outbound
+// HTTP client to ctl-api or an authenticated identity to act on a user's
+// behalf, so the URL is provided so future Approve/Reject buttons can wire
+// directly without a payload-shape change.
+func (h *WebhookSignalLifecycleHook) respondAPIURL(workflowID, stepID, approvalID string) string {
+	if h.publicAPIURL == "" || workflowID == "" || stepID == "" || approvalID == "" {
+		return ""
+	}
+	link, err := url.JoinPath(h.publicAPIURL,
+		"v1", "workflows", workflowID,
+		"steps", stepID,
+		"approvals", approvalID,
+		"response",
+	)
+	if err != nil {
+		return ""
+	}
+	return link
 }
 
 // enrichStep loads the workflow step by id and projects the user-facing step
