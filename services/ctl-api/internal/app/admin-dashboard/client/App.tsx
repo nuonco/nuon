@@ -32,6 +32,7 @@ import { TemporalWorkerDetail } from '@/views/temporal-workers/TemporalWorkerDet
 import { TemporalWorkflows } from '@/views/temporal-workflows/TemporalWorkflows'
 import { SlowQueries } from '@/views/slow-queries/SlowQueries'
 import { QueryCatalog } from '@/views/query-catalog/QueryCatalog'
+import { RunnerUptime } from '@/views/runner-uptime/RunnerUptime'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +77,7 @@ const router = createBrowserRouter([
       { path: 'temporal-workflows', element: <TemporalWorkflows /> },
       { path: 'queries', element: <SlowQueries /> },
       { path: 'query-catalog', element: <QueryCatalog /> },
+      { path: 'runner-uptime', element: <RunnerUptime /> },
     ],
   },
 ])
