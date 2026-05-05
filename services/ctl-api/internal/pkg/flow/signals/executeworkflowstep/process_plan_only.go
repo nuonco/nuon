@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftdetected"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -55,6 +56,24 @@ func (s *Signal) handlePlanOnlyApproval(ctx workflow.Context, step *app.Workflow
 		StatusDescription: statusDescription,
 	}); err != nil {
 		return errors.Wrap(err, "unable to update step target status")
+	}
+
+	// Drift detected → emit a notification-only signal so subscribers that
+	// opted into per-resource `drift_detected: true` are notified ONLY when
+	// drift is actually found (not for clean drift scans). Failure here is
+	// non-fatal: notification is a side-effect, not core flow.
+	if !noopPlan {
+		if err := driftdetected.Dispatch(ctx, &driftdetected.Signal{
+			InstallID:         s.OwnerID,
+			InstallWorkflowID: step.InstallWorkflowID,
+			WorkflowStepID:    step.ID,
+			OwnerID:           step.StepTargetID,
+			OwnerType:         string(step.StepTargetType),
+		}); err != nil {
+			workflow.GetLogger(ctx).Warn("unable to dispatch drift-detected signal",
+				"step_id", step.ID,
+				"error", err)
+		}
 	}
 
 	return nil

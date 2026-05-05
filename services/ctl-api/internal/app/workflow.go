@@ -91,7 +91,7 @@ func (i WorkflowType) Name() string {
 	switch i {
 	case WorkflowTypeProvision:
 		return "Provisioning install"
-	case WorkflowTypeReprovision, WorkflowTypeDriftRunReprovisionSandbox:
+	case WorkflowTypeReprovision:
 		return "Reprovisioning install"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioning install"
@@ -103,7 +103,7 @@ func (i WorkflowType) Name() string {
 		return "Tearing down all components"
 	case WorkflowTypeDeployComponents:
 		return "Deploying all components"
-	case WorkflowTypeReprovisionSandbox:
+	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisioning sandbox"
 	case WorkflowTypeSyncSecrets:
 		return "Syncing secrets"

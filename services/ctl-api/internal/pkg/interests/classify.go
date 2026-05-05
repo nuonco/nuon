@@ -122,6 +122,25 @@ func Classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 // It is split from the public APIs so the matcher doesn't pay the cost of
 // allocating a slug slice when the only output it needs is a boolean.
 func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, db *gorm.DB) facts {
+	// Backfill WorkflowType from the install_workflows table when the event
+	// carries a workflow id but the in-payload workflow type is empty. This
+	// happens for queue signals enqueued before the WorkflowType field was
+	// added to the executeworkflowstepgroup / executeworkflowstep payloads —
+	// their persisted JSON has workflow_type=""; without backfill the drift
+	// suppression and step-resolution paths can't tell what kind of workflow
+	// they belong to. Cheap (one indexed PK lookup) and only fires on the
+	// legacy/in-flight code path; new signals carry the field inline.
+	if event.WorkflowType == "" && event.WorkflowID != "" && db != nil {
+		var row struct{ Type string }
+		if err := db.WithContext(context.Background()).
+			Table("install_workflows").
+			Select("type").
+			Where("id = ?", event.WorkflowID).
+			Scan(&row).Error; err == nil && row.Type != "" {
+			event.WorkflowType = row.Type
+		}
+	}
+
 	f := facts{
 		Phase:   event.Phase,
 		Outcome: outcome,
