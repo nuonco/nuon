@@ -75,9 +75,9 @@ export const AppLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
-      <aside className="w-56 flex-shrink-0 border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+      <aside className="w-56 flex-shrink-0 border-r border-gray-200 dark:border-gray-800">
         <div className="sticky top-0 flex h-screen flex-col overflow-y-auto">
           <div className="flex h-12 items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800">
             <Link to="/" className="text-sm font-semibold tracking-tight text-primary-700 dark:text-primary-400">

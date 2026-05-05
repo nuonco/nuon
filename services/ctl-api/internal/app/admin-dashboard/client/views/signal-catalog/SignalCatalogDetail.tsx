@@ -33,7 +33,7 @@ export const SignalCatalogDetail = () => {
         )}
       </div>
 
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent signals ({recent_signals.length})</h2>
         <div className="mt-2 table-card">
           <table>

@@ -96,7 +96,7 @@ export const RunnerDetail = () => {
       </div>
 
       {/* Process Info */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Process</h2>
         {process ? (
           <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
@@ -119,7 +119,7 @@ export const RunnerDetail = () => {
       </div>
 
       {/* Configs */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Configs</h2>
           <button
@@ -133,7 +133,7 @@ export const RunnerDetail = () => {
 
         <div className="mt-3 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+            <thead className="">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Job Type</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Duration</th>
@@ -143,7 +143,7 @@ export const RunnerDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-gray-900">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {Object.entries(configs || {}).map(([jobType, config]) => (
                 <tr key={jobType}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{jobType}</td>
