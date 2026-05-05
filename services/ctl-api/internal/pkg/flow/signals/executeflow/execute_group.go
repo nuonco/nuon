@@ -23,6 +23,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 
 	sig := &executeworkflowstepgroup.Signal{
 		WorkflowID:      flw.ID,
+		WorkflowType:    string(flw.Type),
 		StepGroupID:     group.ID,
 		GroupIdx:        group.GroupIdx,
 		OwnerID:         cfg.OwnerID,
