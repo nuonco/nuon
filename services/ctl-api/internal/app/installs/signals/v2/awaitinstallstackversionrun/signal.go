@@ -161,7 +161,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: version.ID,
 				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusExpired, map[string]any{
-					"err_message": "cloudformation stack was not applied within 180 days and expired",
+					"err_message": "install stack was not applied before expiring",
 				}),
 			})
 
