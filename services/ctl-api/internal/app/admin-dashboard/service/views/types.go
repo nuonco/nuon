@@ -15,16 +15,6 @@ type RunnerDetailView struct {
 	Configs       map[string]*app.SandboxModeJobConfig `json:"configs"`
 }
 
-// SandboxRunnerView is the view data for the sandbox runners list.
-type SandboxRunnerView struct {
-	Runner        app.Runner                 `json:"runner"`
-	ProcessOnline bool                       `json:"process_online"`
-	Version       string                     `json:"version"`
-	Configs       []app.SandboxModeJobConfig `json:"configs"`
-	InstallID     string                     `json:"install_id"`
-	InstallName   string                     `json:"install_name"`
-}
-
 // LabelSearchResult represents a labeled entity for the browse page.
 type LabelSearchResult struct {
 	EntityType string        `json:"entity_type"`
