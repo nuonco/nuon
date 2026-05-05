@@ -1962,6 +1962,11 @@ export interface paths {
   "/v1/orgs/current/webhooks/{webhook_id}": {
     /** delete a webhook for the current org */
     delete: operations["DeleteCurrentOrgWebhook"];
+    /**
+     * update a webhook for the current org
+     * @description Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
+     */
+    patch: operations["UpdateCurrentOrgWebhook"];
   };
   "/v1/orgs/features": {
     /**
@@ -5968,6 +5973,7 @@ export interface components {
       github_install_id: string;
     };
     "service.CreateCurrentOrgWebhookRequest": {
+      interests?: Record<string, never>;
       webhook_secret?: string;
       webhook_url: string;
     };
@@ -6241,6 +6247,7 @@ export interface components {
       created_by_id?: string;
       has_secret?: boolean;
       id?: string;
+      interests?: Record<string, never>;
       org_id?: string;
       updated_at?: string;
       webhook_url?: string;
@@ -6496,6 +6503,10 @@ export interface components {
       };
       name: string;
       var_name?: string;
+    };
+    "service.UpdateCurrentOrgWebhookRequest": {
+      interests?: Record<string, never>;
+      webhook_secret?: string;
     };
     "service.UpdateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
@@ -20846,6 +20857,62 @@ export interface operations {
       /** @description No Content */
       204: {
         content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update a webhook for the current org
+   * @description Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
+   */
+  UpdateCurrentOrgWebhook: {
+    parameters: {
+      path: {
+        /** @description webhook ID */
+        webhook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateCurrentOrgWebhookRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CurrentOrgWebhookResponse"];
+        };
       };
       /** @description Bad Request */
       400: {
