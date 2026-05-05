@@ -54,6 +54,9 @@ type PlantypesActionWorkflowRunPlan struct {
 
 	// steps
 	Steps []*PlantypesActionWorkflowRunStepPlan `json:"steps"`
+
+	// timeout
+	Timeout TimeDuration `json:"timeout,omitempty"`
 }
 
 // Validate validates this plantypes action workflow run plan
@@ -81,6 +84,10 @@ func (m *PlantypesActionWorkflowRunPlan) Validate(formats strfmt.Registry) error
 	}
 
 	if err := m.validateSteps(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateTimeout(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -220,6 +227,27 @@ func (m *PlantypesActionWorkflowRunPlan) validateSteps(formats strfmt.Registry) 
 	return nil
 }
 
+func (m *PlantypesActionWorkflowRunPlan) validateTimeout(formats strfmt.Registry) error {
+	if swag.IsZero(m.Timeout) { // not required
+		return nil
+	}
+
+	if err := m.Timeout.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("timeout")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("timeout")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 // ContextValidate validate this plantypes action workflow run plan based on the context it is used
 func (m *PlantypesActionWorkflowRunPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -245,6 +273,10 @@ func (m *PlantypesActionWorkflowRunPlan) ContextValidate(ctx context.Context, fo
 	}
 
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateTimeout(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -383,6 +415,28 @@ func (m *PlantypesActionWorkflowRunPlan) contextValidateSteps(ctx context.Contex
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *PlantypesActionWorkflowRunPlan) contextValidateTimeout(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Timeout) { // not required
+		return nil
+	}
+
+	if err := m.Timeout.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("timeout")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("timeout")
+		}
+
+		return err
 	}
 
 	return nil
