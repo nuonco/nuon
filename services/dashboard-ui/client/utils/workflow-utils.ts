@@ -113,9 +113,10 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
       }
     }
     if (metadata?.auto_retried) {
+      const attempt = typeof metadata.retry_idx === 'number' ? metadata.retry_idx + 1 : '?'
       return {
-        copy: `Step encountered an error and was automatically retried (attempt ${metadata.retry_idx ?? '?'} of ${metadata.max_retries ?? '?'}).`,
-        theme: 'info',
+        copy: `Step encountered an error and was automatically retried (attempt ${attempt} of ${metadata.max_retries ?? '?'}).`,
+        theme: 'warn',
         title: `Step ${step?.name} — auto-retried`,
       }
     }
