@@ -12,6 +12,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -297,12 +298,14 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return errors.Wrap(err, "unable to get job")
 	}
 
-	if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
-		OwnerID:     installRun.ID,
-		OwnerType:   "install_sandbox_runs",
-		RunnerJobID: job.ID,
-		StepID:      stepID,
-		Type:        app.TerraformPlanApprovalType,
+	if err := workflowstepapprovalrequest.Dispatch(ctx, &workflowstepapprovalrequest.Signal{
+		InstallID:         install.ID,
+		InstallWorkflowID: s.FlowID,
+		WorkflowStepID:    stepID,
+		OwnerID:           installRun.ID,
+		OwnerType:         "install_sandbox_runs",
+		RunnerJobID:       job.ID,
+		ApprovalType:      app.TerraformPlanApprovalType,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create approval")
 	}
