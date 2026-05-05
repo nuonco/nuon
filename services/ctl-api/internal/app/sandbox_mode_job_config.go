@@ -24,8 +24,8 @@ type SandboxModeJobConfig struct {
 	Enabled   bool   `json:"enabled" gorm:"default:true"`
 
 	// Timing
-	Duration      time.Duration `json:"duration,omitzero"`
-	SleepDuration time.Duration `json:"sleep_duration,omitempty"`
+	Duration      time.Duration `json:"duration,omitzero" swaggertype:"primitive,integer"`
+	SleepDuration time.Duration `json:"sleep_duration,omitempty" swaggertype:"primitive,integer"`
 
 	// Failure modes (simple toggles)
 	ShouldError     bool `json:"should_error"`
