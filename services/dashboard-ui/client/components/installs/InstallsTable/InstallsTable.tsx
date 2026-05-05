@@ -58,6 +58,7 @@ const ActionSkeleton = () => (
 export type InstallRow = {
   action: ReactNode
   activity: ReactNode
+  updatedAt: string
   appHref: string
   appName: string
   installId: string
@@ -164,6 +165,7 @@ export function parseInstallsToTableData(
       )
     })(),
     activity: <ActivityCell install={install} />,
+    updatedAt: install?.updated_at ?? '',
     action: (
       <div className="hidden md:block">
         <QuickManagementDropdown install={install} />
@@ -224,10 +226,11 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
-    enableSorting: false,
-    accessorKey: 'activity',
+    id: 'activity',
+    accessorKey: 'updatedAt',
     header: 'Activity',
-    cell: (info) => info.getValue() as ReactNode,
+    cell: (info) => info.row.original.activity,
+    enableSorting: true,
   },
   {
     enableSorting: false,
@@ -286,6 +289,7 @@ export const InstallsTableSkeleton = () => {
     platform: <PlatformSkeleton />,
     labels: <Skeleton height="14px" width="100px" />,
     activity: <Skeleton height="14px" width="80px" />,
+    updatedAt: '',
     action: '',
   }))
 
@@ -326,10 +330,11 @@ export const InstallsTableSkeleton = () => {
       cell: (info) => info.getValue() as ReactNode,
     },
     {
-      enableSorting: false,
-      accessorKey: 'activity',
+      id: 'activity',
+      accessorKey: 'updatedAt',
       header: 'Activity',
-      cell: (info) => info.getValue() as ReactNode,
+      cell: (info) => info.row.original.activity,
+      enableSorting: true,
     },
     {
       enableSorting: false,

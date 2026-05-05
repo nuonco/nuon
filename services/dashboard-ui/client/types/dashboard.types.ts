@@ -91,6 +91,7 @@ export type TNavLink = {
   path: string
   text: string
   isExternal?: boolean
+  shortcut?: string
 }
 
 export type TNavSectionHeader = {

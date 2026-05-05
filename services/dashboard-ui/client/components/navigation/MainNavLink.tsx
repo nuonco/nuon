@@ -1,5 +1,6 @@
 import { useLocation } from 'react-router'
 import { Icon } from '@/components/common/Icon'
+import { KbdShortcut } from '@/components/common/Kbd'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
@@ -17,6 +18,7 @@ export const MainNavLink = ({
   iconVariant,
   path,
   isExternal,
+  shortcut,
 }: IMainNavLink) => {
   const { isSidebarOpen } = useSidebar()
   const { pathname: pathName } = useLocation()
@@ -31,7 +33,7 @@ export const MainNavLink = ({
   const link = (
     <Link
       aria-current={isActive ? 'page' : undefined}
-      className={cn({})}
+      className={cn('group/nav-link')}
       href={isExternal ? path : `${basePath}${path}`}
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noopener noreferrer' : undefined}
@@ -44,13 +46,23 @@ export const MainNavLink = ({
         {iconVariant ? <Icon variant={iconVariant} weight="bold" /> : null}
       </span>
       <span
-        className={cn('transition-all duration-fast whitespace-nowrap flex items-center gap-1', {
-          'md:opacity-100 w-full': isSidebarOpen,
-          'md:opacity-0 md:w-0': !isSidebarOpen,
-        })}
+        className={cn(
+          'transition-all duration-fast whitespace-nowrap flex items-center gap-2 flex-1 min-w-0',
+          {
+            'md:opacity-100 w-full': isSidebarOpen,
+            'md:opacity-0 md:w-0': !isSidebarOpen,
+          }
+        )}
       >
-        {text}
-        {isExternal ? <Icon variant="ArrowSquareOut" size={12} /> : null}
+        <span className="flex-1 truncate flex items-center gap-1">
+          {text}
+          {isExternal ? <Icon variant="ArrowSquareOut" size={12} /> : null}
+        </span>
+        {shortcut && !isExternal ? (
+          <span className="opacity-0 group-hover/nav-link:opacity-100 transition-opacity">
+            <KbdShortcut shortcut={shortcut} size="sm" />
+          </span>
+        ) : null}
       </span>
     </Link>
   )
@@ -63,9 +75,12 @@ export const MainNavLink = ({
         'md:flex w-max': !isSidebarOpen,
       })}
       tipContent={
-        <Text variant="subtext" weight="stronger">
-          {text}
-        </Text>
+        <span className="flex items-center gap-2">
+          <Text variant="subtext" weight="stronger">
+            {text}
+          </Text>
+          {shortcut ? <KbdShortcut shortcut={shortcut} size="sm" /> : null}
+        </span>
       }
     >
       {link}
