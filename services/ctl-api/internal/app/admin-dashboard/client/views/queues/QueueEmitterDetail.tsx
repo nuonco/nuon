@@ -43,7 +43,7 @@ export const QueueEmitterDetail = () => {
       </div>
 
       {/* Header */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h1 className="text-lg font-semibold">{emitter.name || 'Emitter'}</h1>
           <Badge>{emitter.mode}</Badge>
@@ -68,7 +68,7 @@ export const QueueEmitterDetail = () => {
       {/* Configuration + Runtime state */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Configuration */}
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Configuration</h2>
           <div className="space-y-2 text-xs">
             <InfoRow label="Signal type" value={emitter.signal_type} />
@@ -88,7 +88,7 @@ export const QueueEmitterDetail = () => {
         </div>
 
         {/* Runtime state */}
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Runtime State</h2>
           <div className="space-y-2 text-xs">
             <div className="flex items-start gap-3">
@@ -113,14 +113,14 @@ export const QueueEmitterDetail = () => {
 
       {/* Signal template */}
       {emitter.signal_template && (
-        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Signal Template</h2>
           <JsonViewer data={emitter.signal_template} />
         </div>
       )}
 
       {/* Emitted signals */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Emitted Signals ({signals.length})</h2>
         {signals.length > 0 ? (
           <div className="mt-2 table-card">
