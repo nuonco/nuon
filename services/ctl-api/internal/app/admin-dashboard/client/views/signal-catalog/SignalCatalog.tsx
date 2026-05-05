@@ -52,7 +52,7 @@ function CapabilityBadges({ info }: { info: SignalInfo }) {
         <Badge key={c}>{c}</Badge>
       ))}
       {info.HasQueue && info.Queue && <Badge>queue: {info.Queue}</Badge>}
-      {caps.length === 0 && !info.HasQueue && <span className="text-xs text-gray-400">—</span>}
+      {caps.length === 0 && !info.HasQueue && <span className="text-xs text-gray-400 dark:text-gray-500">—</span>}
     </div>
   )
 }
@@ -96,40 +96,40 @@ export const SignalCatalog = () => {
       <div className="mt-4 space-y-8">
         {visibleNamespaces.map(({ ns, signals }) => (
           <div key={ns}>
-            <h2 className="border-b border-gray-200 pb-2 mb-3 text-sm font-semibold uppercase tracking-wider text-primary-600">
+            <h2 className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-3 text-sm font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
               {ns}
-              <span className="ml-2 font-normal text-gray-400">({signals.length})</span>
+              <span className="ml-2 font-normal text-gray-400 dark:text-gray-500">({signals.length})</span>
             </h2>
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Operation</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Auto-retry</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Max retries</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Capabilities</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Type</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Operation</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Auto-retry</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Max retries</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Capabilities</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                   {signals.map((info) => (
-                    <tr key={String(info.Type)} className="hover:bg-gray-50">
+                    <tr key={String(info.Type)} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="whitespace-nowrap px-4 py-2 text-xs font-mono">
                         <Link
                           to={`/signal-catalog/${encodeURIComponent(String(info.Type))}`}
-                          className="text-primary-600 hover:underline"
+                          className="text-primary-600 dark:text-primary-400 hover:underline"
                         >
                           {String(info.Type)}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-xs font-mono text-gray-700">
-                        {info.Operation || <span className="text-gray-400">—</span>}
+                      <td className="whitespace-nowrap px-4 py-2 text-xs font-mono text-gray-700 dark:text-gray-300">
+                        {info.Operation || <span className="text-gray-400 dark:text-gray-500">—</span>}
                       </td>
                       <td className="whitespace-nowrap px-4 py-2 text-xs">
                         {info.AutoRetry ? (
                           <Badge variant="status" status="online">Yes</Badge>
                         ) : (
-                          <span className="text-gray-400">No</span>
+                          <span className="text-gray-400 dark:text-gray-500">No</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-2 text-xs font-mono">{info.MaxRetries ?? 0}</td>
@@ -144,7 +144,7 @@ export const SignalCatalog = () => {
           </div>
         ))}
         {visibleNamespaces.length === 0 && (
-          <p className="text-sm text-gray-500">No signal types found</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No signal types found</p>
         )}
       </div>
     </div>
