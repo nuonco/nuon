@@ -7,6 +7,7 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { DeleteWebhookButton } from '@/components/webhooks/DeleteWebhook'
+import { EditWebhookButton } from '@/components/webhooks/EditWebhook'
 import type { TWebhook } from '@/types'
 
 export const WebhooksTable = ({
@@ -59,7 +60,8 @@ export const WebhooksTable = ({
         id: 'action',
         header: '',
         cell: (props) => (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-1">
+            <EditWebhookButton webhook={props.row.original} size="sm" />
             <DeleteWebhookButton webhook={props.row.original} size="sm" />
           </div>
         ),

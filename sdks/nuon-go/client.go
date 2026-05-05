@@ -34,6 +34,7 @@ type Client interface {
 	// org webhooks
 	GetCurrentOrgWebhooks(ctx context.Context) ([]*models.ServiceCurrentOrgWebhookResponse, error)
 	CreateCurrentOrgWebhook(ctx context.Context, req *models.ServiceCreateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
+	UpdateCurrentOrgWebhook(ctx context.Context, webhookID string, req *models.ServiceUpdateCurrentOrgWebhookRequest) (*models.ServiceCurrentOrgWebhookResponse, error)
 	DeleteCurrentOrgWebhook(ctx context.Context, webhookID string) error
 
 	// app methods
