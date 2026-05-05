@@ -73,6 +73,7 @@ const (
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
 	OrgFeatureTraceView               OrgFeature = "trace-view"
 	OrgFeatureStateGenV2              OrgFeature = "state-gen-v2"
+	OrgFeatureNativeAWSProvisioner    OrgFeature = "native-aws-provisioner"
 )
 
 type Org struct {
@@ -191,6 +192,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureAppBranchesUI:           false,
 		OrgFeatureTraceView:               false,
 		OrgFeatureStateGenV2:              false,
+		OrgFeatureNativeAWSProvisioner:    false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -267,6 +269,8 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureStateGenV2,
 		OrgFeatureAppBranchesUI,
 		OrgFeatureTraceView,
+		OrgFeatureStateGenV2,
+		OrgFeatureNativeAWSProvisioner,
 	}
 }
 
@@ -304,6 +308,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
 		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
 		OrgFeatureStateGenV2:              "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
+		OrgFeatureNativeAWSProvisioner:    "When enabled, creating an install does not start a provision workflow. Persists the install and an install stack version only; the AWS-native SDK provisioner drives provisioning out-of-band.",
 	}
 }
 
