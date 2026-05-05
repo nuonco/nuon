@@ -22,6 +22,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -223,6 +224,12 @@ type cloudEvent struct {
 	NuonKind       string `json:"nuonkind,omitempty"`
 	NuonTransition string `json:"nuontransition,omitempty"`
 
+	// Interests carries the slug list produced by interests.Classify for
+	// this event (resource:..., op:..., outcome:..., event:...). Consumers
+	// can route by prefix without re-implementing the classifier. Empty
+	// slice is omitted via omitempty.
+	Interests []string `json:"interests,omitempty"`
+
 	Data lifecycleEventData `json:"data"`
 }
 
@@ -302,9 +309,16 @@ type contextLinks struct {
 	RespondAPI string `json:"respond_api,omitempty"`
 }
 
+// webhookTarget is a single dispatch target. ConfigOnly is true for entries
+// derived from the static h.webhookURLs config list — those have no
+// per-target Interests storage and are treated as AllEvents=true (i.e. they
+// receive every supported event). ConfigOnly=false targets carry the
+// Interests value loaded from the app.Webhook row.
 type webhookTarget struct {
-	URL    string
-	Secret string
+	URL        string
+	Secret     string
+	ConfigOnly bool
+	Interests  interests.Interests
 }
 
 func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) error {
@@ -323,6 +337,12 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 
 	subject := buildSubject(event, data)
 
+	// Slug list mirrors the per-target Matches() decision so consumers can
+	// route by prefix (resource:installs, op:components.deploy,
+	// outcome:failures, event:lifecycle.failed, etc.) without
+	// re-implementing the classifier.
+	slugs := interests.Classify(event, outcome, h.db)
+
 	ce := cloudEvent{
 		SpecVersion:     "1.0",
 		ID:              uuid.New().String(),
@@ -334,6 +354,7 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		NuonOrgID:       event.OrgID,
 		NuonKind:        data.Kind,
 		NuonTransition:  data.Transition,
+		Interests:       slugs,
 		Data:            data,
 	}
 
@@ -349,9 +370,15 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		zap.String("workflow_id", data.Workflow.ID),
 	)
 
+	// Static config webhooks have no per-target Interests storage; treat
+	// them as AllEvents=true so the per-target Matches() filter below
+	// passes them through unchanged.
 	targets := make([]webhookTarget, 0, len(h.webhookURLs))
 	for _, webhookURL := range h.webhookURLs {
-		targets = append(targets, webhookTarget{URL: webhookURL})
+		targets = append(targets, webhookTarget{
+			URL:        webhookURL,
+			ConfigOnly: true,
+		})
 	}
 
 	dynamicTargets, err := h.listOrgWebhookTargets(ctx, event.OrgID)
@@ -369,6 +396,13 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 
 	var sendErrs []error
 	for _, target := range targets {
+		// Per-target interests filter. ConfigOnly targets bypass the
+		// matcher (treated as AllEvents=true) since the static config
+		// list has no Interests storage.
+		if !target.ConfigOnly && !interests.Matches(event, outcome, h.db, target.Interests) {
+			continue
+		}
+
 		if err := h.sendWebhook(ctx, target, payloadJSON); err != nil {
 			sendErrs = append(sendErrs, err)
 			logger.Warn("failed to deliver workflow lifecycle webhook",
@@ -967,9 +1001,19 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 			continue
 		}
 
+		// Treat an unconfigured (zero-value) Interests as "all events".
+		// Webhooks predate the interests filter, so any row whose JSONB
+		// column is NULL/empty must keep receiving everything by default.
+		// New rows get AllEvents() at create time in the service layer.
+		effectiveInterests := webhook.Interests
+		if effectiveInterests.IsZero() {
+			effectiveInterests = interests.AllEvents()
+		}
+
 		targets = append(targets, webhookTarget{
-			URL:    trimmedURL,
-			Secret: strings.TrimSpace(webhook.WebhookSecret),
+			URL:       trimmedURL,
+			Secret:    strings.TrimSpace(webhook.WebhookSecret),
+			Interests: effectiveInterests,
 		})
 	}
 
