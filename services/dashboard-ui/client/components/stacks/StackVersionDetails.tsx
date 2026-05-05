@@ -1,16 +1,16 @@
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
-import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { KeyValueList } from '@/components/common/KeyValueList'
-import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel } from '@/components/surfaces/Panel'
-import type { TInstallStack } from '@/types'
+import { AwaitStackDetails } from '@/components/workflows/step-details/stack-details/AwaitStackDetails/AwaitStackDetails'
+import { useInstall } from '@/hooks/use-install'
+import type { TInstallStack, TWorkflowStep } from '@/types'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 import { indexToOrdinal } from '@/utils/string-utils'
@@ -86,41 +86,21 @@ export const StackVersionDetails = ({
   )
 }
 
+// StackVersionLinks renders the full contents of the provision workflow's
+// "await install stack" step panel, scoped to the version this panel is
+// displaying. AwaitStackDetails reads stack?.versions?.at(0); we wrap the
+// single version so the embedded platform block targets it.
 const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
+  const { install } = useInstall()
+  const stack = { versions: [version] } as unknown as TInstallStack
+  const step = {} as TWorkflowStep
+
   return (
-    <div className="flex flex-col gap-4">
-      <Text variant="base" weight="strong">
-        Links
-      </Text>
-
-      {version?.quick_link_url ? (
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
-          <span className="flex justify-between items-center">
-            <Text variant="body" weight="strong">
-              Install quick link
-            </Text>
-            <ClickToCopyButton textToCopy={version.quick_link_url} />
-          </span>
-          <Link href={version.quick_link_url} isExternal>
-            <Code>{version.quick_link_url}</Code>
-          </Link>
-        </div>
-      ) : null}
-
-      {version?.template_url ? (
-        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3">
-          <span className="flex justify-between items-center">
-            <Text variant="body" weight="strong">
-              Install template
-            </Text>
-            <ClickToCopyButton textToCopy={version.template_url} />
-          </span>
-          <Link href={version.template_url} isExternal>
-            <Code>{version.template_url}</Code>
-          </Link>
-        </div>
-      ) : null}
-    </div>
+    <AwaitStackDetails
+      stack={stack}
+      step={step}
+      runnerType={install?.app_runner_config?.app_runner_type}
+    />
   )
 }
 
