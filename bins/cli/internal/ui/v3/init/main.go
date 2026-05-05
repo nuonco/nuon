@@ -88,10 +88,11 @@ func (c *ConfigInit) RunInitMenu(params *apps.InitParams) (*apps.InitParams, err
 
 			huh.NewSelect[string]().
 				Title("Stack Type").
-				Description("Choose your cloud provider").
+				Description("Choose your cloud provider and provisioning technology").
 				Options(
-					huh.NewOption("AWS", "aws"),
-					huh.NewOption("Azure", "azure"),
+					huh.NewOption("AWS (CloudFormation)", "aws-cloudformation"),
+					huh.NewOption("Azure (Bicep)", "azure-bicep"),
+					huh.NewOption("GCP (Terraform)", "gcp-terraform"),
 				).
 				Value(&stackType),
 
