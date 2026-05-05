@@ -57,5 +57,6 @@
 }
 
 .panel {
-  transition: width var(--duration-fastest) var(--ease-cubic);
+  transition: width var(--duration-fastest) var(--ease-cubic),
+    border-color var(--duration-fastest) var(--ease-cubic);
 }
