@@ -54,10 +54,11 @@ export const WebhookSplitApprovals = () => (
           approval_responses: false,
         },
         components: {
-          ops: ['deploy', 'drift'],
+          ops: ['deploy', 'teardown'],
           outcome: 'all',
           approval_requests: false,
           approval_responses: true,
+          drift_detected: true,
         },
       },
     }}

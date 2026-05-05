@@ -220,11 +220,14 @@ const interestsJSONHelp = `INTERESTS JSON SHAPE
 
   Resource kinds and the ops they support:
     installs                provision, deprovision, reprovision
-    components              deploy, teardown, drift
-    sandboxes               provision, reprovision, deprovision, drift
+    components              deploy, teardown
+    sandboxes               provision, reprovision, deprovision
     install_configurations  inputs, secrets
     runners                 provision, reprovision, inactive
     actions                 run
+
+  Note: to subscribe to drift, use "drift_detected" (below) — it fires only when
+  drift is actually found, not on every clean scan.
 
   Per-resource cfg fields (all optional):
     ops                 list of sub-ops; empty/omitted = every sub-op
@@ -235,8 +238,8 @@ const interestsJSONHelp = `INTERESTS JSON SHAPE
                         (independent of outcome)
     drift_detected      bool, deliver a notification ONLY when drift is
                         actually detected during a drift scan (independent
-                        of outcome). Only meaningful for resources with a
-                        "drift" sub-op (components, sandboxes).
+                        of outcome). Only meaningful for components and
+                        sandboxes.
 
 EXAMPLES
 
