@@ -24,5 +24,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "05-recreate-runner-health-check-sort-key",
 			Fn:   m.Migration005RecreateRunnerHealthCheckSortKey,
 		},
+		{
+			Name: "06-fix-otel-log-attr-indexes",
+			Fn:   m.Migration006FixOtelLogAttrIndexes,
+		},
 	}
 }

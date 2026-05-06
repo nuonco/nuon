@@ -9,11 +9,16 @@ import (
 	"oras.land/oras-go/v2/registry/remote"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/local"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
-func (c *copier) CopyFromLocalRegistry(ctx context.Context, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
+func (c *copier) CopyFromLocalRegistry(ctx context.Context, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (_ *ocispec.Descriptor, retErr error) {
+	opCtx, end := op.Tool(ctx, "oci", "copy_from_local_registry")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
 	localRepo := local.GetCopyRepo(c.cfg)
 	repo, err := remote.NewRepository(localRepo)
 	repo.PlainHTTP = true

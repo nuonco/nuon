@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/command"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/zapwriter"
@@ -78,10 +79,13 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		return fmt.Errorf("unable to create command: %w", err)
 	}
 
-	if err := cmdP.Exec(ctx); err != nil {
+	opCtx, end := op.Tool(ctx, "action", "command")
+	if err := cmdP.Exec(opCtx); err != nil {
+		end(err)
 		l.Error("error executing command "+err.Error(), zap.Error(err))
 		return fmt.Errorf("unable to execute command: %w", err)
 	}
+	end(nil)
 
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 	release "helm.sh/helm/v4/pkg/release/v1"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgop "github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/diff"
 	"github.com/nuonco/nuon/pkg/helm"
 	"github.com/nuonco/nuon/pkg/plans"
@@ -33,7 +34,20 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	l.Info("Initializing Helm...",
+	// Tag this handler's logger with semantic-convention attributes so every
+	// emitted record (including those from helpers further down the call tree
+	// that read the logger from ctx) carries them automatically.
+	l = l.With(
+		zap.String("service.name", "runner.helm"),
+		zap.String("nuon.tool", "helm"),
+		zap.String("nuon.deploy.kind", "helm"),
+		zap.String("helm.release_name", h.state.plan.HelmDeployPlan.Name),
+		zap.String("helm.namespace", h.state.plan.HelmDeployPlan.Namespace),
+		zap.String("helm.chart_id", h.state.plan.HelmDeployPlan.HelmChartID),
+	)
+	ctx = pkgctx.SetLogger(ctx, l)
+
+	l.Debug("Initializing Helm...",
 		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
 	)
 	actionCfg, kubeCfg, err := h.actionInit(ctx, l)
@@ -49,7 +63,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	actionCfg.Releases = releaseStore
 
-	l.Info("Checking for previous Helm release...",
+	l.Debug("Checking for previous Helm release...",
 		zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()},
 	)
 	prevRel, err := helm.GetRelease(actionCfg, h.state.plan.HelmDeployPlan.Name)
@@ -87,11 +101,19 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		var err error
 		// in this case, the diff is generated so it is available to the createAPIResult method
 		if prevRel == nil {
-			diffStr, contentDiff, templateOutput, err = h.installDiff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "install"
+			l = l.With(zap.String("helm.operation", helmPlan.Op))
+			opCtx, end := pkgop.Tool(ctx, "helm", "install_diff")
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
+			diffStr, contentDiff, templateOutput, err = h.installDiff(opCtx, opLog, actionCfg, kubeCfg)
+			end(err)
 		} else {
-			diffStr, contentDiff, templateOutput, err = h.upgrade_diff(ctx, l, actionCfg, kubeCfg)
 			helmPlan.Op = "upgrade"
+			l = l.With(zap.String("helm.operation", helmPlan.Op))
+			opCtx, end := pkgop.Tool(ctx, "helm", "upgrade_diff")
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
+			diffStr, contentDiff, templateOutput, err = h.upgrade_diff(opCtx, opLog, actionCfg, kubeCfg)
+			end(err)
 		}
 		if err != nil {
 			return err
@@ -108,18 +130,23 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Debug("calculated helm diff", zap.String("diff", diffStr))
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		// TODO(fd): figure out the best way to get a plan for this
+		helmPlan.Op = "uninstall"
+		l = l.With(zap.String("helm.operation", helmPlan.Op))
 		l.Info("executing helm uninstall plan")
 
-		diffStr, contentDiff, templateOutput, err := h.uninstallDiff(ctx, l, actionCfg, kubeCfg, prevRel)
+		opCtx, end := pkgop.Tool(ctx, "helm", "uninstall_diff")
+		opLog := pkgctx.LoggerOrDefault(opCtx, l)
+		diffStr, contentDiff, templateOutput, err := h.uninstallDiff(opCtx, opLog, actionCfg, kubeCfg, prevRel)
+		end(err)
 		if err != nil {
 			return err
 		}
 
-		helmPlan.Op = "uninstall"
 		helmPlan.Diff = diffStr
 		helmPlan.ContentDiff = *contentDiff
 		helmPlan.TemplateOutput = templateOutput
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
+		l = l.With(zap.String("helm.operation", helmPlan.Op))
 		l.Info(fmt.Sprintf("executing helm %s", helmPlan.Op))
 		switch helmPlan.Op {
 		case "install":
@@ -129,17 +156,29 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 					zap.Int("version", prevRel.Version),
 				)
 				op = "upgrade"
-				rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
+				opCtx, end := pkgop.Tool(ctx, "helm", "upgrade")
+				opLog := pkgctx.LoggerOrDefault(opCtx, l)
+				rel, err = h.upgrade(opCtx, opLog, actionCfg, kubeCfg)
+				end(err)
 			} else {
 				op = "install"
-				rel, err = h.install(ctx, l, actionCfg, kubeCfg)
+				opCtx, end := pkgop.Tool(ctx, "helm", "install")
+				opLog := pkgctx.LoggerOrDefault(opCtx, l)
+				rel, err = h.install(opCtx, opLog, actionCfg, kubeCfg)
+				end(err)
 			}
 		case "upgrade":
 			op = "upgrade"
-			rel, err = h.upgrade(ctx, l, actionCfg, kubeCfg)
+			opCtx, end := pkgop.Tool(ctx, "helm", "upgrade")
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
+			rel, err = h.upgrade(opCtx, opLog, actionCfg, kubeCfg)
+			end(err)
 		case "uninstall":
 			op = "uninstall"
-			err = h.execUninstall(ctx, l, actionCfg, job, jobExecution)
+			opCtx, end := pkgop.Tool(ctx, "helm", "uninstall")
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
+			err = h.execUninstall(opCtx, opLog, actionCfg, job, jobExecution)
+			end(err)
 		default:
 			l.Error("plan did not define an Op. this is unexpected.")
 		}
