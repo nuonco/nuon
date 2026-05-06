@@ -267,6 +267,13 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: "idx_install_workflows_org_created_at",
+			Columns: []string{
+				"org_id",
+				"created_at DESC",
+			},
+		},
 	}
 }
 
