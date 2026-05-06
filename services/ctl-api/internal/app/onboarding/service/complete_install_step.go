@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	installsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/created"
 	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/polldependencies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -218,6 +219,13 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
+		// reconcile cron/drift emitters from app config triggers
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
+			InstallID: install.ID,
+		}, "", ""); err != nil {
+			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
+			return
+		}
 	} else {
 		s.evClient.Send(ctx, install.ID, &installsignals.Signal{
 			Type: installsignals.OperationCreated,
@@ -229,11 +237,10 @@ func (s *service) CompleteInstallStep(ctx *gin.Context) {
 			Type:              installsignals.OperationExecuteFlow,
 			InstallWorkflowID: workflow.ID,
 		})
+		s.evClient.Send(ctx, install.ID, &installsignals.Signal{
+			Type: installsignals.OperationSyncActionWorkflowTriggers,
+		})
 	}
-	// SyncActionWorkflowTriggers must stay legacy - it starts a child workflow in the event loop
-	s.evClient.Send(ctx, install.ID, &installsignals.Signal{
-		Type: installsignals.OperationSyncActionWorkflowTriggers,
-	})
 
 	// Update onboarding with install/workflow references and advance step
 	onboarding.InstallID = &install.ID
