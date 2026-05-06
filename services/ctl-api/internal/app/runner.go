@@ -85,6 +85,13 @@ type Runner struct {
 
 	RestartRequested bool `json:"restart_requested,omitzero" gorm:"default:false" temporaljson:"restart_requested,omitzero,omitempty"`
 
+	// ContainerImageDigest pins the install-mode container image to an
+	// immutable digest at provision time. When set, the runner-settings
+	// response appends "@sha256:<digest>" to ContainerImageTag so existing
+	// init.sh / docker pull paths resolve to the pinned image regardless of
+	// later movement of the group's tag.
+	ContainerImageDigest string `json:"container_image_digest,omitzero" gorm:"default null" temporaljson:"container_image_digest,omitzero,omitempty"`
+
 	RunnerGroupID string      `json:"runner_group_id,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerGroup   RunnerGroup `json:"runner_group,omitzero" temporaljson:"runner_group,omitzero,omitempty"`
 

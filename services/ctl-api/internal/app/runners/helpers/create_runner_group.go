@@ -7,12 +7,14 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/sagikazarmark/slog-shim"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/runnerimage"
 )
 
 const (
@@ -49,6 +51,10 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		sandboxMode = install.SandboxMode.Bool
 	}
 
+	containerImageURL := h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform)
+	containerImageTag := h.cfg.RunnerContainerImageTag
+	containerImageDigest := h.resolvePinnedImageDigest(ctx, install.AppRunnerConfig.CloudPlatform, containerImageURL, containerImageTag)
+
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
@@ -58,16 +64,17 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		Platform: install.AppRunnerConfig.Type,
 		Runners: []app.Runner{
 			{
-				Name:              "default",
-				DisplayName:       "Default runner",
-				Status:            app.RunnerStatusPending,
-				StatusDescription: string(app.RunnerStatusPending),
+				Name:                 "default",
+				DisplayName:          "Default runner",
+				Status:               app.RunnerStatusPending,
+				StatusDescription:    string(app.RunnerStatusPending),
+				ContainerImageDigest: containerImageDigest,
 			},
 		},
 		Settings: app.RunnerGroupSettings{
 			SandboxMode:       sandboxMode,
-			ContainerImageURL: h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform),
-			ContainerImageTag: h.cfg.RunnerContainerImageTag,
+			ContainerImageURL: containerImageURL,
+			ContainerImageTag: containerImageTag,
 			RunnerAPIURL:      h.cfg.RunnerAPIURL,
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
 			EnableLogging:     true,
@@ -213,4 +220,37 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		Type: signals.OperationCreated,
 	})
 	return &runnerGroup, nil
+}
+
+// resolvePinnedImageDigest resolves the runner's container image tag to an
+// immutable digest at provision time. Best-effort: an empty return means the
+// runner falls back to the mutable tag in the existing settings response,
+// matching pre-pin behavior. Azure is not yet supported.
+func (h *Helpers) resolvePinnedImageDigest(ctx context.Context, platform app.CloudPlatform, imageURL, tag string) string {
+	if imageURL == "" || tag == "" {
+		return ""
+	}
+
+	var (
+		digest string
+		err    error
+	)
+	switch platform {
+	case app.CloudPlatformAWS:
+		digest, err = runnerimage.ResolveAWSImageDigest(ctx, h.cfg, imageURL, tag)
+	case app.CloudPlatformGCP:
+		digest, err = runnerimage.ResolveGCPImageDigest(ctx, imageURL, tag)
+	default:
+		return ""
+	}
+	if err != nil {
+		h.l.Warn("unable to resolve runner image digest; runner will track mutable tag",
+			zap.String("platform", string(platform)),
+			zap.String("image_url", imageURL),
+			zap.String("tag", tag),
+			zap.Error(err),
+		)
+		return ""
+	}
+	return digest
 }

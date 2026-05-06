@@ -3,6 +3,7 @@ package helpers
 import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -16,6 +17,7 @@ import (
 type Params struct {
 	fx.In
 
+	L              *zap.Logger
 	V              *validator.Validate
 	Cfg            *internal.Config
 	DB             *gorm.DB `name:"psql"`
@@ -27,6 +29,7 @@ type Params struct {
 }
 
 type Helpers struct {
+	l              *zap.Logger
 	v              *validator.Validate
 	cfg            *internal.Config
 	db             *gorm.DB
@@ -39,6 +42,7 @@ type Helpers struct {
 
 func New(params Params) *Helpers {
 	return &Helpers{
+		l:              params.L,
 		v:              params.V,
 		cfg:            params.Cfg,
 		db:             params.DB,

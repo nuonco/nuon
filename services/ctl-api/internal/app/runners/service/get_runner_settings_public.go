@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/runnerimage"
 )
 
 // @ID						GetRunnerSettings
@@ -37,5 +39,5 @@ func (s *service) GetRunnerSettingsPublic(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, runner.RunnerGroup.Settings)
+	ctx.JSON(http.StatusOK, runnerimage.ApplyDigestPin(runner, runner.RunnerGroup.Settings))
 }
