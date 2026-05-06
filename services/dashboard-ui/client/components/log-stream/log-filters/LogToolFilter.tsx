@@ -29,7 +29,6 @@ export const LogToolFilter = ({ title = 'Tool', filters }: ILogToolFilter) => {
   return (
     <Dropdown
       buttonText={`${title} (${tool || 'all'})`}
-      className="ml-auto"
       icon={<Icon variant="FunnelIcon" size="14" />}
       iconAlignment="left"
       id={`${title}-filter`}

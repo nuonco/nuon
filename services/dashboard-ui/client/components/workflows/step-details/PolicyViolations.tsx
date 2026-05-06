@@ -34,6 +34,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
             {denyCount > 0 ? (
               <Text
                 variant="subtext"
+                weight="strong"
                 className="text-red-600 dark:text-red-500"
               >
                 {denyCount} {denyCount === 1 ? 'violation' : 'violations'}
@@ -42,7 +43,8 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
             {warnCount > 0 ? (
               <Text
                 variant="subtext"
-                className="text-orange-600 dark:text-orange-500"
+                weight="strong"
+                className="text-orange-800 dark:text-orange-500"
               >
                 {warnCount} {warnCount === 1 ? 'warning' : 'warnings'}
               </Text>
@@ -50,6 +52,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
             {!hasViolations ? (
               <Text
                 variant="subtext"
+                weight="strong"
                 className="text-green-600 dark:text-green-500"
               >
                 All passed
@@ -98,7 +101,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
               <Expand
                 id={`policy-warnings-${step.id}`}
                 heading={
-                  <div className="flex items-center gap-2 text-orange-600 dark:text-orange-500">
+                  <div className="flex items-center gap-2 text-orange-800 dark:text-orange-500">
                     <Icon variant="Warning" size={14} />
                     <Text variant="subtext" weight="strong">
                       Policy {warnCount === 1 ? 'Warning' : 'Warnings'}
