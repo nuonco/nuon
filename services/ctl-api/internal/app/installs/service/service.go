@@ -221,6 +221,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// org-level workflow queries (must be registered before /:workflow_id group)
 	ge.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
 	ge.GET("/v1/workflows", s.GetOrgWorkflows)
+	ge.POST("/v1/workflows/cancel", s.CancelWorkflows)
 
 	// workflows (standalone)
 	workflows := ge.Group("/v1/workflows/:workflow_id")
