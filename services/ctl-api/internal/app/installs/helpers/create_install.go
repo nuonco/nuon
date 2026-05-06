@@ -59,7 +59,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 			return db.Order("app_input_configs.created_at DESC").Limit(1)
 		}).
 		Preload("AppConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).Limit(1)
+			return db.
+				Where(views.TableOrViewName(s.db, &app.AppConfig{}, ".status_v2 ->> 'status' = ?"), string(app.AppConfigStatusActive)).
+				Order(views.TableOrViewName(s.db, &app.AppConfig{}, ".created_at DESC")).
+				Limit(1)
 		}).
 		Preload("AppPermissionsConfigs", func(db *gorm.DB) *gorm.DB {
 			return db.Order("app_permissions_configs.created_at DESC").Limit(1)
@@ -68,6 +71,13 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		First(&parentApp, "id = ?", appID)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get app: %w", res.Error)
+	}
+
+	if len(parentApp.AppConfigs) == 0 {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no active app config found for app %s", appID),
+			Description: "No active app config found. Please sync your app configuration before creating an install.",
+		}
 	}
 
 	// make sure the inputs are valid

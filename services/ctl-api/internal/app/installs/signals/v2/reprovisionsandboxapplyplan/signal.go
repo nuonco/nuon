@@ -148,6 +148,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
 
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			s.updateRunStatus(updateCtx, sandboxRun.ID, app.SandboxRunStatusCancelled, "sandbox reprovision apply cancelled")
+		}
+	}()
+
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, &sandboxRun.LogStream)
 	l := workflow.GetLogger(ctx)
 

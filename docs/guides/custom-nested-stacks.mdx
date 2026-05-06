@@ -10,6 +10,13 @@ enables vendors to provision custom AWS or Kubernetes resources as part of the i
 or any components run. This feature is useful for setting up resources that must exist before the sandbox provisions but
 that require permissions the vendor does not need to retain throughout the remainder of an app's lifetime.
 
+<Warning>
+Custom nested stacks are **CloudFormation-only**. The Terraform Stack templates do not include them or reference them. If you
+rely on this feature and your customers want to deploy via Terraform, see
+[Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates), to learn how make equivalent changes to
+the Terraform templates.
+</Warning>
+
 ## Use Cases
 
 For BYO-EKS

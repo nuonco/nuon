@@ -117,6 +117,8 @@ type ClientService interface {
 
 	CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowStepAccepted, error)
 
+	CancelWorkflows(params *CancelWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowsOK, error)
+
 	CheckVCSConnectionStatus(params *CheckVCSConnectionStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CheckVCSConnectionStatusOK, error)
 
 	CompleteOnboardingDeployStep(params *CompleteOnboardingDeployStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CompleteOnboardingDeployStepOK, error)
@@ -694,6 +696,8 @@ type ClientService interface {
 	LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error)
 
 	LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadLogsOK, error)
+
+	LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadSpansOK, error)
 
 	MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error)
 
@@ -1383,6 +1387,52 @@ func (a *Client) CancelWorkflowStep(params *CancelWorkflowStepParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CancelWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelWorkflows cancels multiple workflows
+
+Cancel multiple workflows by ID. Returns partial results if some fail.
+*/
+func (a *Client) CancelWorkflows(params *CancelWorkflowsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelWorkflowsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelWorkflowsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelWorkflows",
+		Method:             "POST",
+		PathPattern:        "/v1/workflows/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelWorkflowsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelWorkflowsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelWorkflows: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -14836,6 +14886,56 @@ func (a *Client) LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo run
 }
 
 /*
+	LogStreamReadSpans reads a log stream s trace spans
+
+	Read OTEL trace spans for a log stream.
+
+Returns the flat list of spans recorded by the runner for the job execution
+(or executions) associated with this log stream, ordered by start timestamp
+ASC. The frontend assembles the tree from `parent_span_id`.
+*/
+func (a *Client) LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadSpansOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewLogStreamReadSpansParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "LogStreamReadSpans",
+		Method:             "GET",
+		PathPattern:        "/v1/log-streams/{log_stream_id}/spans",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &LogStreamReadSpansReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*LogStreamReadSpansOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for LogStreamReadSpans: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 MngVMShutDown shuts down an install runner VM
 */
 func (a *Client) MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error) {
@@ -16297,7 +16397,7 @@ func (a *Client) UpdateComponent(params *UpdateComponentParams, authInfo runtime
 }
 
 /*
-UpdateCurrentOrgWebhook updates a webhook on the current org
+UpdateCurrentOrgWebhook updates a webhook for the current org
 
 Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
 */

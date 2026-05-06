@@ -8,6 +8,7 @@ import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { useAutoFocusOnVisible } from '@/hooks/use-auto-focus-on-visible'
 import { useEscapeKey } from '@/hooks/use-escape-key'
 import { useSurfaces } from '@/hooks/use-surfaces'
+import { Tooltip } from '@/components/common/Tooltip'
 import { cn } from '@/utils/classnames'
 import './Panel.css'
 
@@ -15,10 +16,12 @@ type TPanelSize = 'default' | 'half' | '3/4' | 'full'
 
 export interface IPanel extends React.HTMLAttributes<HTMLDivElement> {
   childrenClassName?: string
+  defaultExpanded?: boolean
   heading?: React.ReactNode
   headerClassName?: string
   isVisible?: boolean
   onClose?: () => void
+  onSizeChange?: (size: TPanelSize) => void
   panelId?: string
   panelKey?: string
   size?: TPanelSize
@@ -29,16 +32,18 @@ export const PanelBase = ({
   className,
   children,
   childrenClassName,
+  defaultExpanded,
   heading,
   headerClassName,
   isVisible = false,
   onClose,
+  onSizeChange,
   panelId,
   panelKey,
   size: initSize = 'default',
   ...props
 }: Omit<IPanel, 'triggerButton'>) => {
-  const [size, setSize] = useState(initSize)
+  const [size, setSize] = useState(defaultExpanded ? 'full' : initSize)
   const { removePanel, panels } = useSurfaces()
   const handleClose = () => {
     if (onClose) onClose?.()
@@ -96,43 +101,53 @@ export const PanelBase = ({
             ) : null}
             <div className="flex items-center gap-4">
               {initSize !== 'full' ? (
+                <Tooltip
+                  position="bottom"
+                  tipContent={
+                    <Text variant="subtext">
+                      {size === 'full'
+                        ? `Resize to ${initSize} size`
+                        : 'Expand to full screen'}
+                    </Text>
+                  }
+                >
+                  <Button
+                    className="!p-2 ml-auto"
+                    variant="ghost"
+                    onClick={() => {
+                      setSize((prev: TPanelSize) => {
+                        const next = prev === initSize ? 'full' : initSize
+                        onSizeChange?.(next)
+                        return next
+                      })
+                    }}
+                    aria-label={
+                      size === 'full'
+                        ? `Resize to ${initSize} size`
+                        : 'Expand to full screen'
+                    }
+                  >
+                    <Icon
+                      variant={size === 'full' ? 'CornersIn' : 'CornersOut'}
+                    />
+                  </Button>
+                </Tooltip>
+              ) : null}
+              <Tooltip
+                position="bottom"
+                tipContent={
+                  <Text variant="subtext">Close panel</Text>
+                }
+              >
                 <Button
                   className="!p-2 ml-auto"
                   variant="ghost"
-                  onClick={() => {
-                    setSize((prev: TPanelSize) => {
-                      if (prev === initSize) {
-                        return 'full'
-                      } else {
-                        return initSize
-                      }
-                    })
-                  }}
-                  title={
-                    size === 'full'
-                      ? `Resize to ${initSize} size`
-                      : 'Expand to full screen'
-                  }
-                  aria-label={
-                    size === 'full'
-                      ? `Resize to ${initSize} size`
-                      : 'Expand to full screen'
-                  }
+                  onClick={handleClose}
+                  aria-label="Close panel"
                 >
-                  <Icon
-                    variant={size === 'full' ? 'CornersIn' : 'CornersOut'}
-                  />
+                  <Icon variant="ArrowLineRight" />
                 </Button>
-              ) : null}
-              <Button
-                className="!p-2 ml-auto"
-                variant="ghost"
-                onClick={handleClose}
-                title="Close panel"
-                aria-label="Close panel"
-              >
-                <Icon variant="ArrowLineRight" />
-              </Button>
+              </Tooltip>
             </div>
           </header>
           <div

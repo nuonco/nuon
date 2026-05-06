@@ -55,6 +55,24 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
 
+		// If the step is skippable, mark it as failed but continue the workflow
+		// instead of stopping. This allows post-trigger action steps to fail
+		// without blocking the entire workflow.
+		if step.Skippable {
+			l.Info("step is skippable, continuing workflow after exhausted retries",
+				zap.String("step_id", step.ID))
+			_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
+				"retries_exhausted":  true,
+				"max_retries":        maxRetries,
+				"retry_index":        retryIndex,
+				"skipped_on_failure": true,
+			})
+			if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
+				return errors.Wrap(err, "unable to set result directive")
+			}
+			return nil
+		}
+
 		if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 			return errors.Wrap(err, "unable to set result directive")
 		}
@@ -72,6 +90,24 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			zap.Int("max_auto_retries", maxAutoRetries),
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
+
+		// If the step is skippable and all retries (including manual) are exhausted
+		// at the auto-retry level, allow the workflow to continue.
+		if step.Skippable && maxAutoRetries >= maxRetries {
+			l.Info("step is skippable, continuing workflow after exhausted retries",
+				zap.String("step_id", step.ID))
+			_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
+				"auto_retries_exhausted": true,
+				"max_auto_retries":       maxAutoRetries,
+				"max_retries":            maxRetries,
+				"retry_index":            retryIndex,
+				"skipped_on_failure":     true,
+			})
+			if err := setResultDirective(ctx, step.ID, DirectiveContinue); err != nil {
+				return errors.Wrap(err, "unable to set result directive")
+			}
+			return nil
+		}
 
 		return s.markStepFailed(ctx, step, stepErr, map[string]any{
 			"auto_retries_exhausted": true,

@@ -7,30 +7,27 @@ keywords: ["supported clouds", "AWS Azure GCP support", "cloud platform compatib
 
 The first and most obvious challenge of BYOC is supporting all the cloud platforms you want to deploy to. Leveraging our runner architecture, Nuon is able to provide first-class support for the major cloud platforms, while maintaining a constistent experience for day-2 operations.
 
-## Install Stacks
+## Stacks
 
-To obviate the need for cross-account access to your customer's account, we support installing the Nuon runner using each cloud platform's native tools. This allows your customer to install the runner into their cloud account using the platform's console or CLI, without granting you or Nuon any access.
+To install the Nuon runner into your customer's cloud account, Nuon generates a Stack template in both Terraform and the platform's native IaC language. Each version of the Stack will create the same resources, so you can pick whichever one suits you and your customers the best.
 
-For each install you create, Nuon will generate an install stack that contains the runner and the base infrastructure it requires to start up and execute jobs. The specific resources vary by platform, but each stack includes:
+The Stack is meant to be provisioned by your customer in their cloud account, phoning home to the Nuon control plane after it has provisioned. This means no cross-account access is required to provision it — your customer stays in full control of the runner identity and the resources it manages.
 
-- A virtual network.
-- Private and public subnets for your application resources.
-- A virtual machine for the runner, deployed into it's own separate subnet.
-- An identity and permissions to manage the required resources.
-
-Nuon will generate links and CLI commands you can share with your customer to install the stack. You can also download the template if your customer would like to inspect it.
+Nuon will generate links and CLI commands you can share with your customer to install the Stack. You can also download the template if your customer would like to inspect it. If the platform offers a simple, one-click installation method, such as AWS Cloudformation Quickcreate, will support that.
 
 <Note>
-There is necessarily some variation here based on each platform's capabilities, but we strive to keep the experience as consistent as possible.
+Google Cloud's IaC solution, Infrastructure Manager, uses Terraform natively, so we do not generate a separate template for Google installs.
 </Note>
 
 | | AWS | Azure | Google Cloud |
 | --- | --- | --- | --- |
-| __Template Language__ | [Cloudformation](https://aws.amazon.com/cloudformation/) | [Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/) | [Terraform](https://cloud.google.com/infrastructure-manager/docs/overview) |
-| __Deployed As__ | Cloudformation Stack | ARM Deployment | Infra Manager Deployment |
+| __Terraform__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> |
+| __Native IaC__ | [Cloudformation](https://aws.amazon.com/cloudformation/) | [Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/) | N/A |
 | __GUI Installation__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="xmark" color="#e2e0e4" /> | <Icon icon="xmark" color="#e2e0e4" /> |
 | __CLI Installation__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> |
 | __Download Template__ | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> | <Icon icon="check" color="#8040bf" /> |
+
+You can find more information about Stacks on the [Stacks Concept page](/concepts/stacks).
 
 ## Access Control
 
@@ -38,11 +35,11 @@ Each cloud platform has it's own conventions, best practices, and tools to manag
 
 ### Nuon Runner Identity-Based Authentication
 
-The Nuon runner is designed to be platform-independent and stateless. When deployed, it is given an identity by the install stack, which is granted limited access to the cloud environment based on your application config.
+The Nuon runner is designed to be platform-independent and stateless. When deployed, it is given an identity by the Stack, which is granted limited access to the cloud environment based on your application config.
 
 The runner does not store platform credentials. It will attempt to authenticate for each job it runs, using whatever identity has been assigned to it.
 
-Since your customer installs the stack, they have full control over it, and can revoke the runner identity's access at any time using their cloud's native access control. The runner will immediately lose access to the cloud environment if they do this.
+Since your customer installs the Stack, they have full control over it, and can revoke the runner identity's access at any time using their cloud's native access control. The runner will immediately lose access to the cloud environment if they do this.
 
 ### Platform-Native Permissions
 

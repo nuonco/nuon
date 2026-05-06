@@ -20,6 +20,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 
 	sig := &executeworkflowstepgroup.Signal{
 		WorkflowID:      flw.ID,
+		WorkflowType:    string(flw.Type),
 		StepGroupID:     group.ID,
 		GroupIdx:        group.GroupIdx,
 		OwnerID:         cfg.OwnerID,

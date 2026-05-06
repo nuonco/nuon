@@ -18,7 +18,7 @@ type ActionWorkflowRunPlan struct {
 	Steps           []*ActionWorkflowRunStepPlan `json:"steps"`
 	BuiltinEnvVars  map[string]string            `json:"builtin_env_vars"`
 	OverrideEnvVars map[string]string            `json:"override_env_vars"`
-	Timeout         time.Duration                `json:"timeout,omitempty"`
+	Timeout         time.Duration                `json:"timeout,omitempty" swaggertype:"primitive,integer"`
 
 	// optional fields based on the configuration
 	ClusterInfo *kube.ClusterInfo        `json:"cluster_info,block"`

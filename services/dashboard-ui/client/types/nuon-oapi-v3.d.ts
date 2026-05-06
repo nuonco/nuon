@@ -1962,6 +1962,11 @@ export interface paths {
   "/v1/orgs/current/webhooks/{webhook_id}": {
     /** delete a webhook for the current org */
     delete: operations["DeleteCurrentOrgWebhook"];
+    /**
+     * update a webhook for the current org
+     * @description Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
+     */
+    patch: operations["UpdateCurrentOrgWebhook"];
   };
   "/v1/orgs/features": {
     /**
@@ -2481,6 +2486,13 @@ export interface paths {
   "/v1/workflows": {
     /** get all workflows for the org */
     get: operations["GetOrgWorkflows"];
+  };
+  "/v1/workflows/cancel": {
+    /**
+     * cancel multiple workflows
+     * @description Cancel multiple workflows by ID. Returns partial results if some fail.
+     */
+    post: operations["CancelWorkflows"];
   };
   "/v1/workflows/pending-approvals": {
     /** get all pending workflow step approvals for the org */
@@ -3872,6 +3884,14 @@ export interface components {
       quick_link_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
       template_url?: string;
+      terraform_checksum?: string;
+      /**
+       * @description On AWS, the install workflow renders BOTH a CloudFormation template and
+       * a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
+       * (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
+       * artifact lives below. The dashboard shows both during the await step.
+       */
+      terraform_contents?: string;
       updated_at?: string;
     };
     "app.InstallStackVersionRun": {
@@ -5264,7 +5284,7 @@ export interface components {
       };
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
-      timeout?: components["schemas"]["time.Duration"];
+      timeout?: number;
     };
     "plantypes.ActionWorkflowRunStepPlan": {
       attrs?: {
@@ -5745,8 +5765,19 @@ export interface components {
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
+    "service.CancelWorkflowError": {
+      error?: string;
+      workflow_id?: string;
+    };
     "service.CancelWorkflowStepResponse": {
       workflow_id?: string;
+    };
+    "service.CancelWorkflowsRequest": {
+      workflow_ids: string[];
+    };
+    "service.CancelWorkflowsResponse": {
+      cancelled?: string[];
+      errors?: components["schemas"]["service.CancelWorkflowError"][];
     };
     "service.CompleteInstallStepRequest": {
       aws_account?: {
@@ -5960,6 +5991,7 @@ export interface components {
       github_install_id: string;
     };
     "service.CreateCurrentOrgWebhookRequest": {
+      interests?: Record<string, never>;
       webhook_secret?: string;
       webhook_url: string;
     };
@@ -6233,6 +6265,7 @@ export interface components {
       created_by_id?: string;
       has_secret?: boolean;
       id?: string;
+      interests?: Record<string, never>;
       org_id?: string;
       updated_at?: string;
       webhook_url?: string;
@@ -6489,6 +6522,10 @@ export interface components {
       name: string;
       var_name?: string;
     };
+    "service.UpdateCurrentOrgWebhookRequest": {
+      interests?: Record<string, never>;
+      webhook_secret?: string;
+    };
     "service.UpdateInstallConfigRequest": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
@@ -6716,11 +6753,6 @@ export interface components {
       error?: string;
       user_error?: boolean;
     };
-    /**
-     * Format: int64
-     * @enum {integer}
-     */
-    "time.Duration": -9223372036854776000 | 9223372036854776000 | 1 | 1000 | 1000000 | 1000000000 | 60000000000 | 3600000000000;
     "types.StringBoolMap": {
       [key: string]: boolean;
     };
@@ -15134,6 +15166,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by runner ID */
+        runner_id?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
@@ -20872,6 +20906,62 @@ export interface operations {
     };
   };
   /**
+   * update a webhook for the current org
+   * @description Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
+   */
+  UpdateCurrentOrgWebhook: {
+    parameters: {
+      path: {
+        /** @description webhook ID */
+        webhook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateCurrentOrgWebhookRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CurrentOrgWebhookResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get available org features
    * @description Get all available organization feature flags with their descriptions.
    *
@@ -24202,6 +24292,50 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel multiple workflows
+   * @description Cancel multiple workflows by ID. Returns partial results if some fail.
+   */
+  CancelWorkflows: {
+    /** @description workflow IDs to cancel */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CancelWorkflowsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CancelWorkflowsResponse"];
         };
       };
       /** @description Bad Request */

@@ -5,7 +5,7 @@ import { Toggle } from '@/components/common/form/Toggle'
 import { ApplyToAllBar } from './ApplyToAllBar'
 import { ResourceBlock } from './ResourceBlock'
 import { defaultInterests } from './defaults'
-import { SUB_OPS } from './subops'
+import { RESOURCES_WITH_DRIFT_DETECTED } from './subops'
 import {
   ALL_RESOURCES,
   type Interests,
@@ -14,10 +14,11 @@ import {
   type ResourceKind,
 } from './types'
 
-// resourceSupportsDrift mirrors the Go SubOps map — only resources whose
-// sub-op vocabulary includes "drift" surface the drift_detected toggle.
+// resourceSupportsDrift mirrors the Go SupportsDriftDetected helper — only
+// components and sandboxes can produce a drift_detected event, so the toggle
+// is only meaningful (and only rendered) for those resources.
 const resourceSupportsDrift = (kind: ResourceKind): boolean =>
-  SUB_OPS[kind].includes('drift')
+  RESOURCES_WITH_DRIFT_DETECTED.has(kind)
 
 // Shared picker that reads + writes the canonical Interests JSON shape (mirror
 // of services/ctl-api/internal/pkg/interests/types.go).

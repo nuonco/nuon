@@ -59,12 +59,22 @@ const CreateInstallModalContainer = ({ ...props }: ICreateInstall & IModal) => {
         {} as Record<string, string>
       )
 
+      const installConfig: TCreateAppInstallBody['install_config'] = {
+        approval_option: formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
+      }
+      const vpcUrl = (formDataObj.vpc_nested_template_url as string)?.trim()
+      const runnerUrl = (formDataObj.runner_nested_template_url as string)?.trim()
+      if (vpcUrl) {
+        installConfig!.vpc_nested_template_url = vpcUrl
+      }
+      if (runnerUrl) {
+        installConfig!.runner_nested_template_url = runnerUrl
+      }
+
       const body: TCreateAppInstallBody = {
         name: formDataObj.name as string,
         inputs: Object.keys(inputs).length > 0 ? inputs : undefined,
-        install_config: {
-          approval_option: formDataObj['auto-approve'] === 'on' ? 'approve-all' : 'prompt',
-        },
+        install_config: installConfig,
         metadata: { managed_by: 'nuon/dashboard' },
       }
 

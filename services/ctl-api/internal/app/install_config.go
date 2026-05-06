@@ -34,7 +34,7 @@ type InstallConfig struct {
 	InstallID string  `json:"install_id,omitzero" gorm:"notnull;default null" temporaljson:"install_id,omitzero,omitempty"`
 	Install   Install `json:"-" temporaljson:"install,omitzero,omitempty"`
 
-	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"not null;default 'auto'" temporaljson:"approval_option,omitzero,omitempty"`
+	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"not null;default 'prompt'" temporaljson:"approval_option,omitzero,omitempty"`
 
 	// Per-install stack template overrides (nil = use app config default)
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty" gorm:"column:vpc_nested_template_url" temporaljson:"vpc_nested_template_url,omitempty"`

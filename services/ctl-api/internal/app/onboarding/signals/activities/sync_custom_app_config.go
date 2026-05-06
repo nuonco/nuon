@@ -37,10 +37,14 @@ func (a *Activities) syncCustomAppConfig(ctx context.Context, onboardingID strin
 	appID := *onboarding.AppID
 
 	// Create AppConfig record for the syncer to link child records to
+	pendingStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending))
+	pendingStatus.StatusHumanDescription = "pending sync"
+
 	appConfig := &app.AppConfig{
 		AppID:             appID,
 		Status:            app.AppConfigStatusPending,
 		StatusDescription: "pending sync",
+		StatusV2:          pendingStatus,
 	}
 
 	if err := a.db.WithContext(ctx).Create(appConfig).Error; err != nil {

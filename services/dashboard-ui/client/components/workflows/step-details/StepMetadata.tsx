@@ -1,5 +1,6 @@
 'use client'
 
+import { Code } from '@/components/common/Code'
 import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { Status } from '@/components/common/Status'
@@ -12,14 +13,36 @@ import type { IStepDetails } from './types'
 
 const StepHistoryStatus = ({
   status,
+  id,
 }: {
   status: IStepDetails['step']['status']['history'][number]
+  id: string
 }) => {
+  const description = status.status_human_description
+
+  if (!description) {
+    return (
+      <span className="flex items-center gap-4 py-2">
+        <Status status={status.status} variant="badge" />
+        <Time seconds={status.created_at_ts} variant="subtext" theme="neutral" />
+      </span>
+    )
+  }
+
   return (
-    <span className="flex items-center gap-4 py-2">
-      <Status status={status.status} variant="badge" />
-      <Time seconds={status.created_at_ts} variant="subtext" theme="neutral" />
-    </span>
+    <Expand
+      id={id}
+      hasNoHoverStyle
+      headerClassName="!p-0"
+      heading={
+        <span className="flex items-center gap-4 py-2">
+          <Status status={status.status} variant="badge" />
+          <Time seconds={status.created_at_ts} variant="subtext" theme="neutral" />
+        </span>
+      }
+    >
+      <Code className="mb-2 !text-xs">{description}</Code>
+    </Expand>
   )
 }
 
@@ -47,9 +70,10 @@ export const StepMetadata = ({ step }: IStepDetails) => {
             <StepHistoryStatus
               key={`${status.created_at_ts}-${idx}`}
               status={status}
+              id={`step-history-${idx}`}
             />
           ))}
-          <StepHistoryStatus status={step.status} />
+          <StepHistoryStatus status={step.status} id="step-history-current" />
         </div>
       </Expand>
 

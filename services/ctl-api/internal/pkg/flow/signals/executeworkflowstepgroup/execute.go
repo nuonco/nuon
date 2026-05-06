@@ -150,6 +150,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep) (str
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
 		WorkflowID:      s.WorkflowID,
+		WorkflowType:    s.WorkflowType,
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
 		TargetQueueName: s.TargetQueueName,

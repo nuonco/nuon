@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
-import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { Button } from '@/components/common/Button'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -11,16 +13,24 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallState } from '@/lib'
+import { createFileDownload } from '@/utils/file-download'
 
 export const ViewState = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const [isCopied, setIsCopied] = useState(false)
 
   const { data: state, error, isLoading } = useQuery({
     queryKey: ['install-state', org?.id, install?.id],
     queryFn: () => getInstallState({ orgId: org.id, installId: install.id }),
     enabled: !!org?.id && !!install?.id,
   })
+
+  useEffect(() => {
+    if (!isCopied) return
+    const timeout = setTimeout(() => setIsCopied(false), 2000)
+    return () => clearTimeout(timeout)
+  }, [isCopied])
 
   return (
     <PageSection>
@@ -46,10 +56,32 @@ export const ViewState = () => {
           </Text>
         </HeadingGroup>
         {state && (
-          <ClickToCopyButton
-            textToCopy={JSON.stringify(state, null, 2)}
-            className="w-fit"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              aria-label={isCopied ? 'Copied' : 'Copy state as JSON'}
+              title={isCopied ? 'Copied' : 'Copy state as JSON'}
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(state, null, 2))
+                setIsCopied(true)
+              }}
+            >
+              <Icon variant={isCopied ? 'Check' : 'Copy'} size="16" />
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                createFileDownload(
+                  JSON.stringify(state, null, 2),
+                  `${install?.name || 'install'}-state.json`,
+                  'application/json'
+                )
+              }
+            >
+              <Icon variant="DownloadSimple" size="16" />
+              Download
+            </Button>
+          </div>
         )}
       </div>
 

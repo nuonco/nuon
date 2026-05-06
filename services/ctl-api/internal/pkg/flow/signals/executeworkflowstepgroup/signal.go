@@ -41,6 +41,13 @@ type Signal struct {
 	TargetQueueName string `json:"target_queue_name"`
 	Parallel        bool   `json:"parallel"`
 
+	// WorkflowType identifies the kind of workflow that owns this group. Set
+	// at dispatch time from the in-scope *app.Workflow and forwarded to each
+	// child execute-workflow-step signal so the workflow_step lifecycle
+	// hook can suppress events for envelope workflows like drift_run /
+	// drift_run_reprovision_sandbox without a DB lookup.
+	WorkflowType string `json:"workflow_type,omitempty"`
+
 	// OrgID / OrgName / OwnerName are pass-through fields stamped by the
 	// parent execute-workflow signal. They are forwarded to the step signal
 	// at dispatch time so workflow_step lifecycle webhook payloads carry

@@ -8,8 +8,8 @@ export const allEvents = (): Interests => ({ all_events: true })
 
 // Power-user opted out of AllEvents baseline. Four resources present, runners +
 // actions absent. Empty ops = all sub-ops; OutcomeCompletion + both approval
-// flags true. drift_detected is on for the two resources whose SubOps include
-// "drift" (components, sandboxes).
+// flags true. drift_detected is on for the two resources that can produce a
+// drift_detected event (components, sandboxes — see RESOURCES_WITH_DRIFT_DETECTED).
 export const defaultInterests = (): Interests => ({
   resources: {
     installs: { outcome: 'completion', approval_requests: true, approval_responses: true },

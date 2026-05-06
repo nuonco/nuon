@@ -4,7 +4,7 @@ import { Text } from '@/components/common/Text'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { RadioInput } from '@/components/common/form/RadioInput'
 import { cn } from '@/utils/classnames'
-import { SUB_OPS, labelForSubOp } from './subops'
+import { RESOURCES_WITH_DRIFT_DETECTED, SUB_OPS, labelForSubOp } from './subops'
 import {
   OUTCOME_LABELS,
   RESOURCE_DESCRIPTIONS,
@@ -48,10 +48,11 @@ export const ResourceBlock = ({
   const approvalResponses = !!cfg.approval_responses
   const slackApprovalChecked = approvalRequests || approvalResponses
   const driftDetected = !!cfg.drift_detected
-  // Only resources whose sub-op vocabulary includes "drift" can reasonably
-  // emit a drift_detected event; we hide the toggle elsewhere to avoid
-  // suggesting it does anything (the matcher would never fire it).
-  const supportsDrift = SUB_OPS[kind].includes('drift')
+  // Only components and sandboxes can produce a drift_detected event (mirrors
+  // the Go SupportsDriftDetected helper). The matcher silently drops drift
+  // workflow lifecycle events entirely, so the toggle is the *only* knob that
+  // ever fires drift notifications — render it only where it can actually fire.
+  const supportsDrift = RESOURCES_WITH_DRIFT_DETECTED.has(kind)
 
   const opSummary =
     ops.length === 0 ? 'all ops' : `${ops.length} op${ops.length === 1 ? '' : 's'}`

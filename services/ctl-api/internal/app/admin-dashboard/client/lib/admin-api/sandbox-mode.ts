@@ -22,6 +22,9 @@ export const upsertSandboxRunnerJobConfig = (jobType: string, body: any) =>
 export const disableAllSignals = () =>
   api<{ status: string }>({ path: 'sandbox-mode/signals/disable-all', method: 'POST' })
 
+export const deleteRunnerJobConfig = (configId: string) =>
+  api<{ deleted: boolean }>({ path: `sandbox-mode/runner-jobs/${encodeURIComponent(configId)}`, method: 'DELETE' })
+
 export const disableAllRunnerJobs = () =>
   api<{ status: string }>({ path: 'sandbox-mode/runner-jobs/disable-all', method: 'POST' })
 

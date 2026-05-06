@@ -28,16 +28,38 @@ import (
 // classification falls back to the WorkflowType-only path which is enough
 // for execute-workflow events but skips step-scoped enrichment.
 func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, db *gorm.DB, in Interests) bool {
-	if in.AllEvents {
-		return true
-	}
-	if len(in.Resources) == 0 {
+	if !in.AllEvents && len(in.Resources) == 0 {
 		return false
 	}
 
 	f := classify(event, outcome, db)
 	if !f.Resolved {
 		return false
+	}
+
+	// Drift workflows (drift_run, drift_run_reprovision_sandbox) emit a flood
+	// of started/completed lifecycle events on every cron tick — including
+	// clean scans where nothing drifted. That noise is never useful: drift is
+	// signaled exclusively through the dedicated drift-detected event class
+	// (eventClassDriftDetected) which fires only when the plan-only check
+	// observes actual changes.
+	//
+	// We key off event.WorkflowType (the parent workflow envelope), not the
+	// classified facts.Op, because steps inside a drift workflow classify
+	// independently — a "runner healthy" step inside drift_run_reprovision_sandbox
+	// classifies as (runners, reprovision), a pre-reprovision lifecycle action
+	// classifies as (actions, run), etc. Filtering on facts.Op alone would
+	// only suppress the outer envelope and the single sandbox-plan step,
+	// leaking every other step event to subscribers. Suppress the entire
+	// lifecycle tree (including under AllEvents) so subscribers opt into
+	// drift via the DriftDetected flag, not by listing "drift" in Ops.
+	if f.EventClass == eventClassLifecycle &&
+		(event.WorkflowType == "drift_run" || event.WorkflowType == "drift_run_reprovision_sandbox") {
+		return false
+	}
+
+	if in.AllEvents {
+		return true
 	}
 
 	cfg, ok := in.Resources[f.Resource]

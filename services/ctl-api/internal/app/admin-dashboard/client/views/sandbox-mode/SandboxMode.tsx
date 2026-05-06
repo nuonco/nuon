@@ -5,6 +5,7 @@ import {
   getSandboxMode,
   upsertSandboxRunnerJobConfig,
   upsertSandboxSignalConfig,
+  deleteRunnerJobConfig,
   disableAllSignals,
   disableAllRunnerJobs,
   applyFlowTemplate,
@@ -78,6 +79,10 @@ export const SandboxMode = () => {
     onSuccess: () => { invalidate(); setEditingSignalType(null) },
   })
 
+  const deleteJobMutation = useMutation({
+    mutationFn: (configId: string) => deleteRunnerJobConfig(configId),
+    onSuccess: invalidate,
+  })
   const disableSignalsMutation = useMutation({ mutationFn: disableAllSignals, onSuccess: invalidate })
   const disableJobsMutation = useMutation({ mutationFn: disableAllRunnerJobs, onSuccess: invalidate })
   const applyTemplateMutation = useMutation({ mutationFn: applyFlowTemplate, onSuccess: invalidate })
@@ -92,6 +97,7 @@ export const SandboxMode = () => {
   const flowTemplates = data.flow_templates || []
   const allTemplates = data.templates || []
   const allRunnerJobTypes: string[] = data.all_runner_job_types || []
+  const allRunnerJobOperationTypes: string[] = data.all_runner_job_operation_types || []
   const allSignalTypes: string[] = data.all_signal_types || []
 
   const templateOptions = allTemplates.map((t: any) => t.key || t.Key || String(t))
@@ -240,12 +246,18 @@ export const SandboxMode = () => {
                       <td className="text-xs text-gray-500 dark:text-gray-400">
                         {[config.log_template, config.plan_template, config.state_template, config.output_template].filter(Boolean).join(', ') || '-'}
                       </td>
-                      <td>
+                      <td className="flex gap-2">
                         <button
                           onClick={() => openEditJob(config)}
                           className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 font-medium"
                         >
                           Edit
+                        </button>
+                        <button
+                          onClick={() => { if (confirm('Delete this config?')) deleteJobMutation.mutate(config.id) }}
+                          className="text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 font-medium"
+                        >
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -442,7 +454,12 @@ function JobFormPanel({
           <input type="checkbox" checked={form.trigger_shutdown} onChange={(e) => setForm((f) => ({ ...f, trigger_shutdown: e.target.checked }))} className="mt-1" />
         </Field>
         <Field label="Operation">
-          <input type="text" value={form.operation} onChange={(e) => setForm((f) => ({ ...f, operation: e.target.value }))} placeholder="optional" className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2" />
+          <select value={form.operation} onChange={(e) => setForm((f) => ({ ...f, operation: e.target.value }))} className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2">
+            <option value="">any (optional)</option>
+            {allRunnerJobOperationTypes.map((op) => (
+              <option key={op} value={op}>{op}</option>
+            ))}
+          </select>
         </Field>
         <Field label="Log template">
           <TemplateSelect value={form.log_template} onChange={(v) => setForm((f) => ({ ...f, log_template: v }))} options={templateOptions} />

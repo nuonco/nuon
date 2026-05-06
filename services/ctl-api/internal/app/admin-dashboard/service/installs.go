@@ -45,7 +45,7 @@ func (s *service) getInstalls(ctx context.Context, search string, sort string, f
 	var installs []*app.Install
 	var totalCount int64
 
-	query := s.db.WithContext(ctx).Model(&app.Install{})
+	query := s.readDB().WithContext(ctx).Model(&app.Install{})
 
 	switch deletedFilter {
 	case "deleted":

@@ -11,7 +11,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -125,6 +124,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
+	// In queue mode the helper's legacy signals are dropped (legacy event loop is
+	// not running). Enqueue queue equivalents so the input-update workflow runs.
 	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
 	if err != nil {
 		ctx.Error(fmt.Errorf("checking features: %w", err))
@@ -153,16 +154,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:              signals.OperationUpdated,
-			InstallWorkflowID: workflow.ID,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:              signals.OperationExecuteFlow,
-			InstallWorkflowID: workflow.ID,
-		})
 	}
+	// In legacy mode the helper already sent OperationUpdated + OperationExecuteFlow.
 
 	inputs.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusOK, inputs)

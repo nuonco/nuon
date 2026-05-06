@@ -25,9 +25,12 @@ import (
 
 type Params struct {
 	fx.In
-	V              *validator.Validate
-	Cfg            *internal.Config
-	DB             *gorm.DB `name:"psql"`
+	V   *validator.Validate
+	Cfg *internal.Config
+	DB  *gorm.DB `name:"psql"`
+	// optional because non-admin-dashboard binaries instantiate this service
+	// via sharedServices but don't provide a replica.
+	ReplicaDB      *gorm.DB `name:"psql-replica" optional:"true"`
 	CHDB           *gorm.DB `name:"ch"`
 	MW             metrics.Writer
 	L              *zap.Logger
@@ -50,6 +53,7 @@ type Service struct {
 	v              *validator.Validate
 	l              *zap.Logger
 	db             *gorm.DB
+	replicaDB      *gorm.DB
 	chDB           *gorm.DB
 	mw             metrics.Writer
 	cfg            *internal.Config
@@ -62,6 +66,22 @@ type Service struct {
 	emitterClient  *emitterclient.Client
 	codecs         []converter.PayloadCodec
 	queryCollector *querycollector.Collector
+}
+
+func (s *Service) readDB() *gorm.DB {
+	if s.replicaDB != nil {
+		return s.replicaDB
+	}
+	return s.db
+}
+
+// psqlForTarget returns the psql connection matching the requested target
+// ("primary" or "replica"). Falls back to primary if the replica is unset.
+func (s *Service) psqlForTarget(target string) *gorm.DB {
+	if target == "replica" {
+		return s.readDB()
+	}
+	return s.db
 }
 
 type service = Service
@@ -221,6 +241,7 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/sandbox-mode/stacks", s.SandboxModeStacksTable)
 		api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
 		api.PUT("/sandbox-mode/runner-jobs/:job_type", s.SandboxModeUpsertRunnerJobConfig)
+		api.DELETE("/sandbox-mode/runner-jobs/:config_id", s.SandboxModeDeleteRunnerJobConfig)
 		api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
 		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
@@ -252,6 +273,7 @@ func New(params Params) (*service, error) {
 		l:              params.L,
 		v:              params.V,
 		db:             params.DB,
+		replicaDB:      params.ReplicaDB,
 		chDB:           params.CHDB,
 		mw:             params.MW,
 		appsHelpers:    params.AppsHelpers,

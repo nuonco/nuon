@@ -70,7 +70,7 @@ func main() {
 
 ### Install the Runner
 
-Installing the runner happens out of band, entirely on the customer's side. You just need to provide them with directions. We provide these for each install as part of the provision workflow. It will either be a link to a Cloudformation stack (for AWS app,) or the Azure CLI command to deploy a resource stack (for Azure apps.)
+Installing the runner happens out of band, entirely on the customer's side. You just need to provide them with directions. We provide these for each install as part of the provision workflow.
 
 Once the runner is installed, it will phone home automatically.
 
@@ -190,7 +190,7 @@ err := client.DeprovisionInstall(context.Background(), installID)
 
 ### Uninstall the Runner
 
-Just like installing the runner, uninstalling it happens out of band. For AWS apps, your customer must deprovision the Cloudformation stack. For Azure apps, your customer must run an Azure CLI command. These are provided in the deprovision workflow.
+Just like installing the runner, uninstalling it happens out of band. The instructions are provided in the deprovision workflow.
 
 ### Delete the Install
 

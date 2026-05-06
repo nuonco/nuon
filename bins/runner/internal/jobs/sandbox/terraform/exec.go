@@ -13,6 +13,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/terraform/run"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
@@ -22,6 +23,21 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	if err != nil {
 		return err
 	}
+
+	// Tag this handler's logger with semantic-convention attributes so every
+	// emitted record (including from terraform-run helpers below) carries them.
+	tfWorkspaceID := ""
+	if p.state.plan != nil && p.state.plan.TerraformBackend != nil {
+		tfWorkspaceID = p.state.plan.TerraformBackend.WorkspaceID
+	}
+	l = l.With(
+		zap.String("service.name", "runner.sandbox.terraform"),
+		zap.String("nuon.tool", "terraform"),
+		zap.String("nuon.deploy.kind", "sandbox.terraform"),
+		zap.String("tf.workspace_id", tfWorkspaceID),
+		zap.String("tf.operation", string(job.Operation)),
+	)
+	ctx = pkgctx.SetLogger(ctx, l)
 
 	hlog := log.NewHClog(l)
 
@@ -91,13 +107,19 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		l.Info("creating terraform plan", zap.String("operation", string(job.Operation)))
-		err = tfRun.Plan(ctx)
+		opCtx, end := op.Tool(ctx, "terraform", "plan")
+		err = tfRun.Plan(opCtx)
+		end(err)
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		l.Info("creating terraform teardown plan", zap.String("operation", string(job.Operation)))
-		err = tfRun.DestroyPlan(ctx)
+		opCtx, end := op.Tool(ctx, "terraform", "destroy_plan")
+		err = tfRun.DestroyPlan(opCtx)
+		end(err)
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		l.Info("executing terraform apply plan", zap.String("operation", string(job.Operation)))
-		err = tfRun.ApplyPlan(ctx)
+		opCtx, end := op.Tool(ctx, "terraform", "apply_plan")
+		err = tfRun.ApplyPlan(opCtx)
+		end(err)
 	default:
 		l.Error("unsupported terraform run type", zap.String("type", string(job.Operation)))
 		return fmt.Errorf("unsupported run type %s", job.Operation)

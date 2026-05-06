@@ -14,18 +14,18 @@ type InstallApprovalOption string
 
 const (
 	InstallApprovalOptionApproveAll InstallApprovalOption = "approve-all"
+	InstallApprovalOptionAuto       InstallApprovalOption = "auto"
 	InstallApprovalOptionPrompt     InstallApprovalOption = "prompt"
 	InstallApprovalOptionUnknown    InstallApprovalOption = ""
 )
 
 func (o InstallApprovalOption) APIType() models.AppInstallApprovalOption {
 	switch o {
-	case InstallApprovalOptionApproveAll:
+	case InstallApprovalOptionApproveAll, InstallApprovalOptionAuto:
 		return models.AppInstallApprovalOptionApproveDashAll
 	case InstallApprovalOptionPrompt:
 		return models.AppInstallApprovalOptionPrompt
 	default:
-		// In case for unknown options, default to prompting for approval.
 		return models.AppInstallApprovalOptionPrompt
 	}
 }

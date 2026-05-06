@@ -3,7 +3,7 @@ import { useLogViewer, useUnifiedLogData } from '@/hooks/use-logs'
 import { SSELogs } from './SSELogs'
 
 export const SSELogsContainer = ({
-  filterClassName = '-top-6',
+  filterClassName = 'top-0',
 }: {
   filterClassName?: string
 }) => {
