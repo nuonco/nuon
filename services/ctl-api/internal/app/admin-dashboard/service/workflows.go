@@ -58,7 +58,7 @@ func (s *service) WorkflowsTable(c *gin.Context) {
 }
 
 func (s *service) getWorkflows(ctx context.Context, search, sort, typeFilter string, page int) ([]*app.Workflow, int, error) {
-	query := s.db.WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.Workflow{}).
 		Preload("CreatedBy")
 
@@ -104,7 +104,7 @@ func (s *service) getWorkflows(ctx context.Context, search, sort, typeFilter str
 	// Load step counts
 	for _, wf := range workflows {
 		var count int64
-		s.db.WithContext(ctx).Model(&app.WorkflowStep{}).Where("install_workflow_id = ?", wf.ID).Count(&count)
+		s.readDB().WithContext(ctx).Model(&app.WorkflowStep{}).Where("install_workflow_id = ?", wf.ID).Count(&count)
 		wf.Steps = make([]app.WorkflowStep, count)
 	}
 

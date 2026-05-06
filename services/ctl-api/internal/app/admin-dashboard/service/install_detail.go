@@ -204,7 +204,7 @@ func (s *service) InstallWorkflowsTable(c *gin.Context) {
 
 func (s *service) getWorkflowsForInstall(ctx context.Context, installID string, page int) ([]*app.Workflow, int, error) {
 	var totalCount int64
-	countQuery := s.db.WithContext(ctx).
+	countQuery := s.readDB().WithContext(ctx).
 		Model(&app.Workflow{}).
 		Where("owner_id = ? AND owner_type = 'installs'", installID)
 
@@ -219,7 +219,7 @@ func (s *service) getWorkflowsForInstall(ctx context.Context, installID string, 
 
 	offset := (page - 1) * installWorkflowsPerPage
 	var workflows []*app.Workflow
-	if err := s.db.WithContext(ctx).
+	if err := s.readDB().WithContext(ctx).
 		Where("owner_id = ? AND owner_type = 'installs'", installID).
 		Order("created_at DESC").
 		Offset(offset).
@@ -239,7 +239,7 @@ func (s *service) getInstall(c *gin.Context) (*app.Install, error) {
 	}
 
 	var install app.Install
-	err := s.db.
+	err := s.readDB().
 		Unscoped().
 		Preload("Org").
 		Preload("App").
@@ -270,7 +270,7 @@ func (s *service) getActiveDeployments(c *gin.Context, installID string) ([]app.
 	}
 
 	var deployments []app.InstallDeploy
-	err := s.db.
+	err := s.readDB().
 		Joins("JOIN install_components ON install_components.id = install_deploys.install_component_id").
 		Where("install_components.install_id = ?", installID).
 		Where("install_deploys.status IN ?", activeStatuses).
@@ -392,7 +392,7 @@ func (s *service) getActivityForInstall(
 	// Get total count
 	countQuery := `SELECT COUNT(*) FROM (` + query + `) as activity_entries`
 	var totalCount int64
-	err := s.db.WithContext(ctx).Raw(countQuery, queryParams...).Scan(&totalCount).Error
+	err := s.readDB().WithContext(ctx).Raw(countQuery, queryParams...).Scan(&totalCount).Error
 	if err != nil {
 		s.l.Error("failed to count activity", zap.Error(err), zap.String("install_id", installID))
 		return nil, 0, fmt.Errorf("unable to count activity: %w", err)
@@ -416,7 +416,7 @@ func (s *service) getActivityForInstall(
 
 	// Execute paginated query
 	queryParams = append(queryParams, installActivityPerPage, offset)
-	err = s.db.WithContext(ctx).Raw(query+` LIMIT ? OFFSET ?`, queryParams...).Scan(&entries).Error
+	err = s.readDB().WithContext(ctx).Raw(query+` LIMIT ? OFFSET ?`, queryParams...).Scan(&entries).Error
 	if err != nil {
 		return nil, 0, fmt.Errorf("unable to get activity: %w", err)
 	}

@@ -17,7 +17,7 @@ func (s *service) QueueEmittersTable(c *gin.Context) {
 	queueID := c.Param("id")
 	page := getPageFromQuery(c)
 
-	query := s.db.WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.QueueEmitter{}).
 		Where("queue_id = ?", queueID)
 
