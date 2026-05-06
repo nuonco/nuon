@@ -62,7 +62,6 @@ export const AwaitAWSDetails = ({
     () => parseTfvars(versionExt?.terraform_contents),
     [versionExt?.terraform_contents]
   )
-  const hasTerraform = tfvarsContent.length > 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -70,32 +69,33 @@ export const AwaitAWSDetails = ({
         Setup your install stack
       </Text>
 
-      {hasTerraform ? (
-        <Tabs
-          initActiveTab="cloudformation"
-          tabs={{
-            cloudformation: (
-              <CloudFormationTab
-                version={version}
-                installId={installId}
-                installAwsRegion={installAwsRegion}
-              />
-            ),
-            terraform: (
-              <TerraformTab
-                tfvarsContent={tfvarsContent}
-                installId={installId}
-              />
-            ),
-          }}
-        />
-      ) : (
-        <CloudFormationTab
-          version={version}
-          installId={installId}
-          installAwsRegion={installAwsRegion}
-        />
-      )}
+      <Tabs
+        initActiveTab="cloudformation"
+        tabLabels={{ cli: 'CLI' }}
+        tabs={{
+          cloudformation: (
+            <CloudFormationTab
+              version={version}
+              installId={installId}
+              installAwsRegion={installAwsRegion}
+            />
+          ),
+          terraform: (
+            <TerraformTab
+              tfvarsContent={tfvarsContent}
+              installId={installId}
+            />
+          ),
+          cli: (
+            <CLITab
+              installId={installId}
+              phoneHomeId={version?.phone_home_id}
+              phoneHomeURL={version?.phone_home_url}
+              region={installAwsRegion}
+            />
+          ),
+        }}
+      />
     </div>
   )
 }
@@ -246,6 +246,48 @@ const CloudFormationTab = ({
           </Button>
         </Card>
       </div>
+    </div>
+  )
+}
+
+interface ICLITab {
+  installId?: string
+  phoneHomeId?: string
+  // phoneHomeURL is `{ctl_api_url}/v1/installs/{install_id}/phone-home/{phone_home_id}`.
+  // We strip the `/v1/...` suffix to recover the canonical ctl-api URL,
+  // which works for both production (https://api.nuon.co) and local dev
+  // (http://localhost:8081) without inferring from the dashboard origin.
+  phoneHomeURL?: string
+  region?: string
+}
+
+const CLITab = ({ installId, phoneHomeId, phoneHomeURL, region }: ICLITab) => {
+  const ctlAPIURL = phoneHomeURL
+    ? phoneHomeURL.replace(/\/v1\/.*$/, '')
+    : 'https://api.nuon.co'
+
+  const cmd = [
+    'installer-cli provision',
+    `  --install-id ${installId || '<install-id>'}`,
+    `  --phone-home-id ${phoneHomeId || '<phone-home-id>'}`,
+    `  --region ${region || '<YOUR_REGION>'}`,
+    `  --ctl-api-url ${ctlAPIURL}`,
+  ].join(' \\\n')
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <Card>
+        <span className="flex justify-between items-center">
+          <Text weight="strong">Provision with installer-cli</Text>
+          <ClickToCopyButton textToCopy={cmd} />
+        </span>
+        <Text variant="subtext" theme="neutral">
+          Run this on a workstation with AWS credentials for the target
+          account. No Nuon API token needed; the phone-home ID in the URL
+          is the secret.
+        </Text>
+        <Code className="text-xs whitespace-pre-wrap break-all">{cmd}</Code>
+      </Card>
     </div>
   )
 }

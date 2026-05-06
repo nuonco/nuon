@@ -51,9 +51,43 @@ func (s *service) getInstallLatestStackRunsByStackID(ctx context.Context, instal
 		Where("install_stacks.install_id = ?", installID).
 		Order("install_stack_version_runs.created_at DESC").
 		Find(&runs)
+	if res.Error == nil {
+		// Pull in each run's log stream so the dashboard can render logs
+		// without an extra round-trip. WriteToken/RunnerAPIURL stay zero —
+		// they're transient response-only fields populated on POST.
+		s.attachRunLogStreams(ctx, runs)
+	}
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to load component releases")
 	}
 
 	return runs, nil
+}
+
+// attachRunLogStreams hydrates each run's transient LogStream pointer with
+// its persisted log_stream row in one batched query. Best-effort: a missing
+// or unfetchable log stream just leaves LogStream nil.
+func (s *service) attachRunLogStreams(ctx context.Context, runs []app.InstallStackVersionRun) {
+	ids := make([]string, 0, len(runs))
+	for _, r := range runs {
+		if r.LogStreamID != "" {
+			ids = append(ids, r.LogStreamID)
+		}
+	}
+	if len(ids) == 0 {
+		return
+	}
+	var streams []app.LogStream
+	if res := s.db.WithContext(ctx).Where("id IN ?", ids).Find(&streams); res.Error != nil {
+		return
+	}
+	byID := make(map[string]*app.LogStream, len(streams))
+	for i := range streams {
+		byID[streams[i].ID] = &streams[i]
+	}
+	for i := range runs {
+		if ls, ok := byID[runs[i].LogStreamID]; ok {
+			runs[i].LogStream = ls
+		}
+	}
 }

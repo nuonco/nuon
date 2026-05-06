@@ -15,6 +15,9 @@ import './Tabs.css'
 interface ITabs extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   initActiveTab?: string
   tabs: Record<string, ReactNode>
+  // tabLabels lets callers override the rendered tab label per key. Useful
+  // for acronyms (e.g. "CLI") that would otherwise be sentence-cased to "Cli".
+  tabLabels?: Record<string, string>
   tabsClassName?: string
   tabControlsClassName?: string
 }
@@ -24,6 +27,7 @@ export const Tabs = ({
   initActiveTab,
   tabControlsClassName,
   tabs,
+  tabLabels,
   tabsClassName,
   ...props
 }: ITabs) => {
@@ -165,7 +169,7 @@ export const Tabs = ({
             onFocus={() => handleTabHoverOrFocus(tabKey)}
             onBlur={handleTabsBlur}
           >
-            {toSentenceCase(camelToWords(tabKey))}
+            {tabLabels?.[tabKey] ?? toSentenceCase(camelToWords(tabKey))}
           </Button>
         ))}
       </div>

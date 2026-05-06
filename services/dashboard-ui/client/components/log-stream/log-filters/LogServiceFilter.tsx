@@ -6,13 +6,14 @@ import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 
-type TLogServiceText = 'api' | 'runner'
+type TLogServiceText = 'api' | 'runner' | 'stack'
 const LOG_ACTIONS: {
   value: number
   label: TLogServiceText
 }[] = [
   { value: 4, label: 'api' },
   { value: 8, label: 'runner' },
+  { value: 12, label: 'stack' },
 ]
 
 interface ILogServiceFilter {

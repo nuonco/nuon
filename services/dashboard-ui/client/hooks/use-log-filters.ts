@@ -12,7 +12,7 @@ const DEFAULT_SELECTED_SEVERITIES = new Set([
   'Fatal',
 ])
 
-const DEFAULT_SELECTED_SERVICES = new Set(['api', 'runner'])
+const DEFAULT_SELECTED_SERVICES = new Set(['api', 'runner', 'stack'])
 
 const LS_KEY_SEVERITIES = 'nuon:log-filter:severities'
 const LS_KEY_SERVICES = 'nuon:log-filter:services'
