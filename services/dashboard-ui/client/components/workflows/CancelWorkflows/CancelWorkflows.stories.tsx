@@ -13,7 +13,7 @@ export const Default = () => (
       count={3}
       isPending={false}
       error={null}
-      results={null}
+      cancelResults={null}
       onSubmit={noop}
     />
   </ModalStory>
@@ -25,7 +25,7 @@ export const SingleWorkflow = () => (
       count={1}
       isPending={false}
       error={null}
-      results={null}
+      cancelResults={null}
       onSubmit={noop}
     />
   </ModalStory>
@@ -37,7 +37,7 @@ export const Loading = () => (
       count={3}
       isPending={true}
       error={null}
-      results={null}
+      cancelResults={null}
       onSubmit={noop}
     />
   </ModalStory>
@@ -49,7 +49,7 @@ export const WithError = () => (
       count={3}
       isPending={false}
       error="Failed to connect to the server"
-      results={null}
+      cancelResults={null}
       onSubmit={noop}
     />
   </ModalStory>
@@ -61,7 +61,7 @@ export const PartialFailure = () => (
       count={3}
       isPending={false}
       error={null}
-      results={{
+      cancelResults={{
         cancelled: ['workflow-1', 'workflow-2'],
         errors: [
           {

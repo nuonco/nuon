@@ -7,7 +7,7 @@ interface ICancelWorkflowsModal extends Omit<IModal, 'onSubmit'> {
   count: number
   isPending: boolean
   error?: string | null
-  results?: {
+  cancelResults?: {
     cancelled: string[]
     errors?: { workflow_id: string; error: string }[]
   } | null
@@ -18,11 +18,11 @@ export const CancelWorkflowsModal = ({
   count,
   isPending,
   error,
-  results,
+  cancelResults,
   onSubmit,
   ...props
 }: ICancelWorkflowsModal) => {
-  const hasPartialErrors = results?.errors && results.errors.length > 0
+  const hasPartialErrors = cancelResults?.errors && cancelResults.errors.length > 0
 
   return (
     <Modal
@@ -60,9 +60,9 @@ export const CancelWorkflowsModal = ({
         )}
         {hasPartialErrors && (
           <Banner theme="error">
-            {results.errors!.length} workflow{results.errors!.length === 1 ? '' : 's'} failed to cancel:
+            {cancelResults.errors!.length} workflow{cancelResults.errors!.length === 1 ? '' : 's'} failed to cancel:
             <ul className="mt-1 list-disc pl-4">
-              {results.errors!.map((e) => (
+              {cancelResults.errors!.map((e) => (
                 <li key={e.workflow_id}>
                   {e.workflow_id}: {e.error}
                 </li>

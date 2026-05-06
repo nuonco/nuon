@@ -62,10 +62,12 @@ export const ActiveWorkflowCard = ({
         </div>
       )}
       <div className="flex flex-col gap-4 flex-1 min-w-0">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-0.5 min-w-0">
+      <div className="flex flex-col gap-0.5 min-w-0">
+        <div className="flex items-center gap-2">
+          <Icon variant="Loading" size={14} className="shrink-0" />
           <Link
             href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
+            className="min-w-0"
           >
             <Text variant="base" weight="strong" className="truncate">
               {installName && !install && (
@@ -76,66 +78,60 @@ export const ActiveWorkflowCard = ({
               {getWorkflowTitle(workflow)}
             </Text>
           </Link>
-          <ID>{workflow?.id}</ID>
+          {pendingApprovals > 0 && (
+            <Badge size="sm" theme="warn" className="shrink-0">
+              Pending approval
+            </Badge>
+          )}
         </div>
-        <Icon variant="Loading" size={16} className="shrink-0 mt-1" />
+        <ID>{workflow?.id}</ID>
       </div>
 
-      <div className="flex items-center gap-6 flex-wrap">
-        <LabeledValue label="Initiated by" className="w-24">
+      <div className="flex items-center gap-6">
+        <LabeledValue label="Initiated by" className="flex-1">
 
             {workflow?.created_by?.email?.split('@')[0] ?? '—'}
 
         </LabeledValue>
-        <LabeledValue label="Elapsed time" className="w-24">
+        <LabeledValue label="Elapsed time" className="flex-1">
           <Duration
             variant="subtext"
             beginTime={workflow.created_at}
             durationUnits={['hours', 'minutes', 'seconds']}
           />
         </LabeledValue>
-        <LabeledValue label="Type" className="w-24">
+        <LabeledValue label="Type" className="flex-1">
           <Text variant="subtext" className="truncate">
             {toSentenceCase(snakeToWords(workflow.type))}
           </Text>
         </LabeledValue>
 
-        {(workflow.plan_only ||
-          workflow?.type === 'drift_run_reprovision_sandbox' ||
-          workflow?.type === 'drift_run' ||
-          pendingApprovals > 0) && (
-          <div className="flex items-center gap-2">
-            {workflow.plan_only && (
-              <Badge variant="code" size="sm">
-                drift scan
-              </Badge>
-            )}
-            {workflow.plan_only &&
-              install?.drifted_objects?.find(
-                (d) => d?.install_workflow_id === workflow?.id
-              ) && (
-                <Badge size="sm" variant="code" theme="warn">
-                  drift detected
-                </Badge>
-              )}
-            {(workflow?.type === 'drift_run_reprovision_sandbox' ||
-              workflow?.type === 'drift_run') && (
-              <Badge variant="code" size="sm">
-                cron scheduled
-              </Badge>
-            )}
-            {pendingApprovals > 0 && (
-              <Badge size="sm" theme="warn">
-                Pending approval
-              </Badge>
-            )}
-          </div>
-        )}
 
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {workflow.plan_only && (
+            <Badge variant="code" size="sm">
+              drift scan
+            </Badge>
+          )}
+          {workflow.plan_only &&
+            install?.drifted_objects?.find(
+              (d) => d?.install_workflow_id === workflow?.id
+            ) && (
+              <Badge size="sm" variant="code" theme="warn">
+                drift detected
+              </Badge>
+            )}
+          {(workflow?.type === 'drift_run_reprovision_sandbox' ||
+            workflow?.type === 'drift_run') && (
+            <Badge variant="code" size="sm">
+              cron scheduled
+            </Badge>
+          )}
+        </div>
         {!cancelMode && (
-          <div className="ml-auto shrink-0">
-            <CancelWorkflowButton workflow={workflow} size="sm" />
-          </div>
+          <CancelWorkflowButton workflow={workflow} size="sm" />
         )}
       </div>
       </div>

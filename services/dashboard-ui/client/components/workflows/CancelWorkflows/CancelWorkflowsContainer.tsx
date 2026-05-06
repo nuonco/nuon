@@ -64,6 +64,7 @@ export const CancelWorkflowsContainer = ({
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
       queryClient.invalidateQueries({ queryKey: ['install-active-workflows'] })
+      queryClient.invalidateQueries({ queryKey: ['install-workflows'] })
     },
     onError: (err) => {
       addToast(
@@ -79,7 +80,7 @@ export const CancelWorkflowsContainer = ({
       count={workflowIds.length}
       isPending={isPending}
       error={error?.error}
-      results={results}
+      cancelResults={results}
       onSubmit={() => execute()}
       {...props}
     />

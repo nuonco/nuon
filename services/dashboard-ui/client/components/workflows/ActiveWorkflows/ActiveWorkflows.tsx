@@ -51,7 +51,7 @@ export const ActiveWorkflows = ({
   const showBulkCancel = inProgressWorkflows.length >= 2
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 @container">
       <div className="flex items-center justify-between">
         <Text variant="base" weight="strong">
           Active workflows
@@ -78,7 +78,7 @@ export const ActiveWorkflows = ({
           </div>
         )}
       </div>
-      <div className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 @3xl:grid-cols-2 gap-3">
         {inProgressWorkflows.map((workflow) => (
           <ActiveWorkflowCard
             key={workflow.id}
