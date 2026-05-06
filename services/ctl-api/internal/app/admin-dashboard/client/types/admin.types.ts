@@ -401,15 +401,6 @@ export type TRunnerDetailView = {
   configs: Record<string, TSandboxModeJobConfig>
 }
 
-export type TSandboxRunnerView = {
-  runner: TRunner
-  process_online: boolean
-  version: string
-  configs: TSandboxModeJobConfig[]
-  install_id: string
-  install_name: string
-}
-
 // API response types
 
 export type TOrgsResponse = {
@@ -529,6 +520,7 @@ export type TSandboxModeResponse = {
   flow_templates?: any[]
   all_signal_types?: string[]
   all_runner_job_types?: string[]
+  all_runner_job_operation_types?: string[]
 }
 
 export type TTemporalWorkersResponse = {
@@ -548,10 +540,6 @@ export type TSignalCatalogResponse = {
 export type TSignalCatalogDetailResponse = {
   signal_type: string
   recent_signals: TQueueSignal[]
-}
-
-export type TRunnersResponse = {
-  runners: TSandboxRunnerView[]
 }
 
 export type TAllRunnerView = {

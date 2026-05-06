@@ -91,7 +91,7 @@ func (i WorkflowType) Name() string {
 	switch i {
 	case WorkflowTypeProvision:
 		return "Provisioning install"
-	case WorkflowTypeReprovision, WorkflowTypeDriftRunReprovisionSandbox:
+	case WorkflowTypeReprovision:
 		return "Reprovisioning install"
 	case WorkflowTypeDeprovision:
 		return "Deprovisioning install"
@@ -103,7 +103,7 @@ func (i WorkflowType) Name() string {
 		return "Tearing down all components"
 	case WorkflowTypeDeployComponents:
 		return "Deploying all components"
-	case WorkflowTypeReprovisionSandbox:
+	case WorkflowTypeReprovisionSandbox, WorkflowTypeDriftRunReprovisionSandbox:
 		return "Reprovisioning sandbox"
 	case WorkflowTypeSyncSecrets:
 		return "Syncing secrets"
@@ -196,7 +196,7 @@ type Workflow struct {
 	// DEPRECATED: for now we always abort on step errors
 	StepErrorBehavior StepErrorBehavior `json:"step_error_behavior,omitzero" temporaljson:"step_error_behavior,omitzero,omitempty" swaggertype:"string"`
 
-	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"default 'auto'" temporaljson:"approval_option,omitzero,omitempty"`
+	ApprovalOption InstallApprovalOption `json:"approval_option,omitzero" gorm:"default 'prompt'" temporaljson:"approval_option,omitzero,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 

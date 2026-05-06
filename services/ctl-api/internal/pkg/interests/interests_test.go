@@ -60,6 +60,20 @@ func TestMatches(t *testing.T) {
 		Phase:        signal.SignalPhaseExecute,
 		StepID:       "iws_step_1",
 	}
+	// Step events inside drift workflows. Without DB enrichment, these
+	// classify via stepResolutionFromParent; with DB enrichment the
+	// classification may differ — but suppression keys off the parent
+	// WorkflowType so both paths are covered.
+	driftRunStepSuccess := signal.SignalPhaseEvent{
+		SignalType:   signalTypeExecuteWorkflowStep,
+		WorkflowType: "drift_run",
+		Phase:        signal.SignalPhaseExecute,
+	}
+	sandboxDriftStepSuccess := signal.SignalPhaseEvent{
+		SignalType:   signalTypeExecuteWorkflowStep,
+		WorkflowType: "drift_run_reprovision_sandbox",
+		Phase:        signal.SignalPhaseExecute,
+	}
 	approvalResponse := signal.SignalPhaseEvent{
 		SignalType:   signalTypeWorkflowStepApprovalResponse,
 		WorkflowType: "deploy_components",
@@ -210,13 +224,23 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			name:    "drift_run envelope matches components.drift",
+			// Drift workflow lifecycle events are unconditionally suppressed
+			// — listing "drift" in Ops is a no-op, drift surfaces only via
+			// the drift-detected event class gated by DriftDetected.
+			name:    "drift_run lifecycle suppressed even when components.Ops contains drift",
 			event:   driftRunSuccess,
 			outcome: successOutcome,
 			in: Interests{Resources: map[ResourceKind]ResourceCfg{
 				ResourceComponents: {Ops: []string{"drift"}, Outcome: OutcomeAll},
 			}},
-			want: true,
+			want: false,
+		},
+		{
+			name:    "drift_run lifecycle suppressed under AllEvents",
+			event:   driftRunSuccess,
+			outcome: successOutcome,
+			in:      Interests{AllEvents: true},
+			want:    false,
 		},
 		{
 			name:    "drift_run envelope does not match components.deploy",
@@ -255,13 +279,49 @@ func TestMatches(t *testing.T) {
 			want: true,
 		},
 		{
-			name:    "sandbox drift workflow matches sandboxes.drift",
+			name:    "sandbox drift workflow lifecycle suppressed even when sandboxes.Ops contains drift",
 			event:   sandboxDriftSuccess,
 			outcome: successOutcome,
 			in: Interests{Resources: map[ResourceKind]ResourceCfg{
 				ResourceSandboxes: {Ops: []string{"drift"}, Outcome: OutcomeAll},
 			}},
-			want: true,
+			want: false,
+		},
+		{
+			name:    "sandbox drift workflow lifecycle suppressed under AllEvents",
+			event:   sandboxDriftSuccess,
+			outcome: successOutcome,
+			in:      Interests{AllEvents: true},
+			want:    false,
+		},
+		{
+			// Regression: steps inside a drift workflow used to leak through
+			// because they classify as their own resource (e.g. a
+			// "runner healthy" step → (runners, reprovision)). Suppression
+			// keys off the parent WorkflowType so the entire lifecycle tree
+			// is dropped — only the dedicated drift-detected event reaches
+			// subscribers.
+			name:    "drift_run step lifecycle suppressed under AllEvents",
+			event:   driftRunStepSuccess,
+			outcome: successOutcome,
+			in:      Interests{AllEvents: true},
+			want:    false,
+		},
+		{
+			name:    "sandbox drift step lifecycle suppressed under AllEvents",
+			event:   sandboxDriftStepSuccess,
+			outcome: successOutcome,
+			in:      Interests{AllEvents: true},
+			want:    false,
+		},
+		{
+			name:    "sandbox drift step lifecycle suppressed even when runners.reprovision is requested",
+			event:   sandboxDriftStepSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceRunners: {Ops: []string{"reprovision"}, Outcome: OutcomeAll},
+			}},
+			want: false,
 		},
 		{
 			name:    "sandbox drift workflow does not match sandboxes.reprovision",
@@ -359,7 +419,25 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "drift-detected (drift_run) matches components.drift when DriftDetected=true",
+			// Canonical post-suppression shape: just DriftDetected=true with
+			// no "drift" in Ops. Drift no longer participates in the SubOps
+			// vocabulary — it surfaces exclusively through this event class.
+			name: "drift-detected (drift_run) matches components when DriftDetected=true (no drift Op)",
+			event: signal.SignalPhaseEvent{
+				SignalType:   signalTypeDriftDetected,
+				WorkflowType: "drift_run",
+				Phase:        signal.SignalPhaseExecute,
+				StepID:       "iws_drift",
+			},
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {DriftDetected: true},
+			}},
+			want: true,
+		},
+		{
+			// Legacy backward-compat: stored configs that still list "drift"
+			// in Ops are accepted by the matcher (validate rejects new ones).
+			name: "drift-detected (drift_run) matches components.drift legacy Ops shape",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
 				WorkflowType: "drift_run",

@@ -1,7 +1,6 @@
 'use client'
 
-import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
 import { getPolicyViolationCounts } from '@/utils/workflow-utils'
 
@@ -10,7 +9,7 @@ interface IPolicyCountsBadge {
 }
 
 export const PolicyCountsBadge = ({ step }: IPolicyCountsBadge) => {
-  const { denyCount, warnCount, hasPolicyData, hasViolations } =
+  const { denyCount, warnCount, hasPolicyData } =
     getPolicyViolationCounts(step)
 
   if (!hasPolicyData) {
@@ -18,24 +17,19 @@ export const PolicyCountsBadge = ({ step }: IPolicyCountsBadge) => {
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-3">
       {denyCount > 0 ? (
-        <Badge theme="error" size="sm">
-          <Icon variant="XCircle" size={10} />
-          {denyCount}
-        </Badge>
+        <Text variant="subtext" className="text-red-600 dark:text-red-500">
+          {denyCount} {denyCount === 1 ? 'violation' : 'violations'}
+        </Text>
       ) : null}
       {warnCount > 0 ? (
-        <Badge theme="warn" size="sm">
-          <Icon variant="Warning" size={10} />
-          {warnCount}
-        </Badge>
-      ) : null}
-      {!hasViolations ? (
-        <Badge theme="success" size="sm">
-          <Icon variant="CheckCircle" size={10} />
-          Passed
-        </Badge>
+        <Text
+          variant="subtext"
+          className="text-orange-600 dark:text-orange-500"
+        >
+          {warnCount} {warnCount === 1 ? 'warning' : 'warnings'}
+        </Text>
       ) : null}
     </div>
   )
