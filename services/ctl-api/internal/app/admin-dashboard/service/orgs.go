@@ -53,7 +53,7 @@ func (s *service) getOrgs(ctx context.Context, search, label string, page int) (
 	var orgsWithCounts []OrgWithCounts
 	var totalCount int64
 
-	query := s.db.WithContext(ctx).Model(&app.Org{})
+	query := s.readDB().WithContext(ctx).Model(&app.Org{})
 
 	if search != "" {
 		search = strings.TrimSpace(search)
@@ -116,7 +116,7 @@ func (s *service) getOrgLabelOptions(ctx context.Context) ([]orgLabelOption, err
 		Labels *string
 	}
 	var rows []row
-	if err := s.db.WithContext(ctx).
+	if err := s.readDB().WithContext(ctx).
 		Table("orgs").
 		Select("labels::text as labels").
 		Where("deleted_at = 0").

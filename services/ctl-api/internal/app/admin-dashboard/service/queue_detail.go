@@ -16,7 +16,7 @@ func (s *service) QueueDetail(c *gin.Context) {
 	queueID := c.Param("id")
 
 	var q app.Queue
-	res := s.db.WithContext(c.Request.Context()).
+	res := s.readDB().WithContext(c.Request.Context()).
 		Preload("Emitters").
 		Where("id = ?", queueID).
 		First(&q)
@@ -38,7 +38,7 @@ func (s *service) QueueDetail(c *gin.Context) {
 
 	// Get recent signals
 	var signals []app.QueueSignal
-	s.db.WithContext(c.Request.Context()).
+	s.readDB().WithContext(c.Request.Context()).
 		Where("queue_id = ?", queueID).
 		Order("created_at desc").
 		Limit(20).
@@ -46,7 +46,7 @@ func (s *service) QueueDetail(c *gin.Context) {
 
 	// Get in-flight signals for this queue
 	var inFlightSignals []app.QueueSignal
-	s.db.WithContext(c.Request.Context()).
+	s.readDB().WithContext(c.Request.Context()).
 		Where("queue_id = ?", queueID).
 		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
 		Order("updated_at desc").
@@ -66,7 +66,7 @@ func (s *service) QueueInFlightSignalsTable(c *gin.Context) {
 	queueID := c.Param("id")
 
 	var signals []app.QueueSignal
-	s.db.WithContext(c.Request.Context()).
+	s.readDB().WithContext(c.Request.Context()).
 		Where("queue_id = ?", queueID).
 		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
 		Order("updated_at desc").

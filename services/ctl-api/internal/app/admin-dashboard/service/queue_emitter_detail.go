@@ -14,7 +14,7 @@ func (s *service) QueueEmitterDetail(c *gin.Context) {
 	emitterID := c.Param("emitter_id")
 
 	var emitter app.QueueEmitter
-	res := s.db.WithContext(c.Request.Context()).
+	res := s.readDB().WithContext(c.Request.Context()).
 		Where("id = ? AND queue_id = ?", emitterID, queueID).
 		First(&emitter)
 
@@ -26,13 +26,13 @@ func (s *service) QueueEmitterDetail(c *gin.Context) {
 
 	// Fetch the parent queue for context
 	var q app.Queue
-	s.db.WithContext(c.Request.Context()).
+	s.readDB().WithContext(c.Request.Context()).
 		Where("id = ?", queueID).
 		First(&q)
 
 	// Fetch signals created by this emitter
 	var signals []app.QueueSignal
-	s.db.WithContext(c.Request.Context()).
+	s.readDB().WithContext(c.Request.Context()).
 		Where("emitter_id = ?", emitterID).
 		Order("created_at desc").
 		Limit(50).

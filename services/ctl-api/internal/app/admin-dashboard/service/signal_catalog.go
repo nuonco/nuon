@@ -82,7 +82,7 @@ func (s *service) SignalCatalogDetail(c *gin.Context) {
 
 	// Fetch recent signals of this type from the database.
 	var recentSignals []app.QueueSignal
-	res := s.db.WithContext(c.Request.Context()).
+	res := s.readDB().WithContext(c.Request.Context()).
 		Model(&app.QueueSignal{}).
 		Where("type = ?", signalType).
 		Order("created_at desc").

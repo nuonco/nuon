@@ -8,3 +8,10 @@ func AsPSQL(f any) any {
 		fx.ResultTags(`name:"psql"`, `name:"dbs"`),
 	)
 }
+
+func AsPSQLReplica(f any) any {
+	return fx.Annotate(
+		f,
+		fx.ResultTags(`name:"psql-replica"`),
+	)
+}

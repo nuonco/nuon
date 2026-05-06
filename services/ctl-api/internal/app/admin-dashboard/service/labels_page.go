@@ -214,7 +214,7 @@ func (s *service) getLabelsData(ctx context.Context, search, entityType, orgID s
 
 	countSQL := "SELECT COUNT(*) FROM (" + strings.Join(countSubqueries, " UNION ALL ") + ") c"
 	var totalCount int64
-	if err := s.db.WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
+	if err := s.readDB().WithContext(ctx).Raw(countSQL, countArgs...).Scan(&totalCount).Error; err != nil {
 		return nil, allKeys, 1, 0, fmt.Errorf("unable to count labels: %w", err)
 	}
 
@@ -230,7 +230,7 @@ func (s *service) getLabelsData(ctx context.Context, search, entityType, orgID s
 	dataArgs = append(dataArgs, labelsPerPage, offset)
 
 	var results []views.LabelSearchResult
-	if err := s.db.WithContext(ctx).Raw(dataSQL, dataArgs...).Scan(&results).Error; err != nil {
+	if err := s.readDB().WithContext(ctx).Raw(dataSQL, dataArgs...).Scan(&results).Error; err != nil {
 		return nil, allKeys, 1, 0, fmt.Errorf("unable to query labels: %w", err)
 	}
 
@@ -250,7 +250,7 @@ func (s *service) getAllLabelKeys(ctx context.Context) []string {
 		var tableKeys []string
 		query := "SELECT DISTINCT (jsonb_each_text(labels)).key FROM " + table +
 			" WHERE labels IS NOT NULL AND labels != '{}'::jsonb AND deleted_at = 0"
-		if err := s.db.WithContext(ctx).Raw(query).Scan(&tableKeys).Error; err != nil {
+		if err := s.readDB().WithContext(ctx).Raw(query).Scan(&tableKeys).Error; err != nil {
 			s.l.Warn("failed to get label keys from "+table, zap.Error(err))
 			continue
 		}
@@ -272,7 +272,7 @@ func (s *service) getAllLabelKeys(ctx context.Context) []string {
 
 func (s *service) getOrgOptions(ctx context.Context) []views.OrgOption {
 	var orgs []app.Org
-	if err := s.db.WithContext(ctx).Select("id", "name").Order("name ASC").Find(&orgs).Error; err != nil {
+	if err := s.readDB().WithContext(ctx).Select("id", "name").Order("name ASC").Find(&orgs).Error; err != nil {
 		s.l.Warn("failed to get orgs for labels filter", zap.Error(err))
 		return nil
 	}

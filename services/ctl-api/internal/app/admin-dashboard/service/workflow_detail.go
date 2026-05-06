@@ -17,7 +17,7 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 	workflowID := c.Param("workflow_id")
 
 	var wf app.Workflow
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Preload("CreatedBy").
 		Preload("Steps", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_idx ASC, group_retry_idx ASC, idx ASC, created_at ASC")
@@ -50,7 +50,7 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 
 		// Load the actual QueueSignal record for this step (for linking)
 		var stepSignal app.QueueSignal
-		if err := s.db.WithContext(ctx).
+		if err := s.readDB().WithContext(ctx).
 			Where(app.QueueSignal{OwnerID: step.ID, OwnerType: (&app.WorkflowStep{}).TableName()}).
 			First(&stepSignal).Error; err == nil {
 			stepDetails[i].StepSignalID = stepSignal.ID
@@ -65,7 +65,7 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 
 	// Load step groups for the workflow (with their queue signals)
 	var stepGroups []app.WorkflowStepGroup
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Preload("QueueSignal").
 		Where(app.WorkflowStepGroup{WorkflowID: workflowID}).
 		Order("group_idx ASC").
@@ -78,7 +78,7 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 	var generateStepsSignal *app.QueueSignal
 	if wf.GenerateStepsSignal != nil {
 		var qs app.QueueSignal
-		if err := s.db.WithContext(ctx).
+		if err := s.readDB().WithContext(ctx).
 			Preload("Queue").
 			Where(app.QueueSignal{
 				OwnerID:   wf.ID,
@@ -92,7 +92,7 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 	// Load the execute-workflow signal for this workflow (the signal that triggers execution)
 	var workflowSignal *app.QueueSignal
 	var ws app.QueueSignal
-	if err := s.db.WithContext(ctx).
+	if err := s.readDB().WithContext(ctx).
 		Where("owner_id = ? AND type = ?", wf.ID, "execute-workflow").
 		First(&ws).Error; err == nil {
 		workflowSignal = &ws
@@ -116,7 +116,7 @@ func (s *service) loadStepTarget(c *gin.Context, targetID, targetType string) *v
 	switch app.WorkflowStepTargetType(targetType) {
 	case app.WorkflowStepTargetTypeInstallDeploy:
 		var deploy app.InstallDeploy
-		if err := s.db.WithContext(ctx).Preload("LogStream").Where("id = ?", targetID).First(&deploy).Error; err == nil {
+		if err := s.readDB().WithContext(ctx).Preload("LogStream").Where("id = ?", targetID).First(&deploy).Error; err == nil {
 			target.Status = string(deploy.Status)
 			if deploy.LogStream.ID != "" {
 				target.LogStreamID = deploy.LogStream.ID
@@ -124,7 +124,7 @@ func (s *service) loadStepTarget(c *gin.Context, targetID, targetType string) *v
 		}
 	case app.WorkflowStepTargetTypeInstallSandboxRun:
 		var run app.InstallSandboxRun
-		if err := s.db.WithContext(ctx).Preload("LogStream").Where("id = ?", targetID).First(&run).Error; err == nil {
+		if err := s.readDB().WithContext(ctx).Preload("LogStream").Where("id = ?", targetID).First(&run).Error; err == nil {
 			target.Status = string(run.Status)
 			if run.LogStream.ID != "" {
 				target.LogStreamID = run.LogStream.ID
@@ -132,7 +132,7 @@ func (s *service) loadStepTarget(c *gin.Context, targetID, targetType string) *v
 		}
 	case app.WorkflowStepTargetTypeInstallActionWorkflowRun:
 		var run app.InstallActionWorkflowRun
-		if err := s.db.WithContext(ctx).Preload("LogStream").Where("id = ?", targetID).First(&run).Error; err == nil {
+		if err := s.readDB().WithContext(ctx).Preload("LogStream").Where("id = ?", targetID).First(&run).Error; err == nil {
 			target.Status = string(run.Status)
 			if run.LogStream.ID != "" {
 				target.LogStreamID = run.LogStream.ID

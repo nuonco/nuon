@@ -81,7 +81,7 @@ func (s *service) LogStreamLogsTable(c *gin.Context) {
 
 func (s *service) getLogStream(ctx context.Context, logStreamID string) (*app.LogStream, error) {
 	var ls app.LogStream
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Where("id = ?", logStreamID).
 		Or("owner_id = ?", logStreamID).
 		First(&ls)

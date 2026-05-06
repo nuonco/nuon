@@ -93,7 +93,7 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		OrgName     string
 	}
 
-	installQuery := s.db.WithContext(ctx).
+	installQuery := s.readDB().WithContext(ctx).
 		Table("installs i").
 		Select("i.id as install_id, i.name as install_name, i.org_id, o.name as org_name").
 		Joins("JOIN orgs o ON o.id = i.org_id AND o.deleted_at = 0").
@@ -137,7 +137,7 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		OwnerID   string
 	}
 	var runners []runnerMapping
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Table("runners r").
 		Select("r.id as runner_id, r.created_at, rg.owner_id").
 		Joins("JOIN runner_groups rg ON rg.id = r.runner_group_id AND rg.deleted_at = 0").
@@ -173,7 +173,7 @@ func (s *service) RunnerUptime(c *gin.Context) {
 
 	// Fetch processes.
 	var processes []app.RunnerProcess
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Where("runner_id IN ?", allRunnerIDs).
 		Where("deleted_at = 0").
 		Where("started_at IS NOT NULL").
@@ -247,7 +247,7 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		Count    int64  `gorm:"column:cnt"`
 	}
 	var jobRows []jobRow
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Table("runner_jobs").
 		Select("runner_id, status, count(*) as cnt").
 		Where("runner_id IN ?", allRunnerIDs).
@@ -441,7 +441,7 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		ID   string
 		Name string
 	}
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Table("orgs").
 		Select("id, name").
 		Where("deleted_at = 0").
@@ -453,7 +453,7 @@ func (s *service) RunnerUptime(c *gin.Context) {
 		Labels *string
 	}
 	var labelRows []labelRow
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Table("installs").
 		Select("labels::text as labels").
 		Where("deleted_at = 0").

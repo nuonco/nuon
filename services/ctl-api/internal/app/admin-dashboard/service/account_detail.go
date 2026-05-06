@@ -53,7 +53,7 @@ func (s *service) AccountDetail(c *gin.Context) {
 	}
 
 	var account app.Account
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Preload("Roles.Org").
 		Where("id = ?", accountID).
 		First(&account)
@@ -71,7 +71,7 @@ func (s *service) AccountDetail(c *gin.Context) {
 	}
 
 	var appsWithCount []AppWithConfigCount
-	appRes := s.db.WithContext(ctx).
+	appRes := s.readDB().WithContext(ctx).
 		Model(&app.App{}).
 		Select("apps.*, "+
 			"(SELECT COUNT(*) FROM app_configs WHERE app_configs.app_id = apps.id) as config_count").
@@ -140,7 +140,7 @@ func (s *service) getInstallsForAccount(ctx context.Context, accountID string, p
 	var installs []*app.Install
 	var totalCount int64
 
-	query := s.db.WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.Install{}).
 		Unscoped().
 		Where("created_by_id = ?", accountID)
@@ -310,7 +310,7 @@ func (s *service) getAuditLogsForAccount(
 	countQuery := `SELECT COUNT(*) FROM (` + query + `) as audit_entries`
 
 	var totalCount int64
-	err := s.db.WithContext(ctx).Raw(countQuery, queryParams...).Scan(&totalCount).Error
+	err := s.readDB().WithContext(ctx).Raw(countQuery, queryParams...).Scan(&totalCount).Error
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("unable to count audit logs: %w", err)
@@ -326,7 +326,7 @@ func (s *service) getAuditLogsForAccount(
 
 	// Execute paginated query
 	queryParams = append(queryParams, accountAuditLogsPerPage, offset)
-	err = s.db.WithContext(ctx).Raw(query+` LIMIT ? OFFSET ?`, queryParams...).Scan(&entries).Error
+	err = s.readDB().WithContext(ctx).Raw(query+` LIMIT ? OFFSET ?`, queryParams...).Scan(&entries).Error
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("unable to get audit logs: %w", err)

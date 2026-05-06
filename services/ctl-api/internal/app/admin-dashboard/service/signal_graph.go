@@ -24,11 +24,11 @@ func (s *service) SignalGraph(c *gin.Context) {
 	signalID := c.Param("signal_id")
 
 	var signal app.QueueSignal
-	if res := s.db.WithContext(c.Request.Context()).
+	if res := s.readDB().WithContext(c.Request.Context()).
 		Where("id = ? AND queue_id = ?", signalID, queueID).
 		First(&signal); res.Error != nil {
 		// Try without queue_id filter (for lazy expand of child signals)
-		if res2 := s.db.WithContext(c.Request.Context()).
+		if res2 := s.readDB().WithContext(c.Request.Context()).
 			Where("id = ?", signalID).
 			First(&signal); res2.Error != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Signal not found"})
@@ -76,7 +76,7 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 				} else if as.QueueSignalID != "" && !seen[as.QueueSignalID] {
 					seen[as.QueueSignalID] = true
 					var childSignal app.QueueSignal
-					if err := s.db.WithContext(c.Request.Context()).
+					if err := s.readDB().WithContext(c.Request.Context()).
 						Where("id = ?", as.QueueSignalID).
 						First(&childSignal).Error; err == nil {
 						child := s.buildSignalGraphNode(c, &childSignal, depth+1, maxDepth)
@@ -94,7 +94,7 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 				} else if es.QueueSignalID != "" && !seen[es.QueueSignalID] {
 					seen[es.QueueSignalID] = true
 					var childSignal app.QueueSignal
-					if err := s.db.WithContext(c.Request.Context()).
+					if err := s.readDB().WithContext(c.Request.Context()).
 						Where("id = ?", es.QueueSignalID).
 						First(&childSignal).Error; err == nil {
 						child := s.buildSignalGraphNode(c, &childSignal, depth+1, maxDepth)

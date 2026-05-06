@@ -77,7 +77,7 @@ func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search, que
 	var queues []app.Queue
 	var totalCount int64
 
-	query := s.db.WithContext(ctx).Model(&app.Queue{})
+	query := s.readDB().WithContext(ctx).Model(&app.Queue{})
 
 	if ownerID != "" {
 		query = query.Where("owner_id = ?", ownerID)
@@ -122,7 +122,7 @@ func (s *service) getQueues(ctx context.Context, ownerID, ownerType, search, que
 
 func (s *service) getDistinctQueueNamespaces(ctx context.Context) ([]string, error) {
 	var namespaces []string
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Model(&app.Queue{}).
 		Select("DISTINCT workflow->>'namespace'").
 		Where("workflow->>'namespace' != ''").
