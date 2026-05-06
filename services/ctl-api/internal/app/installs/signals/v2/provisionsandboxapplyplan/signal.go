@@ -44,10 +44,12 @@ var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+var _ signal.SignalWithRetryGroup = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool                       { return true }
 func (s *Signal) MaxRetries() int                       { return 5 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+func (s *Signal) RetryGroup() bool                      { return true }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -143,6 +145,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
+
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			s.updateRunStatus(updateCtx, sandboxRun.ID, app.SandboxRunStatusCancelled, "sandbox apply cancelled")
+		}
+	}()
 
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusProvisioning, "provisioning sandbox")
 
