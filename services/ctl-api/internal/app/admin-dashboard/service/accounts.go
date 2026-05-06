@@ -40,7 +40,7 @@ func (s *service) getAccounts(ctx context.Context, search string, filter string,
 	var totalCount int64
 
 	// Build base query
-	query := s.db.WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.Account{}).
 		Preload("Roles.Org").
 		Where("account_type IN ?", []app.AccountType{app.AccountTypeAuth0, app.AccountTypeAuth})

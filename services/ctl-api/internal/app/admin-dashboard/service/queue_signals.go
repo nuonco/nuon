@@ -94,7 +94,7 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 	var signals []app.QueueSignal
 	var totalCount int64
 
-	query := s.db.WithContext(ctx).Model(&app.QueueSignal{})
+	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
 
 	if search != "" {
 		query = query.Where("id = ? OR owner_id = ? OR queue_id = ?", search, search, search)
@@ -143,7 +143,7 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 
 func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
 	var namespaces []string
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Model(&app.QueueSignal{}).
 		Select("DISTINCT workflow->>'namespace'").
 		Where("workflow->>'namespace' != ''").
@@ -157,7 +157,7 @@ func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
 
 func (s *service) getDistinctSignalTypes(ctx context.Context, namespace string) ([]string, error) {
 	var types []string
-	query := s.db.WithContext(ctx).Model(&app.QueueSignal{})
+	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
 	if namespace != "" {
 		query = query.Where("workflow->>'namespace' = ?", namespace)
 	}
