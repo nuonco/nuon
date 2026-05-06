@@ -520,6 +520,7 @@ export type TSandboxModeResponse = {
   flow_templates?: any[]
   all_signal_types?: string[]
   all_runner_job_types?: string[]
+  all_runner_job_operation_types?: string[]
 }
 
 export type TTemporalWorkersResponse = {

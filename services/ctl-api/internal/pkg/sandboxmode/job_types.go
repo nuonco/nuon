@@ -1,5 +1,16 @@
 package sandboxmode
 
+// AllRunnerJobOperationTypes returns all known runner job operation types.
+func AllRunnerJobOperationTypes() []string {
+	return []string{
+		"exec",
+		"build",
+		"create-apply-plan",
+		"create-teardown-plan",
+		"apply-plan",
+	}
+}
+
 // AllRunnerJobTypes returns all known runner job types.
 func AllRunnerJobTypes() []string {
 	return []string{

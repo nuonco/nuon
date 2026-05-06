@@ -144,9 +144,13 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 		return nil, fmt.Errorf("unable to find app config: %w", err)
 	}
 
+	updateStatus := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	updateStatus.StatusHumanDescription = req.StatusDescription
+
 	appConfig := app.AppConfig{
 		Status:            req.Status,
 		StatusDescription: req.StatusDescription,
+		StatusV2:          updateStatus,
 		State:             req.State,
 	}
 
