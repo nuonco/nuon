@@ -91,7 +91,7 @@ func (s *service) OrgDetail(c *gin.Context) {
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {
 	var org app.Org
 
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Where("id = ?", orgID).
 		First(&org)
 
@@ -106,7 +106,7 @@ func (s *service) getInstallsForOrg(ctx context.Context, orgID string, page int)
 	var installs []*app.Install
 	var totalCount int64
 
-	query := s.db.WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.Install{}).
 		Unscoped().
 		Where("org_id = ?", orgID)
@@ -146,7 +146,7 @@ func (s *service) getInstallsForOrg(ctx context.Context, orgID string, page int)
 func (s *service) getMostRecentApp(ctx context.Context, orgID string) (*app.App, error) {
 	var app app.App
 
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Where("org_id = ?", orgID).
 		Order("updated_at DESC").
 		First(&app)

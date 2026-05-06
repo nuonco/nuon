@@ -23,7 +23,7 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 	signalID := c.Param("signal_id")
 
 	var signal app.QueueSignal
-	res := s.db.WithContext(ctx).
+	res := s.readDB().WithContext(ctx).
 		Preload("Emitter").
 		Where("id = ? AND queue_id = ?", signalID, queueID).
 		First(&signal)
@@ -36,14 +36,14 @@ func (s *service) QueueSignalDetail(c *gin.Context) {
 
 	// Fetch the 10 signals created right before this one in the same queue.
 	var signalsAhead []app.QueueSignal
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Where("queue_id = ? AND created_at < ? AND id != ?", signal.QueueID, signal.CreatedAt, signal.ID).
 		Order("created_at DESC").
 		Limit(10).
 		Find(&signalsAhead)
 
 	var q app.Queue
-	s.db.WithContext(ctx).
+	s.readDB().WithContext(ctx).
 		Where("id = ?", queueID).
 		First(&q)
 
@@ -436,7 +436,7 @@ func (s *service) extractAwaitedSignals(c *gin.Context, activities []views.Activ
 
 		// Load the awaited signal from DB
 		var signal app.QueueSignal
-		if err := s.db.WithContext(ctx).Where("id = ?", qsID).First(&signal).Error; err == nil {
+		if err := s.readDB().WithContext(ctx).Where("id = ?", qsID).First(&signal).Error; err == nil {
 			asi.Signal = &signal
 		}
 
@@ -472,7 +472,7 @@ func (s *service) extractEnqueuedSignals(c *gin.Context, activities []views.Acti
 		}
 
 		var signal app.QueueSignal
-		if err := s.db.WithContext(ctx).Where("id = ?", qsID).First(&signal).Error; err == nil {
+		if err := s.readDB().WithContext(ctx).Where("id = ?", qsID).First(&signal).Error; err == nil {
 			esi.Signal = &signal
 		}
 
