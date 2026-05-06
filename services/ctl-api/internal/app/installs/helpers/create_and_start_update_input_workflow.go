@@ -40,6 +40,10 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 		return nil, err
 	}
 
+	// Legacy fallback: signal the legacy event loop. Callers in queue mode
+	// must send their own queue signals (see update_install_input.go).
+	// This helper cannot import v2 signal packages due to an import cycle:
+	// helpers -> v2 -> worker/activities -> helpers.
 	h.evClient.Send(ctx, installID, &signals.Signal{
 		Type:              signals.OperationUpdated,
 		InstallWorkflowID: workflow.ID,
@@ -49,5 +53,5 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 		InstallWorkflowID: workflow.ID,
 	})
 
-	return workflow, err
+	return workflow, nil
 }
