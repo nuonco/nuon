@@ -75,6 +75,15 @@ func (s *Service) readDB() *gorm.DB {
 	return s.db
 }
 
+// psqlForTarget returns the psql connection matching the requested target
+// ("primary" or "replica"). Falls back to primary if the replica is unset.
+func (s *Service) psqlForTarget(target string) *gorm.DB {
+	if target == "replica" {
+		return s.readDB()
+	}
+	return s.db
+}
+
 type service = Service
 
 var _ api.Service = (*service)(nil)
