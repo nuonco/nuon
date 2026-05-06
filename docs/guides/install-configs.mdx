@@ -1,0 +1,19 @@
+---
+title: "Install Configs"
+description: "Generate install configs from code using JSON Schema."
+icon: "code"
+boost: 10
+keywords: ["install-config", "install config", "install configuration", "install.toml", "install schema", "install file", "install configuration reference", "install config reference", "configure install", "programmatic install", "json install config", "automated install onboarding", "generate install config"]
+---
+
+If you create installs at scale — for example, one per customer in an automated onboarding flow — you can generate install configs programmatically instead of authoring them by hand.
+
+Install configs are defined by a [JSON Schema](/config-ref/install) that lists every field, its type, and its validation rules. Feed the schema to a code generator, validator, or template engine and produce install configs from your own data.
+
+Apply a generated config with the Nuon CLI:
+
+```bash
+nuon installs sync --file <your-install>.toml --app-id <your-app-id> --yes
+```
+
+For the full property list, see the [Install configuration reference](/config-ref/install).
