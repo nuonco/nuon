@@ -71,6 +71,7 @@ const (
 	// flag only affects the build runner.
 	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
+	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
 )
 
 type Org struct {
@@ -187,6 +188,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureAppBranchesUI:           false,
+		OrgFeaturePulumiSandbox:           false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,

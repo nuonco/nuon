@@ -334,6 +334,10 @@ func NewTerraformWorkspaceStateJSONID() string {
 	return shortid.NewNanoID("tfj")
 }
 
+func NewPulumiWorkspaceID() string {
+	return shortid.NewNanoID("pws")
+}
+
 func NewRunnerGroupID() string {
 	return shortid.NewNanoID("rgr")
 }

@@ -25,6 +25,7 @@ type KubernetesSandboxMode struct {
 }
 
 type PulumiSandboxMode struct {
+	WorkspaceID         string `json:"workspace_id"`
 	PlanContents        string `json:"plan_contents"`
 	PlanDisplayContents string `json:"plan_display_contents"`
 }

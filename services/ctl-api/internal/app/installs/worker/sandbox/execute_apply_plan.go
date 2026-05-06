@@ -31,11 +31,12 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if installRun.RunType == app.SandboxRunTypeDeprovision {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
 	}
+	jobType := install.AppSandboxConfig.JobType()
 	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
 		OwnerID:   installRun.ID,
 		Operation: operation,
 		Group:     app.RunnerJobGroupSandbox,
-		Type:      app.RunnerJobTypeSandboxTerraform,
+		Type:      jobType,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to get plan runner job for current apply job")
@@ -56,6 +57,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
+		JobType:   jobType,
 		Op:        app.RunnerJobOperationTypeApplyPlan,
 		Metadata: map[string]string{
 			"install_id":       install.ID,

@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -48,8 +49,13 @@ type AppSandboxConfig struct {
 	References pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 	Refs       []refs.Ref     `gorm:"-"`
 
-	TerraformVersion string `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
+	Type             string `json:"type,omitzero" gorm:"default:'terraform'" temporaljson:"type,omitzero,omitempty"`
+	TerraformVersion string `json:"terraform_version,omitzero" gorm:"default null" temporaljson:"terraform_version,omitzero,omitempty"`
 	DriftSchedule    string `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
+
+	Runtime       string        `json:"runtime,omitzero" gorm:"default null" temporaljson:"runtime,omitzero,omitempty"`
+	PulumiVersion string        `json:"pulumi_version,omitzero" gorm:"default null" temporaljson:"pulumi_version,omitzero,omitempty"`
+	PulumiConfig  pgtype.Hstore `json:"pulumi_config,omitzero" gorm:"type:hstore" swaggertype:"object,string" features:"template" temporaljson:"pulumi_config,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -110,6 +116,13 @@ func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (c *AppSandboxConfig) JobType() RunnerJobType {
+	if c.Type == config.AppSandboxTypePulumi {
+		return RunnerJobTypeSandboxPulumi
+	}
+	return RunnerJobTypeSandboxTerraform
 }
 
 func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {

@@ -50,6 +50,7 @@ type InstallSandbox struct {
 	StatusV2          CompositeStatus      `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
 
 	TerraformWorkspace TerraformWorkspace `json:"terraform_workspace,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"terraform_workspace,omitzero,omitempty"`
+	PulumiWorkspace    PulumiWorkspace    `json:"pulumi_workspace,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"pulumi_workspace,omitzero,omitempty"`
 
 	InstallSandboxRuns []InstallSandboxRun `json:"install_sandbox_runs,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"install_sandbox_runs,omitzero,omitempty"`
 }
