@@ -14,18 +14,12 @@ import (
 
 const (
 	enqueueChannelSize = 1000
-	sweepInterval      = 1 * time.Minute
-	sweepBatchSize     = 100
-)
-
-const (
-	sweepTimeout      = 30 * time.Second
-	processOneTimeout = 30 * time.Second
+	processOneTimeout  = 30 * time.Second
 )
 
 // Enqueuer processes signal enqueue requests in the background. It receives
-// queue signal IDs via a channel and also periodically sweeps for orphaned
-// signals that were never enqueued.
+// queue signal IDs via a channel and performs the UpdateWithStart call to
+// enqueue them into their respective queue workflows.
 type Enqueuer struct {
 	db      *gorm.DB
 	cfg     *internal.Config
@@ -85,21 +79,18 @@ func New(params Params) *Enqueuer {
 }
 
 // Send enqueues a queue signal ID for background processing. If the channel
-// is full the ID is dropped with a warning — the periodic sweep will recover it.
+// is full the ID is dropped — the AwaitSignal inline path will pick it up.
 func (e *Enqueuer) Send(queueSignalID string) {
 	select {
 	case e.ch <- queueSignalID:
 	default:
-		e.l.Warn("enqueue channel full, signal will be retried by sweep",
+		e.l.Warn("enqueue channel full, signal will be enqueued inline by AwaitSignal",
 			zap.String("queue-signal-id", queueSignalID))
 	}
 }
 
 func (e *Enqueuer) run() {
 	defer close(e.doneCh)
-
-	// ticker := time.NewTicker(sweepInterval)
-	// defer ticker.Stop()
 
 	for {
 		select {
@@ -108,9 +99,6 @@ func (e *Enqueuer) run() {
 			return
 		case id := <-e.ch:
 			e.processOne(id)
-			// NOTE(jm): we no longer run the sweep in process
-			// case <-ticker.C:
-			// e.sweep()
 		}
 	}
 }

@@ -31,6 +31,14 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 		return terminalResponse(q.Status.Status, q.Status.StatusHumanDescription)
 	}
 
+	// If the signal hasn't been enqueued yet, do it inline so the handler
+	// workflow is running before we try to await its finished update.
+	if !q.Enqueued {
+		if err := c.enqueuer.EnqueueInline(ctx, queueSignalID); err != nil {
+			return nil, errors.Wrap(err, "inline enqueue failed")
+		}
+	}
+
 	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.FinishedResponse, error) {
 		rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
 			UpdateID:     queueSignalID + "-finished",
