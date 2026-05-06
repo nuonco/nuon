@@ -11,11 +11,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
@@ -72,9 +72,32 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	steps = append(steps, step)
 
 	sg.nextGroupEager() // generate install state (after stack is ready)
-	step, err = sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	var stateSignal signal.Signal
+	if stateGenV2 {
+		stateSignal = &statepartialgenerate.Signal{
+			InstallID:        installID,
+			Targets:          statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
+			TriggeredByID:    installID,
+			TriggeredByType:  "installs",
+			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		}
+	} else {
+		stateSignal = &generatestate.Signal{InstallID: installID}
+	}
+	step, err = sg.installSignalStep(
+		ctx,
+		installID,
+		"generate install state",
+		pgtype.Hstore{},
+		stateSignal,
+		flw.PlanOnly,
+		WithSkippable(false),
+	)
 	if err != nil {
 		return nil, err
 	}
