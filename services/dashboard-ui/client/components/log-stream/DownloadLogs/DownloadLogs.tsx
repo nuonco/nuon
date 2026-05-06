@@ -74,8 +74,12 @@ export const DownloadLogsButton = ({
   ...props
 }: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
-    <Button variant="ghost" onClick={onClick} {...props}>
-      Download
+    <Button
+      aria-label="Download logs"
+      title="Download logs"
+      onClick={onClick}
+      {...props}
+    >
       <Icon variant="FileArrowDownIcon" size="16" />
     </Button>
   )
