@@ -13,6 +13,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -30,6 +31,7 @@ type Params struct {
 	OrgsHelpers      *orgshelpers.Helpers
 	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
+	FeaturesClient   *features.Features
 }
 
 type Activities struct {
@@ -44,6 +46,7 @@ type Activities struct {
 	orgsHelpers      *orgshelpers.Helpers
 	evClient         eventloop.Client
 	queueClient      *queueclient.Client
+	featuresClient   *features.Features
 }
 
 func New(params Params) (*Activities, error) {
@@ -59,5 +62,6 @@ func New(params Params) (*Activities, error) {
 		orgsHelpers:      params.OrgsHelpers,
 		evClient:         params.EvClient,
 		queueClient:      params.QueueClient,
+		featuresClient:   params.FeaturesClient,
 	}, nil
 }
