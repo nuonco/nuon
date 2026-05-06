@@ -7,10 +7,14 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
@@ -56,6 +60,46 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		return errors.Wrap(err, "unable to create execution")
 	}
 	l = l.With(zap.String("runner_job_execution.id", execution.ID))
+
+	// Open the per-execution root span. Every step / op span is a descendant
+	// so the entire job execution forms a single trace. Job metadata goes onto
+	// ctx so op.Start can stamp it on every descendant span without each
+	// callsite having to repeat itself.
+	ctx = pkgctx.SetJobMetadata(ctx, pkgctx.JobMetadata{
+		RunnerJobID:          job.ID,
+		RunnerJobExecutionID: execution.ID,
+	})
+	// Stash the process-scoped TracerProvider into ctx so op.Start sees it
+	// and we don't get poisoned by transitive deps that overwrite the OTEL
+	// global (notably the docker distribution registry).
+	tp := j.processRegistrar.TracerProvider()
+	ctx = pkgctx.SetTracerProvider(ctx, tp)
+	tracer := tp.Tracer("github.com/nuonco/nuon/bins/runner/jobloop")
+	ctx, rootSpan := tracer.Start(ctx, "job."+string(job.Type),
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(
+			attribute.String("nuon.tool", "runner"),
+			attribute.String("nuon.job.type", string(job.Type)),
+			attribute.String("nuon.job.operation", string(job.Operation)),
+			attribute.String("runner_job.id", job.ID),
+			attribute.String("runner_job_execution.id", execution.ID),
+		),
+	)
+	// Re-wrap `l` with pkgctx.ContextField(ctx) so the otelzap bridge can
+	// extract the rootSpan on every emit. Without this, every "creating job
+	// execution" / "getting job handler" / "finished job" log lands in
+	// otel_log_records with an empty span_id and the dashboard's span→logs
+	// cross-link finds no matches when the user clicks the job span.
+	l = l.With(pkgctx.ContextField(ctx))
+	ctx = pkgctx.SetLogger(ctx, l)
+	var jobErr error
+	defer func() {
+		if jobErr != nil {
+			rootSpan.RecordError(jobErr)
+			rootSpan.SetStatus(codes.Error, jobErr.Error())
+		}
+		rootSpan.End()
+	}()
 
 	l.Info("getting job handler")
 	handler, err := j.getHandler(job)
@@ -112,18 +156,50 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 
 	steps, err := j.getJobSteps(ctx, handler)
 	if err != nil {
-		return errors.Wrap(err, "unable to get job steps")
+		jobErr = errors.Wrap(err, "unable to get job steps")
+		return jobErr
 	}
 
 	for _, step := range steps {
-		l.Info("executing job step "+step.name, zap.String("step", step.name))
-		if err := j.execJobStep(ctx, l, jl, step, job, execution); err != nil {
-			return errs.WithHandlerError(err, j.jobGroup, step.name, job.Type)
+		// Open per-step span as a child of the execution root FIRST so the
+		// "executing job step …" log we emit below carries the step span_id.
+		// Stamp the step name onto JobMetadata so anything launched inside
+		// the step (op.Start callsites in deploy / sandbox handlers)
+		// inherits it.
+		stepCtx := pkgctx.SetJobMetadata(ctx, pkgctx.JobMetadata{
+			RunnerJobID:          job.ID,
+			RunnerJobExecutionID: execution.ID,
+			StepName:             step.name,
+		})
+		stepCtx, stepSpan := tracer.Start(stepCtx, "step."+step.name,
+			trace.WithSpanKind(trace.SpanKindInternal),
+			trace.WithAttributes(
+				attribute.String("nuon.tool", "runner"),
+				attribute.String("runner_job_execution_step.name", step.name),
+				attribute.String("runner_job.id", job.ID),
+				attribute.String("runner_job_execution.id", execution.ID),
+			),
+		)
+		// Step-scope logger picks up the step span via ContextField so the
+		// "executing job step …" marker lands on the step span instead of
+		// the parent rootSpan.
+		stepL := l.With(pkgctx.ContextField(stepCtx))
+		stepL.Info("executing job step "+step.name, zap.String("step", step.name))
+		stepErr := j.execJobStep(stepCtx, stepL, jl, step, job, execution)
+		if stepErr != nil {
+			stepSpan.RecordError(stepErr)
+			stepSpan.SetStatus(codes.Error, stepErr.Error())
+		}
+		stepSpan.End()
+		if stepErr != nil {
+			jobErr = errs.WithHandlerError(stepErr, j.jobGroup, step.name, job.Type)
+			return jobErr
 		}
 	}
 
 	if err := j.updateJobExecutionStatus(ctx, job.ID, execution.ID, models.AppRunnerJobExecutionStatusFinished); err != nil {
-		return errors.Wrap(err, "unable to update job execution status after successful execution")
+		jobErr = errors.Wrap(err, "unable to update job execution status after successful execution")
+		return jobErr
 	}
 
 	l.Info("finished job", zap.String("name", handler.Name()))

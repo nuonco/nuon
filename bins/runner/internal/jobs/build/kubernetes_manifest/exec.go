@@ -13,6 +13,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
 )
 
@@ -32,7 +33,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	case "kustomize":
 		kustomizePath := filepath.Join(h.state.workspace.Source().AbsPath(), h.state.cfg.KustomizePath)
 		l.Info("building kustomize overlay", zap.String("path", kustomizePath))
+		_, endK := op.Tool(ctx, "kustomize", "build")
 		manifestYAML, err = h.buildKustomization(kustomizePath)
+		endK(err)
 		if err != nil {
 			return fmt.Errorf("kustomize build failed: %w", err)
 		}

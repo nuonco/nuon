@@ -695,6 +695,8 @@ type ClientService interface {
 
 	LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadLogsOK, error)
 
+	LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadSpansOK, error)
+
 	MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error)
 
 	PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PhoneHomeCreated, error)
@@ -14832,6 +14834,56 @@ func (a *Client) LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for LogStreamReadLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	LogStreamReadSpans reads a log stream s trace spans
+
+	Read OTEL trace spans for a log stream.
+
+Returns the flat list of spans recorded by the runner for the job execution
+(or executions) associated with this log stream, ordered by start timestamp
+ASC. The frontend assembles the tree from `parent_span_id`.
+*/
+func (a *Client) LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadSpansOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewLogStreamReadSpansParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "LogStreamReadSpans",
+		Method:             "GET",
+		PathPattern:        "/v1/log-streams/{log_stream_id}/spans",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &LogStreamReadSpansReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*LogStreamReadSpansOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for LogStreamReadSpans: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

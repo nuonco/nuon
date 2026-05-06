@@ -5,7 +5,7 @@ import { useArrowKeys } from '@/hooks/use-arrow-keys'
 import { useLogFilters, type TLogFiltersProps } from '@/hooks/use-log-filters'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { UnifiedLogsContext } from '@/providers/unified-logs-provider'
-import type { TOTELLog } from '@/types'
+import type { TOTELLog, TSpan } from '@/types'
 
 type LogViewerContextValue = {
   activeLog?: TOTELLog
@@ -18,9 +18,15 @@ export const LogViewerContext = createContext<LogViewerContextValue | undefined>
 
 interface LogViewerProviderProps {
   children: ReactNode
+  // Optional span list. When provided, useLogFilters expands ?span_id=X to
+  // include all descendant spans, so clicking a parent step span in the
+  // trace tab shows logs from every nested op span. Surfaces without a
+  // trace tab (most non-trace pages) leave this undefined and span_id
+  // continues to behave as an exact match.
+  spans?: TSpan[]
 }
 
-export function LogViewerProvider({ children }: LogViewerProviderProps) {
+export function LogViewerProvider({ children, spans }: LogViewerProviderProps) {
   const unifiedLogsContext = useContext(UnifiedLogsContext)
   if (!unifiedLogsContext) {
     throw new Error('LogViewerProvider must be used within a UnifiedLogsProvider')
@@ -29,7 +35,7 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
   const { logs } = unifiedLogsContext
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
   const cycleDirectionRef = useRef<'up' | 'down' | undefined>()
-  const filters = useLogFilters(logs || [])
+  const filters = useLogFilters(logs || [], spans)
   const { addPanel, updatePanel, removePanel } = useSurfaces()
   const navigate = useNavigate()
 
