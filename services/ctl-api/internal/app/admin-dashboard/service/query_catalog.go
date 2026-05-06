@@ -156,7 +156,8 @@ func (s *service) QueryCatalogRun(c *gin.Context) {
 		return
 	}
 
-	var db = s.db
+	target := c.DefaultQuery("target", "replica")
+	db := s.psqlForTarget(target)
 	if found.DBType == "ch" {
 		db = s.chDB
 	}
@@ -170,6 +171,7 @@ func (s *service) QueryCatalogRun(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"query":   found,
+		"target":  target,
 		"results": results,
 		"count":   len(results),
 	})
