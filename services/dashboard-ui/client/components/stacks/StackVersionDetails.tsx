@@ -8,6 +8,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
+import { SSELogs } from '@/components/log-stream/SSELogs'
 import { AwaitStackDetails } from '@/components/workflows/step-details/stack-details/AwaitStackDetails/AwaitStackDetails'
 import { useInstall } from '@/hooks/use-install'
 import type {
@@ -15,6 +16,9 @@ import type {
   TWorkflowStep,
   TInstallStackVersionRun,
 } from '@/types'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 import { indexToOrdinal } from '@/utils/string-utils'
@@ -191,6 +195,13 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
       {runs.length ? (
         runs.map((run, idx) => {
           const ordinalIdx = (version?.runs?.length ?? 0) - 1 - idx
+          // The OpenAPI types haven't been regenerated to include the
+          // run-scoped log stream yet; widen with a local cast (same pattern
+          // used for terraform_contents on AwaitAWSDetails).
+          const runWithLogs = run as typeof run & {
+            log_stream?: { id?: string; open?: boolean }
+          }
+          const logStreamID = runWithLogs.log_stream?.id
           return (
             <Expand
               key={run?.id}
@@ -226,6 +237,25 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                       values={objectToKeyValueArray(run?.data_contents || {})}
                     />
                   </div>
+                {logStreamID ? (
+                  <LogStreamProvider shouldPoll logStreamId={logStreamID}>
+                    <UnifiedLogsProvider>
+                      <LogViewerProvider>
+                        <SSELogs />
+                      </LogViewerProvider>
+                    </UnifiedLogsProvider>
+                  </LogStreamProvider>
+                ) : null}
+                <ClickToCopyButton
+                  className="w-fit self-end"
+                  textToCopy={JSON.stringify(
+                    run?.data_contents || run?.data || {}
+                  )}
+                />
+                <div className="overflow-auto max-h-[600px]">
+                  <KeyValueList
+                    values={objectToKeyValueArray(run?.data_contents || {})}
+                  />
                 </div>
               </div>
             </Expand>

@@ -95,6 +95,18 @@ type InstallStackVersionRun struct {
 	RunType   StackVersionRunType       `json:"run_type,omitzero" gorm:"type:varchar(50)" temporaljson:"run_type,omitzero,omitempty"`
 	RoleDiff  *StackVersionRunRoleDiff  `json:"role_diff,omitzero" gorm:"type:jsonb" temporaljson:"role_diff,omitzero,omitempty"`
 	InputDiff *StackVersionRunInputDiff `json:"input_diff,omitzero" gorm:"type:jsonb" temporaljson:"input_diff,omitzero,omitempty"`
+	Status    CompositeStatus           `json:"composite_status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
+
+	// LogStreamID is the OTLP log stream the SDK pushes provisioning logs to.
+	// Persisted so the PATCH handler can close the stream on terminal status.
+	LogStreamID string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
+
+	// LogStream is populated transiently:
+	//   - On the POST response: with WriteToken + RunnerAPIURL so the SDK can
+	//     start pushing logs immediately.
+	//   - On GET-runs (via Preload): without WriteToken, so the dashboard can
+	//     find the stream to render but can't write to it.
+	LogStream *LogStream `json:"log_stream,omitempty" gorm:"foreignKey:LogStreamID;references:ID"`
 }
 
 func (i *InstallStackVersionRun) Indexes(db *gorm.DB) []migrations.Index {

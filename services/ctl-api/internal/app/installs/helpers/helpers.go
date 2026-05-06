@@ -13,6 +13,7 @@ import (
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -67,6 +68,7 @@ type Params struct {
 	QueueClient      *queueclient.Client
 	FeaturesClient   *features.Features
 	AccountsClient   *account.Client
+	AuthzClient      *authz.Client
 }
 
 type Helpers struct {
@@ -81,6 +83,7 @@ type Helpers struct {
 	queueClient      *queueclient.Client
 	featuresClient   *features.Features
 	accountsClient   *account.Client
+	authzClient      *authz.Client
 }
 
 func New(params Params) *Helpers {
@@ -96,5 +99,6 @@ func New(params Params) *Helpers {
 		queueClient:      params.QueueClient,
 		featuresClient:   params.FeaturesClient,
 		accountsClient:   params.AccountsClient,
+		authzClient:      params.AuthzClient,
 	}
 }
