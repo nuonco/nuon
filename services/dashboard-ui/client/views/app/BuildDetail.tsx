@@ -5,10 +5,12 @@ import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { BuildHeader } from '@/components/builds/BuildHeader'
+import { Tabs } from '@/components/common/Tabs'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { TraceView } from '@/components/spans/TraceView'
 import { useApp } from '@/hooks/use-app'
 import { useBuild } from '@/hooks/use-build'
 import { useOrg } from '@/hooks/use-org'
@@ -49,7 +51,17 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
           >
             <UnifiedLogsProvider>
               <LogViewerProvider>
-                <SSELogs />
+                <Tabs
+                  tabs={{
+                    logs: <SSELogs />,
+                    trace: (
+                      <TraceView
+                        logStreamId={build.log_stream.id}
+                        shouldPoll={build.log_stream.open}
+                      />
+                    ),
+                  }}
+                />
               </LogViewerProvider>
             </UnifiedLogsProvider>
           </LogStreamProvider>

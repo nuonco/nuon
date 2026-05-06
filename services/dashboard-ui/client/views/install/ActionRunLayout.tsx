@@ -73,6 +73,9 @@ const ActionRunLayoutInner = () => {
         tabs={[
           { path: '/', text: 'Summary' },
           { path: '/logs', text: 'Logs' },
+          ...(org?.features?.['trace-view']
+            ? [{ path: '/trace', text: 'Trace' }]
+            : []),
         ]}
       />
       <Outlet />
