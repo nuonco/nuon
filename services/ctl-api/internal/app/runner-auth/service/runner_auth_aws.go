@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -154,6 +155,18 @@ func extractInstanceIDFromSTSUserId(userId string) string {
 // @Success				200	{object}	RunnerAuthAWSResponse
 // @Router					/v1/runner-auth/aws [POST]
 func (s *service) RunnerAuthAWS(ctx *gin.Context) {
+	start := time.Now()
+	metricTags := map[string]string{
+		"cloud_provider": "aws",
+		"auth_method":    "sts",
+		"status":         "error",
+	}
+	defer func() {
+		if s.mw != nil {
+			s.mw.Timing("runner.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+		}
+	}()
+
 	var req RunnerAuthAWSRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		s.l.Warn("runner auth: failed to parse request", zap.Error(err))
@@ -266,6 +279,7 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["runner_id"] = runner.ID
 
 	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
 	if err != nil {
@@ -279,12 +293,16 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["install_id"] = install.ID
+	metricTags["install_name"] = install.Name
+	metricTags["org_id"] = install.OrgID
 
 	if err := s.validateRunnerAWSIdentity(reqCtx, install, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
 		s.l.Warn("runner auth: AWS identity validation failed",
 			zap.String("runner_id", runnerID),
 			zap.String("install_id", install.ID),
 			zap.String("install_name", install.Name),
+			zap.String("org_id", install.OrgID),
 			zap.String("caller_account", callerIdentity.Result.Account),
 			zap.String("caller_arn", callerIdentity.Result.Arn),
 			zap.Error(err))
@@ -307,9 +325,11 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
+	metricTags["status"] = "ok"
 	s.l.Info("runner auth: authentication successful",
 		zap.String("install_id", install.ID),
 		zap.String("install_name", install.Name),
+		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", instanceID),
 		zap.String("account_id", callerIdentity.Result.Account))

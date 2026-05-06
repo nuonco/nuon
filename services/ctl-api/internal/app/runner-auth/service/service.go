@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	runneraws "github.com/nuonco/nuon/pkg/runner/auth/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -21,6 +22,7 @@ type Params struct {
 	L          *zap.Logger
 	Cfg        *internal.Config
 	AcctClient *account.Client
+	MW         metrics.Writer
 }
 
 type service struct {
@@ -29,6 +31,7 @@ type service struct {
 	db         *gorm.DB
 	cfg        *internal.Config
 	acctClient *account.Client
+	mw         metrics.Writer
 	certStore  *runneraws.IIDCertStore
 }
 
@@ -50,6 +53,7 @@ func New(params Params) *service {
 		db:         params.DB,
 		cfg:        params.Cfg,
 		acctClient: params.AcctClient,
+		mw:         params.MW,
 		certStore:  certStore,
 	}
 }

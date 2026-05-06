@@ -18,6 +18,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
@@ -239,6 +240,18 @@ func extractRunnerIDFromClaims(claims *azureClaims, requestRunnerID string) (run
 // @Success				200	{object}	RunnerAuthAzureResponse
 // @Router					/v1/runner-auth/azure [POST]
 func (s *service) RunnerAuthAzure(ctx *gin.Context) {
+	start := time.Now()
+	metricTags := map[string]string{
+		"cloud_provider": "azure",
+		"auth_method":    "jwt",
+		"status":         "error",
+	}
+	defer func() {
+		if s.mw != nil {
+			s.mw.Timing("runner.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+		}
+	}()
+
 	var req RunnerAuthAzureRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		s.l.Warn("runner auth azure: failed to parse request", zap.Error(err))
@@ -294,6 +307,7 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["runner_id"] = runner.ID
 
 	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
 	if err != nil {
@@ -307,12 +321,16 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["install_id"] = install.ID
+	metricTags["install_name"] = install.Name
+	metricTags["org_id"] = install.OrgID
 
 	if err := s.validateRunnerAzureIdentity(reqCtx, install, azClaims, subscriptionID); err != nil {
 		s.l.Warn("runner auth azure: identity validation failed",
 			zap.String("runner_id", runnerID),
 			zap.String("install_id", install.ID),
 			zap.String("install_name", install.Name),
+			zap.String("org_id", install.OrgID),
 			zap.String("tenant_id", azClaims.TenantID),
 			zap.String("principal_id", azClaims.ObjectID),
 			zap.Error(err))
@@ -335,9 +353,11 @@ func (s *service) RunnerAuthAzure(ctx *gin.Context) {
 		return
 	}
 
+	metricTags["status"] = "ok"
 	s.l.Info("runner auth azure: authentication successful",
 		zap.String("install_id", install.ID),
 		zap.String("install_name", install.Name),
+		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("tenant_id", azClaims.TenantID),
 		zap.String("principal_id", azClaims.ObjectID))
