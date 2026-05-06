@@ -25,7 +25,7 @@ export interface IModal
   secondaryActionTrigger?: IButtonAsButton
   showFooter?: boolean
   showHeader?: boolean
-  size?: 'sm' | 'default' | 'lg' | 'xl'
+  size?: 'sm' | 'default' | 'lg' | 'xl' | 'full'
   triggerButton?: Omit<IButtonAsButton, 'onClick'>
 }
 
@@ -79,6 +79,7 @@ export const ModalBase = ({
               'max-w-[600px]': size === 'default',
               'max-w-[800px]': size === 'lg',
               'max-w-[968px]': size === 'xl',
+              'max-w-[calc(100vw-2rem)]': size === 'full',
             },
             className
           )}

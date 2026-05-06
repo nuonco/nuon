@@ -23,3 +23,18 @@
   background-color: var(--light);
   border-radius: 10%;
 }
+
+/* Pylon chat widget — inset 24px from viewport corner. Shifts the bubble,
+ * the chat window popup, and proactive message popups together so the
+ * bubble→window vertical gap is preserved. !important is required because
+ * Pylon's bundle injects competing positioning rules at runtime, after
+ * style.css loads. */
+.PylonChat-bubbleFrameContainer {
+  bottom: 24px !important;
+  right: 24px !important;
+}
+.PylonChat-chatWindowFrameContainer,
+.PylonChat-popupMessageContainer {
+  bottom: 88px !important;
+  right: 24px !important;
+}

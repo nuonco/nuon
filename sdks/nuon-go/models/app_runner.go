@@ -47,6 +47,9 @@ type AppRunner struct {
 	// Queues holds per-job-group queues created when parallel-runner-jobs feature flag is enabled.
 	Queues []*AppQueue `json:"queues"`
 
+	// restart requested
+	RestartRequested bool `json:"restart_requested,omitempty"`
+
 	// runner group
 	RunnerGroup *AppRunnerGroup `json:"runner_group,omitempty"`
 

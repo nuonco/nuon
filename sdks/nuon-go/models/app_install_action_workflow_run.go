@@ -83,6 +83,9 @@ type AppInstallActionWorkflowRun struct {
 	// steps
 	Steps []*AppInstallActionWorkflowRunStep `json:"steps"`
 
+	// timeout
+	Timeout int64 `json:"timeout,omitempty"`
+
 	// trigger type
 	TriggerType AppActionWorkflowTriggerType `json:"trigger_type,omitempty"`
 

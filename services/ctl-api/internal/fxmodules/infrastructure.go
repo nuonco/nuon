@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
@@ -45,6 +46,14 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.WithLogger(pkglog.NewFXLog),
 	fx.Provide(log.New),
 	fx.Provide(dblog.New),
+
+	// Query collector (enabled by debug_enable_query_collector config)
+	fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
+		if cfg.DebugEnableQueryCollector {
+			return querycollector.NewCollector(5000)
+		}
+		return nil
+	}),
 
 	// Database connections
 	fx.Provide(psql.AsPSQL(psql.New)),

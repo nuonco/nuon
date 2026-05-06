@@ -11,7 +11,10 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
+	appdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/deprovision"
 	componentssignals "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/delete"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 // @ID						DeleteApp
@@ -63,13 +66,19 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 		}
 	}
 
-	appCfg, err := s.helpers.GetAppLatestConfig(ctx, appID)
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		ctx.Error(err)
+	appCfg, cfgErr := s.helpers.GetAppLatestConfig(ctx, appID)
+	if cfgErr != nil && !errors.Is(cfgErr, gorm.ErrRecordNotFound) {
+		ctx.Error(cfgErr)
 		return
 	}
 
-	if err == nil {
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to check features: %w", err))
+		return
+	}
+
+	if cfgErr == nil {
 		// Check if there are any active components for the app, if so, do not proceed for deletion.
 		if len(appCfg.ComponentIDs) > 0 {
 			ctx.Error(fmt.Errorf("app has %d active component(s) in it's latest config, please remove them first", len(appCfg.ComponentIDs)))
@@ -86,28 +95,61 @@ func (s *service) DeleteApp(ctx *gin.Context) {
 			}
 
 			for _, comp := range appComponents {
-				err = s.helpers.DeleteAppComponent(ctx, comp.ID)
-				if err != nil {
+				if err := s.helpers.DeleteAppComponent(ctx, comp.ID); err != nil {
 					ctx.Error(err)
 					return
 				}
 
-				s.evClient.Send(ctx, comp.ID, &componentssignals.Signal{
-					Type: componentssignals.OperationDelete,
-				})
+				if useQueues {
+					q, err := s.queueClient.GetQueueByOwner(ctx, comp.ID, "components")
+					if err != nil {
+						ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
+						return
+					}
+					if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+						QueueID:   q.ID,
+						OwnerID:   comp.ID,
+						OwnerType: "components",
+						Signal:    &componentdelete.Signal{ComponentID: comp.ID},
+					}); err != nil {
+						ctx.Error(fmt.Errorf("unable to enqueue component delete signal: %w", err))
+						return
+					}
+				} else {
+					s.evClient.Send(ctx, comp.ID, &componentssignals.Signal{
+						Type: componentssignals.OperationDelete,
+					})
+				}
 			}
 		}
 	}
 
-	err = s.deleteApp(ctx, appID)
-	if err != nil {
+	if err := s.deleteApp(ctx, appID); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	s.evClient.Send(ctx, appID, &signals.Signal{
-		Type: signals.OperationDeprovision,
-	})
+	if useQueues {
+		q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get app queue: %w", err))
+			return
+		}
+		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   q.ID,
+			OwnerID:   appID,
+			OwnerType: "apps",
+			Signal:    &appdeprovision.Signal{AppID: appID},
+		}); err != nil {
+			ctx.Error(fmt.Errorf("unable to enqueue app deprovision signal: %w", err))
+			return
+		}
+	} else {
+		s.evClient.Send(ctx, appID, &signals.Signal{
+			Type: signals.OperationDeprovision,
+		})
+	}
+
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -34,7 +35,9 @@ func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, 
 	}
 
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID,
+		QueueID:   q.ID,
+		OwnerID:   processID,
+		OwnerType: plugins.TableName(h.db, app.RunnerProcess{}),
 		Signal: queuesignal.NewRaw("process_healthcheck", map[string]any{
 			"runner_id":  runnerID,
 			"process_id": processID,

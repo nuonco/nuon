@@ -221,6 +221,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// org-level workflow queries (must be registered before /:workflow_id group)
 	ge.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
 	ge.GET("/v1/workflows", s.GetOrgWorkflows)
+	ge.POST("/v1/workflows/cancel", s.CancelWorkflows)
 
 	// workflows (standalone)
 	workflows := ge.Group("/v1/workflows/:workflow_id")
@@ -295,6 +296,15 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	{
 		orgs.POST("/admin-forget-installs", s.ForgetOrgInstalls)
 		orgs.GET("/admin-get-installs", s.AdminGetOrgInstalls)
+	}
+
+	// install stack version runs
+	installStackVersionRuns := api.Group("/v1/install-stack-version-runs")
+	{
+		installStackVersionRun := installStackVersionRuns.Group("/:install_stack_version_run_id")
+		{
+			installStackVersionRun.POST("/admin-trigger-stack-output-update", s.AdminTriggerInstallStackOutputUpdate)
+		}
 	}
 
 	// temp for hackathon

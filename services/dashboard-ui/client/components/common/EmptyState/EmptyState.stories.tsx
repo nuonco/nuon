@@ -26,6 +26,11 @@ export const Variants = () => (
       emptyMessage="No actions available for this resource"
     />
     <EmptyState
+      variant="app"
+      emptyTitle="No apps yet"
+      emptyMessage="An app is the configuration that gets deployed into your customers cloud accounts."
+    />
+    <EmptyState
       variant="diagram"
       emptyTitle="No diagram"
       emptyMessage="No diagram data available"

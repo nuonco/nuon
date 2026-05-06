@@ -31,7 +31,7 @@ interface ISSELogs {
 }
 
 export const SSELogs = ({
-  filterClassName = '-top-6',
+  filterClassName = 'top-0',
   filteredLogs,
   filters,
   activeLog,

@@ -14,7 +14,7 @@ import (
 
 func SyncSecrets(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {

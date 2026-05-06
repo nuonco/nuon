@@ -119,5 +119,17 @@ func (s *service) updateWorkflow(ctx context.Context, installWorkflowID string, 
 		return nil, fmt.Errorf("install workflow not found: %w", gorm.ErrRecordNotFound)
 	}
 
+	// Label the approval source on the workflow metadata when approve-all is set via the API
+	if req.ApprovalOption != nil && *req.ApprovalOption == app.InstallApprovalOptionApproveAll {
+		s.db.WithContext(ctx).Exec(
+			`UPDATE install_workflows SET metadata = COALESCE(metadata, ''::hstore) || hstore('approval_type', 'approve-workflow') WHERE id = ?`,
+			installWorkflowID,
+		)
+		s.db.WithContext(ctx).Exec(
+			`UPDATE install_workflows SET status = jsonb_set(COALESCE(status::jsonb, '{}'::jsonb), '{metadata,approval_type}', '"approve-workflow"'::jsonb) WHERE id = ?`,
+			installWorkflowID,
+		)
+	}
+
 	return &currentWorkflow, nil
 }

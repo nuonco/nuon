@@ -10,6 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	pkgplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -160,13 +161,19 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 		}
 	}
 
-	if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
-		OwnerID:     installDeploy.ID,
-		OwnerType:   "install_deploys",
-		RunnerJobID: job.ID,
-		StepID:      stepID,
-		Plan:        contentsDisplay,
-		Type:        approvalTyp,
+	var installWorkflowID string
+	if installDeploy.WorkflowID != nil {
+		installWorkflowID = *installDeploy.WorkflowID
+	}
+	if err := workflowstepapprovalrequest.Dispatch(ctx, &workflowstepapprovalrequest.Signal{
+		InstallID:         install.ID,
+		InstallWorkflowID: installWorkflowID,
+		WorkflowStepID:    stepID,
+		OwnerID:           installDeploy.ID,
+		OwnerType:         "install_deploys",
+		RunnerJobID:       job.ID,
+		ApprovalType:      approvalTyp,
+		Plan:              contentsDisplay,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create approval")
 	}

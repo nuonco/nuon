@@ -2,6 +2,8 @@ package permissions
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -46,6 +48,13 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		}
 	}
 
+	if err := validateInlinePolicyContents(obj.Roles); err != nil {
+		return sync.SyncErr{
+			Resource:    "permissions",
+			Description: err.Error(),
+		}
+	}
+
 	res := db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
 		return sync.SyncInternalErr{
@@ -80,4 +89,37 @@ func convertIAMRole(role *config.AppAWSIAMRole, appConfigID string, roleType app
 		PermissionsBoundaryJSON: generics.ToJSON(role.PermissionsBoundary),
 		Policies:                policies,
 	}
+}
+
+// validateInlinePolicyContents ensures every inline policy on every role parses
+// as a well-formed IAM policy document. Without this, malformed inline policies
+// would silently render to an empty inline policy on the AWS Terraform install
+// path, leaving runner roles under-permissioned at apply time. Catch the
+// problem at sync rather than at provision.
+func validateInlinePolicyContents(roles []app.AppAWSIAMRoleConfig) error {
+	for _, role := range roles {
+		for _, policy := range role.Policies {
+			if len(policy.Contents) == 0 {
+				continue
+			}
+			if policy.ManagedPolicyName != "" {
+				continue
+			}
+			var doc struct {
+				Statement []map[string]json.RawMessage `json:"Statement"`
+			}
+			if err := json.Unmarshal(policy.Contents, &doc); err != nil {
+				return fmt.Errorf("role %q policy %q: inline policy contents must be a JSON IAM policy document: %w", role.Name, policy.Name, err)
+			}
+			if len(doc.Statement) == 0 {
+				return fmt.Errorf("role %q policy %q: inline policy must contain at least one Statement", role.Name, policy.Name)
+			}
+			for i, stmt := range doc.Statement {
+				if _, ok := stmt["Effect"]; !ok {
+					return fmt.Errorf("role %q policy %q: Statement[%d] missing required Effect field", role.Name, policy.Name, i)
+				}
+			}
+		}
+	}
+	return nil
 }

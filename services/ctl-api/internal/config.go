@@ -39,14 +39,19 @@ func init() {
 	config.RegisterDefault("github_app_key_secret_name", "ctl-api-github-app-key")
 	config.RegisterDefault("sandbox_artifacts_base_url", "https://nuon-artifacts.s3.us-west-2.amazonaws.com/sandbox")
 
+	// debug options
+	config.RegisterDefault("debug_enable_query_collector", false)
+
 	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_mode_sleep", "5s")
 	// if sandbox_enable_runners is set to true, all jobs require that you process them via a runner, which means
 	// running an org runner during seeding and then install runners, etc.
 	config.RegisterDefault("sandbox_mode_enable_runners", false)
 
-	// runner defaults
+	// runner defaults; per-cloud overrides avoid cross-cloud egress against AWS ECR's pull quota.
 	config.RegisterDefault("runner_container_image_url", "public.ecr.aws/p7e3r5y0/runner")
+	config.RegisterDefault("runner_container_image_url_gcp", "us-west1-docker.pkg.dev/nuon-public/runner/runner")
+	config.RegisterDefault("runner_container_image_url_azure", "")
 	config.RegisterDefault("runner_api_url", "http://localhost:8083")
 	config.RegisterDefault("public_api_url", "http://localhost:8081")
 	config.RegisterDefault("temporal_url", "https://app.nuon.co")
@@ -88,6 +93,9 @@ func init() {
 	// short for local dev; prod overrides via config
 	config.RegisterDefault("queue_idle_timeout", "10m")
 
+	// queue continue-as-new hint period: how often the CAN listener checks for restart hints
+	config.RegisterDefault("queue_continue_as_new_hint_period", "10m")
+
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
 	config.RegisterDefault("process_install_uptime_threshold", "8h")
@@ -128,6 +136,7 @@ type Config struct {
 	RunnerHTTPPort         string `config:"runner_http_port" validate:"required"`
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
+	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
@@ -135,18 +144,19 @@ type Config struct {
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
-	DBName           string `config:"db_name" validate:"required"`
-	DBHost           string `config:"db_host" validate:"required"`
-	DBPort           string `config:"db_port" validate:"required"`
-	DBSSLMode        string `config:"db_ssl_mode" validate:"required"`
-	DBPassword       string `config:"db_password"`
-	DBUser           string `config:"db_user" validate:"required"`
-	DBZapLog         bool   `config:"db_use_zap"`
-	DBUseIAM         bool   `config:"db_use_iam"`
-	DBRegion         string `config:"db_region" validate:"required"`
-	CloudProvider    string `config:"cloud_provider"`
-	DBLogQueries     bool   `config:"db_log_queries"`
-	DBMaxConnections int32  `config:"db_max_connections"`
+	DBName                    string `config:"db_name" validate:"required"`
+	DBHost                    string `config:"db_host" validate:"required"`
+	DBPort                    string `config:"db_port" validate:"required"`
+	DBSSLMode                 string `config:"db_ssl_mode" validate:"required"`
+	DBPassword                string `config:"db_password"`
+	DBUser                    string `config:"db_user" validate:"required"`
+	DBZapLog                  bool   `config:"db_use_zap"`
+	DBUseIAM                  bool   `config:"db_use_iam"`
+	DBRegion                  string `config:"db_region" validate:"required"`
+	CloudProvider             string `config:"cloud_provider"`
+	DBLogQueries              bool   `config:"db_log_queries"`
+	DebugEnableQueryCollector bool   `config:"debug_enable_query_collector"`
+	DBMaxConnections          int32  `config:"db_max_connections"`
 
 	// clickhouse connection parameters
 	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
@@ -220,9 +230,11 @@ type Config struct {
 	WebhookTimeout time.Duration `config:"webhook_timeout"`
 
 	// configuration for runners
-	RunnerContainerImageURL string `config:"runner_container_image_url" validate:"required"`
-	RunnerContainerImageTag string `config:"runner_container_image_tag" validate:"required"`
-	UseLocalRunners         bool   `config:"use_local_runners"`
+	RunnerContainerImageURL      string `config:"runner_container_image_url" validate:"required"`
+	RunnerContainerImageURLGCP   string `config:"runner_container_image_url_gcp"`
+	RunnerContainerImageURLAzure string `config:"runner_container_image_url_azure"`
+	RunnerContainerImageTag      string `config:"runner_container_image_tag" validate:"required"`
+	UseLocalRunners              bool   `config:"use_local_runners"`
 
 	// AWS IID auth
 	AWSIIDCertsDir string `config:"aws_iid_certs_dir"`
@@ -307,6 +319,9 @@ type Config struct {
 
 	// Queue idle timeout: how long before an idle queue workflow terminates
 	QueueIdleTimeout time.Duration `config:"queue_idle_timeout"`
+
+	// Queue continue-as-new hint period: how often the CAN listener checks for restart hints
+	QueueContinueAsNewHintPeriod time.Duration `config:"queue_continue_as_new_hint_period"`
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`

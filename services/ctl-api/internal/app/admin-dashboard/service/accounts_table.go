@@ -3,14 +3,11 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// AccountsTable returns just the accounts table for htmx polling
+// AccountsTable returns just the accounts table data as JSON
 func (s *service) AccountsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	search := c.Query("search")
@@ -24,6 +21,9 @@ func (s *service) AccountsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.AccountsTable(accounts, page, totalPages, search, filter)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"accounts":    accounts,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }

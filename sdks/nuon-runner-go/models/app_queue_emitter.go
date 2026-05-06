@@ -41,6 +41,12 @@ type AppQueueEmitter struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// For cron mode: spread emitter ticks deterministically across this window
+	// to avoid thundering-herd when many emitters share a schedule. A hash of the
+	// emitter ID determines each emitter's static offset within the window. Zero
+	// disables jitter (default).
+	JitterWindow int64 `json:"jitter_window,omitempty"`
+
 	// last emitted at
 	LastEmittedAt string `json:"last_emitted_at,omitempty"`
 

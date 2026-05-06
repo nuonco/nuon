@@ -17,6 +17,8 @@ import (
 const SignalType signal.SignalType = "install-created"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallID string `json:"install_id"`
 }
 
@@ -25,8 +27,10 @@ var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
-		InstallID: &s.InstallID,
-		Operation: "install-created",
+		InstallID:    &s.InstallID,
+		Operation:    "install-created",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 

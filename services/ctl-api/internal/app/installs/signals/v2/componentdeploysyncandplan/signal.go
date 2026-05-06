@@ -13,6 +13,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -26,6 +27,8 @@ import (
 const SignalType signal.SignalType = "component-deploy-sync-and-plan"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallComponentID string
 	InstallID          string
 	DeployID           string
@@ -86,10 +89,12 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		componentID = nil
 	}
 	return signal.SignalLifecycleContext{
-		InstallID:   installID,
-		ComponentID: componentID,
-		Operation:   "component-deploy",
-		Stage:       "plan",
+		InstallID:    installID,
+		ComponentID:  componentID,
+		Operation:    "component-deploy",
+		Stage:        "plan",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 
@@ -495,13 +500,15 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		}
 	}
 
-	if _, err := activities.AwaitCreateStepApproval(ctx, &activities.CreateStepApprovalRequest{
-		OwnerID:     installDeploy.ID,
-		OwnerType:   "install_deploys",
-		RunnerJobID: job.ID,
-		StepID:      stepID,
-		Plan:        contentsDisplay,
-		Type:        approvalTyp,
+	if err := workflowstepapprovalrequest.Dispatch(ctx, &workflowstepapprovalrequest.Signal{
+		InstallID:         install.ID,
+		InstallWorkflowID: s.FlowID,
+		WorkflowStepID:    stepID,
+		OwnerID:           installDeploy.ID,
+		OwnerType:         "install_deploys",
+		RunnerJobID:       job.ID,
+		ApprovalType:      approvalTyp,
+		Plan:              contentsDisplay,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create approval")
 	}

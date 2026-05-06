@@ -8,16 +8,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const accountInstallsPerPage = 8
 const accountAuditLogsPerPage = 8
+
+// AuditLogEntry represents a single audit log entry for account or install activity.
+type AuditLogEntry struct {
+	EntityType  string    `json:"entity_type"`
+	EntityID    string    `json:"entity_id"`
+	EntityName  string    `json:"entity_name"`
+	CreatedAt   time.Time `json:"created_at"`
+	OrgID       *string   `json:"org_id"`
+	OrgName     *string   `json:"org_name"`
+	AppID       *string   `json:"app_id"`
+	AppName     *string   `json:"app_name"`
+	Description *string   `json:"description"`
+}
 
 func (s *service) AccountDetail(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -108,16 +119,21 @@ func (s *service) AccountDetail(c *gin.Context) {
 	)
 	if err != nil {
 		s.l.Warn("failed to get audit logs", zap.Error(err))
-		auditLogs = []*views.AuditLogEntry{}
+		auditLogs = []*AuditLogEntry{}
 		auditLogsTotalPages = 1
 	}
 
-	component := views.AccountDetail(
-		&account, apps, installs,
-		auditLogs, startDate, endDate,
-		page, installsTotalPages, auditLogsTotalPages,
-	)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"account":                &account,
+		"apps":                   apps,
+		"installs":               installs,
+		"audit_logs":             auditLogs,
+		"start_date":             startDate,
+		"end_date":               endDate,
+		"page":                   page,
+		"installs_total_pages":   installsTotalPages,
+		"audit_logs_total_pages": auditLogsTotalPages,
+	})
 }
 
 func (s *service) getInstallsForAccount(ctx context.Context, accountID string, page int) ([]*app.Install, int, error) {
@@ -168,8 +184,8 @@ func (s *service) getAuditLogsForAccount(
 	startDate, endDate time.Time,
 	page int,
 	entityTypes []string,
-) ([]*views.AuditLogEntry, int, error) {
-	var entries []*views.AuditLogEntry
+) ([]*AuditLogEntry, int, error) {
+	var entries []*AuditLogEntry
 
 	// Build list of queries based on selected entity types (or all if none selected)
 	allTypes := []string{"app", "workflow", "runner_job", "org", "app_sync"}
@@ -277,7 +293,7 @@ func (s *service) getAuditLogsForAccount(
 	}
 
 	if len(queries) == 0 {
-		return []*views.AuditLogEntry{}, 1, nil
+		return []*AuditLogEntry{}, 1, nil
 	}
 
 	// Join all queries with UNION ALL

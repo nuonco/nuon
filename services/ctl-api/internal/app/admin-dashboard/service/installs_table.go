@@ -3,14 +3,11 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// InstallsTable returns just the installs table for htmx polling
+// InstallsTable returns the installs table data for an org as JSON
 func (s *service) InstallsTable(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")
@@ -28,7 +25,10 @@ func (s *service) InstallsTable(c *gin.Context) {
 		return
 	}
 
-	// Return just the table component
-	component := views.InstallsTable(orgID, installs, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"org_id":      orgID,
+		"installs":    installs,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }

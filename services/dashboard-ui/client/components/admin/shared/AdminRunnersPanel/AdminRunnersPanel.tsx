@@ -1,11 +1,16 @@
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Pagination } from '@/components/common/Pagination'
+import { PaginationProvider } from '@/providers/pagination-provider'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { Card } from '@/components/common/Card'
 import { RunnerCard } from '../../runners/RunnerCard'
 import { LoadRunnerCard } from '../../runners/LoadRunnerCard'
 import type { TInstall, TRunner } from '@/types'
+import type { TPaginationMeta } from '@/lib/api'
+
+const PARAM = 'runners_offset'
 
 interface IAdminRunnersPanel extends IPanel {
   orgId: string
@@ -17,6 +22,7 @@ interface IAdminRunnersPanel extends IPanel {
   isRestarting: boolean
   onRestartAll: () => void
   onRefreshInstalls: () => void
+  pagination: TPaginationMeta
 }
 
 export const AdminRunnersPanel = ({
@@ -29,6 +35,7 @@ export const AdminRunnersPanel = ({
   isRestarting,
   onRestartAll,
   onRefreshInstalls,
+  pagination,
   size = 'half',
   ...props
 }: IAdminRunnersPanel) => {
@@ -154,6 +161,15 @@ export const AdminRunnersPanel = ({
               </Text>
             </Card>
           )}
+
+          <PaginationProvider>
+            <Pagination
+              hasNext={pagination.hasNext}
+              offset={pagination.offset}
+              limit={pagination.limit}
+              param={PARAM}
+            />
+          </PaginationProvider>
         </div>
       </div>
     </Panel>

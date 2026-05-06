@@ -26,17 +26,32 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		}
 	}
 
-	// enrich from signal if it implements the optional lifecycle context interface
+	// enrich from signal if it implements the optional lifecycle context interface.
+	// Workflow identity is also sourced from the signal's lifecycle context: it
+	// is stamped at signal-construction time via SignalWithMutableLifecycleContext
+	// (see signal.LifecycleBase) so the queue handler does not need a runtime
+	// DB lookup to resolve the owning install workflow.
 	if lc, ok := h.sig.(signal.SignalWithLifecycleContext); ok {
 		ctx := lc.LifecycleContext()
 		if ctx.OrgID != "" {
 			event.OrgID = ctx.OrgID
+		}
+		if ctx.OrgName != "" {
+			event.OrgName = ctx.OrgName
 		}
 		event.InstallID = ctx.InstallID
 		event.ComponentID = ctx.ComponentID
 		event.SandboxID = ctx.SandboxID
 		event.Operation = ctx.Operation
 		event.Stage = ctx.Stage
+		event.WorkflowID = ctx.WorkflowID
+		event.WorkflowType = ctx.WorkflowType
+		event.StepID = ctx.StepID
+		event.OwnerID = ctx.OwnerID
+		event.OwnerType = ctx.OwnerType
+		if ctx.OwnerName != "" {
+			event.OwnerName = ctx.OwnerName
+		}
 	}
 
 	return event

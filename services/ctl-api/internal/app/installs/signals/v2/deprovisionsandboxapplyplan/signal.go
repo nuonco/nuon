@@ -25,6 +25,8 @@ import (
 const SignalType signal.SignalType = "deprovision-sandbox-apply-plan"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallSandboxID string
 	InstallID        string
 	FlowID           string
@@ -41,10 +43,12 @@ var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+var _ signal.SignalWithRetryGroup = (*Signal)(nil)
 
 func (s *Signal) AutoRetry() bool                       { return true }
 func (s *Signal) MaxRetries() int                       { return 5 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+func (s *Signal) RetryGroup() bool                      { return true }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -65,10 +69,12 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		sandboxID = nil
 	}
 	return signal.SignalLifecycleContext{
-		InstallID: installID,
-		SandboxID: sandboxID,
-		Operation: "sandbox-deprovision",
-		Stage:     "apply",
+		InstallID:    installID,
+		SandboxID:    sandboxID,
+		Operation:    "sandbox-deprovision",
+		Stage:        "apply",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 
@@ -137,6 +143,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get install deploy")
 	}
+
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			s.updateRunStatus(updateCtx, installRun.ID, app.SandboxRunStatusCancelled, "sandbox deprovision apply cancelled")
+		}
+	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installRun.LogStream)
 	l := workflow.GetLogger(ctx)

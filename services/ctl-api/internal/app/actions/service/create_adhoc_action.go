@@ -234,6 +234,7 @@ func (s *service) createAdHocActionRun(
 		StatusDescription: "Queued for execution",
 		Steps:             []app.InstallActionWorkflowRunStep{runStep},
 		RunEnvVars:        dbgenerics.ToHstore(req.EnvVars),
+		Timeout:           time.Duration(req.Timeout) * time.Second,
 		Role:              req.Role,
 		EnableKubeConfig:  enableKubeConfig,
 	}

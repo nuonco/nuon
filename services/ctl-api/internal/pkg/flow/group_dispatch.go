@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -19,6 +20,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 
 	sig := &executeworkflowstepgroup.Signal{
 		WorkflowID:      flw.ID,
+		WorkflowType:    string(flw.Type),
 		StepGroupID:     group.ID,
 		GroupIdx:        group.GroupIdx,
 		OwnerID:         cfg.OwnerID,
@@ -57,6 +59,13 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 		return "", errors.Wrapf(err, "unable to enqueue group signal for group %d", group.GroupIdx)
 	}
 
+	var awaitOpts []*workflow.ActivityOptions
+	if t, ok := signal.Signal(sig).(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
+		awaitOpts = append(awaitOpts, &workflow.ActivityOptions{
+			ScheduleToCloseTimeout: t.Timeout(),
+		})
+	}
+
 	// Wait for the group to finish via the group-finished update handler.
 	// If the group has a StepGroupID, use ForwardGroupFinished for resilient
 	// completion tracking. Fall back to AwaitAwaitSignal for backward compat
@@ -64,7 +73,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	if group.ID != "" {
 		resp, err := workflowactivities.AwaitForwardGroupFinished(ctx, workflowactivities.ForwardGroupFinishedRequest{
 			StepGroupID: group.ID,
-		})
+		}, awaitOpts...)
 		if err != nil {
 			if ctx.Err() != nil {
 				cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
@@ -77,7 +86,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	}
 
 	// Legacy fallback: no StepGroupID, use framework-level finished handler.
-	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID)
+	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, awaitOpts...)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)

@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	enumspb "go.temporal.io/api/enums/v1"
 	"go.uber.org/zap"
@@ -28,7 +28,7 @@ var temporalWorkerNamespaces = []string{
 	"onboardings",
 }
 
-// TemporalWorkers renders the temporal workers overview page.
+// TemporalWorkers returns the temporal workers overview data.
 func (s *service) TemporalWorkers(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -37,11 +37,13 @@ func (s *service) TemporalWorkers(c *gin.Context) {
 		s.l.Error("failed to get temporal workers", zap.Error(err))
 	}
 
-	component := views.TemporalWorkers(namespacePollers, s.cfg.TemporalUIURL)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"namespace_pollers": namespacePollers,
+		"temporal_ui_url":   s.cfg.TemporalUIURL,
+	})
 }
 
-// TemporalWorkersTable returns just the table fragment for HTMX polling.
+// TemporalWorkersTable returns just the table data for polling.
 func (s *service) TemporalWorkersTable(c *gin.Context) {
 	ctx := c.Request.Context()
 
@@ -50,11 +52,12 @@ func (s *service) TemporalWorkersTable(c *gin.Context) {
 		s.l.Error("failed to get temporal workers for table", zap.Error(err))
 	}
 
-	component := views.TemporalWorkersTable(namespacePollers)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"namespace_pollers": namespacePollers,
+	})
 }
 
-// TemporalWorkerDetail renders the detail page for a specific namespace.
+// TemporalWorkerDetail returns the detail data for a specific namespace.
 func (s *service) TemporalWorkerDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Param("namespace")
@@ -68,8 +71,10 @@ func (s *service) TemporalWorkerDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.TemporalWorkerDetailPage(info, s.cfg.TemporalUIURL)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"info":            info,
+		"temporal_ui_url": s.cfg.TemporalUIURL,
+	})
 }
 
 // getTemporalWorkers fetches poller info for all known namespaces in parallel.

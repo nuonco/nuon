@@ -65,6 +65,24 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at",
 			},
 		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "owner_type_owner_id_type_deleted_at"),
+			Columns: []string{
+				"owner_type",
+				"owner_id",
+				"type",
+				"deleted_at",
+				"created_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "owner_type_owner_id_deleted_at"),
+			Columns: []string{
+				"owner_type",
+				"owner_id",
+				"deleted_at",
+			},
+		},
 	}
 }
 

@@ -106,6 +106,7 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 				q.sem.Release(1)
 				q.activeWorkers--
 				q.lastActivityTime = workflow.Now(gCtx)
+				delete(q.inFlightSignals, ref.ID)
 			}()
 
 			if err := q.handleQueueSignal(gCtx, ref); err != nil {

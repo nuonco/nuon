@@ -16,8 +16,8 @@ type AdminUpsertSandboxConfigRequest struct {
 	JobType             string        `json:"job_type" validate:"required"`
 	Operation           string        `json:"operation"`
 	Enabled             *bool         `json:"enabled"`
-	Duration            time.Duration `json:"duration"`
-	SleepDuration       time.Duration `json:"sleep_duration"`
+	Duration            time.Duration `json:"duration" swaggertype:"primitive,integer"`
+	SleepDuration       time.Duration `json:"sleep_duration" swaggertype:"primitive,integer"`
 	ShouldError         bool          `json:"should_error"`
 	Panic               bool          `json:"panic"`
 	TriggerShutdown     bool          `json:"trigger_shutdown"`

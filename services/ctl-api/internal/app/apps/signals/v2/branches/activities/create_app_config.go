@@ -29,6 +29,9 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		return nil, fmt.Errorf("invalid request: %w", err)
 	}
 
+	pendingStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending))
+	pendingStatus.StatusHumanDescription = "pending sync"
+
 	appConfig := &app.AppConfig{
 		AppID:              req.AppID,
 		OrgID:              req.OrgID,
@@ -36,6 +39,7 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		AppBranchID:        generics.NewNullString(req.AppBranchID),
 		Status:             app.AppConfigStatusPending,
 		StatusDescription:  "pending sync",
+		StatusV2:           pendingStatus,
 		IntermediateConfig: &blobstore.Blob{},
 	}
 	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)

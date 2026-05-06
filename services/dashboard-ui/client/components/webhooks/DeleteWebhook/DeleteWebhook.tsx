@@ -48,7 +48,7 @@ export const DeleteWebhookModal = ({
 
         <div className="flex flex-col gap-3">
           <Text variant="base" weight="strong">
-            This webhook will stop receiving operation lifecycle events.
+            This webhook will stop receiving workflow lifecycle events.
           </Text>
           <Code variant="inline" className="!px-2 !py-1">{webhookUrl}</Code>
           <Text variant="body" theme="neutral">

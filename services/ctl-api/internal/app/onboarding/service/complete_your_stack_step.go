@@ -116,8 +116,10 @@ func (s *service) CompleteYourStackStep(ctx *gin.Context) {
 	}
 
 	_, err = s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: queue.ID,
-		Signal:  sig,
+		QueueID:   queue.ID,
+		OwnerID:   onboarding.ID,
+		OwnerType: plugins.TableName(s.db, app.Onboarding{}),
+		Signal:    sig,
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue create app signal: %w", err))

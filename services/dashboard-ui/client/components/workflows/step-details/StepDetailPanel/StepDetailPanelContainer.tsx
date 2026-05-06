@@ -19,7 +19,7 @@ import { StepDetailPanel } from './StepDetailPanel'
 
 type TPanelSize = IPanel['size']
 
-function getStepPanelSize(step: TWorkflowStep): TPanelSize {
+export function getStepPanelSize(step: TWorkflowStep): TPanelSize {
   if (
     step?.step_target_type === 'install_deploys' ||
     step?.step_target_type === 'install_sandbox_runs' ||
@@ -31,7 +31,7 @@ function getStepPanelSize(step: TWorkflowStep): TPanelSize {
   return 'half'
 }
 
-function getStepPanelDetails(step: TWorkflowStep): ReactNode {
+export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   if (step.step_target_type === 'install_action_workflow_runs') return <ActionRunStepDetails />
   if (step.step_target_type === 'install_deploys') return <DeployStepDetails />
   if (step.step_target_type === 'install_sandbox_runs') return <SandboxRunStepDetails />

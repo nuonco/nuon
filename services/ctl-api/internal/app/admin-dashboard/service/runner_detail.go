@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm/clause"
@@ -64,8 +63,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.RunnerDetail(view)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, view)
 }
 
 type dashboardUpsertConfigRequest struct {

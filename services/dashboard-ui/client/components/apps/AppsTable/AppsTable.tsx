@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CloudPlatform } from '@/components/common/CloudPlatform'
 import { Icon } from '@/components/common/Icon'
@@ -112,10 +113,16 @@ const columns: ColumnDef<TAppRow>[] = [
 interface IAppsTable {
   data: TAppRow[]
   isLoading: boolean
+  emptyStateAction?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
-export const AppsTable = ({ data, isLoading, pagination }: IAppsTable) => {
+export const AppsTable = ({
+  data,
+  isLoading,
+  emptyStateAction,
+  pagination,
+}: IAppsTable) => {
   if (isLoading) {
     return <AppsTableSkeleton />
   }
@@ -124,7 +131,13 @@ export const AppsTable = ({ data, isLoading, pagination }: IAppsTable) => {
     <Table<TAppRow>
       data={data}
       columns={columns}
-      emptyMessage="No applications found"
+      emptyStateProps={{
+        variant: 'app',
+        emptyTitle: 'No apps yet',
+        emptyMessage:
+          'An app is the configuration that gets deployed into your customers cloud accounts.',
+        action: emptyStateAction,
+      }}
       pagination={pagination}
       searchPlaceholder="Search app name..."
     />

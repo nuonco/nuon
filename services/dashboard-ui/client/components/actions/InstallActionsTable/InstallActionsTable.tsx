@@ -157,15 +157,21 @@ const columns: ColumnDef<InstallActionRow>[] = [
 
 interface IInstallActionsTable {
   data: InstallActionRow[]
+  isLoading?: boolean
   filterActions?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
 export const InstallActionsTable = ({
   data,
+  isLoading,
   filterActions,
   pagination,
 }: IInstallActionsTable) => {
+  if (isLoading) {
+    return <InstallActionsTableSkeleton />
+  }
+
   return (
     <Table<InstallActionRow>
       columns={columns}

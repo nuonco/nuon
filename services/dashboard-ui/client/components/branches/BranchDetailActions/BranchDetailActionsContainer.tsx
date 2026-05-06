@@ -3,7 +3,7 @@ import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useToast } from '@/hooks/use-toast'
 import { useBranch } from '@/hooks/use-branch'
-import type { TAppBranch, TAppBranchConfig } from '@/types'
+import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { triggerBranchRun } from '@/lib'
 import { EditBranchButton } from '@/components/branches/EditBranchNameModal'
 import { EditInstallGroupsButton } from '@/components/branches/EditInstallGroupsModal'
@@ -44,14 +44,8 @@ export const BranchDetailActionsContainer = ({
       )
       refresh()
     },
-    onError: (error: any) => {
-      const errorMessage =
-        typeof error === 'string'
-          ? error
-          : error.user_error ||
-            error.error ||
-            error.description ||
-            'Failed to trigger run'
+    onError: (error: TAPIError) => {
+      const errorMessage = error.error || 'Failed to trigger run'
       addToast(
         <Toast theme="error" heading="Failed to trigger run">
           <Text>{errorMessage}</Text>

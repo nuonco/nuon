@@ -51,7 +51,7 @@ func (s *service) RestartAllOrgs(ctx *gin.Context) {
 				ctx.Error(fmt.Errorf("unable to get org signals queue for org %s: %w", org.ID, err))
 				return
 			}
-			if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}); err != nil {
+			if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
 				ctx.Error(fmt.Errorf("enqueue signal for org %s: %w", org.ID, err))
 				return
 			}

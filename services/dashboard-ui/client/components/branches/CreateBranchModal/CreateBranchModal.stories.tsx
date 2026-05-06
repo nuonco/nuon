@@ -7,14 +7,29 @@ import { CreateBranchModal } from './CreateBranchModal'
 
 const noop = () => {}
 
+const defaultVcsProps = {
+  repos: [],
+  branches: [],
+  loadingRepos: false,
+  loadingBranches: false,
+  reposError: null,
+  branchesError: null,
+  selectedVcsConnectionId: '',
+  onVcsConnectionChange: noop,
+  selectedRepo: null,
+  onRepoChange: noop,
+  selectedBranch: 'main',
+  onBranchChange: noop,
+}
+
 export const Default = () => (
   <ModalStory>
     <CreateBranchModal
-      orgId="org-1"
       vcsConnections={[]}
       isSubmitting={false}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
     />
   </ModalStory>
 )
@@ -22,7 +37,6 @@ export const Default = () => (
 export const WithVCSConnection = () => (
   <ModalStory>
     <CreateBranchModal
-      orgId="org-1"
       vcsConnections={[
         {
           id: 'conn-1',
@@ -33,6 +47,8 @@ export const WithVCSConnection = () => (
       isSubmitting={false}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
+      selectedVcsConnectionId="conn-1"
     />
   </ModalStory>
 )
@@ -40,7 +56,6 @@ export const WithVCSConnection = () => (
 export const MultipleVCSConnections = () => (
   <ModalStory>
     <CreateBranchModal
-      orgId="org-1"
       vcsConnections={[
         {
           id: 'conn-1',
@@ -56,6 +71,8 @@ export const MultipleVCSConnections = () => (
       isSubmitting={false}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
+      selectedVcsConnectionId="conn-1"
     />
   </ModalStory>
 )
@@ -63,11 +80,11 @@ export const MultipleVCSConnections = () => (
 export const Submitting = () => (
   <ModalStory>
     <CreateBranchModal
-      orgId="org-1"
       vcsConnections={[]}
       isSubmitting={true}
       onSubmit={noop}
       onCancel={noop}
+      {...defaultVcsProps}
     />
   </ModalStory>
 )

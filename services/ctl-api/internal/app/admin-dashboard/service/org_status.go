@@ -3,14 +3,11 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
-// OrgStatus returns just the status badge for htmx polling
+// OrgStatus returns the org status as JSON
 func (s *service) OrgStatus(c *gin.Context) {
 	ctx := c.Request.Context()
 	orgID := c.Param("id")
@@ -26,7 +23,8 @@ func (s *service) OrgStatus(c *gin.Context) {
 		return
 	}
 
-	// Return just the status badge component
-	component := views.OrgStatusBadge(org.ID, org.Status, org.StatusDescription)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"status":             org.Status,
+		"status_description": org.StatusDescription,
+	})
 }

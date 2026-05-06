@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/dominikbraun/graph/draw"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -17,7 +16,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const orgInstallsPerPage = 8
@@ -79,8 +77,15 @@ func (s *service) OrgDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.OrgDetail(org, installs, recentApp, graphDot, s.cfg.AppURL, page, installsTotalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"org":                  org,
+		"installs":             installs,
+		"recent_app":           recentApp,
+		"graph_dot":            graphDot,
+		"app_url":              s.cfg.AppURL,
+		"page":                 page,
+		"installs_total_pages": installsTotalPages,
+	})
 }
 
 func (s *service) getOrg(ctx context.Context, orgID string) (*app.Org, error) {

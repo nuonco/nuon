@@ -13,6 +13,8 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 var _ interceptor.ActivityInboundInterceptor = (*actInterceptor)(nil)
@@ -41,6 +43,17 @@ func (a *actInterceptor) ExecuteActivity(
 		"namespace":     info.WorkflowNamespace,
 		"workflow_type": info.WorkflowType.Name,
 	}
+
+	// Inject a MetricContext so the GORM metrics plugin can emit per-query metrics
+	// from worker activities (same key used by HTTP middleware).
+	metricCtx := &cctx.MetricContext{
+		Endpoint:   info.ActivityType.Name,
+		Method:     "temporal",
+		RequestURI: info.WorkflowType.Name,
+		Context:    "worker",
+		SignalType: info.ActivityType.Name,
+	}
+	ctx = context.WithValue(ctx, keys.MetricsKey, metricCtx)
 
 	// NOTE(jm): we emit from a defer, so we can catch any type of panic and still emit metrics.
 	defer func() {

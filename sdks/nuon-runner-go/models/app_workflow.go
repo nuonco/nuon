@@ -75,6 +75,13 @@ type AppWorkflow struct {
 	// owner id
 	OwnerID string `json:"owner_id,omitempty"`
 
+	// OwnerName is a derived, non-persisted convenience field. It is
+	// populated by activities that need a human-readable owner label
+	// (e.g. workflow lifecycle webhooks) via a small switch on OwnerType
+	// — see PkgWorkflowsFlowGetFlow. Empty unless the loading path
+	// explicitly fills it.
+	OwnerName string `json:"owner_name,omitempty"`
+
 	// owner type
 	OwnerType string `json:"owner_type,omitempty"`
 

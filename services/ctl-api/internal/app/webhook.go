@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
 )
 
 type Webhook struct {
@@ -20,6 +21,15 @@ type Webhook struct {
 
 	WebhookURL    string `json:"webhook_url,omitzero" gorm:"notnull;uniqueIndex:idx_webhooks_org_url" temporaljson:"webhook_url,omitzero,omitempty"`
 	WebhookSecret string `json:"-" temporaljson:"webhook_secret,omitzero,omitempty"`
+
+	// Interests is the per-webhook event filter. Stored as JSONB; the same
+	// shape is used by other notification surfaces (see internal/pkg/interests).
+	// New rows default to AllEvents=true via the create handler when the
+	// request omits the field. Pre-existing rows whose JSONB column is
+	// NULL/empty are treated as AllEvents=true at delivery time by the
+	// dispatcher in internal/pkg/queue/signal/hooks/webhook.go, so legacy
+	// webhooks keep receiving every supported event without a backfill.
+	Interests interests.Interests `json:"interests,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"interests,omitzero,omitempty"`
 }
 
 func (Webhook) TableName() string {

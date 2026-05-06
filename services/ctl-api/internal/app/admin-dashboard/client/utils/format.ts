@@ -1,0 +1,48 @@
+import { DateTime, Duration } from 'luxon'
+
+export function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return '-'
+  const dt = DateTime.fromISO(dateStr)
+  return dt.isValid ? dt.toFormat('yyyy-MM-dd HH:mm:ss') : dateStr
+}
+
+export function formatRelativeDate(dateStr: string | undefined): string {
+  if (!dateStr) return '-'
+  const dt = DateTime.fromISO(dateStr)
+  if (!dt.isValid) return dateStr
+  return dt.toRelative() ?? dt.toFormat('yyyy-MM-dd HH:mm:ss')
+}
+
+export function formatDuration(nanos: number | undefined): string {
+  if (!nanos) return '-'
+  const dur = Duration.fromMillis(nanos / 1_000_000)
+  if (dur.as('seconds') < 1) return `${Math.round(dur.as('milliseconds'))}ms`
+  if (dur.as('minutes') < 1) return `${Math.round(dur.as('seconds'))}s`
+  if (dur.as('hours') < 1) return dur.toFormat("m'm' s's'")
+  return dur.toFormat("h'h' m'm'")
+}
+
+// DEPRECATED: truncateId is pretty much redundant atm, it just returns same value,
+// it was added to truncate long ids but needed anymore. Usage to be removed.
+export function truncateId(id: string, _len = 12): string {
+  if (!id) return '-'
+  return id
+}
+
+export function statusColor(status: string | undefined): string {
+  if (!status) return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+  const s = status.toLowerCase()
+  if (s.includes('running') || s.includes('active') || s.includes('online') || s.includes('healthy') || s.includes('completed') || s.includes('success')) {
+    return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200'
+  }
+  if (s.includes('failed') || s.includes('error') || s.includes('offline') || s.includes('unhealthy')) {
+    return 'bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200'
+  }
+  if (s.includes('pending') || s.includes('queued') || s.includes('waiting')) {
+    return 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-200'
+  }
+  if (s.includes('cancel')) {
+    return 'bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200'
+  }
+  return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+}

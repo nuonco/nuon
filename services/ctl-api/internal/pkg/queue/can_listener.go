@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	canMinInterval = 2 * time.Minute
-	canMaxJitter   = 3 * time.Minute // interval is 2-5 minutes
-	canStartJitter = 60              // seconds of initial jitter
-	canHistoryMax  = 10000
+	canDefaultHintPeriod = 3 * time.Minute // fallback when config is unset
+	canStartJitter       = 60              // seconds of initial jitter
+	canHistoryMax        = 10000
 )
 
 func (q *queue) startCANListener(ctx workflow.Context) {
@@ -29,7 +28,16 @@ func (q *queue) startCANListener(ctx workflow.Context) {
 		}
 
 		for {
-			interval := canMinInterval + time.Duration(rand.Intn(int(canMaxJitter.Seconds())))*time.Second
+			hintPeriod := canDefaultHintPeriod
+			if q.cfg != nil && q.cfg.QueueContinueAsNewHintPeriod > 0 {
+				hintPeriod = q.cfg.QueueContinueAsNewHintPeriod
+			}
+			// Add up to 50% jitter to avoid thundering herd.
+			jitterMax := int(hintPeriod.Seconds() / 2)
+			if jitterMax < 1 {
+				jitterMax = 1
+			}
+			interval := hintPeriod + time.Duration(rand.Intn(jitterMax))*time.Second
 			if err := workflow.Sleep(gCtx, interval); err != nil {
 				return
 			}

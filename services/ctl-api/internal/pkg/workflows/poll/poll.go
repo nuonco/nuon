@@ -42,6 +42,11 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 	currentIteration := 0
 	currentInterval := opts.InitialInterval
 	for {
+		// Check for context cancellation before each iteration
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		currentIteration++
 
 		err := opts.Fn(ctx)
@@ -58,6 +63,10 @@ func Poll(ctx workflow.Context, v *validator.Validate, opts PollOpts) error {
 			}
 		}
 		if err := workflow.Sleep(ctx, currentInterval); err != nil {
+			// If sleep was interrupted by cancellation, exit immediately
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 			return errors.Wrap(err, "sleep failed")
 		}
 

@@ -47,6 +47,11 @@ const navLinks: TNavItem[] = [
     iconVariant: 'HouseSimple' as const,
     text: 'Overview',
   },
+  {
+    path: `/workflows`,
+    iconVariant: 'TreeStructure' as const,
+    text: 'Workflows',
+  },
   { type: 'section', label: 'App' },
   {
     path: `/stacks`,
@@ -78,11 +83,6 @@ const navLinks: TNavItem[] = [
     path: `/actions`,
     iconVariant: 'TerminalWindow' as const,
     text: 'Actions',
-  },
-  {
-    path: `/workflows`,
-    iconVariant: 'TreeStructure' as const,
-    text: 'Workflows',
   },
   {
     path: `/runner`,

@@ -4,12 +4,10 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const signalsPerPage = 20
@@ -51,6 +49,10 @@ func (s *service) QueueSignalsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.QueueSignalsTable(signals, queueID, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":     signals,
+		"queue_id":    queueID,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }

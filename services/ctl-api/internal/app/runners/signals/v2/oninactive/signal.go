@@ -17,10 +17,29 @@ type Signal struct {
 	Reason    string `json:"reason"`
 }
 
-var _ signal.Signal = (*Signal)(nil)
+var (
+	_ signal.Signal                     = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+// LifecycleContext exposes runner identity to the queue dispatcher so that
+// lifecycle hooks (webhook, Slack) and the interests classifier can fan this
+// event out as `op:runners.inactive` to subscribers. The signal continues to
+// do its real work in Execute (terminating the per-process queue); the
+// lifecycle context only opts it into the notification pipeline.
+//
+// OrgID is filled in by the queue handler from the queue signal record, so we
+// only need to populate Operation + OwnerID/OwnerType here.
+func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
+	return signal.SignalLifecycleContext{
+		Operation: "runner-inactive",
+		OwnerID:   s.RunnerID,
+		OwnerType: "runners",
+	}
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

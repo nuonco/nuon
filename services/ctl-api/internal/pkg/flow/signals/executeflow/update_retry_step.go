@@ -136,6 +136,12 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		}, nil
 	}
 
+	// Group succeeded — wake the main flow loop so it continues from the next group.
+	s.resumeRequested = true
+	s.resumeRunType = app.WorkflowRunTypeRetry
+	s.resumeStepID = req.StepID
+	s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID) + 1
+
 	return &RetryStepResponse{
 		WorkflowID: s.WorkflowID,
 		Retryable:  true,

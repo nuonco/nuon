@@ -3,10 +3,7 @@ package service
 import (
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) TemporalWorkflowViewer(c *gin.Context) {
@@ -14,9 +11,7 @@ func (s *service) TemporalWorkflowViewer(c *gin.Context) {
 	workflowID := c.Query("workflow_id")
 
 	if namespace == "" || workflowID == "" {
-		// Show search form
-		component := views.TemporalWorkflowSearch(namespace, workflowID)
-		templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "namespace and workflow_id are required"})
 		return
 	}
 
@@ -26,6 +21,10 @@ func (s *service) TemporalWorkflowViewer(c *gin.Context) {
 		return
 	}
 
-	component := views.TemporalWorkflowDetail(namespace, workflowID, s.cfg.TemporalUIURL, wfInfo)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"namespace":       namespace,
+		"workflow_id":     workflowID,
+		"temporal_ui_url": s.cfg.TemporalUIURL,
+		"workflow_info":   wfInfo,
+	})
 }

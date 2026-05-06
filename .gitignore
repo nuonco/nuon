@@ -93,3 +93,5 @@ bins/lsp/lsp
 ws-*/
 agent-day2/
 agent-day2/*
+sdks/nuon-go/models/cctx_signal_context.go
+sdks/nuon-runner-go/models/cctx_signal_context.go

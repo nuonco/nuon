@@ -56,9 +56,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
-	// For adhoc runs, workflowCfg is nil - use a default timeout
-	timeout := 5 * time.Minute // default timeout
-	if h.state.workflowCfg != nil {
+	timeout := 5 * time.Minute
+	if h.state.plan.Timeout > 0 {
+		timeout = h.state.plan.Timeout
+	} else if h.state.workflowCfg != nil && h.state.workflowCfg.Timeout > 0 {
 		timeout = time.Duration(h.state.workflowCfg.Timeout)
 	}
 	execCtx, cancel := context.WithTimeout(ctx, timeout)

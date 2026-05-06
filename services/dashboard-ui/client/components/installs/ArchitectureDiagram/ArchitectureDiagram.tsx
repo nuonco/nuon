@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { ReactFlow, useReactFlow, ReactFlowProvider, type ReactFlowInstance } from '@xyflow/react'
 import { toPng } from 'html-to-image'
 import '@xyflow/react/dist/style.css'
@@ -48,6 +48,8 @@ const DiagramCanvas = ({
   isLoading,
   isError,
 }: IArchitectureDiagram) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const nodes = useMemo(() => {
     if (!install || !components) return []
     return computeLayout({
@@ -67,7 +69,9 @@ const DiagramCanvas = ({
   }, [])
 
   const handleExportPng = useCallback(() => {
-    const el = document.querySelector('.react-flow') as HTMLElement
+    const el = containerRef.current?.querySelector('.react-flow') as
+      | HTMLElement
+      | null
     if (!el) return
 
     toPng(el, { cacheBust: true, pixelRatio: 2 })
@@ -136,6 +140,7 @@ const DiagramCanvas = ({
 
   return (
     <div
+      ref={containerRef}
       className="w-full h-full min-h-[420px] relative [&_.react-flow__node]:!cursor-default [&_.react-flow__pane]:!cursor-default"
       style={{ background: 'var(--background-neutral)' }}
     >

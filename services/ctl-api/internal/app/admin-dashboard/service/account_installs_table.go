@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) AccountInstallsTable(c *gin.Context) {
@@ -23,6 +20,10 @@ func (s *service) AccountInstallsTable(c *gin.Context) {
 		return
 	}
 
-	component := views.AccountInstallsTable(accountID, installs, page, installsTotalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"account_id":  accountID,
+		"installs":    installs,
+		"page":        page,
+		"total_pages": installsTotalPages,
+	})
 }

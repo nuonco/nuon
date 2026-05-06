@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { Icon } from '@/components/common/Icon'
@@ -6,48 +7,8 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { PolicyReportPanelButton } from '@/components/policies/PolicyReportPanel'
-import type { TPolicyReport, TPolicyResult } from '@/types'
-
-function formatOwnerType(ownerType: string): {
-  label: string
-  theme: 'info' | 'brand' | 'neutral'
-} {
-  switch (ownerType) {
-    case 'install_deploys':
-      return { label: 'Deploy', theme: 'info' }
-    case 'install_sandbox_runs':
-      return { label: 'Sandbox', theme: 'brand' }
-    case 'component_builds':
-      return { label: 'Build', theme: 'neutral' }
-    default:
-      return { label: ownerType, theme: 'neutral' }
-  }
-}
-
-function getOverallStatusBadge(report: TPolicyReport) {
-  if ((report.deny_count || 0) > 0) {
-    return (
-      <Badge theme="error" size="md">
-        <Icon variant="XCircle" size={12} />
-        Denied
-      </Badge>
-    )
-  }
-  if ((report.warn_count || 0) > 0) {
-    return (
-      <Badge theme="warn" size="md">
-        <Icon variant="Warning" size={12} />
-        Warning
-      </Badge>
-    )
-  }
-  return (
-    <Badge theme="success" size="md">
-      <Icon variant="CheckCircle" size={12} />
-      Passed
-    </Badge>
-  )
-}
+import { cn } from '@/utils/classnames'
+import type { TPolicyReport, TPolicyResult, TPolicyViolation } from '@/types'
 
 function getPolicyStatusBadge(policy: TPolicyResult) {
   if (policy.status === 'deny') {
@@ -74,45 +35,168 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
   )
 }
 
+interface IPolicyRow {
+  policy: TPolicyResult
+  policyName: string
+  orgId: string
+  appId?: string
+  violations: TPolicyViolation[]
+}
+
+function PolicyRow({
+  policy,
+  policyName,
+  orgId,
+  appId,
+  violations,
+}: IPolicyRow) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const hasViolations = violations.length > 0
+
+  const toggle = () => {
+    if (hasViolations) setIsExpanded((p) => !p)
+  }
+
+  return (
+    <div className="flex flex-col">
+      <div
+        role={hasViolations ? 'button' : undefined}
+        tabIndex={hasViolations ? 0 : undefined}
+        aria-expanded={hasViolations ? isExpanded : undefined}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          if (!hasViolations) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            toggle()
+          }
+        }}
+        className={cn(
+          'flex items-center justify-between gap-4 px-4 py-3 outline-none',
+          hasViolations && 'cursor-pointer'
+        )}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="min-w-0 truncate">
+            {policy.policy_id && appId ? (
+              <Link
+                href={`/${orgId}/apps/${appId}/policies/${policy.policy_id}`}
+                className="hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Text variant="body" className="truncate">
+                  {policyName}
+                </Text>
+              </Link>
+            ) : (
+              <Text variant="body" className="truncate">
+                {policyName}
+              </Text>
+            )}
+          </div>
+          <div className="shrink-0">{getPolicyStatusBadge(policy)}</div>
+        </div>
+
+        {hasViolations ? (
+          <Icon
+            variant={isExpanded ? 'CaretUp' : 'CaretDown'}
+            size={16}
+            className="shrink-0"
+          />
+        ) : null}
+      </div>
+
+      {isExpanded && hasViolations ? (
+        <div className="px-4 pb-3 space-y-2">
+          {violations.map((violation, index) => {
+            const isDeny = violation.severity === 'deny'
+            return (
+              <div
+                key={`${policy.policy_id}-${index}`}
+                className={cn(
+                  'flex items-start gap-2 rounded-md p-3',
+                  isDeny
+                    ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                    : 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
+                )}
+              >
+                <Icon
+                  variant={isDeny ? 'XCircle' : 'Warning'}
+                  size={14}
+                  className="mt-0.5 shrink-0"
+                />
+                <div className="flex flex-col gap-1 min-w-0">
+                  <Text variant="subtext">
+                    {violation.message ||
+                      (isDeny ? 'Policy check failed' : 'Policy warning')}
+                  </Text>
+                  {violation.input_identity ? (
+                    <Text
+                      variant="subtext"
+                      theme="neutral"
+                      className="text-xs"
+                    >
+                      Input: {violation.input_identity}
+                    </Text>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 interface IPolicyReportGroup {
   report: TPolicyReport
   orgId: string
   policyNameMap: Map<string, string>
+  variant?: 'card' | 'embedded'
 }
 
-export function PolicyReportGroup({ report, orgId, policyNameMap }: IPolicyReportGroup) {
-  const { label: ownerTypeLabel, theme: ownerTypeTheme } = formatOwnerType(
-    report.owner_type || ''
-  )
+export function PolicyReportGroup({
+  report,
+  orgId,
+  policyNameMap,
+  variant = 'card',
+}: IPolicyReportGroup) {
   const policies = report.policies || []
+  const allViolations = report.violations || []
+  const isEmbedded = variant === 'embedded'
 
-  return (
-    <Card className="!p-0 !gap-0 overflow-hidden">
-      <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
+  const content = (
+    <>
+      <div
+        className={cn(
+          'flex items-center justify-between p-4',
+          policies.length > 0 &&
+            'border-b border-cool-grey-200 dark:border-dark-grey-600'
+        )}
+      >
         <div className="flex items-center gap-6 min-w-0">
           <div className="flex flex-col gap-0.5 min-w-0">
-            <Text weight="strong" variant="body">
-              {report.component_name ? `Component - ${report.component_name}` : 'Sandbox'}
+            <Text weight="strong" variant="body" className="truncate">
+              {report.component_name
+                ? `Component - ${report.component_name}`
+                : 'Sandbox'}
             </Text>
-            <ID>{report.id || ''}</ID>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Text variant="subtext" theme="neutral">Type:</Text>
-            <Badge theme={ownerTypeTheme} size="md">
-              {ownerTypeLabel}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Text variant="subtext" theme="neutral">Status:</Text>
-            {getOverallStatusBadge(report)}
+            {!isEmbedded ? <ID>{report.id || ''}</ID> : null}
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Time
+            variant="subtext"
+            theme="neutral"
             time={report.evaluated_at || ''}
             format="relative"
           />
-          <PolicyReportPanelButton report={report} orgId={orgId} policyNameMap={policyNameMap} />
+          <PolicyReportPanelButton
+            report={report}
+            orgId={orgId}
+            policyNameMap={policyNameMap}
+          />
         </div>
       </div>
 
@@ -122,59 +206,32 @@ export function PolicyReportGroup({ report, orgId, policyNameMap }: IPolicyRepor
             const policyName =
               policy.policy_name ||
               (policy.policy_id && policyNameMap.get(policy.policy_id)) ||
-              policy.policy_id
-
+              policy.policy_id ||
+              'Unknown policy'
+            const policyViolations = allViolations.filter(
+              (v) => v.policy_id === policy.policy_id
+            )
             return (
-            <div
-              key={policy.policy_id}
-              className="flex items-center justify-between px-4 py-3"
-            >
-              <div className="flex flex-col gap-0.5 min-w-0">
-                {policy.policy_id && report.app_id ? (
-                  <Link
-                    href={`/${orgId}/apps/${report.app_id}/policies/${policy.policy_id}`}
-                    className="hover:underline"
-                  >
-                    <Text variant="body">
-                      {policyName}
-                    </Text>
-                  </Link>
-                ) : (
-                  <Text variant="body">
-                    {policyName}
-                  </Text>
-                )}
-              </div>
-              <div className="flex items-center gap-4 shrink-0">
-                {(policy.deny_count || 0) > 0 && (
-                  <Text
-                    variant="subtext"
-                    className="text-red-600 dark:text-red-400"
-                  >
-                    {policy.deny_count} {policy.deny_count === 1 ? 'deny' : 'denies'}
-                  </Text>
-                )}
-                {(policy.warn_count || 0) > 0 && (
-                  <Text
-                    variant="subtext"
-                    className="text-orange-600 dark:text-orange-400"
-                  >
-                    {policy.warn_count} {policy.warn_count === 1 ? 'warning' : 'warnings'}
-                  </Text>
-                )}
-                {getPolicyStatusBadge(policy)}
-              </div>
-            </div>
+              <PolicyRow
+                key={policy.policy_id}
+                policy={policy}
+                policyName={policyName}
+                orgId={orgId}
+                appId={report.app_id}
+                violations={policyViolations}
+              />
             )
           })}
         </div>
-      ) : (
-        <div className="px-4 py-3">
-          <Text variant="subtext" theme="neutral">
-            No individual policy results available.
-          </Text>
-        </div>
-      )}
-    </Card>
+      ) : null}
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div className="flex flex-col">{content}</div>
+  }
+
+  return (
+    <Card className="!p-0 !gap-0 overflow-hidden">{content}</Card>
   )
 }

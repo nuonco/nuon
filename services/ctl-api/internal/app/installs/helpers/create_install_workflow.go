@@ -63,17 +63,28 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 		approvalOption = installConfig.ApprovalOption
 	}
 
+	// Label the approval source so the UI can show where auto-approve came from
+	if approvalOption == app.InstallApprovalOptionApproveAll {
+		metadata["approval_type"] = "install-config"
+	}
+
 	metadata["install_id"] = installID
 	var install app.Install
 	if res := s.db.WithContext(ctx).Where("id = ?", installID).First(&install); res.Error == nil && install.Name != "" {
 		metadata[app.WorkflowMetadataKeyOwnerName] = install.Name
 	}
+
+	status := app.NewCompositeStatus(ctx, app.StatusPending)
+	if approvalOption == app.InstallApprovalOptionApproveAll {
+		status.Metadata["approval_type"] = "install-config"
+	}
+
 	installWorkflow := app.Workflow{
 		Type:      workflowType,
 		OwnerID:   installID,
 		OwnerType: "installs",
 		Metadata:  generics.ToHstore(metadata),
-		Status:    app.NewCompositeStatus(ctx, app.StatusPending),
+		Status:    status,
 		// DEPRECATED: for now we always abort on step errors
 		StepErrorBehavior: app.StepErrorBehaviorAbort,
 		ApprovalOption:    approvalOption,

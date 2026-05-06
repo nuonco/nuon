@@ -41,6 +41,21 @@ type Signal struct {
 	TargetQueueName string `json:"target_queue_name"`
 	Parallel        bool   `json:"parallel"`
 
+	// WorkflowType identifies the kind of workflow that owns this group. Set
+	// at dispatch time from the in-scope *app.Workflow and forwarded to each
+	// child execute-workflow-step signal so the workflow_step lifecycle
+	// hook can suppress events for envelope workflows like drift_run /
+	// drift_run_reprovision_sandbox without a DB lookup.
+	WorkflowType string `json:"workflow_type,omitempty"`
+
+	// OrgID / OrgName / OwnerName are pass-through fields stamped by the
+	// parent execute-workflow signal. They are forwarded to the step signal
+	// at dispatch time so workflow_step lifecycle webhook payloads carry
+	// human-readable names without a per-event DB lookup.
+	OrgID     string `json:"org_id,omitempty"`
+	OrgName   string `json:"org_name,omitempty"`
+	OwnerName string `json:"owner_name,omitempty"`
+
 	// finished is set when Execute() completes (success or error). The
 	// group-finished update handler blocks until this is true, then returns
 	// the group's final directive.
@@ -73,6 +88,9 @@ type Signal struct {
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithUpdateHandlers = (*Signal)(nil)
+var _ signal.SignalWithTimeout = (*Signal)(nil)
+
+func (s *Signal) Timeout() time.Duration { return 180 * 24 * time.Hour }
 
 func (s *Signal) Type() signal.SignalType   { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }

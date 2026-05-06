@@ -43,5 +43,8 @@ func (s *service) DirectExecuteSignal(c *gin.Context) {
 		zap.String("queue_id", queueID),
 		zap.String("signal_id", resp.QueueSignalID))
 
-	c.Redirect(http.StatusSeeOther, "/queues/"+queueID+"/signals/"+signalID)
+	c.JSON(http.StatusOK, gin.H{
+		"status":          "direct-executed",
+		"queue_signal_id": resp.QueueSignalID,
+	})
 }

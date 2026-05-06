@@ -73,6 +73,14 @@ export const HelpModal = ({ ...props }: IModal) => {
           </Keys>
         ),
       },
+      {
+        shortcut: 'Cycle log lines (when log panel is open)',
+        keys: (
+          <Keys>
+            <Kbd>↑</Kbd> <Kbd>↓</Kbd> or <Kbd>K</Kbd> <Kbd>J</Kbd>
+          </Keys>
+        ),
+      },
     ],
     [mod, alt, shift]
   )

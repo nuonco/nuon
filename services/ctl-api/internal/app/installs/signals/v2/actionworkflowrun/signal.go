@@ -24,6 +24,8 @@ import (
 const SignalType signal.SignalType = "install-action-workflow-run"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallID               string
 	InstallWorkflowID       string
 	WorkflowStepID          string
@@ -54,8 +56,10 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
-		InstallID: &s.InstallID,
-		Operation: "action-workflow-run",
+		InstallID:    &s.InstallID,
+		Operation:    "action-workflow-run",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 
@@ -142,6 +146,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to create action workflow run")
 	}
 
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			s.updateActionRunStatus(updateCtx, actionWorkflowRun.ID, app.InstallActionRunStatusCancelled, "action workflow run cancelled")
+		}
+	}()
+
 	if s.WorkflowStepID != "" {
 		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 			StepID:         s.WorkflowStepID,
@@ -168,6 +180,14 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get adhoc action run")
 	}
+
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			s.updateActionRunStatus(updateCtx, run.ID, app.InstallActionRunStatusCancelled, "adhoc action workflow run cancelled")
+		}
+	}()
 
 	if s.WorkflowStepID != "" {
 		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{

@@ -350,8 +350,10 @@ Notice the inputs you defined in the `inputs.toml` file are displayed here,
 allowing the customer to enter their own values.
 
 After entering the inputs, click the Create Install button at the bottom of the
-page to start the Workflow including the creation of an AWS CloudFormation stack
-link for the customer to open in their AWS account.
+page to start the Workflow. The provision workflow generates two install stack
+formats — a CloudFormation Quick-Create / CLI snippet, and a Terraform
+`install.tfvars` for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks)
+module — so the customer can apply whichever fits their tooling.
 
 ![Create Install](/images/get-started/create-your-first-app/tutorial-4.jpeg)
 
@@ -362,23 +364,40 @@ install's workflow in the dashboard.
 
 ![Install List](/images/get-started/create-your-first-app/tutorial-9.jpeg)
 
-### Create the CloudFormation Stack in AWS
+### Apply the Install Stack in AWS
 
-Click or copy the CloudFormation link to open it in your AWS account. You will
-need to log in to your AWS account if you are not already logged in. This
-creates a VPC, required policies that Nuon expects, an Autoscaling Group, a VM
-with Docker and a container that installs the Nuon Build Runner in your AWS
-account, which will be used to provision the install of your app. Scroll down to
-the bottom of the page, accept the defaults, and click the Create Stack button.
+Apply the install stack using whichever format fits your workflow. Either way,
+the resulting resources are the same: a VPC, the IAM policies Nuon expects, an
+Autoscaling Group, and a VM running the Nuon Build Runner that will provision
+the install of your app.
+
+#### Option A: CloudFormation
+
+Click or copy the CloudFormation Quick-Create link to open it in your AWS
+account, log in, scroll to the bottom, accept the defaults, and click **Create
+Stack**.
 
 ![CloudFormation Stack](/images/get-started/create-your-first-app/tutorial-7.jpeg)
 
-### Monitor the CloudFormation Stack creation in AWS
+#### Option B: Terraform
 
-Monitor the CloudFormation stack creation in the AWS console. This will take a
-few minutes to complete. You can also pull up the AWS EC2 console and see the
-EC2 VM appear at some point with the install id in its name. The Nuon Dashboard
-will not provide feedback until the runner is up and connected to Nuon.
+Download the generated `install.tfvars` from the dashboard, set up a `backend.tf`
+(snippet provided in the dashboard), and run:
+
+```sh
+terraform init
+terraform apply -var-file=install.tfvars
+```
+
+against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module.
+
+### Monitor the Install Stack creation in AWS
+
+Monitor the stack creation in the AWS console (CloudFormation) or the Terraform
+output. This takes a few minutes to complete. You can also pull up the AWS EC2
+console and see the EC2 VM appear with the install id in its name.
+The Nuon Dashboard will not provide feedback until the runner is up and
+connected to Nuon.
 
 ![Stack Log](/images/get-started/create-your-first-app/tutorial-8.jpeg)
 
@@ -429,12 +448,13 @@ X-Forwarded-Port: 443
 
 ## Deprovision the Install
 
-Nuon is mindful of your public cloud spend, so provide the following
+Nuon is mindful of your public cloud spend, so we provide the following
 deprovisioning steps. Deprovisioning the Install is a two-step process. First,
 you need to deprovision the install in the Nuon dashboard, which will
 deprovision the resources to install your App. Once that is completed
-successfully, you then need to delete the CloudFormation stack in the AWS
-console, which removes the Build Runner by destroying the EC2 VM, ASG, and VPC.
+successfully, tear down the install stack — delete the CloudFormation stack in
+the AWS console, or run `terraform destroy` against the install module — to
+remove the Build Runner by destroying the EC2 VM, ASG, and VPC.
 
 <Note>
 	Be sure to back up any data you want to keep before deprovisioning the
@@ -451,8 +471,9 @@ all resources created by the install, including the EKS cluster, ALB,
 certificates, and Route53 DNS records.
 
 <Note>
-	You still have to delete the CloudFormation stack in the AWS console after
-	running this script to remove the runner, ASG, EC2 VM, and VPC.
+	You still have to tear down the install stack — delete the CloudFormation
+	stack in the AWS console, or run `terraform destroy` against the install
+	module — after running this script to remove the runner, ASG, EC2 VM, and VPC.
 </Note>
 
 ## Wrapping Up and Next Steps

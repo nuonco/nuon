@@ -37,7 +37,7 @@ const BranchConfigsContent = () => {
         ]}
       />
       <Text variant="h3" weight="strong">
-        Branch Configs
+        Branch configs
       </Text>
       <Text variant="body">
         {configs?.length || 0} config{configs?.length !== 1 ? 's' : ''} found

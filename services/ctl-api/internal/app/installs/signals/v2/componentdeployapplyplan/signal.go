@@ -25,6 +25,8 @@ import (
 const SignalType signal.SignalType = "component-deploy-apply-plan"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallComponentID    string
 	InstallID             string
 	ComponentID           string
@@ -54,10 +56,12 @@ var (
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
+	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
 )
 
-func (s *Signal) AutoRetry() bool { return true }
-func (s *Signal) MaxRetries() int { return 15 }
+func (s *Signal) AutoRetry() bool  { return true }
+func (s *Signal) MaxRetries() int  { return 15 }
+func (s *Signal) RetryGroup() bool { return true }
 
 func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
@@ -122,10 +126,12 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		componentID = nil
 	}
 	return signal.SignalLifecycleContext{
-		InstallID:   installID,
-		ComponentID: componentID,
-		Operation:   "component-deploy",
-		Stage:       "apply",
+		InstallID:    installID,
+		ComponentID:  componentID,
+		Operation:    "component-deploy",
+		Stage:        "apply",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 
@@ -153,6 +159,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateDeployStatus(ctx, "", app.InstallDeployStatusError, "unable to get install deploy from previous step")
 		return errors.Wrap(err, "unable to get install deploy")
 	}
+
+	defer func() {
+		if errors.Is(workflow.ErrCanceled, ctx.Err()) {
+			updateCtx, updateCtxCancel := workflow.NewDisconnectedContext(ctx)
+			defer updateCtxCancel()
+			s.updateDeployStatus(updateCtx, installDeploy.ID, app.InstallDeployStatusCancelled, "deploy apply cancelled")
+		}
+	}()
 
 	ctx = cctx.SetLogStreamWorkflowContext(ctx, &installDeploy.LogStream)
 	l, err := log.WorkflowLogger(ctx)

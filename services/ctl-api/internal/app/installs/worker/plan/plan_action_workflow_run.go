@@ -106,6 +106,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	}
 
 	if !run.ActionWorkflowConfigID.Empty() {
+		if run.ActionWorkflowConfig.Timeout > 0 {
+			plan.Timeout = run.ActionWorkflowConfig.Timeout
+		}
 		for idx, stepCfg := range run.Steps {
 			l.Debug(fmt.Sprintf("creating plan for step %d", idx))
 			stepPlan, err := p.createStepPlan(ctx, &stepCfg, stateMap, run.InstallID)
@@ -116,6 +119,9 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 			plan.Steps = append(plan.Steps, stepPlan)
 		}
 	} else {
+		if run.Timeout > 0 {
+			plan.Timeout = run.Timeout
+		}
 		stepPlan, err := p.createAdhocStepPlan(ctx, &run.Steps[0], stateMap, run.InstallID)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, fmt.Sprintf("unable to create adhoc step plan"))

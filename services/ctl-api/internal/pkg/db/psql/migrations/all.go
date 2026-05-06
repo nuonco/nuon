@@ -68,5 +68,13 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "098-backfill-queue-signal-enqueue-finished-at",
 			Fn:   m.Migration098BackfillQueueSignalEnqueueFinishedAt,
 		},
+		{
+			Name: "099-app-config-backfill-status-v2",
+			Fn:   m.Migration099AppConfigBackfillStatusV2,
+		},
+		{
+			Name: "100-fix-approval-option-default",
+			Fn:   m.Migration100FixApprovalOptionDefault,
+		},
 	}
 }

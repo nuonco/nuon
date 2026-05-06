@@ -54,6 +54,9 @@ type PlantypesActionWorkflowRunPlan struct {
 
 	// steps
 	Steps []*PlantypesActionWorkflowRunStepPlan `json:"steps"`
+
+	// timeout
+	Timeout int64 `json:"timeout,omitempty"`
 }
 
 // Validate validates this plantypes action workflow run plan

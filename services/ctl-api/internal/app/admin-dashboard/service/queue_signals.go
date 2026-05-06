@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const queueSignalsPerPage = 100
@@ -25,8 +23,9 @@ func (s *service) QueueSignals(c *gin.Context) {
 	signalType := c.Query("signal_type")
 	status := c.Query("status")
 	namespace := c.Query("namespace")
+	enqueued := c.Query("enqueued")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -43,8 +42,13 @@ func (s *service) QueueSignals(c *gin.Context) {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
 
-	component := views.QueueSignals(signals, search, ownerID, signalType, status, namespace, namespaces, signalTypes, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":      signals,
+		"namespaces":   namespaces,
+		"signal_types": signalTypes,
+		"page":         page,
+		"total_pages":  totalPages,
+	})
 }
 
 func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
@@ -55,35 +59,38 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	signalType := c.Query("signal_type")
 	status := c.Query("status")
 	namespace := c.Query("namespace")
+	enqueued := c.Query("enqueued")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
 		return
 	}
 
-	component := views.QueueSignalsGlobalTable(signals, search, ownerID, signalType, status, namespace, page, totalPages)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signals":     signals,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
-// QueueSignalTypeOptions returns the signal type selectbox options filtered by namespace.
-// Used by HTMX to update the signal type dropdown when namespace changes.
+// QueueSignalTypeOptions returns the signal type options filtered by namespace.
 func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Query("namespace")
-	signalType := c.Query("signal_type")
 
 	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
 	if err != nil {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
 
-	component := views.SignalTypeOptions(signalTypes, signalType)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"signal_types": signalTypes,
+	})
 }
 
-func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace string, page int) ([]app.QueueSignal, int, error) {
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued string, page int) ([]app.QueueSignal, int, error) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
@@ -103,6 +110,11 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 	}
 	if namespace != "" {
 		query = query.Where("workflow->>'namespace' = ?", namespace)
+	}
+	if enqueued == "true" {
+		query = query.Where("enqueued = ?", true)
+	} else if enqueued == "false" {
+		query = query.Where("enqueued = ?", false)
 	}
 
 	if err := query.Count(&totalCount).Error; err != nil {

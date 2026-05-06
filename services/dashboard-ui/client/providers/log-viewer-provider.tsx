@@ -28,8 +28,9 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
 
   const { logs } = unifiedLogsContext
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
+  const cycleDirectionRef = useRef<'up' | 'down' | undefined>()
   const filters = useLogFilters(logs || [])
-  const { addPanel, removePanel } = useSurfaces()
+  const { addPanel, updatePanel, removePanel } = useSurfaces()
   const navigate = useNavigate()
 
   function setLogParam(logId?: string) {
@@ -43,67 +44,58 @@ export function LogViewerProvider({ children }: LogViewerProviderProps) {
   }
 
   function handleActiveLog(id?: string) {
-    setActiveLog(id ? filters.filteredLogs?.find((l) => l.id === id) : undefined)
+    const log = id ? filters.filteredLogs?.find((l) => l.id === id) : undefined
+    setActiveLog(log)
+    setLogParam(log?.id)
   }
 
   useArrowKeys({
     onDownArrow() {
       if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
-        removePanel(activeLog?.id)
-        setLogParam(undefined)
-        const activeLogIndex = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
-        const nextLogIndex = activeLogIndex + 1
-        const nextLog = filters.filteredLogs?.at(
-          nextLogIndex === filters.filteredLogs?.length ? 0 : nextLogIndex
-        )
-        setTimeout(() => {
-          handleActiveLog(nextLog?.id)
-        }, 160)
+        cycleDirectionRef.current = 'down'
+        const idx = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
+        const nextIdx = idx + 1 >= filters.filteredLogs.length ? 0 : idx + 1
+        handleActiveLog(filters.filteredLogs[nextIdx]?.id)
       }
     },
     onUpArrow() {
       if (activeLog && filters.filteredLogs && filters.filteredLogs.length > 0) {
-        removePanel(activeLog?.id)
-        setLogParam(undefined)
-        const activeLogIndex = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
-        const prevLog = filters.filteredLogs?.at(activeLogIndex - 1)
-        setTimeout(() => {
-          handleActiveLog(prevLog?.id)
-        }, 160)
+        cycleDirectionRef.current = 'up'
+        const idx = filters.filteredLogs.findIndex((l) => l.id === activeLog.id)
+        handleActiveLog(filters.filteredLogs.at(idx - 1)?.id)
       }
     },
   })
 
-  const activeLogIdRef = useRef<string | undefined>()
+  const panelIdRef = useRef<string | undefined>()
 
   useEffect(() => {
-    if (activeLog && activeLog.id !== activeLogIdRef.current) {
-      if (activeLogIdRef.current) {
-        removePanel(activeLogIdRef.current)
-      }
-      activeLogIdRef.current = activeLog.id
-      addPanel(
+    if (activeLog) {
+      const panel = (
         <LogPanel
           log={activeLog}
-          onClose={() => {
-            handleActiveLog(undefined)
-            setLogParam(undefined)
-          }}
-        />,
-        undefined,
-        activeLog.id
+          cycleDirection={cycleDirectionRef.current}
+          onClose={() => handleActiveLog(undefined)}
+        />
       )
-      setLogParam(activeLog.id)
-    } else if (!activeLog && activeLogIdRef.current) {
-      removePanel(activeLogIdRef.current)
-      activeLogIdRef.current = undefined
+      if (panelIdRef.current) {
+        updatePanel(panelIdRef.current, panel)
+      } else {
+        cycleDirectionRef.current = undefined
+        panelIdRef.current = 'log-panel'
+        addPanel(panel, undefined, 'log-panel')
+      }
+    } else if (panelIdRef.current) {
+      cycleDirectionRef.current = undefined
+      removePanel(panelIdRef.current)
+      panelIdRef.current = undefined
     }
   }, [activeLog])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const logId = params.get('log')
-    if (logId && !activeLogIdRef.current && filters.filteredLogs?.length) {
+    if (logId && !panelIdRef.current && filters.filteredLogs?.length) {
       handleActiveLog(logId)
     }
   }, [filters.filteredLogs?.length])

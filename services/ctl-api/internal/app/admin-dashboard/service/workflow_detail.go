@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -49,15 +48,25 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 			}
 		}
 
+		// Load the actual QueueSignal record for this step (for linking)
+		var stepSignal app.QueueSignal
+		if err := s.db.WithContext(ctx).
+			Where(app.QueueSignal{OwnerID: step.ID, OwnerType: (&app.WorkflowStep{}).TableName()}).
+			First(&stepSignal).Error; err == nil {
+			stepDetails[i].StepSignalID = stepSignal.ID
+			stepDetails[i].StepSignalQueueID = stepSignal.QueueID
+		}
+
 		// Load step target
 		if step.StepTargetID != "" {
 			stepDetails[i].StepTarget = s.loadStepTarget(c, step.StepTargetID, step.StepTargetType)
 		}
 	}
 
-	// Load step groups for the workflow
+	// Load step groups for the workflow (with their queue signals)
 	var stepGroups []app.WorkflowStepGroup
 	s.db.WithContext(ctx).
+		Preload("QueueSignal").
 		Where(app.WorkflowStepGroup{WorkflowID: workflowID}).
 		Order("group_idx ASC").
 		Find(&stepGroups)
@@ -80,8 +89,21 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 		}
 	}
 
-	component := views.WorkflowDetail(&wf, groupDetails, generateStepsSignal)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	// Load the execute-workflow signal for this workflow (the signal that triggers execution)
+	var workflowSignal *app.QueueSignal
+	var ws app.QueueSignal
+	if err := s.db.WithContext(ctx).
+		Where("owner_id = ? AND type = ?", wf.ID, "execute-workflow").
+		First(&ws).Error; err == nil {
+		workflowSignal = &ws
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"workflow":              &wf,
+		"group_details":         groupDetails,
+		"generate_steps_signal": generateStepsSignal,
+		"workflow_signal":       workflowSignal,
+	})
 }
 
 func (s *service) loadStepTarget(c *gin.Context, targetID, targetType string) *views.StepTargetData {

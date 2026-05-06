@@ -35,5 +35,5 @@ func (s *service) ClearQueue(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusSeeOther, "/queues/"+queueID)
+	c.JSON(http.StatusOK, gin.H{"status": "cleared"})
 }

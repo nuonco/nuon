@@ -44,6 +44,9 @@ type AppRunnerProcess struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// restart requested
+	RestartRequested bool `json:"restart_requested,omitempty"`
+
 	// runner id
 	RunnerID string `json:"runner_id,omitempty"`
 

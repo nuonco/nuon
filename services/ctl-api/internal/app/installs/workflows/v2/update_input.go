@@ -17,7 +17,7 @@ import (
 func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 
 	sg.nextGroup()
 	steps := make([]*app.WorkflowStep, 0)

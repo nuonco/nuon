@@ -25,7 +25,7 @@ export const InstallActionsTableContainer = ({
   const { install } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
 
-  const { data: result } = useQuery({
+  const { data: result, isLoading } = useQuery({
     queryKey: [
       'install-actions',
       org?.id,
@@ -54,6 +54,7 @@ export const InstallActionsTableContainer = ({
 
   return (
     <InstallActionsTable
+      isLoading={isLoading}
       data={parseInstallActionsLatestRunsToTableData(
         actions,
         org?.id ?? '',

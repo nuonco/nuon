@@ -56,7 +56,7 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 			return
 		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgdeprovision.Signal{OrgID: org.ID, Force: req.Force}); err != nil {
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgdeprovision.Signal{OrgID: org.ID, Force: req.Force}, org.ID); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

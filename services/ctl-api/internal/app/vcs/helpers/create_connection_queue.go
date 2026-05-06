@@ -45,7 +45,9 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 
 	// Enqueue an immediate health check signal
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID: q.ID,
+		QueueID:   q.ID,
+		OwnerID:   vcsConn.ID,
+		OwnerType: "vcs_connections",
 		Signal: &healthcheck.Signal{
 			VCSConnectionID: vcsConn.ID,
 		},

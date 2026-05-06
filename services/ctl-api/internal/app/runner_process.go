@@ -49,6 +49,7 @@ type RunnerProcess struct {
 	Version            string     `json:"version,omitzero"`
 	StartedAt          *time.Time `json:"started_at,omitempty"`
 	InitialHealthCheck bool       `json:"initial_health_check,omitzero" gorm:"default:false"`
+	RestartRequested   bool       `json:"restart_requested,omitzero" gorm:"default:false"`
 
 	Uptime time.Duration `json:"uptime,omitempty" gorm:"-" swaggertype:"primitive,integer"`
 
@@ -95,6 +96,10 @@ func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
 	// Label local runners
 	if r.Version == "development" {
 		r.Labels = append(r.Labels, "Local Runner")
+	}
+
+	if r.RestartRequested {
+		r.Labels = append(r.Labels, "Restart Requested")
 	}
 
 	return nil

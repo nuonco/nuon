@@ -20,19 +20,34 @@ import (
 // @execution-timeout 24h
 // @task-timeout 30s
 func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals.RequestSignal) error {
-	id := sreq.ID
-	if sreq.InstallStackID != "" {
-		id = sreq.InstallStackID
-	}
+	var err error
+	var install *app.Install
+	var version *app.InstallStackVersion
 
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, id)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install")
-	}
-
-	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install version")
+	if sreq.InstallStackVersionID != "" {
+		version, err = activities.AwaitGetInstallStackVersionByID(ctx, activities.GetInstallStackVersionByIDRequest{
+			VersionID: sreq.InstallStackVersionID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to get install stack version")
+		}
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, version.InstallStackID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+	} else {
+		id := sreq.ID
+		if sreq.InstallStackID != "" {
+			id = sreq.InstallStackID
+		}
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, id)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+		version, err = activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install version")
+		}
 	}
 
 	run, err := activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
@@ -168,13 +183,18 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 }
 
 func validateRegion(install app.Install, outputs app.InstallStackOutputs) error {
+	// Region is recorded on the install only when the user committed to one
+	// at install creation. AWS/Azure/GCP all allow creating an install with no
+	// region, in which case the user picks one at apply time and the stack
+	// outputs are the source of truth. Only enforce a match when the install
+	// already carries a region.
 	switch {
 	case install.AWSAccount != nil:
-		if install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
+		if install.AWSAccount.Region != "" && install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	case install.AzureAccount != nil:
-		if install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
+		if install.AzureAccount.Location != "" && install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	case install.GCPAccount != nil:

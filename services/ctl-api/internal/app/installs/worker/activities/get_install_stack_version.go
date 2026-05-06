@@ -23,7 +23,8 @@ func (a *Activities) GetInstallStackVersion(ctx context.Context, req GetInstallS
 			InstallID: req.InstallID,
 		}).
 		Preload("InstallStackVersions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_stack_versions.created_at DESC").Limit(1)
+			return db.Where("(status->>'status') != ?", app.StatusCancelled).
+				Order("install_stack_versions.created_at DESC").Limit(1)
 		}).
 		First(&stack); res.Error != nil {
 		return nil, generics.TemporalGormError(res.Error)

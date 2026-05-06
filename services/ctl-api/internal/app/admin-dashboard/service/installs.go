@@ -8,12 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const installsPerPage = 8
@@ -36,8 +34,11 @@ func (s *service) Installs(c *gin.Context) {
 		return
 	}
 
-	component := views.Installs(installs, page, totalPages, search, sort, filter, deletedFilter)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"installs":    installs,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) getInstalls(ctx context.Context, search string, sort string, filter string, deletedFilter string, page int) ([]*app.Install, int, error) {

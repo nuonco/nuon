@@ -1,4 +1,5 @@
 import { components } from '@/types/nuon-oapi-v3'
+import type { Interests as TInterests } from '@/components/interests/types'
 
 // app branches
 export type TAppBranch = components['schemas']['app.AppBranch']
@@ -110,9 +111,22 @@ export type TOrgStats = {
 }
 
 // webhooks
-export type TWebhook = components['schemas']['service.CurrentOrgWebhookResponse']
-export type TCreateWebhookBody =
-  components['schemas']['service.CreateCurrentOrgWebhookRequest']
+//
+// `interests` is stamped `swaggertype:"object"` on the Go side, so the
+// auto-generated SDK shape is a generic object. Re-cast to the hand-written
+// Interests type from @/components/interests at the API boundary instead.
+export type TWebhook = Omit<
+  components['schemas']['service.CurrentOrgWebhookResponse'],
+  'interests'
+> & {
+  interests?: TInterests
+}
+export type TCreateWebhookBody = Omit<
+  components['schemas']['service.CreateCurrentOrgWebhookRequest'],
+  'interests'
+> & {
+  interests?: TInterests
+}
 
 // install
 export type TInstall = components['schemas']['app.Install'] & {

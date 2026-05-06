@@ -12,21 +12,23 @@ import (
 // @as-wrapper
 // @wrapper-prefix QueueInternal
 func (a *Activities) checkRestartHint(ctx context.Context, queueID string) (bool, error) {
+	// Look up the queue to find the owning runner.
 	var queue app.Queue
 	if res := a.db.WithContext(ctx).Where(app.Queue{ID: queueID}).First(&queue); res.Error != nil {
 		return false, generics.TemporalGormError(res.Error, "unable to get queue for restart hint check")
 	}
 
-	if queue.StatusV2.Metadata == nil {
+	if queue.OwnerType != "runners" || queue.OwnerID == "" {
 		return false, nil
 	}
 
-	val, ok := queue.StatusV2.Metadata["restart_hint"]
-	if !ok || val == nil {
-		return false, nil
+	// Check the runner's dedicated column instead of queue JSONB metadata.
+	var runner app.Runner
+	if res := a.db.WithContext(ctx).Select("restart_requested").Where(app.Runner{ID: queue.OwnerID}).First(&runner); res.Error != nil {
+		return false, generics.TemporalGormError(res.Error, "unable to get runner for restart hint check")
 	}
 
-	return true, nil
+	return runner.RestartRequested, nil
 }
 
 // @temporal-gen-v2 activity
@@ -34,10 +36,19 @@ func (a *Activities) checkRestartHint(ctx context.Context, queueID string) (bool
 // @as-wrapper
 // @wrapper-prefix QueueInternal
 func (a *Activities) clearRestartHint(ctx context.Context, queueID string) error {
-	if err := generics.MergeJSONBMetadata(a.db.WithContext(ctx), &app.Queue{}, queueID, "status_v2", map[string]any{
-		"restart_hint": nil,
-	}); err != nil {
-		return generics.TemporalGormError(err, "unable to clear restart hint")
+	// Look up the queue to find the owning runner.
+	var queue app.Queue
+	if res := a.db.WithContext(ctx).Where(app.Queue{ID: queueID}).First(&queue); res.Error != nil {
+		return generics.TemporalGormError(res.Error, "unable to get queue for clear restart hint")
+	}
+
+	if queue.OwnerType != "runners" || queue.OwnerID == "" {
+		return nil
+	}
+
+	// Clear the runner's restart_requested column.
+	if res := a.db.WithContext(ctx).Model(&app.Runner{}).Where(app.Runner{ID: queue.OwnerID}).Update("restart_requested", false); res.Error != nil {
+		return generics.TemporalGormError(res.Error, "unable to clear restart_requested on runner")
 	}
 
 	return nil

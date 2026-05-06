@@ -2,6 +2,8 @@ export default {
   title: 'Apps/AppsTable',
 }
 
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { AppsTable, AppsTableSkeleton, type TAppRow } from './AppsTable'
 
 const mockRows: TAppRow[] = Array.from({ length: 3 }, (_, i) => ({
@@ -28,6 +30,12 @@ export const Empty = () => (
   <AppsTable
     data={[]}
     isLoading={false}
+    emptyStateAction={
+      <Button href="/onboarding">
+        <Icon size="14" variant="AppWindow" />
+        Create app
+      </Button>
+    }
     pagination={{ hasNext: false, offset: 0, limit: 20 }}
   />
 )

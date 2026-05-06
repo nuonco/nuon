@@ -53,7 +53,7 @@ export const Sandbox = () => {
             Test builds in an isolated environment before deploying to installs.
           </Text>
         </HeadingGroup>
-        <BuildSandboxButton variant="primary" />
+        <BuildSandboxButton />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 flex-auto gap-6">

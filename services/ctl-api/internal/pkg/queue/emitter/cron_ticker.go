@@ -1,6 +1,9 @@
 package emitter
 
 import (
+	"hash/fnv"
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -8,6 +11,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
+
+// jitterOffset returns a deterministic offset in [0, window) for the given
+// emitter ID, used to spread cron emitter ticks across a configurable window.
+func jitterOffset(emitterID string, window time.Duration) time.Duration {
+	if window <= 0 {
+		return 0
+	}
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(emitterID))
+	return time.Duration(uint64(h.Sum32()) % uint64(window))
+}
 
 type CronTickerWorkflowRequest struct {
 	QueueID   string `validate:"required"`
@@ -41,6 +55,12 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 	if emitter.Status.Status == app.StatusCancelled {
 		l.Info("emitter is paused, skipping emit")
 		return nil
+	}
+
+	if offset := jitterOffset(emitter.ID, emitter.JitterWindow); offset > 0 {
+		if err := workflow.Sleep(ctx, offset); err != nil {
+			return err
+		}
 	}
 
 	// Emit the signal

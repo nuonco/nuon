@@ -36,6 +36,8 @@ const (
 	OperationExecuteTeardownComponent    eventloop.SignalType = "execute-teardown-component"
 	OperationSyncSecrets                 eventloop.SignalType = "sync-secrets"
 	OperationWorkflowApproveAll          eventloop.SignalType = "workflow-approve-all"
+	OperationWorkflowStepApprovalReq     eventloop.SignalType = "workflow-step-approval-request"
+	OperationWorkflowStepApprovalResp    eventloop.SignalType = "workflow-step-approval-response"
 	OperationGenerateState               eventloop.SignalType = "generate-state"
 
 	// the following will be sent to a different namespace
@@ -205,6 +207,8 @@ type Signal struct {
 
 	// used for install stack output update via phone home
 	InstallStackID string `json:"install_stack_id"`
+	// used for install stack output update via phone home
+	InstallStackVersionID string `json:"install_stack_version_id"`
 
 	// when true, skip triggering the input update workflow after updating install inputs from stack outputs
 	SkipInputUpdateWorkflow bool `json:"skip_input_update_workflow"`

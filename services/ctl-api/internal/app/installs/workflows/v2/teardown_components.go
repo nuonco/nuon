@@ -34,7 +34,7 @@ func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	sg := newStepGroup()
+	sg := newStepGroup(flw)
 	steps, err := teardownComponents(ctx, flw, sg, appCfg, awData)
 	if err != nil {
 		return nil, err

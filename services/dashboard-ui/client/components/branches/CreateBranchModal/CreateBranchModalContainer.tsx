@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -9,8 +10,9 @@ import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
+import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
 import { createAppBranch } from '@/lib'
-import type { TCreateAppBranchRequest } from '@/types'
+import type { TAPIError, TCreateAppBranchRequest } from '@/types'
 import { CreateBranchModal } from './CreateBranchModal'
 
 type ICreateBranchModalContainer = IModal
@@ -25,31 +27,48 @@ export const CreateBranchModalContainer = ({
   const { addToast } = useToast()
   const { removeModal } = useSurfaces()
 
+  const vcsConnections = org?.vcs_connections || []
+  const [vcsConnectionId, setVcsConnectionId] = useState(vcsConnections[0]?.id || '')
+
+  const vcsBrowser = useVcsRepoBrowser({
+    orgId: org.id,
+    vcsConnectionId,
+    enabled: !!vcsConnectionId,
+  })
+
   const { mutate, isPending: isLoading } = useMutation({
     mutationFn: async (
       body: TCreateAppBranchRequest & {
         vcs_connection_id?: string
-        connected_github_vcs_config?: any
-        public_git_vcs_config?: any
+        connected_github_vcs_config?: {
+          repo: string
+          branch: string
+          directory: string
+          path_filter?: string
+        }
+        public_git_vcs_config?: {
+          repo: string
+          branch: string
+          directory: string
+          path_filter?: string
+        }
       }
     ) => {
       return createAppBranch({ appId: app.id, body, orgId: org.id })
     },
     onSuccess: (data) => {
-      const name = (data as any).name || ''
       addToast(
         <Toast heading="Branch created successfully" theme="success">
-          <Text>Created app branch: {name}</Text>
+          <Text>Created app branch: {data.name}</Text>
         </Toast>
       )
       removeModal(props.modalId)
       navigate(`/${org.id}/apps/${app.id}/branches/${data.id}`)
     },
-    onError: (error: Error) => {
+    onError: (error: TAPIError) => {
       addToast(
         <Toast heading="Branch creation failed" theme="error">
-          <Text>Failed to create app branch.</Text>
-          <Text>{error.message || 'Unknown error occurred.'}</Text>
+          <Text>{error.error || 'Failed to create app branch.'}</Text>
         </Toast>
       )
     },
@@ -57,8 +76,19 @@ export const CreateBranchModalContainer = ({
 
   return (
     <CreateBranchModal
-      orgId={org.id}
-      vcsConnections={org?.vcs_connections || []}
+      vcsConnections={vcsConnections}
+      repos={vcsBrowser.repos}
+      branches={vcsBrowser.branches}
+      loadingRepos={vcsBrowser.loadingRepos}
+      loadingBranches={vcsBrowser.loadingBranches}
+      reposError={vcsBrowser.reposError}
+      branchesError={vcsBrowser.branchesError}
+      selectedVcsConnectionId={vcsConnectionId}
+      onVcsConnectionChange={setVcsConnectionId}
+      selectedRepo={vcsBrowser.selectedRepo}
+      onRepoChange={vcsBrowser.setSelectedRepo}
+      selectedBranch={vcsBrowser.selectedBranch}
+      onBranchChange={vcsBrowser.setSelectedBranch}
       isSubmitting={isLoading}
       onSubmit={(body) => mutate(body)}
       onCancel={() => removeModal(props.modalId)}

@@ -1,21 +1,13 @@
-import { forwardRef } from 'react'
-import CodeEditor from '@uiw/react-textarea-code-editor'
+import { useMemo } from 'react'
+import CodeMirror from '@uiw/react-codemirror'
+import { json } from '@codemirror/lang-json'
+import { StreamLanguage } from '@codemirror/language'
+import { shell } from '@codemirror/legacy-modes/mode/shell'
+import { EditorView } from '@codemirror/view'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
 
-export type TEditorLanguage =
-  | 'bash'
-  | 'css'
-  | 'go'
-  | 'hcl'
-  | 'html'
-  | 'javascript'
-  | 'json'
-  | 'markdown'
-  | 'python'
-  | 'sh'
-  | 'typescript'
-  | 'yaml'
+export type TEditorLanguage = 'bash' | 'json' | 'sh' | 'shell'
 
 export interface IEditor {
   value?: string
@@ -28,69 +20,81 @@ export interface IEditor {
   className?: string
   minHeight?: number
   maxHeight?: number
-  padding?: number
 }
 
-export const Editor = forwardRef<HTMLTextAreaElement, IEditor>(
-  (
-    {
-      value = '',
-      onChange,
-      language = 'javascript',
-      placeholder = 'Enter code here...',
-      disabled = false,
-      readOnly = false,
-      name,
-      className,
-      minHeight = 200,
-      maxHeight = 600,
-      padding = 16,
-    },
-    ref
-  ) => {
-    const colorScheme = useSystemTheme()
-
-    const handleChange = (
-      event: React.ChangeEvent<HTMLTextAreaElement>
-    ): void => {
-      if (onChange) {
-        onChange(event.target.value)
-      }
-    }
-
-    return (
-      <div
-        className={cn(
-          'relative rounded-md shadow-sm overflow-hidden',
-          {
-            'opacity-50 cursor-not-allowed': disabled,
-          },
-          className
-        )}
-      >
-        <CodeEditor
-          ref={ref}
-          value={value}
-          language={language}
-          placeholder={placeholder}
-          onChange={handleChange}
-          disabled={disabled}
-          readOnly={readOnly}
-          name={name}
-          padding={padding}
-          style={{
-            minHeight: `${minHeight}px`,
-            maxHeight: `${maxHeight}px`,
-            overflow: 'auto',
-            fontSize: '14px',
-            fontFamily: 'var(--font-hack)',
-            backgroundColor: 'var(--bg-code)',
-          }}
-          data-color-mode={colorScheme}
-        />
-      </div>
-    )
+function getLanguageExtension(language: TEditorLanguage) {
+  switch (language) {
+    case 'json':
+      return json()
+    case 'bash':
+    case 'sh':
+    case 'shell':
+      return StreamLanguage.define(shell)
   }
-)
+}
 
-Editor.displayName = 'Editor'
+const bgOverride = EditorView.theme({
+  '&': {
+    backgroundColor: 'var(--bg-code)',
+  },
+  '.cm-gutters': {
+    backgroundColor: 'var(--bg-code)',
+  },
+})
+
+export const Editor = ({
+  value = '',
+  onChange,
+  language = 'bash',
+  placeholder = 'Enter code here...',
+  disabled = false,
+  readOnly = false,
+  name,
+  className,
+  minHeight = 200,
+  maxHeight = 600,
+}: IEditor) => {
+  const colorScheme = useSystemTheme()
+
+  const extensions = useMemo(() => {
+    const lang = getLanguageExtension(language)
+    return lang ? [lang, bgOverride] : [bgOverride]
+  }, [language])
+
+  return (
+    <div
+      className={cn(
+        'relative rounded-md shadow-sm overflow-hidden',
+        {
+          'opacity-50 cursor-not-allowed': disabled,
+        },
+        className
+      )}
+    >
+      {name && <input type="hidden" name={name} value={value} />}
+      <CodeMirror
+        value={value}
+        onChange={onChange}
+        extensions={extensions}
+        placeholder={placeholder}
+        readOnly={readOnly || disabled}
+        editable={!disabled}
+        theme={colorScheme}
+        minHeight={`${minHeight}px`}
+        maxHeight={`${maxHeight}px`}
+        basicSetup={{
+          lineNumbers: true,
+          foldGutter: false,
+          highlightActiveLine: true,
+          bracketMatching: true,
+          indentOnInput: true,
+          tabSize: 2,
+        }}
+        style={{
+          fontSize: '14px',
+          fontFamily: 'var(--font-hack)',
+        }}
+      />
+    </div>
+  )
+}

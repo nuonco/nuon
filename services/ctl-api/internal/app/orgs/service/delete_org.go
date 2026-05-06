@@ -73,7 +73,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 			return
 		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgdelete.Signal{OrgID: org.ID}); err != nil {
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgdelete.Signal{OrgID: org.ID}, org.ID); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

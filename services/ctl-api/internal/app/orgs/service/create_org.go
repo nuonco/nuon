@@ -88,11 +88,11 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgcreated.Signal{OrgID: newOrg.ID}); err != nil {
+	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgcreated.Signal{OrgID: newOrg.ID}, newOrg.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue org created signal: %w", err))
 		return
 	}
-	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgprovision.Signal{OrgID: newOrg.ID}); err != nil {
+	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgprovision.Signal{OrgID: newOrg.ID}, newOrg.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue org provision signal: %w", err))
 		return
 	}

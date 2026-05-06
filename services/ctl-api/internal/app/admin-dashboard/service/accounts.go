@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/a-h/templ"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 const accountsPerPage = 8
@@ -30,8 +28,11 @@ func (s *service) Accounts(c *gin.Context) {
 		return
 	}
 
-	component := views.Accounts(accounts, page, totalPages, search, filter)
-	templ.Handler(component).ServeHTTP(c.Writer, c.Request)
+	c.JSON(http.StatusOK, gin.H{
+		"accounts":    accounts,
+		"page":        page,
+		"total_pages": totalPages,
+	})
 }
 
 func (s *service) getAccounts(ctx context.Context, search string, filter string, page int) ([]*app.Account, int, error) {

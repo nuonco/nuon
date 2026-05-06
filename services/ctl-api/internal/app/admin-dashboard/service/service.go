@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
@@ -41,6 +42,8 @@ type Params struct {
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
 	TemporalCodecS3Payload    converter.PayloadCodec `name:"s3payload"`
+
+	QueryCollector *querycollector.Collector
 }
 
 type Service struct {
@@ -58,6 +61,7 @@ type Service struct {
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
 	codecs         []converter.PayloadCodec
+	queryCollector *querycollector.Collector
 }
 
 type service = Service
@@ -103,117 +107,141 @@ func (s *service) setAdminAccountContext() gin.HandlerFunc {
 	}
 }
 
-func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
-	// Serve static assets
-	api.Static("/assets", "./internal/app/admin-dashboard/assets")
+func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
+	// Set admin account context from X-Nuon-Auth cookie
+	e.Use(s.setAdminAccountContext())
 
-	// Set admin account context from X-Nuon-Admin-Email header
-	api.Use(s.setAdminAccountContext())
+	// Health check
+	e.GET("/api/livez", s.Livez)
 
-	// Register routes - templ components will be rendered directly in handlers
-	api.GET("/", s.Index)
-	api.GET("/orgs", s.Orgs)
-	api.GET("/orgs/table", s.OrgsTable)
-	api.GET("/orgs/:id", s.OrgDetail)
-	api.GET("/orgs/:id/status", s.OrgStatus)
-	api.POST("/orgs/:id/tags", s.UpdateOrgTags)
-	api.POST("/orgs/:id/tags/remove/:tag", s.RemoveSingleTag)
-	api.POST("/orgs/:id/support-users/add", s.AddSupportUsers)
-	api.POST("/orgs/:id/migrate-queues", s.MigrateOrgQueues)
-	api.GET("/orgs/:id/installs/table", s.InstallsTable)
+	// JSON API endpoints
+	api := e.Group("/api")
+	{
+		// Orgs
+		api.GET("/orgs", s.Orgs)
+		api.GET("/orgs/table", s.OrgsTable)
+		api.GET("/orgs/:id", s.OrgDetail)
+		api.GET("/orgs/:id/status", s.OrgStatus)
+		api.POST("/orgs/:id/labels", s.AddOrgLabels)
+		api.POST("/orgs/:id/labels/remove/:key", s.RemoveOrgLabel)
+		api.POST("/orgs/:id/support-users/add", s.ProxyAddSupportUsers)
+		api.POST("/orgs/:id/migrate-queues", s.ProxyMigrateQueues)
+		api.GET("/orgs/:id/installs", s.InstallsTable)
 
-	// Accounts routes
-	api.GET("/accounts", s.Accounts)
-	api.GET("/accounts/table", s.AccountsTable)
-	api.GET("/accounts/:id", s.AccountDetail)
-	api.GET("/accounts/:id/installs/table", s.AccountInstallsTable)
-	api.GET("/accounts/:id/audit-logs/table", s.AccountAuditLogsTable)
+		// Accounts
+		api.GET("/accounts", s.Accounts)
+		api.GET("/accounts/table", s.AccountsTable)
+		api.GET("/accounts/:id", s.AccountDetail)
+		api.GET("/accounts/:id/installs", s.AccountInstallsTable)
+		api.GET("/accounts/:id/audit-logs", s.AccountAuditLogsTable)
 
-	// Runners routes
-	api.GET("/runners", s.Runners)
-	api.GET("/runners/:id", s.RunnerDetail)
-	api.PUT("/runners/:id/configs", s.RunnerUpsertConfig)
-	api.DELETE("/runners/:id/configs/:job_type", s.RunnerDeleteConfig)
-	api.POST("/runners/:id/configs/reset", s.RunnerResetConfigs)
+		// Runner uptime
+		api.GET("/runner-uptime", s.RunnerUptime)
 
-	// Labels routes
-	api.GET("/labels", s.LabelsPage)
-	api.GET("/labels/table", s.LabelsTable)
+		// Runners
+		api.GET("/runners/all", s.AllRunners)
+		api.GET("/runners/:id", s.RunnerDetail)
+		api.PUT("/runners/:id/configs", s.RunnerUpsertConfig)
+		api.DELETE("/runners/:id/configs/:job_type", s.RunnerDeleteConfig)
+		api.POST("/runners/:id/configs/reset", s.RunnerResetConfigs)
 
-	// Global installs routes
-	api.GET("/installs", s.Installs)
-	api.GET("/installs/table", s.InstallsTableGlobal)
+		// Labels
+		api.GET("/labels", s.LabelsPage)
+		api.GET("/labels/table", s.LabelsTable)
 
-	// Install detail routes
-	api.GET("/installs/:id", s.InstallDetail)
-	api.GET("/installs/:id/status/runner", s.InstallRunnerStatus)
-	api.GET("/installs/:id/status/sandbox", s.InstallSandboxStatus)
-	api.GET("/installs/:id/status/component", s.InstallComponentStatus)
-	api.GET("/installs/:id/active-deployments/table", s.InstallActiveDeploymentsTable)
-	api.GET("/installs/:id/activity/table", s.InstallActivityTable)
-	api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
-	api.GET("/installs/:id/workflows/table", s.InstallWorkflowsTable)
-	api.POST("/installs/:id/labels", s.AddInstallLabel)
-	api.POST("/installs/:id/labels/remove/:key", s.RemoveInstallLabel)
+		// Global installs
+		api.GET("/installs", s.Installs)
+		api.GET("/installs/table", s.InstallsTableGlobal)
 
-	// Workflow routes
-	api.GET("/workflows", s.Workflows)
-	api.GET("/workflows/table", s.WorkflowsTable)
-	api.GET("/workflows/:workflow_id", s.WorkflowDetail)
+		// Install detail
+		api.GET("/installs/:id", s.InstallDetail)
+		api.GET("/installs/:id/status/runner", s.InstallRunnerStatus)
+		api.GET("/installs/:id/status/sandbox", s.InstallSandboxStatus)
+		api.GET("/installs/:id/status/component", s.InstallComponentStatus)
+		api.GET("/installs/:id/active-deployments", s.InstallActiveDeploymentsTable)
+		api.GET("/installs/:id/activity", s.InstallActivityTable)
+		api.GET("/installs/:id/status/drift", s.InstallDriftStatus)
+		api.GET("/installs/:id/workflows", s.InstallWorkflowsTable)
+		api.POST("/installs/:id/labels", s.AddInstallLabel)
+		api.POST("/installs/:id/labels/remove/:key", s.RemoveInstallLabel)
 
-	// Log stream routes
-	api.GET("/log-streams", s.LogStreamViewer)
-	api.GET("/log-streams/:log_stream_id", s.LogStreamDetail)
-	api.GET("/log-streams/:log_stream_id/logs/table", s.LogStreamLogsTable)
+		// Workflows
+		api.GET("/workflows", s.Workflows)
+		api.GET("/workflows/table", s.WorkflowsTable)
+		api.GET("/workflows/:workflow_id", s.WorkflowDetail)
 
-	// Queue routes
-	api.GET("/queues", s.Queues)
-	api.GET("/queues/table", s.QueuesTable)
-	api.GET("/queues/:id", s.QueueDetail)
-	api.GET("/queues/:id/emitters/table", s.QueueEmittersTable)
-	api.GET("/queues/:id/signals/table", s.QueueSignalsTable)
-	api.GET("/queues/:id/in-flight-signals/table", s.QueueInFlightSignalsTable)
-	api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
-	api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
-	api.POST("/queues/:id/restart", s.RestartQueue)
-	api.POST("/queues/:id/force-restart", s.ForceRestartQueue)
-	api.POST("/queues/:id/clear", s.ClearQueue)
-	api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
+		// Log streams
+		api.GET("/log-streams", s.LogStreamViewer)
+		api.GET("/log-streams/:log_stream_id", s.LogStreamDetail)
+		api.GET("/log-streams/:log_stream_id/logs", s.LogStreamLogsTable)
 
-	// Temporal workflow viewer
-	api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
+		// Queue routes
+		api.GET("/queues", s.Queues)
+		api.GET("/queues/table", s.QueuesTable)
+		api.GET("/queues/:id", s.QueueDetail)
+		api.GET("/queues/:id/emitters", s.QueueEmittersTable)
+		api.GET("/queues/:id/signals", s.QueueSignalsTable)
+		api.GET("/queues/:id/in-flight-signals", s.QueueInFlightSignalsTable)
+		api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
+		api.GET("/queues/:id/signals/:signal_id/graph", s.SignalGraph)
+		api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
+		api.POST("/queues/:id/restart", s.RestartQueue)
+		api.POST("/queues/:id/force-restart", s.ForceRestartQueue)
+		api.POST("/queues/:id/clear", s.ClearQueue)
+		api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
 
-	// Temporal workers
-	api.GET("/temporal-workers", s.TemporalWorkers)
-	api.GET("/temporal-workers/table", s.TemporalWorkersTable)
-	api.GET("/temporal-workers/:namespace", s.TemporalWorkerDetail)
+		// Temporal workflow viewer
+		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
 
-	// Queue signals (global view)
-	api.GET("/queue-signals", s.QueueSignals)
-	api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
-	api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
+		// Temporal workers
+		api.GET("/temporal-workers", s.TemporalWorkers)
+		api.GET("/temporal-workers/table", s.TemporalWorkersTable)
+		api.GET("/temporal-workers/:namespace", s.TemporalWorkerDetail)
 
-	// In-flight signals
-	api.GET("/in-flight-signals", s.InFlightSignals)
-	api.GET("/in-flight-signals/table", s.InFlightSignalsTable)
+		// Queue signals (global view)
+		api.GET("/queue-signals", s.QueueSignals)
+		api.GET("/queue-signals/table", s.QueueSignalsGlobalTable)
+		api.GET("/queue-signals/signal-type-options", s.QueueSignalTypeOptions)
 
-	// Signal catalog
-	api.GET("/signal-catalog", s.SignalCatalog)
-	api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)
+		// In-flight signals
+		api.GET("/in-flight-signals", s.InFlightSignals)
+		api.GET("/in-flight-signals/table", s.InFlightSignalsTable)
 
-	// Sandbox mode routes
-	api.GET("/sandbox-mode", s.SandboxMode)
-	api.GET("/sandbox-mode/runner-jobs/table", s.SandboxModeRunnerJobsTable)
-	api.GET("/sandbox-mode/runner-jobs/rows", s.SandboxModeRunnerJobsRows)
-	api.GET("/sandbox-mode/builder", s.SandboxModeBuilder)
-	api.GET("/sandbox-mode/signals/table", s.SandboxModeSignalsTable)
-	api.GET("/sandbox-mode/signals/rows", s.SandboxModeSignalRows)
-	api.GET("/sandbox-mode/stacks/table", s.SandboxModeStacksTable)
-	api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
-	api.PUT("/sandbox-mode/runner-jobs/:job_type", s.SandboxModeUpsertRunnerJobConfig)
-	api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
-	api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
-	api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
+		// Signal catalog
+		api.GET("/signal-catalog", s.SignalCatalog)
+		api.GET("/signal-catalog/:signal_type", s.SignalCatalogDetail)
+
+		// Sandbox mode
+		api.GET("/sandbox-mode", s.SandboxMode)
+		api.GET("/sandbox-mode/runner-jobs", s.SandboxModeRunnerJobsTable)
+		api.GET("/sandbox-mode/runner-jobs/rows", s.SandboxModeRunnerJobsRows)
+		api.GET("/sandbox-mode/builder", s.SandboxModeBuilder)
+		api.GET("/sandbox-mode/signals", s.SandboxModeSignalsTable)
+		api.GET("/sandbox-mode/signals/rows", s.SandboxModeSignalRows)
+		api.GET("/sandbox-mode/stacks", s.SandboxModeStacksTable)
+		api.PUT("/sandbox-mode/signals/:signal_type", s.SandboxModeUpsertSignalConfig)
+		api.PUT("/sandbox-mode/runner-jobs/:job_type", s.SandboxModeUpsertRunnerJobConfig)
+		api.DELETE("/sandbox-mode/runner-jobs/:config_id", s.SandboxModeDeleteRunnerJobConfig)
+		api.POST("/sandbox-mode/signals/disable-all", s.SandboxModeDisableAllSignals)
+		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
+		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
+
+		// Queries (dev-only)
+		api.GET("/queries", s.Queries)
+		api.POST("/queries/clear", s.ClearQueries)
+
+		// Query catalog
+		api.GET("/query-catalog", s.QueryCatalogList)
+		api.POST("/query-catalog/:query_id/run", s.QueryCatalogRun)
+		api.POST("/query-collector/toggle", s.QueryCollectorToggle)
+
+		// General actions
+		api.POST("/promote", s.Promote)
+		api.POST("/seed", s.ProxySeed)
+	}
+
+	// SPA serving (must be AFTER api routes)
+	s.registerSPARoutes(e)
 
 	s.l.Info("admin-dashboard routes registered")
 	return nil
@@ -234,6 +262,7 @@ func New(params Params) (*service, error) {
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
+		queryCollector: params.QueryCollector,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,

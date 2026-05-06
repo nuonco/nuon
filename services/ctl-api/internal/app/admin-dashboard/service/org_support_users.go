@@ -1,10 +1,10 @@
 package service
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/admin-dashboard/service/views"
 )
 
 func (s *service) AddSupportUsers(ctx *gin.Context) {
@@ -13,14 +13,14 @@ func (s *service) AddSupportUsers(ctx *gin.Context) {
 	org, err := s.getOrg(ctx, orgID)
 	if err != nil {
 		s.l.Error("failed to get org", zap.Error(err))
-		ctx.String(500, "Failed to get organization")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get organization"})
 		return
 	}
 
 	results, err := s.orgsHelpers.AddSupportUsersToOrg(ctx, org)
 	if err != nil {
 		s.l.Error("failed to add support users", zap.Error(err))
-		ctx.String(500, "Failed to add support users")
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add support users"})
 		return
 	}
 
@@ -47,19 +47,9 @@ func (s *service) AddSupportUsers(ctx *gin.Context) {
 		zap.Int("already_exists", alreadyExistsCount),
 		zap.Int("errors", errorCount))
 
-	// Render toast component
-	component := views.SupportUsersToast(successCount, alreadyExistsCount, errorCount)
-
-	// Log that we're about to render
-	s.l.Debug("rendering support users toast")
-
-	ctx.Header("Content-Type", "text/html; charset=utf-8")
-
-	if err := component.Render(ctx.Request.Context(), ctx.Writer); err != nil {
-		s.l.Error("failed to render toast", zap.Error(err))
-		ctx.String(500, "Failed to render response")
-		return
-	}
-
-	s.l.Debug("toast rendered successfully")
+	ctx.JSON(http.StatusOK, gin.H{
+		"success":        successCount,
+		"already_exists": alreadyExistsCount,
+		"errors":         errorCount,
+	})
 }

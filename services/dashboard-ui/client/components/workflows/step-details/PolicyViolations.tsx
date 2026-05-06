@@ -1,4 +1,3 @@
-import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
@@ -31,24 +30,30 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
           <Text weight="strong" variant="body">
             Policy report
           </Text>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {denyCount > 0 ? (
-              <Badge theme="error" size="sm">
-                <Icon variant="XCircle" size={10} />
-                {denyCount} {denyCount === 1 ? 'Deny' : 'Denies'}
-              </Badge>
+              <Text
+                variant="subtext"
+                className="text-red-600 dark:text-red-500"
+              >
+                {denyCount} {denyCount === 1 ? 'violation' : 'violations'}
+              </Text>
             ) : null}
             {warnCount > 0 ? (
-              <Badge theme="warn" size="sm">
-                <Icon variant="Warning" size={10} />
-                {warnCount} {warnCount === 1 ? 'Warning' : 'Warnings'}
-              </Badge>
+              <Text
+                variant="subtext"
+                className="text-orange-600 dark:text-orange-500"
+              >
+                {warnCount} {warnCount === 1 ? 'warning' : 'warnings'}
+              </Text>
             ) : null}
             {!hasViolations ? (
-              <Badge theme="success" size="sm">
-                <Icon variant="CheckCircle" size={10} />
-                Passed
-              </Badge>
+              <Text
+                variant="subtext"
+                className="text-green-600 dark:text-green-500"
+              >
+                All passed
+              </Text>
             ) : null}
           </div>
         </div>
@@ -59,15 +64,10 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
               <Expand
                 id={`policy-denies-${step.id}`}
                 heading={
-                  <div className="flex items-center gap-2">
-                    <Icon
-                      variant="XCircle"
-                      size={14}
-                      className="text-red-600 dark:text-red-500"
-                    />
+                  <div className="flex items-center gap-2 text-red-600 dark:text-red-500">
+                    <Icon variant="XCircle" size={14} />
                     <Text variant="subtext" weight="strong">
-                      {denyCount} Policy{' '}
-                      {denyCount === 1 ? 'Violation' : 'Violations'}
+                      Policy {denyCount === 1 ? 'Violation' : 'Violations'}
                     </Text>
                   </div>
                 }
@@ -78,7 +78,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                   {denyViolations.map((violation, index) => (
                     <li
                       key={`deny-${violation.policy_id}-${index}`}
-                      className="flex items-start gap-2 text-red-700 dark:text-red-400"
+                      className="flex items-start gap-2"
                     >
                       <Icon
                         variant="CaretRight"
@@ -98,15 +98,10 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
               <Expand
                 id={`policy-warnings-${step.id}`}
                 heading={
-                  <div className="flex items-center gap-2">
-                    <Icon
-                      variant="Warning"
-                      size={14}
-                      className="text-orange-600 dark:text-orange-500"
-                    />
+                  <div className="flex items-center gap-2 text-orange-600 dark:text-orange-500">
+                    <Icon variant="Warning" size={14} />
                     <Text variant="subtext" weight="strong">
-                      {warnCount} Policy{' '}
-                      {warnCount === 1 ? 'Warning' : 'Warnings'}
+                      Policy {warnCount === 1 ? 'Warning' : 'Warnings'}
                     </Text>
                   </div>
                 }
@@ -117,7 +112,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                   {warnViolations.map((violation, index) => (
                     <li
                       key={`warn-${violation.policy_id}-${index}`}
-                      className="flex items-start gap-2 text-orange-700 dark:text-orange-400"
+                      className="flex items-start gap-2"
                     >
                       <Icon
                         variant="CaretRight"

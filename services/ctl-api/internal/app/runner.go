@@ -83,6 +83,8 @@ type Runner struct {
 
 	Warnings pq.StringArray `json:"warnings,omitempty" gorm:"type:text[];default:'{}'" swaggertype:"array,string" temporaljson:"warnings,omitempty"`
 
+	RestartRequested bool `json:"restart_requested,omitzero" gorm:"default:false" temporaljson:"restart_requested,omitzero,omitempty"`
+
 	RunnerGroupID string      `json:"runner_group_id,omitzero" gorm:"index:idx_runner_name,unique" temporaljson:"runner_group_id,omitzero,omitempty"`
 	RunnerGroup   RunnerGroup `json:"runner_group,omitzero" temporaljson:"runner_group,omitzero,omitempty"`
 
@@ -115,6 +117,12 @@ func (r *Runner) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &Runner{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &Runner{}, "restart_requested"),
+			Columns: []string{
+				"restart_requested",
 			},
 		},
 	}

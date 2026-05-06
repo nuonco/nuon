@@ -22,6 +22,9 @@ type SignaldbWorkflowRef struct {
 
 	// namespace
 	Namespace string `json:"namespace,omitempty"`
+
+	// run id
+	RunID string `json:"run_id,omitempty"`
 }
 
 // Validate validates this signaldb workflow ref

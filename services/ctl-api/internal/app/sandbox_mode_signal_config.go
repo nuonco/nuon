@@ -23,11 +23,11 @@ type SandboxModeSignalConfig struct {
 	Enabled bool `json:"enabled" gorm:"default:false"`
 
 	// Separate failure mode fields
-	DeadlockSleep time.Duration `json:"deadlock_sleep,omitempty"` // blocks in a real sleep
-	WorkflowSleep time.Duration `json:"workflow_sleep,omitempty"` // sleeps using workflow.Sleep
-	Panic         bool          `json:"panic"`                    // triggers panic
-	Error         string        `json:"error,omitempty"`          // returns error from Execute with this message
-	ValidateError string        `json:"validate_error,omitempty"` // returns error from Validate with this message
+	DeadlockSleep time.Duration `json:"deadlock_sleep,omitempty" swaggertype:"primitive,integer"` // blocks in a real sleep
+	WorkflowSleep time.Duration `json:"workflow_sleep,omitempty" swaggertype:"primitive,integer"` // sleeps using workflow.Sleep
+	Panic         bool          `json:"panic"`                                                    // triggers panic
+	Error         string        `json:"error,omitempty"`                                          // returns error from Execute with this message
+	ValidateError string        `json:"validate_error,omitempty"`                                 // returns error from Validate with this message
 }
 
 func (s *SandboxModeSignalConfig) BeforeCreate(tx *gorm.DB) error {

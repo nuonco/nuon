@@ -118,10 +118,10 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 		if err != nil {
 			return fmt.Errorf("unable to get org signals queue: %w", err)
 		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}); err != nil {
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
 			return fmt.Errorf("enqueue restart signal: %w", err)
 		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgreprovision.Signal{OrgID: org.ID}); err != nil {
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgreprovision.Signal{OrgID: org.ID}, org.ID); err != nil {
 			return fmt.Errorf("enqueue reprovision signal: %w", err)
 		}
 	} else {

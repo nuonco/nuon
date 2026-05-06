@@ -20,11 +20,14 @@ const SignalType signal.SignalType = "update-install-stack-outputs"
 
 type Signal struct {
 	InstallStackID          string
+	InstallStackVersionID   string
 	SkipInputUpdateWorkflow bool
 }
 
-var _ signal.Signal = &Signal{}
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var (
+	_ signal.Signal              = &Signal{}
+	_ signal.SignalWithAutoRetry = (*Signal)(nil)
+)
 
 func (s *Signal) AutoRetry() bool { return true }
 
@@ -47,14 +50,30 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install")
-	}
+	var err error
+	var install *app.Install
+	var version *app.InstallStackVersion
 
-	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get install version")
+	if s.InstallStackVersionID != "" {
+		version, err = activities.AwaitGetInstallStackVersionByID(ctx, activities.GetInstallStackVersionByIDRequest{
+			VersionID: s.InstallStackVersionID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to get install stack version")
+		}
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, version.InstallStackID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+	} else {
+		install, err = activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install")
+		}
+		version, err = activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install version")
+		}
 	}
 
 	run, err := activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
@@ -178,13 +197,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 }
 
 func validateRegion(install app.Install, outputs app.InstallStackOutputs) error {
+	// Region is recorded on the install only when the user committed to one
+	// at install creation. AWS/Azure both allow creating an install with no
+	// region, in which case the user picks one at apply time and the stack
+	// outputs are the source of truth. Only enforce a match when the install
+	// already carries a region.
 	switch {
 	case install.AWSAccount != nil:
-		if install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
+		if install.AWSAccount.Region != "" && install.AWSAccount.Region != outputs.AWSStackOutputs.Region {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	case install.AzureAccount != nil:
-		if install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
+		if install.AzureAccount.Location != "" && install.AzureAccount.Location != outputs.AzureStackOutputs.ResourceGroupLocation {
 			return errors.New("install stack was run for a different region than the install was configured for")
 		}
 	}

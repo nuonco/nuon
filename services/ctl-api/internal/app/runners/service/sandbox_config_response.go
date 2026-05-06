@@ -19,8 +19,8 @@ type SandboxConfigResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	Enabled         bool          `json:"enabled"`
-	Duration        time.Duration `json:"duration"`
-	SleepDuration   time.Duration `json:"sleep_duration,omitempty"`
+	Duration        time.Duration `json:"duration" swaggertype:"primitive,integer"`
+	SleepDuration   time.Duration `json:"sleep_duration,omitempty" swaggertype:"primitive,integer"`
 	TriggerShutdown bool          `json:"trigger_shutdown,omitempty"`
 
 	// Resolved template contents

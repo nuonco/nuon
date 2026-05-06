@@ -7,11 +7,11 @@ import { Code } from '@/components/common/Code'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Duration } from '@/components/common/Duration'
-import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
@@ -83,66 +83,24 @@ export const ActionDetail = () => {
       />
 
       <div className="@container flex flex-col flex-1">
-        <header className="p-6 border-b flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <BackLink />
-            {action?.runs?.[0] ? (
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-6">
-                  <LabeledValue label="Last status">
-                    <StatusWithDescription
-                      statusProps={{ status: action.runs[0].status_v2?.status }}
-                      tooltipProps={{
-                        position: 'top',
-                        tipContent:
-                          action.runs[0].status_v2?.status_human_description,
-                      }}
-                    />
-                  </LabeledValue>
-                  <LabeledValue label="Kube config">
-                    <Badge
-                      theme={kubeConfigEnabled ? 'info' : 'warn'}
-                      variant="code"
-                      size="sm"
-                    >
-                      {kubeConfigEnabled ? 'Enabled' : 'Disabled'}
-                    </Badge>
-                  </LabeledValue>
-                  <LabeledValue label="Timeout">
-                    <Duration
-                      nanoseconds={action?.action_workflow?.configs?.[0]?.timeout}
-                      variant="subtext"
-                    />
-                  </LabeledValue>
-                </div>
-                <LabeledValue label="Last trigger">
-                  <ActionTriggerType
-                    size="sm"
-                    triggerType={
-                      action.runs[0].triggered_by_type as TActionConfigTriggerType
-                    }
-                    componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
-                    componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
-                  />
-                </LabeledValue>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="flex items-end justify-between">
+        <header className="p-6 border-b flex flex-col gap-6">
+          <div className="flex flex-wrap items-start gap-4 justify-between w-full">
             <HeadingGroup>
-              <Text variant="base" weight="strong">
+              <BackLink className="mb-4" />
+              <Text variant="h3" weight="strong">
                 {action?.action_workflow?.name}
               </Text>
-              {action?.action_workflow_id ? (
-                <ID>{action.action_workflow_id}</ID>
-              ) : null}
-              {action?.id ? (
-                <AdminDashboardLink
-                  path={`/queues?owner_id=${action.id}`}
-                  label="Admin panel"
-                />
-              ) : null}
+              <span className="flex flex-wrap items-center gap-4 mt-1">
+                {action?.action_workflow_id ? (
+                  <ID>{action.action_workflow_id}</ID>
+                ) : null}
+                {action?.id ? (
+                  <AdminDashboardLink
+                    path={`/queues?owner_id=${action.id}`}
+                    label="Admin panel"
+                  />
+                ) : null}
+              </span>
             </HeadingGroup>
 
             <div className="flex items-center gap-4">
@@ -175,6 +133,45 @@ export const ActionDetail = () => {
               ) : null}
             </div>
           </div>
+
+          {action?.runs?.[0] ? (
+            <div className="flex flex-wrap gap-x-8 gap-y-4 items-start">
+              <LabeledStatus
+                label="Last status"
+                statusProps={{ status: action.runs[0].status_v2?.status }}
+                tooltipProps={{
+                  position: 'top',
+                  tipContent:
+                    action.runs[0].status_v2?.status_human_description,
+                }}
+              />
+              <LabeledValue label="Kube config">
+                <Badge
+                  theme={kubeConfigEnabled ? 'info' : 'warn'}
+                  variant="code"
+                  size="sm"
+                >
+                  {kubeConfigEnabled ? 'Enabled' : 'Disabled'}
+                </Badge>
+              </LabeledValue>
+              <LabeledValue label="Timeout">
+                <Duration
+                  nanoseconds={action?.action_workflow?.configs?.[0]?.timeout}
+                  variant="subtext"
+                />
+              </LabeledValue>
+              <LabeledValue label="Last trigger">
+                <ActionTriggerType
+                  size="sm"
+                  triggerType={
+                    action.runs[0].triggered_by_type as TActionConfigTriggerType
+                  }
+                  componentName={action.runs[0].run_env_vars?.COMPONENT_NAME}
+                  componentPath={`/${org?.id}/installs/${install?.id}/components/${action.runs[0].run_env_vars?.COMPONENT_ID}`}
+                />
+              </LabeledValue>
+            </div>
+          ) : null}
         </header>
 
         <div className="grid grid-cols-1 @5xl:grid-cols-12 flex-1">

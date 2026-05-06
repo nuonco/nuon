@@ -14,6 +14,8 @@ import (
 const SignalType signal.SignalType = "provision-runner"
 
 type Signal struct {
+	signal.LifecycleBase
+
 	InstallID string `json:"install_id"`
 }
 
@@ -25,8 +27,10 @@ func (s *Signal) AutoRetry() bool { return true }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{
-		InstallID: &s.InstallID,
-		Operation: "runner-provision",
+		InstallID:    &s.InstallID,
+		Operation:    "runner-provision",
+		WorkflowID:   s.LifecycleWorkflowID,
+		WorkflowType: s.LifecycleWorkflowType,
 	}
 }
 

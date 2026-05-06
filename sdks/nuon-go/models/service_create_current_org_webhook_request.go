@@ -19,6 +19,9 @@ import (
 // swagger:model service.CreateCurrentOrgWebhookRequest
 type ServiceCreateCurrentOrgWebhookRequest struct {
 
+	// interests
+	Interests any `json:"interests,omitempty"`
+
 	// webhook secret
 	WebhookSecret string `json:"webhook_secret,omitempty"`
 
