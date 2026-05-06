@@ -13,6 +13,7 @@ import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
 import { DeployDetailGate } from './DeployDetailGate'
 import { DeployLogsTab } from './deploy-tabs/DeployLogsTab'
+import { DeployTraceTab } from './deploy-tabs/DeployTraceTab'
 import { DeployPlanTab } from './deploy-tabs/DeployPlanTab'
 import { DeployVariablesTab } from './deploy-tabs/DeployVariablesTab'
 import { DeployStateTab } from './deploy-tabs/DeployStateTab'
@@ -24,9 +25,11 @@ import { ActionDetail } from './ActionDetail'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
+import { ActionRunTracePage } from './ActionRunTrace'
 import { SandboxRunDetailGate } from './SandboxRunDetailGate'
 import { SandboxRunLogsTab } from './sandbox-tabs/SandboxRunLogsTab'
 import { SandboxRunPlanTab } from './sandbox-tabs/SandboxRunPlanTab'
+import { SandboxRunTraceTab } from './sandbox-tabs/SandboxRunTraceTab'
 import { SandboxRunVariablesTab } from './sandbox-tabs/SandboxRunVariablesTab'
 import { SandboxRunStateTab } from './sandbox-tabs/SandboxRunStateTab'
 import { SandboxRunOutputsTab } from './sandbox-tabs/SandboxRunOutputsTab'
@@ -65,6 +68,7 @@ export const installRoutes: RouteObject[] = [
         element: <SandboxRunDetailGate />,
         children: [
           { index: true, element: <SandboxRunLogsTab /> },
+          { path: 'trace', element: <SandboxRunTraceTab /> },
           { path: 'plan', element: <SandboxRunPlanTab /> },
           { path: 'variables', element: <SandboxRunVariablesTab /> },
           { path: 'state', element: <SandboxRunStateTab /> },
@@ -94,6 +98,7 @@ export const installRoutes: RouteObject[] = [
         element: <DeployDetailGate />,
         children: [
           { index: true, element: <DeployLogsTab /> },
+          { path: 'trace', element: <DeployTraceTab /> },
           { path: 'plan', element: <DeployPlanTab /> },
           { path: 'variables', element: <DeployVariablesTab /> },
           { path: 'state', element: <DeployStateTab /> },
@@ -120,6 +125,7 @@ export const installRoutes: RouteObject[] = [
         children: [
           { index: true, element: <ActionRunDetail /> },
           { path: 'logs', element: <ActionRunLogsPage /> },
+          { path: 'trace', element: <ActionRunTracePage /> },
         ],
       },
     ],

@@ -34,12 +34,17 @@ func (z *zaphclogWriter) writeTerraform(byts []byte) error {
 	}
 
 	switch tfLine.Level {
+	case "trace", "debug":
+		z.zl.Debug(tfLine.Msg, attrs...)
 	case "info":
 		z.zl.Info(tfLine.Msg, attrs...)
 	case "error":
 		z.zl.Error(tfLine.Msg, attrs...)
 	case "warning", "warn":
 		z.zl.Warn(tfLine.Msg, attrs...)
+	default:
+		// Unknown levels (or empty) fall back to Info so we don't silently drop them.
+		z.zl.Info(tfLine.Msg, attrs...)
 	}
 
 	return nil

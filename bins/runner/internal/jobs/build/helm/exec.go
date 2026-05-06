@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
 	"github.com/nuonco/nuon/pkg/plans"
 )
@@ -22,7 +23,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	l.Info("packaging chart", zapcore.Field{Key: "base_path", Type: zapcore.StringType, String: h.state.arch.BasePath()})
+	_, endPkg := op.Tool(ctx, "helm", "package_chart")
 	packagePath, err := h.packageChart(l)
+	endPkg(err)
 	if err != nil {
 		return fmt.Errorf("unable to get source files: %w", err)
 	}
