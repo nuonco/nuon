@@ -88,12 +88,38 @@ func New(v *validator.Validate,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
 ) (*gorm.DB, error) {
+	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBHost)
+}
+
+// NewReplica errors if DBReplicaHost is empty so callers can't silently
+// fall back to the primary.
+func NewReplica(v *validator.Validate,
+	l zapgorm2.Logger,
+	metricsWriter metrics.Writer,
+	lc fx.Lifecycle,
+	cfg *internal.Config,
+	qc *querycollector.Collector,
+) (*gorm.DB, error) {
+	if cfg.DBReplicaHost == "" {
+		return nil, fmt.Errorf("db_replica_host must be set to use the read replica")
+	}
+	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost)
+}
+
+func open(v *validator.Validate,
+	l zapgorm2.Logger,
+	metricsWriter metrics.Writer,
+	lc fx.Lifecycle,
+	cfg *internal.Config,
+	qc *querycollector.Collector,
+	host string,
+) (*gorm.DB, error) {
 	ctx := context.Background()
 	ctx, cancelFn := context.WithCancel(ctx)
 
 	database := &database{
 		Logger:         l,
-		Host:           cfg.DBHost,
+		Host:           host,
 		User:           cfg.DBUser,
 		Name:           cfg.DBName,
 		Port:           cfg.DBPort,
