@@ -48,6 +48,14 @@ func ClientV2(log *zap.Logger, kubeCfg *rest.Config, ns string) (*action.Configu
 		return nil, fmt.Errorf("failed to create kube client: %w", err)
 	}
 
+	// The Helm v4 SDK logs internally via the standard library's slog default
+	// logger. Without this bridge, those messages go to os.Stdout and never
+	// reach OTEL. Routing slog -> our zap logger ensures SDK output flows
+	// through the same per-job log stream as the rest of the runner.
+	if log != nil {
+		slog.SetDefault(slog.New(newZapSlogHandler(log)))
+	}
+
 	// Initialize our action
 	ac, err := initActionConfig(&RestClientGetter{
 		RestConfig: kubeCfg,

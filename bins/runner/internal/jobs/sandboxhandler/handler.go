@@ -18,6 +18,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -88,10 +89,73 @@ func (h *Handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 }
 
 func (h *Handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
+	// Tag this handler's logger with the same semantic-convention attributes
+	// the real per-tool deploy/sandbox handlers emit, so logs from sandbox-mode
+	// orgs are filterable in the dashboard by nuon.tool / service.name even
+	// though they're produced by the universal stub handler.
+	if l, err := pkgctx.Logger(ctx); err == nil {
+		tool, svc := toolAndServiceForJobType(job.Type)
+		l = l.With(
+			zap.String("service.name", svc),
+			zap.String("nuon.tool", tool),
+			zap.String("nuon.deploy.kind", "sandbox."+tool),
+			zap.String("nuon.job.type", string(job.Type)),
+			zap.String("nuon.job.operation", string(job.Operation)),
+		)
+		// SetLoggerWithSpan re-stamps ContextField(ctx) so the step span
+		// (current span on ctx, opened in executeJob) is picked up by every
+		// emit through the contextual logger inside execSandboxStep /
+		// execStepForStep. Plain SetLogger would inherit the parent ctx field
+		// — which already points at the step ctx — but we re-attach to make
+		// the intent explicit and stay symmetric with op.Start.
+		ctx = pkgctx.SetLoggerWithSpan(ctx, l)
+	}
+
 	if job.Type == models.AppRunnerJobTypeActionsDashWorkflow {
 		return h.execActionSandboxStep(ctx, job)
 	}
 	return h.execSandboxStep(ctx, job)
+}
+
+// toolAndServiceForJobType maps a runner job.Type to the (nuon.tool,
+// service.name) pair the dashboard log filters key off. Tool labels match the
+// real deploy-mode handlers (terraform/helm/kubernetes_manifest/job/pulumi/
+// sync_secrets/action) so a single filter value covers both real and
+// sandbox-mode logs; service.name is namespaced under runner.sandbox.* so
+// users can still distinguish them when needed.
+func toolAndServiceForJobType(jobType models.AppRunnerJobType) (string, string) {
+	switch jobType {
+	case models.AppRunnerJobTypeTerraformDashDeploy,
+		models.AppRunnerJobTypeRunnerDashTerraform,
+		models.AppRunnerJobTypeSandboxDashTerraform,
+		models.AppRunnerJobTypeSandboxDashTerraformDashPlan,
+		models.AppRunnerJobTypeTerraformDashModuleDashBuild:
+		return "terraform", "runner.sandbox.terraform"
+	case models.AppRunnerJobTypeHelmDashChartDashDeploy,
+		models.AppRunnerJobTypeRunnerDashHelm,
+		models.AppRunnerJobTypeHelmDashChartDashBuild:
+		return "helm", "runner.sandbox.helm"
+	case models.AppRunnerJobTypeKubernetesDashManifestDashDeploy,
+		models.AppRunnerJobTypeKubernetesDashManifestDashBuild:
+		return "kubernetes_manifest", "runner.sandbox.kubernetes_manifest"
+	case models.AppRunnerJobTypeJobDashDeploy:
+		return "job", "runner.sandbox.job"
+	case models.AppRunnerJobTypePulumiDashDeploy,
+		models.AppRunnerJobTypeSandboxDashPulumi,
+		models.AppRunnerJobTypePulumiDashBuild:
+		return "pulumi", "runner.sandbox.pulumi"
+	case models.AppRunnerJobTypeSandboxDashSyncDashSecrets:
+		return "sync_secrets", "runner.sandbox.sync_secrets"
+	case models.AppRunnerJobTypeActionsDashWorkflow:
+		return "action", "runner.sandbox.action"
+	case models.AppRunnerJobTypeDockerDashBuild,
+		models.AppRunnerJobTypeContainerDashImageDashBuild:
+		return "docker", "runner.sandbox.docker"
+	case models.AppRunnerJobTypeOciDashSync:
+		return "oci_sync", "runner.sandbox.oci_sync"
+	default:
+		return "sandbox", "runner.sandbox"
+	}
 }
 
 func (h *Handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -212,31 +276,32 @@ func (h *Handler) execSandboxStep(ctx context.Context, job *models.AppRunnerJob)
 		zap.Duration("duration", duration),
 		zap.String("duration_human", duration.String()),
 	)
-	timeout := time.NewTimer(duration)
-	ticker := time.NewTicker(logPeriod)
-	defer ticker.Stop()
-	defer timeout.Stop()
 
-	logLineIdx := 0
+	// Open one op.Tool span per simulated tool operation so sandbox-mode
+	// jobs render in the dashboard span tree with the same shape as a real
+	// deploy job. The simulatedOps table mirrors the op names wrapped by
+	// real handlers in Phase 3 (terraform.plan, helm.upgrade, etc.); jobs
+	// not in the table fall back to a single <tool>.exec span so we never
+	// regress prior behavior.
+	tool, _ := toolAndServiceForJobType(job.Type)
+	ops := simulatedOps(job.Type, job.Operation)
+	if len(ops) == 0 {
+		ops = []simOp{{op: "exec", fraction: 1.0}}
+	}
+
 	hasCustomLogs := cfg != nil && len(cfg.LogLines) > 0
+	customLogIdx := 0
 
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("sandbox: job timed out for %s", jobType)
-		case <-ticker.C:
-			if hasCustomLogs && logLineIdx < len(cfg.LogLines) {
-				l.Info(cfg.LogLines[logLineIdx])
-				logLineIdx++
-			} else {
-				l.Info("fake log output")
-			}
-
-		case <-timeout.C:
-			goto BREAK
+	for _, sop := range ops {
+		opDur := time.Duration(float64(duration) * sop.fraction)
+		if opDur <= 0 {
+			continue
+		}
+		if err := h.runSimOp(ctx, l, tool, sop, opDur, hasCustomLogs, cfg, &customLogIdx); err != nil {
+			return err
 		}
 	}
-BREAK:
+
 	l.Info("sandbox job complete",
 		zap.String("job_type", jobType),
 		zap.Duration("duration", duration),
@@ -251,6 +316,58 @@ BREAK:
 	}
 
 	return nil
+}
+
+// runSimOp opens an op.Tool span for one simulated tool operation, sleeps
+// for `dur` while emitting log lines on a ticker, and closes the span. If
+// the parent ctx is cancelled the span is closed with an error so the
+// dashboard tree colors it red.
+//
+// Custom log lines from sandbox config (cfg.LogLines) are consumed across op
+// spans via *customLogIdx so the existing "use custom logs until exhausted,
+// then fall back to canned output" semantics are preserved across the new
+// multi-span layout.
+func (h *Handler) runSimOp(
+	ctx context.Context,
+	parentLog *zap.Logger,
+	tool string,
+	sop simOp,
+	dur time.Duration,
+	useCustomLogs bool,
+	cfg *Config,
+	customLogIdx *int,
+) error {
+	opCtx, end := op.Tool(ctx, tool, sop.op)
+	opLog := pkgctx.LoggerOrDefault(opCtx, parentLog)
+
+	timeout := time.NewTimer(dur)
+	defer timeout.Stop()
+	ticker := time.NewTicker(logPeriod)
+	defer ticker.Stop()
+
+	cannedIdx := 0
+	for {
+		select {
+		case <-opCtx.Done():
+			err := fmt.Errorf("sandbox: op %s.%s cancelled", tool, sop.op)
+			end(err)
+			return err
+		case <-ticker.C:
+			switch {
+			case useCustomLogs && cfg != nil && *customLogIdx < len(cfg.LogLines):
+				opLog.Info(cfg.LogLines[*customLogIdx])
+				*customLogIdx++
+			case cannedIdx < len(sop.logs):
+				opLog.Info(sop.logs[cannedIdx])
+				cannedIdx++
+			default:
+				opLog.Info("(simulated) " + tool + "." + sop.op + " progressing")
+			}
+		case <-timeout.C:
+			end(nil)
+			return nil
+		}
+	}
 }
 
 // execActionSandboxStep handles sandbox mode for actions-workflow job types.

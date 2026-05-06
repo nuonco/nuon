@@ -186,8 +186,15 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
           variant="subtext"
         />
 
-        <Text family="mono" variant="subtext">
-          {log.service_name}
+        <Text
+          family="mono"
+          variant="subtext"
+          nowrap
+          as="div"
+          className="truncate"
+          title={log.service_name}
+        >
+          {log.service_name?.split('.').pop()}
         </Text>
         <span className="!inline-block w-full max-w-full overflow-hidden">
           <Text

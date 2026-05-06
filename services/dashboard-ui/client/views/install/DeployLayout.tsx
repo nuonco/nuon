@@ -15,8 +15,14 @@ import { getComponent, getWorkflow } from '@/lib'
 import type { TComponentType } from '@/types'
 import type { TNavLink } from '@/types'
 
-function getTabsForComponentType(type?: TComponentType): TNavLink[] {
+function getTabsForComponentType(
+  type?: TComponentType,
+  traceEnabled?: boolean
+): TNavLink[] {
   const tabs: TNavLink[] = [{ path: '/', text: 'Logs' }]
+  if (traceEnabled) {
+    tabs.push({ path: '/trace', text: 'Trace' })
+  }
 
   switch (type) {
     case 'terraform_module':
@@ -93,7 +99,10 @@ const DeployLayoutInner = () => {
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
 
   const basePath = `/${org?.id}/installs/${installId}/components/${componentId}/deploys/${deployId}`
-  const tabs = getTabsForComponentType(component?.type)
+  const tabs = getTabsForComponentType(
+    component?.type,
+    org?.features?.['trace-view']
+  )
 
   if (pendingApproval && !isAutoApprove) {
     const planTab = tabs.find((t) => t.path === '/plan')
