@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
@@ -65,6 +66,11 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 	if c.enqueuer != nil {
 		c.enqueuer.Send(queueSignal.ID)
 	}
+
+	c.mw.Incr("queue.signal.enqueued", metrics.ToTags(map[string]string{
+		"signal_type": string(req.Signal.Type()),
+		"owner_type":  req.OwnerType,
+	}))
 
 	return &queue.EnqueueResponse{
 		ID:         queueSignal.ID,
