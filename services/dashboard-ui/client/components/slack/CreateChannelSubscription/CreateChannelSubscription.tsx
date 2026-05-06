@@ -9,6 +9,8 @@ import {
   allEvents,
   type Interests,
 } from '@/components/interests'
+import { MatchPicker } from '@/components/match/MatchPicker'
+import type { SubscriptionMatch } from '@/components/match/types'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
   TAPIError,
@@ -22,6 +24,7 @@ export type CreateChannelSubscriptionInput = {
   orgLinkId: string
   channelId: string
   channelName: string
+  match: SubscriptionMatch | undefined
   interests: Interests
 }
 
@@ -61,6 +64,7 @@ export const CreateChannelSubscriptionModal = ({
 } & Omit<IModal, 'onSubmit'>) => {
   const [channelId, setChannelId] = useState('')
   const [channelName, setChannelName] = useState('')
+  const [match, setMatch] = useState<SubscriptionMatch | undefined>(undefined)
   const [interests, setInterests] = useState<Interests>(() => allEvents())
 
   useEffect(() => {
@@ -113,6 +117,7 @@ export const CreateChannelSubscriptionModal = ({
             orgLinkId: matchingLink.id,
             channelId,
             channelName,
+            match,
             interests,
           })
         },
@@ -179,6 +184,14 @@ export const CreateChannelSubscriptionModal = ({
             The Nuon bot must be invited to private channels before they appear
             here.
           </Text>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Scope</Label>
+          <Text variant="subtext" theme="neutral">
+            Filter which resources fire notifications in this channel.
+          </Text>
+          <MatchPicker value={match} onChange={setMatch} />
         </div>
 
         <div className="flex flex-col gap-2">

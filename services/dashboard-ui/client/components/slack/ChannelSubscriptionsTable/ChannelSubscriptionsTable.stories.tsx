@@ -37,7 +37,7 @@ const subs: TSlackChannelSubscription[] = [
           approval_requests: true,
           approval_responses: true,
         },
-        deploys: {
+        components: {
           outcome: 'failures',
           approval_requests: true,
           approval_responses: true,
@@ -55,6 +55,44 @@ const subs: TSlackChannelSubscription[] = [
     org_id: 'org-001',
     interests: {},
     created_at: '2026-04-20T15:00:00Z',
+  },
+  // Per-install scope — describeMatch renders "2 installs".
+  {
+    id: 'slc-004',
+    channel_id: 'C4444444444',
+    channel_name: 'install-pinned',
+    team_id: 'T0123456789',
+    org_link_id: 'slo-001',
+    org_id: 'org-001',
+    interests: { all_events: true },
+    match: { installs: { ids: ['inst_a', 'inst_b'] } },
+    created_at: '2026-04-15T15:00:00Z',
+  },
+  // Components by labels — describeMatch renders "Components: env=prod".
+  {
+    id: 'slc-005',
+    channel_id: 'C3333333333',
+    channel_name: 'prod-components',
+    team_id: 'T0123456789',
+    org_link_id: 'slo-001',
+    org_id: 'org-001',
+    interests: { all_events: true },
+    match: {
+      components: { selector: { match_labels: { env: 'prod' } } },
+    },
+    created_at: '2026-04-10T15:00:00Z',
+  },
+  // Empty TargetMatch{} — describeMatch renders "Any actions".
+  {
+    id: 'slc-006',
+    channel_id: 'C2222222222',
+    channel_name: 'all-actions',
+    team_id: 'T0123456789',
+    org_link_id: 'slo-001',
+    org_id: 'org-001',
+    interests: { all_events: true },
+    match: { actions: {} },
+    created_at: '2026-04-05T15:00:00Z',
   },
 ]
 

@@ -135,14 +135,17 @@ export type TSlackInstallationStatus =
 export type TSlackOrgLink = components['schemas']['app.SlackOrgLink']
 export type TSlackOrgLinkStatus =
   components['schemas']['app.SlackOrgLinkStatus']
-// `interests` is stamped `swaggertype:"object"` on the Go side, so the
-// generated SDK shape is a generic object. Re-cast to the hand-written
-// Interests type at the API boundary, matching TWebhook above.
+// `interests` and `match` are both stamped `swaggertype:"object"` on the
+// Go side, so the generated SDK shape is a generic object. Re-cast each
+// to its hand-written mirror at the API boundary so dashboard code can
+// read sub.match.installs?.ids without casting through any. See
+// client/components/match/types.ts for SubscriptionMatch.
 export type TSlackChannelSubscription = Omit<
   components['schemas']['app.SlackChannelSubscription'],
-  'interests'
+  'interests' | 'match'
 > & {
   interests?: TInterests
+  match?: TSubscriptionMatch
 }
 export type TSlackInstallURLResponse =
   components['schemas']['service.GetInstallURLResponse']
@@ -151,12 +154,23 @@ export type TSlackChannelsResponse =
   components['schemas']['service.ListChannelsResponse']
 export type TCreateSlackOrgLinkBody =
   components['schemas']['service.CreateOrgLinkRequest']
+// `interests` and `match` are both stamped `swaggertype:"object"` on the
+// Go side, so the generated SDK shape is a generic object. Re-cast both at
+// the API boundary so callers get type-checked payloads. SubscriptionMatch
+// is the TypeScript mirror of pkg/labels.SubscriptionMatch — see
+// client/components/match/types.ts.
 export type TCreateSlackChannelSubscriptionBody = Omit<
   components['schemas']['service.CreateChannelSubscriptionRequest'],
-  'interests'
+  'interests' | 'match'
 > & {
   interests?: TInterests
+  match?: TSubscriptionMatch
 }
+
+// Re-export SubscriptionMatch under a `T`-prefixed alias so dashboard
+// types stay in one place. The picker / helpers import the raw type from
+// '@/components/match/types' directly to avoid a re-import dance.
+export type TSubscriptionMatch = import('@/components/match/types').SubscriptionMatch
 
 // install
 export type TInstall = components['schemas']['app.Install'] & {

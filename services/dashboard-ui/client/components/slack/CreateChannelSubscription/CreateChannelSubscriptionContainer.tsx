@@ -94,6 +94,7 @@ const CreateChannelSubscriptionModalContainer = (
           org_link_id: input.orgLinkId,
           channel_id: input.channelId,
           channel_name: input.channelName,
+          match: input.match,
           interests: input.interests,
         },
       }),

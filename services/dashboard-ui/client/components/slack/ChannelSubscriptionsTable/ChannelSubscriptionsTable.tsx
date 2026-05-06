@@ -12,7 +12,9 @@ import {
   RESOURCE_LABELS,
   type Interests,
 } from '@/components/interests'
+import { describeMatch } from '@/components/match/types'
 import { DeleteChannelSubscriptionButton } from '@/components/slack/DeleteChannelSubscription'
+import { EditChannelSubscriptionButton } from '@/components/slack/EditChannelSubscription'
 import type { TSlackChannelSubscription, TSlackOrgLink } from '@/types'
 
 const teamLabel = (
@@ -41,6 +43,10 @@ export const ChannelSubscriptionsTable = ({
         cell: (props) => {
           const name = props.getValue<string | undefined>()
           const id = props.row.original.channel_id
+          // Scope subtitle mirrors the Slack subscribe modal's
+          // describeMatch vocabulary so the dashboard and slash-command
+          // surfaces describe the same row identically.
+          const scope = describeMatch(props.row.original.match)
           return (
             <div className="flex flex-col gap-1">
               <Text variant="base" weight="strong">
@@ -51,6 +57,9 @@ export const ChannelSubscriptionsTable = ({
                   {id}
                 </Code>
               ) : null}
+              <Text variant="subtext" theme="neutral">
+                {scope}
+              </Text>
             </div>
           )
         },
@@ -90,7 +99,11 @@ export const ChannelSubscriptionsTable = ({
         id: 'action',
         header: '',
         cell: (props) => (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-1">
+            <EditChannelSubscriptionButton
+              subscription={props.row.original}
+              size="sm"
+            />
             <DeleteChannelSubscriptionButton
               subscription={props.row.original}
               size="sm"
@@ -134,18 +147,30 @@ export const ChannelSubscriptionsTableSkeleton = () => (
 )
 
 // Compact summary of an Interests config for the table cell. Mirrors the
-// picker semantics: AllEvents wins, an empty resources map means "no events
-// will fire", and otherwise we render one badge per enabled resource with the
-// configured outcome appended (omitted when it's the implicit "all activity").
+// picker semantics AND the backend matcher (interests.Matches):
+//   - all_events=true                   → "All events"
+//   - empty / missing / no resources    → "No events" (matcher returns false
+//     for every event in this case — the row was created with explicit
+//     opt-out, or the JSONB column was persisted as NULL because the
+//     Interests struct was IsZero).
+//   - otherwise                         → one badge per enabled resource
+//     with the configured outcome appended (omitted when it's the implicit
+//     "all activity").
+//
+// IMPORTANT: do NOT treat `interests === undefined` as "all events". The
+// backend serializes a zero-valued Interests with `omitzero`, so an empty
+// subscription comes back over the wire with no `interests` key — falsely
+// showing "All events" here misleads users into thinking they're still
+// subscribed to everything.
 const InterestsSummary = ({
   interests,
 }: {
   interests: Interests | undefined
 }) => {
-  if (!interests || interests.all_events) {
+  if (interests?.all_events) {
     return <Badge theme="neutral">All events</Badge>
   }
-  const resources = interests.resources ?? {}
+  const resources = interests?.resources ?? {}
   const enabled = ALL_RESOURCES.filter((kind) =>
     Object.prototype.hasOwnProperty.call(resources, kind)
   )

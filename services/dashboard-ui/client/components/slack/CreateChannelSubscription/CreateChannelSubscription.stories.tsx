@@ -71,6 +71,10 @@ export const NoInstallations = () => (
   </ModalStory>
 )
 
+// Stories don't drive the internal MatchPicker via a prop — the picker
+// owns its own state — so this variant doesn't preconfigure scope at the
+// modal level. The pre-scoped flow is exercised by EditChannelSubscription
+// stories instead, which seed `subscription.match` directly.
 export const LoadingMore = () => (
   <ModalStory>
     <CreateChannelSubscriptionModal
