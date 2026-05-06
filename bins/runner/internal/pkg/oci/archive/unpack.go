@@ -14,10 +14,15 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
-func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryRepository, tag string) error {
+func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryRepository, tag string) (retErr error) {
+	opCtx, end := op.Tool(ctx, "oci", "unpack")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
 	l, err := pkgctx.Logger(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to get logger: %w", err)

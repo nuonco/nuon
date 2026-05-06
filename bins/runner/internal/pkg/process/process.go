@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	otellog "go.opentelemetry.io/otel/sdk/log"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/pkg/retry"
@@ -15,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/strace"
 	"github.com/nuonco/nuon/bins/runner/internal/version"
 )
 
@@ -32,8 +36,9 @@ type Params struct {
 type Result struct {
 	fx.Out
 
-	Registrar          *Registrar
-	ProcessLogProvider *otellog.LoggerProvider `name:"process-log-provider" optional:"true"`
+	Registrar             *Registrar
+	ProcessLogProvider    *otellog.LoggerProvider  `name:"process-log-provider" optional:"true"`
+	ProcessTracerProvider *sdktrace.TracerProvider `name:"process-tracer-provider" optional:"true"`
 }
 
 type Registrar struct {
@@ -44,8 +49,9 @@ type Registrar struct {
 	settings    *settings.Settings
 	shutdowner  fx.Shutdowner
 
-	logStreamID string
-	logProvider *otellog.LoggerProvider
+	logStreamID    string
+	logProvider    *otellog.LoggerProvider
+	tracerProvider *sdktrace.TracerProvider
 }
 
 // New creates a process and registers it with the API during initialization
@@ -87,6 +93,14 @@ func New(params Params) (Result, error) {
 		}
 	}
 
+	// Process-scope TracerProvider for the tool-call-graph spike. We register
+	// it as the global so op.Start can pick it up via otel.Tracer(...) without
+	// having to thread a TracerProvider through every job handler.
+	if tp, err := strace.NewProcessProvider(r.cfg, r.settings); err == nil {
+		r.tracerProvider = tp
+		otel.SetTracerProvider(tp)
+	}
+
 	params.LC.Append(fx.Hook{
 		OnStop: func(ctx context.Context) error {
 			return r.stop(ctx)
@@ -94,8 +108,9 @@ func New(params Params) (Result, error) {
 	})
 
 	return Result{
-		Registrar:          r,
-		ProcessLogProvider: r.logProvider,
+		Registrar:             r,
+		ProcessLogProvider:    r.logProvider,
+		ProcessTracerProvider: r.tracerProvider,
 	}, nil
 }
 
@@ -110,6 +125,19 @@ func (r *Registrar) LogStreamID() string {
 // LogProvider returns the OTEL log provider for the process log stream.
 func (r *Registrar) LogProvider() *otellog.LoggerProvider {
 	return r.logProvider
+}
+
+// TracerProvider returns the process-scoped OTEL TracerProvider, falling back
+// to the global if none was created. Callers should prefer this over
+// otel.GetTracerProvider() because transitive deps (e.g. the docker
+// distribution registry) call otel.SetTracerProvider during their init and
+// silently overwrite the global, sending our spans to the default OTLP
+// endpoint instead of the runner traces ingest endpoint.
+func (r *Registrar) TracerProvider() oteltrace.TracerProvider {
+	if r.tracerProvider == nil {
+		return otel.GetTracerProvider()
+	}
+	return r.tracerProvider
 }
 
 func (r *Registrar) stop(ctx context.Context) error {
@@ -129,6 +157,15 @@ func (r *Registrar) stop(ctx context.Context) error {
 	if r.logProvider != nil {
 		if err := r.logProvider.ForceFlush(ctx); err != nil {
 			return fmt.Errorf("unable to flush process log provider: %w", err)
+		}
+	}
+
+	if r.tracerProvider != nil {
+		if err := r.tracerProvider.ForceFlush(ctx); err != nil {
+			return fmt.Errorf("unable to flush process tracer provider: %w", err)
+		}
+		if err := r.tracerProvider.Shutdown(ctx); err != nil {
+			return fmt.Errorf("unable to shutdown process tracer provider: %w", err)
 		}
 	}
 
