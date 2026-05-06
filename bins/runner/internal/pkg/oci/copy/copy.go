@@ -15,6 +15,7 @@ import (
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/oci"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 )
 
@@ -22,7 +23,11 @@ const (
 	defaultCopyConcurrency int = 10
 )
 
-func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (*ocispec.Descriptor, error) {
+func (c *copier) Copy(ctx context.Context, srcCfg *configs.OCIRegistryRepository, srcTag string, dstCfg *configs.OCIRegistryRepository, dstTag string) (_ *ocispec.Descriptor, retErr error) {
+	opCtx, end := op.Tool(ctx, "oci", "copy")
+	ctx = opCtx
+	defer func() { end(retErr) }()
+
 	srcRepo, err := oci.GetRepo(ctx, srcCfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get source repo")

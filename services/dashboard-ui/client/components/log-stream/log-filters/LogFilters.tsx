@@ -1,8 +1,10 @@
 import { LogJobOutputFilter } from './LogJobOutputFilter'
+import { LogScopeFilter } from './LogScopeFilter'
 import { LogSearch } from './LogSearch'
 import { LogServiceFilter } from './LogServiceFilter'
 import { LogSeverityFilter } from './LogSeverityFilter'
 import { LogSort } from './LogSort'
+import { LogToolFilter } from './LogToolFilter'
 import { DownloadLogsButton } from '../DownloadLogs'
 import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 import { useUnifiedLogData } from '@/hooks/use-logs'
@@ -20,6 +22,8 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
       <div className="flex items-center justify-end gap-4">
         <LogJobOutputFilter filters={filters} />
         <LogSort filters={filters} />
+        <LogToolFilter filters={filters} />
+        <LogScopeFilter filters={filters} />
         <LogServiceFilter title="Service" filters={filters} />
         <LogSeverityFilter title="Severity" filters={filters} />
         {!isStreamOpen && <DownloadLogsButton />}

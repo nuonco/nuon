@@ -16,6 +16,7 @@ import type { TNavLink } from '@/types'
 
 const sandboxTabs: TNavLink[] = [
   { path: '/', text: 'Logs' },
+  { path: '/trace', text: 'Trace' },
   { path: '/plan', text: 'Plan' },
   { path: '/variables', text: 'Variables' },
   { path: '/state', text: 'State' },
@@ -50,7 +51,10 @@ const SandboxRunLayoutInner = () => {
     step?.approval && !step?.approval?.response && !responded && !isTerminal && stepStatus !== 'auto-skipped'
 
   const basePath = `/${org?.id}/installs/${install?.id}/sandbox/runs/${runId}`
-  const tabs = sandboxTabs.map((t) => ({ ...t }))
+  const traceEnabled = !!org?.features?.['trace-view']
+  const tabs = sandboxTabs
+    .filter((t) => traceEnabled || t.path !== '/trace')
+    .map((t) => ({ ...t }))
 
   if (pendingApproval && !isAutoApprove) {
     const planTab = tabs.find((t) => t.path === '/plan')

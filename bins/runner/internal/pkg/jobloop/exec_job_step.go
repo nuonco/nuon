@@ -56,7 +56,15 @@ func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
 }
 
 func (j *jobLoop) execJobStep(ctx context.Context, l *zap.Logger, logProvider *log.LoggerProvider, step *executeJobStep, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	l = l.With(zap.String("runner_job_execution_step.name", step.name))
+	// Attach pkgctx.ContextField(ctx) to BOTH the local `l` and the
+	// ctx-stored logger so the otelzap bridge can extract the per-step span
+	// (opened in executeJob) on every emit. The local `l` is used directly by
+	// l.Info("step was completed successfully", …) below — without this the
+	// caller's plain logger has no ctx field and those step-scope logs land
+	// in otel_log_records with an empty span_id, which breaks the dashboard's
+	// span→logs cross-link. SetLoggerWithSpan only mutates the copy stored
+	// in ctx, so we have to re-wrap `l` here too.
+	l = l.With(zap.String("runner_job_execution_step.name", step.name), pkgctx.ContextField(ctx))
 	ctx = pkgctx.SetLogger(ctx, l)
 
 	startTS := time.Now()

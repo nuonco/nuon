@@ -316,6 +316,23 @@ export type TRunnerProcessShutdown =
 // log stream
 export type TLogStream = components['schemas']['app.LogStream']
 
+// otel spans (Phase 4 spans endpoint — defined manually until ctl-api ships
+// the schema; the wire shape mirrors the runner -> ctl-api ingestion record).
+export type TSpan = {
+  span_id: string
+  parent_span_id?: string
+  trace_id?: string
+  name: string
+  start_time: string
+  end_time: string
+  duration_ns: number
+  status_code?: 'Ok' | 'Error' | 'Unset' | string
+  status_message?: string
+  attributes?: Record<string, string>
+  scope_name?: string
+  service_name?: string
+}
+
 // old action workflows types
 export type TActionWorkflow = components['schemas']['app.ActionWorkflow']
 export type TActionConfig = components['schemas']['app.ActionWorkflowConfig']
