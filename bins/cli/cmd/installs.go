@@ -25,6 +25,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		componentID      string
 		roleName         string
 		inputs           []string
+		labelArgs        []string
 		noSelect         bool
 		deployDeps       bool
 		offset           int
@@ -51,15 +52,21 @@ func (c *cli) installsCmd() *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List installs",
-		Long:    "List all your app's installs",
+		Long: `List all your app's installs.
+
+Use --labels (repeatable, format key=value) to filter installs by labels. All
+provided labels must match (AND semantics):
+
+  nuon installs list --labels env=prod --labels team=platform`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
+			return svc.List(cmd.Context(), appID, offset, limit, labelArgs, PrintJSON)
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter installs by")
 	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
 	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum installs to return")
+	listCmd.Flags().StringSliceVar(&labelArgs, "labels", []string{}, "Filter installs by labels (repeatable, format: key=value). All labels must match.")
 	installsCmds.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
@@ -102,13 +109,18 @@ func (c *cli) installsCmd() *cobra.Command {
 	installsCmds.AddCommand(generateConfigCmd)
 
 	createCmd := &cobra.Command{
-		Use:         "create",
-		Short:       "Create an install",
-		Long:        "Create a new install of your app",
+		Use:   "create",
+		Short: "Create an install",
+		Long: `Create a new install of your app.
+
+Use --label (repeatable, format key=value) to attach labels at creation time:
+
+  nuon installs create -a my-app -n my-install -r us-west-2 \
+    --label env=prod --label team=platform`,
 		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Create(cmd.Context(), appID, name, region, inputs, PrintJSON, noSelect)
+			return svc.Create(cmd.Context(), appID, name, region, inputs, labelArgs, PrintJSON, noSelect)
 		}),
 	}
 	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to create this install for")
@@ -122,6 +134,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		createCmd.MarkFlagRequired("region")
 	}
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
+	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
 	installsCmds.AddCommand(createCmd)
 
@@ -1000,6 +1013,31 @@ By default, launches an interactive TUI to browse and execute actions.`,
 	actionsCmd.AddCommand(actionsOutputsCmd)
 
 	installsCmds.AddCommand(actionsCmd)
+
+	labelCmd := &cobra.Command{
+		Use:   "label",
+		Short: "Add, remove, or view labels on an install",
+		Long: `Add, remove, or view labels on an install.
+
+Labels are key-value strings. Pass kubectl-style positional args:
+  KEY=VALUE   add or overwrite a label
+  KEY-        remove a label
+
+With no args, prints the install's current labels.
+
+Examples:
+  nuon installs label --install-id inst_abc env=prod team=platform
+  nuon installs label --install-id inst_abc env-
+  nuon installs label --install-id inst_abc env=prod owner-
+  nuon installs label --install-id inst_abc`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.Label(cmd.Context(), id, args, PrintJSON)
+		}),
+	}
+	labelCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to label")
+	labelCmd.MarkFlagRequired("install-id")
+	installsCmds.AddCommand(labelCmd)
 
 	return installsCmds
 }
