@@ -1753,6 +1753,20 @@ export interface paths {
      */
     get: operations["GetInstallStackRuns"];
   };
+  "/v1/installs/{install_id}/stack-runs/{phone_home_id}": {
+    /**
+     * create a stack version run
+     * @description start a new run for an install stack version. Public endpoint, mirrors phone-home: the per-stack-version phone_home_id in the URL acts as the secret. Used by the AWS-native SDK provisioner; legacy CFN/TF flows use phone-home.
+     */
+    post: operations["CreateInstallStackVersionRun"];
+  };
+  "/v1/installs/{install_id}/stack-runs/{phone_home_id}/{run_id}": {
+    /**
+     * update a stack version run
+     * @description mark a run terminal (succeeded/failed). Public endpoint, mirrors phone-home: phone_home_id in the URL acts as the secret.
+     */
+    patch: operations["UpdateInstallStackVersionRun"];
+  };
   "/v1/installs/{install_id}/state": {
     /**
      * Get the current state of an install.
@@ -4005,6 +4019,7 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallStackVersionRun": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
       created_at?: string;
       created_by_id?: string;
       data?: {
@@ -4014,6 +4029,19 @@ export interface components {
         [key: string]: unknown;
       };
       id?: string;
+      /**
+       * @description LogStream is populated transiently:
+       *   - On the POST response: with WriteToken + RunnerAPIURL so the SDK can
+       *     start pushing logs immediately.
+       *   - On GET-runs (via Preload): without WriteToken, so the dashboard can
+       *     find the stream to render but can't write to it.
+       */
+      log_stream?: components["schemas"]["app.LogStream"];
+      /**
+       * @description LogStreamID is the OTLP log stream the SDK pushes provisioning logs to.
+       * Persisted so the PATCH handler can close the stream on terminal status.
+       */
+      log_stream_id?: string;
       updated_at?: string;
     };
     "app.InstallState": {
@@ -4800,7 +4828,7 @@ export interface components {
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "running" | "succeeded" | "failed" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -5177,7 +5205,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "create_stack_version" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
     "blobstore.Blob": Record<string, never>;
     "cctx.SignalContext": {
       account_id?: string;
@@ -6814,6 +6842,14 @@ export interface components {
     };
     "service.UpdateInstallRoleRequest": {
       enabled: boolean;
+    };
+    "service.UpdateInstallStackVersionRunRequest": {
+      data?: {
+        [key: string]: unknown;
+      };
+      /** @description Status must be "succeeded" or "failed"; runs are created as "running". */
+      status: components["schemas"]["app.Status"];
+      status_description?: string;
     };
     "service.UpdateOrgFeaturesRequest": {
       features: {
@@ -19801,6 +19837,88 @@ export interface operations {
       };
       /** @description Forbidden */
       403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a stack version run
+   * @description start a new run for an install stack version. Public endpoint, mirrors phone-home: the per-stack-version phone_home_id in the URL acts as the secret. Used by the AWS-native SDK provisioner; legacy CFN/TF flows use phone-home.
+   */
+  CreateInstallStackVersionRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description stack version phone-home ID (used as the URL secret) */
+        phone_home_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallStackVersionRun"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * update a stack version run
+   * @description mark a run terminal (succeeded/failed). Public endpoint, mirrors phone-home: phone_home_id in the URL acts as the secret.
+   */
+  UpdateInstallStackVersionRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description stack version phone-home ID (used as the URL secret) */
+        phone_home_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateInstallStackVersionRunRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallStackVersionRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

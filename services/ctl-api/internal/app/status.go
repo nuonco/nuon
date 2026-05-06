@@ -40,6 +40,10 @@ const (
 	InstallStackVersionStatusActive       Status = "active"
 	InstallStackVersionStatusOutdated     Status = "outdated"
 	InstallStackVersionStatusExpired      Status = "expired"
+
+	InstallStackVersionRunStatusRunning   Status = "running"
+	InstallStackVersionRunStatusSucceeded Status = "succeeded"
+	InstallStackVersionRunStatusFailed    Status = "failed"
 )
 
 const (
