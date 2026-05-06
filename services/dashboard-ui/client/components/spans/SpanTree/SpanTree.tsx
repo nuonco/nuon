@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -10,24 +10,24 @@ export interface ISpanTree {
   spans: TSpan[]
   selectedSpanId?: string
   onSelectSpan: (spanId: string) => void
+  collapsed: Set<string>
+  onToggleCollapsed: (spanId: string) => void
+  onExpandAll: () => void
+  onCollapseAll: () => void
+  headerActions?: ReactNode
 }
 
-export const SpanTree = ({ spans, selectedSpanId, onSelectSpan }: ISpanTree) => {
+export const SpanTree = ({
+  spans,
+  selectedSpanId,
+  onSelectSpan,
+  collapsed,
+  onToggleCollapsed,
+  onExpandAll,
+  onCollapseAll,
+  headerActions,
+}: ISpanTree) => {
   const forest = useMemo(() => buildSpanForest(spans), [spans])
-  const allIds = useMemo(() => collectIds(forest), [forest])
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-
-  const toggle = (id: string) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
-  const expandAll = () => setCollapsed(new Set())
-  const collapseAll = () => setCollapsed(new Set(allIds))
   const isAllExpanded = collapsed.size === 0
 
   if (!spans?.length) {
@@ -42,7 +42,7 @@ export const SpanTree = ({ spans, selectedSpanId, onSelectSpan }: ISpanTree) => 
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between gap-3 px-2 py-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
+      <div className="flex items-center justify-between gap-3 px-2 h-14 border-b border-cool-grey-200 dark:border-dark-grey-600">
         <div className="flex items-baseline gap-2">
           <Text variant="body" weight="strong">
             Trace
@@ -51,26 +51,29 @@ export const SpanTree = ({ spans, selectedSpanId, onSelectSpan }: ISpanTree) => 
             {spans.length} span{spans.length === 1 ? '' : 's'}
           </Text>
         </div>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={isAllExpanded ? collapseAll : expandAll}
-          aria-pressed={!isAllExpanded}
-        >
-          <Icon
-            variant={isAllExpanded ? 'CaretUpDownIcon' : 'CaretDownIcon'}
-            size="12"
-          />
-          {isAllExpanded ? 'Collapse' : 'Expand'}
-        </Button>
+        <div className="flex items-center gap-2">
+          {headerActions}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={isAllExpanded ? onCollapseAll : onExpandAll}
+            aria-pressed={!isAllExpanded}
+          >
+            <Icon
+              variant={isAllExpanded ? 'CaretUpDownIcon' : 'CaretDownIcon'}
+              size="12"
+            />
+            {isAllExpanded ? 'Collapse' : 'Expand'}
+          </Button>
+        </div>
       </div>
-      <div className="flex flex-col py-1">
+      <div className="flex flex-col">
         {forest.map((node) => (
           <SpanTreeNode
             key={node.span.span_id}
             node={node}
             collapsed={collapsed}
-            onToggle={toggle}
+            onToggle={onToggleCollapsed}
             selectedSpanId={selectedSpanId}
             onSelectSpan={onSelectSpan}
           />
@@ -78,16 +81,6 @@ export const SpanTree = ({ spans, selectedSpanId, onSelectSpan }: ISpanTree) => 
       </div>
     </div>
   )
-}
-
-const collectIds = (forest: TSpanNode[]): string[] => {
-  const out: string[] = []
-  const walk = (n: TSpanNode) => {
-    out.push(n.span.span_id)
-    for (const c of n.children) walk(c)
-  }
-  for (const r of forest) walk(r)
-  return out
 }
 
 interface ISpanTreeNode {
@@ -235,4 +228,15 @@ const SpanStatusDot = ({ status }: { status: TSpanStatus }) => {
       <Icon variant={variant} weight="fill" size={14} theme={theme} />
     </span>
   )
+}
+
+export const collectSpanIds = (spans: TSpan[]): string[] => {
+  const forest = buildSpanForest(spans)
+  const out: string[] = []
+  const walk = (n: TSpanNode) => {
+    out.push(n.span.span_id)
+    for (const c of n.children) walk(c)
+  }
+  for (const r of forest) walk(r)
+  return out
 }
