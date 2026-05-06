@@ -17,6 +17,14 @@ export interface ISpanTimeline {
   onSelectSpan: (spanId: string) => void
 }
 
+const TICK_COUNT = 5
+
+const buildTicks = (totalMs: number) =>
+  Array.from({ length: TICK_COUNT + 1 }, (_, i) => ({
+    pct: (i / TICK_COUNT) * 100,
+    ms: (totalMs * i) / TICK_COUNT,
+  }))
+
 export const SpanTimeline = ({
   spans,
   selectedSpanId,
@@ -34,6 +42,8 @@ export const SpanTimeline = ({
     }
   }, [spans])
 
+  const ticks = useMemo(() => buildTicks(totalMs), [totalMs])
+
   if (!spans?.length) {
     return (
       <div className="p-6 text-center">
@@ -45,15 +55,21 @@ export const SpanTimeline = ({
   }
 
   return (
-    <div className="flex flex-col gap-1 p-2">
-      <div className="grid grid-cols-[14rem_1fr] gap-2 px-2 py-1 border-b">
-        <Text variant="subtext" theme="neutral" weight="strong">
-          Span
-        </Text>
-        <div className="relative">
-          <Text variant="subtext" theme="neutral" weight="strong">
-            Timeline ({formatDurationNs(totalMs * 1_000_000)})
-          </Text>
+    <div className="relative flex flex-col py-1">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 px-2"
+      >
+        <div className="relative w-full h-full">
+          {ticks.map((t, i) =>
+            i === 0 || i === ticks.length - 1 ? null : (
+              <div
+                key={i}
+                className="absolute top-0 bottom-0 w-px bg-cool-grey-200/60 dark:bg-dark-grey-700/60"
+                style={{ left: `${t.pct}%` }}
+              />
+            )
+          )}
         </div>
       </div>
       {rows.map((node) => (
@@ -65,6 +81,46 @@ export const SpanTimeline = ({
           isSelected={selectedSpanId === node.span.span_id}
           onSelect={onSelectSpan}
         />
+      ))}
+    </div>
+  )
+}
+
+export interface ISpanTimelineAxis {
+  spans: TSpan[]
+  className?: string
+}
+
+export const SpanTimelineAxis = ({ spans, className }: ISpanTimelineAxis) => {
+  const totalMs = useMemo(() => {
+    if (!spans?.length) return 0
+    return Math.max(traceEnd(spans) - traceStart(spans), 1)
+  }, [spans])
+
+  const ticks = useMemo(() => buildTicks(totalMs), [totalMs])
+
+  if (!spans?.length) return null
+
+  return (
+    <div className={cn('relative h-full w-full', className)}>
+      {ticks.map((t, i) => (
+        <div
+          key={i}
+          className="absolute top-0 bottom-0 flex items-center"
+          style={{
+            left: `${t.pct}%`,
+            transform:
+              i === 0
+                ? 'translateX(0)'
+                : i === ticks.length - 1
+                  ? 'translateX(-100%)'
+                  : 'translateX(-50%)',
+          }}
+        >
+          <Text variant="label" family="mono" theme="neutral" nowrap as="span">
+            {formatDurationNs(t.ms * 1_000_000)}
+          </Text>
+        </div>
       ))}
     </div>
   )
@@ -96,31 +152,27 @@ const SpanGanttRow = ({
     <button
       type="button"
       onClick={() => onSelect(span.span_id)}
+      title={`${span.name} · ${formatDurationNs(span.duration_ns)}`}
       className={cn(
-        'grid grid-cols-[14rem_1fr] gap-2 items-center px-2 py-1 rounded text-left',
-        'hover:bg-black/5 dark:hover:bg-white/5',
-        isSelected && '!bg-primary-600/20 dark:!bg-primary-400/20'
+        'group relative flex items-center min-h-7 px-2 text-left',
+        'hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500',
+        isSelected &&
+          'bg-primary-200 dark:bg-primary-600/25'
       )}
     >
-      <div
-        className="flex items-center min-w-0"
-        style={{ paddingLeft: `${node.depth * 12}px` }}
-        title={span.name}
-      >
-        <Text family="mono" variant="subtext" nowrap as="span" className="truncate">
-          {span.name}
-        </Text>
-      </div>
-      <div className="relative h-4 w-full bg-cool-grey-100 dark:bg-dark-grey-800 rounded">
+      <div className="relative h-3 w-full">
         <div
           className={cn(
-            'absolute top-0 h-full rounded',
+            'absolute top-0 h-full rounded-sm',
             isError && 'bg-red-500',
             !isError && node.hasErrorDescendant && 'bg-red-400/70',
             !isError && !node.hasErrorDescendant && 'bg-emerald-500'
           )}
-          style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
-          title={`${span.name} · ${formatDurationNs(span.duration_ns)}`}
+          style={{
+            left: `${leftPct}%`,
+            width: `${widthPct}%`,
+            minWidth: '2px',
+          }}
         />
       </div>
     </button>
