@@ -10,6 +10,8 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { FILTER_PREFIXES, COMMANDS_BY_PREFIX, parseQuery, getAutocompletion } from '../types'
 import { useSpotlightResults } from '../use-spotlight-results'
@@ -31,6 +33,13 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
   const autocompletion = useMemo(() => getAutocompletion(raw), [raw])
   const listRef = useRef<HTMLDivElement>(null)
   const inputWrapperRef = useRef<HTMLDivElement>(null)
+
+  const rawPrefix = useMemo(() => {
+    const colonIdx = raw.indexOf(':')
+    if (colonIdx < 0) return null
+    return raw.slice(0, colonIdx + 1)
+  }, [raw])
+  const queryAfterPrefix = rawPrefix ? raw.slice(rawPrefix.length) : raw
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -112,23 +121,62 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
         onKeyDown={handleKeyDown}
       >
         <div className="relative">
-          <SearchInput
-            className="w-full bg-transparent"
-            labelClassName="w-full"
-            placeholder="Search pages, apps, installs, components, actions…"
-            value={raw}
-            onChange={setRaw}
-            onClear={() => setRaw('')}
-            autoFocus
-          />
-          {autocompletion && (
-            <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-500 dark:text-cool-grey-500 whitespace-pre">
-              <span className="invisible">{raw}</span>
-              <span>{autocompletion.slice(raw.length)}</span>
-              <span className="ml-1.5 text-xs text-cool-grey-500 dark:text-cool-grey-500 border border-cool-grey-400 dark:border-dark-grey-500 rounded px-1">
-                tab
-              </span>
-            </div>
+          {liveParsed.prefix && rawPrefix ? (
+            <label className="relative w-full flex items-center rounded-md border h-[36px] bg-white dark:bg-dark-grey-900">
+              <Icon
+                variant="MagnifyingGlass"
+                className="text-cool-grey-500 dark:text-cool-grey-700 ml-2 shrink-0"
+              />
+              <Badge size="sm" variant="code" theme="neutral" className="ml-1.5 shrink-0">
+                {rawPrefix}
+              </Badge>
+              <input
+                className="flex-1 bg-transparent pl-2.5 pr-3.5 py-1.5 h-full font-sans text-sm outline-none placeholder:text-cool-grey-500 dark:placeholder:text-cool-grey-700"
+                type="text"
+                autoComplete="off"
+                placeholder="Search…"
+                value={queryAfterPrefix}
+                onChange={(e) => setRaw(rawPrefix + e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Backspace' && queryAfterPrefix === '') {
+                    e.preventDefault()
+                    setRaw('')
+                  }
+                }}
+                autoFocus
+              />
+              {raw && (
+                <Button
+                  className="!p-0.5 !h-fit absolute top-1/2 right-1.5 -translate-y-1/2"
+                  variant="ghost"
+                  title="clear search"
+                  onClick={() => setRaw('')}
+                >
+                  <Icon variant="XCircle" />
+                </Button>
+              )}
+            </label>
+          ) : (
+            <>
+              <SearchInput
+                className="w-full bg-transparent"
+                labelClassName="w-full"
+                placeholder="Search pages, apps, installs, components, actions…"
+                value={raw}
+                onChange={setRaw}
+                onClear={() => setRaw('')}
+                autoFocus
+              />
+              {autocompletion && (
+                <div className="absolute inset-0 pointer-events-none flex items-center pl-8 pr-3.5 text-sm text-cool-grey-500 dark:text-cool-grey-500 whitespace-pre">
+                  <span className="invisible">{raw}</span>
+                  <span>{autocompletion.slice(raw.length)}</span>
+                  <span className="ml-1.5 text-xs text-cool-grey-500 dark:text-cool-grey-500 border border-cool-grey-400 dark:border-dark-grey-500 rounded px-1">
+                    tab
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -153,11 +201,11 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
         )}
         {liveParsed.prefix && COMMANDS_BY_PREFIX[liveParsed.prefix] && liveParsed.command === null && (
           <div className="px-2 py-1 flex items-center gap-1.5">
-            <Text variant="subtext" className="text-cool-grey-600">
-              Type{' '}
+            <Text variant="subtext" className="text-cool-grey-600" flex>
+              Type
               <Badge size="sm" variant="code" theme="neutral">
                 /
-              </Badge>{' '}
+              </Badge>
               to run commands
             </Text>
           </div>
