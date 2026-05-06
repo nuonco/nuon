@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -25,8 +26,19 @@ export const TraceView = ({
 }: ITraceView) => {
   const [variant, setVariant] = useState<TTraceRightPaneVariant>('logs')
 
+  const showUpgradeBanner = !isLoading && spans.length === 0
+
   return (
     <div className="flex flex-col gap-4 h-full">
+      {showUpgradeBanner ? (
+        <Banner theme="info">
+          <Text weight="strong">No trace data available</Text>
+          <Text variant="subtext">
+            Traces require a recent version of the runner. If this run completed
+            without spans, upgrade your runner to see execution traces here.
+          </Text>
+        </Banner>
+      ) : null}
       <div className="flex items-center justify-between gap-2 px-2">
         <div className="flex items-center gap-2">
           <Text variant="base" weight="strong">
