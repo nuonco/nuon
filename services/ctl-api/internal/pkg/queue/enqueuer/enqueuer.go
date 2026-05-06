@@ -4,11 +4,15 @@ import (
 	"context"
 	"time"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
+	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
@@ -60,8 +64,9 @@ func New(params Params) *Enqueuer {
 	}
 
 	params.LC.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(ctx context.Context) error {
 			go e.run()
+			e.startSweepWorkflow(ctx)
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
@@ -101,6 +106,26 @@ func (e *Enqueuer) run() {
 			e.processOne(id)
 		}
 	}
+}
+
+// startSweepWorkflow starts the EnqueuerSweep workflow if not already running.
+func (e *Enqueuer) startSweepWorkflow(ctx context.Context) {
+	opts := tclient.StartWorkflowOptions{
+		ID:                       "enqueuer-sweep",
+		TaskQueue:                workflows.APITaskQueue,
+		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+
+	type sweepReq struct{}
+	_, err := e.tClient.ExecuteWorkflowInNamespace(ctx, "general", opts, "EnqueuerSweep", sweepReq{})
+	if err != nil {
+		e.l.Warn("unable to start enqueuer sweep workflow", zap.Error(err))
+		return
+	}
+	e.l.Info("enqueuer sweep workflow started")
 }
 
 // drain processes any remaining channel items during shutdown.

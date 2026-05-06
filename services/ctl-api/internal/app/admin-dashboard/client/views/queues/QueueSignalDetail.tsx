@@ -268,35 +268,48 @@ export const QueueSignalDetail = () => {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Signal info</h2>
-          <div className="space-y-2 text-xs">
-            <InfoRow label="Type" value={signal?.type} />
-            <InfoRow label="Status" value={status} />
-            <InfoRow label="Exec count" value={String(signal?.execution_count ?? 0)} highlight={signal?.execution_count > 1} />
-            {signal?.status?.status_human_description && <InfoRow label="Description" value={signal.status.status_human_description} />}
-            <InfoRow label="Created" value={formatDate(signal?.created_at)} />
-            <InfoRow label="Updated" value={formatDate(signal?.updated_at)} />
-            {signal?.status?.metadata && Object.entries(signal.status.metadata).map(([k, v]) => (
-              <InfoRow key={k} label={k} value={String(v)} />
-            ))}
-          </div>
+          <table className="w-full text-xs table-fixed">
+            <colgroup>
+              <col className="w-36" />
+              <col />
+            </colgroup>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <InfoTableRow label="Type" value={signal?.type} badge />
+              <InfoTableRow label="Status" value={status} statusBadge />
+              <InfoTableRow label="Exec count" value={String(signal?.execution_count ?? 0)} highlight={signal?.execution_count > 1} />
+              {signal?.status?.status_human_description && <InfoTableRow label="Description" value={signal.status.status_human_description} />}
+              <InfoTableRow label="Enqueued" value={signal?.enqueued ? 'Yes' : 'No'} statusBadge />
+              <InfoTableRow label="Enqueue source" value={getMeta(signal?.status, 'enqueue_source') || '-'} badge={!!getMeta(signal?.status, 'enqueue_source')} />
+              <InfoTableRow label="Enqueue duration" value={timeBetween(enqueueStartedAt, enqueueFinishedAt) || '-'} mono />
+              <InfoTableRow label="Execute duration" value={timeBetween(executeStartedAt, executeFinishedAt) || '-'} mono />
+              <InfoTableRow label="Created" value={formatDate(signal?.created_at)} />
+              <InfoTableRow label="Updated" value={formatDate(signal?.updated_at)} />
+              {enqueueError && <InfoTableRow label="Enqueue error" value={enqueueError} error />}
+            </tbody>
+          </table>
         </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Handler</h2>
-          <div className="space-y-2 text-xs">
-            <InfoRow label="Owner type" value={signal?.owner_type} />
-            <div className="flex items-start gap-3">
-              <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">Owner ID</span>
-              <span className="font-mono break-all">{signal?.owner_id}</span>
-            </div>
-            {signal?.emitter_id && (
-              <div className="flex items-start gap-3">
-                <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">Emitter</span>
-                <Link to={`/queues/${queue?.id}/emitters/${signal.emitter_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{signal.emitter_id}</Link>
-              </div>
-            )}
-            {signal?.workflow?.id && <InfoRow label="Workflow ID" value={signal.workflow.id} />}
-            {signal?.workflow?.namespace && <InfoRow label="Namespace" value={signal.workflow.namespace} />}
-          </div>
+          <table className="w-full text-xs table-fixed">
+            <colgroup>
+              <col className="w-36" />
+              <col />
+            </colgroup>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <InfoTableRow label="Owner type" value={signal?.owner_type} />
+              <InfoTableRow label="Owner ID" value={signal?.owner_id} mono />
+              {signal?.emitter_id && (
+                <tr>
+                  <td className="py-1.5 pr-3 text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap align-top font-medium">Emitter</td>
+                  <td className="py-1.5 overflow-hidden text-ellipsis">
+                    <Link to={`/queues/${queue?.id}/emitters/${signal.emitter_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 break-all">{signal.emitter_id}</Link>
+                  </td>
+                </tr>
+              )}
+              {signal?.workflow?.id && <InfoTableRow label="Workflow ID" value={signal.workflow.id} mono />}
+              {signal?.workflow?.namespace && <InfoTableRow label="Namespace" value={signal.workflow.namespace} />}
+            </tbody>
+          </table>
           <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-800 flex flex-wrap gap-3 text-xs">
             {signal?.workflow?.id && signal?.workflow?.namespace && (
               <Link to={`/temporal-workflows?namespace=${signal.workflow.namespace}&workflow_id=${signal.workflow.id}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
@@ -369,6 +382,23 @@ function InfoRow({ label, value, highlight }: { label: string; value?: string; h
       <span className="text-gray-500 dark:text-gray-400 uppercase w-28 shrink-0">{label}</span>
       <span className={`font-mono break-all ${highlight ? 'text-orange-500 font-bold' : ''}`}>{value || '-'}</span>
     </div>
+  )
+}
+
+function InfoTableRow({ label, value, highlight, badge, statusBadge, mono, error: isError }: {
+  label: string; value?: string; highlight?: boolean; badge?: boolean; statusBadge?: boolean; mono?: boolean; error?: boolean;
+}) {
+  return (
+    <tr>
+      <td className="py-1.5 pr-3 text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap align-top font-medium">{label}</td>
+      <td className={`py-1.5 overflow-hidden text-ellipsis ${highlight ? 'text-orange-500 font-bold font-mono' : ''} ${mono ? 'font-mono' : ''} ${isError ? 'text-red-600 dark:text-red-400 font-mono' : ''}`}>
+        {statusBadge && value
+          ? <Badge variant="status" status={value}>{value}</Badge>
+          : badge && value
+            ? <Badge>{value}</Badge>
+            : <span className="break-all">{value || '-'}</span>}
+      </td>
+    </tr>
   )
 }
 

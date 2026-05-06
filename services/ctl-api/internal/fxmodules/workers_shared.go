@@ -11,6 +11,7 @@ import (
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -72,4 +73,5 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(queue.NewWorkflows),
 	fx.Provide(handler.NewWorkflows),
 	fx.Provide(emitter.NewWorkflows),
+	fx.Provide(enqueuer.NewWorkflows),
 )

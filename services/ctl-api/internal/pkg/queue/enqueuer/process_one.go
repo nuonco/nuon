@@ -14,10 +14,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 )
 
+// EnqueueSource identifies how a signal was enqueued.
+const (
+	EnqueueSourceChannel = "channel"
+	EnqueueSourceAwait   = "await"
+	EnqueueSourceSweep   = "sweep"
+)
+
 // EnqueueInline synchronously enqueues a queue signal by performing the
 // UpdateWithStart call inline with the caller. It records enqueue timing
-// metadata and marks the signal as enqueued on success.
-func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string) error {
+// metadata (including the enqueue source) and marks the signal as enqueued
+// on success.
+func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, source string) error {
 	var qs app.QueueSignal
 	if res := e.db.WithContext(ctx).First(&qs, "id = ?", queueSignalID); res.Error != nil {
 		return errors.Wrap(res.Error, "unable to get queue signal for enqueue")
@@ -57,6 +65,7 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string) erro
 	metadata := map[string]any{
 		"enqueue_started_at":  enqueueStartedAt,
 		"enqueue_finished_at": enqueueFinishedAt,
+		"enqueue_source":      source,
 	}
 	if err != nil {
 		metadata["enqueue_error"] = err.Error()
@@ -90,7 +99,7 @@ func (e *Enqueuer) processOne(queueSignalID string) {
 	ctx, cancel := context.WithTimeout(e.ctx, processOneTimeout)
 	defer cancel()
 
-	if err := e.EnqueueInline(ctx, queueSignalID); err != nil {
+	if err := e.EnqueueInline(ctx, queueSignalID, EnqueueSourceChannel); err != nil {
 		e.l.Warn("background enqueue failed",
 			zap.String("queue-signal-id", queueSignalID),
 			zap.Error(err))
