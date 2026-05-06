@@ -16297,7 +16297,7 @@ func (a *Client) UpdateComponent(params *UpdateComponentParams, authInfo runtime
 }
 
 /*
-UpdateCurrentOrgWebhook updates a webhook on the current org
+UpdateCurrentOrgWebhook updates a webhook for the current org
 
 Replaces the webhook's interests filter and/or rotates its signing secret. WebhookURL is part of the (org_id, webhook_url) unique index and cannot be changed in place — delete and recreate to rename.
 */

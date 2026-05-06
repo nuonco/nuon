@@ -68,11 +68,6 @@ type AppInstallStackVersion struct {
 	// runs
 	Runs []*AppInstallStackVersionRun `json:"runs"`
 
-	// StackType records which install-stack path was actually applied. Set by
-	// the phone-home handler when the callback fires; empty until then.
-	// One of: "cloudformation", "terraform".
-	StackType string `json:"stack_type,omitempty"`
-
 	// template url
 	TemplateURL string `json:"template_url,omitempty"`
 
@@ -82,9 +77,7 @@ type AppInstallStackVersion struct {
 	// On AWS, the install workflow renders BOTH a CloudFormation template and
 	// a Terraform tfvars envelope. The CFN artifact lives in Contents/Checksum
 	// (and is uploaded to S3 with TemplateURL/QuickLinkURL); the Terraform
-	// artifact lives below. The dashboard shows both during the await step;
-	// the user picks one to apply, and StackType is recorded post-hoc when
-	// phone-home arrives.
+	// artifact lives below. The dashboard shows both during the await step.
 	TerraformContents string `json:"terraform_contents,omitempty"`
 
 	// updated at

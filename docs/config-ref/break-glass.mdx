@@ -18,7 +18,7 @@ title: 'Break Glass'
 | **`cloud_platform`**<br/>string | target cloud platform Cloud platform this role targets. Determines which downstream renderer processes the role (e.g., AWS CloudFormation vs GCP IAM). Defaults to aws if omitted | **Optional**<br/>`"aws"`, `"azure"`, `"gcp"` | `"aws"`, `"gcp"` |
 | **`display_name`**<br/>string | display name of the role Human-readable display name shown in the installer UI. Supports templating | **Optional** | `"Application S3 Access"`, `"Database Admin"` |
 | **`permissions_boundary`**<br/>string | [AWS] permissions boundary policy [AWS only] Optional ARN of a permissions boundary policy. Limits the maximum permissions the role can have. Supports templating and external file sources: HTTP(S) ... | **Optional** | `"./provision_boundary.json"`, `"./maintenance_boundary.json"` |
-| **`enabled_in_stack`**<br/>boolean | whether the role is enabled by default in the stack. Controls the default value of the Enable parameter for this role in the stack (CloudFormation parameter or Terraform variable, de... | **Optional** | - |
+| **`enabled_in_stack`**<br/>boolean | whether the role is enabled by default in the install stack Controls the default value of the Enable parameter for this role in the install stack (CloudFormation parameter or Terraform variable, de... | **Optional** | - |
 
 ### `policies`
 
