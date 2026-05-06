@@ -22,6 +22,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/health"
 	"github.com/nuonco/nuon/services/ctl-api/internal/httpbin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
 )
 
@@ -68,7 +69,10 @@ var AuthServicesModule = fx.Module("auth-services",
 )
 
 // AdminDashboardServicesModule provides services for the admin dashboard API.
-var AdminDashboardServicesModule = fx.Module("admin-dashboard-services", sharedServices)
+var AdminDashboardServicesModule = fx.Module("admin-dashboard-services",
+	sharedServices,
+	fx.Provide(psql.AsPSQLReplica(psql.NewReplica)),
+)
 
 // AllServicesModule provides all services including authservice (for dev mode).
 var AllServicesModule = fx.Module("all-services",

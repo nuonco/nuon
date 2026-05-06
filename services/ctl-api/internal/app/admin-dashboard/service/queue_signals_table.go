@@ -19,7 +19,7 @@ func (s *service) QueueSignalsTable(c *gin.Context) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
-	query := s.db.WithContext(c.Request.Context()).
+	query := s.readDB().WithContext(c.Request.Context()).
 		Model(&app.QueueSignal{}).
 		Where("queue_id = ?", queueID)
 
@@ -36,7 +36,7 @@ func (s *service) QueueSignalsTable(c *gin.Context) {
 
 	offset := (page - 1) * signalsPerPage
 
-	res := s.db.WithContext(c.Request.Context()).
+	res := s.readDB().WithContext(c.Request.Context()).
 		Where("queue_id = ?", queueID).
 		Order("created_at desc").
 		Limit(signalsPerPage).

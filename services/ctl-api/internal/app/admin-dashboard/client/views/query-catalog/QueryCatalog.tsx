@@ -1,14 +1,15 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getQueryCatalog, runCatalogQuery, type TCatalogQuery } from '@/lib/admin-api'
+import { getQueryCatalog, runCatalogQuery, type TCatalogQuery, type TQueryTarget } from '@/lib/admin-api'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { Badge } from '@/components/common/Badge'
 
 export const QueryCatalog = () => {
   const [activeQuery, setActiveQuery] = useState<string | null>(null)
-  const [results, setResults] = useState<{ query: TCatalogQuery; rows: Record<string, any>[]; count: number } | null>(null)
+  const [results, setResults] = useState<{ query: TCatalogQuery; rows: Record<string, any>[]; count: number; target: TQueryTarget } | null>(null)
   const [runError, setRunError] = useState<string | null>(null)
+  const [target, setTarget] = useState<TQueryTarget>('replica')
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['query-catalog'],
@@ -16,9 +17,9 @@ export const QueryCatalog = () => {
   })
 
   const runMutation = useMutation({
-    mutationFn: (queryId: string) => runCatalogQuery(queryId),
+    mutationFn: (queryId: string) => runCatalogQuery(queryId, target),
     onSuccess: (data) => {
-      setResults({ query: data.query, rows: data.results || [], count: data.count })
+      setResults({ query: data.query, rows: data.results || [], count: data.count, target: data.target })
       setRunError(null)
     },
     onError: (err: any) => {
@@ -34,7 +35,20 @@ export const QueryCatalog = () => {
 
   return (
     <div>
-      <h1 className="page-heading">Query catalog</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="page-heading">Query catalog</h1>
+        <label className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <span>Connection</span>
+          <select
+            value={target}
+            onChange={(e) => setTarget(e.target.value as TQueryTarget)}
+            className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+          >
+            <option value="replica">Replica (default)</option>
+            <option value="primary">Primary</option>
+          </select>
+        </label>
+      </div>
 
       <div className="mt-4 space-y-2">
         {queries.map((q) => {
@@ -82,7 +96,9 @@ export const QueryCatalog = () => {
         <div className="mt-6">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Results: {results.query.name}
-            <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">({results.count} rows)</span>
+            <span className="ml-2 font-normal text-gray-500 dark:text-gray-400">
+              ({results.count} rows{results.query.db_type === 'psql' ? ` · ${results.target}` : ''})
+            </span>
           </h2>
           {results.rows.length > 0 ? (
             <div className="table-card overflow-x-auto">

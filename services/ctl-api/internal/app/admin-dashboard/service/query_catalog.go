@@ -122,6 +122,43 @@ ORDER BY seq_tup_read DESC
 LIMIT 20`,
 	},
 	{
+		ID:          "unenqueued-signals",
+		Name:        "Unenqueued queue signals",
+		Description: "Queue signals that have not been enqueued yet. Newest first.",
+		DBType:      "psql",
+		SQL: `SELECT
+  id,
+  org_id,
+  queue_id,
+  owner_id,
+  owner_type,
+  type,
+  status,
+  enqueued,
+  execution_count,
+  created_at
+FROM queue_signals
+WHERE enqueued = false
+  AND deleted_at = 0
+ORDER BY created_at DESC
+LIMIT 200`,
+	},
+	{
+		ID:          "unenqueued-signals-count",
+		Name:        "Unenqueued queue signals (count)",
+		Description: "Count of un-enqueued queue signals grouped by owner_type and type.",
+		DBType:      "psql",
+		SQL: `SELECT
+  owner_type,
+  type,
+  COUNT(*) AS count
+FROM queue_signals
+WHERE enqueued = false
+  AND deleted_at = 0
+GROUP BY owner_type, type
+ORDER BY count DESC`,
+	},
+	{
 		ID:          "cache-hit-ratio",
 		Name:        "Cache hit ratio",
 		Description: "Buffer cache hit ratio per table. Want >99% for hot tables.",
@@ -156,7 +193,8 @@ func (s *service) QueryCatalogRun(c *gin.Context) {
 		return
 	}
 
-	var db = s.db
+	target := c.DefaultQuery("target", "replica")
+	db := s.psqlForTarget(target)
 	if found.DBType == "ch" {
 		db = s.chDB
 	}
@@ -170,6 +208,7 @@ func (s *service) QueryCatalogRun(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"query":   found,
+		"target":  target,
 		"results": results,
 		"count":   len(results),
 	})
