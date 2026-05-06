@@ -30,7 +30,7 @@ type AdminForgetOrgInstallsRequest struct{}
 func (s *service) ForgetOrgInstalls(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
 
-	installs, err := s.getOrgInstalls(ctx, orgID, "", nil)
+	installs, err := s.getOrgInstalls(ctx, orgID, "", nil, "")
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org installs: %w", err))
 		return
