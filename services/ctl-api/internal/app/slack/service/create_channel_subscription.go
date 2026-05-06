@@ -9,7 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -18,25 +20,35 @@ import (
 )
 
 // CreateChannelSubscriptionRequest is the body for creating a per-channel
-// routing rule from the dashboard. CreatedBySlackUserID stays nil for
-// dashboard-originated subs (the CHECK constraint requires at least one of
-// the two creator fields; the account ID we set below satisfies it).
-//
-// Interests is optional. When omitted (zero value), the handler stamps in
-// the AllEvents() default so the new sub forwards every supported lifecycle
-// event until the user opts into a per-resource configuration.
+// routing rule from the dashboard. The Match field uses the same shape the
+// slash-command modal builds — nil for org-wide, or any combination of the
+// three TargetMatch slots (Installs / Components / Actions). Interests is
+// optional; the handler defaults to AllEvents=true when omitted so the
+// dashboard's minimal create-flow doesn't have to ship a full per-resource
+// config to get a working sub.
 type CreateChannelSubscriptionRequest struct {
-	OrgLinkID   string              `json:"org_link_id" validate:"required"`
-	ChannelID   string              `json:"channel_id" validate:"required"`
-	ChannelName string              `json:"channel_name"`
-	Interests   interests.Interests `json:"interests" swaggertype:"object"`
+	OrgLinkID   string                    `json:"org_link_id" validate:"required"`
+	ChannelID   string                    `json:"channel_id" validate:"required"`
+	ChannelName string                    `json:"channel_name"`
+	Match       *labels.SubscriptionMatch `json:"match,omitempty" swaggertype:"object"`
+	Interests   *interests.Interests      `json:"interests,omitempty" swaggertype:"object"`
 }
 
 func (r *CreateChannelSubscriptionRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(r); err != nil {
 		return validatorPkg.FormatValidationError(err)
 	}
-	return interests.Validate(r.Interests)
+	if r.Interests != nil {
+		if err := interests.Validate(*r.Interests); err != nil {
+			return err
+		}
+	}
+	if r.Match != nil {
+		if err := r.Match.Validate(); err != nil {
+			return fmt.Errorf("invalid match: %w", err)
+		}
+	}
+	return nil
 }
 
 // @ID						CreateSlackChannelSubscription
@@ -87,76 +99,74 @@ func (s *service) CreateChannelSubscription(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, sub)
 }
 
+// createChannelSubscription is the dashboard-side creator. It mirrors the
+// slash-command modal's upsertModalSubscription path: trust-bind the
+// org_link to the calling org, then insert a SlackChannelSubscription
+// keyed on (team, channel, link, match_canonical). Re-creating with an
+// identical Match upserts in place rather than 23505-ing — same semantics
+// the modal relies on.
 func (s *service) createChannelSubscription(
 	ctx context.Context,
 	acct *app.Account,
 	orgID string,
 	req *CreateChannelSubscriptionRequest,
 ) (*app.SlackChannelSubscription, error) {
-	// ABAC: OrgLinkID must resolve to a verified link in the caller's org.
-	// Filtering by org id + status in the same WHERE means a caller cannot
-	// create subscriptions against another org's link or against a revoked
-	// one — the row simply isn't found.
+	// Trust-bind: the link must be verified AND belong to the caller's org.
+	// Re-derive both invariants from the DB rather than trusting the request
+	// — the org_link_id is user-supplied.
 	var link app.SlackOrgLink
-	res := s.db.WithContext(ctx).
+	if err := s.db.WithContext(ctx).
 		Where(app.SlackOrgLink{
 			ID:     req.OrgLinkID,
 			OrgID:  orgID,
 			Status: app.SlackOrgLinkStatusVerified,
 		}).
-		First(&link)
-	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-		return nil, stderr.ErrNotFound{Err: fmt.Errorf("slack org link %q not found", req.OrgLinkID)}
-	}
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	// Pre-check for an existing live subscription on
-	// (org_link_id, team_id, channel_id). Mirror createOrgLink — the unique
-	// index would catch this at insert time but surfaces as a generic 500.
-	var existing app.SlackChannelSubscription
-	dupRes := s.db.WithContext(ctx).
-		Where(app.SlackChannelSubscription{
-			OrgLinkID: link.ID,
-			TeamID:    link.TeamID,
-			ChannelID: req.ChannelID,
-		}).
-		First(&existing)
-	if dupRes.Error == nil {
-		return nil, stderr.ErrConflict{
-			Err:         fmt.Errorf("slack channel subscription already exists for channel %q on link %q", req.ChannelID, link.ID),
-			Description: "this channel is already subscribed for this workspace",
+		First(&link).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, stderr.ErrNotFound{
+				Err:         fmt.Errorf("verified slack org link %q not found for org %q", req.OrgLinkID, orgID),
+				Description: "Slack org link not found",
+			}
 		}
-	}
-	if !errors.Is(dupRes.Error, gorm.ErrRecordNotFound) {
-		return nil, dupRes.Error
+		return nil, fmt.Errorf("lookup slack org link: %w", err)
 	}
 
-	// Set the calling account on the context so SlackChannelSubscription's
-	// BeforeCreate hook can resolve CreatedByID.
-	ctx = cctx.SetAccountContext(ctx, acct)
-
-	// Default new dashboard subs to AllEvents=true so users opt-in per
-	// resource only when they actively configure the picker. Mirrors the
-	// webhook default path.
-	subInterests := req.Interests
-	if subInterests.IsZero() {
-		subInterests = interests.AllEvents()
+	// Default Interests to AllEvents=true so a bare {org_link_id, channel_id}
+	// request lands a working subscription. The modal already does the
+	// same default; mirroring it here keeps the two creators consistent.
+	in := interests.Interests{AllEvents: true}
+	if req.Interests != nil {
+		in = *req.Interests
 	}
 
-	acctID := acct.ID
-	sub := &app.SlackChannelSubscription{
+	sub := app.SlackChannelSubscription{
 		OrgLinkID:          link.ID,
+		OrgID:              link.OrgID,
 		TeamID:             link.TeamID,
 		ChannelID:          req.ChannelID,
 		ChannelName:        req.ChannelName,
-		OrgID:              orgID,
-		Interests:          subInterests,
-		CreatedByAccountID: &acctID,
+		Match:              req.Match,
+		Interests:          in,
+		CreatedByAccountID: &acct.ID,
+		CreatedByID:        acct.ID,
 	}
-	if err := s.db.WithContext(ctx).Create(sub).Error; err != nil {
-		return nil, err
+
+	if err := s.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{
+			{Name: "team_id"},
+			{Name: "channel_id"},
+			{Name: "org_link_id"},
+			{Name: "match_canonical"},
+			{Name: "deleted_at"},
+		},
+		DoUpdates: clause.AssignmentColumns([]string{
+			"channel_name",
+			"interests",
+			"updated_at",
+			"created_by_account_id",
+		}),
+	}).Create(&sub).Error; err != nil {
+		return nil, fmt.Errorf("create slack channel subscription: %w", err)
 	}
-	return sub, nil
+	return &sub, nil
 }

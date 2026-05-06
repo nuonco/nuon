@@ -225,9 +225,9 @@ func (s *service) persistSlackInstall(
 }
 
 // postInstallRedirectURL returns the dashboard URL the user is redirected to
-// after a successful install. We re-use cfg.AppURL (the dashboard root) and
-// append ?slack=installed&org_id=<orgID> so the dashboard can show a success
-// toast and route to the integration page.
+// after a successful install. We deep-link to the org's Slack integration page
+// (/<orgID>/slack) and append ?slack=installed so the page can show a success
+// toast. If orgID is empty we fall back to the dashboard root.
 func (s *service) postInstallRedirectURL(orgID string) string {
 	base := strings.TrimRight(s.cfg.AppURL, "/")
 	if base == "" {
@@ -237,10 +237,10 @@ func (s *service) postInstallRedirectURL(orgID string) string {
 	}
 	q := url.Values{}
 	q.Set("slack", "installed")
-	if orgID != "" {
-		q.Set("org_id", orgID)
+	if orgID == "" {
+		return base + "/?" + q.Encode()
 	}
-	return base + "?" + q.Encode()
+	return base + "/" + orgID + "/slack?" + q.Encode()
 }
 
 // renderOAuthError writes an HTML error page back to the user's browser.

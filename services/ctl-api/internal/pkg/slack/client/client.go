@@ -257,6 +257,101 @@ func (c *Client) ConversationsList(ctx context.Context, botToken string, req Con
 	return &resp, nil
 }
 
+// ViewsOpenRequest opens a modal in response to a trigger_id from an
+// interactive surface (slash command, button click, etc.). View is the
+// Block-Kit modal definition; we accept it as a generic map so callers can
+// build whatever shape they need without us schema-locking the modal here.
+type ViewsOpenRequest struct {
+	TriggerID string         `json:"trigger_id"`
+	View      map[string]any `json:"view"`
+}
+
+// ViewsResponse is the shared response shape for views.open / views.update /
+// views.push. Slack returns the persisted view (with its allocated id) on
+// success.
+type ViewsResponse struct {
+	baseResponse
+
+	View struct {
+		ID         string `json:"id"`
+		CallbackID string `json:"callback_id"`
+		Hash       string `json:"hash"`
+	} `json:"view"`
+
+	// ResponseMetadata.Messages carries Block-Kit validation errors when
+	// Slack rejects a view payload (e.g. an unknown block type). Surfaces
+	// in error messages so misshapen modals are debuggable.
+	ResponseMetadata struct {
+		Messages []string `json:"messages,omitempty"`
+	} `json:"response_metadata,omitempty"`
+}
+
+// ViewsOpen opens a new modal anchored to the given trigger_id. Trigger ids
+// are short-lived (~3s) so callers must not block before invoking this.
+func (c *Client) ViewsOpen(ctx context.Context, botToken string, req ViewsOpenRequest) (*ViewsResponse, error) {
+	var resp ViewsResponse
+	if err := c.callJSON(ctx, "views.open", botToken, req, &resp); err != nil {
+		return nil, err
+	}
+	if !resp.OK {
+		return nil, fmt.Errorf("slack views.open: %s%s", resp.Error, formatViewMessages(resp.ResponseMetadata.Messages))
+	}
+	return &resp, nil
+}
+
+// ViewsUpdateRequest replaces the contents of an already-open modal. Exactly
+// one of ViewID / ExternalID identifies the view; ViewID is the standard
+// case (Slack provides it on every view payload).
+type ViewsUpdateRequest struct {
+	ViewID     string         `json:"view_id,omitempty"`
+	ExternalID string         `json:"external_id,omitempty"`
+	Hash       string         `json:"hash,omitempty"`
+	View       map[string]any `json:"view"`
+}
+
+// ViewsUpdate edits a previously opened modal in place. Used by the
+// unsubscribe modal's Remove buttons (re-render after each delete) and by
+// the subscribe modal's scope/install pivots.
+func (c *Client) ViewsUpdate(ctx context.Context, botToken string, req ViewsUpdateRequest) (*ViewsResponse, error) {
+	var resp ViewsResponse
+	if err := c.callJSON(ctx, "views.update", botToken, req, &resp); err != nil {
+		return nil, err
+	}
+	if !resp.OK {
+		return nil, fmt.Errorf("slack views.update: %s%s", resp.Error, formatViewMessages(resp.ResponseMetadata.Messages))
+	}
+	return &resp, nil
+}
+
+// ViewsPushRequest pushes a new modal onto an already-open modal stack. We
+// don't currently use push (everything fits in a single root modal) but
+// expose it for parity with views.open / views.update.
+type ViewsPushRequest struct {
+	TriggerID string         `json:"trigger_id"`
+	View      map[string]any `json:"view"`
+}
+
+// ViewsPush stacks a new modal on top of the current one.
+func (c *Client) ViewsPush(ctx context.Context, botToken string, req ViewsPushRequest) (*ViewsResponse, error) {
+	var resp ViewsResponse
+	if err := c.callJSON(ctx, "views.push", botToken, req, &resp); err != nil {
+		return nil, err
+	}
+	if !resp.OK {
+		return nil, fmt.Errorf("slack views.push: %s%s", resp.Error, formatViewMessages(resp.ResponseMetadata.Messages))
+	}
+	return &resp, nil
+}
+
+// formatViewMessages flattens Slack's response_metadata.messages array into a
+// single trailing " (msg1; msg2)" suffix for log/error-friendly inclusion.
+func formatViewMessages(msgs []string) string {
+	if len(msgs) == 0 {
+		return ""
+	}
+	return " (" + strings.Join(msgs, "; ") + ")"
+}
+
 // AuthTestResponse is the response from auth.test.
 type AuthTestResponse struct {
 	baseResponse

@@ -18,6 +18,13 @@
 #   - /slack/oauth/callback  unsigned (browser redirect; trust via state JWT)
 #   - /slack/commands/nuon   signing-middleware verified
 #   - /slack/events          signing-middleware verified
+#   - /slack/interactions    signing-middleware verified
+#                            (modals, buttons, dynamic select options)
+#
+# Deploy order: ship the /slack/interactions handler returning 200 first, THEN
+# update the manifest below — Slack performs URL verification on the
+# interactivity request_url whenever the manifest is saved, and a 404 will
+# block the manifest update.
 
 display_information:
   name: Nuon
@@ -37,7 +44,7 @@ features:
     - command: /nuon
       url: https://<your-public-host>/slack/commands/nuon
       description: Manage Nuon notifications in Slack
-      usage_hint: subscribe <org_id> | list | unsubscribe | status | help
+      usage_hint: subscribe [install] | unsubscribe | status | help
       should_escape: false
 
 oauth_config:
@@ -58,3 +65,34 @@ settings:
   socket_mode_enabled: false
   token_rotation_enabled: false
   is_mcp_enabled: false
+
+  # Interactivity: subscribe / unsubscribe modals, Remove buttons inside
+  # the unsubscribe modal, and the install picker's external_select all
+  # POST to /slack/interactions. The endpoint is signing-middleware
+  # verified (X-Slack-Signature). message_menu_options_url shares the
+  # same endpoint — Slack uses payload.type to dispatch.
+  interactivity:
+    is_enabled: true
+    request_url: https://<your-public-host>/slack/interactions
+    message_menu_options_url: https://<your-public-host>/slack/interactions
+
+  # Bot events that drive cleanup paths. We deliberately avoid
+  # `conversations.connect:*` scopes — for our use case (bot invited to
+  # Slack Connect channels by the customer or vendor) the standard
+  # chat:write + channels:read + groups:read scopes are sufficient.
+  #
+  # Wired in services/ctl-api/internal/app/slack/service/slack_events.go:
+  #   - app_uninstalled / tokens_revoked → flip installation Status,
+  #     revoke org_links, soft-delete subs, drop thread anchors.
+  #   - channel_rename → update SlackChannelSubscription.ChannelName for
+  #     affected rows so audit logs / pickers stay readable.
+  #   - channel_archive / channel_left → soft-delete subs targeting that
+  #     channel (we cannot post into archived / left channels).
+  event_subscriptions:
+    request_url: https://<your-public-host>/slack/events
+    bot_events:
+      - app_uninstalled
+      - tokens_revoked
+      - channel_rename
+      - channel_archive
+      - channel_left

@@ -13,7 +13,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
 )
 
 // slashResponseTypeEphemeral is the response_type Slack honors for
@@ -24,12 +23,10 @@ const slashResponseTypeEphemeral = "ephemeral"
 // subcommands. Kept as a single string (vs. block-kit) since the slash command
 // surface is intentionally thin in v1; richer affordances live in the dashboard.
 const slashHelpText = `*Nuon Slack commands*
-` + "`/nuon subscribe`" + ` — subscribe this channel to Nuon events for the linked workspace
+` + "`/nuon subscribe`" + ` — subscribe this channel to Nuon events (opens a dialog)
 ` + "`/nuon unsubscribe`" + ` — remove this channel's subscription
 ` + "`/nuon status`" + ` — show this workspace's installation, linked orgs, and this channel's subscription
-` + "`/nuon help`" + ` — show this message
-
-If your workspace is linked to multiple Nuon orgs, manage subscriptions from the dashboard.`
+` + "`/nuon help`" + ` — show this message`
 
 // slashResponse is the JSON envelope Slack expects from a slash command POST.
 type slashResponse struct {
@@ -61,6 +58,7 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	channelID := ctx.PostForm("channel_id")
 	channelName := ctx.PostForm("channel_name")
 	userID := ctx.PostForm("user_id")
+	triggerID := ctx.PostForm("trigger_id")
 	text := strings.TrimSpace(ctx.PostForm("text"))
 
 	if teamID == "" || channelID == "" || userID == "" {
@@ -76,9 +74,9 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	case "", "help":
 		respondSlash(ctx, slashHelpText)
 	case "subscribe":
-		s.handleSlashSubscribe(ctx, teamID, channelID, channelName, userID)
+		s.handleSlashSubscribe(ctx, teamID, channelID, channelName, userID, triggerID)
 	case "unsubscribe":
-		s.handleSlashUnsubscribe(ctx, teamID, channelID)
+		s.handleSlashUnsubscribe(ctx, teamID, channelID, channelName, triggerID)
 	case "status":
 		s.handleSlashStatus(ctx, teamID, channelID)
 	default:
@@ -86,14 +84,15 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	}
 }
 
-// handleSlashSubscribe creates a SlackChannelSubscription for the invoking
-// channel, attributing creation to the Slack user (CreatedByAccountID nil —
-// the CHECK constraint requires at least one of {slack_user_id, account_id}).
-//
-// The workspace must have an active SlackInstallation and exactly one verified
-// SlackOrgLink. If multiple orgs are linked we punt to the dashboard rather
-// than guessing.
-func (s *service) handleSlashSubscribe(ctx *gin.Context, teamID, channelID, channelName, slackUserID string) {
+// handleSlashSubscribe always opens the subscribe modal so the user can pick
+// the org, scope, and per-resource filters — symmetric with /nuon unsubscribe.
+// We still verify the workspace has an active installation and at least one
+// verified org link before opening the modal, so the user gets a useful
+// ephemeral message rather than an empty modal in the misconfigured case.
+func (s *service) handleSlashSubscribe(
+	ctx *gin.Context,
+	teamID, channelID, channelName, slackUserID, triggerID string,
+) {
 	var install app.SlackInstallation
 	res := s.db.WithContext(ctx).
 		Where(app.SlackInstallation{TeamID: teamID, Status: app.SlackInstallationStatusActive}).
@@ -121,138 +120,53 @@ func (s *service) handleSlashSubscribe(ctx *gin.Context, teamID, channelID, chan
 		respondSlash(ctx, "This workspace isn't linked to any Nuon org yet. Open the Nuon dashboard to link an org.")
 		return
 	}
-	if len(links) > 1 {
-		respondSlash(ctx, fmt.Sprintf(
-			"This workspace is linked to %d Nuon orgs. Subscribing from Slack is ambiguous — please subscribe from the Nuon dashboard.",
-			len(links),
-		))
+
+	if triggerID == "" {
+		// No trigger_id from Slack means we can't open a modal. This
+		// should never happen with a real slash command POST, but
+		// guard so we return something useful instead of opaque-failing.
+		respondSlash(ctx, "Sorry — Slack didn't send a trigger id. Try the command again.")
 		return
 	}
-
-	link := links[0]
-	if err := s.upsertSlashSubscription(ctx, link, channelID, channelName, slackUserID); err != nil {
-		s.l.Error("slash subscribe: create subscription failed", zap.Error(err),
+	// Pre-populate the modal from this channel's most recently updated
+	// existing subscription (if any) so re-running /nuon subscribe doesn't
+	// throw away the user's prior org / scope / install / event-filter
+	// selections. With no existing sub this returns the zero value and the
+	// modal renders its default empty state.
+	preselect := s.preselectSubscribeRenderStateForChannel(ctx, teamID, channelID)
+	if err := s.openSubscribeModalForSlash(ctx, triggerID, teamID, channelID, channelName, slackUserID, preselect); err != nil {
+		s.l.Error("slash subscribe: open modal failed", zap.Error(err),
 			zap.String("team_id", teamID), zap.String("channel_id", channelID))
-		respondSlash(ctx, "Sorry — couldn't create the subscription. Please try again.")
+		respondSlash(ctx, "Sorry — couldn't open the subscribe dialog. Please try again.")
 		return
 	}
-
-	respondSlash(ctx, fmt.Sprintf("Subscribed <#%s> to Nuon events for this workspace.", channelID))
+	// Modal opens; reply with an empty 200 so Slack doesn't render an
+	// extra ephemeral message in the channel.
+	ctx.Status(http.StatusOK)
 }
 
-// upsertSlashSubscription creates a sub or revives a previously soft-deleted
-// one. Slash-command-originated subs set CreatedBySlackUserID (account id nil).
-func (s *service) upsertSlashSubscription(
-	ctx context.Context,
-	link app.SlackOrgLink,
-	channelID, channelName, slackUserID string,
-) error {
-	var existing app.SlackChannelSubscription
-	res := s.db.WithContext(ctx).
-		Unscoped().
-		Where(app.SlackChannelSubscription{
-			OrgLinkID: link.ID,
-			TeamID:    link.TeamID,
-			ChannelID: channelID,
-		}).
-		First(&existing)
-
-	switch {
-	case errors.Is(res.Error, gorm.ErrRecordNotFound):
-		uid := slackUserID
-		// Slash-command-originated subs have no Nuon account context;
-		// resolve CreatedByID off InstalledByAccount via a synthetic
-		// account-context lookup. We fetch the installation's installer
-		// account so the BeforeCreate hook can stamp CreatedByID.
-		ctxWithAcct, ctxErr := s.contextWithInstallerAccount(ctx, link.TeamID)
-		if ctxErr != nil {
-			return ctxErr
-		}
-		// Slash command subs default to AllEvents=true — same as the
-		// dashboard create handler — since /nuon subscribe doesn't take
-		// per-resource filters.
-		sub := &app.SlackChannelSubscription{
-			OrgLinkID:            link.ID,
-			TeamID:               link.TeamID,
-			ChannelID:            channelID,
-			ChannelName:          channelName,
-			OrgID:                link.OrgID,
-			Interests:            interests.AllEvents(),
-			CreatedBySlackUserID: &uid,
-		}
-		return s.db.WithContext(ctxWithAcct).Create(sub).Error
-	case res.Error != nil:
-		return res.Error
-	default:
-		uid := slackUserID
-		existing.ChannelName = channelName
-		existing.CreatedBySlackUserID = &uid
-		existing.OrgID = link.OrgID
-		existing.DeletedAt = 0
-		// Backfill AllEvents for resurrected rows whose Interests column
-		// is empty (e.g. legacy text[] rows after the column-drop
-		// migration). New rows always have Interests populated, so this
-		// is a no-op for them.
-		if existing.Interests.IsZero() {
-			existing.Interests = interests.AllEvents()
-		}
-		return s.db.WithContext(ctx).Unscoped().Save(&existing).Error
-	}
-}
-
-// handleSlashUnsubscribe soft-deletes the active subscription for this
-// (team_id, channel_id). Mirrors the subscribe ambiguity check: if the
-// workspace is linked to multiple verified Nuon orgs, /nuon unsubscribe is
-// ambiguous (it would silently delete subscriptions across every linked org)
-// and we refuse, deferring to the dashboard. Idempotent when scoped to a
-// single org-link.
-func (s *service) handleSlashUnsubscribe(ctx *gin.Context, teamID, channelID string) {
-	var links []app.SlackOrgLink
-	if err := s.db.WithContext(ctx).
-		Where(app.SlackOrgLink{TeamID: teamID, Status: app.SlackOrgLinkStatusVerified}).
-		Find(&links).Error; err != nil {
-		s.l.Error("slash unsubscribe: lookup org links failed", zap.Error(err),
-			zap.String("team_id", teamID))
-		respondSlash(ctx, "Sorry — something went wrong looking up linked orgs. Please try again.")
+// handleSlashUnsubscribe always opens the unsubscribe modal so the user can
+// see (and selectively remove) every active subscription targeting this
+// channel — across orgs and scopes.
+//
+// The modal renders an empty-state message when nothing is subscribed, so
+// users still get visual confirmation that the command worked.
+func (s *service) handleSlashUnsubscribe(ctx *gin.Context, teamID, channelID, channelName, triggerID string) {
+	if triggerID == "" {
+		// Defensive: real Slack POSTs always include trigger_id. Tell the
+		// user to retry instead of silently failing.
+		respondSlash(ctx, "Sorry — Slack didn't send a trigger id. Try the command again.")
 		return
 	}
-
-	switch len(links) {
-	case 0:
-		respondSlash(ctx, "This workspace isn't linked to any Nuon org.")
-		return
-	case 1:
-		// fall through to scoped delete below
-	default:
-		respondSlash(ctx, fmt.Sprintf(
-			"This workspace is linked to %d Nuon orgs. Unsubscribing from Slack is ambiguous — please unsubscribe from the Nuon dashboard.",
-			len(links),
-		))
-		return
-	}
-
-	// Scope deletion to the single verified link's org so we never reach
-	// across orgs. (The unique index permits the same channel to be
-	// subscribed under multiple org_links for the same team_id.)
-	link := links[0]
-	res := s.db.WithContext(ctx).
-		Where(app.SlackChannelSubscription{
-			OrgLinkID: link.ID,
-			TeamID:    teamID,
-			ChannelID: channelID,
-		}).
-		Delete(&app.SlackChannelSubscription{})
-	if res.Error != nil {
-		s.l.Error("slash unsubscribe: delete failed", zap.Error(res.Error),
+	if err := s.openUnsubscribeModalForSlash(ctx, triggerID, teamID, channelID, channelName); err != nil {
+		s.l.Error("slash unsubscribe: open modal failed", zap.Error(err),
 			zap.String("team_id", teamID), zap.String("channel_id", channelID))
-		respondSlash(ctx, "Sorry — couldn't remove the subscription. Please try again.")
+		respondSlash(ctx, "Sorry — couldn't open the unsubscribe dialog. Please try again.")
 		return
 	}
-	if res.RowsAffected == 0 {
-		respondSlash(ctx, fmt.Sprintf("<#%s> was not subscribed.", channelID))
-		return
-	}
-	respondSlash(ctx, fmt.Sprintf("Unsubscribed <#%s> from Nuon events.", channelID))
+	// Modal opens; reply with empty 200 so Slack doesn't render an extra
+	// ephemeral message in-channel.
+	ctx.Status(http.StatusOK)
 }
 
 // handleSlashStatus reports — ephemerally — what Nuon knows about this
@@ -331,11 +245,15 @@ func (s *service) handleSlashStatus(ctx *gin.Context, teamID, channelID string) 
 			if !ok {
 				name = sub.OrgID
 			}
-			scope := "filtered"
+			// describeMatch lives in subscribe_modal.go; the unsubscribe
+			// modal uses the same helper so the two surfaces show
+			// identical scope tags.
+			scopeTag := describeMatch(sub.Match)
+			filter := "specific events"
 			if sub.Interests.AllEvents {
-				scope = "all events"
+				filter = "all events"
 			}
-			fmt.Fprintf(&b, "    – %s (%s)\n", name, scope)
+			fmt.Fprintf(&b, "    – %s · %s · %s\n", name, scopeTag, filter)
 		}
 	}
 

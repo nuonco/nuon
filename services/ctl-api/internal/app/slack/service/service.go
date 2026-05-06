@@ -85,6 +85,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 		orgs.GET("/channel-subscriptions", s.ListChannelSubscriptions)
 		orgs.POST("/channel-subscriptions", s.CreateChannelSubscription)
+		orgs.PATCH("/channel-subscriptions/:sub_id", s.UpdateChannelSubscription)
 		orgs.DELETE("/channel-subscriptions/:sub_id", s.DeleteChannelSubscription)
 	}
 
@@ -119,6 +120,10 @@ func (s *service) RegisterSlackRoutes(ge *gin.Engine) error {
 	signed := ge.Group("", signMW)
 	signed.POST("/slack/commands/nuon", s.SlackSlashCommand)
 	signed.POST("/slack/events", s.SlackEvents)
+	// Single request_url for all interactive surfaces (modals, buttons,
+	// select menus, dynamic options). Stub returns 200 today; modal
+	// handlers land in subsequent commits within this PR.
+	signed.POST("/slack/interactions", s.SlackInteractions)
 
 	return nil
 }
