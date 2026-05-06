@@ -9,8 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
-	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	generatestatev2 "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
 )
 
 // @ID						AdminInstallGenerateInstallState
@@ -48,13 +47,8 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 			return
 		}
 
-		if err := s.enqueueInstallSignal(ctx, queueID, &statepartialgenerate.Signal{
-			InstallID:        install.ID,
-			Targets:          state.AllPartialTargets(),
-			ForceAll:         true,
-			TriggeredByID:    installID,
-			TriggeredByType:  "installs",
-			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+		if err := s.enqueueInstallSignal(ctx, queueID, &generatestatev2.Signal{
+			InstallID: install.ID,
 		}, install.ID, "installs"); err != nil {
 			ctx.Error(fmt.Errorf("unable to enqueue force-regenerate: %w", err))
 			return

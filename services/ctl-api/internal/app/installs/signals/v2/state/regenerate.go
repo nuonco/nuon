@@ -1,7 +1,6 @@
 package state
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -131,9 +130,7 @@ func fetchPartialWithTargets(ctx workflow.Context, installID string, partial sta
 	case state.PartialStack:
 		return fetchStackPartial(ctx, installID, is)
 	case state.PartialSecrets:
-		err := fetchSecretsPartial(ctx, installID, is)
-		fmt.Println("smk fetch secrets error", err)
-		return err
+		return fetchSecretsPartial(ctx, installID, is)
 	default:
 		return errors.Errorf("unknown partial: %s", partial)
 	}

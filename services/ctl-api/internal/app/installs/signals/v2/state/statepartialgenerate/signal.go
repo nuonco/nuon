@@ -16,7 +16,7 @@ import (
 	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-const SignalType signal.SignalType = "state-regenerate"
+const SignalType signal.SignalType = "state-partial-generate"
 
 // Signal generates state based on signal input
 type Signal struct {
@@ -65,7 +65,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	resp, err := statesignals.Regenerate(ctx, &state.ExecuteRegenerationRequest{
 		InstallID:        s.InstallID,
 		Targets:          s.Targets,
-		ForceAll:         s.ForceAll,
 		TriggeredByID:    s.TriggeredByID,
 		TriggeredByType:  s.TriggeredByType,
 		StateGeneratedBy: s.StateGeneratedBy,
@@ -78,7 +77,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// emit metrics
 	if s.metrics == nil {
-		return err
+		return nil
 	}
 	baseTags := metrics.ToTags(map[string]string{
 		"install_id":        s.InstallID,

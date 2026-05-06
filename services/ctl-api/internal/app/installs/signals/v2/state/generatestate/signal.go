@@ -16,7 +16,7 @@ import (
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
-const SignalType signal.SignalType = "generate-state"
+const SignalType signal.SignalType = "generate-full-state"
 
 // This signal force generates all state parts and calls the state-regenerate signal with
 // forceAll: true and targets: all-partials
@@ -56,7 +56,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		Signal: &statepartialgenerate.Signal{
 			InstallID:        s.InstallID,
 			AllTargets:       true,
-			ForceAll:         true,
 			TriggeredByID:    s.InstallID,
 			TriggeredByType:  "installs",
 			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
