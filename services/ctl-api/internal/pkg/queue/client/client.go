@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -23,6 +24,7 @@ type Client struct {
 	cfg      *internal.Config
 	tClient  temporalclient.Client
 	l        *zap.Logger
+	mw       metrics.Writer
 	enqueuer *enqueuer.Enqueuer
 }
 
@@ -33,6 +35,7 @@ type Params struct {
 	Cfg      *internal.Config
 	TClient  temporalclient.Client
 	L        *zap.Logger
+	MW       metrics.Writer
 	Enqueuer *enqueuer.Enqueuer
 }
 
@@ -42,6 +45,7 @@ func New(params Params) *Client {
 		cfg:      params.Cfg,
 		tClient:  params.TClient,
 		l:        params.L,
+		mw:       params.MW,
 		enqueuer: params.Enqueuer,
 	}
 }

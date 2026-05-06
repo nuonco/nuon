@@ -15181,6 +15181,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by runner ID */
+        runner_id?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */

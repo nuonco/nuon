@@ -94,7 +94,7 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 
 	// Merge new values with existing values and track changes
 	if installInputs.Values == nil {
-		return errors.New("missing install inputs")
+		installInputs.Values = pgtype.Hstore{}
 	}
 
 	// Convert filtered values to pointer map for comparison
