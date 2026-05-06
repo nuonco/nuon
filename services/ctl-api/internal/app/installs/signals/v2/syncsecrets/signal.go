@@ -3,6 +3,7 @@ package syncsecrets
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -31,9 +32,15 @@ type Signal struct {
 var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithTimeout = (*Signal)(nil)
 
-func (s *Signal) AutoRetry() bool { return true }
+func (s *Signal) AutoRetry() bool                       { return true }
+func (s *Signal) MaxRetries() int                       { return 3 }
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+func (s *Signal) Timeout() time.Duration                { return 180 * 24 * time.Hour }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)

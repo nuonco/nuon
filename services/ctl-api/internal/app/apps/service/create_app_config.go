@@ -95,11 +95,15 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 }
 
 func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req *CreateAppConfigRequest) (*app.AppConfig, error) {
+	pendingStatus := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusPending))
+	pendingStatus.StatusHumanDescription = "sync pending"
+
 	inputs := app.AppConfig{
 		OrgID:              orgID,
 		AppID:              appID,
 		Status:             app.AppConfigStatusPending,
 		StatusDescription:  "sync pending",
+		StatusV2:           pendingStatus,
 		Readme:             req.Readme,
 		CLIVersion:         req.CLIVersion,
 		IntermediateConfig: &blobstore.Blob{},
