@@ -58,11 +58,20 @@ export function useSpotlightResults(
     enabled: (parsed.prefix === 'app' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
   })
 
+  const isRunnerIdQuery = parsed.query.startsWith('run')
+
   const { data: installsResult, isFetching: installsFetching } = useQuery({
     queryKey: ['spotlight', 'installs', parsed.query, orgId],
     queryFn: () =>
       getInstalls({ orgId, q: parsed.query || undefined, limit: 5 }),
     enabled: (parsed.prefix === 'install' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
+  })
+
+  const { data: runnerInstallsResult, isFetching: runnerInstallsFetching } = useQuery({
+    queryKey: ['spotlight', 'installs-by-runner', parsed.query, orgId],
+    queryFn: () =>
+      getInstalls({ orgId, runner_id: parsed.query, limit: 5 }),
+    enabled: isRunnerIdQuery && (parsed.prefix === null || parsed.prefix === 'install') && !!orgId,
   })
 
   const { data: actionResults, isFetching: actionsFetching } = useQuery({
@@ -165,14 +174,29 @@ export function useSpotlightResults(
         path: `/apps/${app.id}`,
         icon: 'AppWindow',
       }))
-      const installs = (installsResult?.data ?? []).map((install): SpotlightResult => ({
+      const nameInstalls = installsResult?.data ?? []
+      const runnerInstalls = runnerInstallsResult?.data ?? []
+      const seen = new Set<string>()
+      const allInstalls = [...runnerInstalls, ...nameInstalls].filter((i) => {
+        if (seen.has(i.id!)) return false
+        seen.add(i.id!)
+        return true
+      })
+      const runnerPages: SpotlightResult[] = runnerInstalls.map((install): SpotlightResult => ({
+        label: `${install.name ?? install.id!} › Runner`,
+        subtitle: install.app?.name,
+        tag: 'install',
+        path: `/installs/${install.id}/runner`,
+        icon: 'Cube',
+      }))
+      const installs = allInstalls.map((install): SpotlightResult => ({
         label: install.name ?? install.id!,
         subtitle: install.app?.name,
         tag: 'install',
         path: `/installs/${install.id}`,
         icon: 'Cube',
       }))
-      return [...matched, ...apps, ...installs]
+      return [...matched, ...apps, ...runnerPages, ...installs]
     }
 
     if (parsed.prefix === 'app') {
@@ -218,12 +242,29 @@ export function useSpotlightResults(
     }
 
     if (parsed.prefix === 'install') {
-      const installs = installsResult?.data ?? []
+      const nameInstalls = installsResult?.data ?? []
+      const runnerInstalls = runnerInstallsResult?.data ?? []
+      const seen = new Set<string>()
+      const installs = [...runnerInstalls, ...nameInstalls].filter((i) => {
+        if (seen.has(i.id!)) return false
+        seen.add(i.id!)
+        return true
+      })
+      const runnerIdSet = new Set(runnerInstalls.map((i) => i.id!))
       const items: SpotlightResult[] = []
       for (const install of installs) {
         const installId = install.id!
         const name = install.name ?? installId
         if (parsed.command === null) {
+          if (runnerIdSet.has(installId)) {
+            items.push({
+              label: `${name} › Runner`,
+              subtitle: install.app?.name,
+              tag: 'install',
+              path: `/installs/${installId}/runner`,
+              icon: 'Cube',
+            })
+          }
           items.push({
             label: name,
             subtitle: install.app?.name,
@@ -469,9 +510,9 @@ export function useSpotlightResults(
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
+  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
 
-  const isFetching = appsFetching || installsFetching || orgsFetching || actionsFetching || componentsFetching
+  const isFetching = appsFetching || installsFetching || runnerInstallsFetching || orgsFetching || actionsFetching || componentsFetching
 
   return { results, isFetching }
 }
