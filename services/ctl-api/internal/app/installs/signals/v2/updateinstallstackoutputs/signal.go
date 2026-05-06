@@ -11,12 +11,11 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -60,9 +59,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	var err error
 	var install *app.Install
 	var version *app.InstallStackVersion
-	l, _ := log.WorkflowLogger(ctx)
 
-	install, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+	install, err = activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
@@ -207,7 +205,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			OwnerID:   install.ID,
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
-			Signal: &stateregenerate.Signal{
+			Signal: &statepartialgenerate.Signal{
 				InstallID:        install.ID,
 				Targets:          statemanager.TargetsForHint(statemanager.HintStackOutputsUpdated, ""),
 				ForceAll:         true,
@@ -217,9 +215,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			},
 		})
 		if err != nil {
-			workflow.GetLogger(ctx).Warn("unable to hint state manager", zap.Error(err))
+			return errors.Wrap(err, "unable to hint state manager")
 		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
-			workflow.GetLogger(ctx).Warn("unable to await state generation", zap.Error(err))
+			return errors.Wrap(err, "unable to await state generation")
 		}
 
 	} else {
@@ -228,7 +226,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			TriggeredByID:   run.ID,
 			TriggeredByType: "install_stack_version_runs",
 		}); err != nil {
-			l.Warn("unable to generate state", zap.Error(err))
+			return errors.Wrap(err, "unable to generate state")
 		}
 	}
 

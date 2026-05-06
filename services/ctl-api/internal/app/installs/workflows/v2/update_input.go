@@ -10,8 +10,8 @@ import (
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
-	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
+	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -116,7 +116,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	var stateSignal signal.Signal
 	if stateGenV2 {
-		stateSignal = &stateregenerate.Signal{
+		stateSignal = &statepartialgenerate.Signal{
 			InstallID:        installID,
 			Targets:          statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
 			TriggeredByID:    installID,

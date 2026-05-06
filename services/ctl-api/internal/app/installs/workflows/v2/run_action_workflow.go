@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )

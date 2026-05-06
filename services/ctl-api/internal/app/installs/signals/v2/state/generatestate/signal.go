@@ -5,16 +5,14 @@ import (
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -51,15 +49,13 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	l := workflow.GetLogger(ctx)
-
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
 		QueueName: installshelpers.InstallStateManagerQueueName,
-		Signal: &stateregenerate.Signal{
+		Signal: &statepartialgenerate.Signal{
 			InstallID:        s.InstallID,
-			Targets:          pkgstate.AllPartialTargets(),
+			AllTargets:       true,
 			ForceAll:         true,
 			TriggeredByID:    s.InstallID,
 			TriggeredByType:  "installs",
@@ -70,7 +66,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to force-regenerate state")
 	}
 	if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
-		l.Warn("unable to await state generation", zap.Error(err))
+		return errors.Wrap(err, "unable to await state generation")
 	}
 	return nil
 }

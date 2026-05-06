@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 
@@ -266,7 +266,7 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 		OwnerID:   installID,
 		OwnerType: "installs",
 		QueueName: installshelpers.InstallStateManagerQueueName,
-		Signal: &stateregenerate.Signal{
+		Signal: &statepartialgenerate.Signal{
 			InstallID:        installID,
 			Targets:          statemanager.TargetsForHint(statemanager.HintActionRan, ""),
 			ForceAll:         true,

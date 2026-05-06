@@ -8,8 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -48,7 +48,7 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 			return
 		}
 
-		if err := s.enqueueInstallSignal(ctx, queueID, &stateregenerate.Signal{
+		if err := s.enqueueInstallSignal(ctx, queueID, &statepartialgenerate.Signal{
 			InstallID:        install.ID,
 			Targets:          state.AllPartialTargets(),
 			ForceAll:         true,

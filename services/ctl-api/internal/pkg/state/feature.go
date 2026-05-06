@@ -1,6 +1,8 @@
 package state
 
-import "github.com/jackc/pgx/v5/pgtype"
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 // InstallMetadataStateGenV2Key is the install metadata key that can disable state-gen-v2
 // for a specific install even when the org-level feature flag is enabled.

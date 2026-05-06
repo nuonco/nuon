@@ -3,26 +3,10 @@ package state
 import (
 	"time"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	pkgstate "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
-
-type ForceRegenerateRequest struct {
-	TriggeredByID    string
-	TriggeredByType  string
-	StateGeneratedBy app.InstallStateGenerateSource
-}
-
-type ForceRegenerateResponse struct{}
-
-type HintRequest struct {
-	Targets          []PartialTarget
-	TriggeredByID    string
-	TriggeredByType  string
-	StateGeneratedBy app.InstallStateGenerateSource
-}
-
-type HintResponse struct{}
 
 type ExecuteRegenerationRequest struct {
 	InstallID        string
@@ -34,6 +18,9 @@ type ExecuteRegenerationRequest struct {
 	ForceAll       bool
 	CachedState    *pkgstate.State
 	LastModifiedAt map[PartialName]time.Time
+
+	// MetricsWriter is optional — when set, Regenerate emits timing and count metrics.
+	MetricsWriter metrics.Writer
 }
 
 type ExecuteRegenerationResponse struct {

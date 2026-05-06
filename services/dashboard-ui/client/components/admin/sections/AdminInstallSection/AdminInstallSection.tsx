@@ -16,6 +16,7 @@ import {
   adminGracefulRunnerShutdown,
   adminForceRunnerShutdown,
   adminInvalidateRunnerToken,
+  adminGenerateInstallState,
 } from '@/lib'
 
 interface IAdminInstallSection {
@@ -87,6 +88,13 @@ export const AdminInstallSection = ({
           variant="warning"
           requiresConfirmation
           confirmationText="This will restart all queue Temporal workflows for this install. Continue?"
+        />
+        <AdminActionCard
+          title="Force generate state"
+          description="Force trigger state generation for this install"
+          action={() => adminGenerateInstallState({ installId, adminEmail })}
+          confirmationText="This will enqueue a state generation signal for this install. Continue?"
+          requiresConfirmation
         />
       </AdminActionGroup>
 

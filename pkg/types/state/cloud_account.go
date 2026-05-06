@@ -1,11 +1,7 @@
 package state
 
 func NewCloudAccount() *CloudAccount {
-	return &CloudAccount{
-		AWS:   &AWSCloudAccount{},
-		Azure: &AzureCloudAccount{},
-		GCP:   &GCPCloudAccount{},
-	}
+	return &CloudAccount{}
 }
 
 type CloudAccount struct {

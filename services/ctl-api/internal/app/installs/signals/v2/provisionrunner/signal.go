@@ -2,18 +2,16 @@ package provisionrunner
 
 import (
 	"go.temporal.io/sdk/workflow"
-	"go.uber.org/zap"
 
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/provisionserviceaccount"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -62,7 +60,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	l, _ := log.WorkflowLogger(ctx)
 
 	install, err := activities.AwaitGet(ctx, activities.GetRequest{
 		InstallID: s.InstallID,
@@ -93,7 +90,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			OwnerID:   s.InstallID,
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
-			Signal: &stateregenerate.Signal{
+			Signal: &statepartialgenerate.Signal{
 				InstallID:        s.InstallID,
 				Targets:          statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
 				ForceAll:         true,
@@ -103,9 +100,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			},
 		})
 		if err != nil {
-			l.Warn("unable to hint state manager", zap.Error(err))
+			return errors.Wrap(err, "unable to hint state manager")
 		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
-			l.Warn("unable to await state generation", zap.Error(err))
+			return errors.Wrap(err, "unable to await state generation")
 		}
 
 	} else {
@@ -114,7 +111,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			TriggeredByID:   install.RunnerID,
 			TriggeredByType: "runners",
 		}); err != nil {
-			l.Warn("unable to generate state", zap.Error(err))
+			return errors.Wrap(err, "unable to generate state")
 		}
 	}
 

@@ -11,12 +11,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateinstallstackversion"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisiondns"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
-	stateregenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/syncsecrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -43,7 +43,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 	var stateSignal signal.Signal
 	if stateGenV2 {
-		stateSignal = &stateregenerate.Signal{
+		stateSignal = &statepartialgenerate.Signal{
 			InstallID:        installID,
 			Targets:          statemanager.TargetsForHint(statemanager.HintInstallCreated, ""),
 			TriggeredByID:    installID,

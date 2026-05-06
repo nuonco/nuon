@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/stateregenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
@@ -190,7 +190,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			OwnerID:   install.ID,
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
-			Signal: &stateregenerate.Signal{
+			Signal: &statepartialgenerate.Signal{
 				InstallID:        install.ID,
 				Targets:          statemanager.TargetsForHint(statemanager.HintSandboxReprovisioned, ""),
 				ForceAll:         true,
@@ -200,9 +200,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			},
 		})
 		if err != nil {
-			l.Warn("unable to hint state manager", zap.Error(err))
+			return errors.Wrap(err, "unable to hint state manager")
 		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
-			l.Warn("unable to await state generation", zap.Error(err))
+			return errors.Wrap(err, "unable to await state generation")
 		}
 
 	} else {
@@ -211,7 +211,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			TriggeredByID:   sandboxRun.ID,
 			TriggeredByType: "install_sandbox_runs",
 		}); err != nil {
-			l.Warn("unable to generate state", zap.Error(err))
+			return errors.Wrap(err, "unable to generate state")
 		}
 	}
 

@@ -3,7 +3,9 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
@@ -141,7 +143,6 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 
 		is.Components[name] = cMap
 	}
-	is.Components["comps"] = comps
 
 	is.App = h.ToAppState(install.App)
 	is.Org = h.ToOrgState(install.Org)
@@ -153,6 +154,8 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	is.Sandbox = h.ToSandboxesState(sandboxRuns)
 	if len(sandboxRuns) > 0 {
 		is.Domain = h.ToDomainState(&sandboxRuns[0])
+	} else {
+		is.Domain = h.ToDomainState(nil)
 	}
 
 	is.Actions = h.ToActions(actions)
@@ -212,56 +215,14 @@ func (h *Helpers) ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, re
 }
 
 func (h *Helpers) ToCloudAccount(install *app.Install) *state.CloudAccount {
-	st := state.NewCloudAccount()
-
-	if install.AWSAccount != nil {
-		st.AWS = &state.AWSCloudAccount{
-			Region: install.AWSAccount.Region,
-		}
-	}
-
-	if install.AzureAccount != nil {
-		st.Azure = &state.AzureCloudAccount{
-			Location: install.AzureAccount.Location,
-		}
-	}
-
-	return st
+	return ToCloudAccount(install)
 }
 
 func (h *Helpers) ToSandboxesState(sandboxRuns []app.InstallSandboxRun) *state.SandboxState {
 	if len(sandboxRuns) < 1 {
 		return state.NewSandboxState()
 	}
-
-	st := h.ToSandboxRunState(sandboxRuns[0])
-	for _, run := range sandboxRuns[1:] {
-		runSt := h.ToSandboxRunState(run)
-		st.RecentRuns = append(st.RecentRuns, runSt)
-	}
-
-	return st
-}
-
-func (h *Helpers) ToSandboxRunState(run app.InstallSandboxRun) *state.SandboxState {
-	st := state.NewSandboxState()
-
-	st.Populated = true
-	st.Status = string(run.Status)
-	st.Outputs = run.Outputs
-
-	publicVCSConfig := run.AppSandboxConfig.PublicGitVCSConfig
-	connectedVCSConfig := run.AppSandboxConfig.ConnectedGithubVCSConfig
-	if publicVCSConfig != nil {
-		st.Type = publicVCSConfig.Directory
-		st.Version = publicVCSConfig.Branch
-	}
-	if connectedVCSConfig != nil {
-		st.Type = connectedVCSConfig.Directory
-		st.Version = connectedVCSConfig.Branch
-	}
-
-	return st
+	return ToSandboxState(&sandboxRuns[0])
 }
 
 func (h *Helpers) ToAppState(currentApp app.App) *state.AppState {
@@ -426,6 +387,7 @@ func ToDomainState(run *app.InstallSandboxRun) *state.DomainState {
 func ToComponentState(installComp app.InstallComponent) *state.ComponentState {
 	st := state.NewComponentState()
 	st.Populated = true
+	st.Name = installComp.Component.Name
 	st.ComponentID = installComp.ComponentID
 	st.InstallComponentID = installComp.ID
 	if len(installComp.InstallDeploys) > 0 {
@@ -445,6 +407,68 @@ func ToActionWorkflowState(act app.InstallActionWorkflow) *state.ActionWorkflowS
 		if run.RunnerJob != nil {
 			st.Outputs = run.RunnerJob.ParsedOutputs
 			break
+		}
+	}
+	return st
+}
+
+func ToSecretsState(parsedOutputs map[string]interface{}) *state.SecretsState {
+	empty := state.NewSecretsState()
+	if len(parsedOutputs) == 0 {
+		return &empty
+	}
+	var secretsState state.SecretsState
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToSliceHookFunc(","),
+			mapstructure.StringToTimeDurationHookFunc(),
+			mapstructure.StringToTimeHookFunc(time.RFC3339Nano),
+			pkggenerics.StringToMapDecodeHook(),
+		),
+		WeaklyTypedInput: true,
+		Result:           &secretsState,
+	}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return &empty
+	}
+	if err := decoder.Decode(parsedOutputs); err != nil {
+		return &empty
+	}
+	if secretsState == nil {
+		return &empty
+	}
+	return &secretsState
+}
+
+func ToSandboxState(run *app.InstallSandboxRun) *state.SandboxState {
+	st := state.NewSandboxState()
+	st.Populated = true
+	st.Status = string(run.Status)
+	st.Outputs = run.Outputs
+	if run.AppSandboxConfig.PublicGitVCSConfig != nil {
+		st.Type = run.AppSandboxConfig.PublicGitVCSConfig.Directory
+		st.Version = run.AppSandboxConfig.PublicGitVCSConfig.Branch
+	}
+	if run.AppSandboxConfig.ConnectedGithubVCSConfig != nil {
+		st.Type = run.AppSandboxConfig.ConnectedGithubVCSConfig.Directory
+		st.Version = run.AppSandboxConfig.ConnectedGithubVCSConfig.Branch
+	}
+	return st
+}
+
+func ToCloudAccount(install *app.Install) *state.CloudAccount {
+	st := state.NewCloudAccount()
+	if install.AWSAccount != nil {
+		st.AWS = &state.AWSCloudAccount{Region: install.AWSAccount.Region}
+	}
+	if install.AzureAccount != nil {
+		st.Azure = &state.AzureCloudAccount{Location: install.AzureAccount.Location}
+	}
+	if install.GCPAccount != nil {
+		st.GCP = &state.GCPCloudAccount{
+			ProjectID: install.GCPAccount.ProjectID,
+			Region:    install.GCPAccount.Region,
 		}
 	}
 	return st

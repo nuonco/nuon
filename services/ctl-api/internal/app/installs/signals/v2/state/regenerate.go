@@ -2,19 +2,17 @@ package state
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
-	"gorm.io/gorm"
 
-	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	pkgstate "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -29,45 +27,13 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 	}
 	groups := make(map[state.PartialName]*group)
 
-	if req.ForceAll {
-		for _, t := range req.Targets {
-			g := groups[t.Name]
-			if g == nil {
-				g = &group{}
-				groups[t.Name] = g
-			}
-			g.targets = append(g.targets, t)
+	for _, t := range req.Targets {
+		g := groups[t.Name]
+		if g == nil {
+			g = &group{}
+			groups[t.Name] = g
 		}
-	} else {
-		checked := make(map[state.PartialName]bool)
-		for _, t := range req.Targets {
-			if !checked[t.Name] {
-				checked[t.Name] = true
-				resp, err := installactivities.AwaitCheckModified(ctx, &installactivities.CheckModifiedRequest{
-					InstallID:   req.InstallID,
-					PartialName: string(t.Name),
-					LastKnownAt: lastModifiedAt[t.Name],
-				})
-				if err != nil {
-					return nil, errors.Wrapf(err, "check modified %s", t.Name)
-				}
-				if !resp.Changed {
-					continue
-				}
-				groups[t.Name] = &group{}
-			}
-			if g := groups[t.Name]; g != nil {
-				g.targets = append(g.targets, t)
-			}
-		}
-	}
-
-	if len(groups) == 0 {
-		return &state.ExecuteRegenerationResponse{
-			State:          req.CachedState,
-			LastModifiedAt: lastModifiedAt,
-			GeneratedAt:    workflow.Now(ctx),
-		}, nil
+		g.targets = append(g.targets, t)
 	}
 
 	is := req.CachedState
@@ -95,8 +61,19 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 		if !ok {
 			continue
 		}
+		partialStart := time.Now()
 		if err := fetchPartialWithTargets(ctx, req.InstallID, partial, g.targets, is); err != nil {
-			return nil, errors.Wrapf(err, "fetch partial %s", partial)
+			return nil, errors.Wrapf(err, "error fetching partial %s", partial)
+		}
+		if req.MetricsWriter != nil {
+			dur := time.Since(partialStart)
+			req.MetricsWriter.Timing("nuon.state.regenerate.partial.fetch.duration",
+				dur,
+				metrics.ToTags(map[string]string{
+					"install_id": req.InstallID,
+					"partial":    string(partial),
+				}),
+			)
 		}
 		lastModifiedAt[partial] = workflow.Now(ctx)
 		updatedPartials = append(updatedPartials, partial)
@@ -112,13 +89,13 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 			TriggeredByType: req.TriggeredByType,
 			GeneratedBy:     req.StateGeneratedBy,
 		}); err != nil {
-			return nil, errors.Wrap(err, "save state")
+			return nil, errors.Wrap(err, "error while saving state")
 		}
 
 		if err := installactivities.AwaitArchiveState(ctx, &installactivities.ArchiveStateRequest{
 			InstallID: req.InstallID,
 		}); err != nil {
-			return nil, errors.Wrap(err, "archive state")
+			return nil, errors.Wrap(err, "error while archiving state")
 		}
 	}
 
@@ -154,7 +131,9 @@ func fetchPartialWithTargets(ctx workflow.Context, installID string, partial sta
 	case state.PartialStack:
 		return fetchStackPartial(ctx, installID, is)
 	case state.PartialSecrets:
-		return fetchSecretsPartial(ctx, installID, is)
+		err := fetchSecretsPartial(ctx, installID, is)
+		fmt.Println("smk fetch secrets error", err)
+		return err
 	default:
 		return errors.Errorf("unknown partial: %s", partial)
 	}
@@ -191,22 +170,13 @@ func fetchAppPartial(ctx workflow.Context, installID string, is *pkgstate.State)
 func fetchDomainPartial(ctx workflow.Context, installID string, is *pkgstate.State) error {
 	sandboxRun, err := installactivities.AwaitGetInstallSandboxRunStateByInstallID(ctx, installID)
 	if err != nil {
-		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
-			is.Domain = &pkgstate.DomainState{}
+		if generics.IsGormErrRecordNotFound(err) {
+			is.Domain = helpers.ToDomainState(nil)
 			return nil
 		}
 		return errors.Wrap(err, "unable to get domain state")
 	}
-	st := pkgstate.NewDomainState()
-	if sandboxRun != nil {
-		if v, ok := sandboxRun.Outputs["public_domain"].(string); ok {
-			st.PublicDomain = v
-		}
-		if v, ok := sandboxRun.Outputs["internal_domain"].(string); ok {
-			st.InternalDomain = v
-		}
-	}
-	is.Domain = st
+	is.Domain = helpers.ToDomainState(sandboxRun)
 	return nil
 }
 
@@ -228,21 +198,7 @@ func fetchCloudPartial(ctx workflow.Context, installID string, is *pkgstate.Stat
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
-	st := pkgstate.NewCloudAccount()
-	if install.AWSAccount != nil {
-		st.AWS = &pkgstate.AWSCloudAccount{Region: install.AWSAccount.Region}
-	}
-	if install.AzureAccount != nil {
-		st.Azure = &pkgstate.AzureCloudAccount{Location: install.AzureAccount.Location}
-	}
-	if install.GCPAccount != nil {
-		st.GCP = &pkgstate.GCPCloudAccount{
-			ProjectID: install.GCPAccount.ProjectID,
-			Region:    install.GCPAccount.Region,
-		}
-	}
-	fmt.Println("smk cloud account state gen", is.Cloud)
-	is.Cloud = st
+	is.Cloud = helpers.ToCloudAccount(install)
 	return nil
 }
 
@@ -265,7 +221,7 @@ func fetchAllActionsPartial(ctx workflow.Context, installID string, is *pkgstate
 		if err != nil {
 			return errors.Wrap(err, "unable to get action workflow state")
 		}
-		st.Workflows[action.ActionWorkflow.Name] = buildActionWorkflowState(act)
+		st.Workflows[action.ActionWorkflow.Name] = helpers.ToActionWorkflowState(*act)
 	}
 	is.Actions = st
 	return nil
@@ -281,13 +237,9 @@ func fetchTargetedActionsPartial(ctx workflow.Context, entityIDs []string, is *p
 		if err != nil {
 			return errors.Wrapf(err, "unable to get action workflow state %s", id)
 		}
-		is.Actions.Workflows[act.ActionWorkflow.Name] = buildActionWorkflowState(act)
+		is.Actions.Workflows[act.ActionWorkflow.Name] = helpers.ToActionWorkflowState(*act)
 	}
 	return nil
-}
-
-func buildActionWorkflowState(act *app.InstallActionWorkflow) *pkgstate.ActionWorkflowState {
-	return helpers.ToActionWorkflowState(*act)
 }
 
 func fetchInputsPartial(ctx workflow.Context, installID string, is *pkgstate.State) error {
@@ -297,7 +249,7 @@ func fetchInputsPartial(ctx workflow.Context, installID string, is *pkgstate.Sta
 	}
 	inps, err := installactivities.AwaitGetInstallInputsStateByInstallID(ctx, installID)
 	if err != nil {
-		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
+		if generics.IsGormErrRecordNotFound(err) {
 			is.Inputs = &pkgstate.InputsState{}
 			return nil
 		}
@@ -364,27 +316,13 @@ func buildComponentState(installComp *app.InstallComponent) *pkgstate.ComponentS
 func fetchSandboxPartial(ctx workflow.Context, installID string, is *pkgstate.State) error {
 	sandboxRun, err := installactivities.AwaitGetInstallSandboxRunStateByInstallID(ctx, installID)
 	if err != nil {
-		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
+		if generics.IsGormErrRecordNotFound(err) {
 			is.Sandbox = &pkgstate.SandboxState{}
 			return nil
 		}
 		return errors.Wrap(err, "unable to get sandbox run")
 	}
-	st := pkgstate.NewSandboxState()
-	st.Populated = true
-	st.Status = string(sandboxRun.Status)
-	st.Outputs = sandboxRun.Outputs
-	publicVCSConfig := sandboxRun.AppSandboxConfig.PublicGitVCSConfig
-	connectedVCSConfig := sandboxRun.AppSandboxConfig.ConnectedGithubVCSConfig
-	if publicVCSConfig != nil {
-		st.Type = publicVCSConfig.Directory
-		st.Version = publicVCSConfig.Branch
-	}
-	if connectedVCSConfig != nil {
-		st.Type = connectedVCSConfig.Directory
-		st.Version = connectedVCSConfig.Branch
-	}
-	is.Sandbox = st
+	is.Sandbox = helpers.ToSandboxState(sandboxRun)
 	return nil
 }
 
@@ -400,30 +338,12 @@ func fetchStackPartial(ctx workflow.Context, installID string, is *pkgstate.Stat
 func fetchSecretsPartial(ctx workflow.Context, installID string, is *pkgstate.State) error {
 	runnerJob, err := installactivities.AwaitGetSecretsSyncJobByInstallID(ctx, installID)
 	if err != nil {
-		if strings.Contains(err.Error(), gorm.ErrRecordNotFound.Error()) {
-			is.Secrets = &pkgstate.SecretsState{}
+		if generics.IsGormErrRecordNotFound(err) {
+			is.Secrets = helpers.ToSecretsState(nil)
 			return nil
 		}
 		return errors.Wrap(err, "unable to get secrets state")
 	}
-	var secretsState pkgstate.SecretsState
-	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToTimeHookFunc(time.RFC3339Nano),
-			pkggenerics.StringToMapDecodeHook(),
-		),
-		WeaklyTypedInput: true,
-		Result:           &secretsState,
-	}
-	decoder, err := mapstructure.NewDecoder(decoderConfig)
-	if err != nil {
-		return errors.Wrap(err, "unable to create decoder")
-	}
-	if err := decoder.Decode(runnerJob.ParsedOutputs); err != nil {
-		return errors.Wrap(err, "unable to parse secrets outputs")
-	}
-	is.Secrets = &secretsState
+	is.Secrets = helpers.ToSecretsState(runnerJob.ParsedOutputs)
 	return nil
 }

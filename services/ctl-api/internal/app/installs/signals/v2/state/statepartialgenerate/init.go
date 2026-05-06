@@ -1,4 +1,4 @@
-package stateregenerate
+package statepartialgenerate
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
