@@ -17,7 +17,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 	runnerID := c.Param("id")
 
 	var runner app.Runner
-	if res := s.db.WithContext(ctx).
+	if res := s.readDB().WithContext(ctx).
 		Preload("RunnerGroup").
 		Where("id = ?", runnerID).
 		First(&runner); res.Error != nil {
@@ -34,7 +34,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 	// Resolve install
 	if runner.RunnerGroup.OwnerType == "installs" {
 		var install app.Install
-		if res := s.db.WithContext(ctx).
+		if res := s.readDB().WithContext(ctx).
 			Select("id", "name").
 			Where("id = ?", runner.RunnerGroup.OwnerID).
 			First(&install); res.Error == nil {
@@ -45,7 +45,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 
 	// Get latest process for online status
 	var process app.RunnerProcess
-	if res := s.db.WithContext(ctx).
+	if res := s.readDB().WithContext(ctx).
 		Where("runner_id = ?", runnerID).
 		Order("created_at desc").
 		First(&process); res.Error == nil {
@@ -55,7 +55,7 @@ func (s *service) RunnerDetail(c *gin.Context) {
 
 	// Load sandbox configs keyed by job type
 	var configs []app.SandboxModeJobConfig
-	if res := s.db.WithContext(ctx).
+	if res := s.readDB().WithContext(ctx).
 		Where("job_type != ''").
 		Find(&configs); res.Error == nil {
 		for i := range configs {
