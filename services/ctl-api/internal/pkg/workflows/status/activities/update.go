@@ -9,10 +9,19 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
+
+func isTerminalStatus(s app.Status) bool {
+	switch s {
+	case app.StatusSuccess, app.StatusError, app.StatusCancelled:
+		return true
+	}
+	return false
+}
 
 // NOTE
 //
@@ -692,11 +701,13 @@ type UpdateQueueSignalStatusV2Request struct {
 func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQueueSignalStatusV2Request) error {
 	obj := app.QueueSignal{ID: req.QueueSignalID}
 
+	var signalType string
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
 		var obj app.QueueSignal
 		if err := a.getStatus(ctx, &obj, req.QueueSignalID); err != nil {
 			return app.CompositeStatus{}, err
 		}
+		signalType = string(obj.Type)
 		return obj.Status, nil
 	}
 
@@ -707,5 +718,15 @@ func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQu
 	for k, v := range req.Metadata {
 		status.Metadata[k] = v
 	}
-	return a.updateStatus(ctx, &obj, status, getter)
+	if err := a.updateStatus(ctx, &obj, status, getter); err != nil {
+		return err
+	}
+
+	if isTerminalStatus(req.Status) {
+		a.mw.Incr("queue.signal.processed", metrics.ToTags(map[string]string{
+			"signal_type": signalType,
+			"status":      string(req.Status),
+		}))
+	}
+	return nil
 }
