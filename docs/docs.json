@@ -152,6 +152,7 @@
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
+              "guides/programmatic-install-config",
               "guides/runner-kill-switch",
               "guides/custom-domains"
             ]
