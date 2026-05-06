@@ -4,8 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 )
 
 type AdminDeleteComponentRequest struct{}
@@ -24,8 +22,9 @@ type AdminDeleteComponentRequest struct{}
 func (s *service) AdminDeleteComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
-	s.evClient.Send(ctx, componentID, &signals.Signal{
-		Type: signals.OperationDelete,
-	})
+	if err := s.dispatchComponentDelete(ctx, componentID); err != nil {
+		ctx.Error(err)
+		return
+	}
 	ctx.JSON(http.StatusOK, true)
 }
