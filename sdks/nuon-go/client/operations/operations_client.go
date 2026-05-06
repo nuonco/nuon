@@ -834,6 +834,8 @@ type ClientService interface {
 
 	UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerSettingsOK, error)
 
+	UpdateSlackChannelSubscription(params *UpdateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSlackChannelSubscriptionOK, error)
+
 	UpdateTerraformState(params *UpdateTerraformStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateOK, error)
 
 	UpdateUserJourneyStep(params *UpdateUserJourneyStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateUserJourneyStepOK, error)
@@ -17505,6 +17507,52 @@ func (a *Client) UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateRunnerSettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateSlackChannelSubscription updates a slack channel subscription
+
+Mutates a per-channel routing rule. Pass only the fields you want to change. Updating `match` may collide with the `(team_id, channel_id, org_link_id, match_canonical)` unique index — the API returns 409 with a clear description in that case so the dashboard can render the same toast it shows on a duplicate create. The subscription must belong to the calling org (ABAC enforced at the DB query level).
+*/
+func (a *Client) UpdateSlackChannelSubscription(params *UpdateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSlackChannelSubscriptionOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateSlackChannelSubscriptionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateSlackChannelSubscription",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/{org_id}/slack/channel-subscriptions/{sub_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateSlackChannelSubscriptionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateSlackChannelSubscriptionOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateSlackChannelSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

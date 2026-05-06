@@ -112,20 +112,24 @@ export type TOrgStats = {
 
 // webhooks
 //
-// `interests` is stamped `swaggertype:"object"` on the Go side, so the
-// auto-generated SDK shape is a generic object. Re-cast to the hand-written
-// Interests type from @/components/interests at the API boundary instead.
+// `interests` and `match` are both stamped `swaggertype:"object"` on the
+// Go side, so the auto-generated SDK shape is a generic object. Re-cast
+// each to its hand-written mirror at the API boundary so dashboard code
+// can read webhook.match.installs?.ids without casting through any. See
+// client/components/match/types.ts for SubscriptionMatch.
 export type TWebhook = Omit<
   components['schemas']['service.CurrentOrgWebhookResponse'],
-  'interests'
+  'interests' | 'match'
 > & {
   interests?: TInterests
+  match?: TSubscriptionMatch
 }
 export type TCreateWebhookBody = Omit<
   components['schemas']['service.CreateCurrentOrgWebhookRequest'],
-  'interests'
+  'interests' | 'match'
 > & {
   interests?: TInterests
+  match?: TSubscriptionMatch
 }
 
 // slack
