@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, type KeyboardEvent } from 'react'
 import { Avatar } from '@/components/common/Avatar'
 import { Button } from '@/components/common/Button'
 import { Link } from '@/components/common/Link'
@@ -39,32 +39,74 @@ export const OrgsNav = ({
   showSearch,
   showLoadMore,
 }: IOrgsNav) => {
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  const focusLinkAt = (index: number) => {
+    const links = listRef.current?.querySelectorAll<HTMLAnchorElement>('a')
+    if (!links?.length) return
+    const wrapped = ((index % links.length) + links.length) % links.length
+    links[wrapped]?.focus()
+  }
+
+  const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      e.stopPropagation()
+      focusLinkAt(0)
+    }
+  }
+
+  const handleLinkKeyDown = (
+    e: KeyboardEvent<HTMLAnchorElement>,
+    idx: number
+  ) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      e.stopPropagation()
+      focusLinkAt(idx + 1)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      e.stopPropagation()
+      if (idx === 0) {
+        searchInputRef.current?.focus()
+      } else {
+        focusLinkAt(idx - 1)
+      }
+    }
+  }
+
   return (
     <div className="w-full">
       {showSearch ? (
         <div className="p-2 w-full">
           <SearchInput
+            ref={searchInputRef}
             labelClassName="md:!min-w-full md:!w-full"
             className="md:!min-w-full md:!w-full"
             placeholder="Search org by name..."
             value={searchTerm}
             onChange={onSearchChange}
+            onKeyDown={handleSearchKeyDown}
           />
         </div>
       ) : null}
       {isLoading ? (
         Array.from({ length: 5 }).map((_, i) => <LoadingOrgSummary key={i} />)
       ) : orgs?.length ? (
-        orgs?.map((o) => (
-          <Link
-            key={o?.id}
-            className="!h-fit !block w-full"
-            href={`/${o?.id}/apps`}
-            variant="ghost"
-          >
-            <OrgSummary org={o} />
-          </Link>
-        ))
+        <div ref={listRef}>
+          {orgs?.map((o, idx) => (
+            <Link
+              key={o?.id}
+              className="!h-fit !block w-full"
+              href={`/${o?.id}/apps`}
+              variant="ghost"
+              onKeyDown={(e) => handleLinkKeyDown(e, idx)}
+            >
+              <OrgSummary org={o} />
+            </Link>
+          ))}
+        </div>
       ) : (
         <div className="flex flex-col items-center text-center w-full px-2 py-4">
           <Text variant="base" weight="strong">
