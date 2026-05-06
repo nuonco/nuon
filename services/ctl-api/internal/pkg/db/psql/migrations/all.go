@@ -80,5 +80,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "101-slack-channel-subs-creator-check",
 			Fn:   m.Migration101SlackChannelSubsCreatorCheck,
 		},
+		{
+			Name: "102-webhooks-match",
+			Fn:   m.Migration102WebhooksMatch,
+		},
 	}
 }
