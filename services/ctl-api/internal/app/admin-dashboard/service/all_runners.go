@@ -64,7 +64,7 @@ func (s *service) AllRunners(c *gin.Context) {
 }
 
 func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int) ([]views.AllRunnerView, int64, error) {
-	query := s.db.WithContext(ctx).Model(&app.Runner{})
+	query := s.readDB().WithContext(ctx).Model(&app.Runner{})
 	if orgID != "" {
 		query = query.Where(app.Runner{OrgID: orgID})
 	}
@@ -101,7 +101,7 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 	if len(orgIDs) > 0 {
 		ids := mapKeys(orgIDs)
 		var orgs []app.Org
-		s.db.WithContext(ctx).Select("id", "name").Where("id IN ?", ids).Find(&orgs)
+		s.readDB().WithContext(ctx).Select("id", "name").Where("id IN ?", ids).Find(&orgs)
 		for _, o := range orgs {
 			orgNames[o.ID] = o.Name
 		}
@@ -112,7 +112,7 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 	if len(installIDs) > 0 {
 		ids := mapKeys(installIDs)
 		var installs []app.Install
-		s.db.WithContext(ctx).Select("id", "name").Where("id IN ?", ids).Find(&installs)
+		s.readDB().WithContext(ctx).Select("id", "name").Where("id IN ?", ids).Find(&installs)
 		for _, i := range installs {
 			installNames[i.ID] = i.Name
 		}
@@ -133,7 +133,7 @@ func (s *service) getAllRunnerViews(ctx context.Context, orgID string, page int)
 	if len(runnerIDs) > 0 {
 		var processes []app.RunnerProcess
 		// use a subquery to get the latest process per runner
-		s.db.WithContext(ctx).
+		s.readDB().WithContext(ctx).
 			Raw(`SELECT DISTINCT ON (runner_id) * FROM runner_processes
 				 WHERE runner_id IN ? AND deleted_at = 0
 				 ORDER BY runner_id, created_at DESC`, runnerIDs).
@@ -179,7 +179,7 @@ func (s *service) getAllRunnerStats(ctx context.Context, orgID string) (runnerSt
 	var stats runnerStats
 
 	// group_type: counts by runner_groups.type
-	groupTypeQuery := s.db.WithContext(ctx).
+	groupTypeQuery := s.readDB().WithContext(ctx).
 		Table("runners").
 		Select("COALESCE(NULLIF(runner_groups.type, ''), 'unknown') AS label, COUNT(*) AS value").
 		Joins("JOIN runner_groups ON runner_groups.id = runners.runner_group_id").
@@ -217,7 +217,7 @@ func (s *service) getAllRunnerStats(ctx context.Context, orgID string) (runnerSt
 		` + scope + `
 		GROUP BY 1
 	`
-	if err := s.db.WithContext(ctx).Raw(versionSQL, args...).Scan(&stats.Version).Error; err != nil {
+	if err := s.readDB().WithContext(ctx).Raw(versionSQL, args...).Scan(&stats.Version).Error; err != nil {
 		return stats, err
 	}
 
@@ -228,7 +228,7 @@ func (s *service) getAllRunnerStats(ctx context.Context, orgID string) (runnerSt
 		` + scope + `
 		GROUP BY 1
 	`
-	if err := s.db.WithContext(ctx).Raw(processTypeSQL, args...).Scan(&stats.ProcessType).Error; err != nil {
+	if err := s.readDB().WithContext(ctx).Raw(processTypeSQL, args...).Scan(&stats.ProcessType).Error; err != nil {
 		return stats, err
 	}
 
