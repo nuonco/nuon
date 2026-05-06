@@ -1,2 +1,2 @@
-export { SpanTree } from './SpanTree'
+export { collectSpanIds, SpanTree } from './SpanTree'
 export type { ISpanTree } from './SpanTree'
