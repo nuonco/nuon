@@ -35,6 +35,10 @@ type ServiceCreateInstallRequest struct {
 	// install config
 	InstallConfig *HelpersCreateInstallConfigParams `json:"install_config,omitempty"`
 
+	// Labels are key/value pairs to attach to the install at creation time.
+	// They are merged into the install's existing labels (which is empty for a brand-new install).
+	Labels map[string]string `json:"labels,omitempty"`
+
 	// metadata
 	Metadata *HelpersInstallMetadata `json:"metadata,omitempty"`
 

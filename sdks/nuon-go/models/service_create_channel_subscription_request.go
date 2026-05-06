@@ -29,6 +29,9 @@ type ServiceCreateChannelSubscriptionRequest struct {
 	// interests
 	Interests any `json:"interests,omitempty"`
 
+	// match
+	Match any `json:"match,omitempty"`
+
 	// org link id
 	// Required: true
 	OrgLinkID *string `json:"org_link_id"`

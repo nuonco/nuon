@@ -778,6 +778,8 @@ type ClientService interface {
 
 	SlackEvents(params *SlackEventsParams, opts ...ClientOption) (*SlackEventsOK, error)
 
+	SlackInteractions(params *SlackInteractionsParams, opts ...ClientOption) (*SlackInteractionsOK, error)
+
 	SlackOAuthCallback(params *SlackOAuthCallbackParams, opts ...ClientOption) error
 
 	SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error)
@@ -16223,6 +16225,51 @@ func (a *Client) SlackEvents(params *SlackEventsParams, opts ...ClientOption) (*
 }
 
 /*
+SlackInteractions slacks interactivity and shortcuts request URL
+
+Receives interactive payloads (view_submission, block_actions, block_suggestion, shortcut). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Dispatches subscribe/unsubscribe modal submissions, block_actions (scope/notif radios, Remove buttons), and the install picker's external_select block_suggestion handshake. Returns 200 on every parseable envelope so Slack does not retry; unhandled payload types are logged and acked.
+*/
+func (a *Client) SlackInteractions(params *SlackInteractionsParams, opts ...ClientOption) (*SlackInteractionsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSlackInteractionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SlackInteractions",
+		Method:             "POST",
+		PathPattern:        "/slack/interactions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SlackInteractionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SlackInteractionsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SlackInteractions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 SlackOAuthCallback slacks o auth v2 redirect target
 
 Receives the OAuth `code` + signed-state JWT from Slack, exchanges the code for a workspace bot token via oauth.v2.access, persists the installation + org link, and redirects to the dashboard. NOT signed by Slack — trust comes from the state JWT signature. Enterprise Grid (org-wide) installs are rejected.
@@ -16259,7 +16306,7 @@ func (a *Client) SlackOAuthCallback(params *SlackOAuthCallbackParams, opts ...Cl
 /*
 SlackSlashCommand slacks nuon slash command webhook
 
-Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, help. Responses are ephemeral.
+Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
 */
 func (a *Client) SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error) {
 	// NOTE: parameters are not validated before sending

@@ -132,6 +132,8 @@ type Client interface {
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
 	ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error)
+	RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error)
 
 	// install config
 	CreateInstallConfig(ctx context.Context, installID string, req *models.ServiceCreateInstallConfigRequest) (*models.AppInstallConfig, error)

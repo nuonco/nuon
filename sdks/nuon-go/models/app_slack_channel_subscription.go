@@ -44,6 +44,12 @@ type AppSlackChannelSubscription struct {
 	// the field.
 	Interests any `json:"interests,omitempty"`
 
+	// Match is the per-subscription routing predicate. Nil = match every
+	// event in the org. Non-nil = evaluated by labels.SubscriptionMatch
+	// against the dispatch-time labels.EventTargets. swaggertype:"object"
+	// keeps the SDK from materialising the full nested type tree.
+	Match any `json:"match,omitempty"`
+
 	// OrgID is denormalized from OrgLink for query convenience.
 	OrgID string `json:"org_id,omitempty"`
 
