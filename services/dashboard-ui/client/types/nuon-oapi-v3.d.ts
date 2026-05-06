@@ -5277,7 +5277,7 @@ export interface components {
       };
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
-      timeout?: components["schemas"]["time.Duration"];
+      timeout?: number;
     };
     "plantypes.ActionWorkflowRunStepPlan": {
       attrs?: {
@@ -6735,11 +6735,6 @@ export interface components {
       error?: string;
       user_error?: boolean;
     };
-    /**
-     * Format: int64
-     * @enum {integer}
-     */
-    "time.Duration": -9223372036854776000 | 9223372036854776000 | 1 | 1000 | 1000000 | 1000000000 | 60000000000 | 3600000000000;
     "types.StringBoolMap": {
       [key: string]: boolean;
     };
@@ -15153,6 +15148,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by runner ID */
+        runner_id?: string;
         /** @description limit of results to return */
         limit?: number;
         /** @description page number of results to return */
