@@ -104,20 +104,14 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			helmPlan.Op = "install"
 			l = l.With(zap.String("helm.operation", helmPlan.Op))
 			opCtx, end := pkgop.Tool(ctx, "helm", "install_diff")
-			opLog, _ := pkgctx.Logger(opCtx)
-			if opLog == nil {
-				opLog = l
-			}
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
 			diffStr, contentDiff, templateOutput, err = h.installDiff(opCtx, opLog, actionCfg, kubeCfg)
 			end(err)
 		} else {
 			helmPlan.Op = "upgrade"
 			l = l.With(zap.String("helm.operation", helmPlan.Op))
 			opCtx, end := pkgop.Tool(ctx, "helm", "upgrade_diff")
-			opLog, _ := pkgctx.Logger(opCtx)
-			if opLog == nil {
-				opLog = l
-			}
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
 			diffStr, contentDiff, templateOutput, err = h.upgrade_diff(opCtx, opLog, actionCfg, kubeCfg)
 			end(err)
 		}
@@ -141,10 +135,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		l.Info("executing helm uninstall plan")
 
 		opCtx, end := pkgop.Tool(ctx, "helm", "uninstall_diff")
-		opLog, _ := pkgctx.Logger(opCtx)
-		if opLog == nil {
-			opLog = l
-		}
+		opLog := pkgctx.LoggerOrDefault(opCtx, l)
 		diffStr, contentDiff, templateOutput, err := h.uninstallDiff(opCtx, opLog, actionCfg, kubeCfg, prevRel)
 		end(err)
 		if err != nil {
@@ -166,38 +157,26 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 				)
 				op = "upgrade"
 				opCtx, end := pkgop.Tool(ctx, "helm", "upgrade")
-				opLog, _ := pkgctx.Logger(opCtx)
-				if opLog == nil {
-					opLog = l
-				}
+				opLog := pkgctx.LoggerOrDefault(opCtx, l)
 				rel, err = h.upgrade(opCtx, opLog, actionCfg, kubeCfg)
 				end(err)
 			} else {
 				op = "install"
 				opCtx, end := pkgop.Tool(ctx, "helm", "install")
-				opLog, _ := pkgctx.Logger(opCtx)
-				if opLog == nil {
-					opLog = l
-				}
+				opLog := pkgctx.LoggerOrDefault(opCtx, l)
 				rel, err = h.install(opCtx, opLog, actionCfg, kubeCfg)
 				end(err)
 			}
 		case "upgrade":
 			op = "upgrade"
 			opCtx, end := pkgop.Tool(ctx, "helm", "upgrade")
-			opLog, _ := pkgctx.Logger(opCtx)
-			if opLog == nil {
-				opLog = l
-			}
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
 			rel, err = h.upgrade(opCtx, opLog, actionCfg, kubeCfg)
 			end(err)
 		case "uninstall":
 			op = "uninstall"
 			opCtx, end := pkgop.Tool(ctx, "helm", "uninstall")
-			opLog, _ := pkgctx.Logger(opCtx)
-			if opLog == nil {
-				opLog = l
-			}
+			opLog := pkgctx.LoggerOrDefault(opCtx, l)
 			err = h.execUninstall(opCtx, opLog, actionCfg, job, jobExecution)
 			end(err)
 		default:

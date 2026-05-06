@@ -98,28 +98,19 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		opCtx, end := op.Tool(ctx, "terraform", "plan")
-		opLog, _ := pkgctx.Logger(opCtx)
-		if opLog == nil {
-			opLog = l
-		}
+		opLog := pkgctx.LoggerOrDefault(opCtx, l)
 		opLog.Info("executing create terraform apply plan")
 		err = tfRun.Plan(opCtx)
 		end(err)
 	case models.AppRunnerJobOperationTypeCreateDashTeardownDashPlan:
 		opCtx, end := op.Tool(ctx, "terraform", "destroy_plan")
-		opLog, _ := pkgctx.Logger(opCtx)
-		if opLog == nil {
-			opLog = l
-		}
+		opLog := pkgctx.LoggerOrDefault(opCtx, l)
 		opLog.Info("executing create terraform destroy plan")
 		err = tfRun.DestroyPlan(opCtx)
 		end(err)
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
 		opCtx, end := op.Tool(ctx, "terraform", "apply_plan")
-		opLog, _ := pkgctx.Logger(opCtx)
-		if opLog == nil {
-			opLog = l
-		}
+		opLog := pkgctx.LoggerOrDefault(opCtx, l)
 		opLog.Info("executing terraform apply")
 		err = tfRun.ApplyPlan(opCtx)
 		end(err)

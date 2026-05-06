@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/zapwriter"
@@ -19,6 +20,9 @@ import (
 
 func Clone(ctx context.Context, rootDir string, src *plantypes.GitSource, l *zap.Logger) error {
 	opCtx, end := op.Tool(ctx, "git", "clone")
+	if opL, err := pkgctx.Logger(opCtx); err == nil && opL != nil {
+		l = opL
+	}
 	cl := &workspace{}
 	err := cl.clone(opCtx, rootDir, src, l)
 	end(err)

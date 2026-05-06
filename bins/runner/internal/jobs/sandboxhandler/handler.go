@@ -338,10 +338,7 @@ func (h *Handler) runSimOp(
 	customLogIdx *int,
 ) error {
 	opCtx, end := op.Tool(ctx, tool, sop.op)
-	opLog, _ := pkgctx.Logger(opCtx)
-	if opLog == nil {
-		opLog = parentLog
-	}
+	opLog := pkgctx.LoggerOrDefault(opCtx, parentLog)
 
 	timeout := time.NewTimer(dur)
 	defer timeout.Stop()

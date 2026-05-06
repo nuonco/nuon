@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 )
 
@@ -27,6 +28,9 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 	opCtx, end := op.Tool(ctx, "oci", "pack")
 	ctx = opCtx
 	defer func() { end(retErr) }()
+	if l, err := pkgctx.Logger(ctx); err == nil && l != nil {
+		log = l
+	}
 
 	fileDescriptors := make([]v1.Descriptor, 0, len(filePaths))
 

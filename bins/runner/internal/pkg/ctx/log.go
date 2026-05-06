@@ -27,6 +27,18 @@ func SetLogger(ctx context.Context, l *zap.Logger) context.Context {
 	return context.WithValue(ctx, logCtxKey{}, l)
 }
 
+// LoggerOrDefault returns the logger stored on ctx, or the provided default
+// when ctx has no logger or carries a nil one. Use this at the top of helpers
+// that wrap an op.Tool span and want to use the new span-tagged logger when
+// available without each callsite having to re-implement the lookup +
+// fallback dance.
+func LoggerOrDefault(ctx context.Context, def *zap.Logger) *zap.Logger {
+	if l, err := Logger(ctx); err == nil && l != nil {
+		return l
+	}
+	return def
+}
+
 // zapCtxFldName is the zap field key used by ContextField below. The otelzap
 // bridge inspects fields and, when one carries a context.Context, uses it as
 // the emit context — promoting trace_id / span_id into the dedicated OTLP log
