@@ -1,17 +1,27 @@
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { EmptyState } from '@/components/common/EmptyState'
 import { useInstall } from '@/hooks/use-install'
+import { useSandboxRun } from '@/hooks/use-sandbox-run'
 
 export const SandboxRunStateTab = () => {
   const { install } = useInstall()
-  const workspaceId = install?.sandbox?.terraform_workspace?.id
+  const { sandboxRun } = useSandboxRun()
+
+  const isPulumi = sandboxRun?.app_sandbox_config?.type === 'pulumi'
+  const workspaceId = isPulumi
+    ? install?.sandbox?.pulumi_workspace?.id
+    : install?.sandbox?.terraform_workspace?.id
 
   if (!workspaceId) {
     return (
       <EmptyState
         variant="table"
         emptyTitle="No state available"
-        emptyMessage="No Terraform workspace found for this sandbox."
+        emptyMessage={
+          isPulumi
+            ? 'No Pulumi workspace found for this sandbox.'
+            : 'No Terraform workspace found for this sandbox.'
+        }
       />
     )
   }
@@ -19,7 +29,7 @@ export const SandboxRunStateTab = () => {
   return (
     <TerraformWorkspaceCard
       workspaceId={workspaceId}
-      componentType="terraform_module"
+      componentType={isPulumi ? 'pulumi' : 'terraform_module'}
     />
   )
 }

@@ -40,3 +40,21 @@ export const WithGitHub = () => (
     } as any}
   />
 )
+
+export const Pulumi = () => (
+  <AppSandbox
+    appConfig={{
+      sandbox: {
+        type: 'pulumi',
+        runtime: 'go',
+        pulumi_version: '3.100.0',
+        public_git_vcs_config: {
+          repo: 'https://github.com/my-org/pulumi-sandbox',
+          branch: 'main',
+          directory: '/',
+        },
+        operation_roles: {},
+      },
+    } as any}
+  />
+)

@@ -72,7 +72,7 @@ const JOB_CATEGORIES: { label: string; jobTypes: string[] }[] = [
   },
   {
     label: 'Sandbox',
-    jobTypes: ['sandbox-terraform'],
+    jobTypes: ['sandbox-terraform', 'sandbox-pulumi'],
   },
   {
     label: 'Runner',

@@ -2,6 +2,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import {
   SandboxEnvironmentVariablesModal,
   SandboxVariablesFilesModal,
+  SandboxPulumiConfigModal,
 } from '@/components/sandbox/SandboxConfigModals'
 import { SandboxConfigCard } from './SandboxConfigCard'
 import type { ICard } from '@/components/common/Card'
@@ -19,6 +20,10 @@ export const SandboxConfigCardContainer = ({
 
   const hasEnvVars = config.env_vars && Object.keys(config.env_vars).length > 0
   const hasVariablesFiles = config.variables_files && config.variables_files.length > 0
+  const hasPulumiConfig =
+    config.type === 'pulumi' &&
+    config.pulumi_config &&
+    Object.keys(config.pulumi_config).length > 0
 
   const handleViewEnvVars = () => {
     addModal(<SandboxEnvironmentVariablesModal envVars={config.env_vars!} />)
@@ -28,11 +33,16 @@ export const SandboxConfigCardContainer = ({
     addModal(<SandboxVariablesFilesModal variablesFiles={config.variables_files!} />)
   }
 
+  const handleViewPulumiConfig = () => {
+    addModal(<SandboxPulumiConfigModal pulumiConfig={config.pulumi_config!} />)
+  }
+
   return (
     <SandboxConfigCard
       config={config}
       onViewEnvVars={hasEnvVars ? handleViewEnvVars : undefined}
       onViewVariablesFiles={hasVariablesFiles ? handleViewVariablesFiles : undefined}
+      onViewPulumiConfig={hasPulumiConfig ? handleViewPulumiConfig : undefined}
       {...props}
     />
   )
