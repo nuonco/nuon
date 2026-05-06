@@ -6,7 +6,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	enumsv1 "go.temporal.io/api/enums/v1"
+	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
+
+	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -88,10 +93,63 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 	if nativeProvisioner {
-		if _, err := s.helpers.CreateInstallStackVersionForInstall(ctx, install); err != nil {
-			ctx.Error(fmt.Errorf("create install stack version: %w", err))
+		// Skip the full provision workflow but still drive
+		// GenerateInstallStackVersion so the install stack version row, S3
+		// template upload, and Terraform tfvars all get produced. Without
+		// this, the dashboard's stack version panel has nothing to render.
+		stack, err := s.helpers.GetInstallStack(ctx, install.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("get install stack: %w", err))
 			return
 		}
+		// Record a workflow row so the install's workflow history page shows
+		// the run. The SDK drives provisioning out-of-band; this row tracks
+		// the synchronous template-generation step.
+		stackVersionWorkflow, err := s.helpers.CreateWorkflow(ctx,
+			install.ID,
+			app.WorkflowTypeCreateStackVersion,
+			map[string]string{},
+			false,
+		)
+		if err != nil {
+			ctx.Error(fmt.Errorf("create cli-provision workflow: %w", err))
+			return
+		}
+		// GenerateInstallStackVersion reads sreq.ID (EventLoopRequest.ID) as
+		// the stack ID, so it must be set there — InstallStackID on the
+		// embedded Signal alone is not what the workflow looks at.
+		run, err := s.tClient.ExecuteWorkflowInNamespace(ctx,
+			signals.TemporalNamespace,
+			tclient.StartWorkflowOptions{
+				ID:                    fmt.Sprintf("native-aws-provisioner-generate-stack-%s", stack.ID),
+				TaskQueue:             pkgworkflows.APITaskQueue,
+				WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+			},
+			"GenerateInstallStackVersion",
+			signals.RequestSignal{
+				Signal: &signals.Signal{
+					Type:           signals.OperationGenerateInstallStackVersion,
+					InstallStackID: stack.ID,
+				},
+				EventLoopRequest: eventloop.EventLoopRequest{ID: stack.ID},
+			},
+		)
+		if err != nil {
+			ctx.Error(fmt.Errorf("start generate-install-stack-version workflow: %w", err))
+			return
+		}
+		// Add a single workflow step ("Generate stack version") so the
+		// workflow detail page renders steps instead of an empty state.
+		stepID, err := s.createStackVersionWorkflowStep(ctx, stackVersionWorkflow.ID, install.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("create cli-provision step: %w", err))
+			return
+		}
+		// Mark workflow + step Active and, when the Temporal workflow
+		// finishes, flip both to Success/Error in the background. Detached so
+		// HTTP latency stays bounded — the request returns immediately.
+		s.markCreateStackVersionWorkflowActive(stackVersionWorkflow.ID, stepID)
+		go s.awaitCreateStackVersionWorkflow(stackVersionWorkflow.ID, stepID, run)
 		// Update user journey step for first install creation (kept for parity).
 		user, err := cctx.AccountFromGinContext(ctx)
 		if err == nil {
@@ -255,10 +313,63 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 	if nativeProvisioner {
-		if _, err := s.helpers.CreateInstallStackVersionForInstall(ctx, install); err != nil {
-			ctx.Error(fmt.Errorf("create install stack version: %w", err))
+		// Skip the full provision workflow but still drive
+		// GenerateInstallStackVersion so the install stack version row, S3
+		// template upload, and Terraform tfvars all get produced. Without
+		// this, the dashboard's stack version panel has nothing to render.
+		stack, err := s.helpers.GetInstallStack(ctx, install.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("get install stack: %w", err))
 			return
 		}
+		// Record a workflow row so the install's workflow history page shows
+		// the run. The SDK drives provisioning out-of-band; this row tracks
+		// the synchronous template-generation step.
+		stackVersionWorkflow, err := s.helpers.CreateWorkflow(ctx,
+			install.ID,
+			app.WorkflowTypeCreateStackVersion,
+			map[string]string{},
+			false,
+		)
+		if err != nil {
+			ctx.Error(fmt.Errorf("create cli-provision workflow: %w", err))
+			return
+		}
+		// GenerateInstallStackVersion reads sreq.ID (EventLoopRequest.ID) as
+		// the stack ID, so it must be set there — InstallStackID on the
+		// embedded Signal alone is not what the workflow looks at.
+		run, err := s.tClient.ExecuteWorkflowInNamespace(ctx,
+			signals.TemporalNamespace,
+			tclient.StartWorkflowOptions{
+				ID:                    fmt.Sprintf("native-aws-provisioner-generate-stack-%s", stack.ID),
+				TaskQueue:             pkgworkflows.APITaskQueue,
+				WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+			},
+			"GenerateInstallStackVersion",
+			signals.RequestSignal{
+				Signal: &signals.Signal{
+					Type:           signals.OperationGenerateInstallStackVersion,
+					InstallStackID: stack.ID,
+				},
+				EventLoopRequest: eventloop.EventLoopRequest{ID: stack.ID},
+			},
+		)
+		if err != nil {
+			ctx.Error(fmt.Errorf("start generate-install-stack-version workflow: %w", err))
+			return
+		}
+		// Add a single workflow step ("Generate stack version") so the
+		// workflow detail page renders steps instead of an empty state.
+		stepID, err := s.createStackVersionWorkflowStep(ctx, stackVersionWorkflow.ID, install.ID)
+		if err != nil {
+			ctx.Error(fmt.Errorf("create cli-provision step: %w", err))
+			return
+		}
+		// Mark workflow + step Active and, when the Temporal workflow
+		// finishes, flip both to Success/Error in the background. Detached so
+		// HTTP latency stays bounded — the request returns immediately.
+		s.markCreateStackVersionWorkflowActive(stackVersionWorkflow.ID, stepID)
+		go s.awaitCreateStackVersionWorkflow(stackVersionWorkflow.ID, stepID, run)
 		user, err := cctx.AccountFromGinContext(ctx)
 		if err == nil {
 			if err := s.accountsHelpers.UpdateUserJourneyStepForFirstInstallCreate(ctx, user.ID, install.ID); err != nil {

@@ -7,9 +7,13 @@ import { KeyValueList } from '@/components/common/KeyValueList'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { SSELogs } from '@/components/log-stream/SSELogs'
 import { Panel } from '@/components/surfaces/Panel'
 import { AwaitStackDetails } from '@/components/workflows/step-details/stack-details/AwaitStackDetails/AwaitStackDetails'
 import { useInstall } from '@/hooks/use-install'
+import { LogStreamProvider } from '@/providers/log-stream-provider'
+import { LogViewerProvider } from '@/providers/log-viewer-provider'
+import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TInstallStack, TWorkflowStep } from '@/types'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
@@ -115,6 +119,13 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
       {runs.length ? (
         runs.map((run, idx) => {
           const ordinalIdx = (version?.runs?.length ?? 0) - 1 - idx
+          // The OpenAPI types haven't been regenerated to include the
+          // run-scoped log stream yet; widen with a local cast (same pattern
+          // used for terraform_contents on AwaitAWSDetails).
+          const runWithLogs = run as typeof run & {
+            log_stream?: { id?: string; open?: boolean }
+          }
+          const logStreamID = runWithLogs.log_stream?.id
           return (
             <Expand
               key={run?.id}
@@ -128,7 +139,16 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                 </Text>
               }
             >
-              <div className="border-t p-4 flex flex-col gap-2">
+              <div className="border-t p-4 flex flex-col gap-4">
+                {logStreamID ? (
+                  <LogStreamProvider shouldPoll logStreamId={logStreamID}>
+                    <UnifiedLogsProvider>
+                      <LogViewerProvider>
+                        <SSELogs />
+                      </LogViewerProvider>
+                    </UnifiedLogsProvider>
+                  </LogStreamProvider>
+                ) : null}
                 <ClickToCopyButton
                   className="w-fit self-end"
                   textToCopy={JSON.stringify(
