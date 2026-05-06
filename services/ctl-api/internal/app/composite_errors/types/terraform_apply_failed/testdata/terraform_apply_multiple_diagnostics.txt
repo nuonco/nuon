@@ -1,0 +1,20 @@
+module.eks.aws_iam_role.cluster: Creating...
+module.eks.aws_security_group.cluster: Creating...
+╷
+│ Error: creating IAM Role (eks-cluster-role): EntityAlreadyExists: Role with name eks-cluster-role already exists.
+│ 	status code: 409, request id: aaaaaaaa-1111-2222-3333-444444444444
+│
+│   with module.eks.aws_iam_role.cluster,
+│   on .terraform/modules/eks/iam.tf line 12, in resource "aws_iam_role" "cluster":
+│   12: resource "aws_iam_role" "cluster" {
+│
+╵
+╷
+│ Error: creating Security Group (eks-cluster-sg): VPCIdNotSpecified: No default VPC for this user.
+│ 	status code: 400, request id: bbbbbbbb-5555-6666-7777-888888888888
+│
+│   with module.eks.aws_security_group.cluster,
+│   on .terraform/modules/eks/main.tf line 47, in resource "aws_security_group" "cluster":
+│   47: resource "aws_security_group" "cluster" {
+│
+╵
