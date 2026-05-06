@@ -152,7 +152,7 @@
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
-              "guides/programmatic-install-config",
+              "guides/install-configs",
               "guides/runner-kill-switch",
               "guides/custom-domains"
             ]
@@ -381,6 +381,10 @@
     {
       "source": "/guides/self-hosting",
       "destination": "/guides/self-hosted"
+    },
+    {
+      "source": "/guides/programmatic-install-config",
+      "destination": "/guides/install-configs"
     }
   ]
 }
