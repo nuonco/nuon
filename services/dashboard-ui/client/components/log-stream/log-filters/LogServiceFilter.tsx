@@ -45,7 +45,6 @@ export const LogServiceFilter = ({ title, filters }: ILogServiceFilter) => {
   return (
     <Dropdown
       buttonText={`${title} (${selectedServices.size})`}
-      className="ml-auto"
       icon={<Icon variant="FunnelIcon" size="14" />}
       iconAlignment="left"
       id={`${title}-fitler`}
