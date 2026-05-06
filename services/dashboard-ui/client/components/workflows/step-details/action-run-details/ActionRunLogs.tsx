@@ -1,8 +1,10 @@
 import { Skeleton } from '@/components/common/Skeleton'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
+import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
@@ -23,7 +25,17 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
         <UnifiedLogsProvider>
           <LogViewerProvider>
             {isAdhoc ? (
-              <SSELogs />
+              <Tabs
+                tabs={{
+                  logs: <SSELogs />,
+                  trace: (
+                    <TraceView
+                      logStreamId={actionRun.log_stream.id}
+                      shouldPoll={actionRun.log_stream.open}
+                    />
+                  ),
+                }}
+              />
             ) : (
               <InstallActionRunLogs
                 actionConfig={actionRun?.config}

@@ -7,6 +7,7 @@ import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { SSELogs } from '@/components/log-stream/SSELogs'
+import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
@@ -82,26 +83,41 @@ export const DeployStepDetails = ({
         ) : null}
       </div>
       {step?.execution_type === 'approval' ? (
-        <Tabs
-          tabs={{
-            plan: (
-              <div className="mt-4">
-                <Plan step={step} />
-              </div>
-            ),
-            logs: deploy?.log_stream ? (
-              <LogStreamProvider shouldPoll logStreamId={deploy.log_stream.id}>
-                <UnifiedLogsProvider>
-                  <LogViewerProvider>
-                    <SSELogs />
-                  </LogViewerProvider>
-                </UnifiedLogsProvider>
-              </LogStreamProvider>
-            ) : (
-              <DeployLogsSkeleton />
-            ),
-          }}
-        />
+        deploy?.log_stream ? (
+          <LogStreamProvider shouldPoll logStreamId={deploy.log_stream.id}>
+            <UnifiedLogsProvider>
+              <LogViewerProvider>
+                <Tabs
+                  tabs={{
+                    plan: (
+                      <div className="mt-4">
+                        <Plan step={step} />
+                      </div>
+                    ),
+                    logs: <SSELogs />,
+                    trace: (
+                      <TraceView
+                        logStreamId={deploy.log_stream.id}
+                        shouldPoll={deploy.log_stream.open}
+                      />
+                    ),
+                  }}
+                />
+              </LogViewerProvider>
+            </UnifiedLogsProvider>
+          </LogStreamProvider>
+        ) : (
+          <Tabs
+            tabs={{
+              plan: (
+                <div className="mt-4">
+                  <Plan step={step} />
+                </div>
+              ),
+              logs: <DeployLogsSkeleton />,
+            }}
+          />
+        )
       ) : (
         <DeployApply initDeploy={deploy} />
       )}

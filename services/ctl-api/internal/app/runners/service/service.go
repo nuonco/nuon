@@ -112,6 +112,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST(tfBackendPath, s.UpdateTerraformState)
 
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
+	api.GET("/v1/log-streams/:log_stream_id/spans", s.LogStreamReadSpans)
 	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
 
 	return nil
