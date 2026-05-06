@@ -152,6 +152,7 @@
             "boost": 3,
             "pages": [
               "guides/vendor-customers",
+              "guides/install-configs",
               "guides/runner-kill-switch",
               "guides/custom-domains"
             ]
@@ -256,7 +257,7 @@
             "boost": 1.5,
             "pages": [
               "architecture/platform",
-              "architecture/byoc",
+              "architecture/app-deployment",
               "architecture/runner-auth",
               "security"
             ]
@@ -366,6 +367,10 @@
       "destination": "/architecture/platform"
     },
     {
+      "source": "/architecture/byoc",
+      "destination": "/architecture/app-deployment"
+    },
+    {
       "source": "/concepts/installs",
       "destination": "/guides/app-install-life-cycle"
     },
@@ -376,6 +381,10 @@
     {
       "source": "/guides/self-hosting",
       "destination": "/guides/self-hosted"
+    },
+    {
+      "source": "/guides/programmatic-install-config",
+      "destination": "/guides/install-configs"
     }
   ]
 }
