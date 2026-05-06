@@ -70,7 +70,7 @@ export const LogFiltersDropdown = ({ filters }: ILogFiltersDropdown) => {
       alignment="right"
       closeOnBlur={false}
     >
-      <Menu className="!w-72 max-h-[28rem] overflow-y-auto">
+      <Menu className="!w-72">
         <SectionHeading>Display</SectionHeading>
         <CheckboxInput
           checked={jobOutputOnly}
