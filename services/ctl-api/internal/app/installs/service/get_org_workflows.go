@@ -107,8 +107,10 @@ func (s *service) getOrgWorkflows(ctx *gin.Context, orgID string, excludePlanOnl
 		Preload("Steps.CreatedBy").
 		Preload("Steps.Approval").
 		Preload("Steps.Approval.Response").
-		Where("org_id = ?", orgID).
-		Order("created_at desc")
+		Joins("LEFT JOIN installs ON installs.id = install_workflows.owner_id AND install_workflows.owner_type = 'installs'").
+		Where("(install_workflows.owner_type != 'installs' OR installs.deleted_at = 0)").
+		Where("install_workflows.org_id = ?", orgID).
+		Order("install_workflows.created_at desc")
 
 	if !excludePlanOnly {
 		query = query.Where("plan_only = ?", false)
