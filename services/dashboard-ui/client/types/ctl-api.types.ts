@@ -128,10 +128,7 @@ export type TCreateWebhookBody = Omit<
   interests?: TInterests
 }
 
-export type TInstallSandbox = components['schemas']['app.InstallSandbox'] & {
-  /** Pulumi workspace (populated for pulumi-type sandboxes) */
-  pulumi_workspace?: { id?: string; org_id?: string }
-}
+export type TInstallSandbox = components['schemas']['app.InstallSandbox']
 
 // install
 export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
@@ -252,32 +249,10 @@ export type TPulumiRuntime = 'go' | 'nodejs' | 'python'
 
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
-  /** sandbox type: terraform (default) or pulumi */
-  type?: TSandboxType
-  /** pulumi runtime: go, nodejs, python */
-  runtime?: TPulumiRuntime
-  /** optional pulumi version override */
-  pulumi_version?: string
-  /** namespaced pulumi config key-value pairs */
-  pulumi_config?: Record<string, string>
 }
 
-export type TCreateAppSandboxConfigBody = {
-  app_config_id?: string
-  type?: TSandboxType
-  terraform_version?: string
-  variables?: Record<string, string>
-  variables_files?: string[]
-  env_vars?: Record<string, string>
-  drift_schedule?: string
-  runtime?: TPulumiRuntime
-  pulumi_version?: string
-  pulumi_config?: Record<string, string>
-  connected_github_vcs_config?: components['schemas']['helpers.ConnectedGithubVCSConfigRequest']
-  public_git_vcs_config?: components['schemas']['helpers.PublicGitVCSConfigRequest']
-  operation_roles?: Record<string, string>
-  references?: string[]
-}
+export type TCreateAppSandboxConfigBody = components['schemas']['service.CreateAppSandboxConfigRequest']
+
 export type TSandboxRun = Omit<components['schemas']['app.InstallSandboxRun'], 'app_sandbox_config'> & {
   org_id: string
   app_sandbox_config?: TSandboxConfig

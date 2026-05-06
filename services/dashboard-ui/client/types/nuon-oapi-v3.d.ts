@@ -3110,9 +3110,15 @@ export interface components {
       };
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      pulumi_config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      runtime?: string;
       terraform_version?: string;
+      type?: string;
       updated_at?: string;
       variables?: {
         [key: string]: string;
@@ -3795,6 +3801,7 @@ export interface components {
       id?: string;
       install_id?: string;
       install_sandbox_runs?: components["schemas"]["app.InstallSandboxRun"][];
+      pulumi_workspace?: components["schemas"]["app.PulumiWorkspace"];
       status?: string;
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
@@ -4233,6 +4240,15 @@ export interface components {
       runtime?: string;
       updated_at?: string;
       version?: string;
+    };
+    "app.PulumiWorkspace": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      owner_id?: string;
+      owner_type?: string;
+      updated_at?: string;
     };
     "app.Queue": {
       created_at?: string;
@@ -5277,7 +5293,7 @@ export interface components {
       };
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       steps?: components["schemas"]["plantypes.ActionWorkflowRunStepPlan"][];
-      timeout?: components["schemas"]["time.Duration"];
+      timeout?: number;
     };
     "plantypes.ActionWorkflowRunStepPlan": {
       attrs?: {
@@ -5470,6 +5486,15 @@ export interface components {
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
     };
+    "plantypes.PulumiBackend": {
+      config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
+      runtime: string;
+      stack_name: string;
+      workspace_id: string;
+    };
     "plantypes.PulumiBuildPlan": {
       labels?: {
         [key: string]: string;
@@ -5499,6 +5524,7 @@ export interface components {
     "plantypes.PulumiSandboxMode": {
       plan_contents?: string;
       plan_display_contents?: string;
+      workspace_id?: string;
     };
     "plantypes.SandboxMode": {
       enabled?: boolean;
@@ -5530,6 +5556,7 @@ export interface components {
       policies?: {
         [key: string]: string;
       };
+      pulumi_backend?: components["schemas"]["plantypes.PulumiBackend"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
       terraform_backend?: components["schemas"]["plantypes.TerraformBackend"];
@@ -5929,8 +5956,14 @@ export interface components {
         [key: string]: string;
       };
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      pulumi_config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
       references?: string[];
-      terraform_version: string;
+      runtime?: string;
+      terraform_version?: string;
+      type?: string;
       variables: {
         [key: string]: string;
       };
@@ -6735,11 +6768,6 @@ export interface components {
       error?: string;
       user_error?: boolean;
     };
-    /**
-     * Format: int64
-     * @enum {integer}
-     */
-    "time.Duration": -9223372036854776000 | 9223372036854776000 | 1 | 1000 | 1000000 | 1000000000 | 60000000000 | 3600000000000;
     "types.StringBoolMap": {
       [key: string]: boolean;
     };
