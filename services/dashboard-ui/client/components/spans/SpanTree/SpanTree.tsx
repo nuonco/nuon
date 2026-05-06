@@ -28,6 +28,7 @@ export const SpanTree = ({ spans, selectedSpanId, onSelectSpan }: ISpanTree) => 
 
   const expandAll = () => setCollapsed(new Set())
   const collapseAll = () => setCollapsed(new Set(allIds))
+  const isAllExpanded = collapsed.size === 0
 
   if (!spans?.length) {
     return (
@@ -40,16 +41,30 @@ export const SpanTree = ({ spans, selectedSpanId, onSelectSpan }: ISpanTree) => 
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 px-2 py-1 border-b">
-        <Button size="xs" variant="ghost" onClick={expandAll}>
-          Expand all
-        </Button>
-        <Button size="xs" variant="ghost" onClick={collapseAll}>
-          Collapse all
+    <div className="flex flex-col">
+      <div className="flex items-center justify-between gap-3 px-2 py-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
+        <div className="flex items-baseline gap-2">
+          <Text variant="body" weight="strong">
+            Trace
+          </Text>
+          <Text variant="body" theme="neutral">
+            {spans.length} span{spans.length === 1 ? '' : 's'}
+          </Text>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={isAllExpanded ? collapseAll : expandAll}
+          aria-pressed={!isAllExpanded}
+        >
+          <Icon
+            variant={isAllExpanded ? 'CaretUpDownIcon' : 'CaretDownIcon'}
+            size="12"
+          />
+          {isAllExpanded ? 'Collapse' : 'Expand'}
         </Button>
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col py-1">
         {forest.map((node) => (
           <SpanTreeNode
             key={node.span.span_id}
@@ -103,46 +118,68 @@ const SpanTreeNode = ({
         aria-selected={isSelected}
         aria-expanded={hasChildren ? !isCollapsed : undefined}
         className={cn(
-          'group grid grid-cols-[1.25rem_1rem_1fr_auto] items-center gap-2 py-1 px-2 rounded cursor-pointer',
-          'hover:bg-black/5 dark:hover:bg-white/5',
-          isSelected && '!bg-primary-600/20 dark:!bg-primary-400/20'
+          'group flex items-stretch min-h-7 cursor-pointer',
+          'hover:bg-cool-grey-50 dark:hover:bg-dark-grey-500',
+          isSelected &&
+            'bg-primary-200 text-primary-800 dark:bg-primary-600/25 dark:text-primary-400'
         )}
-        style={{ paddingLeft: `${node.depth * 16 + 8}px` }}
         onClick={() => onSelectSpan(span.span_id)}
         title={span.name}
       >
-        {hasChildren ? (
-          <button
-            type="button"
-            className="flex items-center justify-center w-5 h-5 text-cool-grey-500"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggle(span.span_id)
-            }}
-            aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+        {Array.from({ length: node.depth }).map((_, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            className="w-4 shrink-0 flex justify-center"
           >
-            <Icon
-              variant={isCollapsed ? 'CaretRightIcon' : 'CaretDownIcon'}
-              size={12}
-            />
-          </button>
-        ) : (
-          <span />
-        )}
-        <SpanStatusDot status={status} />
-        <span className="flex items-center gap-2 min-w-0">
-          <Text family="mono" variant="subtext" nowrap as="span" className="truncate">
-            {span.name}
-          </Text>
-          {span.attributes?.['nuon.tool'] ? (
-            <Text variant="subtext" theme="neutral" nowrap as="span">
-              · {span.attributes['nuon.tool']}
+            <span className="w-px self-stretch bg-cool-grey-200 dark:bg-dark-grey-700" />
+          </span>
+        ))}
+        <div className="flex items-center gap-2 flex-1 min-w-0 px-2 py-1">
+          {hasChildren ? (
+            <button
+              type="button"
+              className={cn(
+                'flex items-center justify-center w-4 h-4 shrink-0 rounded',
+                'text-cool-grey-500 dark:text-cool-grey-400',
+                'hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8',
+                'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary-400'
+              )}
+              onClick={(e) => {
+                e.stopPropagation()
+                onToggle(span.span_id)
+              }}
+              aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+            >
+              <Icon
+                variant={isCollapsed ? 'CaretRightIcon' : 'CaretDownIcon'}
+                size={12}
+              />
+            </button>
+          ) : (
+            <span className="w-4 shrink-0" />
+          )}
+          <SpanStatusDot status={status} />
+          <span className="flex items-center gap-2 min-w-0 flex-1">
+            <Text
+              family="mono"
+              variant="subtext"
+              nowrap
+              as="span"
+              className="truncate"
+            >
+              {span.name}
             </Text>
-          ) : null}
-        </span>
-        <Text variant="subtext" family="mono" theme="neutral" nowrap as="span">
-          {formatDurationNs(span.duration_ns)}
-        </Text>
+            {span.attributes?.['nuon.tool'] ? (
+              <Text variant="subtext" theme="neutral" nowrap as="span">
+                · {span.attributes['nuon.tool']}
+              </Text>
+            ) : null}
+          </span>
+          <Text variant="subtext" family="mono" theme="neutral" nowrap as="span">
+            {formatDurationNs(span.duration_ns)}
+          </Text>
+        </div>
       </div>
       {hasChildren && !isCollapsed
         ? node.children.map((child) => (
@@ -169,29 +206,33 @@ const statusFor = (node: TSpanNode): TSpanStatus => {
   return 'ok'
 }
 
+const STATUS_ICON: Record<
+  TSpanStatus,
+  {
+    variant: 'CheckCircle' | 'XCircle' | 'MinusCircle'
+    theme: 'success' | 'error' | 'neutral'
+  }
+> = {
+  ok: { variant: 'CheckCircle', theme: 'success' },
+  error: { variant: 'XCircle', theme: 'error' },
+  skipped: { variant: 'MinusCircle', theme: 'neutral' },
+}
+
+const STATUS_DOT_LABEL: Record<TSpanStatus, string> = {
+  ok: 'Ok',
+  error: 'Error (or contains errored descendant)',
+  skipped: 'Skipped',
+}
+
 const SpanStatusDot = ({ status }: { status: TSpanStatus }) => {
-  if (status === 'error') {
-    return (
-      <span
-        title="Error (or contains errored descendant)"
-        className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-red-500 text-white text-[8px] leading-none"
-      >
-        ✗
-      </span>
-    )
-  }
-  if (status === 'skipped') {
-    return (
-      <span
-        title="Skipped"
-        className="inline-flex items-center justify-center w-3 h-3 rounded-full border border-cool-grey-400"
-      />
-    )
-  }
+  const { variant, theme } = STATUS_ICON[status]
   return (
     <span
-      title="Ok"
-      className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-emerald-500"
-    />
+      title={STATUS_DOT_LABEL[status]}
+      aria-label={STATUS_DOT_LABEL[status]}
+      className="inline-flex shrink-0"
+    >
+      <Icon variant={variant} weight="fill" size={14} theme={theme} />
+    </span>
   )
 }
