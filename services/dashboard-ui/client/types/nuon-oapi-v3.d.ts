@@ -2487,6 +2487,13 @@ export interface paths {
     /** get all workflows for the org */
     get: operations["GetOrgWorkflows"];
   };
+  "/v1/workflows/cancel": {
+    /**
+     * cancel multiple workflows
+     * @description Cancel multiple workflows by ID. Returns partial results if some fail.
+     */
+    post: operations["CancelWorkflows"];
+  };
   "/v1/workflows/pending-approvals": {
     /** get all pending workflow step approvals for the org */
     get: operations["GetOrgPendingApprovals"];
@@ -5758,8 +5765,19 @@ export interface components {
       root_domain?: string;
     };
     "service.CancelRunnerJobRequest": Record<string, never>;
+    "service.CancelWorkflowError": {
+      error?: string;
+      workflow_id?: string;
+    };
     "service.CancelWorkflowStepResponse": {
       workflow_id?: string;
+    };
+    "service.CancelWorkflowsRequest": {
+      workflow_ids: string[];
+    };
+    "service.CancelWorkflowsResponse": {
+      cancelled?: string[];
+      errors?: components["schemas"]["service.CancelWorkflowError"][];
     };
     "service.CompleteInstallStepRequest": {
       aws_account?: {
@@ -24274,6 +24292,50 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.Workflow"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel multiple workflows
+   * @description Cancel multiple workflows by ID. Returns partial results if some fail.
+   */
+  CancelWorkflows: {
+    /** @description workflow IDs to cancel */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CancelWorkflowsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.CancelWorkflowsResponse"];
         };
       };
       /** @description Bad Request */
