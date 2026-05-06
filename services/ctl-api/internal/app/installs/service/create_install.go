@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/created"
 	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/polldependencies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -127,6 +128,13 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
+		// reconcile cron/drift emitters from app config triggers
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
+			InstallID: install.ID,
+		}, "", ""); err != nil {
+			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
+			return
+		}
 	} else {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type: signals.OperationCreated,
@@ -138,11 +146,10 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 			Type:              signals.OperationExecuteFlow,
 			InstallWorkflowID: workflow.ID,
 		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationSyncActionWorkflowTriggers,
+		})
 	}
-	// SyncActionWorkflowTriggers must stay legacy - it starts a child workflow in the event loop
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationSyncActionWorkflowTriggers,
-	})
 
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
@@ -267,6 +274,13 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
+		// reconcile cron/drift emitters from app config triggers
+		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
+			InstallID: install.ID,
+		}, "", ""); err != nil {
+			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
+			return
+		}
 	} else {
 		s.evClient.Send(ctx, install.ID, &signals.Signal{
 			Type: signals.OperationCreated,
@@ -278,11 +292,10 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 			Type:              signals.OperationExecuteFlow,
 			InstallWorkflowID: workflow.ID,
 		})
+		s.evClient.Send(ctx, install.ID, &signals.Signal{
+			Type: signals.OperationSyncActionWorkflowTriggers,
+		})
 	}
-	// SyncActionWorkflowTriggers must stay legacy - it starts a child workflow in the event loop
-	s.evClient.Send(ctx, install.ID, &signals.Signal{
-		Type: signals.OperationSyncActionWorkflowTriggers,
-	})
 
 	// Update user journey step for first install creation
 	user, err := cctx.AccountFromGinContext(ctx)
