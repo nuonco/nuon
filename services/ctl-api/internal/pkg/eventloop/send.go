@@ -11,6 +11,11 @@ import (
 )
 
 func (a *evClient) Send(ctx context.Context, id string, signal Signal) {
+	a.mw.Incr("queue.signal.legacy_v1", metrics.ToTags(map[string]string{
+		"signal_type":   string(signal.SignalType()),
+		"workflow_name": signal.WorkflowName(),
+	}))
+
 	if err := a.v.Struct(signal); err != nil {
 		a.mw.Incr("event_loop.signal", metrics.ToStatusTag("invalid signal"))
 		a.l.Error("invalid signal", zap.Error(err))
