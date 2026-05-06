@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
 )
 
@@ -40,7 +41,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// this flag — it auto-detects the mirror at unpack time.
 	if h.state.cfg != nil && h.state.cfg.VendorProviders {
 		l.Info("vendoring terraform providers via filesystem mirror")
-		if err := h.generateProviderMirror(ctx, src.AbsPath()); err != nil {
+		opMirrorCtx, endMirror := op.Tool(ctx, "terraform", "provider_mirror")
+		err := h.generateProviderMirror(opMirrorCtx, src.AbsPath())
+		endMirror(err)
+		if err != nil {
 			l.Error("failed to generate provider mirror", zap.Error(err))
 			h.writeErrorResult(ctx, "vendor providers", err)
 			return fmt.Errorf("unable to generate provider mirror: %w", err)

@@ -71,6 +71,7 @@ const (
 	// flag only affects the build runner.
 	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
+	OrgFeatureTraceView               OrgFeature = "trace-view"
 )
 
 type Org struct {
@@ -187,6 +188,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureAppBranchesUI:           false,
+		OrgFeatureTraceView:               false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -261,6 +263,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureDeployOutputs,
 		OrgFeatureTerraformProviderMirror,
 		OrgFeatureAppBranchesUI,
+		OrgFeatureTraceView,
 	}
 }
 
@@ -296,6 +299,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureDeployOutputs:           "Enable tabbed deploy detail page with plan, variables, state, and outputs tabs",
 		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
 		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
+		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
 	}
 }
 

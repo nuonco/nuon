@@ -111,6 +111,18 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 	// NOTE(fd): we use the "{pod.Namespace}.{pod.Name}.{containerName}" as the identifier
 	podIdentifier := fmt.Sprintf("%s.%s.%s", pod.Namespace, pod.Name, containerName)
 
+	// Emit pod metadata once at startup with full labels/annotations. Per-line
+	// records below keep only the lightweight identifying fields to avoid
+	// duplicating large attribute maps on every log entry.
+	ls.l.Info(
+		fmt.Sprintf("starting log stream for pod %s", podIdentifier),
+		zap.String("pod.metadata.name", pod.GetName()),
+		zap.String("pod.metadata.namespace", pod.GetNamespace()),
+		zap.String("pod.spec.container", containerName),
+		zap.Any("pod.metadata.labels", pod.GetLabels()),
+		zap.Any("pod.metadata.annotations", pod.GetAnnotations()),
+	)
+
 	podCtx, cancel := context.WithCancel(ctx)
 
 	ls.mu.Lock()
@@ -153,9 +165,6 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 						zap.String("pod.metadata.name", pod.GetName()),
 						zap.String("pod.metadata.namespace", pod.GetNamespace()),
 						zap.String("pod.spec.container", containerName),
-						zap.String("pod.name", pod.GetName()),
-						zap.Any("pod.metadata.labels", pod.GetLabels()),
-						zap.Any("pod.metadata.annotations", pod.GetAnnotations()),
 					)
 				}
 				return
@@ -165,14 +174,12 @@ func (ls *LogStreamer) streamPodContainerLog(ctx context.Context, pod *corev1.Po
 			case <-podCtx.Done():
 				return
 			default:
-				// write the log to the logger
-				ls.l.Debug(line,
+				// write the log to the logger; lightweight identifying fields only —
+				// full labels/annotations were emitted once at stream startup above.
+				ls.l.Info(line,
 					zap.String("pod.metadata.name", pod.GetName()),
 					zap.String("pod.metadata.namespace", pod.GetNamespace()),
 					zap.String("pod.spec.container", containerName),
-					zap.String("pod.name", pod.GetName()),
-					zap.Any("pod.metadata.labels", pod.GetLabels()),
-					zap.Any("pod.metadata.annotations", pod.GetAnnotations()),
 				)
 			}
 		}

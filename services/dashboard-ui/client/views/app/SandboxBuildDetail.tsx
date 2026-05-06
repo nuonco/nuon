@@ -7,12 +7,14 @@ import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { TraceView } from '@/components/spans/TraceView'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSandboxBuild } from '@/hooks/use-sandbox-build'
@@ -84,7 +86,17 @@ const SandboxBuildDetailInner = () => {
           >
             <UnifiedLogsProvider>
               <LogViewerProvider>
-                <SSELogs />
+                <Tabs
+                  tabs={{
+                    logs: <SSELogs />,
+                    trace: (
+                      <TraceView
+                        logStreamId={build.log_stream.id}
+                        shouldPoll={build.log_stream.open}
+                      />
+                    ),
+                  }}
+                />
               </LogViewerProvider>
             </UnifiedLogsProvider>
           </LogStreamProvider>

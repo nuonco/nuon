@@ -33,6 +33,25 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return err
 	}
 
+	// Tag this handler's logger with semantic-convention attributes so every
+	// emitted record (including from helpers further down the call tree) carries
+	// them automatically.
+	pulumiWorkspaceID := ""
+	pulumiStack := ""
+	if h.state.plan != nil && h.state.plan.PulumiDeployPlan != nil {
+		pulumiWorkspaceID = h.state.plan.PulumiDeployPlan.WorkspaceID
+		pulumiStack = h.state.plan.PulumiDeployPlan.StackName
+	}
+	l = l.With(
+		zap.String("service.name", "runner.sandbox.pulumi"),
+		zap.String("nuon.tool", "pulumi"),
+		zap.String("nuon.deploy.kind", "sandbox.pulumi"),
+		zap.String("pulumi.workspace_id", pulumiWorkspaceID),
+		zap.String("pulumi.stack", pulumiStack),
+		zap.String("pulumi.operation", string(job.Operation)),
+	)
+	ctx = pkgctx.SetLogger(ctx, l)
+
 	plan := h.state.plan.PulumiDeployPlan
 
 	envVars := make(map[string]string)

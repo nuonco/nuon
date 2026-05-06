@@ -84,7 +84,9 @@ func (s *service) writeRunnerTraces(ctx context.Context, runnerID string, req pt
 				span := spans.At(k)
 				timestamp := span.StartTimestamp().AsTime()
 				endtimestamp := span.EndTimestamp().AsTime()
-				duration := endtimestamp.Unix() - timestamp.Unix()
+				// NOTE: use Sub().Nanoseconds() — endtimestamp.Unix()-timestamp.Unix()
+				// truncated sub-second spans to 0.
+				duration := endtimestamp.Sub(timestamp).Nanoseconds()
 				traceAttrs := span.Attributes()
 				traceAttrsMap := otel.AttributesToMap(traceAttrs)
 

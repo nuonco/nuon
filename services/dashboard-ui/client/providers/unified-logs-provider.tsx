@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState, useRef, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useLogServerFilters } from '@/hooks/use-log-server-filters'
 import { useLogStream } from '@/hooks/use-log-stream'
 import { useOrg } from '@/hooks/use-org'
 import { getLogStreamLogsWithMeta } from '@/lib'
@@ -12,6 +13,7 @@ const useUnifiedLogData = ({
 }) => {
   const { org } = useOrg()
   const { logStream } = useLogStream()
+  const serverFilters = useLogServerFilters()
   const [logs, setLogs] = useState<TOTELLog[]>(initLogs || [])
   const [offset, setOffset] = useState<string>()
   const [hasMore, setHasMore] = useState(true)
@@ -146,28 +148,30 @@ const useUnifiedLogData = ({
   }
 
   const { data: staticResult, isLoading: staticIsLoading } = useQuery({
-    queryKey: ['log-stream-logs-static', logStream?.id, org.id, staticTrigger],
-    queryFn: () => getLogStreamLogsWithMeta({ logStreamId: logStream!.id, orgId: org.id, offset, order: 'desc' }),
+    queryKey: ['log-stream-logs-static', logStream?.id, org.id, staticTrigger, serverFilters],
+    queryFn: () => getLogStreamLogsWithMeta({ logStreamId: logStream!.id, orgId: org.id, offset, order: 'desc', filters: serverFilters }),
     enabled: staticEnabled && !isStreamOpen && !!logStream?.id,
   })
 
   const { data: paginationCheckResult } = useQuery({
-    queryKey: ['log-stream-logs-pagination-check', logStream?.id, org.id, needsPaginationCheck],
+    queryKey: ['log-stream-logs-pagination-check', logStream?.id, org.id, needsPaginationCheck, serverFilters],
     queryFn: () => getLogStreamLogsWithMeta({
       logStreamId: logStream!.id,
       orgId: org.id,
       offset: logs.length > 0 ? String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000) : undefined,
       order: 'desc',
+      filters: serverFilters,
     }),
     enabled: needsPaginationCheck && !isStreamOpen && !!logStream?.id,
   })
 
   const { data: finalFetchResult } = useQuery({
-    queryKey: ['log-stream-logs-final', logStream?.id, org.id, needsFinalFetch],
+    queryKey: ['log-stream-logs-final', logStream?.id, org.id, needsFinalFetch, serverFilters],
     queryFn: () => getLogStreamLogsWithMeta({
       logStreamId: logStream!.id,
       orgId: org.id,
       offset: logs.length > 0 ? String(new Date(logs[logs.length - 1]?.timestamp).getTime() * 1000000) : undefined,
+      filters: serverFilters,
     }),
     enabled: needsFinalFetch && !isStreamOpen && !!logStream?.id,
   })
