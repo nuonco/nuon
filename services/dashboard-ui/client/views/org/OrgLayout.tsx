@@ -16,11 +16,13 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import { useSpotlight } from '@/hooks/use-spotlight'
 import { useHelp } from '@/hooks/use-help'
+import { useNavShortcuts } from '@/hooks/use-nav-shortcuts'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
 
 const SpotlightListener = () => {
   useSpotlight()
   useHelp()
+  useNavShortcuts()
   return null
 }
 

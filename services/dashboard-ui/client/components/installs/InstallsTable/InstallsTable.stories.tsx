@@ -16,6 +16,7 @@ const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   platform: <span className="text-sm text-foreground-muted">AWS</span>,
   labels: i % 2 === 0 ? <span className="text-xs font-mono">env: prod</span> : null,
   activity: <span className="text-sm text-foreground-muted">{i + 1}h ago</span>,
+  updatedAt: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString(),
   action: <Button size="sm" variant="ghost">Manage</Button>,
 }))
 
