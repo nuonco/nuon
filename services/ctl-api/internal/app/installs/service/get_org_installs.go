@@ -21,6 +21,7 @@ import (
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param         q								 query	string	false	"search query to filter installs by name"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					runner_id				query	string	false	"filter by runner ID"
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Tags					installs
@@ -44,8 +45,9 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+	runnerID := ctx.Query("runner_id")
 
-	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls)
+	install, err := s.getOrgInstalls(ctx, org.ID, q, lbls, runnerID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get installs for org %s: %w", org.ID, err))
 		return
@@ -54,7 +56,7 @@ func (s *service) GetOrgInstalls(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, install)
 }
 
-func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels) ([]app.Install, error) {
+func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.Labels, runnerID string) ([]app.Install, error) {
 	var installs []app.Install
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -81,6 +83,14 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Joins("JOIN orgs ON orgs.id=apps.org_id").
 		Where(views.TableOrViewName(s.db, &app.Install{}, ".org_id")+" = ?", orgID).
 		Order("name ASC")
+
+	if runnerID != "" {
+		viewName := views.TableOrViewName(s.db, &app.Install{}, "")
+		tx = tx.
+			Joins("JOIN runner_groups ON runner_groups.owner_id = "+viewName+".id AND runner_groups.owner_type = 'installs' AND runner_groups.deleted_at = 0").
+			Joins("JOIN runners ON runners.runner_group_id = runner_groups.id AND runners.deleted_at = 0").
+			Where("runners.id = ?", runnerID)
+	}
 
 	if q != "" {
 		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".name")+" ILIKE ?", "%"+q+"%")
