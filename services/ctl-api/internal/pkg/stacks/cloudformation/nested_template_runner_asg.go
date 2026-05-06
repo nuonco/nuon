@@ -52,8 +52,8 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		"InstallId":           inp.Install.ID,
 		"RunnerId":            inp.Runner.ID,
 		"RunnerApiUrl":        a.cfg.RunnerAPIURL,
-		"InstanceType":        "t3a.medium",            // NOTE(fd): this may be a good thing to make configurable later
-		"RootVolumeSize":      "30",                    // NOTE(fd): this may be a good thing to make configurable later
+		"InstanceType":        cloudformation.Ref("RunnerInstanceType"),
+		"RootVolumeSize":      cloudformation.Ref("RunnerRootVolumeSize"),
 		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
 	}
 
@@ -80,47 +80,30 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 	}, nil
 }
 
-// VPCNestedStackParameters returns the parameters for the VPC nested stack
-func (a *Templates) getRunnerASGNestedStackParams() map[string]cloudformation.Parameter {
+// getRunnerParameters returns the user-overridable top-level parameters for
+// the runner. These are exposed at the parent stack so customers can override
+// the defaults when creating/updating the stack; the nested runner ASG stack
+// references them via Ref().
+func (a *Templates) getRunnerParameters() map[string]cloudformation.Parameter {
 	return map[string]cloudformation.Parameter{
-		"SubnetId": {
-			Type:        "AWS::EC2::Subnet::Id",
-			Description: generics.ToPtr("The subnet on which the app will run within the selected VPC."),
-		},
-		"RunnerEgressGroupId": {
-			Type:        "AWS::EC2::SecurityGroup::Id",
-			Description: generics.ToPtr("The security group for the runner instance that allows outbound traffic."),
-		},
-		"InstallId": {
-			Type:        "String",
-			Description: generics.ToPtr("The install ID"),
-		},
-		"RunnerId": {
-			Type:        "String",
-			Description: generics.ToPtr("The runner ID"),
-		},
-		"RunnerApiUrl": {
-			Type:        "String",
-			Description: generics.ToPtr("API URL for the runner"),
-			Default:     "https://runner.nuon.co",
-		},
-		"InstanceType": {
+		"RunnerInstanceType": {
 			Type:        "String",
 			Description: generics.ToPtr("EC2 instance type for the runner"),
 			Default:     "t3a.medium",
 			AllowedValues: []interface{}{
 				"t3.small",
 				"t3.medium",
+				"t3.large",
 				"t3a.small",
 				"t3a.medium",
 				"t3a.large",
-				"m5.large",
-				"m5a.large",
+				"c4.large",
+				"c5.large",
 			},
 		},
-		"RootVolumeSize": {
+		"RunnerRootVolumeSize": {
 			Type:        "Number",
-			Description: generics.ToPtr("EC2 instance type for the runner"),
+			Description: generics.ToPtr("Root EBS volume size (GiB) for the runner"),
 			Default:     "30",
 			MinValue:    ptr(8.0),
 			MaxValue:    ptr(100.0),

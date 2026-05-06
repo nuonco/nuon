@@ -28,6 +28,11 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// vpcParams := t.getVPCNestedStackParams(inp)
 	maps.Copy(tmpl.Parameters, vpcParams)
 
+	// Top-level Runner parameters: exposed on the parent stack so customers can
+	// override the defaults; the runner ASG nested stack references these.
+	runnerParams := t.getRunnerParameters()
+	maps.Copy(tmpl.Parameters, runnerParams)
+
 	// When using local runners (dev mode), skip the ASG and runner-EC2-specific
 	// resources to save ~5-6 minutes during stack creation.
 	// PhoneHome resources are always created as the provision workflow depends on
@@ -105,6 +110,12 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 	// parameter groups
 	var pgs []map[string]any
 	paramGroups := []map[string]any{
+		{
+			"Label": map[string]any{
+				"default": "Runner Configuration",
+			},
+			"Parameters": pkggenerics.MapToKeys(runnerParams),
+		},
 		{
 			"Label": map[string]any{
 				"default": "VPC Configuration",
