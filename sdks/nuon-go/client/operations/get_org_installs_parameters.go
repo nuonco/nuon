@@ -94,6 +94,12 @@ type GetOrgInstallsParams struct {
 	*/
 	Q *string
 
+	/* RunnerID.
+
+	   filter by runner ID
+	*/
+	RunnerID *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -219,6 +225,17 @@ func (o *GetOrgInstallsParams) SetQ(q *string) {
 	o.Q = q
 }
 
+// WithRunnerID adds the runnerID to the get org installs params
+func (o *GetOrgInstallsParams) WithRunnerID(runnerID *string) *GetOrgInstallsParams {
+	o.SetRunnerID(runnerID)
+	return o
+}
+
+// SetRunnerID adds the runnerId to the get org installs params
+func (o *GetOrgInstallsParams) SetRunnerID(runnerID *string) {
+	o.RunnerID = runnerID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetOrgInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -307,6 +324,23 @@ func (o *GetOrgInstallsParams) WriteToRequest(r runtime.ClientRequest, reg strfm
 		if qQ != "" {
 
 			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerID != nil {
+
+		// query param runner_id
+		var qrRunnerID string
+
+		if o.RunnerID != nil {
+			qrRunnerID = *o.RunnerID
+		}
+		qRunnerID := qrRunnerID
+		if qRunnerID != "" {
+
+			if err := r.SetQueryParam("runner_id", qRunnerID); err != nil {
 				return err
 			}
 		}
