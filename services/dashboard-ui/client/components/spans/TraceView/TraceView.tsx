@@ -1,7 +1,5 @@
 import { useState, type ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { SpanTimeline } from '@/components/spans/SpanTimeline'
 import { SpanTree } from '@/components/spans/SpanTree'
@@ -24,12 +22,12 @@ export const TraceView = ({
   onSelectSpan,
   rightPane,
 }: ITraceView) => {
-  const [variant, setVariant] = useState<TTraceRightPaneVariant>('logs')
+  const [variant] = useState<TTraceRightPaneVariant>('logs')
 
   const showUpgradeBanner = !isLoading && spans.length === 0
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full pt-4">
       {showUpgradeBanner ? (
         <Banner theme="info">
           <Text weight="strong">No trace data available</Text>
@@ -39,36 +37,8 @@ export const TraceView = ({
           </Text>
         </Banner>
       ) : null}
-      <div className="flex items-center justify-between gap-2 px-2">
-        <div className="flex items-center gap-2">
-          <Text variant="base" weight="strong">
-            Trace
-          </Text>
-          {spans.length > 0 ? (
-            <Text variant="subtext" theme="neutral">
-              {spans.length} span{spans.length === 1 ? '' : 's'}
-            </Text>
-          ) : null}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            size="xs"
-            variant={variant === 'logs' ? 'primary' : 'ghost'}
-            onClick={() => setVariant('logs')}
-          >
-            Logs
-          </Button>
-          <Button
-            size="xs"
-            variant={variant === 'timeline' ? 'primary' : 'ghost'}
-            onClick={() => setVariant('timeline')}
-          >
-            <Icon variant="ArrowsLeftRightIcon" size={12} /> Split
-          </Button>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-4 flex-auto min-h-0">
-        <div className="border rounded overflow-y-auto min-h-[20rem]">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] gap-4 flex-auto min-h-0">
+        <div className="overflow-y-auto min-h-[20rem]">
           {isLoading && !spans.length ? (
             <div className="p-6 text-center">
               <Text variant="subtext" theme="neutral">
@@ -85,7 +55,7 @@ export const TraceView = ({
             />
           )}
         </div>
-        <div className="border rounded overflow-y-auto min-h-[20rem]">
+        <div className="overflow-y-auto min-h-[20rem]">
           {variant === 'logs' ? (
             rightPane
           ) : (

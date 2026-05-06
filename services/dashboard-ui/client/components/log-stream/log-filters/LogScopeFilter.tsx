@@ -40,7 +40,6 @@ export const LogScopeFilter = ({ title = 'Scope', filters }: ILogScopeFilter) =>
   return (
     <Dropdown
       buttonText={`${title} (${selectedScopes.size === 0 ? 'all' : selectedScopes.size})`}
-      className="ml-auto"
       icon={<Icon variant="FunnelIcon" size="14" />}
       iconAlignment="left"
       id={`${title}-filter`}
