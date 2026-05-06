@@ -58,6 +58,9 @@ type PlantypesSandboxRunPlan struct {
 	// policies
 	Policies map[string]string `json:"policies,omitempty"`
 
+	// pulumi backend
+	PulumiBackend *PlantypesPulumiBackend `json:"pulumi_backend,omitempty"`
+
 	// sandbox mode
 	SandboxMode *PlantypesSandboxMode `json:"sandbox_mode,omitempty"`
 
@@ -99,6 +102,10 @@ func (m *PlantypesSandboxRunPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLocalArchive(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePulumiBackend(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -258,6 +265,29 @@ func (m *PlantypesSandboxRunPlan) validateLocalArchive(formats strfmt.Registry) 
 	return nil
 }
 
+func (m *PlantypesSandboxRunPlan) validatePulumiBackend(formats strfmt.Registry) error {
+	if swag.IsZero(m.PulumiBackend) { // not required
+		return nil
+	}
+
+	if m.PulumiBackend != nil {
+		if err := m.PulumiBackend.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi_backend")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi_backend")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesSandboxRunPlan) validateSandboxMode(formats strfmt.Registry) error {
 	if swag.IsZero(m.SandboxMode) { // not required
 		return nil
@@ -352,6 +382,10 @@ func (m *PlantypesSandboxRunPlan) ContextValidate(ctx context.Context, formats s
 	}
 
 	if err := m.contextValidateLocalArchive(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidatePulumiBackend(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -514,6 +548,31 @@ func (m *PlantypesSandboxRunPlan) contextValidateLocalArchive(ctx context.Contex
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("local_archive")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesSandboxRunPlan) contextValidatePulumiBackend(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PulumiBackend != nil {
+
+		if swag.IsZero(m.PulumiBackend) { // not required
+			return nil
+		}
+
+		if err := m.PulumiBackend.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi_backend")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi_backend")
 			}
 
 			return err

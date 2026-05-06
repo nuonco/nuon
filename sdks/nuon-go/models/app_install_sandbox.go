@@ -35,6 +35,9 @@ type AppInstallSandbox struct {
 	// install sandbox runs
 	InstallSandboxRuns []*AppInstallSandboxRun `json:"install_sandbox_runs"`
 
+	// pulumi workspace
+	PulumiWorkspace *AppPulumiWorkspace `json:"pulumi_workspace,omitempty"`
+
 	// status
 	Status string `json:"status,omitempty"`
 
@@ -56,6 +59,10 @@ func (m *AppInstallSandbox) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateInstallSandboxRuns(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validatePulumiWorkspace(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -98,6 +105,29 @@ func (m *AppInstallSandbox) validateInstallSandboxRuns(formats strfmt.Registry) 
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstallSandbox) validatePulumiWorkspace(formats strfmt.Registry) error {
+	if swag.IsZero(m.PulumiWorkspace) { // not required
+		return nil
+	}
+
+	if m.PulumiWorkspace != nil {
+		if err := m.PulumiWorkspace.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi_workspace")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi_workspace")
+			}
+
+			return err
+		}
 	}
 
 	return nil
@@ -157,6 +187,10 @@ func (m *AppInstallSandbox) ContextValidate(ctx context.Context, formats strfmt.
 		res = append(res, err)
 	}
 
+	if err := m.contextValidatePulumiWorkspace(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateStatusV2(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -195,6 +229,31 @@ func (m *AppInstallSandbox) contextValidateInstallSandboxRuns(ctx context.Contex
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *AppInstallSandbox) contextValidatePulumiWorkspace(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.PulumiWorkspace != nil {
+
+		if swag.IsZero(m.PulumiWorkspace) { // not required
+			return nil
+		}
+
+		if err := m.PulumiWorkspace.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("pulumi_workspace")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("pulumi_workspace")
+			}
+
+			return err
+		}
 	}
 
 	return nil
