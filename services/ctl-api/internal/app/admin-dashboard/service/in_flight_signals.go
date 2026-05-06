@@ -52,7 +52,7 @@ func (s *service) InFlightSignalsTable(c *gin.Context) {
 func (s *service) getInFlightSignals(ctx context.Context, namespace string) ([]app.QueueSignal, error) {
 	var signals []app.QueueSignal
 
-	query := s.db.WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.QueueSignal{}).
 		Where("status->>'status' IN ('executing', 'in-progress', 'active')").
 		Order("updated_at DESC").

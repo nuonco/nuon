@@ -84,7 +84,7 @@ func (s *service) SandboxModeBuilder(c *gin.Context) {
 	var cfg *app.SandboxModeJobConfig
 	if jobType != "" {
 		var found app.SandboxModeJobConfig
-		if res := s.db.WithContext(c.Request.Context()).
+		if res := s.readDB().WithContext(c.Request.Context()).
 			Where(app.SandboxModeJobConfig{JobType: jobType}).
 			First(&found); res.Error == nil {
 			cfg = &found
@@ -333,7 +333,7 @@ func (s *service) SandboxModeApplyFlowTemplate(c *gin.Context) {
 
 func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.SandboxModeJobConfig, error) {
 	var configs []app.SandboxModeJobConfig
-	if res := s.db.WithContext(ctx).Order("job_type asc").Find(&configs); res.Error != nil {
+	if res := s.readDB().WithContext(ctx).Order("job_type asc").Find(&configs); res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox configs: %w", res.Error)
 	}
 	return configs, nil
@@ -341,7 +341,7 @@ func (s *service) getSandboxRunnerJobConfigs(ctx context.Context) ([]app.Sandbox
 
 func (s *service) getSandboxSignalConfigs(ctx context.Context) ([]app.SandboxModeSignalConfig, error) {
 	var configs []app.SandboxModeSignalConfig
-	if res := s.db.WithContext(ctx).Order("signal_type asc").Find(&configs); res.Error != nil {
+	if res := s.readDB().WithContext(ctx).Order("signal_type asc").Find(&configs); res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox signal configs: %w", res.Error)
 	}
 	return configs, nil
@@ -349,7 +349,7 @@ func (s *service) getSandboxSignalConfigs(ctx context.Context) ([]app.SandboxMod
 
 func (s *service) getSandboxStackConfig(ctx context.Context) (*app.SandboxModeJobConfig, error) {
 	var cfg app.SandboxModeJobConfig
-	if res := s.db.WithContext(ctx).
+	if res := s.readDB().WithContext(ctx).
 		Where(app.SandboxModeJobConfig{JobType: "sandbox-terraform"}).
 		First(&cfg); res.Error != nil {
 		return nil, res.Error
