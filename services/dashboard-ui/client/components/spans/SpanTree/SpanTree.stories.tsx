@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { TSpan } from '@/types'
-import { SpanTree } from './SpanTree'
+import { collectSpanIds, SpanTree } from './SpanTree'
 
 export default {
   title: 'Spans/SpanTree',
@@ -69,30 +69,55 @@ const mockSpans: TSpan[] = [
   },
 ]
 
+const useTreeProps = (spans: TSpan[]) => {
+  const allIds = useMemo(() => collectSpanIds(spans), [spans])
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  return {
+    collapsed,
+    onToggleCollapsed: (id: string) =>
+      setCollapsed((prev) => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id)
+        else next.add(id)
+        return next
+      }),
+    onExpandAll: () => setCollapsed(new Set()),
+    onCollapseAll: () => setCollapsed(new Set(allIds)),
+  }
+}
+
 export const Default = () => {
   const [selected, setSelected] = useState<string | undefined>('tf-plan')
+  const treeProps = useTreeProps(mockSpans)
   return (
     <div style={{ width: 540 }}>
       <SpanTree
         spans={mockSpans}
         selectedSpanId={selected}
         onSelectSpan={setSelected}
+        {...treeProps}
       />
     </div>
   )
 }
 
-export const Empty = () => (
-  <SpanTree spans={[]} onSelectSpan={() => undefined} />
-)
+export const Empty = () => {
+  const treeProps = useTreeProps([])
+  return (
+    <SpanTree spans={[]} onSelectSpan={() => undefined} {...treeProps} />
+  )
+}
 
 export const SingleRoot = () => {
   const [selected, setSelected] = useState<string | undefined>()
+  const single = [mockSpans[0]]
+  const treeProps = useTreeProps(single)
   return (
     <SpanTree
-      spans={[mockSpans[0]]}
+      spans={single}
       selectedSpanId={selected}
       onSelectSpan={setSelected}
+      {...treeProps}
     />
   )
 }
