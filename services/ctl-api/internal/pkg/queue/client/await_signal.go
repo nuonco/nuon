@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/heartbeat"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
@@ -29,6 +30,14 @@ func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handle
 	// If the DB status already indicates completion, return immediately.
 	if isTerminalStatus(q.Status.Status) {
 		return terminalResponse(q.Status.Status, q.Status.StatusHumanDescription)
+	}
+
+	// If the signal hasn't been enqueued yet, do it inline so the handler
+	// workflow is running before we try to await its finished update.
+	if !q.Enqueued {
+		if err := c.enqueuer.EnqueueInline(ctx, queueSignalID, enqueuer.EnqueueSourceAwait); err != nil {
+			return nil, errors.Wrap(err, "inline enqueue failed")
+		}
 	}
 
 	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.FinishedResponse, error) {
