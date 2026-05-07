@@ -1760,6 +1760,17 @@ export interface paths {
      */
     get: operations["LogStreamReadLogs"];
   };
+  "/v1/log-streams/{log_stream_id}/spans": {
+    /**
+     * read a log stream's trace spans
+     * @description Read OTEL trace spans for a log stream.
+     *
+     * Returns the flat list of spans recorded by the runner for the job execution
+     * (or executions) associated with this log stream, ordered by start timestamp
+     * ASC. The frontend assembles the tree from `parent_span_id`.
+     */
+    get: operations["LogStreamReadSpans"];
+  };
   "/v1/onboarding": {
     /**
      * Start a new onboarding session
@@ -4370,6 +4381,8 @@ export interface components {
       updated_at?: string;
     };
     "app.RunnerGroupSettings": {
+      /** @enum {string} */
+      aws_auth_method?: "iid" | "sts";
       aws_cloudformation_stack_type?: string;
       /** @description aws runner specifics runner-v2 */
       aws_instance_type?: string;
@@ -6349,6 +6362,34 @@ export interface components {
     "service.LatestRunnerHeartBeats": {
       [key: string]: components["schemas"]["app.LatestRunnerHeartBeat"];
     };
+    "service.LogStreamSpan": {
+      attributes?: {
+        [key: string]: string;
+      };
+      /**
+       * @description DurationNs is the wall-clock span duration in nanoseconds, copied
+       * straight from the otel_traces.duration column.
+       */
+      duration_ns?: number;
+      end_timestamp?: string;
+      parent_span_id?: string;
+      runner_job_execution_id?: string;
+      runner_job_execution_step?: string;
+      /**
+       * @description Per-execution identifiers extracted server-side at ingest time.
+       * Empty if the span was emitted outside a job context.
+       */
+      runner_job_id?: string;
+      scope_name?: string;
+      service_name?: string;
+      span_id?: string;
+      span_kind?: string;
+      span_name?: string;
+      start_timestamp?: string;
+      status_code?: string;
+      status_message?: string;
+      trace_id?: string;
+    };
     "service.MngFetchTokenRequest": Record<string, never>;
     "service.MngRestartRequest": Record<string, never>;
     "service.MngShutDownRequest": Record<string, never>;
@@ -6559,6 +6600,8 @@ export interface components {
       name: string;
     };
     "service.UpdateRunnerSettingsRequest": {
+      /** @enum {string} */
+      aws_auth_method?: "iid" | "sts";
       /** @description Deprecated: no longer used. Instance refresh is handled by a backend cron. */
       aws_max_instance_lifetime?: number;
       binary_version?: string;
@@ -19708,8 +19751,36 @@ export interface operations {
   LogStreamReadLogs: {
     parameters: {
       query?: {
-        /** @description resource attribute filters */
+        /** @description sort direction */
         order?: string;
+        /** @description filter by service_name (repeatable) */
+        service_name?: string[];
+        /** @description filter by scope_name (repeatable) */
+        scope_name?: string[];
+        /** @description filter by severity_text (repeatable) */
+        severity_text?: string[];
+        /** @description filter by log_attributes['nuon.tool'] */
+        tool?: string;
+        /** @description filter by log_attributes['helm.release_name'] */
+        helm_release_name?: string;
+        /** @description filter by log_attributes['helm.operation'] */
+        helm_operation?: string;
+        /** @description filter by log_attributes['tf.workspace_id'] */
+        tf_workspace_id?: string;
+        /** @description filter by log_attributes['tf.operation'] */
+        tf_operation?: string;
+        /** @description filter by log_attributes['k8s.kind'] */
+        k8s_kind?: string;
+        /** @description filter by log_attributes['k8s.namespace'] */
+        k8s_namespace?: string;
+        /** @description filter by log_attributes['k8s.name'] */
+        k8s_name?: string;
+        /** @description filter by exact trace_id (dedicated CH column) */
+        trace_id?: string;
+        /** @description filter by exact span_id (dedicated CH column) */
+        span_id?: string;
+        /** @description case-insensitive substring filter on log body */
+        q?: string;
       };
       header?: {
         /** @description log stream offset */
@@ -19725,6 +19796,60 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OtelLogRecord"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * read a log stream's trace spans
+   * @description Read OTEL trace spans for a log stream.
+   *
+   * Returns the flat list of spans recorded by the runner for the job execution
+   * (or executions) associated with this log stream, ordered by start timestamp
+   * ASC. The frontend assembles the tree from `parent_span_id`.
+   */
+  LogStreamReadSpans: {
+    parameters: {
+      path: {
+        /** @description log stream ID */
+        log_stream_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.LogStreamSpan"][];
         };
       };
       /** @description Bad Request */
