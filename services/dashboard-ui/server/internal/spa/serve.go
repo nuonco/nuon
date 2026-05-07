@@ -153,11 +153,6 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 			return
 		}
 
-		authHandler(c)
-		if c.IsAborted() {
-			return
-		}
-
 		filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
 
 		if publicFS != nil {
@@ -172,6 +167,11 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 				distFileServer.ServeHTTP(c.Writer, c.Request)
 				return
 			}
+		}
+
+		authHandler(c)
+		if c.IsAborted() {
+			return
 		}
 
 		if !hasSPAFallback {
@@ -198,17 +198,17 @@ func (h *Handler) registerDevProxy(e *gin.Engine) error {
 			return
 		}
 
-		authHandler(c)
-		if c.IsAborted() {
-			return
-		}
-
 		if publicFS != nil {
 			filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
 			if _, err := fs.Stat(publicFS, filePath); err == nil {
 				http.FileServer(http.FS(publicFS)).ServeHTTP(c.Writer, c.Request)
 				return
 			}
+		}
+
+		authHandler(c)
+		if c.IsAborted() {
+			return
 		}
 
 		proxy := &http.Transport{}
