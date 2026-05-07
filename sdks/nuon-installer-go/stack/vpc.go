@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -12,12 +13,20 @@ import (
 )
 
 const (
-	vpcCIDR = "10.42.0.0/16"
+	// vpcCIDR matches the TF module (install-stacks/aws/modules/vpc). Why:
+	// app-side IaC (helm charts, app modules) often pins network CIDRs that
+	// reference this range; drifting from TF would silently break customers.
+	vpcCIDR = "10.128.0.0/16"
+
+	// runnerSubnetCIDR is a dedicated /24 for the runner ASG. It uses the
+	// private route table (NAT egress) so the EC2 instance can reach the
+	// init script and the runner API without a public IP.
+	runnerSubnetCIDR = "10.128.2.0/24"
 )
 
 var (
-	publicSubnetCIDRs  = []string{"10.42.0.0/20", "10.42.16.0/20", "10.42.32.0/20"}
-	privateSubnetCIDRs = []string{"10.42.64.0/20", "10.42.80.0/20", "10.42.96.0/20"}
+	publicSubnetCIDRs  = []string{"10.128.0.0/24", "10.128.16.0/24"}
+	privateSubnetCIDRs = []string{"10.128.1.0/24", "10.128.17.0/24"}
 )
 
 func tagSpec(rt ec2types.ResourceType, name, installID string) ec2types.TagSpecification {
@@ -25,20 +34,168 @@ func tagSpec(rt ec2types.ResourceType, name, installID string) ec2types.TagSpeci
 		ResourceType: rt,
 		Tags: []ec2types.Tag{
 			{Key: aws.String("Name"), Value: aws.String(name)},
-			{Key: aws.String("nuon:install_id"), Value: aws.String(installID)},
+			{Key: aws.String(installIDTagKey), Value: aws.String(installID)},
 		},
 	}
 }
 
-// CreateVPC builds a minimal 3-AZ VPC: VPC, IGW, 3 public + 3 private subnets,
-// single NAT gateway in the first public subnet, and route tables.
+// CreateVPC ensures the VPC and all dependent network resources exist. Safe to
+// call repeatedly: each step is a discover-or-create, with AWS as the source of
+// truth and the state file used only as a cache.
 func CreateVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
-	azs, err := pickAZs(ctx, c, 3)
+	azs, err := pickAZs(ctx, c, 2)
 	if err != nil {
 		return err
 	}
 
-	if st.VPCID == "" {
+	if err := ensureVPC(ctx, log, c, st); err != nil {
+		return err
+	}
+	if err := ensureIGW(ctx, log, c, st); err != nil {
+		return err
+	}
+	if err := ensureSubnets(ctx, log, c, st, azs); err != nil {
+		return err
+	}
+	if err := ensureNAT(ctx, log, c, st); err != nil {
+		return err
+	}
+	if err := ensurePublicRouteTable(ctx, log, c, st); err != nil {
+		return err
+	}
+	if err := ensurePrivateRouteTable(ctx, log, c, st); err != nil {
+		return err
+	}
+	if err := ensureRunnerSubnet(ctx, log, c, st, azs); err != nil {
+		return err
+	}
+	if err := ensureRunnerSecurityGroup(ctx, log, c, st); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ensureRunnerSubnet creates the dedicated runner subnet in AZ[0] and
+// associates it with the private route table. Why: the runner has no public
+// IP — it relies on NAT for outbound. Putting it on the private route table
+// matches the TF module exactly.
+func ensureRunnerSubnet(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, azs []string) error {
+	existing, err := findSubnetsForVPC(ctx, c, st.VPCID, st.InstallID)
+	if err != nil {
+		return err
+	}
+	if id, ok := existing[runnerSubnetCIDR]; ok {
+		st.RunnerSubnetID = id
+	} else {
+		name := fmt.Sprintf("nuon-%s-runner", st.InstallID)
+		out, err := c.CreateSubnet(ctx, &ec2.CreateSubnetInput{
+			VpcId:             &st.VPCID,
+			AvailabilityZone:  aws.String(azs[0]),
+			CidrBlock:         aws.String(runnerSubnetCIDR),
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st.InstallID)},
+		})
+		if err != nil {
+			return fmt.Errorf("create runner subnet: %w", err)
+		}
+		st.RunnerSubnetID = aws.ToString(out.Subnet.SubnetId)
+		log.Info("created runner subnet", "id", st.RunnerSubnetID)
+	}
+	if st.PrivateRouteTbl != "" {
+		if err := ensureRouteAssociations(ctx, c, st.PrivateRouteTbl, []string{st.RunnerSubnetID}); err != nil {
+			return err
+		}
+	}
+	return st.Save()
+}
+
+// ensureRunnerSecurityGroup provisions the runner SG with intra-SG ingress
+// (so future co-located components can talk to it) and full egress. Mirrors
+// install-stacks/aws/modules/vpc default SG.
+func ensureRunnerSecurityGroup(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	if st.RunnerSecurityGroupID != "" {
+		// Verify it still exists; otherwise re-resolve.
+		out, err := c.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{GroupIds: []string{st.RunnerSecurityGroupID}})
+		if err == nil && len(out.SecurityGroups) > 0 {
+			return nil
+		}
+		if err != nil && !IsAWSErrCode(err, "InvalidGroup.NotFound") {
+			return fmt.Errorf("describe runner sg: %w", err)
+		}
+		st.RunnerSecurityGroupID = ""
+	}
+	// Resolve by tag in case state was lost.
+	d, err := c.DescribeSecurityGroups(ctx, &ec2.DescribeSecurityGroupsInput{
+		Filters: []ec2types.Filter{
+			{Name: aws.String("vpc-id"), Values: []string{st.VPCID}},
+			{Name: aws.String("tag:" + installIDTagKey), Values: []string{st.InstallID}},
+			{Name: aws.String("tag:Name"), Values: []string{"nuon-" + st.InstallID + "-runner"}},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("describe sg by tag: %w", err)
+	}
+	if len(d.SecurityGroups) > 0 {
+		st.RunnerSecurityGroupID = aws.ToString(d.SecurityGroups[0].GroupId)
+	} else {
+		name := "nuon-" + st.InstallID + "-runner"
+		cr, err := c.CreateSecurityGroup(ctx, &ec2.CreateSecurityGroupInput{
+			VpcId:             &st.VPCID,
+			GroupName:         aws.String(name),
+			Description:       aws.String("Nuon runner SG"),
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSecurityGroup, name, st.InstallID)},
+		})
+		if err != nil {
+			return fmt.Errorf("create runner sg: %w", err)
+		}
+		st.RunnerSecurityGroupID = aws.ToString(cr.GroupId)
+		log.Info("created runner SG", "id", st.RunnerSecurityGroupID)
+	}
+	// Intra-SG ingress on all ports. AuthorizeSecurityGroupIngress is not
+	// idempotent — InvalidPermission.Duplicate is the "already there" signal.
+	if _, err := c.AuthorizeSecurityGroupIngress(ctx, &ec2.AuthorizeSecurityGroupIngressInput{
+		GroupId: &st.RunnerSecurityGroupID,
+		IpPermissions: []ec2types.IpPermission{{
+			IpProtocol: aws.String("-1"),
+			UserIdGroupPairs: []ec2types.UserIdGroupPair{{
+				GroupId: &st.RunnerSecurityGroupID,
+			}},
+		}},
+	}); err != nil && !IsAWSErrCode(err, "InvalidPermission.Duplicate") {
+		return fmt.Errorf("authorize ingress: %w", err)
+	}
+	// Egress 0.0.0.0/0 all ports. NB: AWS auto-creates a default allow-all
+	// egress on SG creation; AuthorizeSecurityGroupEgress for the same rule
+	// returns Duplicate. Keep this call so reconcile after a manual revoke
+	// still re-establishes it.
+	if _, err := c.AuthorizeSecurityGroupEgress(ctx, &ec2.AuthorizeSecurityGroupEgressInput{
+		GroupId: &st.RunnerSecurityGroupID,
+		IpPermissions: []ec2types.IpPermission{{
+			IpProtocol: aws.String("-1"),
+			IpRanges:   []ec2types.IpRange{{CidrIp: aws.String("0.0.0.0/0")}},
+		}},
+	}); err != nil && !IsAWSErrCode(err, "InvalidPermission.Duplicate") {
+		return fmt.Errorf("authorize egress: %w", err)
+	}
+	return st.Save()
+}
+
+func ensureVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	id, err := resolveByTag(ctx, c, ec2types.ResourceTypeVpc, st.VPCID, st.InstallID, func(id string) (bool, error) {
+		out, err := c.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{VpcIds: []string{id}})
+		if err != nil {
+			if IsAWSErrCode(err, "InvalidVpcID.NotFound") {
+				return false, nil
+			}
+			return false, err
+		}
+		return len(out.Vpcs) > 0, nil
+	})
+	if err != nil {
+		return err
+	}
+	if id != "" {
+		st.VPCID = id
+	} else {
 		out, err := c.CreateVpc(ctx, &ec2.CreateVpcInput{
 			CidrBlock:         aws.String(vpcCIDR),
 			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeVpc, "nuon-"+st.InstallID, st.InstallID)},
@@ -48,80 +205,182 @@ func CreateVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 		}
 		st.VPCID = aws.ToString(out.Vpc.VpcId)
 		log.Info("created VPC", "vpc_id", st.VPCID)
-		if _, err := c.ModifyVpcAttribute(ctx, &ec2.ModifyVpcAttributeInput{
-			VpcId:              &st.VPCID,
-			EnableDnsHostnames: &ec2types.AttributeBooleanValue{Value: aws.Bool(true)},
-		}); err != nil {
-			return fmt.Errorf("enable dns hostnames: %w", err)
-		}
-		if err := st.Save(); err != nil {
-			return err
-		}
 	}
+	if err := reconcileVPCAttributes(ctx, c, st.VPCID); err != nil {
+		return err
+	}
+	return st.Save()
+}
 
-	if st.IGWID == "" {
+func reconcileVPCAttributes(ctx context.Context, c *ec2.Client, vpcID string) error {
+	out, err := c.DescribeVpcAttribute(ctx, &ec2.DescribeVpcAttributeInput{
+		VpcId:     &vpcID,
+		Attribute: ec2types.VpcAttributeNameEnableDnsHostnames,
+	})
+	if err != nil {
+		return fmt.Errorf("describe vpc attribute: %w", err)
+	}
+	if out.EnableDnsHostnames != nil && aws.ToBool(out.EnableDnsHostnames.Value) {
+		return nil
+	}
+	if _, err := c.ModifyVpcAttribute(ctx, &ec2.ModifyVpcAttributeInput{
+		VpcId:              &vpcID,
+		EnableDnsHostnames: &ec2types.AttributeBooleanValue{Value: aws.Bool(true)},
+	}); err != nil {
+		return fmt.Errorf("enable dns hostnames: %w", err)
+	}
+	return nil
+}
+
+func ensureIGW(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	id, err := resolveByTag(ctx, c, ec2types.ResourceTypeInternetGateway, st.IGWID, st.InstallID, func(id string) (bool, error) {
+		out, err := c.DescribeInternetGateways(ctx, &ec2.DescribeInternetGatewaysInput{InternetGatewayIds: []string{id}})
+		if err != nil {
+			if IsAWSErrCode(err, "InvalidInternetGatewayID.NotFound") {
+				return false, nil
+			}
+			return false, err
+		}
+		return len(out.InternetGateways) > 0, nil
+	})
+	if err != nil {
+		return err
+	}
+	if id == "" {
 		out, err := c.CreateInternetGateway(ctx, &ec2.CreateInternetGatewayInput{
 			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeInternetGateway, "nuon-"+st.InstallID, st.InstallID)},
 		})
 		if err != nil {
 			return fmt.Errorf("create igw: %w", err)
 		}
-		st.IGWID = aws.ToString(out.InternetGateway.InternetGatewayId)
+		id = aws.ToString(out.InternetGateway.InternetGatewayId)
+		log.Info("created IGW", "igw_id", id)
+	}
+	st.IGWID = id
+
+	// Attach to VPC if not already attached. AttachInternetGateway is idempotent
+	// for the same (igw, vpc) pair but errors on "already attached"; check first.
+	out, err := c.DescribeInternetGateways(ctx, &ec2.DescribeInternetGatewaysInput{InternetGatewayIds: []string{id}})
+	if err != nil {
+		return fmt.Errorf("describe igw: %w", err)
+	}
+	attached := false
+	for _, g := range out.InternetGateways {
+		for _, a := range g.Attachments {
+			if aws.ToString(a.VpcId) == st.VPCID {
+				attached = true
+			}
+		}
+	}
+	if !attached {
 		if _, err := c.AttachInternetGateway(ctx, &ec2.AttachInternetGatewayInput{
-			InternetGatewayId: &st.IGWID,
+			InternetGatewayId: &id,
 			VpcId:             &st.VPCID,
 		}); err != nil {
 			return fmt.Errorf("attach igw: %w", err)
 		}
-		log.Info("created IGW", "igw_id", st.IGWID)
-		if err := st.Save(); err != nil {
-			return err
-		}
+	}
+	return st.Save()
+}
+
+func ensureSubnets(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, azs []string) error {
+	pubIDs, err := ensureSubnetSet(ctx, log, c, st, azs, publicSubnetCIDRs, true, "public")
+	if err != nil {
+		return err
+	}
+	privIDs, err := ensureSubnetSet(ctx, log, c, st, azs, privateSubnetCIDRs, false, "private")
+	if err != nil {
+		return err
+	}
+	st.PublicSubnetIDs = pubIDs
+	st.PrivateSubnetIDs = privIDs
+	return st.Save()
+}
+
+// ensureSubnetSet returns CIDR-ordered subnet IDs, creating any missing CIDRs.
+// We index by CIDR (not list position) so partial state never causes us to
+// create overlapping subnets.
+func ensureSubnetSet(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, azs []string, cidrs []string, public bool, label string) ([]string, error) {
+	existing, err := findSubnetsForVPC(ctx, c, st.VPCID, st.InstallID)
+	if err != nil {
+		return nil, err
 	}
 
-	if len(st.PublicSubnetIDs) < len(publicSubnetCIDRs) {
-		st.PublicSubnetIDs = nil
-		for i, cidr := range publicSubnetCIDRs {
-			id, err := createSubnet(ctx, c, st, azs[i], cidr, true, fmt.Sprintf("nuon-%s-public-%d", st.InstallID, i))
-			if err != nil {
-				return err
-			}
-			st.PublicSubnetIDs = append(st.PublicSubnetIDs, id)
+	ids := make([]string, len(cidrs))
+	for i, cidr := range cidrs {
+		if id, ok := existing[cidr]; ok {
+			ids[i] = id
+			continue
 		}
-		log.Info("created public subnets", "ids", st.PublicSubnetIDs)
-		if err := st.Save(); err != nil {
-			return err
-		}
-	}
-	if len(st.PrivateSubnetIDs) < len(privateSubnetCIDRs) {
-		st.PrivateSubnetIDs = nil
-		for i, cidr := range privateSubnetCIDRs {
-			id, err := createSubnet(ctx, c, st, azs[i], cidr, false, fmt.Sprintf("nuon-%s-private-%d", st.InstallID, i))
-			if err != nil {
-				return err
-			}
-			st.PrivateSubnetIDs = append(st.PrivateSubnetIDs, id)
-		}
-		log.Info("created private subnets", "ids", st.PrivateSubnetIDs)
-		if err := st.Save(); err != nil {
-			return err
-		}
-	}
-
-	if st.NATElasticIP == "" {
-		out, err := c.AllocateAddress(ctx, &ec2.AllocateAddressInput{
-			Domain:            ec2types.DomainTypeVpc,
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeElasticIp, "nuon-"+st.InstallID, st.InstallID)},
+		name := fmt.Sprintf("nuon-%s-%s-%d", st.InstallID, label, i)
+		out, err := c.CreateSubnet(ctx, &ec2.CreateSubnetInput{
+			VpcId:             &st.VPCID,
+			AvailabilityZone:  aws.String(azs[i]),
+			CidrBlock:         aws.String(cidr),
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st.InstallID)},
 		})
 		if err != nil {
-			return fmt.Errorf("allocate eip: %w", err)
+			return nil, fmt.Errorf("create subnet %s: %w", name, err)
 		}
-		st.NATElasticIP = aws.ToString(out.AllocationId)
-		if err := st.Save(); err != nil {
-			return err
+		ids[i] = aws.ToString(out.Subnet.SubnetId)
+		log.Info("created subnet", "id", ids[i], "cidr", cidr, "label", label)
+	}
+
+	if public {
+		for _, id := range ids {
+			if err := reconcileSubnetPublicIP(ctx, c, id); err != nil {
+				return nil, err
+			}
 		}
 	}
-	if st.NATGatewayID == "" {
+	return ids, nil
+}
+
+// findSubnetsForVPC returns a CIDR→ID map of subnets in this install's VPC.
+func findSubnetsForVPC(ctx context.Context, c *ec2.Client, vpcID, installID string) (map[string]string, error) {
+	out, err := c.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{
+		Filters: []ec2types.Filter{
+			{Name: aws.String("vpc-id"), Values: []string{vpcID}},
+			{Name: aws.String("tag:" + installIDTagKey), Values: []string{installID}},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describe subnets: %w", err)
+	}
+	m := make(map[string]string, len(out.Subnets))
+	for _, s := range out.Subnets {
+		m[aws.ToString(s.CidrBlock)] = aws.ToString(s.SubnetId)
+	}
+	return m, nil
+}
+
+func reconcileSubnetPublicIP(ctx context.Context, c *ec2.Client, subnetID string) error {
+	out, err := c.DescribeSubnets(ctx, &ec2.DescribeSubnetsInput{SubnetIds: []string{subnetID}})
+	if err != nil {
+		return fmt.Errorf("describe subnet: %w", err)
+	}
+	if len(out.Subnets) > 0 && aws.ToBool(out.Subnets[0].MapPublicIpOnLaunch) {
+		return nil
+	}
+	if _, err := c.ModifySubnetAttribute(ctx, &ec2.ModifySubnetAttributeInput{
+		SubnetId:            &subnetID,
+		MapPublicIpOnLaunch: &ec2types.AttributeBooleanValue{Value: aws.Bool(true)},
+	}); err != nil {
+		return fmt.Errorf("public-ip-on-launch %s: %w", subnetID, err)
+	}
+	return nil
+}
+
+func ensureNAT(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	if err := ensureEIP(ctx, log, c, st); err != nil {
+		return err
+	}
+
+	id, err := findActiveNAT(ctx, c, st.VPCID, st.InstallID)
+	if err != nil {
+		return err
+	}
+	if id == "" {
 		out, err := c.CreateNatGateway(ctx, &ec2.CreateNatGatewayInput{
 			AllocationId:      &st.NATElasticIP,
 			SubnetId:          &st.PublicSubnetIDs[0],
@@ -130,64 +389,221 @@ func CreateVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 		if err != nil {
 			return fmt.Errorf("create nat: %w", err)
 		}
-		st.NATGatewayID = aws.ToString(out.NatGateway.NatGatewayId)
-		log.Info("created NAT gateway, waiting for AVAILABLE", "nat_id", st.NATGatewayID)
-		if err := st.Save(); err != nil {
-			return err
-		}
-		if err := waitNATAvailable(ctx, c, st.NATGatewayID); err != nil {
-			return err
-		}
+		id = aws.ToString(out.NatGateway.NatGatewayId)
+		log.Info("created NAT gateway, waiting for AVAILABLE", "nat_id", id)
 	}
+	st.NATGatewayID = id
+	if err := st.Save(); err != nil {
+		return err
+	}
+	return waitNATAvailable(ctx, c, id)
+}
 
-	if st.PublicRouteTable == "" {
-		rt, err := createRouteTable(ctx, c, st, "nuon-"+st.InstallID+"-public")
-		if err != nil {
-			return err
-		}
-		if _, err := c.CreateRoute(ctx, &ec2.CreateRouteInput{
-			RouteTableId:         &rt,
-			DestinationCidrBlock: aws.String("0.0.0.0/0"),
-			GatewayId:            &st.IGWID,
-		}); err != nil {
-			return fmt.Errorf("create public route: %w", err)
-		}
-		for _, sn := range st.PublicSubnetIDs {
-			sn := sn
-			if _, err := c.AssociateRouteTable(ctx, &ec2.AssociateRouteTableInput{RouteTableId: &rt, SubnetId: &sn}); err != nil {
-				return fmt.Errorf("assoc public rt: %w", err)
-			}
-		}
-		st.PublicRouteTable = rt
-		if err := st.Save(); err != nil {
-			return err
-		}
+// findActiveNAT returns a NAT in this VPC that's available or pending — i.e.
+// usable on resume. Deleted/deleting/failed NATs are ignored so we'll create
+// a fresh one.
+func findActiveNAT(ctx context.Context, c *ec2.Client, vpcID, installID string) (string, error) {
+	out, err := c.DescribeNatGateways(ctx, &ec2.DescribeNatGatewaysInput{
+		Filter: []ec2types.Filter{
+			{Name: aws.String("vpc-id"), Values: []string{vpcID}},
+			{Name: aws.String("tag:" + installIDTagKey), Values: []string{installID}},
+			{Name: aws.String("state"), Values: []string{"pending", "available"}},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("describe nat: %w", err)
 	}
-	if st.PrivateRouteTbl == "" {
-		rt, err := createRouteTable(ctx, c, st, "nuon-"+st.InstallID+"-private")
-		if err != nil {
-			return err
-		}
-		if _, err := c.CreateRoute(ctx, &ec2.CreateRouteInput{
-			RouteTableId:         &rt,
-			DestinationCidrBlock: aws.String("0.0.0.0/0"),
-			NatGatewayId:         &st.NATGatewayID,
-		}); err != nil {
-			return fmt.Errorf("create private route: %w", err)
-		}
-		for _, sn := range st.PrivateSubnetIDs {
-			sn := sn
-			if _, err := c.AssociateRouteTable(ctx, &ec2.AssociateRouteTableInput{RouteTableId: &rt, SubnetId: &sn}); err != nil {
-				return fmt.Errorf("assoc private rt: %w", err)
-			}
-		}
-		st.PrivateRouteTbl = rt
-		if err := st.Save(); err != nil {
-			return err
-		}
+	if len(out.NatGateways) == 0 {
+		return "", nil
 	}
+	return aws.ToString(out.NatGateways[0].NatGatewayId), nil
+}
 
+func ensureEIP(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	out, err := c.DescribeAddresses(ctx, &ec2.DescribeAddressesInput{
+		Filters: []ec2types.Filter{
+			{Name: aws.String("tag:" + installIDTagKey), Values: []string{st.InstallID}},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("describe eip: %w", err)
+	}
+	if len(out.Addresses) > 0 {
+		st.NATElasticIP = aws.ToString(out.Addresses[0].AllocationId)
+		return st.Save()
+	}
+	alloc, err := c.AllocateAddress(ctx, &ec2.AllocateAddressInput{
+		Domain:            ec2types.DomainTypeVpc,
+		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeElasticIp, "nuon-"+st.InstallID, st.InstallID)},
+	})
+	if err != nil {
+		return fmt.Errorf("allocate eip: %w", err)
+	}
+	st.NATElasticIP = aws.ToString(alloc.AllocationId)
+	log.Info("allocated EIP", "alloc_id", st.NATElasticIP)
+	return st.Save()
+}
+
+func ensurePublicRouteTable(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	rt, err := ensureRouteTable(ctx, log, c, st, "nuon-"+st.InstallID+"-public")
+	if err != nil {
+		return err
+	}
+	st.PublicRouteTable = rt
+	if err := ensureRouteToIGW(ctx, c, rt, st.IGWID); err != nil {
+		return err
+	}
+	if err := ensureRouteAssociations(ctx, c, rt, st.PublicSubnetIDs); err != nil {
+		return err
+	}
+	return st.Save()
+}
+
+func ensurePrivateRouteTable(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+	rt, err := ensureRouteTable(ctx, log, c, st, "nuon-"+st.InstallID+"-private")
+	if err != nil {
+		return err
+	}
+	st.PrivateRouteTbl = rt
+	if err := ensureRouteToNAT(ctx, c, rt, st.NATGatewayID); err != nil {
+		return err
+	}
+	if err := ensureRouteAssociations(ctx, c, rt, st.PrivateSubnetIDs); err != nil {
+		return err
+	}
+	return st.Save()
+}
+
+// ensureRouteTable resolves a route table by Name tag (one per role: public/
+// private), creating it if missing. Name is the disambiguator since both route
+// tables live in the same VPC under the same install_id tag.
+func ensureRouteTable(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, name string) (string, error) {
+	out, err := c.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{
+		Filters: []ec2types.Filter{
+			{Name: aws.String("vpc-id"), Values: []string{st.VPCID}},
+			{Name: aws.String("tag:" + installIDTagKey), Values: []string{st.InstallID}},
+			{Name: aws.String("tag:Name"), Values: []string{name}},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("describe route tables: %w", err)
+	}
+	if len(out.RouteTables) > 0 {
+		return aws.ToString(out.RouteTables[0].RouteTableId), nil
+	}
+	cr, err := c.CreateRouteTable(ctx, &ec2.CreateRouteTableInput{
+		VpcId:             &st.VPCID,
+		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeRouteTable, name, st.InstallID)},
+	})
+	if err != nil {
+		return "", fmt.Errorf("create route table %s: %w", name, err)
+	}
+	id := aws.ToString(cr.RouteTable.RouteTableId)
+	log.Info("created route table", "id", id, "name", name)
+	return id, nil
+}
+
+func ensureRouteToIGW(ctx context.Context, c *ec2.Client, rtID, igwID string) error {
+	if has, err := hasDefaultRoute(ctx, c, rtID); err != nil || has {
+		return err
+	}
+	_, err := c.CreateRoute(ctx, &ec2.CreateRouteInput{
+		RouteTableId:         &rtID,
+		DestinationCidrBlock: aws.String("0.0.0.0/0"),
+		GatewayId:            &igwID,
+	})
+	if err != nil && !IsAWSErrCode(err, "RouteAlreadyExists") {
+		return fmt.Errorf("create public route: %w", err)
+	}
 	return nil
+}
+
+func ensureRouteToNAT(ctx context.Context, c *ec2.Client, rtID, natID string) error {
+	if has, err := hasDefaultRoute(ctx, c, rtID); err != nil || has {
+		return err
+	}
+	_, err := c.CreateRoute(ctx, &ec2.CreateRouteInput{
+		RouteTableId:         &rtID,
+		DestinationCidrBlock: aws.String("0.0.0.0/0"),
+		NatGatewayId:         &natID,
+	})
+	if err != nil && !IsAWSErrCode(err, "RouteAlreadyExists") {
+		return fmt.Errorf("create private route: %w", err)
+	}
+	return nil
+}
+
+func hasDefaultRoute(ctx context.Context, c *ec2.Client, rtID string) (bool, error) {
+	out, err := c.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{RouteTableIds: []string{rtID}})
+	if err != nil {
+		return false, fmt.Errorf("describe route table: %w", err)
+	}
+	for _, t := range out.RouteTables {
+		for _, r := range t.Routes {
+			if aws.ToString(r.DestinationCidrBlock) == "0.0.0.0/0" {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func ensureRouteAssociations(ctx context.Context, c *ec2.Client, rtID string, subnetIDs []string) error {
+	out, err := c.DescribeRouteTables(ctx, &ec2.DescribeRouteTablesInput{RouteTableIds: []string{rtID}})
+	if err != nil {
+		return fmt.Errorf("describe route table assoc: %w", err)
+	}
+	already := map[string]bool{}
+	for _, t := range out.RouteTables {
+		for _, a := range t.Associations {
+			if a.SubnetId != nil {
+				already[aws.ToString(a.SubnetId)] = true
+			}
+		}
+	}
+	for _, sn := range subnetIDs {
+		if already[sn] {
+			continue
+		}
+		sn := sn
+		if _, err := c.AssociateRouteTable(ctx, &ec2.AssociateRouteTableInput{RouteTableId: &rtID, SubnetId: &sn}); err != nil {
+			return fmt.Errorf("assoc rt: %w", err)
+		}
+	}
+	return nil
+}
+
+// resolveByTag resolves an EC2 resource using cached state first, then a tag
+// lookup, then returns "" if neither finds it (caller should create).
+//
+// verify must return (found, err) given a candidate ID.
+func resolveByTag(ctx context.Context, c *ec2.Client, rt ec2types.ResourceType, cachedID, installID string, verify func(id string) (bool, error)) (string, error) {
+	if cachedID != "" {
+		ok, err := verify(cachedID)
+		if err != nil {
+			return "", err
+		}
+		if ok {
+			return cachedID, nil
+		}
+	}
+	ids, err := findEC2ResourcesByInstallID(ctx, c, rt, installID)
+	if err != nil {
+		return "", err
+	}
+	for _, id := range ids {
+		if id == cachedID {
+			continue // already checked above
+		}
+		ok, err := verify(id)
+		if err != nil {
+			return "", err
+		}
+		if ok {
+			return id, nil
+		}
+	}
+	return "", nil
 }
 
 func pickAZs(ctx context.Context, c *ec2.Client, n int) ([]string, error) {
@@ -202,40 +618,8 @@ func pickAZs(ctx context.Context, c *ec2.Client, n int) ([]string, error) {
 	for _, z := range out.AvailabilityZones[:n] {
 		azs = append(azs, aws.ToString(z.ZoneName))
 	}
+	slices.Sort(azs)
 	return azs, nil
-}
-
-func createSubnet(ctx context.Context, c *ec2.Client, st *State, az, cidr string, public bool, name string) (string, error) {
-	out, err := c.CreateSubnet(ctx, &ec2.CreateSubnetInput{
-		VpcId:             &st.VPCID,
-		AvailabilityZone:  &az,
-		CidrBlock:         &cidr,
-		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st.InstallID)},
-	})
-	if err != nil {
-		return "", fmt.Errorf("create subnet %s: %w", name, err)
-	}
-	id := aws.ToString(out.Subnet.SubnetId)
-	if public {
-		if _, err := c.ModifySubnetAttribute(ctx, &ec2.ModifySubnetAttributeInput{
-			SubnetId:            &id,
-			MapPublicIpOnLaunch: &ec2types.AttributeBooleanValue{Value: aws.Bool(true)},
-		}); err != nil {
-			return "", fmt.Errorf("public-ip-on-launch %s: %w", name, err)
-		}
-	}
-	return id, nil
-}
-
-func createRouteTable(ctx context.Context, c *ec2.Client, st *State, name string) (string, error) {
-	out, err := c.CreateRouteTable(ctx, &ec2.CreateRouteTableInput{
-		VpcId:             &st.VPCID,
-		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeRouteTable, name, st.InstallID)},
-	})
-	if err != nil {
-		return "", fmt.Errorf("create route table %s: %w", name, err)
-	}
-	return aws.ToString(out.RouteTable.RouteTableId), nil
 }
 
 func waitNATAvailable(ctx context.Context, c *ec2.Client, id string) error {
@@ -309,6 +693,18 @@ func DeleteVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 			log.Warn("delete route table", "rt", *rt, "err", err)
 		}
 		*rt = ""
+	}
+	if st.RunnerSecurityGroupID != "" {
+		if _, err := c.DeleteSecurityGroup(ctx, &ec2.DeleteSecurityGroupInput{GroupId: &st.RunnerSecurityGroupID}); err != nil {
+			log.Warn("delete runner sg", "id", st.RunnerSecurityGroupID, "err", err)
+		}
+		st.RunnerSecurityGroupID = ""
+	}
+	if st.RunnerSubnetID != "" {
+		if _, err := c.DeleteSubnet(ctx, &ec2.DeleteSubnetInput{SubnetId: &st.RunnerSubnetID}); err != nil {
+			log.Warn("delete runner subnet", "id", st.RunnerSubnetID, "err", err)
+		}
+		st.RunnerSubnetID = ""
 	}
 	for _, ids := range [][]string{st.PublicSubnetIDs, st.PrivateSubnetIDs} {
 		for _, id := range ids {

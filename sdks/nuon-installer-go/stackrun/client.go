@@ -15,6 +15,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nuonco/nuon/sdks/nuon-installer-go/stack"
 )
 
 // Config configures the client. All fields are required.
@@ -33,7 +35,11 @@ type Client struct {
 func New(cfg Config) *Client {
 	hc := cfg.HTTPClient
 	if hc == nil {
-		hc = &http.Client{Timeout: 30 * time.Second}
+		// Per-attempt timeout is intentionally short. doWithRetry retries up
+		// to 5 times with capped backoff, so total wall time on a hard outage
+		// is ~60s — long enough to ride out a brief network blip, short
+		// enough to fail the CLI fast when ctl-api is genuinely unreachable.
+		hc = &http.Client{Timeout: 10 * time.Second}
 	}
 	return &Client{cfg: cfg, hc: hc}
 }
@@ -46,21 +52,43 @@ type LogStream struct {
 	RunnerAPIURL string `json:"runner_api_url"`
 }
 
-// CreateRunResponse mirrors the ctl-api response shape.
+// CreateRunResponse mirrors the ctl-api response shape. Config is the
+// rendered tfvars-equivalent that the SDK threads into the stack package;
+// ctl-api must populate it on every successful create-run, otherwise the
+// SDK has no idea what permissions/secrets/roles to provision.
 type CreateRunResponse struct {
-	ID                    string     `json:"id"`
-	InstallStackVersionID string     `json:"install_stack_version_id"`
-	LogStream             *LogStream `json:"log_stream,omitempty"`
+	ID                    string        `json:"id"`
+	InstallStackVersionID string        `json:"install_stack_version_id"`
+	LogStream             *LogStream    `json:"log_stream,omitempty"`
+	Config                *stack.Config `json:"config,omitempty"`
 }
 
-// CreateRun starts a new stack version run. Returns the full response so
-// the caller can read the run ID + log-stream credentials.
-func (c *Client) CreateRun(ctx context.Context) (*CreateRunResponse, error) {
+// RunKind identifies the operation a stack run represents. Mirrors the
+// ctl-api `app.InstallStackVersionRunKind` enum.
+type RunKind string
+
+const (
+	RunKindProvision   RunKind = "provision"
+	RunKindReprovision RunKind = "reprovision"
+	RunKindDeprovision RunKind = "deprovision"
+)
+
+// CreateRun starts a new stack version run of the given kind. Returns the
+// full response so the caller can read the run ID + log-stream credentials.
+//
+// kind is appended to the URL as a /kind/{kind} segment so it can't shadow
+// the PATCH terminal-update route (which uses /:run_id at the same depth).
+// An empty kind defaults to provision.
+func (c *Client) CreateRun(ctx context.Context, kind RunKind) (*CreateRunResponse, error) {
+	if kind == "" {
+		kind = RunKindProvision
+	}
 	url := fmt.Sprintf(
-		"%s/v1/installs/%s/stack-runs/%s",
+		"%s/v1/installs/%s/stack-runs/%s/kind/%s",
 		strings.TrimSuffix(c.cfg.CtlAPIURL, "/"),
 		c.cfg.InstallID,
 		c.cfg.PhoneHomeID,
+		kind,
 	)
 	var out CreateRunResponse
 	if err := c.doWithRetry(ctx, http.MethodPost, url, nil, &out); err != nil {
@@ -88,19 +116,25 @@ func (c *Client) UpdateRun(ctx context.Context, runID string, req UpdateRunReque
 	return c.doWithRetry(ctx, http.MethodPatch, url, req, nil)
 }
 
-// doWithRetry retries up to 3 times with exponential backoff on transient
-// failures (network errors and 5xx). 4xx errors are returned immediately.
+// doWithRetry retries up to 5 times with capped exponential backoff on
+// transient failures (network errors and 5xx). 4xx errors are returned
+// immediately. The backoff caps at 8s so total wall time on a hard outage
+// stays bounded.
 func (c *Client) doWithRetry(ctx context.Context, method, url string, body, out any) error {
+	const maxAttempts = 5
+	const maxDelay = 8 * time.Second
 	var lastErr error
 	delay := 500 * time.Millisecond
-	for attempt := 0; attempt < 3; attempt++ {
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if attempt > 0 {
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-time.After(delay):
 			}
-			delay *= 2
+			if delay *= 2; delay > maxDelay {
+				delay = maxDelay
+			}
 		}
 
 		var bodyReader io.Reader
@@ -140,5 +174,5 @@ func (c *Client) doWithRetry(ctx context.Context, method, url string, body, out 
 		}
 		lastErr = fmt.Errorf("ctl-api %d: %s", resp.StatusCode, string(respBody))
 	}
-	return fmt.Errorf("after 3 attempts: %w", lastErr)
+	return fmt.Errorf("could not reach ctl-api at %s after %d attempts: %w", c.cfg.CtlAPIURL, maxAttempts, lastErr)
 }

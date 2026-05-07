@@ -48,6 +48,32 @@ func (p *Provider) Shutdown(ctx context.Context) error {
 	return p.lp.Shutdown(ctx)
 }
 
+// teeHandler fans out each record to two slog handlers. Used so the CLI shows
+// progress on the customer's terminal while we also push to the dashboard.
+type teeHandler struct{ a, b slog.Handler }
+
+func (h teeHandler) Enabled(ctx context.Context, l slog.Level) bool {
+	return h.a.Enabled(ctx, l) || h.b.Enabled(ctx, l)
+}
+
+func (h teeHandler) Handle(ctx context.Context, r slog.Record) error {
+	// Best-effort — a failure on one sink shouldn't suppress the other.
+	errA := h.a.Handle(ctx, r.Clone())
+	errB := h.b.Handle(ctx, r)
+	if errA != nil {
+		return errA
+	}
+	return errB
+}
+
+func (h teeHandler) WithAttrs(as []slog.Attr) slog.Handler {
+	return teeHandler{a: h.a.WithAttrs(as), b: h.b.WithAttrs(as)}
+}
+
+func (h teeHandler) WithGroup(name string) slog.Handler {
+	return teeHandler{a: h.a.WithGroup(name), b: h.b.WithGroup(name)}
+}
+
 // NewStdout returns a Provider that writes to stdout. Useful for local dev.
 func NewStdout(serviceName string) *Provider {
 	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
@@ -88,6 +114,10 @@ func New(ctx context.Context, cfg Config) (*Provider, error) {
 		)),
 	)
 
-	logger := otelslog.NewLogger(cfg.ServiceName, otelslog.WithLoggerProvider(lp))
+	otelLogger := otelslog.NewLogger(cfg.ServiceName, otelslog.WithLoggerProvider(lp))
+
+	// Tee through stdout so the customer running the CLI also sees progress.
+	stdoutH := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	logger := slog.New(teeHandler{a: stdoutH, b: otelLogger.Handler()}).With("service", cfg.ServiceName)
 	return &Provider{lp: lp, logger: logger}, nil
 }

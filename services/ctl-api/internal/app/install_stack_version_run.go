@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -18,6 +19,26 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
+// InstallStackVersionRunKind identifies the operation a stack run represents.
+type InstallStackVersionRunKind string
+
+const (
+	InstallStackVersionRunKindProvision   InstallStackVersionRunKind = "provision"
+	InstallStackVersionRunKindReprovision InstallStackVersionRunKind = "reprovision"
+	InstallStackVersionRunKindDeprovision InstallStackVersionRunKind = "deprovision"
+)
+
+// Valid reports whether k is a known kind.
+func (k InstallStackVersionRunKind) Valid() bool {
+	switch k {
+	case InstallStackVersionRunKindProvision,
+		InstallStackVersionRunKindReprovision,
+		InstallStackVersionRunKindDeprovision:
+		return true
+	}
+	return false
+}
+
 type InstallStackVersionRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -32,6 +53,12 @@ type InstallStackVersionRun struct {
 	InstallStackVersionID string              `json:"install_stack_version_id,omitzero" gorm:"notnull" swaggerignore:"true" temporaljson:"install_stack_version_id,omitzero,omitempty"`
 	InstallStackVersion   InstallStackVersion `json:"-" temporaljson:"install_stack_version,omitzero,omitempty"`
 
+	// Kind is the operation this run represents. provision = first-time create,
+	// reprovision = idempotent reconcile of an existing install, deprovision =
+	// tear-down. default:'provision' lets gorm auto-migrate back-fill historical
+	// rows; BeforeCreate validates the value.
+	Kind InstallStackVersionRunKind `json:"kind,omitempty" gorm:"type:text;notnull;default:'provision'" temporaljson:"kind,omitzero,omitempty"`
+
 	Data         pgtype.Hstore  `json:"data,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"data,omitzero,omitempty"`
 	DataContents map[string]any `json:"data_contents,omitzero" gorm:"-"`
 
@@ -39,7 +66,7 @@ type InstallStackVersionRun struct {
 
 	// LogStreamID is the OTLP log stream the SDK pushes provisioning logs to.
 	// Persisted so the PATCH handler can close the stream on terminal status.
-	LogStreamID string `json:"log_stream_id,omitzero" temporaljson:"log_stream_id,omitzero,omitempty"`
+	LogStreamID string `json:"log_stream_id,omitzero" gorm:"default:null" temporaljson:"log_stream_id,omitzero,omitempty"`
 
 	// LogStream is populated transiently:
 	//   - On the POST response: with WriteToken + RunnerAPIURL so the SDK can
@@ -47,6 +74,59 @@ type InstallStackVersionRun struct {
 	//   - On GET-runs (via Preload): without WriteToken, so the dashboard can
 	//     find the stream to render but can't write to it.
 	LogStream *LogStream `json:"log_stream,omitempty" gorm:"foreignKey:LogStreamID;references:ID"`
+
+	// SDKConfig is populated transiently on the POST response so the AWS-native
+	// SDK provisioner has everything it needs to apply the stack: runner ID,
+	// runner API URL, operation-role permissions, secrets, etc. Mirrors the TF
+	// tfvars contract at install-stacks/aws/variables.tf — see
+	// sdks/nuon-installer-go/stack/config.go for the SDK-side struct.
+	SDKConfig *InstallerSDKConfig `json:"config,omitempty" gorm:"-" swaggerignore:"true"`
+}
+
+// InstallerSDKConfig is the JSON shape the SDK expects on CreateRunResponse.
+// Field tags match sdks/nuon-installer-go/stack/config.go exactly. Only
+// populated on the create-run POST response — never persisted, never returned
+// on the GET path.
+type InstallerSDKConfig struct {
+	InstallID    string `json:"install_id,omitempty"`
+	RunnerID     string `json:"runner_id,omitempty"`
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
+	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
+
+	InstallInputs map[string]string `json:"install_inputs,omitempty"`
+
+	AutoGenerateSecrets []string                          `json:"auto_generate_secrets,omitempty"`
+	Secrets             map[string]InstallerSDKSecret     `json:"secrets,omitempty"`
+	BreakGlassRoles     map[string]InstallerSDKRoleConfig `json:"break_glass_roles,omitempty"`
+	CustomRoles         map[string]InstallerSDKRoleConfig `json:"custom_roles,omitempty"`
+
+	ProvisionPermissions          []string `json:"provision_permissions,omitempty"`
+	ProvisionInlinePolicyDocument string   `json:"provision_inline_policy_document,omitempty"`
+	ProvisionManagedPolicyARNs    []string `json:"provision_managed_policy_arns,omitempty"`
+
+	MaintenancePermissions          []string `json:"maintenance_permissions,omitempty"`
+	MaintenanceInlinePolicyDocument string   `json:"maintenance_inline_policy_document,omitempty"`
+	MaintenanceManagedPolicyARNs    []string `json:"maintenance_managed_policy_arns,omitempty"`
+
+	DeprovisionPermissions          []string `json:"deprovision_permissions,omitempty"`
+	DeprovisionInlinePolicyDocument string   `json:"deprovision_inline_policy_document,omitempty"`
+	DeprovisionManagedPolicyARNs    []string `json:"deprovision_managed_policy_arns,omitempty"`
+}
+
+// InstallerSDKSecret is the customer-provided secret shape.
+type InstallerSDKSecret struct {
+	Description string `json:"description,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+	Value       string `json:"value,omitempty"`
+}
+
+// InstallerSDKRoleConfig is the per-role payload for break-glass/custom roles.
+type InstallerSDKRoleConfig struct {
+	Permissions          []string `json:"permissions,omitempty"`
+	InlinePolicyDocument string   `json:"inline_policy_document,omitempty"`
+	ManagedPolicyARNs    []string `json:"managed_policy_arns,omitempty"`
+	Enabled              bool     `json:"enabled,omitempty"`
 }
 
 func (i *InstallStackVersionRun) Indexes(db *gorm.DB) []migrations.Index {
@@ -97,6 +177,13 @@ func (i *InstallStackVersionRun) BeforeCreate(tx *gorm.DB) error {
 
 	if i.OrgID == "" {
 		i.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	if i.Kind == "" {
+		i.Kind = InstallStackVersionRunKindProvision
+	}
+	if !i.Kind.Valid() {
+		return fmt.Errorf("invalid install stack version run kind: %q", i.Kind)
 	}
 
 	return nil

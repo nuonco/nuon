@@ -40,6 +40,9 @@ const (
 	InstallStackVersionStatusActive       Status = "active"
 	InstallStackVersionStatusOutdated     Status = "outdated"
 	InstallStackVersionStatusExpired      Status = "expired"
+	// Destroying / Destroyed mark a deprovision run in progress / complete.
+	InstallStackVersionStatusDestroying Status = "destroying"
+	InstallStackVersionStatusDestroyed  Status = "destroyed"
 
 	InstallStackVersionRunStatusRunning   Status = "running"
 	InstallStackVersionRunStatusSucceeded Status = "succeeded"
