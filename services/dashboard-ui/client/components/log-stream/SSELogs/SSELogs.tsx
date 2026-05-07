@@ -66,7 +66,7 @@ export const SSELogs = ({
           <div className="flex items-center gap-4">
             <LogFilters filters={filters} />
           </div>
-          <div className="grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 py-2">
+          <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
             <Text variant="subtext" weight="strong" theme="neutral">
               Severity
             </Text>
@@ -160,7 +160,7 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
     <div id={`log-${log.id}`} className="border-b">
       <Button
         className={cn(
-          '!grid grid-cols-[3rem_15rem_3rem_1fr] gap-6 !py-1 !px-0 text-left w-full rounded-none h-fit',
+          '!grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 !py-1 !px-0 text-left w-full rounded-none h-fit',
           'hover:!bg-black/10 dark:hover:!bg-white/10 focus:!bg-black/10 dark:focus:!bg-white/10',
           {
             '!bg-cool-grey-100 dark:!bg-dark-grey-800':

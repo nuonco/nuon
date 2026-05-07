@@ -34,13 +34,8 @@ const mockFilters: TLogFiltersProps = {
   handleSeverityInputToggle: noop,
   handleSeverityButtonClick: noop,
   handleSeverityReset: noop,
-  selectedServices: new Set(['runner']),
-  availableServices: new Set(['runner']),
-  handleServiceInputToggle: noop,
-  handleServiceButtonClick: noop,
-  handleServiceReset: noop,
-  jobOutputOnly: false,
-  handleJobOutputToggle: noop,
+  includeSystemLogs: false,
+  handleSystemLogsToggle: noop,
   searchQuery: '',
   sortDirection: 'desc',
   filteredLogs: mockLogs,
@@ -50,7 +45,6 @@ const mockFilters: TLogFiltersProps = {
   filterStats: { selectedCount: 5, totalCount: 5 },
   sortStats: { direction: 'desc', isNewestFirst: true, isOldestFirst: false },
   severityStats: { selectedCount: 4, totalCount: 4 },
-  serviceStats: { selectedCount: 1, totalCount: 1, isAllSelected: true },
 } as unknown as TLogFiltersProps
 
 const mockLogStream: TLogStream = {
