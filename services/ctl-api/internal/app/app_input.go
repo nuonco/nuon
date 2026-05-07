@@ -72,6 +72,12 @@ func (a *AppInput) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &AppInput{}, "app_input_config_id"),
+			Columns: []string{
+				"app_input_config_id",
+			},
+		},
 	}
 }
 
