@@ -1,6 +1,8 @@
-// Package stack provisions and tears down the AWS resources that make up
-// a Nuon install stack: S3 artifact bucket, VPC + subnets, IAM roles, EKS
-// control plane, and a managed node group.
+// Package stack provisions and tears down the AWS resources that make up a
+// Nuon install stack: VPC + subnets (incl. dedicated runner subnet/SG), IAM
+// roles (runner + ops + dynamic break-glass/custom), Secrets Manager entries,
+// and the runner EC2 ASG with its CloudWatch log group. Mirrors the reference
+// Terraform module at install-stacks/aws/.
 package stack
 
 import (
@@ -10,14 +12,16 @@ import (
 	"path/filepath"
 )
 
-// State records the AWS resource IDs created during provisioning so we can
-// tear down idempotently or surface outputs to the caller.
+// State caches the AWS resource IDs we've already discovered or created. AWS
+// is the source of truth — every Provision step does its own existence check
+// (by tag or deterministic name) and falls back to a Create when the resource
+// is gone. State just lets us skip those Describe calls on the happy path and
+// gives Deprovision a quick handle on what to tear down.
 type State struct {
 	InstallID string `json:"install_id"`
 	Region    string `json:"region"`
 
-	S3BucketName string `json:"s3_bucket_name,omitempty"`
-
+	// Networking
 	VPCID            string   `json:"vpc_id,omitempty"`
 	IGWID            string   `json:"igw_id,omitempty"`
 	NATGatewayID     string   `json:"nat_gateway_id,omitempty"`
@@ -27,14 +31,30 @@ type State struct {
 	PublicRouteTable string   `json:"public_route_table,omitempty"`
 	PrivateRouteTbl  string   `json:"private_route_table,omitempty"`
 
-	ClusterRoleName string `json:"cluster_role_name,omitempty"`
-	NodeRoleName    string `json:"node_role_name,omitempty"`
+	RunnerSubnetID        string `json:"runner_subnet_id,omitempty"`
+	RunnerSecurityGroupID string `json:"runner_security_group_id,omitempty"`
 
-	ClusterName     string `json:"cluster_name,omitempty"`
-	NodeGroupName   string `json:"node_group_name,omitempty"`
-	ClusterEndpoint string `json:"cluster_endpoint,omitempty"`
-	ClusterCAData   string `json:"cluster_ca_data,omitempty"`
-	OIDCIssuer      string `json:"oidc_issuer,omitempty"`
+	// Runner compute
+	RunnerLogGroupName        string `json:"runner_log_group_name,omitempty"`
+	RunnerRoleName            string `json:"runner_role_name,omitempty"`
+	RunnerInstanceProfileName string `json:"runner_instance_profile_name,omitempty"`
+	RunnerLaunchTemplateID    string `json:"runner_launch_template_id,omitempty"`
+	RunnerASGName             string `json:"runner_asg_name,omitempty"`
+
+	// Operation roles. Empty when the ctl-api config didn't request them.
+	ProvisionRoleName   string `json:"provision_role_name,omitempty"`
+	MaintenanceRoleName string `json:"maintenance_role_name,omitempty"`
+	DeprovisionRoleName string `json:"deprovision_role_name,omitempty"`
+
+	// Dynamic role names (verbatim map keys from the config — no extra prefixing).
+	BreakGlassRoleNames []string `json:"break_glass_role_names,omitempty"`
+	CustomRoleNames     []string `json:"custom_role_names,omitempty"`
+
+	// Secrets Manager ARNs keyed by `<name>_arn` to match the CloudFormation
+	// phone-home payload contract. Why: app templates resolving
+	// `nuon.install_stack.outputs.<name>_arn` must work identically across
+	// CFN, TF, and SDK install paths.
+	SecretARNs map[string]string `json:"secret_arns,omitempty"`
 }
 
 // StatePath returns the on-disk location of the state file for an install.

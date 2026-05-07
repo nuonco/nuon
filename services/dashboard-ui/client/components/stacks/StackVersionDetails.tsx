@@ -17,7 +17,6 @@ import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TInstallStack, TWorkflowStep } from '@/types'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
-import { indexToOrdinal } from '@/utils/string-utils'
 
 type TStackVersion = TInstallStack['versions'][number]
 
@@ -118,14 +117,15 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
 
       {runs.length ? (
         runs.map((run, idx) => {
-          const ordinalIdx = (version?.runs?.length ?? 0) - 1 - idx
           // The OpenAPI types haven't been regenerated to include the
-          // run-scoped log stream yet; widen with a local cast (same pattern
-          // used for terraform_contents on AwaitAWSDetails).
-          const runWithLogs = run as typeof run & {
+          // run-scoped log stream + kind yet; widen with a local cast (same
+          // pattern used for terraform_contents on AwaitAWSDetails).
+          const runExt = run as typeof run & {
             log_stream?: { id?: string; open?: boolean }
+            kind?: 'provision' | 'reprovision' | 'deprovision'
           }
-          const logStreamID = runWithLogs.log_stream?.id
+          const logStreamID = runExt.log_stream?.id
+          const kind = runExt.kind ?? 'provision'
           return (
             <Expand
               key={run?.id}
@@ -133,10 +133,15 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
               className="border rounded-md"
               isOpen={idx === 0}
               heading={
-                <Text variant="base">
-                  {indexToOrdinal(ordinalIdx)} run &middot;{' '}
-                  <Time variant="subtext" time={run?.created_at} />
-                </Text>
+                <span className="flex items-center gap-2">
+                  <Text variant="base" weight="strong">
+                    {kind}
+                  </Text>
+                  <Status status={run?.composite_status?.status} />
+                  <Text variant="subtext">
+                    <Time time={run?.created_at} />
+                  </Text>
+                </span>
               }
             >
               <div className="border-t p-4 flex flex-col gap-4">

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -33,6 +34,18 @@ func (s *service) CreateInstallStackVersionRun(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	phoneHomeID := ctx.Param("phone_home_id")
 
+	// Legacy route omits the kind segment — default to provision so older SDK
+	// builds (and any existing CLI sessions mid-flight during rollout) keep
+	// working.
+	kind := app.InstallStackVersionRunKind(ctx.Param("kind"))
+	if kind == "" {
+		kind = app.InstallStackVersionRunKindProvision
+	}
+	if !kind.Valid() {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("unknown stack run kind: %q", kind)))
+		return
+	}
+
 	var stackVersion app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStackVersion{InstallID: installID, PhoneHomeID: phoneHomeID}).
@@ -54,6 +67,7 @@ func (s *service) CreateInstallStackVersionRun(ctx *gin.Context) {
 	run := app.InstallStackVersionRun{
 		InstallStackVersionID: stackVersion.ID,
 		OrgID:                 stackVersion.OrgID,
+		Kind:                  kind,
 		Status:                app.NewCompositeStatus(reqCtx, app.InstallStackVersionRunStatusRunning),
 	}
 	if res := s.db.WithContext(reqCtx).Create(&run); res.Error != nil {
@@ -75,14 +89,67 @@ func (s *service) CreateInstallStackVersionRun(ctx *gin.Context) {
 	run.LogStreamID = logStream.ID
 	run.LogStream = logStream
 
+	parentStatus := app.InstallStackVersionStatusProvisioning
+	if kind == app.InstallStackVersionRunKindDeprovision {
+		parentStatus = app.InstallStackVersionStatusDestroying
+	}
 	if res := s.db.WithContext(reqCtx).
 		Model(&app.InstallStackVersion{ID: stackVersion.ID}).
 		Updates(app.InstallStackVersion{
-			Status: app.NewCompositeStatus(reqCtx, app.InstallStackVersionStatusProvisioning),
+			Status: app.NewCompositeStatus(reqCtx, parentStatus),
 		}); res.Error != nil {
 		ctx.Error(fmt.Errorf("update stack version status: %w", res.Error))
 		return
 	}
 
+	// Build the SDK config block. A missing config is fatal — the runner can't
+	// bootstrap without runner_id + runner_api_url, and silently shipping an
+	// empty config would leave EC2 instances tagged with garbage that fails
+	// authentication minutes later when the dashboard expects them online.
+	cfg, err := s.buildInstallerSDKConfig(reqCtx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("build installer sdk config: %w", err))
+		return
+	}
+	run.SDKConfig = cfg
+
 	ctx.JSON(http.StatusCreated, run)
+}
+
+// buildInstallerSDKConfig assembles the SDK config block from the install +
+// runner records. Sources runner_api_url from the per-runner-group settings
+// (same as the CFN renderer at pkg/stacks/cloudformation/resource_ec2_launch_template.go),
+// falling back to the global ctl-api config only when the per-group value is
+// missing. Operation roles, secrets, and dynamic role configs are
+// intentionally left empty for now — the SDK handles empty/nil sub-configs
+// as no-ops; full tfvars-equivalent rendering is tracked separately.
+func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string) (*app.InstallerSDKConfig, error) {
+	var install app.Install
+	if res := s.db.WithContext(ctx).
+		Preload("RunnerGroup.Runners").
+		Preload("RunnerGroup.Settings").
+		Where("id = ?", installID).
+		First(&install); res.Error != nil {
+		return nil, fmt.Errorf("load install: %w", res.Error)
+	}
+
+	// Per-runner-group setting wins; global config is only a safety net for
+	// older installs that pre-date the per-group field being populated.
+	runnerAPIURL := install.RunnerGroup.Settings.RunnerAPIURL
+	if runnerAPIURL == "" {
+		runnerAPIURL = s.cfg.RunnerAPIURL
+	}
+
+	if install.RunnerID == "" {
+		return nil, fmt.Errorf("install %s has no runner — cannot build SDK config", installID)
+	}
+	if runnerAPIURL == "" {
+		return nil, fmt.Errorf("install %s: runner_api_url empty (set RunnerGroupSettings.RunnerAPIURL for the install's runner group)", installID)
+	}
+
+	return &app.InstallerSDKConfig{
+		InstallID:    install.ID,
+		RunnerID:     install.RunnerID,
+		RunnerAPIURL: runnerAPIURL,
+	}, nil
 }

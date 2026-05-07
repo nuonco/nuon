@@ -30,8 +30,9 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	// SDK-driven stack runs (native-aws-provisioner). Mirror phone-home: public,
 	// with phone_home_id in the URL acting as the per-stack-version secret. No
 	// token mint, no bearer auth — accepts run state updates only.
-	{"POST", "/v1/installs/:install_id/stack-runs/:phone_home_id"}:          {},
-	{"PATCH", "/v1/installs/:install_id/stack-runs/:phone_home_id/:run_id"}: {},
+	{"POST", "/v1/installs/:install_id/stack-runs/:phone_home_id"}:            {},
+	{"POST", "/v1/installs/:install_id/stack-runs/:phone_home_id/kind/:kind"}: {},
+	{"PATCH", "/v1/installs/:install_id/stack-runs/:phone_home_id/:run_id"}:   {},
 
 	// runner auth: must be accessible w/out a token
 	{"POST", "/v1/runner-auth/aws"}:                   {},

@@ -17,6 +17,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   connected: 'success',
   approved: 'success',
   success: 'success',
+  succeeded: 'success',
 
   // Error
   failed: 'error',
@@ -55,6 +56,8 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   provisioning: 'info',
   syncing: 'info',
   deploying: 'info',
+  running: 'info',
+  destroying: 'info',
   available: 'info',
   'pending-approval': 'info',
   info: 'info',
@@ -72,6 +75,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'No build': 'neutral',
   'not-attempted': 'neutral',
   deprovisioned: 'neutral',
+  destroyed: 'neutral',
   skeleton: 'neutral',
 
   // Brand
