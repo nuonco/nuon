@@ -99,7 +99,7 @@ func (h *RootHandler) Handle(c *gin.Context) {
 
 	var orgs []*models.AppOrg
 	for attempt := 0; attempt <= maxRetries; attempt++ {
-		orgs, _, err = client.GetOrgs(c.Request.Context(), nil)
+		orgs, _, err = client.GetOrgs(c.Request.Context(), &models.GetPaginatedQuery{Limit: 1})
 		if err == nil {
 			break
 		}
