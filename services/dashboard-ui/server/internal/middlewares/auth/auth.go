@@ -63,6 +63,7 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
+		m.l.Info("auth middleware calling GetAuthMe", zap.String("path", c.Request.URL.Path), zap.String("method", c.Request.Method))
 		if _, err := client.GetAuthMe(c.Request.Context()); err != nil {
 			m.l.Warn("auth check failed", zap.Error(err))
 			c.Redirect(http.StatusFound, loginURL)
