@@ -6,15 +6,12 @@ import { collectDescendantIds } from '@/utils/span-tree'
 
 type SortDirection = 'asc' | 'desc'
 
-// URL-backed filter state. Empty selection (no entries in the URL) means
-// "show everything" — we never pre-filter.
-//
-// Multi-value params (severity, service, scope) are repeated in the URL,
-// e.g. ?severity=Info&severity=Warn. Single-value attribute filters
-// (tool, helm.release_name, k8s.kind, etc.) appear once.
+// URL-backed filter state. Multi-value params (severity) are repeated in
+// the URL, e.g. ?severity=Info&severity=Warn. Single-value params
+// (tool, helm.release_name, k8s.kind, system_logs, etc.) appear once.
+// System logs (scope=system) are hidden by default; the user opts in
+// via the "Include system logs" toggle (?system_logs=true).
 const PARAM_SEVERITY = 'severity'
-const PARAM_SERVICE = 'service'
-const PARAM_SCOPE = 'scope'
 const PARAM_TOOL = 'tool'
 const PARAM_HELM_RELEASE = 'helm_release_name'
 const PARAM_HELM_OPERATION = 'helm_operation'
@@ -24,7 +21,7 @@ const PARAM_K8S_KIND = 'k8s_kind'
 const PARAM_K8S_NAMESPACE = 'k8s_namespace'
 const PARAM_K8S_NAME = 'k8s_name'
 const PARAM_BODY = 'q'
-const PARAM_JOB_OUTPUT = 'job_output'
+const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
 // Span / trace cross-link from the trace tab. SSE delivers every log on the
 // stream regardless of server filter, so we always have to apply these
@@ -35,8 +32,6 @@ const PARAM_TRACE_ID = 'trace_id'
 
 const ALL_FILTER_PARAMS = [
   PARAM_SEVERITY,
-  PARAM_SERVICE,
-  PARAM_SCOPE,
   PARAM_TOOL,
   PARAM_HELM_RELEASE,
   PARAM_HELM_OPERATION,
@@ -46,7 +41,7 @@ const ALL_FILTER_PARAMS = [
   PARAM_K8S_NAMESPACE,
   PARAM_K8S_NAME,
   PARAM_BODY,
-  PARAM_JOB_OUTPUT,
+  PARAM_SYSTEM_LOGS,
 ] as const
 
 const KNOWN_SEVERITIES = ['Trace', 'Debug', 'Info', 'Warn', 'Error', 'Fatal']
@@ -77,14 +72,7 @@ export const useLogFilters = <T extends TOTELLog>(
     return new Set(fromURL)
   }, [searchParams])
   const severityIsDefault = searchParams.getAll(PARAM_SEVERITY).length === 0
-  const selectedServices = useMemo(
-    () => new Set(searchParams.getAll(PARAM_SERVICE)),
-    [searchParams]
-  )
-  const selectedScopes = useMemo(
-    () => new Set(searchParams.getAll(PARAM_SCOPE)),
-    [searchParams]
-  )
+  const includeSystemLogs = searchParams.get(PARAM_SYSTEM_LOGS) === 'true'
   const tool = searchParams.get(PARAM_TOOL) || ''
   const helmReleaseName = searchParams.get(PARAM_HELM_RELEASE) || ''
   const helmOperation = searchParams.get(PARAM_HELM_OPERATION) || ''
@@ -94,7 +82,6 @@ export const useLogFilters = <T extends TOTELLog>(
   const k8sNamespace = searchParams.get(PARAM_K8S_NAMESPACE) || ''
   const k8sName = searchParams.get(PARAM_K8S_NAME) || ''
   const searchQuery = searchParams.get(PARAM_BODY) || ''
-  const jobOutputOnly = searchParams.get(PARAM_JOB_OUTPUT) === 'true'
   const spanId = searchParams.get(PARAM_SPAN_ID) || ''
   const traceId = searchParams.get(PARAM_TRACE_ID) || ''
   const sortDirection: SortDirection =
@@ -138,24 +125,6 @@ export const useLogFilters = <T extends TOTELLog>(
 
   // Available values are derived from the currently loaded logs; useful for
   // populating dropdowns that haven't been pre-seeded with a fixed list.
-  const availableServices = useMemo(() => {
-    const out = new Set<string>()
-    if (!logs) return out
-    for (const log of logs) {
-      if (log.service_name) out.add(log.service_name)
-    }
-    return out
-  }, [logs])
-
-  const availableScopes = useMemo(() => {
-    const out = new Set<string>()
-    if (!logs) return out
-    for (const log of logs) {
-      if (log.scope_name) out.add(log.scope_name)
-    }
-    return out
-  }, [logs])
-
   const availableTools = useMemo(() => {
     const out = new Set<string>()
     if (!logs) return out
@@ -207,15 +176,9 @@ export const useLogFilters = <T extends TOTELLog>(
         selectedSeverities.has(item.severity_text)
       )
     }
-    if (selectedServices.size > 0) {
-      filtered = filtered.filter((item) =>
-        item.service_name ? selectedServices.has(item.service_name) : false
-      )
-    }
-    if (selectedScopes.size > 0) {
-      filtered = filtered.filter((item) =>
-        item.scope_name ? selectedScopes.has(item.scope_name) : false
-      )
+
+    if (!includeSystemLogs) {
+      filtered = filtered.filter((item) => item.scope_name === 'oteljob')
     }
 
     if (tool) {
@@ -243,10 +206,6 @@ export const useLogFilters = <T extends TOTELLog>(
       filtered = filtered.filter((item) => item.log_attributes?.['k8s.name'] === k8sName)
     }
 
-    if (jobOutputOnly) {
-      filtered = filtered.filter((item) => item.scope_name === 'oteljob')
-    }
-
     if (spanId) {
       // Expand spanId into { spanId, ...descendants } when a span list is
       // available so clicking a parent step span shows all child tool span
@@ -268,8 +227,7 @@ export const useLogFilters = <T extends TOTELLog>(
   }, [
     logs,
     selectedSeverities,
-    selectedServices,
-    selectedScopes,
+    includeSystemLogs,
     tool,
     helmReleaseName,
     helmOperation,
@@ -278,7 +236,6 @@ export const useLogFilters = <T extends TOTELLog>(
     k8sKind,
     k8sNamespace,
     k8sName,
-    jobOutputOnly,
     spanIdMatchSet,
     traceId,
     searchQuery,
@@ -311,54 +268,6 @@ export const useLogFilters = <T extends TOTELLog>(
     setMultiValue(PARAM_SEVERITY, [])
   }, [setMultiValue])
 
-  // Service handlers
-  const handleServiceInputToggle = useCallback(
-    (service: string) => {
-      const next = new Set(selectedServices)
-      if (next.has(service)) next.delete(service)
-      else next.add(service)
-      setMultiValue(PARAM_SERVICE, next)
-    },
-    [selectedServices, setMultiValue]
-  )
-  const handleServiceButtonClick = useCallback(
-    (service: string) => {
-      if (selectedServices.size === 1 && selectedServices.has(service)) {
-        setMultiValue(PARAM_SERVICE, [])
-      } else {
-        setMultiValue(PARAM_SERVICE, [service])
-      }
-    },
-    [selectedServices, setMultiValue]
-  )
-  const handleServiceReset = useCallback(() => {
-    setMultiValue(PARAM_SERVICE, [])
-  }, [setMultiValue])
-
-  // Scope handlers
-  const handleScopeInputToggle = useCallback(
-    (scope: string) => {
-      const next = new Set(selectedScopes)
-      if (next.has(scope)) next.delete(scope)
-      else next.add(scope)
-      setMultiValue(PARAM_SCOPE, next)
-    },
-    [selectedScopes, setMultiValue]
-  )
-  const handleScopeButtonClick = useCallback(
-    (scope: string) => {
-      if (selectedScopes.size === 1 && selectedScopes.has(scope)) {
-        setMultiValue(PARAM_SCOPE, [])
-      } else {
-        setMultiValue(PARAM_SCOPE, [scope])
-      }
-    },
-    [selectedScopes, setMultiValue]
-  )
-  const handleScopeReset = useCallback(() => {
-    setMultiValue(PARAM_SCOPE, [])
-  }, [setMultiValue])
-
   // Single-value attribute setters
   const setTool = useCallback((v: string) => setSingleValue(PARAM_TOOL, v), [setSingleValue])
   const setHelmReleaseName = useCallback((v: string) => setSingleValue(PARAM_HELM_RELEASE, v), [setSingleValue])
@@ -380,17 +289,16 @@ export const useLogFilters = <T extends TOTELLog>(
     (direction: SortDirection) => setSingleValue(PARAM_SORT, direction),
     [setSingleValue]
   )
-  const handleJobOutputToggle = useCallback(() => {
+  const handleSystemLogsToggle = useCallback(() => {
     updateParams((next) => {
-      if (jobOutputOnly) next.delete(PARAM_JOB_OUTPUT)
-      else next.set(PARAM_JOB_OUTPUT, 'true')
+      if (includeSystemLogs) next.delete(PARAM_SYSTEM_LOGS)
+      else next.set(PARAM_SYSTEM_LOGS, 'true')
     })
-  }, [jobOutputOnly, updateParams])
+  }, [includeSystemLogs, updateParams])
 
   const isFiltered =
     !severityIsDefault ||
-    selectedServices.size > 0 ||
-    selectedScopes.size > 0 ||
+    includeSystemLogs ||
     !!tool ||
     !!helmReleaseName ||
     !!helmOperation ||
@@ -399,7 +307,6 @@ export const useLogFilters = <T extends TOTELLog>(
     !!k8sKind ||
     !!k8sNamespace ||
     !!k8sName ||
-    jobOutputOnly ||
     searchQuery.trim() !== ''
 
   const handleResetAll = useCallback(() => {
@@ -412,8 +319,7 @@ export const useLogFilters = <T extends TOTELLog>(
   // expects, so callers can pass it straight to getLogStreamLogs[WithMeta].
   const serverFilters: TLogStreamFilters = useMemo(() => {
     const f: TLogStreamFilters = {}
-    if (selectedServices.size > 0) f.service_name = Array.from(selectedServices)
-    if (selectedScopes.size > 0) f.scope_name = Array.from(selectedScopes)
+    if (!includeSystemLogs) f.scope_name = ['oteljob']
     if (selectedSeverities.size > 0) f.severity_text = Array.from(selectedSeverities)
     if (tool) f.tool = tool
     if (helmReleaseName) f.helm_release_name = helmReleaseName
@@ -426,8 +332,7 @@ export const useLogFilters = <T extends TOTELLog>(
     if (searchQuery.trim()) f.q = searchQuery.trim()
     return f
   }, [
-    selectedServices,
-    selectedScopes,
+    includeSystemLogs,
     selectedSeverities,
     tool,
     helmReleaseName,
@@ -448,19 +353,9 @@ export const useLogFilters = <T extends TOTELLog>(
     handleSeverityButtonClick,
     handleSeverityReset,
 
-    // Service filter
-    selectedServices,
-    availableServices,
-    handleServiceInputToggle,
-    handleServiceButtonClick,
-    handleServiceReset,
-
-    // Scope filter
-    selectedScopes,
-    availableScopes,
-    handleScopeInputToggle,
-    handleScopeButtonClick,
-    handleScopeReset,
+    // System logs toggle
+    includeSystemLogs,
+    handleSystemLogsToggle,
 
     // Tool / attribute filters
     availableTools,
@@ -480,10 +375,6 @@ export const useLogFilters = <T extends TOTELLog>(
     setK8sNamespace,
     k8sName,
     setK8sName,
-
-    // Job output filter
-    jobOutputOnly,
-    handleJobOutputToggle,
 
     // Search and sort
     searchQuery,
@@ -515,16 +406,6 @@ export const useLogFilters = <T extends TOTELLog>(
       totalCount: availableSeverities.size,
       // "Is the user currently on the default selection (no URL override)?"
       isDefault: severityIsDefault,
-    },
-    serviceStats: {
-      selectedCount: selectedServices.size,
-      totalCount: availableServices.size,
-      isAllSelected: selectedServices.size === 0,
-    },
-    scopeStats: {
-      selectedCount: selectedScopes.size,
-      totalCount: availableScopes.size,
-      isAllSelected: selectedScopes.size === 0,
     },
   }
 }
