@@ -16,16 +16,8 @@ const mockFilters: TLogFiltersProps = {
   handleSeverityInputToggle: noop,
   handleSeverityButtonClick: noop,
   handleSeverityReset: noop,
-  selectedServices: new Set(['api', 'runner']),
-  availableServices: new Set(['api', 'runner']),
-  handleServiceInputToggle: noop,
-  handleServiceButtonClick: noop,
-  handleServiceReset: noop,
-  selectedScopes: new Set<string>(),
-  availableScopes: new Set<string>(['oteljob', 'system']),
-  handleScopeInputToggle: noop,
-  handleScopeButtonClick: noop,
-  handleScopeReset: noop,
+  includeSystemLogs: false,
+  handleSystemLogsToggle: noop,
   availableTools: new Set<string>(['helm', 'terraform', 'kubernetes_manifest']),
   tool: '',
   setTool: noop,
@@ -43,8 +35,6 @@ const mockFilters: TLogFiltersProps = {
   setK8sNamespace: noop,
   k8sName: '',
   setK8sName: noop,
-  jobOutputOnly: false,
-  handleJobOutputToggle: noop,
   searchQuery: '',
   sortDirection: 'desc',
   filteredLogs: [],
@@ -54,8 +44,6 @@ const mockFilters: TLogFiltersProps = {
   filterStats: { selectedCount: 0, totalCount: 0 },
   sortStats: { direction: 'desc', isNewestFirst: true, isOldestFirst: false },
   severityStats: { selectedCount: 4, totalCount: 6, isDefault: true },
-  serviceStats: { selectedCount: 2, totalCount: 2, isAllSelected: false },
-  scopeStats: { selectedCount: 0, totalCount: 2, isAllSelected: true },
   isFiltered: false,
   handleResetAll: noop,
   serverFilters: {},
@@ -103,10 +91,10 @@ export const StaticLogs = () => (
   </LogStreamContext.Provider>
 )
 
-export const JobOutputOnly = () => (
+export const WithSystemLogs = () => (
   <LogStreamContext.Provider value={mockLogStreamContext}>
     <UnifiedLogsContext.Provider value={mockContextStatic}>
-      <LogFilters filters={{ ...mockFilters, jobOutputOnly: true }} />
+      <LogFilters filters={{ ...mockFilters, includeSystemLogs: true }} />
     </UnifiedLogsContext.Provider>
   </LogStreamContext.Provider>
 )
