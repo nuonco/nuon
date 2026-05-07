@@ -68,6 +68,36 @@ type LogStreamReadLogsParams struct {
 	*/
 	XNuonAPIOffset *string
 
+	/* Attr.
+
+	   generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params)
+	*/
+	Attr []string
+
+	/* EndTime.
+
+	   only return records with timestamp <= end_time (RFC3339)
+	*/
+	EndTime *string
+
+	/* HelmChartID.
+
+	   filter by log_attributes['helm.chart_id']
+	*/
+	HelmChartID *string
+
+	/* HelmChartName.
+
+	   filter by log_attributes['helm.chart_name']
+	*/
+	HelmChartName *string
+
+	/* HelmNamespace.
+
+	   filter by log_attributes['helm.namespace']
+	*/
+	HelmNamespace *string
+
 	/* HelmOperation.
 
 	   filter by log_attributes['helm.operation']
@@ -98,6 +128,12 @@ type LogStreamReadLogsParams struct {
 	*/
 	K8sNamespace *string
 
+	/* K8sOperation.
+
+	   filter by log_attributes['k8s.operation']
+	*/
+	K8sOperation *string
+
 	/* LogStreamID.
 
 	   log stream ID
@@ -118,11 +154,71 @@ type LogStreamReadLogsParams struct {
 	*/
 	Q *string
 
+	/* ResourceAttr.
+
+	   generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params)
+	*/
+	ResourceAttr []string
+
+	/* ResourceSchemaURL.
+
+	   filter by resource_schema_url (repeatable)
+	*/
+	ResourceSchemaURL []string
+
+	/* RunnerGroupID.
+
+	   filter by runner_group_id
+	*/
+	RunnerGroupID *string
+
+	/* RunnerID.
+
+	   filter by runner_id
+	*/
+	RunnerID *string
+
+	/* RunnerJobExecutionID.
+
+	   filter by runner_job_execution_id
+	*/
+	RunnerJobExecutionID *string
+
+	/* RunnerJobExecutionStep.
+
+	   filter by runner_job_execution_step
+	*/
+	RunnerJobExecutionStep *string
+
+	/* RunnerJobID.
+
+	   filter by runner_job_id (part of CH ORDER BY — efficient)
+	*/
+	RunnerJobID *string
+
+	/* ScopeAttr.
+
+	   generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params)
+	*/
+	ScopeAttr []string
+
 	/* ScopeName.
 
-	   filter by scope_name (repeatable)
+	   filter by scope_name (repeatable; e.g. oteljob, system)
 	*/
 	ScopeName []string
+
+	/* ScopeSchemaURL.
+
+	   filter by scope_schema_url (repeatable)
+	*/
+	ScopeSchemaURL []string
+
+	/* ScopeVersion.
+
+	   filter by scope_version (repeatable)
+	*/
+	ScopeVersion []string
 
 	/* ServiceName.
 
@@ -130,9 +226,21 @@ type LogStreamReadLogsParams struct {
 	*/
 	ServiceName []string
 
+	/* SeverityNumberMax.
+
+	   filter by severity_number <= N (OTEL: TRACE=1..FATAL=24)
+	*/
+	SeverityNumberMax *int64
+
+	/* SeverityNumberMin.
+
+	   filter by severity_number >= N (OTEL: TRACE=1..FATAL=24)
+	*/
+	SeverityNumberMin *int64
+
 	/* SeverityText.
 
-	   filter by severity_text (repeatable)
+	   filter by severity_text (repeatable; INFO/WARN/ERROR/...)
 	*/
 	SeverityText []string
 
@@ -141,6 +249,12 @@ type LogStreamReadLogsParams struct {
 	   filter by exact span_id (dedicated CH column)
 	*/
 	SpanID *string
+
+	/* StartTime.
+
+	   only return records with timestamp >= start_time (RFC3339)
+	*/
+	StartTime *string
 
 	/* TfOperation.
 
@@ -156,9 +270,15 @@ type LogStreamReadLogsParams struct {
 
 	/* Tool.
 
-	   filter by log_attributes['nuon.tool']
+	   filter by log_attributes['nuon.tool'] (repeatable; e.g. helm, terraform, kubernetes_manifest, runner)
 	*/
-	Tool *string
+	Tool []string
+
+	/* TraceFlags.
+
+	   filter by exact trace_flags (UInt8)
+	*/
+	TraceFlags *int64
 
 	/* TraceID.
 
@@ -241,6 +361,61 @@ func (o *LogStreamReadLogsParams) SetXNuonAPIOffset(xNuonAPIOffset *string) {
 	o.XNuonAPIOffset = xNuonAPIOffset
 }
 
+// WithAttr adds the attr to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithAttr(attr []string) *LogStreamReadLogsParams {
+	o.SetAttr(attr)
+	return o
+}
+
+// SetAttr adds the attr to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetAttr(attr []string) {
+	o.Attr = attr
+}
+
+// WithEndTime adds the endTime to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithEndTime(endTime *string) *LogStreamReadLogsParams {
+	o.SetEndTime(endTime)
+	return o
+}
+
+// SetEndTime adds the endTime to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetEndTime(endTime *string) {
+	o.EndTime = endTime
+}
+
+// WithHelmChartID adds the helmChartID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithHelmChartID(helmChartID *string) *LogStreamReadLogsParams {
+	o.SetHelmChartID(helmChartID)
+	return o
+}
+
+// SetHelmChartID adds the helmChartId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetHelmChartID(helmChartID *string) {
+	o.HelmChartID = helmChartID
+}
+
+// WithHelmChartName adds the helmChartName to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithHelmChartName(helmChartName *string) *LogStreamReadLogsParams {
+	o.SetHelmChartName(helmChartName)
+	return o
+}
+
+// SetHelmChartName adds the helmChartName to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetHelmChartName(helmChartName *string) {
+	o.HelmChartName = helmChartName
+}
+
+// WithHelmNamespace adds the helmNamespace to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithHelmNamespace(helmNamespace *string) *LogStreamReadLogsParams {
+	o.SetHelmNamespace(helmNamespace)
+	return o
+}
+
+// SetHelmNamespace adds the helmNamespace to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetHelmNamespace(helmNamespace *string) {
+	o.HelmNamespace = helmNamespace
+}
+
 // WithHelmOperation adds the helmOperation to the log stream read logs params
 func (o *LogStreamReadLogsParams) WithHelmOperation(helmOperation *string) *LogStreamReadLogsParams {
 	o.SetHelmOperation(helmOperation)
@@ -296,6 +471,17 @@ func (o *LogStreamReadLogsParams) SetK8sNamespace(k8sNamespace *string) {
 	o.K8sNamespace = k8sNamespace
 }
 
+// WithK8sOperation adds the k8sOperation to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithK8sOperation(k8sOperation *string) *LogStreamReadLogsParams {
+	o.SetK8sOperation(k8sOperation)
+	return o
+}
+
+// SetK8sOperation adds the k8sOperation to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetK8sOperation(k8sOperation *string) {
+	o.K8sOperation = k8sOperation
+}
+
 // WithLogStreamID adds the logStreamID to the log stream read logs params
 func (o *LogStreamReadLogsParams) WithLogStreamID(logStreamID string) *LogStreamReadLogsParams {
 	o.SetLogStreamID(logStreamID)
@@ -329,6 +515,94 @@ func (o *LogStreamReadLogsParams) SetQ(q *string) {
 	o.Q = q
 }
 
+// WithResourceAttr adds the resourceAttr to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithResourceAttr(resourceAttr []string) *LogStreamReadLogsParams {
+	o.SetResourceAttr(resourceAttr)
+	return o
+}
+
+// SetResourceAttr adds the resourceAttr to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetResourceAttr(resourceAttr []string) {
+	o.ResourceAttr = resourceAttr
+}
+
+// WithResourceSchemaURL adds the resourceSchemaURL to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithResourceSchemaURL(resourceSchemaURL []string) *LogStreamReadLogsParams {
+	o.SetResourceSchemaURL(resourceSchemaURL)
+	return o
+}
+
+// SetResourceSchemaURL adds the resourceSchemaUrl to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetResourceSchemaURL(resourceSchemaURL []string) {
+	o.ResourceSchemaURL = resourceSchemaURL
+}
+
+// WithRunnerGroupID adds the runnerGroupID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithRunnerGroupID(runnerGroupID *string) *LogStreamReadLogsParams {
+	o.SetRunnerGroupID(runnerGroupID)
+	return o
+}
+
+// SetRunnerGroupID adds the runnerGroupId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetRunnerGroupID(runnerGroupID *string) {
+	o.RunnerGroupID = runnerGroupID
+}
+
+// WithRunnerID adds the runnerID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithRunnerID(runnerID *string) *LogStreamReadLogsParams {
+	o.SetRunnerID(runnerID)
+	return o
+}
+
+// SetRunnerID adds the runnerId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetRunnerID(runnerID *string) {
+	o.RunnerID = runnerID
+}
+
+// WithRunnerJobExecutionID adds the runnerJobExecutionID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithRunnerJobExecutionID(runnerJobExecutionID *string) *LogStreamReadLogsParams {
+	o.SetRunnerJobExecutionID(runnerJobExecutionID)
+	return o
+}
+
+// SetRunnerJobExecutionID adds the runnerJobExecutionId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetRunnerJobExecutionID(runnerJobExecutionID *string) {
+	o.RunnerJobExecutionID = runnerJobExecutionID
+}
+
+// WithRunnerJobExecutionStep adds the runnerJobExecutionStep to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithRunnerJobExecutionStep(runnerJobExecutionStep *string) *LogStreamReadLogsParams {
+	o.SetRunnerJobExecutionStep(runnerJobExecutionStep)
+	return o
+}
+
+// SetRunnerJobExecutionStep adds the runnerJobExecutionStep to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetRunnerJobExecutionStep(runnerJobExecutionStep *string) {
+	o.RunnerJobExecutionStep = runnerJobExecutionStep
+}
+
+// WithRunnerJobID adds the runnerJobID to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithRunnerJobID(runnerJobID *string) *LogStreamReadLogsParams {
+	o.SetRunnerJobID(runnerJobID)
+	return o
+}
+
+// SetRunnerJobID adds the runnerJobId to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetRunnerJobID(runnerJobID *string) {
+	o.RunnerJobID = runnerJobID
+}
+
+// WithScopeAttr adds the scopeAttr to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithScopeAttr(scopeAttr []string) *LogStreamReadLogsParams {
+	o.SetScopeAttr(scopeAttr)
+	return o
+}
+
+// SetScopeAttr adds the scopeAttr to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetScopeAttr(scopeAttr []string) {
+	o.ScopeAttr = scopeAttr
+}
+
 // WithScopeName adds the scopeName to the log stream read logs params
 func (o *LogStreamReadLogsParams) WithScopeName(scopeName []string) *LogStreamReadLogsParams {
 	o.SetScopeName(scopeName)
@@ -340,6 +614,28 @@ func (o *LogStreamReadLogsParams) SetScopeName(scopeName []string) {
 	o.ScopeName = scopeName
 }
 
+// WithScopeSchemaURL adds the scopeSchemaURL to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithScopeSchemaURL(scopeSchemaURL []string) *LogStreamReadLogsParams {
+	o.SetScopeSchemaURL(scopeSchemaURL)
+	return o
+}
+
+// SetScopeSchemaURL adds the scopeSchemaUrl to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetScopeSchemaURL(scopeSchemaURL []string) {
+	o.ScopeSchemaURL = scopeSchemaURL
+}
+
+// WithScopeVersion adds the scopeVersion to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithScopeVersion(scopeVersion []string) *LogStreamReadLogsParams {
+	o.SetScopeVersion(scopeVersion)
+	return o
+}
+
+// SetScopeVersion adds the scopeVersion to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetScopeVersion(scopeVersion []string) {
+	o.ScopeVersion = scopeVersion
+}
+
 // WithServiceName adds the serviceName to the log stream read logs params
 func (o *LogStreamReadLogsParams) WithServiceName(serviceName []string) *LogStreamReadLogsParams {
 	o.SetServiceName(serviceName)
@@ -349,6 +645,28 @@ func (o *LogStreamReadLogsParams) WithServiceName(serviceName []string) *LogStre
 // SetServiceName adds the serviceName to the log stream read logs params
 func (o *LogStreamReadLogsParams) SetServiceName(serviceName []string) {
 	o.ServiceName = serviceName
+}
+
+// WithSeverityNumberMax adds the severityNumberMax to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithSeverityNumberMax(severityNumberMax *int64) *LogStreamReadLogsParams {
+	o.SetSeverityNumberMax(severityNumberMax)
+	return o
+}
+
+// SetSeverityNumberMax adds the severityNumberMax to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetSeverityNumberMax(severityNumberMax *int64) {
+	o.SeverityNumberMax = severityNumberMax
+}
+
+// WithSeverityNumberMin adds the severityNumberMin to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithSeverityNumberMin(severityNumberMin *int64) *LogStreamReadLogsParams {
+	o.SetSeverityNumberMin(severityNumberMin)
+	return o
+}
+
+// SetSeverityNumberMin adds the severityNumberMin to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetSeverityNumberMin(severityNumberMin *int64) {
+	o.SeverityNumberMin = severityNumberMin
 }
 
 // WithSeverityText adds the severityText to the log stream read logs params
@@ -371,6 +689,17 @@ func (o *LogStreamReadLogsParams) WithSpanID(spanID *string) *LogStreamReadLogsP
 // SetSpanID adds the spanId to the log stream read logs params
 func (o *LogStreamReadLogsParams) SetSpanID(spanID *string) {
 	o.SpanID = spanID
+}
+
+// WithStartTime adds the startTime to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithStartTime(startTime *string) *LogStreamReadLogsParams {
+	o.SetStartTime(startTime)
+	return o
+}
+
+// SetStartTime adds the startTime to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetStartTime(startTime *string) {
+	o.StartTime = startTime
 }
 
 // WithTfOperation adds the tfOperation to the log stream read logs params
@@ -396,14 +725,25 @@ func (o *LogStreamReadLogsParams) SetTfWorkspaceID(tfWorkspaceID *string) {
 }
 
 // WithTool adds the tool to the log stream read logs params
-func (o *LogStreamReadLogsParams) WithTool(tool *string) *LogStreamReadLogsParams {
+func (o *LogStreamReadLogsParams) WithTool(tool []string) *LogStreamReadLogsParams {
 	o.SetTool(tool)
 	return o
 }
 
 // SetTool adds the tool to the log stream read logs params
-func (o *LogStreamReadLogsParams) SetTool(tool *string) {
+func (o *LogStreamReadLogsParams) SetTool(tool []string) {
 	o.Tool = tool
+}
+
+// WithTraceFlags adds the traceFlags to the log stream read logs params
+func (o *LogStreamReadLogsParams) WithTraceFlags(traceFlags *int64) *LogStreamReadLogsParams {
+	o.SetTraceFlags(traceFlags)
+	return o
+}
+
+// SetTraceFlags adds the traceFlags to the log stream read logs params
+func (o *LogStreamReadLogsParams) SetTraceFlags(traceFlags *int64) {
+	o.TraceFlags = traceFlags
 }
 
 // WithTraceID adds the traceID to the log stream read logs params
@@ -430,6 +770,85 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		// header param X-Nuon-API-Offset
 		if err := r.SetHeaderParam("X-Nuon-API-Offset", *o.XNuonAPIOffset); err != nil {
 			return err
+		}
+	}
+
+	if o.Attr != nil {
+
+		// binding items for attr
+		joinedAttr := o.bindParamAttr(reg)
+
+		// query array param attr
+		if err := r.SetQueryParam("attr", joinedAttr...); err != nil {
+			return err
+		}
+	}
+
+	if o.EndTime != nil {
+
+		// query param end_time
+		var qrEndTime string
+
+		if o.EndTime != nil {
+			qrEndTime = *o.EndTime
+		}
+		qEndTime := qrEndTime
+		if qEndTime != "" {
+
+			if err := r.SetQueryParam("end_time", qEndTime); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmChartID != nil {
+
+		// query param helm_chart_id
+		var qrHelmChartID string
+
+		if o.HelmChartID != nil {
+			qrHelmChartID = *o.HelmChartID
+		}
+		qHelmChartID := qrHelmChartID
+		if qHelmChartID != "" {
+
+			if err := r.SetQueryParam("helm_chart_id", qHelmChartID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmChartName != nil {
+
+		// query param helm_chart_name
+		var qrHelmChartName string
+
+		if o.HelmChartName != nil {
+			qrHelmChartName = *o.HelmChartName
+		}
+		qHelmChartName := qrHelmChartName
+		if qHelmChartName != "" {
+
+			if err := r.SetQueryParam("helm_chart_name", qHelmChartName); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.HelmNamespace != nil {
+
+		// query param helm_namespace
+		var qrHelmNamespace string
+
+		if o.HelmNamespace != nil {
+			qrHelmNamespace = *o.HelmNamespace
+		}
+		qHelmNamespace := qrHelmNamespace
+		if qHelmNamespace != "" {
+
+			if err := r.SetQueryParam("helm_namespace", qHelmNamespace); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -518,6 +937,23 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		}
 	}
 
+	if o.K8sOperation != nil {
+
+		// query param k8s_operation
+		var qrK8sOperation string
+
+		if o.K8sOperation != nil {
+			qrK8sOperation = *o.K8sOperation
+		}
+		qK8sOperation := qrK8sOperation
+		if qK8sOperation != "" {
+
+			if err := r.SetQueryParam("k8s_operation", qK8sOperation); err != nil {
+				return err
+			}
+		}
+	}
+
 	// path param log_stream_id
 	if err := r.SetPathParam("log_stream_id", o.LogStreamID); err != nil {
 		return err
@@ -557,6 +993,124 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		}
 	}
 
+	if o.ResourceAttr != nil {
+
+		// binding items for resource_attr
+		joinedResourceAttr := o.bindParamResourceAttr(reg)
+
+		// query array param resource_attr
+		if err := r.SetQueryParam("resource_attr", joinedResourceAttr...); err != nil {
+			return err
+		}
+	}
+
+	if o.ResourceSchemaURL != nil {
+
+		// binding items for resource_schema_url
+		joinedResourceSchemaURL := o.bindParamResourceSchemaURL(reg)
+
+		// query array param resource_schema_url
+		if err := r.SetQueryParam("resource_schema_url", joinedResourceSchemaURL...); err != nil {
+			return err
+		}
+	}
+
+	if o.RunnerGroupID != nil {
+
+		// query param runner_group_id
+		var qrRunnerGroupID string
+
+		if o.RunnerGroupID != nil {
+			qrRunnerGroupID = *o.RunnerGroupID
+		}
+		qRunnerGroupID := qrRunnerGroupID
+		if qRunnerGroupID != "" {
+
+			if err := r.SetQueryParam("runner_group_id", qRunnerGroupID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerID != nil {
+
+		// query param runner_id
+		var qrRunnerID string
+
+		if o.RunnerID != nil {
+			qrRunnerID = *o.RunnerID
+		}
+		qRunnerID := qrRunnerID
+		if qRunnerID != "" {
+
+			if err := r.SetQueryParam("runner_id", qRunnerID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerJobExecutionID != nil {
+
+		// query param runner_job_execution_id
+		var qrRunnerJobExecutionID string
+
+		if o.RunnerJobExecutionID != nil {
+			qrRunnerJobExecutionID = *o.RunnerJobExecutionID
+		}
+		qRunnerJobExecutionID := qrRunnerJobExecutionID
+		if qRunnerJobExecutionID != "" {
+
+			if err := r.SetQueryParam("runner_job_execution_id", qRunnerJobExecutionID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerJobExecutionStep != nil {
+
+		// query param runner_job_execution_step
+		var qrRunnerJobExecutionStep string
+
+		if o.RunnerJobExecutionStep != nil {
+			qrRunnerJobExecutionStep = *o.RunnerJobExecutionStep
+		}
+		qRunnerJobExecutionStep := qrRunnerJobExecutionStep
+		if qRunnerJobExecutionStep != "" {
+
+			if err := r.SetQueryParam("runner_job_execution_step", qRunnerJobExecutionStep); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunnerJobID != nil {
+
+		// query param runner_job_id
+		var qrRunnerJobID string
+
+		if o.RunnerJobID != nil {
+			qrRunnerJobID = *o.RunnerJobID
+		}
+		qRunnerJobID := qrRunnerJobID
+		if qRunnerJobID != "" {
+
+			if err := r.SetQueryParam("runner_job_id", qRunnerJobID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.ScopeAttr != nil {
+
+		// binding items for scope_attr
+		joinedScopeAttr := o.bindParamScopeAttr(reg)
+
+		// query array param scope_attr
+		if err := r.SetQueryParam("scope_attr", joinedScopeAttr...); err != nil {
+			return err
+		}
+	}
+
 	if o.ScopeName != nil {
 
 		// binding items for scope_name
@@ -564,6 +1118,28 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 
 		// query array param scope_name
 		if err := r.SetQueryParam("scope_name", joinedScopeName...); err != nil {
+			return err
+		}
+	}
+
+	if o.ScopeSchemaURL != nil {
+
+		// binding items for scope_schema_url
+		joinedScopeSchemaURL := o.bindParamScopeSchemaURL(reg)
+
+		// query array param scope_schema_url
+		if err := r.SetQueryParam("scope_schema_url", joinedScopeSchemaURL...); err != nil {
+			return err
+		}
+	}
+
+	if o.ScopeVersion != nil {
+
+		// binding items for scope_version
+		joinedScopeVersion := o.bindParamScopeVersion(reg)
+
+		// query array param scope_version
+		if err := r.SetQueryParam("scope_version", joinedScopeVersion...); err != nil {
 			return err
 		}
 	}
@@ -576,6 +1152,40 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		// query array param service_name
 		if err := r.SetQueryParam("service_name", joinedServiceName...); err != nil {
 			return err
+		}
+	}
+
+	if o.SeverityNumberMax != nil {
+
+		// query param severity_number_max
+		var qrSeverityNumberMax int64
+
+		if o.SeverityNumberMax != nil {
+			qrSeverityNumberMax = *o.SeverityNumberMax
+		}
+		qSeverityNumberMax := swag.FormatInt64(qrSeverityNumberMax)
+		if qSeverityNumberMax != "" {
+
+			if err := r.SetQueryParam("severity_number_max", qSeverityNumberMax); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.SeverityNumberMin != nil {
+
+		// query param severity_number_min
+		var qrSeverityNumberMin int64
+
+		if o.SeverityNumberMin != nil {
+			qrSeverityNumberMin = *o.SeverityNumberMin
+		}
+		qSeverityNumberMin := swag.FormatInt64(qrSeverityNumberMin)
+		if qSeverityNumberMin != "" {
+
+			if err := r.SetQueryParam("severity_number_min", qSeverityNumberMin); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -602,6 +1212,23 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 		if qSpanID != "" {
 
 			if err := r.SetQueryParam("span_id", qSpanID); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.StartTime != nil {
+
+		// query param start_time
+		var qrStartTime string
+
+		if o.StartTime != nil {
+			qrStartTime = *o.StartTime
+		}
+		qStartTime := qrStartTime
+		if qStartTime != "" {
+
+			if err := r.SetQueryParam("start_time", qStartTime); err != nil {
 				return err
 			}
 		}
@@ -643,16 +1270,27 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 
 	if o.Tool != nil {
 
-		// query param tool
-		var qrTool string
+		// binding items for tool
+		joinedTool := o.bindParamTool(reg)
 
-		if o.Tool != nil {
-			qrTool = *o.Tool
+		// query array param tool
+		if err := r.SetQueryParam("tool", joinedTool...); err != nil {
+			return err
 		}
-		qTool := qrTool
-		if qTool != "" {
+	}
 
-			if err := r.SetQueryParam("tool", qTool); err != nil {
+	if o.TraceFlags != nil {
+
+		// query param trace_flags
+		var qrTraceFlags int64
+
+		if o.TraceFlags != nil {
+			qrTraceFlags = *o.TraceFlags
+		}
+		qTraceFlags := swag.FormatInt64(qrTraceFlags)
+		if qTraceFlags != "" {
+
+			if err := r.SetQueryParam("trace_flags", qTraceFlags); err != nil {
 				return err
 			}
 		}
@@ -681,6 +1319,74 @@ func (o *LogStreamReadLogsParams) WriteToRequest(r runtime.ClientRequest, reg st
 	return nil
 }
 
+// bindParamLogStreamReadLogs binds the parameter attr
+func (o *LogStreamReadLogsParams) bindParamAttr(formats strfmt.Registry) []string {
+	attrIR := o.Attr
+
+	var attrIC []string
+	for _, attrIIR := range attrIR { // explode []string
+
+		attrIIV := attrIIR // string as string
+		attrIC = append(attrIC, attrIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	attrIS := swag.JoinByFormat(attrIC, "csv")
+
+	return attrIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter resource_attr
+func (o *LogStreamReadLogsParams) bindParamResourceAttr(formats strfmt.Registry) []string {
+	resourceAttrIR := o.ResourceAttr
+
+	var resourceAttrIC []string
+	for _, resourceAttrIIR := range resourceAttrIR { // explode []string
+
+		resourceAttrIIV := resourceAttrIIR // string as string
+		resourceAttrIC = append(resourceAttrIC, resourceAttrIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	resourceAttrIS := swag.JoinByFormat(resourceAttrIC, "csv")
+
+	return resourceAttrIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter resource_schema_url
+func (o *LogStreamReadLogsParams) bindParamResourceSchemaURL(formats strfmt.Registry) []string {
+	resourceSchemaURLIR := o.ResourceSchemaURL
+
+	var resourceSchemaURLIC []string
+	for _, resourceSchemaURLIIR := range resourceSchemaURLIR { // explode []string
+
+		resourceSchemaURLIIV := resourceSchemaURLIIR // string as string
+		resourceSchemaURLIC = append(resourceSchemaURLIC, resourceSchemaURLIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	resourceSchemaURLIS := swag.JoinByFormat(resourceSchemaURLIC, "csv")
+
+	return resourceSchemaURLIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter scope_attr
+func (o *LogStreamReadLogsParams) bindParamScopeAttr(formats strfmt.Registry) []string {
+	scopeAttrIR := o.ScopeAttr
+
+	var scopeAttrIC []string
+	for _, scopeAttrIIR := range scopeAttrIR { // explode []string
+
+		scopeAttrIIV := scopeAttrIIR // string as string
+		scopeAttrIC = append(scopeAttrIC, scopeAttrIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	scopeAttrIS := swag.JoinByFormat(scopeAttrIC, "csv")
+
+	return scopeAttrIS
+}
+
 // bindParamLogStreamReadLogs binds the parameter scope_name
 func (o *LogStreamReadLogsParams) bindParamScopeName(formats strfmt.Registry) []string {
 	scopeNameIR := o.ScopeName
@@ -696,6 +1402,40 @@ func (o *LogStreamReadLogsParams) bindParamScopeName(formats strfmt.Registry) []
 	scopeNameIS := swag.JoinByFormat(scopeNameIC, "csv")
 
 	return scopeNameIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter scope_schema_url
+func (o *LogStreamReadLogsParams) bindParamScopeSchemaURL(formats strfmt.Registry) []string {
+	scopeSchemaURLIR := o.ScopeSchemaURL
+
+	var scopeSchemaURLIC []string
+	for _, scopeSchemaURLIIR := range scopeSchemaURLIR { // explode []string
+
+		scopeSchemaURLIIV := scopeSchemaURLIIR // string as string
+		scopeSchemaURLIC = append(scopeSchemaURLIC, scopeSchemaURLIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	scopeSchemaURLIS := swag.JoinByFormat(scopeSchemaURLIC, "csv")
+
+	return scopeSchemaURLIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter scope_version
+func (o *LogStreamReadLogsParams) bindParamScopeVersion(formats strfmt.Registry) []string {
+	scopeVersionIR := o.ScopeVersion
+
+	var scopeVersionIC []string
+	for _, scopeVersionIIR := range scopeVersionIR { // explode []string
+
+		scopeVersionIIV := scopeVersionIIR // string as string
+		scopeVersionIC = append(scopeVersionIC, scopeVersionIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	scopeVersionIS := swag.JoinByFormat(scopeVersionIC, "csv")
+
+	return scopeVersionIS
 }
 
 // bindParamLogStreamReadLogs binds the parameter service_name
@@ -730,4 +1470,21 @@ func (o *LogStreamReadLogsParams) bindParamSeverityText(formats strfmt.Registry)
 	severityTextIS := swag.JoinByFormat(severityTextIC, "csv")
 
 	return severityTextIS
+}
+
+// bindParamLogStreamReadLogs binds the parameter tool
+func (o *LogStreamReadLogsParams) bindParamTool(formats strfmt.Registry) []string {
+	toolIR := o.Tool
+
+	var toolIC []string
+	for _, toolIIR := range toolIR { // explode []string
+
+		toolIIV := toolIIR // string as string
+		toolIC = append(toolIC, toolIIV)
+	}
+
+	// items.CollectionFormat: "csv"
+	toolIS := swag.JoinByFormat(toolIC, "csv")
+
+	return toolIS
 }
