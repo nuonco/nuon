@@ -73,7 +73,7 @@ const DiffLineModal = ({
           </CodeBlock>
         </div>
       ) : (
-        <div className="bg-code rounded-md overflow-auto max-h-[70vh] p-4 [&>div]:min-w-fit">
+        <div className="bg-code rounded-md overflow-auto max-h-[70vh] p-4">
           <TreeDiffValue before={before} after={after} />
         </div>
       )}

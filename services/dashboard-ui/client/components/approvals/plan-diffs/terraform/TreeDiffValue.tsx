@@ -39,6 +39,7 @@ export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
   return (
     <div className="ml-4 my-1">
       <div className="font-mono text-[13px] leading-6 overflow-x-auto">
+        <div className="min-w-fit">
         {visibleLines.map((line, i) => (
           <div
             key={i}
@@ -71,6 +72,7 @@ export function TreeDiffValue({ before, after }: TreeDiffValueProps) {
             Show all {lines.length} lines
           </button>
         )}
+        </div>
       </div>
     </div>
   )
