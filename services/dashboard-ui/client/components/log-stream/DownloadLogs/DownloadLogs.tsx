@@ -2,22 +2,22 @@ import { useState } from 'react'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { RadioInput } from '@/components/common/form/RadioInput'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
-
-type DownloadMode = 'all' | 'user'
 
 interface IDownloadLogsModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
-  onDownload: (mode: DownloadMode) => void
+  includeSystemLogs: boolean
+  onDownload: (includeSystemLogs: boolean) => void
 }
 
 export const DownloadLogsModal = ({
   isPending,
+  includeSystemLogs: defaultIncludeSystem,
   onDownload,
   ...props
 }: IDownloadLogsModal) => {
-  const [mode, setMode] = useState<DownloadMode>('all')
+  const [includeSystem, setIncludeSystem] = useState(defaultIncludeSystem)
 
   return (
     <Modal
@@ -43,26 +43,17 @@ export const DownloadLogsModal = ({
           </span>
         ),
         disabled: isPending,
-        onClick: () => onDownload(mode),
+        onClick: () => onDownload(includeSystem),
         variant: 'primary',
       }}
       {...props}
     >
       <Text variant="base">Download logs from this stream as a text file.</Text>
-      <div className="flex items-center gap-4">
-        <RadioInput
-          name="download-mode"
-          value="all"
-          checked={mode === 'all'}
-          onChange={() => setMode('all')}
-          labelProps={{ labelText: 'All logs' }}
-        />
-        <RadioInput
-          name="download-mode"
-          value="user"
-          checked={mode === 'user'}
-          onChange={() => setMode('user')}
-          labelProps={{ labelText: 'Job output only' }}
+      <div className="flex">
+        <CheckboxInput
+          checked={includeSystem}
+          onChange={() => setIncludeSystem(!includeSystem)}
+          labelProps={{ labelText: 'Include system logs' }}
         />
       </div>
     </Modal>

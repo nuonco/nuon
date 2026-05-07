@@ -12,11 +12,8 @@ export const useLogServerFilters = (): TLogStreamFilters => {
   return useMemo(() => {
     const f: TLogStreamFilters = {}
 
-    const services = searchParams.getAll('service')
-    if (services.length > 0) f.service_name = services
-
-    const scopes = searchParams.getAll('scope')
-    if (scopes.length > 0) f.scope_name = scopes
+    const includeSystemLogs = searchParams.get('system_logs') === 'true'
+    if (!includeSystemLogs) f.scope_name = ['oteljob']
 
     const severities = searchParams.getAll('severity')
     if (severities.length > 0) f.severity_text = severities
