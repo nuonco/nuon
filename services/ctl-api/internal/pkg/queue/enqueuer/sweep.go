@@ -9,27 +9,37 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-// sweep queries for signals that have not been enqueued and processes them.
-func (e *Enqueuer) sweep() {
-	ctx := context.Background()
+const sweepBatchSize = 100
 
+type SweepRequest struct{}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 2m
+func (a *Activities) Sweep(ctx context.Context, _ *SweepRequest) error {
 	var signals []app.QueueSignal
-	if res := e.db.WithContext(ctx).
+	if res := a.e.db.WithContext(ctx).
 		Select("id").
 		Where("enqueued = ?", false).
 		Where("created_at < ?", time.Now().Add(-30*time.Second)).
 		Order("created_at ASC").
 		Limit(sweepBatchSize).
 		Find(&signals); res.Error != nil {
-		e.l.Warn("sweep query failed", zap.Error(res.Error))
-		return
+		return res.Error
 	}
 
-	if len(signals) > 0 {
-		e.l.Warn("sweep found orphaned signals", zap.Int("count", len(signals)))
+	if len(signals) == 0 {
+		return nil
 	}
+
+	a.e.l.Info("sweep found orphaned signals", zap.Int("count", len(signals)))
 
 	for _, s := range signals {
-		e.processOne(s.ID)
+		if err := a.e.EnqueueInline(ctx, s.ID, EnqueueSourceSweep); err != nil {
+			a.e.l.Warn("sweep enqueue failed",
+				zap.String("queue-signal-id", s.ID),
+				zap.Error(err))
+		}
 	}
+
+	return nil
 }
