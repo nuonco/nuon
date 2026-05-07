@@ -1335,6 +1335,60 @@ export const DriftDetected = () => (
     }
   />
 )
+export const KubectlManifestDeployment = () => (
+  <TerraformDiff
+    plan={
+      {
+        resource_changes: [
+          {
+            address: 'kubectl_manifest.api_deployment',
+            type: 'kubectl_manifest',
+            name: 'api_deployment',
+            module_address: 'module.k8s_workloads',
+            change: {
+              actions: ['update'],
+              before: {
+                yaml_body: `apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api-server\n  namespace: production\n  labels:\n    app: api-server\n    version: v2.14.0\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: api-server\n  template:\n    metadata:\n      labels:\n        app: api-server\n    spec:\n      serviceAccountName: api-server\n      containers:\n      - name: api-server\n        image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/api-server:v2.14.0\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 500m\n            memory: 512Mi\n          limits:\n            cpu: 1000m\n            memory: 1Gi`,
+                yaml_body_parsed: `apiVersion=apps/v1,kind=Deployment,metadata.name=api-server,metadata.namespace=production,metadata.labels.app=api-server,metadata.labels.version=v2.14.0,spec.replicas=3,spec.template.spec.containers.0.image=123456789012.dkr.ecr.us-west-2.amazonaws.com/api-server:v2.14.0,spec.template.spec.containers.0.resources.requests.cpu=500m,spec.template.spec.containers.0.resources.requests.memory=512Mi`,
+                live_manifest_incluster: 'sha256:a3f8c2e1d09b4f7e6c5a2b1d8e3f9c4a7b2e5d8f1c6a9b3e7f2d5c8a1b4e7f0c3d6a9b2e5c8f1a4b7e0d3c6f9a2b5e8c1d4f7a0b3e6c9d2f5a8b1e4c7d0f3a6b9e2c5d8f1a4b7e0c3d6f9a2b5e8c1',
+                force_new: false,
+                server_side_apply: true,
+              },
+              after: {
+                yaml_body: `apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api-server\n  namespace: production\n  labels:\n    app: api-server\n    version: v2.15.0\nspec:\n  replicas: 5\n  selector:\n    matchLabels:\n      app: api-server\n  template:\n    metadata:\n      labels:\n        app: api-server\n    spec:\n      serviceAccountName: api-server\n      containers:\n      - name: api-server\n        image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/api-server:v2.15.0\n        ports:\n        - containerPort: 8080\n        resources:\n          requests:\n            cpu: 500m\n            memory: 1Gi\n          limits:\n            cpu: 2000m\n            memory: 2Gi`,
+                yaml_body_parsed: `apiVersion=apps/v1,kind=Deployment,metadata.name=api-server,metadata.namespace=production,metadata.labels.app=api-server,metadata.labels.version=v2.15.0,spec.replicas=5,spec.template.spec.containers.0.image=123456789012.dkr.ecr.us-west-2.amazonaws.com/api-server:v2.15.0,spec.template.spec.containers.0.resources.requests.cpu=500m,spec.template.spec.containers.0.resources.requests.memory=1Gi`,
+                live_manifest_incluster: 'sha256:b4a9d3f2e1c8b5a2e9d6c3f0a7b4e1d8c5f2a9b6e3c0d7f4a1b8e5c2d9f6a3b0e7c4d1f8a5b2e9c6d3f0a7b4e1d8c5f2a9b6e3c0d7f4a1b8e5c2d9f6a3b0e7',
+                force_new: false,
+                server_side_apply: true,
+              },
+            },
+          },
+          {
+            address: 'kubectl_manifest.api_namespace',
+            type: 'kubectl_manifest',
+            name: 'api_namespace',
+            module_address: 'module.k8s_workloads',
+            change: {
+              actions: ['update'],
+              before: {
+                yaml_body: `apiVersion: v1\nkind: Namespace\nmetadata:\n  name: production\n  labels:\n    team: platform\n    environment: production\n  annotations:\n    iam.amazonaws.com/permitted: "arn:aws:iam::123456789012:role/production-*"`,
+                yaml_body_parsed: `apiVersion=v1,kind=Namespace,metadata.name=production,metadata.labels.team=platform,metadata.labels.environment=production,metadata.annotations.iam.amazonaws.com/permitted=arn:aws:iam::123456789012:role/production-*`,
+                live_manifest_incluster: 'sha256:c1e4a7b0d3f6c9a2e5b8d1f4c7a0e3b6d9f2c5a8e1b4d7f0c3a6e9b2d5f8c1a4e7b0d3f6c9a2e5b8d1f4c7a0e3b6d9f2c5a8e1b4d7f0c3a6e9b2d5f8c1a4',
+              },
+              after: {
+                yaml_body: `apiVersion: v1\nkind: Namespace\nmetadata:\n  name: production\n  labels:\n    team: platform\n    environment: production\n    cost-center: eng-platform\n  annotations:\n    iam.amazonaws.com/permitted: "arn:aws:iam::123456789012:role/production-*"\n    scheduler.alpha.kubernetes.io/defaultTolerations: '[{"operator":"Equal","effect":"NoSchedule","key":"dedicated","value":"platform"}]'`,
+                yaml_body_parsed: `apiVersion=v1,kind=Namespace,metadata.name=production,metadata.labels.team=platform,metadata.labels.environment=production,metadata.labels.cost-center=eng-platform,metadata.annotations.iam.amazonaws.com/permitted=arn:aws:iam::123456789012:role/production-*,metadata.annotations.scheduler.alpha.kubernetes.io/defaultTolerations=[{"operator":"Equal","effect":"NoSchedule","key":"dedicated","value":"platform"}]`,
+                live_manifest_incluster: 'sha256:d2f5b8e1a4c7d0f3b6e9c2d5f8a1b4e7c0d3f6a9b2e5c8d1f4a7b0e3c6d9f2a5b8e1c4d7f0a3b6e9c2d5f8a1b4e7c0d3f6a9b2e5c8d1f4a7b0e3c6d9f2a5',
+              },
+            },
+          },
+        ],
+        output_changes: {},
+      } as any
+    }
+  />
+)
+
 export const DriftWithChangesAndOutputs = () => (
   <TerraformDiff
     plan={

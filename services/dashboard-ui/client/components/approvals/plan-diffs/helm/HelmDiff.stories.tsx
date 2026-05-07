@@ -1184,3 +1184,143 @@ const vmagentSingleRemovalPlan = {
 export const VmagentSingleRemoval = () => (
   <HelmDiff plan={vmagentSingleRemovalPlan} />
 )
+
+const longAnnotationsAndEnvVarsPlan = {
+  plan: `production, api-server, Deployment (apps/v1) to be changed
+production, api-server-config, ConfigMap (v1) to be changed
+Plan: 0 to add, 2 to change, 0 to destroy`,
+  op: 'upgrade',
+  helm_content_diff: [
+    {
+      api: 'apps/v1',
+      kind: 'Deployment',
+      name: 'api-server',
+      namespace: 'production',
+      before: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+  namespace: production
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/production-api-server-irsa-us-west-2
+    kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"api-server","namespace":"production"}}'
+    deployment.kubernetes.io/revision: "14"
+  labels:
+    app.kubernetes.io/name: api-server
+    app.kubernetes.io/version: v2.14.0
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api-server
+        app.kubernetes.io/version: v2.14.0
+    spec:
+      serviceAccountName: api-server
+      containers:
+      - name: api-server
+        image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/api-server:v2.14.0-amd64-sha256-a3f8c2e1d09b4f7e
+        env:
+        - name: DATABASE_URL
+          value: postgresql://api_user:$(DB_PASSWORD)@production-aurora-cluster.cluster-cabcdefghijk.us-west-2.rds.amazonaws.com:5432/api_production?sslmode=require&connect_timeout=10&application_name=api-server
+        - name: REDIS_URL
+          value: rediss://production-elasticache.abc123.ng.0001.usw2.cache.amazonaws.com:6380/0
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-collector.monitoring.svc.cluster.local:4317
+        - name: AWS_STS_REGIONAL_ENDPOINTS
+          value: regional
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi`,
+      after: `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-server
+  namespace: production
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/production-api-server-irsa-us-west-2
+    kubectl.kubernetes.io/last-applied-configuration: '{"apiVersion":"apps/v1","kind":"Deployment","metadata":{"name":"api-server","namespace":"production"}}'
+    deployment.kubernetes.io/revision: "15"
+    prometheus.io/scrape: "true"
+    prometheus.io/path: /metrics
+    prometheus.io/port: "9090"
+  labels:
+    app.kubernetes.io/name: api-server
+    app.kubernetes.io/version: v2.15.0
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api-server
+        app.kubernetes.io/version: v2.15.0
+    spec:
+      serviceAccountName: api-server
+      containers:
+      - name: api-server
+        image: 123456789012.dkr.ecr.us-west-2.amazonaws.com/api-server:v2.15.0-amd64-sha256-b4c9d3f2e1a8b5d2
+        env:
+        - name: DATABASE_URL
+          value: postgresql://api_user:$(DB_PASSWORD)@production-aurora-cluster.cluster-cabcdefghijk.us-west-2.rds.amazonaws.com:5432/api_production?sslmode=require&connect_timeout=10&application_name=api-server
+        - name: REDIS_URL
+          value: rediss://production-elasticache.abc123.ng.0001.usw2.cache.amazonaws.com:6380/0
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: http://otel-collector.monitoring.svc.cluster.local:4317
+        - name: AWS_STS_REGIONAL_ENDPOINTS
+          value: regional
+        - name: CORS_ALLOWED_ORIGINS
+          value: https://app.acme.io,https://admin.acme.io,https://staging.acme.io,https://localhost:3000
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 2Gi`,
+    },
+    {
+      api: 'v1',
+      kind: 'ConfigMap',
+      name: 'api-server-config',
+      namespace: 'production',
+      before: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-server-config
+  namespace: production
+data:
+  LOG_LEVEL: info
+  MAX_CONNECTIONS: "100"
+  TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  ALLOWED_REDIRECT_URIS: https://app.acme.io/auth/callback,https://admin.acme.io/auth/callback`,
+      after: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-server-config
+  namespace: production
+data:
+  LOG_LEVEL: info
+  MAX_CONNECTIONS: "200"
+  TRUSTED_PROXIES: 10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  ALLOWED_REDIRECT_URIS: https://app.acme.io/auth/callback,https://admin.acme.io/auth/callback,https://staging.acme.io/auth/callback
+  FEATURE_FLAGS_ENDPOINT: http://flagsmith.internal.svc.cluster.local:8000/api/v1/flags/?environment=production
+  SENTRY_DSN: https://a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4@o123456.ingest.sentry.io/7890123`,
+    },
+  ],
+} as any
+
+export const LongAnnotationsAndEnvVars = () => (
+  <HelmDiff plan={longAnnotationsAndEnvVarsPlan} />
+)
