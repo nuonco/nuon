@@ -68,6 +68,7 @@ export const CancelWorkflowModalContainer = ({
 
 export const CancelWorkflowButton = ({
   workflow,
+  children,
   ...props
 }: ICancelWorkflow & IButtonAsButton) => {
   const { addModal } = useSurfaces()
@@ -80,7 +81,7 @@ export const CancelWorkflowButton = ({
       onClick={() => addModal(modal)}
       {...props}
     >
-      Cancel workflow
+      {children ?? 'Cancel workflow'}
       {props?.isMenuButton ? <Icon variant="StopCircle" /> : null}
     </Button>
   ) : null
