@@ -2,6 +2,7 @@ import { Text } from '@/components/common/Text'
 import type { TTerraformOutputChange } from '@/types'
 import { cn } from '@/utils/classnames'
 import { deepEqual, isComplex, isStringJson } from '@/utils/terraform-utils'
+import { DiffLineExpandButton } from '../DiffLineExpandModal'
 import { TreeDiffValue } from './TreeDiffValue'
 
 type TTerraformValues = Pick<
@@ -83,6 +84,8 @@ export const TerraformValuesDiff = ({
 
           const formattedBefore = formatValue(value.before)
           const formattedAfter = formatValue(value.after)
+          const isLongValue =
+            formattedBefore.length > 40 || formattedAfter.length > 40
 
           return (
             <div
@@ -116,6 +119,14 @@ export const TerraformValuesDiff = ({
                     >
                       {formattedAfter}
                     </span>
+                    {isLongValue && (
+                      <DiffLineExpandButton
+                        label={value.key}
+                        prefix={prefix.char as '~' | '+' | '-'}
+                        before={value.before}
+                        after={value.after}
+                      />
+                    )}
                   </>
                 ) : (
                   <>
@@ -132,6 +143,14 @@ export const TerraformValuesDiff = ({
                     >
                       {formattedAfter}
                     </span>
+                    {isLongValue && (
+                      <DiffLineExpandButton
+                        label={value.key}
+                        prefix={prefix.char as '~' | '+' | '-'}
+                        before={value.before}
+                        after={value.after}
+                      />
+                    )}
                   </>
                 )}
               </span>
