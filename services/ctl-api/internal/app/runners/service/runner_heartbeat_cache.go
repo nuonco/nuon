@@ -11,7 +11,7 @@ import (
 const (
 	runnerHeartbeatRunnerCacheSize  = 4096
 	runnerHeartbeatInstallCacheSize = 4096
-	runnerHeartbeatCacheTTL         = 5 * time.Minute
+	runnerHeartbeatCacheTTL         = 1 * time.Hour
 )
 
 // RunnerHeartbeatCache holds the lookups used to enrich heartbeat metric tags.
