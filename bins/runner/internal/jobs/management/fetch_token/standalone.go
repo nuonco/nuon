@@ -25,8 +25,8 @@ type FetchTokenResult struct {
 
 // FetchToken authenticates using cloud instance credentials and returns the token without writing to disk.
 // It detects the cloud provider from the CLOUD_PROVIDER env var, falling back to auto-detection.
-// For AWS, authMethod selects the authentication strategy: "iid" for Instance Identity Document
-// (requires runnerID), or "" / "sts" (default) for presigned STS requests.
+// For AWS, authMethod selects the authentication strategy: "" / "iid" (default) for Instance
+// Identity Document (requires runnerID), or "sts" for presigned STS requests.
 func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, runnerID string) (*FetchTokenResult, error) {
 	provider := detectCloudProvider(ctx)
 	switch provider {
@@ -34,10 +34,10 @@ func FetchToken(ctx context.Context, apiClient nuonrunner.Client, authMethod, ru
 		return fetchTokenGCP(ctx, apiClient)
 	case "aws":
 		switch authMethod {
-		case "iid":
-			return fetchTokenAWSIID(ctx, apiClient, runnerID)
-		default:
+		case "sts":
 			return fetchTokenAWSSTS(ctx, apiClient)
+		default:
+			return fetchTokenAWSIID(ctx, apiClient, runnerID)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported or undetected cloud provider: %s", provider)
