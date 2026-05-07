@@ -191,6 +191,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		// These mirror the phone-home pattern: public, with phone_home_id
 		// in the URL acting as the per-stack-version secret.
 		installs.POST("/stack-runs/:phone_home_id", s.CreateInstallStackVersionRun)
+		// Kind-scoped variant: /stack-runs/{phone_home_id}/kind/{provision|reprovision|deprovision}.
+		// Distinct path segment ("kind") so this doesn't shadow the PATCH
+		// /stack-runs/:phone_home_id/:run_id terminal-update route.
+		installs.POST("/stack-runs/:phone_home_id/kind/:kind", s.CreateInstallStackVersionRun)
 		installs.PATCH("/stack-runs/:phone_home_id/:run_id", s.UpdateInstallStackVersionRun)
 		installs.GET("/generate-terraform-installer-config", s.GenerateTerraformInstallerConfig)
 

@@ -25,6 +25,8 @@ Usage:
 
 Commands:
   provision     Create the install stack in AWS.
+  reprovision   Reconcile an existing install (idempotent re-run; recorded as
+                a distinct run kind in the dashboard).
   deprovision   Tear down the install stack.
   status        Print the persisted state file for an install.
 
@@ -45,7 +47,9 @@ func main() {
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 	case "provision":
-		runProvision()
+		runProvision(false)
+	case "reprovision":
+		runProvision(true)
 	case "deprovision":
 		runDeprovision()
 	case "status":
@@ -92,8 +96,12 @@ func (c *commonFlags) toOptions() (installer.Options, error) {
 	return o, nil
 }
 
-func runProvision() {
-	fs := flag.NewFlagSet("provision", flag.ExitOnError)
+func runProvision(reprovision bool) {
+	verb := "provision"
+	if reprovision {
+		verb = "reprovision"
+	}
+	fs := flag.NewFlagSet(verb, flag.ExitOnError)
 	c := &commonFlags{}
 	bindCommon(fs, c)
 	_ = fs.Parse(os.Args[2:])
@@ -110,7 +118,11 @@ func runProvision() {
 		fail(err)
 	}
 
-	st, provErr := inst.Provision(ctx)
+	run := inst.Provision
+	if reprovision {
+		run = inst.Reprovision
+	}
+	st, provErr := run(ctx)
 	// Flush logs with a fresh, uncanceled context — defer + os.Exit would skip
 	// this and the OTLP batch processor would never push.
 	closeCtx, closeCancel := context.WithTimeout(context.Background(), 10*time.Second)

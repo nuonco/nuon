@@ -5,11 +5,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
@@ -101,9 +105,17 @@ func (s *service) UpdateInstallStackVersionRun(ctx *gin.Context) {
 		return
 	}
 
-	parentStatus := app.InstallStackVersionStatusActive
-	if req.Status == app.InstallStackVersionRunStatusFailed {
+	// Parent status reflects what the run actually did. A failed run always
+	// surfaces as StatusError. A succeeded deprovision flips the version to
+	// Destroyed; provision/reprovision resolve to Active.
+	var parentStatus app.Status
+	switch {
+	case req.Status == app.InstallStackVersionRunStatusFailed:
 		parentStatus = app.StatusError
+	case run.Kind == app.InstallStackVersionRunKindDeprovision:
+		parentStatus = app.InstallStackVersionStatusDestroyed
+	default:
+		parentStatus = app.InstallStackVersionStatusActive
 	}
 	if res := s.db.WithContext(ctx).
 		Model(&app.InstallStackVersion{ID: stackVersion.ID}).
@@ -129,5 +141,60 @@ func (s *service) UpdateInstallStackVersionRun(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("reload run: %w", res.Error))
 		return
 	}
+
+	// Trigger the same UpdateInstallStackOutputs flow the legacy phone-home
+	// handler runs (post_install_phone_home.go:163). Without this, the
+	// install_stack_outputs row stays empty and runner-auth/aws-iid 5xxs on
+	// every IID auth request because it can't validate the runner's account
+	// against the install. Provision and reprovision both populate outputs;
+	// failed runs and deprovisions skip — failure shouldn't rewrite outputs,
+	// and a deprovision should leave them intact for audit.
+	terminal := req.Status == app.InstallStackVersionRunStatusSucceeded
+	wantsOutputs := run.Kind == app.InstallStackVersionRunKindProvision ||
+		run.Kind == app.InstallStackVersionRunKindReprovision
+	if terminal && wantsOutputs {
+		if err := s.dispatchUpdateInstallStackOutputs(ctx, &stackVersion, installID); err != nil {
+			// Don't fail the run on dispatch error — the phone-home payload is
+			// already saved, and a manual signal can replay it. Log loudly.
+			s.l.Error("dispatch update install stack outputs",
+				zap.Error(err),
+				zap.String("install_id", installID),
+				zap.String("run_id", runID))
+		}
+	}
+
 	ctx.JSON(http.StatusOK, run)
+}
+
+// dispatchUpdateInstallStackOutputs fires the same workflow signal the legacy
+// phone-home endpoint fires (see post_install_phone_home.go:146-174). The
+// signal body is identical — only the trigger point differs.
+func (s *service) dispatchUpdateInstallStackOutputs(ctx *gin.Context, stackVersion *app.InstallStackVersion, installID string) error {
+	// Public endpoint: middleware doesn't set org or account on the context.
+	// The features client needs the org; queue_signals INSERTs need an
+	// account ID for the BeforeCreate hook's NOT NULL CreatedByID constraint.
+	reqCtx := cctx.SetOrgIDContext(ctx.Request.Context(), stackVersion.OrgID)
+	reqCtx = cctx.SetAccountIDContext(reqCtx, stackVersion.CreatedByID)
+
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(reqCtx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		return fmt.Errorf("checking features: %w", err)
+	}
+	if useQueues {
+		queueID, err := s.getInstallSignalsQueueID(reqCtx, installID)
+		if err != nil {
+			return err
+		}
+		if err := s.enqueueInstallSignal(reqCtx, queueID, &updateinstallstackoutputs.Signal{
+			InstallStackID: stackVersion.InstallStackID,
+		}, "", ""); err != nil {
+			return fmt.Errorf("enqueue signal: %w", err)
+		}
+		return nil
+	}
+	s.evClient.Send(reqCtx, installID, &signals.Signal{
+		Type:           signals.OperationUpdateInstallStackOutputs,
+		InstallStackID: stackVersion.InstallStackID,
+	})
+	return nil
 }
