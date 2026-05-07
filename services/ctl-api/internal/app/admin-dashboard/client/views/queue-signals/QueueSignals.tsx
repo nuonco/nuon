@@ -9,6 +9,17 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
+import { DateTime } from 'luxon'
+
+function enqueueDuration(meta: Record<string, any> | undefined): string {
+  if (!meta?.enqueue_started_at || !meta?.enqueue_finished_at) return '-'
+  const start = DateTime.fromISO(meta.enqueue_started_at)
+  const end = DateTime.fromISO(meta.enqueue_finished_at)
+  if (!start.isValid || !end.isValid) return '-'
+  const ms = end.diff(start).as('milliseconds')
+  if (ms < 1000) return `${Math.round(ms)}ms`
+  return `${(ms / 1000).toFixed(1)}s`
+}
 
 export const QueueSignals = () => {
   const [searchParams] = useSearchParams()
@@ -82,6 +93,8 @@ export const QueueSignals = () => {
               <th>Owner</th>
               <th>Queue</th>
               <th>Status</th>
+              <th>Enqueued</th>
+              <th>Enqueue Time</th>
               <th>Created</th>
             </tr>
           </thead>
@@ -100,12 +113,24 @@ export const QueueSignals = () => {
                 <td>
                   <Badge variant="status" status={String(signal.status?.status || signal.status)}>{String(signal.status?.status || signal.status)}</Badge>
                 </td>
+                <td>
+                  {signal.enqueued
+                    ? <Badge variant="status" status="yes">{signal.status?.metadata?.enqueue_source || 'Yes'}</Badge>
+                    : <Badge variant="status" status="no">No</Badge>}
+                </td>
+                <td className="text-gray-500 dark:text-gray-400 text-xs">
+                  {signal.status?.metadata?.enqueue_started_at
+                    ? <span title={`${formatDate(signal.status.metadata.enqueue_started_at)} → ${formatDate(signal.status.metadata.enqueue_finished_at)}`}>
+                        {enqueueDuration(signal.status?.metadata)}
+                      </span>
+                    : '-'}
+                </td>
                 <td className="text-gray-500 dark:text-gray-400">{formatDate(signal.created_at)}</td>
               </tr>
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-gray-500 dark:text-gray-400 py-6">No signals found</td>
+                <td colSpan={8} className="text-center text-gray-500 dark:text-gray-400 py-6">No signals found</td>
               </tr>
             )}
           </tbody>
