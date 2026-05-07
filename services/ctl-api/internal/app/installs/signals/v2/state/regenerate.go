@@ -36,6 +36,7 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 	}
 
 	is := req.CachedState
+	var appID, appName, appConfigID string
 	if is == nil {
 		existing, err := installactivities.AwaitGetLatestInstallStateByInstallID(ctx, req.InstallID)
 		if err != nil {
@@ -52,6 +53,9 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 		}
 		is.ID = install.ID
 		is.Name = install.Name
+		appID = install.AppID
+		appConfigID = install.AppConfigID
+		appName = install.App.Name
 	}
 
 	var updatedPartials []state.PartialName
@@ -69,8 +73,11 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 			req.MetricsWriter.Timing("nuon.state.regenerate.partial.fetch.duration",
 				dur,
 				metrics.ToTags(map[string]string{
-					"install_id": req.InstallID,
-					"partial":    string(partial),
+					"install_id":    req.InstallID,
+					"partial":       string(partial),
+					"app_id":        appID,
+					"app_name":      appName,
+					"app_config_id": appConfigID,
 				}),
 			)
 		}
@@ -103,6 +110,9 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 		UpdatedPartials: updatedPartials,
 		LastModifiedAt:  lastModifiedAt,
 		GeneratedAt:     workflow.Now(ctx),
+		AppID:           appID,
+		AppName:         appName,
+		AppConfigID:     appConfigID,
 	}, nil
 }
 

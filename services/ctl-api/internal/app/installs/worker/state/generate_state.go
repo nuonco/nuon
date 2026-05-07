@@ -242,6 +242,9 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 	tags := metrics.ToTags(map[string]string{
 		"install_id":        req.InstallID,
 		"triggered_by_type": req.TriggeredByType,
+		"app_id":            install.AppID,
+		"app_name":          install.App.Name,
+		"app_config_id":     install.AppConfigID,
 	})
 	w.mw.Timing(ctx, "nuon.state.legacy.generate.duration", workflow.Now(ctx).Sub(start), tags...)
 	w.mw.Incr(ctx, "nuon.state.legacy.generate.count", tags...)

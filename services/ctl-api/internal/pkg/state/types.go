@@ -28,4 +28,7 @@ type ExecuteRegenerationResponse struct {
 	UpdatedPartials []PartialName
 	LastModifiedAt  map[PartialName]time.Time
 	GeneratedAt     time.Time
+	AppID           string
+	AppName         string
+	AppConfigID     string
 }
