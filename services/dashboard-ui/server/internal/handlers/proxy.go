@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,11 +19,17 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
+type authCacheEntry struct {
+	email   string
+	expires time.Time
+}
+
 type ProxyHandler struct {
 	cfg            *internal.Config
 	l              *zap.Logger
 	codecClient    *http.Client
 	codecSemaphore chan struct{}
+	authCache      sync.Map // token -> authCacheEntry
 }
 
 func NewProxyHandler(cfg *internal.Config, l *zap.Logger) *ProxyHandler {
@@ -206,6 +213,38 @@ func (h *ProxyHandler) proxyTemporalCodecDecode(c *gin.Context) {
 	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), limitedBody, nil)
 }
 
+const authCacheTTL = 5 * time.Minute
+
+func (h *ProxyHandler) lookupAuth(token string) (email string, ok bool) {
+	if v, found := h.authCache.Load(token); found {
+		entry := v.(authCacheEntry)
+		if time.Now().Before(entry.expires) {
+			return entry.email, true
+		}
+		h.authCache.Delete(token)
+	}
+	return "", false
+}
+
+func (h *ProxyHandler) verifyAndCache(c *gin.Context, token string) (string, error) {
+	if email, ok := h.lookupAuth(token); ok {
+		return email, nil
+	}
+	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+	if err != nil {
+		return "", err
+	}
+	me, err := client.GetAuthMe(c.Request.Context())
+	if err != nil {
+		return "", err
+	}
+	h.authCache.Store(token, authCacheEntry{
+		email:   me.Email,
+		expires: time.Now().Add(authCacheTTL),
+	})
+	return me.Email, nil
+}
+
 func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 	loginURL := h.cfg.AuthServiceUrl + "/?url=" + h.cfg.AppUrl
 	return func(c *gin.Context) {
@@ -215,13 +254,7 @@ func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
-		if err != nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		h.l.Debug("requireAuth calling GetAuthMe", zap.String("path", c.Request.URL.Path))
-		if _, err := client.GetAuthMe(c.Request.Context()); err != nil {
+		if _, verifyErr := h.verifyAndCache(c, token); verifyErr != nil {
 			c.Redirect(http.StatusFound, loginURL)
 			c.Abort()
 			return
@@ -233,10 +266,8 @@ func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 func (h *ProxyHandler) requireNuonEmail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, _ := c.Cookie(authCookie)
-		client, _ := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
-		h.l.Debug("requireNuonEmail calling GetAuthMe", zap.String("path", c.Request.URL.Path))
-		me, err := client.GetAuthMe(c.Request.Context())
-		if err != nil || !strings.HasSuffix(me.Email, "@nuon.co") {
+		email, err := h.verifyAndCache(c, token)
+		if err != nil || !strings.HasSuffix(email, "@nuon.co") {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
