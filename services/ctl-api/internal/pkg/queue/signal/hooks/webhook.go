@@ -78,6 +78,12 @@ const (
 	signalTypeExecuteWorkflowStep          signal.SignalType = "execute-workflow-step"
 	signalTypeWorkflowStepApprovalRequest  signal.SignalType = "workflow-step-approval-request"
 	signalTypeWorkflowStepApprovalResponse signal.SignalType = "workflow-step-approval-response"
+	// signalTypeDriftDetected mirrors driftdetected.SignalType — the
+	// notification-only signal dispatched from the plan-only check inside a
+	// drift_run / drift_run_reprovision_sandbox workflow when the plan
+	// observed actual changes. Its lifecycle events are how subscribers who
+	// opted into per-resource `drift_detected: true` get notified.
+	signalTypeDriftDetected signal.SignalType = "drift-detected"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -158,7 +164,8 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 	case signalTypeExecuteWorkflow,
 		signalTypeExecuteWorkflowStep,
 		signalTypeWorkflowStepApprovalRequest,
-		signalTypeWorkflowStepApprovalResponse:
+		signalTypeWorkflowStepApprovalResponse,
+		signalTypeDriftDetected:
 		return true
 	default:
 		return false
@@ -173,9 +180,10 @@ func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event sign
 
 	// Approval signals don't have a "started" semantic: a request has either
 	// happened (requested) or it hasn't, and a response is intrinsically
-	// terminal (approved / rejected). Skip the before-phase emission so
-	// consumers don't see a noisy intermediate event.
-	if isApprovalSignalType(event.SignalType) {
+	// terminal (approved / rejected). Drift-detected is a single-shot
+	// notification (its Execute is a no-op) — a "started" emission would
+	// just produce a duplicate event before the real one. Skip both.
+	if isApprovalSignalType(event.SignalType) || event.SignalType == signalTypeDriftDetected {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -459,7 +467,13 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		data.Outcome = h.buildOutcome(event, outcome)
 	}
 
-	if kind == kindWorkflowStep && event.StepID != "" {
+	// Enrich the step on workflow_step.lifecycle events AND on the
+	// drift-detected signal — the latter has Kind=workflow but its StepID
+	// points at the plan-only step that observed the drift, and the renderer
+	// (Slack flat drift message + webhook subscribers) needs ComponentName /
+	// SandboxID and the matching Component / Sandbox dashboard links to
+	// render a useful "drift detected on X" payload.
+	if event.StepID != "" && (kind == kindWorkflowStep || event.SignalType == signalTypeDriftDetected) {
 		stepRef, installName, emit := h.enrichStep(ctx, event.StepID)
 		// Drop the entire step.lifecycle event for hidden / internal steps
 		// (e.g. "generate install state"). Webhook consumers should only see
@@ -751,14 +765,21 @@ func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID stri
 	ref.TargetID = step.StepTargetID
 	ref.ExecutionType = string(step.ExecutionType)
 
+	// Both singular and plural target type strings exist in the codebase
+	// (WorkflowStepTargetTypeInstallDeploy / *Deploys, etc.) but the actual
+	// install_workflow_steps.step_target_type column is consistently the
+	// plural form ("install_deploys", "install_sandbox_runs"). Match both
+	// defensively so any legacy singular row also enriches correctly.
 	var installName string
 	switch step.StepTargetType {
-	case string(app.WorkflowStepTargetTypeInstallDeploy):
+	case string(app.WorkflowStepTargetTypeInstallDeploy),
+		string(app.WorkflowStepTargetTypeInstallDeploys):
 		meta := h.lookupDeployTargetMeta(ctx, step.StepTargetID)
 		ref.ComponentID = meta.ComponentID
 		ref.ComponentName = meta.ComponentName
 		installName = meta.InstallName
-	case string(app.WorkflowStepTargetTypeInstallSandboxRun):
+	case string(app.WorkflowStepTargetTypeInstallSandboxRun),
+		string(app.WorkflowStepTargetTypeInstallSandboxRuns):
 		meta := h.lookupSandboxRunTargetMeta(ctx, step.StepTargetID)
 		ref.SandboxID = meta.SandboxID
 		installName = meta.InstallName
