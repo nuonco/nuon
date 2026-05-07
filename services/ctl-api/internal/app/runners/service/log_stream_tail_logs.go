@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -123,10 +124,44 @@ type LogStreamTailLogsResponse struct {
 
 // @ID						LogStreamTailLogs
 // @Summary				long-poll tail a log stream
-// @Description			Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
+// @Description			Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream.
 // @Param					log_stream_id	path	string	true	"log stream ID"
 // @Param					since			query	string	false	"composite cursor in the form `<unix_nano>:<id>`; empty starts from the oldest row"
 // @Param					wait			query	string	false	"max wait for new rows (Go duration, capped server-side at 30s)"
+// @Param					start_time			query	string		false	"only return records with timestamp >= start_time (RFC3339)"
+// @Param					end_time			query	string		false	"only return records with timestamp <= end_time (RFC3339)"
+// @Param					service_name		query	[]string	false	"filter by service_name (repeatable) collectionFormat(multi)"
+// @Param					scope_name			query	[]string	false	"filter by scope_name (repeatable; e.g. oteljob, system) collectionFormat(multi)"
+// @Param					scope_version		query	[]string	false	"filter by scope_version (repeatable) collectionFormat(multi)"
+// @Param					resource_schema_url	query	[]string	false	"filter by resource_schema_url (repeatable) collectionFormat(multi)"
+// @Param					scope_schema_url	query	[]string	false	"filter by scope_schema_url (repeatable) collectionFormat(multi)"
+// @Param					severity_text		query	[]string	false	"filter by severity_text (repeatable; INFO/WARN/ERROR/...) collectionFormat(multi)"
+// @Param					severity_number_min	query	int			false	"filter by severity_number >= N (OTEL: TRACE=1..FATAL=24)"
+// @Param					severity_number_max	query	int			false	"filter by severity_number <= N (OTEL: TRACE=1..FATAL=24)"
+// @Param					trace_id			query	string		false	"filter by exact trace_id (dedicated CH column)"
+// @Param					span_id				query	string		false	"filter by exact span_id (dedicated CH column)"
+// @Param					trace_flags			query	int			false	"filter by exact trace_flags (UInt8)"
+// @Param					runner_id			query	string		false	"filter by runner_id"
+// @Param					runner_job_id		query	string		false	"filter by runner_job_id (part of CH ORDER BY — efficient)"
+// @Param					runner_group_id		query	string		false	"filter by runner_group_id"
+// @Param					runner_job_execution_id		query	string	false	"filter by runner_job_execution_id"
+// @Param					runner_job_execution_step	query	string	false	"filter by runner_job_execution_step"
+// @Param					tool				query	[]string	false	"filter by log_attributes['nuon.tool'] (repeatable; e.g. helm, terraform, kubernetes_manifest, runner) collectionFormat(multi)"
+// @Param					helm_release_name	query	string		false	"filter by log_attributes['helm.release_name']"
+// @Param					helm_chart_name		query	string		false	"filter by log_attributes['helm.chart_name']"
+// @Param					helm_chart_id		query	string		false	"filter by log_attributes['helm.chart_id']"
+// @Param					helm_namespace		query	string		false	"filter by log_attributes['helm.namespace']"
+// @Param					helm_operation		query	string		false	"filter by log_attributes['helm.operation']"
+// @Param					tf_workspace_id		query	string		false	"filter by log_attributes['tf.workspace_id']"
+// @Param					tf_operation		query	string		false	"filter by log_attributes['tf.operation']"
+// @Param					k8s_kind			query	string		false	"filter by log_attributes['k8s.kind']"
+// @Param					k8s_namespace		query	string		false	"filter by log_attributes['k8s.namespace']"
+// @Param					k8s_name			query	string		false	"filter by log_attributes['k8s.name']"
+// @Param					k8s_operation		query	string		false	"filter by log_attributes['k8s.operation']"
+// @Param					attr				query	[]string	false	"generic log_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					resource_attr		query	[]string	false	"generic resource_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					scope_attr			query	[]string	false	"generic scope_attributes filter as 'key:value' (repeatable, max 16 across all attr params) collectionFormat(multi)"
+// @Param					q					query	string		false	"case-insensitive substring filter on log body"
 // @Tags					runners
 // @Accept					json
 // @Produce				json
@@ -160,6 +195,12 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 		return
 	}
 
+	filters, err := parseLogFilters(ctx)
+	if err != nil {
+		ctx.Error(stderr.NewInvalidRequest(err))
+		return
+	}
+
 	wait := tailMaxWait
 	if w := ctx.Query("wait"); w != "" {
 		d, err := time.ParseDuration(w)
@@ -180,7 +221,7 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 	probes := 0
 	for {
 		probeStart := time.Now()
-		logs, next, hasMore, qerr := s.tailProbe(ctx.Request.Context(), orgID, logStreamID, cursor)
+		logs, next, hasMore, qerr := s.tailProbe(ctx.Request.Context(), orgID, logStreamID, cursor, filters)
 		probes++
 		s.mw.Count(metricTailProbe, 1, nil)
 		if qerr != nil {
@@ -245,6 +286,15 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 
 		s.mw.Timing(metricTailEmptyProbeMs, time.Since(probeStart), nil)
 		firstIter = false
+
+		// A filtered probe can match nothing while rows still arrived;
+		// the probe hands back the unfiltered high-water mark as `next`
+		// so the cursor skips the gap instead of rescanning it forever.
+		if next != "" {
+			if cur, perr := parseTailCursor(next); perr == nil {
+				cursor = cur
+			}
+		}
 
 		// Drop out at the wait deadline (or when the client closes the
 		// connection). Returning an empty payload is the long-poll
@@ -334,7 +384,7 @@ func encodeTailCursor(c tailCursor) string {
 // tailProbe performs a single bounded ClickHouse query for rows after the
 // supplied cursor. It blocks on the per-pod semaphore so a burst of tail
 // requests doesn't translate to an unbounded burst of CH connections.
-func (s *service) tailProbe(parent context.Context, orgID, logStreamID string, cursor tailCursor) ([]app.OtelLogRecord, string, bool, error) {
+func (s *service) tailProbe(parent context.Context, orgID, logStreamID string, cursor tailCursor, filters logFilters) ([]app.OtelLogRecord, string, bool, error) {
 	select {
 	case tailProbeSem <- struct{}{}:
 	case <-parent.Done():
@@ -349,25 +399,54 @@ func (s *service) tailProbe(parent context.Context, orgID, logStreamID string, c
 		Where("org_id = ?", orgID).
 		Where("log_stream_id = ?", logStreamID)
 
-	if cursor.tsNano > 0 {
-		// `timestamp` stays unwrapped on the left so the CH sort key on
-		// (org_id, log_stream_id, runner_job_id, timestamp_time,
-		// timestamp) can prune granules.
-		//
-		// When the caller carries an id, use a strictly-greater
-		// composite cursor so rows sharing a timestamp paginate without
-		// dupes. When the caller hands off from the legacy read
-		// endpoint (which only knows the timestamp), id is empty and
-		// the safe interpretation is "strictly after this ns" — the
-		// legacy paginator already consumed everything at the boundary.
+	// `timestamp` stays unwrapped on the left so the CH sort key on
+	// (org_id, log_stream_id, runner_job_id, timestamp_time,
+	// timestamp) can prune granules.
+	//
+	// When the caller carries an id, use a strictly-greater
+	// composite cursor so rows sharing a timestamp paginate without
+	// dupes. When the caller hands off from the legacy read
+	// endpoint (which only knows the timestamp), id is empty and
+	// the safe interpretation is "strictly after this ns" — the
+	// legacy paginator already consumed everything at the boundary.
+	addCursorPred := func(q *gorm.DB) *gorm.DB {
+		if cursor.tsNano <= 0 {
+			return q
+		}
 		if cursor.id != "" {
-			q = q.Where(
+			return q.Where(
 				"(timestamp > fromUnixTimestamp64Nano(?)) OR (timestamp = fromUnixTimestamp64Nano(?) AND id > ?)",
 				cursor.tsNano, cursor.tsNano, cursor.id,
 			)
-		} else {
-			q = q.Where("timestamp > fromUnixTimestamp64Nano(?)", cursor.tsNano)
 		}
+		return q.Where("timestamp > fromUnixTimestamp64Nano(?)", cursor.tsNano)
+	}
+
+	q = applyLogFilters(addCursorPred(q), filters)
+
+	// With filters, an empty probe no longer means "nothing new": rows
+	// after the cursor may exist but not match. Bounded rescan per probe
+	// would grow without bound, so cap the probe at an unfiltered
+	// high-water mark and hand back that mark as the next cursor when
+	// nothing matching is found. The HWM runs FIRST and the filtered
+	// query is bounded by it — a row inserted between the two queries
+	// lies beyond the HWM and therefore still after the returned cursor,
+	// so nothing matching can be skipped.
+	hwm := tailCursor{}
+	if hasAnyFilter(filters) {
+		var err error
+		hwm, err = s.tailHighWaterMark(ctx, orgID, logStreamID, cursor)
+		if err != nil {
+			return nil, "", false, errors.Wrap(tailProbeQueryError(ctx, err), "unable to query log tail high-water mark")
+		}
+		// True idle: nothing after the cursor at all.
+		if hwm.tsNano == 0 {
+			return nil, "", false, nil
+		}
+		q = q.Where(
+			"(timestamp < fromUnixTimestamp64Nano(?)) OR (timestamp = fromUnixTimestamp64Nano(?) AND id <= ?)",
+			hwm.tsNano, hwm.tsNano, hwm.id,
+		)
 	}
 
 	// LIMIT pageSize+1 so we can report `has_more` without a separate
@@ -387,11 +466,47 @@ func (s *service) tailProbe(parent context.Context, orgID, logStreamID string, c
 	}
 
 	if len(rows) == 0 {
+		if hwm.tsNano > 0 {
+			return rows, encodeTailCursor(hwm), false, nil
+		}
 		return rows, "", false, nil
 	}
 	last := rows[len(rows)-1]
 	next := encodeTailCursor(tailCursor{tsNano: last.Timestamp.UnixNano(), id: last.ID})
 	return rows, next, hasMore, nil
+}
+
+// tailHighWaterMark finds the newest row after the cursor, ignoring user
+// filters, so a filtered probe that matches nothing can still advance the
+// cursor past the gap. A plain ordered LIMIT 1 (no aggregation) rides the
+// sort key directly; argMax(id, (ts, id)) trips ILLEGAL_AGGREGATION on
+// ClickHouse 24.3 when the query carries an OR predicate.
+func (s *service) tailHighWaterMark(ctx context.Context, orgID, logStreamID string, cursor tailCursor) (tailCursor, error) {
+	q := "SELECT timestamp AS ts, id FROM otel_log_records WHERE org_id = ? AND log_stream_id = ?"
+	args := []interface{}{orgID, logStreamID}
+
+	if cursor.tsNano > 0 {
+		if cursor.id != "" {
+			q += " AND ((timestamp > fromUnixTimestamp64Nano(?)) OR (timestamp = fromUnixTimestamp64Nano(?) AND id > ?))"
+			args = append(args, cursor.tsNano, cursor.tsNano, cursor.id)
+		} else {
+			q += " AND timestamp > fromUnixTimestamp64Nano(?)"
+			args = append(args, cursor.tsNano)
+		}
+	}
+	q += " ORDER BY timestamp DESC, id DESC LIMIT 1"
+
+	var row struct {
+		Ts time.Time `gorm:"column:ts"`
+		ID string    `gorm:"column:id"`
+	}
+	if err := s.chDB.WithContext(ctx).Raw(q, args...).Scan(&row).Error; err != nil {
+		return tailCursor{}, err
+	}
+	if row.ID == "" || row.Ts.IsZero() || row.Ts.UnixNano() <= 0 {
+		return tailCursor{}, nil
+	}
+	return tailCursor{tsNano: row.Ts.UnixNano(), id: row.ID}, nil
 }
 
 // jitter returns a uniformly distributed value in [-d/4, +d/4) so a
