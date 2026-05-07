@@ -56,16 +56,15 @@ export const LogSeverityDropdown = ({ filters }: ILogSeverityDropdown) => {
       alignment="right"
       closeOnBlur={false}
     >
-      <Menu className="!w-56">
+      <Menu className="min-w-56">
         {LOG_SEVERITIES.map((s) => {
           const checked = selectedSeverities.has(s.label)
-          const isOnlySelected =
-            selectedSeverities.size === 1 && checked
+          const isOnlySelected = selectedSeverities.size === 1 && checked
           return (
             <CheckboxInputWithButton
               key={s.label}
               className={cn(
-                'w-full border-l-4 pl-2 pr-2',
+                'w-full border-l-4 pl-2 pr-0',
                 getSeverityBorderClasses(s.value, 'l')
               )}
               name={s.label}
@@ -74,7 +73,7 @@ export const LogSeverityDropdown = ({ filters }: ILogSeverityDropdown) => {
               onChange={() => handleSeverityInputToggle(s.label)}
               buttonProps={{
                 className:
-                  '!py-1 !pl-0 !pr-1 flex items-center justify-between group w-full',
+                  '!p-1 flex items-center justify-between group w-full !rounded-sm',
                 variant: 'ghost',
                 type: 'button',
                 value: s.label,

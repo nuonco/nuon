@@ -10,18 +10,20 @@ import { DownloadLogsModal, DownloadLogsButton } from './DownloadLogs'
 interface IDownloadLogsModalContainer extends IModal {
   orgId: string
   logStreamId: string
+  includeSystemLogs: boolean
 }
 
 export const DownloadLogsModalContainer = ({
   orgId,
   logStreamId,
+  includeSystemLogs,
   ...props
 }: IDownloadLogsModalContainer) => {
   const { removeModal } = useSurfaces()
 
   const { mutate: download, isPending } = useMutation({
-    mutationFn: async (mode: 'all' | 'user') => {
-      const params = mode === 'user' ? '?job_output=true' : ''
+    mutationFn: async (includeSystem: boolean) => {
+      const params = includeSystem ? '' : '?job_output=true'
       const resp = await fetch(
         `/api/orgs/${orgId}/log-streams/${logStreamId}/logs/download${params}`
       )
@@ -39,17 +41,28 @@ export const DownloadLogsModalContainer = ({
   return (
     <DownloadLogsModal
       isPending={isPending}
-      onDownload={(mode) => download(mode)}
+      includeSystemLogs={includeSystemLogs}
+      onDownload={(includeSystem) => download(includeSystem)}
       {...props}
     />
   )
 }
 
-export const DownloadLogsButtonContainer = ({ onClick: _onClick, ...props }: IButtonAsButton) => {
+export const DownloadLogsButtonContainer = ({
+  includeSystemLogs = false,
+  onClick: _onClick,
+  ...props
+}: { includeSystemLogs?: boolean } & IButtonAsButton) => {
   const { org } = useOrg()
   const { logStream } = useLogStream()
   const { addModal } = useSurfaces()
-  const modal = <DownloadLogsModalContainer orgId={org.id} logStreamId={logStream.id} />
+  const modal = (
+    <DownloadLogsModalContainer
+      orgId={org.id}
+      logStreamId={logStream.id}
+      includeSystemLogs={includeSystemLogs}
+    />
+  )
 
   return (
     <DownloadLogsButton onClick={() => addModal(modal)} {...props} />
