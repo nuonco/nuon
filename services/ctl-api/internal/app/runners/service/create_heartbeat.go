@@ -69,12 +69,12 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
-	var installID string
+	var installID, installName string
 	if runner.RunnerGroup.OwnerType == plugins.TableName(s.db, app.Install{}) {
 		installID = runner.RunnerGroup.OwnerID
+		installName = s.heartbeatGetInstallName(ctx, installID)
 	}
 
-	// TODO(ey): add install_name and a cache here.
 	tags := metrics.ToTags(map[string]string{
 		"org_id":         runner.OrgID,
 		"org_name":       runner.Org.Name,
@@ -83,6 +83,7 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		"runner_version": req.Version,
 		"process_type":   string(req.Process),
 		"install_id":     installID,
+		"install_name":   installName,
 	})
 
 	s.mw.Incr("heart_beat.incr", tags)
@@ -116,6 +117,10 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 }
 
 func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
+	if cached, ok := s.runnerHeartbeatCache.Runners.Get(runnerID); ok {
+		return cached, nil
+	}
+
 	// NOTE(fd): same as getRunner w/out the RunnerGroup.Settings preload. this is hit often enough we care to optimize.
 	runner := app.Runner{}
 	res := s.db.WithContext(ctx).
@@ -126,5 +131,26 @@ func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app
 		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
 	}
 
+	s.runnerHeartbeatCache.Runners.Add(runnerID, &runner)
 	return &runner, nil
+}
+
+func (s *service) heartbeatGetInstallName(ctx context.Context, installID string) string {
+	if cached, ok := s.runnerHeartbeatCache.Installs.Get(installID); ok {
+		return cached.Name
+	}
+
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Select("id", "name").
+		First(&install, "id = ?", installID).Error; err != nil {
+		s.l.Warn("unable to look up install for heartbeat metric tag",
+			zap.String("install_id", installID),
+			zap.Error(err),
+		)
+		return ""
+	}
+
+	s.runnerHeartbeatCache.Installs.Add(installID, &install)
+	return install.Name
 }
