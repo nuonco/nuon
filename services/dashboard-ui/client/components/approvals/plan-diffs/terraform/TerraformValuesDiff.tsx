@@ -2,6 +2,7 @@ import { Text } from '@/components/common/Text'
 import type { TTerraformOutputChange } from '@/types'
 import { cn } from '@/utils/classnames'
 import { deepEqual, isComplex, isStringJson } from '@/utils/terraform-utils'
+import { DiffLineExpandButton } from '../DiffLineExpandModal'
 import { TreeDiffValue } from './TreeDiffValue'
 
 type TTerraformValues = Pick<
@@ -54,6 +55,7 @@ export const TerraformValuesDiff = ({
 
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+      <div className="min-w-fit">
       {valuesDiff.length ? (
         valuesDiff.map((value, idx) => {
           const prefix = getDiffPrefix(values.action, value.changed)
@@ -83,6 +85,8 @@ export const TerraformValuesDiff = ({
 
           const formattedBefore = formatValue(value.before)
           const formattedAfter = formatValue(value.after)
+          const isLongValue =
+            formattedBefore.length > 40 || formattedAfter.length > 40
 
           return (
             <div
@@ -116,6 +120,14 @@ export const TerraformValuesDiff = ({
                     >
                       {formattedAfter}
                     </span>
+                    {isLongValue && (
+                      <DiffLineExpandButton
+                        label={value.key}
+                        prefix={prefix.char as '~' | '+' | '-'}
+                        before={value.before}
+                        after={value.after}
+                      />
+                    )}
                   </>
                 ) : (
                   <>
@@ -132,6 +144,14 @@ export const TerraformValuesDiff = ({
                     >
                       {formattedAfter}
                     </span>
+                    {isLongValue && (
+                      <DiffLineExpandButton
+                        label={value.key}
+                        prefix={prefix.char as '~' | '+' | '-'}
+                        before={value.before}
+                        after={value.after}
+                      />
+                    )}
                   </>
                 )}
               </span>
@@ -141,6 +161,7 @@ export const TerraformValuesDiff = ({
       ) : (
         <Text family="mono">No values to display.</Text>
       )}
+      </div>
     </div>
   )
 }
