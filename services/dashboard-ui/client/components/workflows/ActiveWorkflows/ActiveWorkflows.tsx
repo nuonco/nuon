@@ -78,7 +78,7 @@ export const ActiveWorkflows = ({
           </div>
         )}
       </div>
-      <div className="grid grid-cols-1 @3xl:grid-cols-2 gap-3">
+      <div className={`grid grid-cols-1 gap-3 ${inProgressWorkflows.length > 1 ? '@3xl:grid-cols-2' : ''}`}>
         {inProgressWorkflows.map((workflow) => (
           <ActiveWorkflowCard
             key={workflow.id}
