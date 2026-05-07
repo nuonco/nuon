@@ -18,7 +18,7 @@ export const LogFilters = ({ filters }: LogFiltersProps) => {
       <div className="flex items-center gap-2">
         <LogSeverityDropdown filters={filters} />
         <LogFiltersDropdown filters={filters} />
-        {!isStreamOpen && <DownloadLogsButton />}
+        {!isStreamOpen && <DownloadLogsButton includeSystemLogs={filters.includeSystemLogs} />}
       </div>
     </div>
   )
