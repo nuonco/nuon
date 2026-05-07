@@ -70,10 +70,11 @@ COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     echo "=== /go/pkg/build-cache before ===" && \
     du -sh /go/pkg/build-cache 2>&1 || true && \
-    ls -la /go/pkg/build-cache 2>&1 | head -10 || true && \
     echo "=== entry count: $(find /go/pkg/build-cache -type f 2>/dev/null | wc -l) ===" && \
     echo "=== go test ./... ===" && \
-    time go test ./... && \
+    START=$(date +%s) && \
+    go test ./... && \
+    echo "=== elapsed: $(($(date +%s) - START))s ===" && \
     echo "=== /go/pkg/build-cache after ===" && \
     du -sh /go/pkg/build-cache 2>&1 || true
 
