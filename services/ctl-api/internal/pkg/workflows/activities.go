@@ -7,6 +7,7 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -30,6 +31,7 @@ type Params struct {
 	// queues / signals
 	QueueActs                 *queueactivities.Activities
 	QueueClient               *queueclient.Client
+	Enqueuer                  *enqueuer.Enqueuer
 	EmitterActs               *emitteractivities.Activities
 	HandlerActs               *handleractivities.Activities
 	SignalsActivities         *signalsactivities.Activities
@@ -44,6 +46,7 @@ type Activities struct {
 	StatusActivities          *statusactivities.Activities
 	Activities                *activities.Activities
 	QueueActivities           *queueactivities.Activities
+	Enqueuer                  *enqueuer.Activities
 	EmitterActivities         *emitteractivities.Activities
 	HandlerActivities         *handleractivities.Activities
 	QueueClient               *queueclient.Client
@@ -59,6 +62,7 @@ func (a *Activities) AllActivities() []any {
 		a.SignalsActivities,
 		a.StatusActivities,
 		a.QueueActivities,
+		a.Enqueuer,
 		a.EmitterActivities,
 		a.HandlerActivities,
 		a.QueueClient,
@@ -75,6 +79,7 @@ func NewActivities(params Params) *Activities {
 		SignalsActivities:         params.SignalsActivities,
 		StatusActivities:          params.StatusActivities,
 		QueueActivities:           params.QueueActs,
+		Enqueuer:                  enqueuer.NewActivities(params.Enqueuer),
 		EmitterActivities:         params.EmitterActs,
 		HandlerActivities:         params.HandlerActs,
 		QueueClient:               params.QueueClient,

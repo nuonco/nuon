@@ -189,6 +189,7 @@ export type TQueueSignal = {
   owner_id: string
   owner_type: string
   status: any
+  enqueued: boolean
   created_at: string
   updated_at: string
 }
