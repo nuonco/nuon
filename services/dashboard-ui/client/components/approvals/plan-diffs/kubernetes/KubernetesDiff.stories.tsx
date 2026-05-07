@@ -457,3 +457,69 @@ const withErrorsPlan = {
 } as any
 
 export const WithErrors = () => <KubernetesDiff plan={withErrorsPlan} />
+
+const longConfigMapEntriesPlan = {
+  plan: 'k8s-long-configmap',
+  op: 'apply',
+  k8s_content_diff: [
+    {
+      _version: 'v1',
+      name: 'nginx-config',
+      namespace: 'ingress',
+      kind: 'ConfigMap',
+      api: 'v1',
+      resource: 'configmaps',
+      op: 'apply',
+      type: 3,
+      dry_run: false,
+      entries: [
+        { type: 0, payload: 'apiVersion: v1', path: '' },
+        { type: 0, payload: 'kind: ConfigMap', path: '' },
+        { type: 0, payload: 'metadata:', path: '' },
+        { type: 0, payload: '  name: nginx-config', path: '' },
+        { type: 0, payload: '  namespace: ingress', path: '' },
+        { type: 0, payload: 'data:', path: '' },
+        { type: 0, payload: '  proxy-body-size: 16m', path: '' },
+        { type: 1, payload: '  nginx.conf: "worker_processes auto; error_log /var/log/nginx/error.log warn; pid /var/run/nginx.pid; events { worker_connections 1024; } http { include /etc/nginx/mime.types; default_type application/octet-stream; }"', path: '' },
+        { type: 2, payload: '  nginx.conf: "worker_processes auto; worker_rlimit_nofile 65535; error_log /var/log/nginx/error.log warn; pid /var/run/nginx.pid; events { worker_connections 65535; use epoll; multi_accept on; } http { include /etc/nginx/mime.types; default_type application/octet-stream; sendfile on; tcp_nopush on; }"', path: '' },
+        { type: 1, payload: '  proxy-next-upstream-tries: "3"', path: '' },
+        { type: 2, payload: '  proxy-next-upstream-tries: "5"', path: '' },
+        { type: 1, payload: '  ssl-ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384', path: '' },
+        { type: 2, payload: '  ssl-ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305', path: '' },
+        { type: 2, payload: '  server-snippet: "more_set_headers \'X-Frame-Options: SAMEORIGIN\'; more_set_headers \'X-Content-Type-Options: nosniff\'; more_set_headers \'Strict-Transport-Security: max-age=31536000; includeSubDomains; preload\';"', path: '' },
+      ],
+    },
+    {
+      _version: 'v1',
+      name: 'app-env-config',
+      namespace: 'production',
+      kind: 'ConfigMap',
+      api: 'v1',
+      resource: 'configmaps',
+      op: 'apply',
+      type: 3,
+      dry_run: false,
+      entries: [
+        { type: 0, payload: 'apiVersion: v1', path: '' },
+        { type: 0, payload: 'kind: ConfigMap', path: '' },
+        { type: 0, payload: 'metadata:', path: '' },
+        { type: 0, payload: '  name: app-env-config', path: '' },
+        { type: 0, payload: '  namespace: production', path: '' },
+        { type: 0, payload: 'data:', path: '' },
+        { type: 0, payload: '  LOG_LEVEL: info', path: '' },
+        { type: 1, payload: '  DATABASE_URL: postgresql://app_user@production-db.cluster-cabcdefghijk.us-west-2.rds.amazonaws.com:5432/app_production?sslmode=require', path: '' },
+        { type: 2, payload: '  DATABASE_URL: postgresql://app_user@production-db-v2.cluster-xyzabcdefghi.us-west-2.rds.amazonaws.com:5432/app_production?sslmode=require&connect_timeout=10&application_name=api-server&pool_max_conns=25', path: '' },
+        { type: 1, payload: '  REDIS_SENTINEL_HOSTS: sentinel-0.redis-sentinel.production.svc.cluster.local:26379,sentinel-1.redis-sentinel.production.svc.cluster.local:26379', path: '' },
+        { type: 2, payload: '  REDIS_SENTINEL_HOSTS: sentinel-0.redis-sentinel.production.svc.cluster.local:26379,sentinel-1.redis-sentinel.production.svc.cluster.local:26379,sentinel-2.redis-sentinel.production.svc.cluster.local:26379', path: '' },
+        { type: 0, payload: '  OTEL_SERVICE_NAME: api-server', path: '' },
+        { type: 1, payload: '  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.monitoring.svc.cluster.local:4317', path: '' },
+        { type: 2, payload: '  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector.monitoring.svc.cluster.local:4317/v1/traces', path: '' },
+        { type: 2, payload: '  OTEL_RESOURCE_ATTRIBUTES: service.namespace=production,service.version=v2.15.0,deployment.environment=production,cloud.provider=aws,cloud.region=us-west-2', path: '' },
+      ],
+    },
+  ],
+} as any
+
+export const LongConfigMapEntries = () => (
+  <KubernetesDiff plan={longConfigMapEntriesPlan} />
+)

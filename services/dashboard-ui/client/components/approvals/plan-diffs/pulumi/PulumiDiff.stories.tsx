@@ -1655,6 +1655,100 @@ export const RBACArrayNoise = () => (
   />
 )
 
+export const LongPolicyAndConfigValues = () => (
+  <PulumiDiff
+    plan={{
+      stdout: '',
+      stderr: '',
+      change_summary: { create: 1, update: 2 },
+      resource_changes: [
+        {
+          urn: 'urn:pulumi:prod::platform::aws:iam/role:Role::api-task-role',
+          type: 'aws:iam/role:Role',
+          name: 'api-task-role',
+          action: 'update',
+          diffs: ['assumeRolePolicy', 'inlinePolicies'],
+          detailed_diff: {
+            assumeRolePolicy: { kind: 'update', inputDiff: true },
+            'inlinePolicies[0].policy': { kind: 'update', inputDiff: true },
+          },
+          old_inputs: {
+            name: 'production-api-task-role',
+            assumeRolePolicy: JSON.stringify({ Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'ecs-tasks.amazonaws.com' }, Action: 'sts:AssumeRole' }] }),
+            inlinePolicies: [
+              {
+                name: 'secrets-access',
+                policy: JSON.stringify({ Version: '2012-10-17', Statement: [{ Effect: 'Allow', Action: ['secretsmanager:GetSecretValue', 'ssm:GetParameters', 'ssm:GetParameter'], Resource: 'arn:aws:secretsmanager:us-west-2:123456789012:secret:production/api/*' }] }),
+              },
+            ],
+            tags: { Environment: 'production', Team: 'platform', ManagedBy: 'pulumi' },
+          },
+          new_inputs: {
+            name: 'production-api-task-role',
+            assumeRolePolicy: JSON.stringify({ Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: ['ecs-tasks.amazonaws.com', 'lambda.amazonaws.com'] }, Action: 'sts:AssumeRole' }, { Effect: 'Allow', Principal: { AWS: 'arn:aws:iam::123456789012:role/production-deploy-role' }, Action: 'sts:AssumeRole', Condition: { StringEquals: { 'sts:ExternalId': 'nuon-deploy-production' } } }] }),
+            inlinePolicies: [
+              {
+                name: 'secrets-access',
+                policy: JSON.stringify({ Version: '2012-10-17', Statement: [{ Effect: 'Allow', Action: ['secretsmanager:GetSecretValue', 'secretsmanager:DescribeSecret', 'ssm:GetParameters', 'ssm:GetParameter', 'ssm:GetParametersByPath'], Resource: ['arn:aws:secretsmanager:us-west-2:123456789012:secret:production/api/*', 'arn:aws:ssm:us-west-2:123456789012:parameter/production/api/*'] }] }),
+              },
+            ],
+            tags: { Environment: 'production', Team: 'platform', ManagedBy: 'pulumi' },
+          },
+        },
+        {
+          urn: 'urn:pulumi:prod::platform::aws:cognito/userPool:UserPool::app-users',
+          type: 'aws:cognito/userPool:UserPool',
+          name: 'app-users',
+          action: 'update',
+          diffs: ['lambdaConfig', 'schema'],
+          detailed_diff: {
+            'lambdaConfig.preTokenGeneration': { kind: 'update', inputDiff: true },
+            'schema[2].stringAttributeConstraints.maxLength': { kind: 'update', inputDiff: true },
+          },
+          old_inputs: {
+            name: 'production-app-users',
+            lambdaConfig: {
+              preTokenGeneration: 'arn:aws:lambda:us-west-2:123456789012:function:production-pre-token-gen:3',
+              preSignUp: 'arn:aws:lambda:us-west-2:123456789012:function:production-pre-signup-validation:7',
+              postConfirmation: 'arn:aws:lambda:us-west-2:123456789012:function:production-post-confirmation-welcome:2',
+            },
+            allowedOauthFlowsUserPoolClient: true,
+            allowedOauthScopes: ['openid', 'email', 'profile', 'aws.cognito.signin.user.admin'],
+            callbackUrls: ['https://app.acme.io/auth/callback', 'https://staging.acme.io/auth/callback', 'http://localhost:3000/auth/callback'],
+            logoutUrls: ['https://app.acme.io/auth/logout', 'https://staging.acme.io/auth/logout'],
+            supportedIdentityProviders: ['COGNITO', 'Google', 'LoginWithAmazon'],
+          },
+          new_inputs: {
+            name: 'production-app-users',
+            lambdaConfig: {
+              preTokenGeneration: 'arn:aws:lambda:us-west-2:123456789012:function:production-pre-token-gen:4',
+              preSignUp: 'arn:aws:lambda:us-west-2:123456789012:function:production-pre-signup-validation:7',
+              postConfirmation: 'arn:aws:lambda:us-west-2:123456789012:function:production-post-confirmation-welcome:2',
+            },
+            allowedOauthFlowsUserPoolClient: true,
+            allowedOauthScopes: ['openid', 'email', 'profile', 'aws.cognito.signin.user.admin'],
+            callbackUrls: ['https://app.acme.io/auth/callback', 'https://staging.acme.io/auth/callback', 'http://localhost:3000/auth/callback'],
+            logoutUrls: ['https://app.acme.io/auth/logout', 'https://staging.acme.io/auth/logout'],
+            supportedIdentityProviders: ['COGNITO', 'Google', 'LoginWithAmazon', 'SAML-OktaEnterprise'],
+          },
+        },
+        {
+          urn: 'urn:pulumi:prod::platform::aws:iam/openIdConnectProvider:OpenIdConnectProvider::eks-oidc',
+          type: 'aws:iam/openIdConnectProvider:OpenIdConnectProvider',
+          name: 'eks-oidc',
+          action: 'create',
+          new_inputs: {
+            url: 'https://oidc.eks.us-west-2.amazonaws.com/id/EXAMPLED539D4633E53DE1B71EXAMPLE',
+            clientIdLists: ['sts.amazonaws.com'],
+            thumbprintLists: ['9e99a48a9960b14926bb7f3b02e22da2b0ab7280', 'a9d53002e97e00e043244f3d170d6f4c414104fd'],
+            tags: { Environment: 'production', ManagedBy: 'pulumi', Cluster: 'production-eks-cluster-us-west-2' },
+          },
+        },
+      ],
+    }}
+  />
+)
+
 export const WithDiagnostics = () => (
   <PulumiDiff
     plan={{
