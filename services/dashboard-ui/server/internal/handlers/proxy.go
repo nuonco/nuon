@@ -220,6 +220,7 @@ func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		h.l.Debug("requireAuth calling GetAuthMe", zap.String("path", c.Request.URL.Path))
 		if _, err := client.GetAuthMe(c.Request.Context()); err != nil {
 			c.Redirect(http.StatusFound, loginURL)
 			c.Abort()
@@ -233,6 +234,7 @@ func (h *ProxyHandler) requireNuonEmail() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, _ := c.Cookie(authCookie)
 		client, _ := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
+		h.l.Debug("requireNuonEmail calling GetAuthMe", zap.String("path", c.Request.URL.Path))
 		me, err := client.GetAuthMe(c.Request.Context())
 		if err != nil || !strings.HasSuffix(me.Email, "@nuon.co") {
 			c.AbortWithStatus(http.StatusForbidden)
