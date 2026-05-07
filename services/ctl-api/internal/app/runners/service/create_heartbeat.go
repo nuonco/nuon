@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type CreateRunnerHeartBeatRequest struct {
@@ -68,11 +69,20 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
+	var installID string
+	if runner.RunnerGroup.OwnerType == plugins.TableName(s.db, app.Install{}) {
+		installID = runner.RunnerGroup.OwnerID
+	}
+
+	// TODO(ey): add install_name and a cache here.
 	tags := metrics.ToTags(map[string]string{
+		"org_id":         runner.OrgID,
 		"org_name":       runner.Org.Name,
-		"install_type":   string(runner.RunnerGroup.Type),
+		"runner_id":      runnerID,
+		"runner_type":    string(runner.RunnerGroup.Type),
 		"runner_version": req.Version,
-		"process":        string(req.Process),
+		"process_type":   string(req.Process),
+		"install_id":     installID,
 	})
 
 	s.mw.Incr("heart_beat.incr", tags)
