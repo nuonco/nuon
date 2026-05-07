@@ -1,4 +1,3 @@
-# CTL API 
+# CTL API
 
 The Nuon control-plane API.
-
