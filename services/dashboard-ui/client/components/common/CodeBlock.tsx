@@ -157,7 +157,7 @@ export function CodeBlock({
           : undefined
       }
       codeTagProps={{
-        className: 'bg-code font-mono w-full',
+        className: cn('bg-code font-mono w-full', isDiff && 'min-w-fit block'),
       }}
       customStyle={{
         background: 'var(--bg-code)',
