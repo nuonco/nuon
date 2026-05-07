@@ -80,6 +80,7 @@ function DetailedDiffBody({
 }) {
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+      <div className="min-w-fit">
       {Object.entries(detailedDiff).map(([prop, diff]) => {
         const prefix = getDiffPrefix(diff.kind)
         return (
@@ -98,6 +99,7 @@ function DetailedDiffBody({
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
@@ -127,6 +129,7 @@ function InputsDiffBody({
 
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+      <div className="min-w-fit">
       {keyValues.length ? (
         keyValues.map((value, idx) => {
           const prefix = value.changed
@@ -219,6 +222,7 @@ function InputsDiffBody({
       ) : (
         <Text family="mono">No values to display.</Text>
       )}
+      </div>
     </div>
   )
 }
