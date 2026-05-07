@@ -1,7 +1,6 @@
 import { AdminOrgSection } from '../sections/AdminOrgSection'
 import { AdminAppSection } from '../sections/AdminAppSection'
 import { AdminInstallSection } from '../sections/AdminInstallSection'
-import { AdminSandboxSection } from '../sections/AdminSandboxSection'
 import { DevOrgSection } from '../dev/sections/DevOrgSection'
 import { DevInstallSection } from '../dev/sections/DevInstallSection'
 
@@ -26,7 +25,6 @@ export const AdminControls = ({
 
   return (
     <div className="flex flex-col gap-8 h-full overflow-y-auto">
-      {isNuonEmployee && <AdminSandboxSection />}
       {isNuonEmployee && <AdminOrgSection orgId={orgId} />}
       {isNuonEmployee && appId && <AdminAppSection orgId={orgId} appId={appId} />}
       {isNuonEmployee && installId && (
