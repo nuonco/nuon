@@ -68,7 +68,7 @@ COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
-    go test -v ./...
+    go test ./...
 
 FROM code AS lint
 

@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
 
 FROM code AS test
 RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
-    go test -v ./...
+    go test ./...
 
 FROM code AS lint
 COPY .golangci.yml .
