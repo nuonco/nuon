@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getQueries, clearQueries, type TQueryRecord } from '@/lib/admin-api'
+import { getQueries, clearQueries, explainQuery, type TQueryRecord } from '@/lib/admin-api'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
@@ -38,6 +38,7 @@ export const SlowQueries = () => {
   const [sortBy, setSortBy] = useState('max_ms')
   const [minDuration, setMinDuration] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [explainResult, setExplainResult] = useState<{ key: string; rows?: Record<string, unknown>[]; error?: string; loading?: boolean } | null>(null)
   const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
@@ -178,9 +179,52 @@ export const SlowQueries = () => {
                   <pre className="whitespace-pre-wrap break-all text-xs text-gray-700 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-800 rounded p-2 max-h-60 overflow-auto">
                     {q.sql}
                   </pre>
-                  {q.caller && (
-                    <div className="text-xs text-blue-600 dark:text-blue-400 font-mono">
-                      {q.caller}
+                  <div className="flex items-center gap-2">
+                    {q.operation === 'Query' && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          setExplainResult({ key, loading: true })
+                          try {
+                            const res = await explainQuery({ sql: q.sql, db_type: q.db_type })
+                            if (res.error) {
+                              setExplainResult({ key, error: res.error })
+                            } else {
+                              setExplainResult({ key, rows: res.rows })
+                            }
+                          } catch (err: any) {
+                            setExplainResult({ key, error: err?.error || err?.message || 'Explain failed' })
+                          }
+                        }}
+                        disabled={explainResult?.key === key && explainResult?.loading}
+                        className="rounded-md bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 text-xs font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 disabled:opacity-50"
+                      >
+                        {explainResult?.key === key && explainResult?.loading ? 'Running...' : 'Explain'}
+                      </button>
+                    )}
+                    {q.caller && (
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+                        {q.caller_url ? (
+                          <a href={q.caller_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-800 dark:hover:text-blue-300">
+                            {q.caller}
+                          </a>
+                        ) : (
+                          q.caller
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  {explainResult?.key === key && !explainResult.loading && (
+                    <div className="rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 p-2">
+                      {explainResult.error ? (
+                        <div className="text-xs text-red-600 dark:text-red-400 font-mono">{explainResult.error}</div>
+                      ) : (
+                        <pre className="whitespace-pre-wrap break-all text-xs text-gray-700 dark:text-gray-300 font-mono max-h-80 overflow-auto">
+                          {(explainResult.rows || []).map((row) =>
+                            Object.values(row).join('\n')
+                          ).join('\n')}
+                        </pre>
+                      )}
                     </div>
                   )}
                   {q.endpoint && (
