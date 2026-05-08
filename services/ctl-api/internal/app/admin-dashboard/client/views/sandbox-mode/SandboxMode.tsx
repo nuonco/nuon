@@ -208,6 +208,7 @@ export const SandboxMode = () => {
                 isNew={editingJobType === '__new__'}
                 jobType={editingJobType === '__new__' ? selectedNewJobType : editingJobType}
                 allTypes={allRunnerJobTypes}
+                allOperationTypes={allRunnerJobOperationTypes}
                 onJobTypeChange={setSelectedNewJobType}
                 form={jobForm}
                 setForm={setJobForm}
@@ -403,6 +404,7 @@ function JobFormPanel({
   isNew,
   jobType,
   allTypes,
+  allOperationTypes,
   onJobTypeChange,
   form,
   setForm,
@@ -414,6 +416,7 @@ function JobFormPanel({
   isNew: boolean
   jobType: string
   allTypes: string[]
+  allOperationTypes: string[]
   onJobTypeChange: (v: string) => void
   form: typeof defaultJobForm
   setForm: React.Dispatch<React.SetStateAction<typeof defaultJobForm>>
@@ -456,7 +459,7 @@ function JobFormPanel({
         <Field label="Operation">
           <select value={form.operation} onChange={(e) => setForm((f) => ({ ...f, operation: e.target.value }))} className="w-full rounded-md border-gray-300 dark:border-gray-700 text-sm py-1.5 px-2">
             <option value="">any (optional)</option>
-            {allRunnerJobOperationTypes.map((op) => (
+            {allOperationTypes.map((op) => (
               <option key={op} value={op}>{op}</option>
             ))}
           </select>
