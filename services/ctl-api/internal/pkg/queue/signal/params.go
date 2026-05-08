@@ -2,6 +2,7 @@ package signal
 
 import (
 	"github.com/go-playground/validator/v10"
+
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
