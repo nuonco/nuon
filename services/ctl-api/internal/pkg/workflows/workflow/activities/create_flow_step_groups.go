@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -15,6 +16,7 @@ type CreateFlowStepGroup struct {
 	Parallel   bool                `json:"parallel"`
 	Name       string              `json:"name"`
 	Status     app.CompositeStatus `json:"status"`
+	Timeout    time.Duration       `json:"timeout"`
 }
 
 type CreateFlowStepGroupsRequest struct {
@@ -36,6 +38,7 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowStepGroups(ctx context.Context, r
 			Parallel:   req.Parallel,
 			Name:       req.Name,
 			Status:     req.Status,
+			Timeout:    req.Timeout,
 		}
 		groups = append(groups, &g)
 	}

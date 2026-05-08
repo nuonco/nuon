@@ -64,6 +64,10 @@ type Signal struct {
 	// bypassing the OwnerID/TargetQueueName lookup.
 	TargetQueueID string `json:"target_queue_id,omitempty"`
 
+	// DerivedTimeout is set at dispatch time from the step's TimeoutSeconds.
+	// When non-zero, Timeout() returns this instead of the hardcoded fallback.
+	DerivedTimeout time.Duration `json:"derived_timeout,omitempty"`
+
 	// innerQueueSignalID tracks the currently executing inner signal so that
 	// Cancel() can propagate cancellation to it. Set during executeInnerSignal,
 	// read during Cancel. Safe because Temporal workflows are single-threaded.
@@ -99,7 +103,12 @@ var (
 	_ signal.SignalWithTimeout          = (*Signal)(nil)
 )
 
-func (s *Signal) Timeout() time.Duration { return 180 * 24 * time.Hour }
+func (s *Signal) Timeout() time.Duration {
+	if s.DerivedTimeout > 0 {
+		return s.DerivedTimeout
+	}
+	return 2 * time.Hour
+}
 
 // LifecycleContext exposes the step + workflow identity to lifecycle hooks so
 // they can emit workflow_step.lifecycle.* webhook events without leaking the

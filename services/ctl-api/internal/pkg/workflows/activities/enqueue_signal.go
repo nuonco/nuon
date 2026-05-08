@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -50,7 +51,7 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 			queue, err = a.queueClient.GetQueueByOwner(ctx, req.OwnerID, req.OwnerType)
 		}
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to find queue for owner")
+			return nil, generics.TemporalGormError(err, "unable to find queue for owner")
 		}
 		queueID = queue.ID
 	}
