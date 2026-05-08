@@ -39,8 +39,9 @@
               golangci-lint
               mockgen
 
-              # Node.js (dashboard-ui, docs, website)
+              # Node.js (docs, website) + Bun (dashboard-ui)
               nodejs
+              bun
 
               # Infrastructure
               terraform

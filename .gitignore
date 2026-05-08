@@ -12,6 +12,7 @@
 *.test
 
 .env
+.env.dev
 coverage/
 node_modules/
 dist/

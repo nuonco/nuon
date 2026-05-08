@@ -1,0 +1,405 @@
+version: "0.5"
+
+processes:
+  # ── infra: databases, message brokers, and setup ──────────────────────────────
+
+  preflight:
+    command: |
+      for port in 5432 9000 8123 7233 8081 8082 8083 8084 8086 8087 8089 9088 9090 4000 4001; do
+        pid=$(lsof -ti TCP:$port -sTCP:LISTEN 2>/dev/null || true)
+        if [ -n "$pid" ]; then
+          echo "killing stale process on port $port (pid $pid)"
+          kill $pid 2>/dev/null || true
+        fi
+      done
+    namespace: infra
+    availability:
+      restart: "no"
+
+  postgres-init:
+    command: |
+      mkdir -p "$PGDATA"
+      if [ ! -f "$PGDATA/PG_VERSION" ]; then
+        # PG_VERSION absent but dir non-empty = corrupt/half-wiped cluster from
+        # a previous run. initdb refuses non-empty dirs, so reset it.
+        if [ -n "$(ls -A "$PGDATA" 2>/dev/null)" ]; then
+          echo "wiping stale pgdata at $PGDATA (no PG_VERSION present)"
+          rm -rf "$PGDATA"
+          mkdir -p "$PGDATA"
+        fi
+        initdb --username=ctl_api --auth=trust
+        echo "host all all 127.0.0.1/32 trust" >> "$PGDATA/pg_hba.conf"
+      fi
+    environment:
+      - "PGDATA=.dev/pgdata"
+    namespace: infra
+    depends_on:
+      preflight:
+        condition: process_completed_successfully
+    availability:
+      restart: "no"
+
+  postgres:
+    command: postgres -D .dev/pgdata -p 5432 -k /tmp
+    namespace: infra
+    depends_on:
+      postgres-init:
+        condition: process_completed_successfully
+    readiness_probe:
+      exec:
+        command: pg_isready -h 127.0.0.1 -p 5432
+      initial_delay_seconds: 2
+      period_seconds: 2
+
+  postgres-createdb:
+    command: |
+      psql -h 127.0.0.1 -p 5432 -U ctl_api -tc "SELECT 1 FROM pg_database WHERE datname = 'ctl_api'" | grep -q 1 || \
+        createdb -h 127.0.0.1 -p 5432 -U ctl_api ctl_api
+      psql -h 127.0.0.1 -p 5432 -U ctl_api -d ctl_api -c "CREATE EXTENSION IF NOT EXISTS hstore"
+    namespace: infra
+    depends_on:
+      postgres:
+        condition: process_healthy
+    availability:
+      restart: "no"
+
+  clickhouse:
+    log_location: /tmp/pc-clickhouse.log
+    command: |
+      mkdir -p .dev/chdata
+      cat > .dev/clickhouse-config.xml <<'CHEOF'
+      <clickhouse>
+        <logger>
+          <level>warning</level>
+          <console>true</console>
+        </logger>
+        <http_port>8123</http_port>
+        <tcp_port>9000</tcp_port>
+        <interserver_http_port>9009</interserver_http_port>
+        <path>.dev/chdata/</path>
+        <access_control_path>.dev/chdata/access/</access_control_path>
+        <users>
+          <default>
+            <password>local</password>
+            <networks><ip>::/0</ip></networks>
+            <profile>default</profile>
+            <quota>default</quota>
+            <access_management>1</access_management>
+          </default>
+        </users>
+        <profiles><default/></profiles>
+        <quotas><default/></quotas>
+        <remote_servers>
+          <simple>
+            <shard>
+              <replica>
+                <host>127.0.0.1</host>
+                <port>9000</port>
+              </replica>
+            </shard>
+          </simple>
+        </remote_servers>
+        <keeper_server>
+          <tcp_port>9181</tcp_port>
+          <server_id>1</server_id>
+          <log_storage_path>.dev/chdata/coordination/log</log_storage_path>
+          <snapshot_storage_path>.dev/chdata/coordination/snapshots</snapshot_storage_path>
+          <coordination_settings>
+            <operation_timeout_ms>10000</operation_timeout_ms>
+            <session_timeout_ms>30000</session_timeout_ms>
+          </coordination_settings>
+          <raft_configuration>
+            <server>
+              <id>1</id>
+              <hostname>127.0.0.1</hostname>
+              <port>9234</port>
+            </server>
+          </raft_configuration>
+        </keeper_server>
+        <zookeeper>
+          <node>
+            <host>127.0.0.1</host>
+            <port>9181</port>
+          </node>
+        </zookeeper>
+        <macros>
+          <cluster>simple</cluster>
+          <shard>1</shard>
+          <replica>1</replica>
+        </macros>
+        <distributed_ddl>
+          <path>/clickhouse/task_queue/ddl</path>
+        </distributed_ddl>
+      </clickhouse>
+      CHEOF
+      clickhouse-server --config-file=.dev/clickhouse-config.xml
+    namespace: infra
+    depends_on:
+      preflight:
+        condition: process_completed_successfully
+    readiness_probe:
+      exec:
+        command: clickhouse-client --port 9000 --password local --query "SELECT 1"
+      initial_delay_seconds: 8
+      period_seconds: 3
+      timeout_seconds: 5
+      failure_threshold: 5
+
+  clickhouse-createdb:
+    command: clickhouse-client --port 9000 --password local --query "CREATE DATABASE IF NOT EXISTS ctl_api"
+    namespace: infra
+    depends_on:
+      clickhouse:
+        condition: process_healthy
+    availability:
+      restart: "no"
+
+  temporal:
+    command: |
+      temporal server start-dev \
+        --port 7233 \
+        --ui-port 8233 \
+        --namespace general \
+        --namespace orgs \
+        --namespace apps \
+        --namespace components \
+        --namespace installs \
+        --namespace runners \
+        --namespace actions \
+        --namespace onboardings \
+        --namespace vcs \
+        --db-filename .dev/temporal.db
+    namespace: infra
+    depends_on:
+      preflight:
+        condition: process_completed_successfully
+    readiness_probe:
+      exec:
+        command: temporal workflow list --namespace general --address 127.0.0.1:7233
+      initial_delay_seconds: 3
+      period_seconds: 3
+
+  # ── setup: code generation and migrations ─────────────────────────────────────
+
+  go-generate:
+    command: ./scripts/reset-generated-code
+    namespace: setup
+    availability:
+      restart: "no"
+
+  gen-api-startup:
+    command: go run cmd/gen/main.go
+    working_dir: services/ctl-api
+    log_location: /tmp/pc-gen-api-startup.log
+    namespace: setup
+    depends_on:
+      go-generate:
+        condition: process_completed_successfully
+    availability:
+      restart: "no"
+
+  ctl-api-startup:
+    command: go run services/ctl-api/main.go startup
+    log_location: /tmp/pc-ctl-api-startup.log
+    namespace: setup
+    depends_on:
+      gen-api-startup:
+        condition: process_completed_successfully
+      postgres-createdb:
+        condition: process_completed_successfully
+      clickhouse-createdb:
+        condition: process_completed_successfully
+      temporal:
+        condition: process_healthy
+    availability:
+      restart: "no"
+
+  dashboard-ui-deps:
+    command: |
+      if [ ! -d node_modules ]; then
+        bun install
+      fi
+    working_dir: services/dashboard-ui
+    namespace: setup
+    availability:
+      restart: "no"
+
+  admin-dashboard-deps:
+    command: |
+      if [ ! -d node_modules ]; then
+        bun install
+      fi
+    working_dir: services/ctl-api/internal/app/admin-dashboard
+    namespace: setup
+    availability:
+      restart: "no"
+
+  # ── services: long-running application processes ──────────────────────────────
+
+  ctl-api:
+    command: air -c .air-api.toml
+    log_location: /tmp/pc-ctl-api.log
+    namespace: services
+    depends_on:
+      ctl-api-startup:
+        condition: process_completed_successfully
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 8081
+        path: /livez
+      initial_delay_seconds: 10
+      period_seconds: 5
+      failure_threshold: 5
+
+  ctl-api-worker:
+    command: air -c .air-worker.toml
+    log_location: /tmp/pc-ctl-api-worker.log
+    namespace: services
+    environment:
+      - "PROFILING_PORT=6061"
+    depends_on:
+      ctl-api-startup:
+        condition: process_completed_successfully
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 8086
+        path: /readyz
+      initial_delay_seconds: 10
+      period_seconds: 5
+      failure_threshold: 5
+
+  runner:
+    command: air -c .air-runner.toml
+    log_location: /tmp/pc-runner.log
+    namespace: services
+    environment:
+      - "ENV=development"
+      - "INTERNAL_API_URL=http://localhost:8082"
+      - "RUNNER_API_URL=http://localhost:8083"
+    depends_on:
+      ctl-api:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 9090
+        path: /health
+      initial_delay_seconds: 20
+      period_seconds: 5
+      failure_threshold: 5
+
+  dashboard-ui:
+    command: bun run dev
+    working_dir: services/dashboard-ui
+    namespace: services
+    depends_on:
+      dashboard-ui-deps:
+        condition: process_completed_successfully
+      ctl-api:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 4001
+        path: /
+      initial_delay_seconds: 10
+      period_seconds: 5
+      failure_threshold: 5
+
+  dashboard-ui-server:
+    command: go run ./server/main.go serve
+    working_dir: services/dashboard-ui
+    log_location: /tmp/pc-dashboard-ui-server.log
+    namespace: services
+    environment:
+      - "NUON_API_URL=http://localhost:8081"
+      - "NUON_ADMIN_API_URL=http://localhost:8082"
+      - "NUON_AUTH_SERVICE_URL=http://localhost:8084"
+      - "NUON_ADMIN_DASHBOARD_URL=http://localhost:8087"
+      - "NUON_TEMPORAL_UI_URL=http://localhost:8233"
+    depends_on:
+      dashboard-ui:
+        condition: process_started
+      ctl-api:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 4000
+        path: /livez
+      initial_delay_seconds: 10
+      period_seconds: 5
+      failure_threshold: 5
+
+  # admin-dashboard SPA dev process: esbuild watch + PostCSS + browser-sync.
+  # The JSON BFF is served by ctl-api itself on :8087 — no extra Go process.
+  # browser-sync proxies :8087 and exposes live-reload on :9088.
+  admin-dashboard:
+    command: bun run dev
+    working_dir: services/ctl-api/internal/app/admin-dashboard
+    log_location: /tmp/pc-admin-dashboard.log
+    namespace: services
+    depends_on:
+      admin-dashboard-deps:
+        condition: process_completed_successfully
+      ctl-api:
+        condition: process_healthy
+    readiness_probe:
+      http_get:
+        host: 127.0.0.1
+        port: 9088
+        path: /api/livez
+      initial_delay_seconds: 10
+      period_seconds: 5
+      failure_threshold: 5
+
+  # ── codegen: on-demand generators (trigger via TUI F7 or CLI) ─────────────────
+  # Usage: process-compose process start <name>
+
+  gen-temporal:
+    command: go run ./services/ctl-api/cmd/gen --targets temporal
+    namespace: codegen
+    disabled: true
+    availability:
+      restart: "no"
+
+  gen-api:
+    command: go run services/ctl-api/cmd/gen/main.go
+    namespace: codegen
+    disabled: true
+    availability:
+      restart: "no"
+
+  gen-mocks:
+    command: |
+      grep -r --include="*.go" -l "//go:generate" ./pkg ./services/ctl-api/internal \
+        | grep -v "sdks/" \
+        | grep -i mock \
+        | xargs -n 1 -P 10 go generate
+    namespace: codegen
+    disabled: true
+    availability:
+      restart: "no"
+
+  gen-sdk:
+    command: ./scripts/reset-generated-code --sdk
+    namespace: codegen
+    disabled: true
+    availability:
+      restart: "no"
+
+  gen-all:
+    command: ./scripts/reset-generated-code
+    namespace: codegen
+    disabled: true
+    availability:
+      restart: "no"
+
+  install-cli:
+    command: go build -o "$(go env GOPATH)/bin/nuon" ./bins/cli
+    namespace: codegen
+    disabled: true
+    availability:
+      restart: "no"

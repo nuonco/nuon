@@ -1,0 +1,12 @@
+root = "."
+tmp_dir = ".dev/air/worker"
+
+[build]
+cmd = "go run ./services/ctl-api/cmd/gen --targets temporal && go build -o .dev/air/worker/ctl-api-worker ./services/ctl-api"
+bin = ".dev/air/worker/ctl-api-worker"
+args_bin = ["worker", "--namespace", "${WORKER_NAMESPACE:-all}"]
+include_dir = ["services/ctl-api", "pkg"]
+include_ext = ["go"]
+exclude_dir = [".dev", "node_modules", "dist"]
+exclude_regex = ["_gen\\.go$", "mock.*\\.go$"]
+delay = 1000

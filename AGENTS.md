@@ -176,46 +176,60 @@ go generate ./...
 
 ## Running Services Locally
 
-Ask the user how to start the services to test your changes.
+See **[dev.md](/dev.md)** for the complete local development environment setup.
+
+The local stack uses **Nix flake** (`flake.nix`) for dependencies and **process-compose** (`process-compose.yml`) to orchestrate all services. No Docker required.
+
+```bash
+# Enter nix shell and start everything
+nix develop
+process-compose up
+```
 
 ### Expected URLs
 
-```
-Frontend Services:
-- Dashboard UI:     http://localhost:4000
-- Wiki:             http://localhost:4321
+| Service | URL |
+|---|---|
+| Dashboard UI | http://localhost:4000 |
+| CTL-API Public | http://localhost:8081 |
+| CTL-API Admin | http://localhost:8082 |
+| CTL-API Runner | http://localhost:8083 |
+| Runner health | http://localhost:9090/health |
+| Temporal UI | http://localhost:8233 |
+| PostgreSQL | localhost:5432 |
+| ClickHouse | localhost:9000 (native), localhost:8123 (HTTP) |
 
-Backend Services:
-- CTL-API Public:   http://localhost:8081
-- CTL-API Admin:    http://localhost:8082
-- CTL-API Runner:   http://localhost:8083
+### Hot Reload
 
-Infrastructure:
-- PostgreSQL:       localhost:5432
-- ClickHouse:       localhost:9000 (native), localhost:8123 (HTTP)
-- Temporal:         localhost:7233
-- Temporal UI:      http://localhost:8233
-```
+Go services (ctl-api, ctl-api-worker, runner) use **air** for hot reload — edit a `.go` file and the service automatically rebuilds and restarts. Temporal code generation runs automatically on each rebuild for ctl-api and ctl-api-worker.
 
-### Local Debugging via Docker
+Dashboard UI uses **esbuild watch + BrowserSync** — edit a client file and the browser refreshes automatically.
 
-Use Docker to inspect Temporal, Postgres, and ClickHouse when services are running locally.
+### On-Demand Code Generation
+
+Trigger code generation from a terminal while process-compose is running:
 
 ```bash
-# Temporal CLI (components namespace)
-temporal workflow list --namespace components
-temporal workflow show --namespace components --workflow-id <workflow_id> --run-id <run_id> --output json
+process-compose process start gen-temporal  # Temporal workflows/activities
+process-compose process start gen-api       # Swagger/API types
+process-compose process start gen-mocks     # All mocks
+process-compose process start gen-sdk       # nuon-go + nuon-runner-go SDKs
+process-compose process start gen-all       # Full regeneration
+```
 
-# Postgres (ctl-api)
-docker exec -i mono-postgres-1 psql -U ctl_api -d ctl_api
+Air automatically picks up generated files and rebuilds affected services.
 
-# Example Postgres query
-docker exec -i mono-postgres-1 psql -U ctl_api -d ctl_api \
-  -c "select id, status, status_description from runner_jobs order by created_at desc limit 5;"
+### Local Debugging
 
-# ClickHouse (ctl-api logs)
-docker exec -i clickhouse-01 clickhouse-client \
-  --query "select timestamp, severity_text, body from ctl_api.otel_log_records order by timestamp desc limit 50"
+```bash
+# PostgreSQL
+psql -h 127.0.0.1 -p 5432 -U ctl_api -d ctl_api
+
+# ClickHouse
+clickhouse-client --port 9000
+
+# Temporal
+temporal workflow list --namespace components --address 127.0.0.1:7233
 ```
 
 ## Getting Started

@@ -1,0 +1,12 @@
+root = "."
+tmp_dir = ".dev/air/runner"
+
+[build]
+cmd = "go build -o .dev/air/runner/runner ./bins/runner"
+bin = ".dev/air/runner/runner"
+args_bin = ["run-local", "org"]
+include_dir = ["bins/runner", "pkg"]
+include_ext = ["go"]
+exclude_dir = [".dev", "node_modules", "dist"]
+exclude_regex = ["_gen\\.go$", "mock.*\\.go$"]
+delay = 1000
