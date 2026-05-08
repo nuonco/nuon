@@ -4,12 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 
 	"github.com/nuonco/nuon/pkg/config/refs"
@@ -21,12 +19,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg := newStepGroup()
 
-	sg.nextGroup()
 	steps := make([]*app.WorkflowStep, 0)
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationGenerateState,
-	}, flw.PlanOnly, WithSkippable(false))
-	steps = append(steps, step)
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")

@@ -85,10 +85,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
 	}
+
 	if err := s.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
 		return nil, err
 	}
-
 	install := app.Install{
 		AppID:              appID,
 		Name:               req.Name,
@@ -244,6 +244,19 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install-workflow-steps queue: %w", err)
+	}
+
+	// Create the state-manager queue (handles state regeneration operations)
+	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     install.ID,
+		OwnerType:   plugins.TableName(s.db, app.Install{}),
+		Namespace:   "installs",
+		Name:        InstallStateManagerQueueName,
+		MaxInFlight: 5,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create state-manager queue: %w", err)
 	}
 
 	if req.InstallConfig != nil {
