@@ -11,10 +11,17 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 )
@@ -40,7 +47,7 @@ var _ signal.SignalWithTimeout = (*Signal)(nil)
 func (s *Signal) AutoRetry() bool                       { return true }
 func (s *Signal) MaxRetries() int                       { return 3 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
-func (s *Signal) Timeout() time.Duration                { return 180 * 24 * time.Hour }
+func (s *Signal) Timeout() time.Duration                { return 2 * time.Hour }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -173,6 +180,40 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if status != app.RunnerJobStatusFinished {
 		l.Error("runner job status was not successful", zap.Any("status", status))
 		return fmt.Errorf("unable to sync secrets: %w", err)
+	}
+
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	if stateGenV2 {
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   s.InstallID,
+			OwnerType: "installs",
+			QueueName: installshelpers.InstallStateManagerQueueName,
+			Signal: &statepartialgenerate.Signal{
+				InstallID:       s.InstallID,
+				Targets:         statemanager.TargetsForHint(statemanager.HintSecretsUpdated, ""),
+				ForceAll:        true,
+				TriggeredByID:   runnerJob.ID,
+				TriggeredByType: "runner_jobs",
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to hint state manager")
+		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+			return errors.Wrap(err, "unable to await state generation")
+		}
+
+	} else {
+		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
+			InstallID:       s.InstallID,
+			TriggeredByID:   runnerJob.ID,
+			TriggeredByType: "runner_jobs",
+		}); err != nil {
+			return errors.Wrap(err, "unable to generate state")
+		}
 	}
 
 	return nil

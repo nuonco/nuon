@@ -5,6 +5,7 @@ import (
 	enumsv1 "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -39,6 +40,7 @@ func (w *Workflows) Handler(ctx workflow.Context, req HandlerRequest) error {
 	h := &handler{
 		cfg:           w.cfg,
 		v:             w.v,
+		mw:            w.mw,
 		queueSignalID: req.QueueSignalID,
 		queueID:       req.QueueID,
 	}
@@ -57,6 +59,7 @@ func (w *Workflows) Handler(ctx workflow.Context, req HandlerRequest) error {
 type handler struct {
 	cfg *internal.Config
 	v   *validator.Validate
+	mw  metrics.Writer
 
 	queueID       string
 	queueSignalID string

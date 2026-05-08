@@ -131,25 +131,39 @@ func (c *cli) getLongDescription() string {
 	// User is authenticated.
 	status += fmt.Sprintf("✅ You are logged into %s.", c.cfg.APIURL)
 
+	ctx := context.Background()
+
 	// If an org is already configured, show that.
 	orgID := c.cfg.OrgID
 	status += "\n\n"
 	if orgID != "" {
-		status += fmt.Sprintf("org: %s", orgID)
+		if org, err := c.apiClient.GetOrg(ctx); err == nil && org != nil && org.Name != "" {
+			status += fmt.Sprintf("org: %s (%s)", org.Name, orgID)
+		} else {
+			status += fmt.Sprintf("org: %s", orgID)
+		}
 	}
 
 	// Add app info if an app is selected
 	appID := c.cfg.GetString("app_id")
 	if appID != "" {
 		status += "\n"
-		status += fmt.Sprintf("app: %s", appID)
+		if app, err := c.apiClient.GetApp(ctx, appID); err == nil && app != nil && app.Name != "" {
+			status += fmt.Sprintf("app: %s (%s)", app.Name, appID)
+		} else {
+			status += fmt.Sprintf("app: %s", appID)
+		}
 	}
 
 	// Add install info if an install is selected
 	installID := c.cfg.GetString("install_id")
 	if installID != "" {
 		status += "\n"
-		status += fmt.Sprintf("install: %s", installID)
+		if install, err := c.apiClient.GetInstall(ctx, installID); err == nil && install != nil && install.Name != "" {
+			status += fmt.Sprintf("install: %s (%s)", install.Name, installID)
+		} else {
+			status += fmt.Sprintf("install: %s", installID)
+		}
 	}
 
 	return status

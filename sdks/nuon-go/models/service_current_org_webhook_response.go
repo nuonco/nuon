@@ -32,6 +32,9 @@ type ServiceCurrentOrgWebhookResponse struct {
 	// interests
 	Interests any `json:"interests,omitempty"`
 
+	// match
+	Match any `json:"match,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

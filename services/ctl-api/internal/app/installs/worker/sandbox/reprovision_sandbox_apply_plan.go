@@ -11,7 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -57,7 +58,7 @@ func (w *Workflows) ReprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 
 	w.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   sandboxRun.ID,
 		TriggeredByType: plugins.TableName(w.db, sandboxRun),

@@ -1,8 +1,6 @@
 package executeworkflowstep
 
 import (
-	"strconv"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -38,7 +36,7 @@ func (s *Signal) handlePlanOnlyApproval(ctx workflow.Context, step *app.Workflow
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.WorkflowStepApprovalStatusApproved,
-			StatusHumanDescription: "auto-approved (plan-only mode) " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "auto-approved (plan-only mode) " + step.Name,
 			Metadata: map[string]any{
 				"step_idx":  step.Idx,
 				"status":    "auto-approved",

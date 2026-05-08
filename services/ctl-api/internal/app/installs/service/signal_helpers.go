@@ -29,6 +29,11 @@ func (s *service) getInstallSignalsQueueID(ctx context.Context, installID string
 	return s.getInstallQueueID(ctx, installID, helpers.InstallSignalsQueueName)
 }
 
+// getInstallStateManagerQueueID returns the state-manager queue ID.
+func (s *service) getInstallStateManagerQueueID(ctx context.Context, installID string) (string, error) {
+	return s.getInstallQueueID(ctx, installID, helpers.InstallStateManagerQueueName)
+}
+
 // enqueueInstallSignal enqueues a v2 signal to the given install queue.
 func (s *service) enqueueInstallSignal(ctx context.Context, queueID string, sig signal.Signal, ownerID, ownerType string) error {
 	_, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{

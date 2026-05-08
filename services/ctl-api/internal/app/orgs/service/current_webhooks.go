@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -19,30 +20,36 @@ import (
 )
 
 type CurrentOrgWebhookResponse struct {
-	ID          string              `json:"id"`
-	OrgID       string              `json:"org_id"`
-	WebhookURL  string              `json:"webhook_url"`
-	CreatedByID string              `json:"created_by_id"`
-	CreatedAt   time.Time           `json:"created_at"`
-	UpdatedAt   time.Time           `json:"updated_at"`
-	HasSecret   bool                `json:"has_secret"`
-	Interests   interests.Interests `json:"interests" swaggertype:"object"`
+	ID          string                    `json:"id"`
+	OrgID       string                    `json:"org_id"`
+	WebhookURL  string                    `json:"webhook_url"`
+	CreatedByID string                    `json:"created_by_id"`
+	CreatedAt   time.Time                 `json:"created_at"`
+	UpdatedAt   time.Time                 `json:"updated_at"`
+	HasSecret   bool                      `json:"has_secret"`
+	Interests   interests.Interests       `json:"interests" swaggertype:"object"`
+	Match       *labels.SubscriptionMatch `json:"match,omitempty" swaggertype:"object"`
 }
 
 type CreateCurrentOrgWebhookRequest struct {
-	WebhookURL    string              `json:"webhook_url" binding:"required"`
-	WebhookSecret string              `json:"webhook_secret"`
-	Interests     interests.Interests `json:"interests" swaggertype:"object"`
+	WebhookURL    string                    `json:"webhook_url" binding:"required"`
+	WebhookSecret string                    `json:"webhook_secret"`
+	Interests     interests.Interests       `json:"interests" swaggertype:"object"`
+	Match         *labels.SubscriptionMatch `json:"match,omitempty" swaggertype:"object"`
 }
 
-// UpdateCurrentOrgWebhookRequest mutates a webhook's interests and/or secret.
-// WebhookURL is part of the (org_id, webhook_url) unique index and cannot be
-// changed in place — callers should delete + create to rename. Interests is
-// always replaced wholesale (PUT semantics for the field). WebhookSecret
-// pointer distinguishes "leave unchanged" (nil) from "clear" (empty string).
+// UpdateCurrentOrgWebhookRequest mutates a webhook's interests, scope (Match),
+// and/or secret. WebhookURL is part of the (org_id, webhook_url, match)
+// unique index and cannot be changed in place — callers should delete +
+// create to rename. Interests is always replaced wholesale (PUT semantics
+// for the field). Match is also replaced wholesale: passing nil resets the
+// row to org-wide; passing a non-nil predicate replaces the existing scope.
+// WebhookSecret pointer distinguishes "leave unchanged" (nil) from "clear"
+// (empty string).
 type UpdateCurrentOrgWebhookRequest struct {
-	WebhookSecret *string             `json:"webhook_secret,omitempty"`
-	Interests     interests.Interests `json:"interests" swaggertype:"object"`
+	WebhookSecret *string                   `json:"webhook_secret,omitempty"`
+	Interests     interests.Interests       `json:"interests" swaggertype:"object"`
+	Match         *labels.SubscriptionMatch `json:"match,omitempty" swaggertype:"object"`
 }
 
 // @ID                                          GetCurrentOrgWebhooks
@@ -111,6 +118,12 @@ func (s *service) CreateCurrentOrgWebhook(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if req.Match != nil {
+		if err := req.Match.Validate(); err != nil {
+			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid match: %w", err)))
+			return
+		}
+	}
 
 	webhook, err := s.createCurrentOrgWebhook(ctx, org.ID, account.ID, &req)
 	if err != nil {
@@ -154,6 +167,12 @@ func (s *service) UpdateCurrentOrgWebhook(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
+	if req.Match != nil {
+		if err := req.Match.Validate(); err != nil {
+			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid match: %w", err)))
+			return
+		}
+	}
 
 	webhook, err := s.updateCurrentOrgWebhook(ctx, org.ID, ctx.Param("webhook_id"), &req)
 	if err != nil {
@@ -189,6 +208,12 @@ func (s *service) updateCurrentOrgWebhook(ctx context.Context, orgID, webhookID 
 
 	updates := map[string]any{
 		"interests": req.Interests,
+		// Match is replaced wholesale — passing nil resets to org-wide.
+		// match_canonical is computed inline (rather than relying on
+		// BeforeSave, which doesn't fire reliably for map-based Updates)
+		// so the unique index always sees the canonical projection.
+		"match":           req.Match,
+		"match_canonical": req.Match.Canonical(),
 	}
 	if req.WebhookSecret != nil {
 		updates["webhook_secret"] = strings.TrimSpace(*req.WebhookSecret)
@@ -197,10 +222,36 @@ func (s *service) updateCurrentOrgWebhook(ctx context.Context, orgID, webhookID 
 	if err := s.db.WithContext(ctx).
 		Model(&webhook).
 		Updates(updates).Error; err != nil {
+		if isUniqueViolation(err) {
+			return nil, stderr.ErrConflict{
+				Err:         fmt.Errorf("webhook %q for org %q already exists with this scope: %w", trimmedWebhookID, orgID, err),
+				Description: "another webhook for this URL already uses this scope",
+			}
+		}
 		return nil, fmt.Errorf("unable to update webhook: %w", err)
 	}
 
+	// Reflect the new values on the returned struct so the response body
+	// surfaces the updated scope without an extra SELECT.
+	webhook.Interests = req.Interests
+	webhook.Match = req.Match
+	webhook.MatchCanonical = req.Match.Canonical()
+	if req.WebhookSecret != nil {
+		webhook.WebhookSecret = strings.TrimSpace(*req.WebhookSecret)
+	}
+
 	return &webhook, nil
+}
+
+// isUniqueViolation sniffs a GORM error for the Postgres 23505 unique
+// constraint code. Used to convert duplicate-Match upserts into 409s.
+func isUniqueViolation(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "duplicate key value") ||
+		strings.Contains(msg, "SQLSTATE 23505")
 }
 
 // @ID                                          DeleteCurrentOrgWebhook
@@ -256,14 +307,19 @@ func (s *service) createCurrentOrgWebhook(ctx context.Context, orgID string, acc
 
 	normalizedWebhookSecret := strings.TrimSpace(req.WebhookSecret)
 
+	// Conflict check now keys on (org_id, webhook_url, match_canonical) to
+	// match the unique index introduced by migration 102: the same URL can
+	// be registered multiple times in the same org with different scopes.
+	matchCanonical := req.Match.Canonical()
 	var existing app.Webhook
 	err = s.db.WithContext(ctx).
-		Where("org_id = ? AND webhook_url = ?", orgID, normalizedWebhookURL).
+		Where("org_id = ? AND webhook_url = ? AND match_canonical = ?",
+			orgID, normalizedWebhookURL, matchCanonical).
 		First(&existing).Error
 	if err == nil {
 		return nil, stderr.ErrConflict{
-			Err:         fmt.Errorf("webhook %q already exists for org %q", normalizedWebhookURL, orgID),
-			Description: "webhook already exists for this org",
+			Err:         fmt.Errorf("webhook %q already exists for org %q with this scope", normalizedWebhookURL, orgID),
+			Description: "webhook already exists for this org with this scope",
 		}
 	}
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -284,9 +340,16 @@ func (s *service) createCurrentOrgWebhook(ctx context.Context, orgID string, acc
 		WebhookURL:    normalizedWebhookURL,
 		WebhookSecret: normalizedWebhookSecret,
 		Interests:     subInterests,
+		Match:         req.Match,
 	}
 
 	if err := s.db.WithContext(ctx).Create(&webhook).Error; err != nil {
+		if isUniqueViolation(err) {
+			return nil, stderr.ErrConflict{
+				Err:         fmt.Errorf("webhook %q already exists for org %q with this scope: %w", normalizedWebhookURL, orgID, err),
+				Description: "webhook already exists for this org with this scope",
+			}
+		}
 		return nil, fmt.Errorf("unable to create webhook: %w", err)
 	}
 
@@ -362,6 +425,7 @@ func toCurrentOrgWebhookResponse(webhook app.Webhook) CurrentOrgWebhookResponse 
 		UpdatedAt:   webhook.UpdatedAt,
 		HasSecret:   strings.TrimSpace(webhook.WebhookSecret) != "",
 		Interests:   effectiveInterests,
+		Match:       webhook.Match,
 	}
 }
 

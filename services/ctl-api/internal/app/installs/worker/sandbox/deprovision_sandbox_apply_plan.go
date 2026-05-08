@@ -10,7 +10,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -49,7 +50,7 @@ func (w *Workflows) DeprovisionSandboxApplyPlan(ctx workflow.Context, sreq signa
 	}
 	w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   installRun.ID,
 		TriggeredByType: plugins.TableName(w.db, installRun),

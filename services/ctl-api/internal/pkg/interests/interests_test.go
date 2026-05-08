@@ -410,13 +410,16 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			name:    "Approval honours Ops filter on the resource",
+			// Ops only narrows lifecycle sub-ops. Approval events are gated
+			// independently by ApprovalRequests / ApprovalResponses, so a
+			// lifecycle-only Ops filter must not silence them.
+			name:    "Approval ignores lifecycle Ops filter on the resource",
 			event:   approvalRequest,
 			outcome: nil,
 			in: Interests{Resources: map[ResourceKind]ResourceCfg{
 				ResourceComponents: {Ops: []string{"teardown"}, ApprovalRequests: true},
 			}},
-			want: false,
+			want: true,
 		},
 		{
 			// Canonical post-suppression shape: just DriftDetected=true with
@@ -463,7 +466,10 @@ func TestMatches(t *testing.T) {
 			want: false,
 		},
 		{
-			name: "drift-detected (drift_run) honours Ops filter — does not match deploy",
+			// Ops only narrows lifecycle sub-ops. Drift-detected events are
+			// gated independently by DriftDetected, so a lifecycle-only Ops
+			// filter must not silence them.
+			name: "drift-detected (drift_run) ignores lifecycle Ops filter",
 			event: signal.SignalPhaseEvent{
 				SignalType:   signalTypeDriftDetected,
 				WorkflowType: "drift_run",
@@ -473,7 +479,7 @@ func TestMatches(t *testing.T) {
 			in: Interests{Resources: map[ResourceKind]ResourceCfg{
 				ResourceComponents: {Ops: []string{"deploy"}, DriftDetected: true},
 			}},
-			want: false,
+			want: true,
 		},
 		{
 			name: "drift-detected (drift_run_reprovision_sandbox) matches sandboxes.drift",
@@ -501,6 +507,80 @@ func TestMatches(t *testing.T) {
 				ResourceComponents: {Outcome: OutcomeFailures, DriftDetected: true},
 			}},
 			want: true,
+		},
+		{
+			// OutcomeNone mutes all lifecycle events for the resource —
+			// even terminal successes that would pass under OutcomeAll /
+			// OutcomeCompletion.
+			name:    "Outcome=none drops lifecycle events",
+			event:   provisionSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceInstalls: {Outcome: OutcomeNone},
+			}},
+			want: false,
+		},
+		{
+			// Lifecycle Ops filter must not silence approval events. Event
+			// is for components.deploy; cfg.Ops lists "teardown" only.
+			name:  "Approval request matches when lifecycle Ops list a different sub-op",
+			event: approvalRequest,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Ops: []string{"teardown"}, ApprovalRequests: true},
+			}},
+			want: true,
+		},
+		{
+			// Lifecycle Ops filter must not silence drift-detected events.
+			// The drift_run drift-detected event classifies as
+			// components.drift; cfg.Ops lists "deploy" only.
+			name: "Drift-detected matches when lifecycle Ops list a different sub-op",
+			event: signal.SignalPhaseEvent{
+				SignalType:   signalTypeDriftDetected,
+				WorkflowType: "drift_run",
+				Phase:        signal.SignalPhaseExecute,
+				StepID:       "iws_drift",
+			},
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Ops: []string{"deploy"}, DriftDetected: true},
+			}},
+			want: true,
+		},
+		{
+			// Drift-only configuration: OutcomeNone mutes lifecycle, but
+			// DriftDetected=true keeps the dedicated drift event flowing.
+			name: "Drift-only cfg: drift-detected event for components matches",
+			event: signal.SignalPhaseEvent{
+				SignalType:   signalTypeDriftDetected,
+				WorkflowType: "drift_run",
+				Phase:        signal.SignalPhaseExecute,
+				StepID:       "iws_drift",
+			},
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Outcome: OutcomeNone, DriftDetected: true},
+			}},
+			want: true,
+		},
+		{
+			name: "Drift-only cfg: lifecycle event for components is muted",
+			event: signal.SignalPhaseEvent{
+				SignalType:   signalTypeExecuteWorkflow,
+				WorkflowType: "teardown_components",
+				Phase:        signal.SignalPhaseExecute,
+			},
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Outcome: OutcomeNone, DriftDetected: true},
+			}},
+			want: false,
+		},
+		{
+			name:  "Drift-only cfg: approval event for components is dropped (approval flags off)",
+			event: approvalRequest,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Outcome: OutcomeNone, DriftDetected: true},
+			}},
+			want: false,
 		},
 	}
 

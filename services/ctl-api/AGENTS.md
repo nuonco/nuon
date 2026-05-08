@@ -988,6 +988,24 @@ The admin dashboard is a React 18 SPA backed by a JSON BFF at `internal/app/admi
 
 **Full documentation**: See [`internal/app/admin-dashboard/AGENTS.md`](internal/app/admin-dashboard/AGENTS.md) for tech stack, handler patterns, and step-by-step recipes for adding pages.
 
+## Workflow Status Descriptions
+
+**Never use `step.Idx` in user-facing strings.** This includes `StatusHumanDescription`, `StatusDescription`, and error
+messages shown in the dashboard. Always use `step.Name` (or `nextStep.Name`, `stp.Name`, etc.) instead.
+
+```go
+// ✅ CORRECT - Human-readable step name
+StatusHumanDescription: "executing step " + step.Name,
+StatusHumanDescription: "awaiting approval for " + step.Name,
+
+// ❌ WRONG - Numeric index meaningless to users
+StatusHumanDescription: "executing step " + strconv.Itoa(step.Idx+1),
+StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
+```
+
+`step.Idx` is an internal counter that can reach into the thousands for long-running workflows — it is not meaningful to
+users. `step.Name` is the human-readable identifier (e.g., `terraform-plan`, `terraform-apply`).
+
 ## Logging Conventions
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.

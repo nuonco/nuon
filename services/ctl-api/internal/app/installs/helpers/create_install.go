@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -41,6 +42,10 @@ type CreateInstallParams struct {
 	InstallConfig *CreateInstallConfigParams `json:"install_config"`
 
 	Metadata InstallMetadata `json:"metadata,omitempty"`
+
+	// Labels are key/value pairs to attach to the install at creation time.
+	// They are merged into the install's existing labels (which is empty for a brand-new install).
+	Labels map[string]string `json:"labels,omitempty"`
 
 	SandboxMode bool `json:"sandbox_mode,omitempty" swaggerignore:"true"`
 }
@@ -85,10 +90,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err != nil {
 		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
 	}
+
 	if err := s.ValidateInstallInputs(ctx, latestAppInputConfig, req.Inputs); err != nil {
 		return nil, err
 	}
-
 	install := app.Install{
 		AppID:              appID,
 		Name:               req.Name,
@@ -105,6 +110,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		Metadata: generics.ToHstore(map[string]string{
 			"managed_by": req.Metadata.ManagedBy,
 		}),
+	}
+
+	if len(req.Labels) > 0 {
+		install.Labels = labels.Labels(req.Labels)
 	}
 
 	if req.AWSAccount == nil && req.AzureAccount == nil && req.GCPAccount == nil {
@@ -244,6 +253,19 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create install-workflow-steps queue: %w", err)
+	}
+
+	// Create the state-manager queue (handles state regeneration operations)
+	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     install.ID,
+		OwnerType:   plugins.TableName(s.db, app.Install{}),
+		Namespace:   "installs",
+		Name:        InstallStateManagerQueueName,
+		MaxInFlight: 5,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create state-manager queue: %w", err)
 	}
 
 	if req.InstallConfig != nil {
