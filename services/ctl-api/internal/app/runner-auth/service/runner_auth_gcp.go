@@ -10,12 +10,14 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"google.golang.org/api/idtoken"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	gcptypes "github.com/nuonco/nuon/pkg/types/gcp"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -61,6 +63,18 @@ type RunnerAuthGCPResponse struct {
 // @Success				200	{object}	RunnerAuthGCPResponse
 // @Router					/v1/runner-auth/gcp [POST]
 func (s *service) RunnerAuthGCP(ctx *gin.Context) {
+	start := time.Now()
+	metricTags := map[string]string{
+		"cloud_provider": "gcp",
+		"auth_method":    "jwt",
+		"status":         "error",
+	}
+	defer func() {
+		if s.mw != nil {
+			s.mw.Timing("runner.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+		}
+	}()
+
 	var req RunnerAuthGCPRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		s.l.Warn("runner auth gcp: failed to parse request", zap.Error(err))
@@ -155,10 +169,30 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["runner_id"] = runner.ID
 
-	if err := s.validateRunnerGCPIdentity(reqCtx, runner, claims); err != nil {
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth gcp: failed to get install for runner",
+			zap.String("runner_id", runnerID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not associated with an install",
+		})
+		ctx.Abort()
+		return
+	}
+	metricTags["install_id"] = install.ID
+	metricTags["install_name"] = install.Name
+	metricTags["org_id"] = install.OrgID
+
+	if err := s.validateRunnerGCPIdentity(reqCtx, install, claims); err != nil {
 		s.l.Warn("runner auth gcp: identity validation failed",
 			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("install_name", install.Name),
+			zap.String("org_id", install.OrgID),
 			zap.String("project_id", claims.projectID),
 			zap.String("service_account", claims.serviceAccount),
 			zap.Error(err))
@@ -181,7 +215,11 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 		return
 	}
 
+	metricTags["status"] = "ok"
 	s.l.Info("runner auth gcp: authentication successful",
+		zap.String("install_id", install.ID),
+		zap.String("install_name", install.Name),
+		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", claims.instanceID),
 		zap.String("project_id", claims.projectID))
@@ -332,12 +370,7 @@ func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
 	return ""
 }
 
-func (s *service) validateRunnerGCPIdentity(ctx context.Context, runner *app.Runner, claims *gcpClaims) error {
-	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
-	}
-
+func (s *service) validateRunnerGCPIdentity(ctx context.Context, install *app.Install, claims *gcpClaims) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)
