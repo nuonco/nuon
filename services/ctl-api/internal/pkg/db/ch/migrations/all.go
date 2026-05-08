@@ -32,5 +32,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "07-create-queries-table",
 			Fn:   m.Migration007CreateQueriesTable,
 		},
+		{
+			Name: "08-add-queries-indexes",
+			Fn:   m.Migration008AddQueriesIndexes,
+		},
 	}
 }
