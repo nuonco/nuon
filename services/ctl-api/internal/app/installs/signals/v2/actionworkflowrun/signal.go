@@ -347,7 +347,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Ins
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to hint state manager")
-		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+		} else if _, err := queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID); err != nil {
 			return errors.Wrap(err, "unable to await state generation")
 		}
 

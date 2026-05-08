@@ -150,7 +150,7 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 		return errors.Wrap(err, "unable to enqueue workflow-step-approval-request signal")
 	}
 
-	if _, err := client.AwaitAwaitSignal(ctx, resp.QueueSignalID); err != nil {
+	if _, err := client.AwaitQueueSignal(ctx, resp.QueueSignalID); err != nil {
 		return errors.Wrap(err, "workflow-step-approval-request signal failed")
 	}
 	return nil
