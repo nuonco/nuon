@@ -28,14 +28,12 @@ export const getQueries = (params?: {
   source?: string
   sort?: string
   min_duration_ms?: string
+  time_range?: string
 }) =>
   api<{ enabled: boolean; queries: TQueryRecord[]; tables: string[]; total: number }>({
     path: 'queries',
     params,
   })
-
-export const clearQueries = () =>
-  api<{ cleared: boolean }>({ path: 'queries/clear', method: 'POST' })
 
 export const explainQuery = (params: { sql: string; db_type: string }) =>
   api<{ rows: Record<string, unknown>[]; error?: string }>({

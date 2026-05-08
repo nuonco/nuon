@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useCallback } from 'react'
-import { getQueries, clearQueries, explainQuery, type TQueryRecord } from '@/lib/admin-api'
+import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { getQueries, explainQuery, type TQueryRecord } from '@/lib/admin-api'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
@@ -9,7 +9,6 @@ import { Badge } from '@/components/common/Badge'
 const SQL_KEYWORDS = /\b(SELECT|FROM|WHERE|AND|OR|LEFT JOIN|RIGHT JOIN|INNER JOIN|OUTER JOIN|FULL JOIN|JOIN|ON|ORDER BY|GROUP BY|HAVING|LIMIT|OFFSET|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|IN|NOT|IS|NULL|AS|CASE|WHEN|THEN|ELSE|END|DISTINCT|UNION|ALL|EXISTS|BETWEEN|LIKE|ILIKE|RETURNING)\b/gi
 
 function formatSQL(sql: string): string {
-  // Newline before major clauses
   const breakBefore = /\b(SELECT|FROM|WHERE|AND|OR|LEFT JOIN|RIGHT JOIN|INNER JOIN|OUTER JOIN|FULL JOIN|JOIN|ON|ORDER BY|GROUP BY|HAVING|LIMIT|OFFSET|RETURNING|UNION)\b/gi
   let formatted = sql.replace(/\s+/g, ' ').trim()
   formatted = formatted.replace(breakBefore, (match) => {
@@ -28,6 +27,16 @@ const SORT_OPTIONS = [
   { value: 'total_ms', label: 'Most total time' },
   { value: 'count', label: 'Most frequent' },
   { value: 'last_seen', label: 'Most recent' },
+] as const
+
+const TIME_RANGE_OPTIONS = [
+  { value: '5m', label: '5 minutes' },
+  { value: '15m', label: '15 minutes' },
+  { value: '30m', label: '30 minutes' },
+  { value: '1h', label: '1 hour' },
+  { value: '6h', label: '6 hours' },
+  { value: '24h', label: '24 hours' },
+  { value: '7d', label: '7 days' },
 ] as const
 
 const fmt = (ms: number) => {
@@ -52,13 +61,13 @@ export const SlowQueries = () => {
   const [dbType, setDbType] = useState('')
   const [source, setSource] = useState('')
   const [sortBy, setSortBy] = useState('max_ms')
+  const [timeRange, setTimeRange] = useState('1h')
   const [minDuration, setMinDuration] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [explainResult, setExplainResult] = useState<{ key: string; rows?: Record<string, unknown>[]; error?: string; loading?: boolean } | null>(null)
-  const queryClient = useQueryClient()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queries', search, table, dbType, source, sortBy, minDuration],
+    queryKey: ['queries', search, table, dbType, source, sortBy, minDuration, timeRange],
     queryFn: () => getQueries({
       search: search || undefined,
       table: table || undefined,
@@ -66,46 +75,25 @@ export const SlowQueries = () => {
       source: source || undefined,
       sort: sortBy,
       min_duration_ms: minDuration || undefined,
+      time_range: timeRange,
     }),
-    refetchInterval: 5000,
-  })
-
-  const clearMutation = useMutation({
-    mutationFn: clearQueries,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queries'] }),
+    refetchInterval: 10000,
   })
 
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load queries'} />
 
-  if (!data?.enabled) {
-    return (
-      <div>
-        <h1 className="page-heading">Queries</h1>
-        <div className="mt-6 rounded-lg border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 p-4 text-sm text-yellow-800 dark:text-yellow-300">
-          Query collector is disabled. Set <code className="rounded bg-yellow-100 dark:bg-yellow-900/50 px-1 font-mono text-xs">debug_enable_query_collector=true</code> in your config to enable.
-        </div>
-      </div>
-    )
-  }
-
-  const queries = data.queries || []
-  const tables = [...(data.tables || [])].sort()
+  const queries = data?.queries || []
+  const tables = [...(data?.tables || [])].sort()
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <h1 className="page-heading">Queries</h1>
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <span>{data.total} total captured</span>
+          <span>{data?.total?.toLocaleString()} total in range</span>
           <span className="text-gray-300 dark:text-gray-600">|</span>
           <span>{queries.length} unique</span>
-          <button
-            onClick={() => clearMutation.mutate()}
-            className="ml-2 rounded-md bg-red-50 dark:bg-red-900/30 px-2 py-1 text-xs font-medium text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/50"
-          >
-            Clear
-          </button>
         </div>
       </div>
 
@@ -113,6 +101,15 @@ export const SlowQueries = () => {
         <div className="w-full sm:w-64">
           <SearchInput value={search} onChange={setSearch} placeholder="Search SQL, table, caller..." />
         </div>
+        <select
+          value={timeRange}
+          onChange={(e) => setTimeRange(e.target.value)}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          {TIME_RANGE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
         <select
           value={table}
           onChange={(e) => setTable(e.target.value)}
@@ -280,7 +277,7 @@ export const SlowQueries = () => {
           )
         })}
         {queries.length === 0 && (
-          <div className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">No queries captured yet</div>
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">No queries found in the selected time range</div>
         )}
       </div>
     </div>

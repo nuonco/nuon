@@ -246,9 +246,8 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
 
-		// Queries (dev-only)
-		api.GET("/queries", s.Queries)
-		api.POST("/queries/clear", s.ClearQueries)
+		// Queries
+		api.GET("/queries", s.QueriesClickHouse)
 		api.POST("/queries/explain", s.ExplainQuery)
 
 		// Query catalog
