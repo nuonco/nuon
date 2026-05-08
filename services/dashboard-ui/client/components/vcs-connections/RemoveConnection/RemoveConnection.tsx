@@ -104,14 +104,6 @@ export const RemoveConnectionModal = ({
               labelText: 'Also uninstall the Nuon GitHub App from GitHub',
             }}
           />
-          <Text
-            variant="subtext"
-            className="pl-9 text-cool-grey-600 dark:text-cool-grey-400"
-          >
-            Only check this if no other Nuon organization uses this GitHub App
-            installation. Uninstalling here will revoke access for every org
-            that shares it.
-          </Text>
         </div>
 
         {deleteGithubApp ? (
