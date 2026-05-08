@@ -7,6 +7,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
@@ -15,7 +16,7 @@ import (
 func (c *Client) GetQueue(ctx context.Context, id string) (*app.Queue, error) {
 	q, err := c.getQueue(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get queue")
+		return nil, generics.TemporalGormError(err, "unable to get queue")
 	}
 
 	return q, nil
@@ -40,7 +41,7 @@ func (c *Client) GetQueueByOwner(ctx context.Context, ownerID, ownerType string)
 			OwnerType: ownerType,
 		}).
 		First(&q); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue by owner")
+		return nil, generics.TemporalGormError(res.Error, "unable to get queue by owner")
 	}
 
 	return &q, nil
@@ -57,7 +58,7 @@ func (c *Client) GetQueueByOwnerAndName(ctx context.Context, ownerID, ownerType,
 			Name:      name,
 		}).
 		First(&q); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue by owner and name")
+		return nil, generics.TemporalGormError(res.Error, "unable to get queue by owner and name")
 	}
 
 	return &q, nil
@@ -68,7 +69,7 @@ func (c *Client) GetQueueByOwnerAndName(ctx context.Context, ownerID, ownerType,
 func (c *Client) GetQueueStatus(ctx context.Context, queueID string) (*queue.StatusResponse, error) {
 	q, err := c.getQueue(ctx, queueID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get queue")
+		return nil, generics.TemporalGormError(err, "unable to get queue")
 	}
 
 	rawResp, err := c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{

@@ -31,6 +31,19 @@ function formatDur(ns: number | undefined): string {
   return formatDuration(ns)
 }
 
+function formatNsDuration(ns: number): string {
+  const seconds = Math.floor(ns / 1e9)
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  const remainMinutes = minutes % 60
+  if (hours < 24) return remainMinutes > 0 ? `${hours}h${remainMinutes}m` : `${hours}h`
+  const days = Math.floor(hours / 24)
+  const remainHours = hours % 24
+  return remainHours > 0 ? `${days}d${remainHours}h` : `${days}d`
+}
+
 // -- Step detail row --
 
 function StepRow({ stepData }: { stepData: any }) {
@@ -86,6 +99,7 @@ function StepRow({ stepData }: { stepData: any }) {
                 {step?.skippable && <Badge>skippable</Badge>}
                 {step?.retried && <Badge variant="status" status="warning">retried</Badge>}
                 {step?.result_directive && <Badge>{step.result_directive}</Badge>}
+                {step?.timeout > 0 && <Badge>timeout: {formatNsDuration(step.timeout)}</Badge>}
               </div>
 
               {/* Step target */}
@@ -179,6 +193,7 @@ function StepGroupSection({ group }: { group: any }) {
           <Badge>{g?.parallel ? 'parallel' : 'sequential'}</Badge>
           {status && <Badge variant="status" status={status}>{status}</Badge>}
           {g?.result_directive && <Badge>{g.result_directive}</Badge>}
+          {g?.timeout > 0 && <Badge>timeout: {formatNsDuration(g.timeout)}</Badge>}
           <span className="text-xs text-gray-400 dark:text-gray-500">{steps.length} steps</span>
         </div>
         <div className="flex items-center gap-2">

@@ -73,6 +73,7 @@ func (w *Workflows) GenerateWorkflowSteps(ctx workflow.Context, req *GenerateWor
 			Retryable:     step.Retryable,
 			Skippable:     step.Skippable,
 			GroupIdx:      step.GroupIdx,
+			Timeout:       step.Timeout,
 		})
 	}
 

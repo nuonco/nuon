@@ -129,6 +129,12 @@ type AppWorkflowStep struct {
 	// gets dispatched. When empty, the step signal's TargetQueueName is used.
 	TargetQueueID string `json:"target_queue_id,omitempty"`
 
+	// Timeout is the execution timeout for this step, derived from the
+	// inner signal's Timeout() at step generation time. Used by the step-group
+	// to set ScheduleToCloseTimeout when awaiting step completion.
+	// Zero means use default fallback.
+	Timeout string `json:"timeout,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
