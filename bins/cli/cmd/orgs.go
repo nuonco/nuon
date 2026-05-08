@@ -208,11 +208,29 @@ func (c *cli) orgsCmd() *cobra.Command {
 	return orgsCmd
 }
 
-// interestsJSONHelp documents the shape accepted by --interests-json /
-// --interests-file. Mirrors internal/pkg/interests/types.go (SubOps map and
-// Outcome constants) and the "Filtering events with interests" section of
-// docs/guides/webhooks.mdx; update all three in lockstep.
-const interestsJSONHelp = `INTERESTS JSON SHAPE
+// subscriptionJSONHelp documents the shape accepted by --subscription-json
+// and --subscription-file. The unified payload combines the events filter
+// (interests) and the optional scope predicate (match) into a single
+// committable artifact. Mirrors:
+//   - services/ctl-api/internal/pkg/interests/types.go (SubOps map + Outcome constants)
+//   - pkg/labels/match.go (SubscriptionMatch / TargetMatch / Selector)
+//   - the "Filtering events with interests" + "Scoping deliveries" sections
+//     of docs/guides/webhooks.mdx
+//
+// Update all four in lockstep.
+const subscriptionJSONHelp = `SUBSCRIPTION JSON SHAPE
+
+  Top-level keys (both optional):
+    interests  events filter — which events fire for this webhook
+    match      scope predicate — which entities are in scope (omit for
+               org-wide / every entity)
+
+  Omitting --subscription-json / --subscription-file entirely is equivalent
+  to {"interests": {"all_events": true}} — every event in the org, no
+  scoping. On update both fields are replaced wholesale; pass the existing
+  shape alongside any edits to preserve it.
+
+INTERESTS
 
   Top-level keys (one of):
     all_events: bool             subscribe to every supported event
@@ -231,7 +249,11 @@ const interestsJSONHelp = `INTERESTS JSON SHAPE
 
   Per-resource cfg fields (all optional):
     ops                 list of sub-ops; empty/omitted = every sub-op
-    outcome             "all" (default) | "completion" | "failures"
+    outcome             "all" (default) | "completion" | "failures" | "none"
+                        ("none" mutes lifecycle for this resource — combine
+                        with drift_detected / approval_requests /
+                        approval_responses for drift-only or approvals-only
+                        subscriptions)
     approval_requests   bool, deliver workflow-step approval requests
                         (independent of outcome)
     approval_responses  bool, deliver workflow-step approval responses
@@ -241,27 +263,69 @@ const interestsJSONHelp = `INTERESTS JSON SHAPE
                         of outcome). Only meaningful for components and
                         sandboxes.
 
+MATCH
+
+  Top-level keys (any combination; OR across kinds):
+    installs    target match for install-scoped events
+    components  target match for component-scoped events
+    actions     target match for action-scoped events
+
+  Per-kind TargetMatch fields (all optional; an empty {} means "any entity
+  of this kind"):
+    ids       list of entity IDs (OR within the list)
+    selector  label selector with match_labels: {key: value} (AND across keys;
+              value "*" means "key must exist")
+
+  Composition: the match matches an event when ANY populated kind matches.
+  Within a kind, the entity matches when its ID is in ids OR the selector
+  hits its labels.
+
 EXAMPLES
 
-  Subscribe to every supported event (the default if --interests-json/-file is
-  omitted):
-    {"all_events": true}
+  Subscribe to every supported event in the org (equivalent to omitting the
+  flag entirely):
+    {"interests": {"all_events": true}}
 
-  Per-resource opt-in matching the dashboard's "opted-out-of-AllEvents"
-  baseline:
+  Component deploy failures across the whole org:
     {
-      "resources": {
-        "installs":               {"outcome": "completion", "approval_requests": true, "approval_responses": true},
-        "components":             {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
-        "sandboxes":              {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
-        "install_configurations": {"outcome": "completion", "approval_requests": true, "approval_responses": true}
+      "interests": {
+        "resources": {
+          "components": {"ops": ["deploy"], "outcome": "failures"}
+        }
       }
     }
 
-  Narrowly scoped — only component deploy failures:
+  Every event, but only for two specific installs:
     {
-      "resources": {
-        "components": {"ops": ["deploy"], "outcome": "failures"}
+      "interests": {"all_events": true},
+      "match":     {"installs": {"ids": ["ins_abc123", "ins_def456"]}}
+    }
+
+  Drift-only on components carrying env=prod:
+    {
+      "interests": {
+        "resources": {
+          "components": {"outcome": "none", "drift_detected": true}
+        }
+      },
+      "match": {
+        "components": {"selector": {"match_labels": {"env": "prod"}}}
+      }
+    }
+
+  Per-resource baseline — terminal events plus approvals for the four most
+  common resources, scoped to a label-selected install:
+    {
+      "interests": {
+        "resources": {
+          "installs":               {"outcome": "completion", "approval_requests": true, "approval_responses": true},
+          "components":             {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
+          "sandboxes":              {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
+          "install_configurations": {"outcome": "completion", "approval_requests": true, "approval_responses": true}
+        }
+      },
+      "match": {
+        "installs": {"selector": {"match_labels": {"team": "platform"}}}
       }
     }
 `
@@ -272,8 +336,8 @@ func (c *cli) orgWebhooksCmd() *cobra.Command {
 		webhookSecret string
 		webhookID     string
 
-		createInterests orgs.InterestsFlags
-		updateInterests orgs.InterestsFlags
+		createSubscription orgs.SubscriptionFlags
+		updateSubscription orgs.SubscriptionFlags
 	)
 
 	webhooksCmd := &cobra.Command{
@@ -299,46 +363,63 @@ func (c *cli) orgWebhooksCmd() *cobra.Command {
 		Short: "Create a webhook for the current org",
 		Long: `Create a webhook subscription for operation lifecycle events on the current org.
 
-By default the webhook subscribes to every supported event. To filter, pass
-either --interests-json '<json>' or --interests-file path/to/interests.json.
+When neither --subscription-json nor --subscription-file is passed in an
+interactive terminal, the CLI drops into a picker that walks you through
+the same fields the dashboard's Slack subscription modal collects.
 
-` + interestsJSONHelp,
+In non-interactive sessions (NUON_NO_TTY=true, CI, piped stdout) the
+default is to subscribe to every supported event in the org. To narrow
+events and/or scope the webhook to specific entities non-interactively,
+pass either --subscription-json '<json>' or --subscription-file
+path/to/subscription.json.
+
+` + subscriptionJSONHelp,
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			createInterests.AllEventsIsSet = cmd.Flags().Changed("all-events")
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateWebhook(cmd.Context(), webhookURL, webhookSecret, createInterests, PrintJSON)
+			return svc.CreateWebhook(cmd.Context(), webhookURL, webhookSecret, createSubscription, PrintJSON)
 		}),
 	}
 	createCmd.Flags().StringVarP(&webhookURL, "url", "u", "", "Webhook URL (must be an absolute http/https URL)")
 	createCmd.MarkFlagRequired("url")
 	createCmd.Flags().StringVarP(&webhookSecret, "secret", "s", "", "Optional shared secret used to sign webhook payloads (HMAC-SHA256, X-Nuon-Signature header)")
-	createCmd.Flags().BoolVar(&createInterests.AllEvents, "all-events", true, "Subscribe to every supported event (default). Mutually exclusive with --interests-json/--interests-file")
-	createCmd.Flags().StringVar(&createInterests.InterestsJSON, "interests-json", "", "Inline JSON interests config (mutually exclusive with --all-events / --interests-file)")
-	createCmd.Flags().StringVar(&createInterests.InterestsFile, "interests-file", "", "Path to a JSON file containing the interests config (mutually exclusive with --all-events / --interests-json)")
+	createCmd.Flags().StringVar(&createSubscription.JSON, "subscription-json", "", "Inline JSON subscription describing interests + match (mutually exclusive with --subscription-file)")
+	createCmd.Flags().StringVar(&createSubscription.File, "subscription-file", "", "Path to a JSON file containing the subscription describing interests + match (mutually exclusive with --subscription-json)")
 	webhooksCmd.AddCommand(createCmd)
 
 	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "Update a webhook for the current org",
-		Long: `Replace the interests filter on a webhook and optionally rotate its signing secret.
+		Long: `Replace the subscription on a webhook and optionally rotate its signing secret.
 
 The webhook URL is immutable — delete and recreate to rename. The signing
 secret is preserved unless --secret <new> is passed, in which case it is
 rotated to the provided value.
 
-` + interestsJSONHelp,
+The subscription (interests + match) is replaced wholesale on every update.
+
+When neither --subscription-json nor --subscription-file is passed in an
+interactive terminal, the CLI drops into a picker so you can rebuild the
+subscription from scratch (the previous subscription is NOT pre-loaded —
+the picker starts at "all events" / "every entity").
+
+In non-interactive sessions (NUON_NO_TTY=true, CI, piped stdout) omitting
+both flags resets the webhook to the implicit default (every event in
+the org, no scoping). Pass the existing subscription alongside any edits
+to preserve it.
+
+` + subscriptionJSONHelp,
+		Annotations: tuiAnnotation(TUIContextual),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
-			updateInterests.AllEventsIsSet = cmd.Flags().Changed("all-events")
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.UpdateWebhook(cmd.Context(), webhookID, webhookSecret, updateInterests, PrintJSON)
+			return svc.UpdateWebhook(cmd.Context(), webhookID, webhookSecret, updateSubscription, PrintJSON)
 		}),
 	}
 	updateCmd.Flags().StringVar(&webhookID, "webhook-id", "", "The ID of the webhook to update")
 	updateCmd.MarkFlagRequired("webhook-id")
 	updateCmd.Flags().StringVarP(&webhookSecret, "secret", "s", "", "New signing secret. Omit to keep the existing secret unchanged")
-	updateCmd.Flags().BoolVar(&updateInterests.AllEvents, "all-events", true, "Subscribe to every supported event. Mutually exclusive with --interests-json/--interests-file")
-	updateCmd.Flags().StringVar(&updateInterests.InterestsJSON, "interests-json", "", "Inline JSON interests config (mutually exclusive with --all-events / --interests-file)")
-	updateCmd.Flags().StringVar(&updateInterests.InterestsFile, "interests-file", "", "Path to a JSON file containing the interests config (mutually exclusive with --all-events / --interests-json)")
+	updateCmd.Flags().StringVar(&updateSubscription.JSON, "subscription-json", "", "Inline JSON subscription describing interests + match (mutually exclusive with --subscription-file)")
+	updateCmd.Flags().StringVar(&updateSubscription.File, "subscription-file", "", "Path to a JSON file containing the subscription describing interests + match (mutually exclusive with --subscription-json)")
 	webhooksCmd.AddCommand(updateCmd)
 
 	deleteCmd := &cobra.Command{

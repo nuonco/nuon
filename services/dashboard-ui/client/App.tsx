@@ -12,6 +12,14 @@ import { Onboarding } from '@/views/Onboarding'
 import { orgRoutes } from '@/views/org/routes'
 
 const BFFRedirect = () => {
+  const search = new URLSearchParams(window.location.search)
+  if (search.get('slack') === 'installed') {
+    const orgId = search.get('org_id')
+    if (orgId) {
+      window.location.replace(`/${orgId}/slack?slack=installed`)
+      return null
+    }
+  }
   window.location.href = '/'
   return null
 }

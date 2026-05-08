@@ -78,3 +78,10 @@ func New(params Params) (*Service, error) {
 		mw:      params.MW,
 	}, nil
 }
+
+func (s *Service) RegisterSlackRoutes(api *gin.Engine) error {
+	api.GET("/livez", s.GetLivezHandler)
+	api.GET("/readyz", s.GetReadyzHandler)
+	api.GET("/version", s.GetVersionHandler)
+	return nil
+}
