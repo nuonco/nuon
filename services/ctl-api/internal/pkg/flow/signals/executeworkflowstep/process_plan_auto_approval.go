@@ -1,8 +1,6 @@
 package executeworkflowstep
 
 import (
-	"strconv"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -60,7 +58,7 @@ func (s *Signal) runAutoApprovalCheck(ctx workflow.Context, step *app.WorkflowSt
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.WorkflowStepApprovalStatusApproved,
-			StatusHumanDescription: "auto-approved " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "auto-approved " + step.Name,
 			Metadata: map[string]any{
 				"step_idx":      step.Idx,
 				"status":        "auto-approved",
@@ -77,7 +75,7 @@ func (s *Signal) runAutoApprovalCheck(ctx workflow.Context, step *app.WorkflowSt
 		ID: flw.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusInProgress,
-			StatusHumanDescription: "auto-approved step " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "auto-approved step " + step.Name,
 			Metadata: map[string]any{
 				"step_idx":      step.Idx,
 				"status":        "auto-approved",
