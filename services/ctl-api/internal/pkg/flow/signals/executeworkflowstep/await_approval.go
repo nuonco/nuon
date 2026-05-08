@@ -2,7 +2,6 @@ package executeworkflowstep
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/pkg/errors"
@@ -30,7 +29,7 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.AwaitingApproval,
-			StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "awaiting approval for " + step.Name,
 			Metadata: map[string]any{
 				"step_idx":   step.Idx,
 				"status":     "ok",
