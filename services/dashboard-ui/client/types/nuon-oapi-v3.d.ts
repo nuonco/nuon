@@ -4092,6 +4092,14 @@ export interface components {
       phone_home_id?: string
       phone_home_url?: string
       quick_link_url?: string
+      /**
+       * @description RunnerAPIURL is the externally-reachable runner-API host the installer-cli
+       * SDK should POST to. Populated transiently on read via AfterFind from
+       * Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
+       * surface vendors expose, so the customer's workstation can hit it even
+       * when ctl-api itself is private.
+       */
+      runner_api_url?: string
       runs?: components['schemas']['app.InstallStackVersionRun'][]
       template_url?: string
       terraform_checksum?: string

@@ -30,7 +30,7 @@ type UpdateInstallStackVersionRunRequest struct {
 // @Param					phone_home_id	path	string	true	"stack version phone-home ID (used as the URL secret)"
 // @Param					run_id			path	string	true	"run ID"
 // @Param					req				body	UpdateInstallStackVersionRunRequest	true	"Input"
-// @Tags					installs
+// @Tags					stacks
 // @Accept					json
 // @Produce				json
 // @Failure				400	{object}	stderr.ErrResponse
