@@ -9,10 +9,6 @@ import (
 
 // TODO(jm): this entire file should probably live in `pkg/account`
 func (m *Client) FetchAccount(ctx context.Context, acctID string) (*app.Account, error) {
-	if cached, ok := m.accountCache.Get(acctID); ok {
-		return cached, nil
-	}
-
 	acct := app.Account{}
 	res := m.db.WithContext(ctx).
 		Preload("Roles").
@@ -23,8 +19,5 @@ func (m *Client) FetchAccount(ctx context.Context, acctID string) (*app.Account,
 		return nil, fmt.Errorf("unable to fetch account %s: %w", acctID, res.Error)
 	}
 
-	if len(acct.Roles) > 0 {
-		m.accountCache.Add(acctID, &acct)
-	}
 	return &acct, nil
 }
