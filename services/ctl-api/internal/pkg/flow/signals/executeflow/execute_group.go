@@ -31,6 +31,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		QueueName:       cfg.QueueName,
 		TargetQueueName: cfg.TargetQueueName,
 		Parallel:        group.Parallel,
+		DerivedTimeout:  group.Timeout,
 		// Forward stamped names so the step signal can expose them via
 		// LifecycleContext for workflow_step lifecycle webhooks.
 		OrgID:     s.OrgID,
@@ -72,14 +73,8 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 	// Wait for the group signal to finish using the framework's built-in
 	// finished handler. This avoids the custom group-finished handler which
 	// may not be registered yet when the update arrives.
-	var awaitOpts []*workflow.ActivityOptions
-	if t, ok := signal.Signal(sig).(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
-		awaitOpts = append(awaitOpts, &workflow.ActivityOptions{
-			ScheduleToCloseTimeout: t.Timeout(),
-		})
-	}
-
-	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, awaitOpts...)
+	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID,
+		signal.TimeoutActivityOpts(sig.Timeout()))
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)

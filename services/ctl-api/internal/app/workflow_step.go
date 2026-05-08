@@ -126,6 +126,12 @@ type WorkflowStep struct {
 
 	Links map[string]any `json:"links,omitzero,omitempty" temporaljson:"-" gorm:"-"`
 
+	// Timeout is the execution timeout for this step, derived from the
+	// inner signal's Timeout() at step generation time. Used by the step-group
+	// to set ScheduleToCloseTimeout when awaiting step completion.
+	// Zero means use default fallback.
+	Timeout time.Duration `json:"timeout,omitzero" gorm:"default:0" swaggertype:"string" temporaljson:"timeout,omitzero,omitempty"`
+
 	Retryable  bool `json:"retryable,omitzero" gorm:"default:false" temporaljson:"retryable,omitzero,omitempty"`
 	Skippable  bool `json:"skippable,omitzero" gorm:"default:false" temporaljson:"skippable,omitzero,omitempty"`
 	Retried    bool `json:"retried,omitzero" gorm:"default:false" temporaljson:"retried,omitzero,omitempty"`
