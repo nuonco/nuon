@@ -110,6 +110,7 @@ type Client interface {
 
 	// general methods
 	GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error)
+	ValidateToken(ctx context.Context) error
 	GetCLIConfig(ctx context.Context) (*models.ServiceCLIConfig, error)
 	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 	GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error)
