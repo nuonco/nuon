@@ -14,6 +14,9 @@ function getCookie(name: string): string | undefined {
 
 export const getOrgSession = () => getCookie('org_session')
 export const setOrgSession = (orgId: string) => setCookie('org_session', orgId)
+export const clearOrgSession = () => {
+  document.cookie = 'org_session=; path=/; SameSite=Lax; max-age=0'
+}
 
 export const getSidebarOpen = () => getCookie('sidebar_open') === '1'
 export const setSidebarOpen = (isOpen: boolean) =>

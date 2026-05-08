@@ -8,7 +8,7 @@ export interface paths {
   "/slack/commands/nuon": {
     /**
      * Slack /nuon slash command webhook
-     * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, help. Responses are ephemeral.
+     * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
      */
     post: operations["SlackSlashCommand"];
   };
@@ -18,6 +18,13 @@ export interface paths {
      * @description Receives lifecycle events from Slack: url_verification (handshake), app_uninstalled (workspace removed Nuon), tokens_revoked (bot token invalidated). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Returns 200 even for unhandled event types so Slack does not retry.
      */
     post: operations["SlackEvents"];
+  };
+  "/slack/interactions": {
+    /**
+     * Slack interactivity & shortcuts request URL
+     * @description Receives interactive payloads (view_submission, block_actions, block_suggestion, shortcut). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Dispatches subscribe/unsubscribe modal submissions, block_actions (scope/notif radios, Remove buttons), and the install picker's external_select block_suggestion handshake. Returns 200 on every parseable envelope so Slack does not retry; unhandled payload types are logged and acked.
+     */
+    post: operations["SlackInteractions"];
   };
   "/slack/oauth/callback": {
     /**
@@ -2029,6 +2036,11 @@ export interface paths {
      * @description Soft-deletes a SlackChannelSubscription belonging to the current org. ABAC scoped at the DB query so callers cannot delete subscriptions outside their org.
      */
     delete: operations["DeleteSlackChannelSubscription"];
+    /**
+     * Update a Slack channel subscription
+     * @description Mutates a per-channel routing rule. Pass only the fields you want to change. Updating `match` may collide with the `(team_id, channel_id, org_link_id, match_canonical)` unique index — the API returns 409 with a clear description in that case so the dashboard can render the same toast it shows on a duplicate create. The subscription must belong to the calling org (ABAC enforced at the DB query level).
+     */
+    patch: operations["UpdateSlackChannelSubscription"];
   };
   "/v1/orgs/{org_id}/slack/install-url": {
     /**
@@ -4726,10 +4738,19 @@ export interface components {
       created_by_slack_user_id?: string;
       id?: string;
       /**
-       * @description Interests filters which event categories route to this channel
-       * (e.g. workflow lifecycle, approvals). Empty/nil means "all".
+       * @description Interests is the per-subscription event filter. Stored as JSONB; one
+       * shape is shared with webhooks (see internal/pkg/interests). New rows
+       * default to AllEvents=true via the create handler when the request omits
+       * the field.
        */
-      interests?: string[];
+      interests?: Record<string, never>;
+      /**
+       * @description Match is the per-subscription routing predicate. Nil = match every
+       * event in the org. Non-nil = evaluated by labels.SubscriptionMatch
+       * against the dispatch-time labels.EventTargets. swaggertype:"object"
+       * keeps the SDK from materialising the full nested type tree.
+       */
+      match?: Record<string, never>;
       /** @description OrgID is denormalized from OrgLink for query convenience. */
       org_id?: string;
       org_link_id?: string;
@@ -6143,7 +6164,8 @@ export interface components {
     "service.CreateChannelSubscriptionRequest": {
       channel_id: string;
       channel_name?: string;
-      interests?: string[];
+      interests?: Record<string, never>;
+      match?: Record<string, never>;
       org_link_id: string;
     };
     "service.CreateComponentBuildRequest": {
@@ -6167,6 +6189,7 @@ export interface components {
     };
     "service.CreateCurrentOrgWebhookRequest": {
       interests?: Record<string, never>;
+      match?: Record<string, never>;
       webhook_secret?: string;
       webhook_url: string;
     };
@@ -6285,6 +6308,13 @@ export interface components {
         [key: string]: string;
       };
       install_config?: components["schemas"]["helpers.CreateInstallConfigParams"];
+      /**
+       * @description Labels are key/value pairs to attach to the install at creation time.
+       * They are merged into the install's existing labels (which is empty for a brand-new install).
+       */
+      labels?: {
+        [key: string]: string;
+      };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
     };
@@ -6304,6 +6334,13 @@ export interface components {
         [key: string]: string;
       };
       install_config?: components["schemas"]["helpers.CreateInstallConfigParams"];
+      /**
+       * @description Labels are key/value pairs to attach to the install at creation time.
+       * They are merged into the install's existing labels (which is empty for a brand-new install).
+       */
+      labels?: {
+        [key: string]: string;
+      };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
     };
@@ -6444,6 +6481,7 @@ export interface components {
       has_secret?: boolean;
       id?: string;
       interests?: Record<string, never>;
+      match?: Record<string, never>;
       org_id?: string;
       updated_at?: string;
       webhook_url?: string;
@@ -6727,6 +6765,12 @@ export interface components {
       name?: string;
       slack_webhook_url?: string;
     };
+    "service.UpdateChannelSubscriptionRequest": {
+      channel_id?: string;
+      channel_name?: string;
+      interests?: Record<string, never>;
+      match?: Record<string, never>;
+    };
     "service.UpdateComponentRequest": {
       dependencies?: string[];
       labels?: {
@@ -6737,6 +6781,7 @@ export interface components {
     };
     "service.UpdateCurrentOrgWebhookRequest": {
       interests?: Record<string, never>;
+      match?: Record<string, never>;
       webhook_secret?: string;
     };
     "service.UpdateInstallConfigRequest": {
@@ -6994,7 +7039,7 @@ export interface operations {
 
   /**
    * Slack /nuon slash command webhook
-   * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, help. Responses are ephemeral.
+   * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
    */
   SlackSlashCommand: {
     requestBody?: {
@@ -7041,6 +7086,26 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["service.slackChallengeResponse"];
         };
+      };
+    };
+  };
+  /**
+   * Slack interactivity & shortcuts request URL
+   * @description Receives interactive payloads (view_submission, block_actions, block_suggestion, shortcut). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Dispatches subscribe/unsubscribe modal submissions, block_actions (scope/notif radios, Remove buttons), and the install picker's external_select block_suggestion handshake. Returns 200 on every parseable envelope so Slack does not retry; unhandled payload types are logged and acked.
+   */
+  SlackInteractions: {
+    requestBody?: {
+      content: {
+        "application/x-www-form-urlencoded": {
+          /** @description JSON-encoded interaction payload */
+          payload: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
       };
     };
   };
@@ -21493,6 +21558,64 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update a Slack channel subscription
+   * @description Mutates a per-channel routing rule. Pass only the fields you want to change. Updating `match` may collide with the `(team_id, channel_id, org_link_id, match_canonical)` unique index — the API returns 409 with a clear description in that case so the dashboard can render the same toast it shows on a duplicate create. The subscription must belong to the calling org (ABAC enforced at the DB query level).
+   */
+  UpdateSlackChannelSubscription: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+        /** @description Subscription ID */
+        sub_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateChannelSubscriptionRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.SlackChannelSubscription"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
