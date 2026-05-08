@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sort"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
@@ -128,6 +129,13 @@ func CreateIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 
 // ensureRole creates an IAM role with the given trust policy if it doesn't
 // already exist. Idempotent.
+//
+// Retries on MalformedPolicyDocument: when the trust policy references
+// another role (e.g. operation roles trusting the just-created runner role),
+// IAM's principal-validation has propagation lag and rejects the create with
+// "Invalid principal in policy" until the referenced role's ARN is visible
+// globally. TF works around this with implicit `depends_on` ordering plus AWS
+// provider-level retries; we retry inline.
 func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trust, installID string) error {
 	_, err := c.GetRole(ctx, &iam.GetRoleInput{RoleName: &name})
 	if err == nil {
@@ -136,20 +144,38 @@ func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trus
 	if !IsAWSErrCode(err, "NoSuchEntity") {
 		return fmt.Errorf("get role %s: %w", name, err)
 	}
-	if _, err := c.CreateRole(ctx, &iam.CreateRoleInput{
-		RoleName:                 &name,
-		AssumeRolePolicyDocument: &trust,
-		Tags: []iamtypes.Tag{
-			{Key: aws.String(installIDTagKey), Value: &installID},
-		},
-	}); err != nil {
-		if !IsAWSErrCode(err, "EntityAlreadyExists") {
-			return fmt.Errorf("create role %s: %w", name, err)
+
+	deadline := time.Now().Add(2 * time.Minute)
+	delay := 5 * time.Second
+	for {
+		_, err := c.CreateRole(ctx, &iam.CreateRoleInput{
+			RoleName:                 &name,
+			AssumeRolePolicyDocument: &trust,
+			Tags: []iamtypes.Tag{
+				{Key: aws.String(installIDTagKey), Value: &installID},
+			},
+		})
+		if err == nil {
+			log.Info("created IAM role", "role", name)
+			return nil
 		}
-		return nil
+		if IsAWSErrCode(err, "EntityAlreadyExists") {
+			return nil
+		}
+		if IsAWSErrCode(err, "MalformedPolicyDocument") && time.Now().Before(deadline) {
+			log.Info("trust principal not yet propagated, retrying", "role", name, "delay", delay)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(delay):
+			}
+			if delay < 20*time.Second {
+				delay += 5 * time.Second
+			}
+			continue
+		}
+		return fmt.Errorf("create role %s: %w", name, err)
 	}
-	log.Info("created IAM role", "role", name)
-	return nil
 }
 
 // ensureRoleWithPolicies provisions an IAM role then attaches/refreshes its

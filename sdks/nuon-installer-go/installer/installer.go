@@ -270,7 +270,10 @@ func (i *Installer) buildPhoneHomePayload(st *stack.State) map[string]any {
 	for _, n := range st.CustomRoleNames {
 		customRoles[n] = roleARN(n)
 	}
-	var installInputs map[string]string
+	// Always non-nil — empty maps stringify to "map[]" which the StringToMap
+	// decode hook handles cleanly. Nil maps land as NULL in hstore and break
+	// downstream decode with "expected a map, got 'string'".
+	installInputs := map[string]string{}
 	if i.cfg != nil && len(i.cfg.InstallInputs) > 0 {
 		installInputs = i.cfg.InstallInputs
 	}
@@ -292,20 +295,16 @@ func (i *Installer) buildPhoneHomePayload(st *stack.State) map[string]any {
 		"maintenance_iam_role_arn": roleARN(st.MaintenanceRoleName),
 		"deprovision_iam_role_arn": roleARN(st.DeprovisionRoleName),
 	}
-	// Map-typed values: omit when empty. Why: ctl-api stringifies via
-	// fmt.Sprintf("%v", v) into hstore and decodes via a hook that requires
-	// the "map[k:v ...]" Go-print format. An empty map serialized through
-	// JSON arrives as nil, lands in hstore as NULL, and the decoder errors
-	// out with "expected a map, got 'string'". Easier to drop the key.
-	if len(breakGlass) > 0 {
-		data["break_glass_role_arns"] = breakGlass
-	}
-	if len(customRoles) > 0 {
-		data["custom_role_arns"] = customRoles
-	}
-	if installInputs != nil {
-		data["install_inputs"] = installInputs
-	}
+	// Always emit map-typed keys, even when empty. Customer dashboard
+	// templates reference `.nuon.install_stack.outputs.break_glass_role_arns`
+	// directly and explode if the key is missing. Empty Go maps stringify to
+	// "map[]" via fmt.Sprintf("%v", v); the StringToMapDecodeHook handles
+	// that input cleanly. The previous omit-when-empty workaround was for nil
+	// maps landing as NULL in hstore — non-nil empty maps don't have that
+	// problem.
+	data["break_glass_role_arns"] = breakGlass
+	data["custom_role_arns"] = customRoles
+	data["install_inputs"] = installInputs
 	for k, v := range st.SecretARNs {
 		data[k] = v
 	}

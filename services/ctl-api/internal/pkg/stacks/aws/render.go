@@ -269,33 +269,111 @@ func extractAWSRolesFromList(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleTemplate
 	return result, nil
 }
 
-func managedPolicyArnsForRole(role app.AppAWSIAMRoleConfig) []string {
-	var out []string
-	for _, policy := range role.Policies {
-		if policy.ManagedPolicyName == "" {
-			continue
-		}
-		out = append(out, fmt.Sprintf("arn:aws:iam::aws:policy/%s", policy.ManagedPolicyName))
-	}
-	return out
+// AWSRoleRaw is the raw (non-HCL) shape returned by ExtractAWSRolesFromListRaw
+// for the SDK config builder. ManagedPolicyARNs is a Go slice (empty when none)
+// and InlinePolicyDocument is a raw IAM policy JSON document (empty string
+// when none) — i.e. NOT JSON-marshal-quoted for HCL interpolation.
+type AWSRoleRaw struct {
+	Name                 string
+	InlinePolicyDocument string
+	ManagedPolicyARNs    []string
 }
 
-// mergedInlinePolicyDocument merges the Statement arrays from every inline
-// policy attached to a role into a single IAM policy document. Returns the
-// document JSON-marshaled and HCL-quoted (i.e. ready to interpolate into
-// tfvars), or `""` if the role has no inline policy contents.
-//
-// Each policy.Contents is expected to be a full IAM policy JSON document of
-// the form `{"Version": "...", "Statement": [...]}`. Non-Contents policies
-// (i.e. ManagedPolicyName-only entries) are skipped.
-func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
+// ExtractAWSStandardPermissionsRaw returns managed-policy ARNs for the three
+// standard runner roles (provision/maintenance/deprovision) as Go slices.
+// Sibling of extractAWSStandardPermissions, which returns HCL string literals
+// for tfvars interpolation. Used by the SDK config builder where we want raw
+// data, not HCL.
+func ExtractAWSStandardPermissionsRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision []string) {
+	if appCfg == nil {
+		return nil, nil, nil
+	}
+	for _, role := range appCfg.PermissionsConfig.Roles {
+		if role.CloudPlatform != "" && role.CloudPlatform != "aws" {
+			continue
+		}
+		mpas := managedPolicyArnsForRole(role)
+		if len(mpas) == 0 {
+			continue
+		}
+		switch role.Type {
+		case app.AWSIAMRoleTypeRunnerProvision:
+			provision = mpas
+		case app.AWSIAMRoleTypeRunnerMaintenance:
+			maintenance = mpas
+		case app.AWSIAMRoleTypeRunnerDeprovision:
+			deprovision = mpas
+		}
+	}
+	return provision, maintenance, deprovision
+}
+
+// ExtractAWSStandardInlinePoliciesRaw returns the merged inline policy document
+// for each standard runner role as raw JSON (or "" if none). Sibling of
+// extractAWSStandardInlinePolicies, which returns HCL-quoted strings.
+func ExtractAWSStandardInlinePoliciesRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision string, err error) {
+	if appCfg == nil {
+		return "", "", "", nil
+	}
+	for _, role := range appCfg.PermissionsConfig.Roles {
+		if role.CloudPlatform != "" && role.CloudPlatform != "aws" {
+			continue
+		}
+		doc, derr := mergedInlinePolicyDocumentRaw(role)
+		if derr != nil {
+			return "", "", "", fmt.Errorf("role %q: %w", role.Name, derr)
+		}
+		if doc == "" {
+			continue
+		}
+		switch role.Type {
+		case app.AWSIAMRoleTypeRunnerProvision:
+			provision = doc
+		case app.AWSIAMRoleTypeRunnerMaintenance:
+			maintenance = doc
+		case app.AWSIAMRoleTypeRunnerDeprovision:
+			deprovision = doc
+		}
+	}
+	return provision, maintenance, deprovision, nil
+}
+
+// ExtractAWSRolesFromListRaw is the raw-types sibling of extractAWSRolesFromList.
+// Filters to AWS roles only. Roles with neither managed-policy attachments nor
+// inline policy contents are skipped — matches the legacy renderer's behavior.
+func ExtractAWSRolesFromListRaw(roles []app.AppAWSIAMRoleConfig) ([]AWSRoleRaw, error) {
+	var result []AWSRoleRaw
+	for _, role := range roles {
+		if role.CloudPlatform != "" && role.CloudPlatform != "aws" {
+			continue
+		}
+		mpas := managedPolicyArnsForRole(role)
+		doc, err := mergedInlinePolicyDocumentRaw(role)
+		if err != nil {
+			return nil, fmt.Errorf("role %q: %w", role.Name, err)
+		}
+		if len(mpas) == 0 && doc == "" {
+			continue
+		}
+		result = append(result, AWSRoleRaw{
+			Name:                 role.Name,
+			InlinePolicyDocument: doc,
+			ManagedPolicyARNs:    mpas,
+		})
+	}
+	return result, nil
+}
+
+// mergedInlinePolicyDocumentRaw returns the merged policy document JSON
+// (no HCL quoting). mergedInlinePolicyDocument is the HCL-quoted wrapper
+// used by the tfvars renderer.
+func mergedInlinePolicyDocumentRaw(role app.AppAWSIAMRoleConfig) (string, error) {
 	var statements []json.RawMessage
 	for _, policy := range role.Policies {
 		if len(policy.Contents) == 0 {
 			continue
 		}
 		if policy.ManagedPolicyName != "" {
-			// Mutually exclusive with Contents per existing config validation.
 			continue
 		}
 		var doc struct {
@@ -320,7 +398,34 @@ func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("marshal merged policy document: %w", err)
 	}
-	q, err := json.Marshal(string(b))
+	return string(b), nil
+}
+
+func managedPolicyArnsForRole(role app.AppAWSIAMRoleConfig) []string {
+	var out []string
+	for _, policy := range role.Policies {
+		if policy.ManagedPolicyName == "" {
+			continue
+		}
+		out = append(out, fmt.Sprintf("arn:aws:iam::aws:policy/%s", policy.ManagedPolicyName))
+	}
+	return out
+}
+
+// mergedInlinePolicyDocument merges the Statement arrays from every inline
+// policy attached to a role into a single IAM policy document. Returns the
+// document JSON-marshaled and HCL-quoted (i.e. ready to interpolate into
+// tfvars), or `""` if the role has no inline policy contents.
+//
+// Each policy.Contents is expected to be a full IAM policy JSON document of
+// the form `{"Version": "...", "Statement": [...]}`. Non-Contents policies
+// (i.e. ManagedPolicyName-only entries) are skipped.
+func mergedInlinePolicyDocument(role app.AppAWSIAMRoleConfig) (string, error) {
+	doc, err := mergedInlinePolicyDocumentRaw(role)
+	if err != nil || doc == "" {
+		return doc, err
+	}
+	q, err := json.Marshal(doc)
 	if err != nil {
 		return "", fmt.Errorf("hcl-quote policy document: %w", err)
 	}
