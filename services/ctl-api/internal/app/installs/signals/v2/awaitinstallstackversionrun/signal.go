@@ -156,7 +156,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 		Fn: func(ctx workflow.Context) error {
 			run, err = activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
-			return err
+			if err != nil {
+				return err
+			}
+			// Legacy CFN/TF phone-home creates the run with full Data in one
+			// POST, so any run row meant the run was done. The SDK splits
+			// CreateRun (status=running, empty Data) from the terminal PATCH
+			// that fills Data. Poll until terminal so downstream
+			// UpdateInstallStackOutputs sees populated outputs.
+			switch run.Status.Status {
+			case app.InstallStackVersionRunStatusSucceeded:
+				return nil
+			case app.InstallStackVersionRunStatusFailed:
+				return errors.Wrap(poll.NonRetryableError, "stack run failed")
+			default:
+				return errors.New("stack run still running")
+			}
 		},
 	}); err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {

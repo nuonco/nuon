@@ -115,9 +115,7 @@ export const CreateInstallFromAppContainer = ({
       if (workflowId) {
         navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
       } else {
-        // No workflow created — install is being provisioned out-of-band
-        // (native-aws-provisioner toggle). Send the user to the stacks view.
-        navigate(`/${org?.id}/installs/${result.data.id}/stacks${suffix}`)
+        navigate(`/${org?.id}/installs/${result.data.id}/workflows${suffix}`)
       }
     },
     onError: (error) => {

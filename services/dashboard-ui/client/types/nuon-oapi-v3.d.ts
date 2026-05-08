@@ -4116,6 +4116,13 @@ export interface components {
       }
       id?: string
       /**
+       * @description Kind is the operation this run represents. provision = first-time create,
+       * reprovision = idempotent reconcile of an existing install, deprovision =
+       * tear-down. default:'provision' lets gorm auto-migrate back-fill historical
+       * rows; BeforeCreate validates the value.
+       */
+      kind?: components["schemas"]["app.InstallStackVersionRunKind"];
+      /**
        * @description LogStream is populated transiently:
        *   - On the POST response: with WriteToken + RunnerAPIURL so the SDK can
        *     start pushing logs immediately.
@@ -4130,6 +4137,8 @@ export interface components {
       log_stream_id?: string
       updated_at?: string
     }
+    /** @enum {string} */
+    'app.InstallStackVersionRunKind': 'provision' | 'reprovision' | 'deprovision'
     'app.InstallState': {
       archived?: boolean
       contents?: string
@@ -5040,6 +5049,8 @@ export interface components {
       | 'active'
       | 'outdated'
       | 'expired'
+      | 'destroying'
+      | 'destroyed'
       | 'running'
       | 'succeeded'
       | 'failed'
