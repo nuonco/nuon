@@ -28,6 +28,8 @@ export const QueueSignals = () => {
   const [signalType, setSignalType] = useState('')
   const [namespace, setNamespace] = useState('')
   const [enqueued, setEnqueued] = useState('')
+  const [status, setStatus] = useState('')
+  const [sortBy, setSortBy] = useState('')
   const [page, setPage] = useState(1)
 
   const { data: typeOptions } = useQuery({
@@ -36,12 +38,14 @@ export const QueueSignals = () => {
   })
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, ownerID, page],
+    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, status, sortBy, ownerID, page],
     queryFn: () => getQueueSignalsGlobal({
       search,
       signal_type: signalType || undefined,
       namespace: namespace || undefined,
       enqueued: enqueued || undefined,
+      status: status || undefined,
+      sort_by: sortBy || undefined,
       owner_id: ownerID,
       page,
     }),
@@ -74,13 +78,37 @@ export const QueueSignals = () => {
           ))}
         </select>
         <select
+          value={status}
+          onChange={(e) => { setStatus(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          <option value="">All statuses</option>
+          <option value="error">Error</option>
+          <option value="queued">Queued</option>
+          <option value="in-progress">In Progress</option>
+          <option value="success">Success</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="retrying">Retrying</option>
+          <option value="pending">Pending</option>
+          <option value="discarded">Discarded</option>
+        </select>
+        <select
           value={enqueued}
           onChange={(e) => { setEnqueued(e.target.value); setPage(1) }}
-          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300"
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
         >
           <option value="">All signals</option>
           <option value="false">Not enqueued</option>
           <option value="true">Enqueued</option>
+        </select>
+        <select
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          <option value="">Newest first</option>
+          <option value="updated_at">Recently updated</option>
+          <option value="execution_count">Most executed</option>
         </select>
       </div>
 
@@ -94,6 +122,7 @@ export const QueueSignals = () => {
               <th>Queue</th>
               <th>Status</th>
               <th>Enqueued</th>
+              <th>Executions</th>
               <th>Enqueue Time</th>
               <th>Created</th>
             </tr>
@@ -118,6 +147,7 @@ export const QueueSignals = () => {
                     ? <Badge variant="status" status="yes">{signal.status?.metadata?.enqueue_source || 'Yes'}</Badge>
                     : <Badge variant="status" status="no">No</Badge>}
                 </td>
+                <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{signal.execution_count ?? 0}</td>
                 <td className="text-gray-500 dark:text-gray-400 text-xs">
                   {signal.status?.metadata?.enqueue_started_at
                     ? <span title={`${formatDate(signal.status.metadata.enqueue_started_at)} → ${formatDate(signal.status.metadata.enqueue_finished_at)}`}>
@@ -130,7 +160,7 @@ export const QueueSignals = () => {
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={8} className="text-center text-gray-500 dark:text-gray-400 py-6">No signals found</td>
+                <td colSpan={9} className="text-center text-gray-500 dark:text-gray-400 py-6">No signals found</td>
               </tr>
             )}
           </tbody>

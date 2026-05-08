@@ -26,6 +26,7 @@ export const getQueries = (params?: {
   table?: string
   db_type?: string
   source?: string
+  has_error?: string
   sort?: string
   min_duration_ms?: string
   time_range?: string
