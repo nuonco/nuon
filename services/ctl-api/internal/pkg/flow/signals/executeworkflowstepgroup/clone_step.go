@@ -59,6 +59,7 @@ func cloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) e
 				WorkflowStepGroupID: step.WorkflowStepGroupID,
 				StepTargetType:      step.StepTargetType,
 				RetryIndex:          newRetryIndex,
+				Timeout:             step.Timeout,
 			},
 		},
 	})
