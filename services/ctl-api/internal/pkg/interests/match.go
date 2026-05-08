@@ -15,11 +15,17 @@ import (
 //   - Empty Resources (and AllEvents=false): never matches.
 //   - Resource missing from Resources: never matches.
 //   - Resource present:
+//   - Approval events are gated by ApprovalRequests / ApprovalResponses
+//     (independent of Outcome and Ops).
+//   - Drift-detected events are gated by DriftDetected (independent of
+//     Outcome and Ops).
+//   - Lifecycle events:
 //   - Ops empty → every sub-op for this resource matches.
 //   - Ops non-empty → only the listed sub-op matches.
-//   - Approval events are gated by ApprovalRequests / ApprovalResponses
-//     (independent of Outcome).
-//   - Lifecycle events apply Outcome:
+//     The Ops filter applies ONLY to lifecycle events; it never silences
+//     approval or drift-detected events.
+//   - Outcome:
+//   - "none" → no lifecycle events (drift / approval still flow if enabled).
 //   - "" / "all" → every started + terminal event.
 //   - "completion" → terminal events only (suppress started).
 //   - "failures" → only failed/cancelled terminal events.
@@ -67,10 +73,6 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return false
 	}
 
-	if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
-		return false
-	}
-
 	switch f.EventClass {
 	case eventClassApprovalRequest:
 		return cfg.ApprovalRequests
@@ -78,19 +80,26 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return cfg.ApprovalResponses
 	case eventClassDriftDetected:
 		return cfg.DriftDetected
+	case eventClassLifecycle:
+		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
+			return false
+		}
+		// Lifecycle outcome filter. Empty Outcome is treated as OutcomeAll
+		// for forward-compatibility with rows persisted before this field
+		// existed.
+		switch cfg.Outcome {
+		case OutcomeNone:
+			return false
+		case OutcomeFailures:
+			return f.IsFailureOrCancellation()
+		case OutcomeCompletion:
+			return f.IsTerminal()
+		default:
+			// OutcomeAll / "": every started + terminal event matches.
+			return true
+		}
 	}
-
-	// Lifecycle outcome filter. Empty Outcome is treated as OutcomeAll for
-	// forward-compatibility with rows persisted before this field existed.
-	switch cfg.Outcome {
-	case OutcomeFailures:
-		return f.IsFailureOrCancellation()
-	case OutcomeCompletion:
-		return f.IsTerminal()
-	default:
-		// OutcomeAll / "": every started + terminal event matches.
-		return true
-	}
+	return false
 }
 
 func contains(haystack []string, needle string) bool {

@@ -154,3 +154,7 @@ func New(params Params) (*service, error) {
 
 	return s, nil
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

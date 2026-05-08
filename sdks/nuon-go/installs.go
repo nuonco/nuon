@@ -153,6 +153,30 @@ func (c *client) DeprovisionInstall(ctx context.Context, installID string) (*mod
 	return resp.Payload, nil
 }
 
+func (c *client) AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error) {
+	resp, err := c.genClient.Operations.AddInstallLabels(&operations.AddInstallLabelsParams{
+		InstallID: installID,
+		Req:       &models.ServiceAddInstallLabelsRequest{Labels: labels},
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
+func (c *client) RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error) {
+	resp, err := c.genClient.Operations.RemoveInstallLabels(&operations.RemoveInstallLabelsParams{
+		InstallID: installID,
+		Req:       &models.ServiceRemoveInstallLabelsRequest{Keys: keys},
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
 func (c *client) GenerateCLIInstallConfig(ctx context.Context, installID string) ([]byte, error) {
 	var buf bytes.Buffer
 	if _, err := c.genClient.Operations.GenerateCLIInstallConfig(&operations.GenerateCLIInstallConfigParams{

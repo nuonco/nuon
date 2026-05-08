@@ -9,8 +9,17 @@ import {
   allEvents,
   type Interests,
 } from '@/components/interests'
+import { MatchPicker } from '@/components/match/MatchPicker'
+import type { SubscriptionMatch } from '@/components/match/types'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
+
+export type CreateWebhookInput = {
+  webhookUrl: string
+  webhookSecret: string
+  match: SubscriptionMatch | undefined
+  interests: Interests
+}
 
 export const CreateWebhookModal = ({
   isPending,
@@ -20,14 +29,11 @@ export const CreateWebhookModal = ({
 }: {
   isPending: boolean
   error: TAPIError | null
-  onSubmit: (params: {
-    webhookUrl: string
-    webhookSecret: string
-    interests: Interests
-  }) => void
+  onSubmit: (input: CreateWebhookInput) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [webhookUrl, setWebhookUrl] = useState('')
   const [webhookSecret, setWebhookSecret] = useState('')
+  const [match, setMatch] = useState<SubscriptionMatch | undefined>(undefined)
   const [interests, setInterests] = useState<Interests>(() => allEvents())
 
   const trimmedUrl = webhookUrl.trim()
@@ -57,6 +63,7 @@ export const CreateWebhookModal = ({
           onSubmit({
             webhookUrl: trimmedUrl,
             webhookSecret: webhookSecret.trim(),
+            match,
             interests,
           }),
         variant: 'primary',
@@ -106,6 +113,14 @@ export const CreateWebhookModal = ({
             The secret cannot be retrieved later. Edit the webhook to rotate
             it.
           </Text>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Scope</Label>
+          <Text variant="subtext" theme="neutral">
+            Filter which resources fire deliveries to this webhook.
+          </Text>
+          <MatchPicker value={match} onChange={setMatch} />
         </div>
 
         <div className="flex flex-col gap-2">

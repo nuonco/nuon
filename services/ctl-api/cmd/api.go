@@ -12,7 +12,7 @@ import (
 func (c *cli) registerAPI() error {
 	runApiCmd := &cobra.Command{
 		Use:   "api",
-		Short: "run all APIs (public, internal, runner, auth)",
+		Short: "run all APIs (public, internal, runner, auth, admin-dashboard, slack)",
 		Run:   c.runAPI,
 	}
 	rootCmd.AddCommand(runApiCmd)

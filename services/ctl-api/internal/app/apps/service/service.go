@@ -274,3 +274,7 @@ func New(params Params) *service {
 		queueClient:     params.QueueClient,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

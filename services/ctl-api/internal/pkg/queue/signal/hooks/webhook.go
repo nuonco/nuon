@@ -16,10 +16,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.temporal.io/sdk/activity"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/interests"
@@ -78,6 +81,12 @@ const (
 	signalTypeExecuteWorkflowStep          signal.SignalType = "execute-workflow-step"
 	signalTypeWorkflowStepApprovalRequest  signal.SignalType = "workflow-step-approval-request"
 	signalTypeWorkflowStepApprovalResponse signal.SignalType = "workflow-step-approval-response"
+	// signalTypeDriftDetected mirrors driftdetected.SignalType — the
+	// notification-only signal dispatched from the plan-only check inside a
+	// drift_run / drift_run_reprovision_sandbox workflow when the plan
+	// observed actual changes. Its lifecycle events are how subscribers who
+	// opted into per-resource `drift_detected: true` get notified.
+	signalTypeDriftDetected signal.SignalType = "drift-detected"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -91,6 +100,7 @@ type Params struct {
 	Cfg *internal.Config `optional:"true"`
 	L   *zap.Logger      `optional:"true"`
 	DB  *gorm.DB         `name:"psql" optional:"true"`
+	MW  metrics.Writer   `optional:"true"`
 }
 
 type WebhookSignalLifecycleHook struct {
@@ -100,6 +110,7 @@ type WebhookSignalLifecycleHook struct {
 	db           *gorm.DB
 	appURL       string
 	publicAPIURL string
+	mw           metrics.Writer
 }
 
 var _ signal.SignalLifecycleHook = (*WebhookSignalLifecycleHook)(nil)
@@ -136,7 +147,42 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		db:           params.DB,
 		appURL:       appURL,
 		publicAPIURL: publicAPIURL,
+		mw:           params.MW,
 	}
+}
+
+// metricNamespace returns the Temporal namespace tag value for metrics emitted
+// from inside an activity. Returns "" when called outside an activity context.
+func (h *WebhookSignalLifecycleHook) metricNamespace(ctx context.Context) string {
+	info := activity.GetInfo(ctx)
+	return info.WorkflowNamespace
+}
+
+// emitPublishLatency records how long a successful webhook delivery took for
+// this phase. Only called when at least one webhook actually fired; lookup-
+// only paths and "no targets" exits do not emit so the percentile reflects
+// real delivery cost.
+func (h *WebhookSignalLifecycleHook) emitPublishLatency(ctx context.Context, phasePrefix string, startTS time.Time) {
+	if h.mw == nil {
+		return
+	}
+	h.mw.Timing(
+		fmt.Sprintf("signal_lifecycle.%s.webhook.publish_latency", phasePrefix),
+		time.Since(startTS),
+		metrics.ToTags(map[string]string{"namespace": h.metricNamespace(ctx)}),
+	)
+}
+
+// emitError increments the webhook error counter for this phase. One increment
+// per failed delivery so the count reflects per-attempt failures.
+func (h *WebhookSignalLifecycleHook) emitError(ctx context.Context, phasePrefix string) {
+	if h.mw == nil {
+		return
+	}
+	h.mw.Incr(
+		fmt.Sprintf("signal_lifecycle.%s.webhook.errors", phasePrefix),
+		metrics.ToTags(map[string]string{"namespace": h.metricNamespace(ctx)}),
+	)
 }
 
 func (h *WebhookSignalLifecycleHook) Name() string {
@@ -158,7 +204,8 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 	case signalTypeExecuteWorkflow,
 		signalTypeExecuteWorkflowStep,
 		signalTypeWorkflowStepApprovalRequest,
-		signalTypeWorkflowStepApprovalResponse:
+		signalTypeWorkflowStepApprovalResponse,
+		signalTypeDriftDetected:
 		return true
 	default:
 		return false
@@ -173,9 +220,10 @@ func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event sign
 
 	// Approval signals don't have a "started" semantic: a request has either
 	// happened (requested) or it hasn't, and a response is intrinsically
-	// terminal (approved / rejected). Skip the before-phase emission so
-	// consumers don't see a noisy intermediate event.
-	if isApprovalSignalType(event.SignalType) {
+	// terminal (approved / rejected). Drift-detected is a single-shot
+	// notification (its Execute is a no-op) — a "started" emission would
+	// just produce a duplicate event before the real one. Skip both.
+	if isApprovalSignalType(event.SignalType) || event.SignalType == signalTypeDriftDetected {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -311,17 +359,70 @@ type contextLinks struct {
 
 // webhookTarget is a single dispatch target. ConfigOnly is true for entries
 // derived from the static h.webhookURLs config list — those have no
-// per-target Interests storage and are treated as AllEvents=true (i.e. they
-// receive every supported event). ConfigOnly=false targets carry the
-// Interests value loaded from the app.Webhook row.
+// per-target Interests or Match storage and are treated as AllEvents=true /
+// org-wide (they receive every supported event in the org). ConfigOnly=false
+// targets carry the Interests + Match values loaded from the app.Webhook row.
 type webhookTarget struct {
 	URL        string
 	Secret     string
 	ConfigOnly bool
 	Interests  interests.Interests
+	Match      *labels.SubscriptionMatch
 }
 
 func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) error {
+	// outcome is nil when invoked from BeforePhase, non-nil from AfterPhase.
+	// Used as the metric-name prefix so before/after timings are split into
+	// separate timeseries (see signal_lifecycle.{before,after}_phase.webhook.*).
+	phasePrefix := "before_phase"
+	if outcome != nil {
+		phasePrefix = "after_phase"
+	}
+	startTS := time.Now()
+	delivered := false
+	defer func() {
+		if delivered {
+			h.emitPublishLatency(ctx, phasePrefix, startTS)
+		}
+	}()
+
+	logger := h.l.With(
+		zap.String("hook", h.Name()),
+		zap.String("workflow_id", event.WorkflowID),
+		zap.String("signal_type", string(event.SignalType)),
+	)
+
+	// Resolve dispatch targets BEFORE the expensive buildEventData
+	// enrichment. listOrgWebhookTargets is a single SELECT on the
+	// webhooks table filtered by org_id; the enrichment chain
+	// (enrichStep + lookupDeployTargetMeta + lookupParent + approval
+	// lookups) issues several JOIN queries and is wasted work when no
+	// subscribers exist for this org. Most orgs have no webhooks
+	// configured, so this short-circuit removes the dominant DB cost
+	// from the activity's hot path.
+	//
+	// Static config webhooks have no per-target Interests storage; treat
+	// them as AllEvents=true so the per-target Matches() filter below
+	// passes them through unchanged.
+	targets := make([]webhookTarget, 0, len(h.webhookURLs))
+	for _, webhookURL := range h.webhookURLs {
+		targets = append(targets, webhookTarget{
+			URL:        webhookURL,
+			ConfigOnly: true,
+		})
+	}
+
+	dynamicTargets, err := h.listOrgWebhookTargets(ctx, event.OrgID)
+	if err != nil {
+		logger.Warn("failed to resolve org workflow lifecycle webhooks", zap.Error(err))
+	}
+
+	targets = append(targets, dynamicTargets...)
+	targets = dedupeWebhookTargets(targets)
+	if len(targets) == 0 {
+		return nil
+	}
+
 	data, ok := h.buildEventData(ctx, event, outcome)
 	if !ok {
 		return nil
@@ -363,39 +464,42 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		return fmt.Errorf("unable to marshal workflow lifecycle webhook payload: %w", err)
 	}
 
-	logger := h.l.With(
-		zap.String("hook", h.Name()),
+	logger = logger.With(
 		zap.String("kind", data.Kind),
 		zap.String("transition", data.Transition),
-		zap.String("workflow_id", data.Workflow.ID),
+		zap.Int("webhook_count", len(targets)),
 	)
 
-	// Static config webhooks have no per-target Interests storage; treat
-	// them as AllEvents=true so the per-target Matches() filter below
-	// passes them through unchanged.
-	targets := make([]webhookTarget, 0, len(h.webhookURLs))
-	for _, webhookURL := range h.webhookURLs {
-		targets = append(targets, webhookTarget{
-			URL:        webhookURL,
-			ConfigOnly: true,
-		})
-	}
+	// Resolve the entity ids referenced by this event (install / component /
+	// action). Drives the per-target Match.Matches predicate below. Any of
+	// these may be empty for org-only events; nil-Match targets (org-wide)
+	// always fire regardless.
+	matchTargets := EventTargetsFromEvent(ctx, h.db, event, data)
 
-	dynamicTargets, err := h.listOrgWebhookTargets(ctx, event.OrgID)
-	if err != nil {
-		logger.Warn("failed to resolve org workflow lifecycle webhooks", zap.Error(err))
-	}
-
-	targets = append(targets, dynamicTargets...)
-	targets = dedupeWebhookTargets(targets)
-	if len(targets) == 0 {
-		return nil
-	}
-
-	logger = logger.With(zap.Int("webhook_count", len(targets)))
+	// labelLoader memoises label lookups for this publish() call. Multiple
+	// targets in the same org that hit the same install / component / action
+	// only pay the SELECT cost once. Local to the call (events fan out
+	// across many publish() invocations for unrelated workflows).
+	labelLoader := newLabelLoader(h.db)
 
 	var sendErrs []error
 	for _, target := range targets {
+		// Per-target Match filter. ConfigOnly targets bypass the
+		// predicate (always org-wide). nil Match means org-wide and the
+		// matcher returns true unconditionally.
+		if !target.ConfigOnly && target.Match != nil {
+			if err := labelLoader.load(ctx, &matchTargets); err != nil {
+				logger.Warn("failed to load event labels for match",
+					zap.Error(err))
+				// Fail open: a label lookup failure shouldn't drop
+				// the dispatch. Selector matches will simply miss
+				// when the label set is empty.
+			}
+			if !target.Match.Matches(matchTargets) {
+				continue
+			}
+		}
+
 		// Per-target interests filter. ConfigOnly targets bypass the
 		// matcher (treated as AllEvents=true) since the static config
 		// list has no Interests storage.
@@ -405,10 +509,13 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 
 		if err := h.sendWebhook(ctx, target, payloadJSON); err != nil {
 			sendErrs = append(sendErrs, err)
+			h.emitError(ctx, phasePrefix)
 			logger.Warn("failed to deliver workflow lifecycle webhook",
 				zap.String("webhook_host", webhookHost(target.URL)),
 				zap.Error(err))
+			continue
 		}
+		delivered = true
 	}
 
 	if len(sendErrs) > 0 {
@@ -459,7 +566,13 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		data.Outcome = h.buildOutcome(event, outcome)
 	}
 
-	if kind == kindWorkflowStep && event.StepID != "" {
+	// Enrich the step on workflow_step.lifecycle events AND on the
+	// drift-detected signal — the latter has Kind=workflow but its StepID
+	// points at the plan-only step that observed the drift, and the renderer
+	// (Slack flat drift message + webhook subscribers) needs ComponentName /
+	// SandboxID and the matching Component / Sandbox dashboard links to
+	// render a useful "drift detected on X" payload.
+	if event.StepID != "" && (kind == kindWorkflowStep || event.SignalType == signalTypeDriftDetected) {
 		stepRef, installName, emit := h.enrichStep(ctx, event.StepID)
 		// Drop the entire step.lifecycle event for hidden / internal steps
 		// (e.g. "generate install state"). Webhook consumers should only see
@@ -751,14 +864,21 @@ func (h *WebhookSignalLifecycleHook) enrichStep(ctx context.Context, stepID stri
 	ref.TargetID = step.StepTargetID
 	ref.ExecutionType = string(step.ExecutionType)
 
+	// Both singular and plural target type strings exist in the codebase
+	// (WorkflowStepTargetTypeInstallDeploy / *Deploys, etc.) but the actual
+	// install_workflow_steps.step_target_type column is consistently the
+	// plural form ("install_deploys", "install_sandbox_runs"). Match both
+	// defensively so any legacy singular row also enriches correctly.
 	var installName string
 	switch step.StepTargetType {
-	case string(app.WorkflowStepTargetTypeInstallDeploy):
+	case string(app.WorkflowStepTargetTypeInstallDeploy),
+		string(app.WorkflowStepTargetTypeInstallDeploys):
 		meta := h.lookupDeployTargetMeta(ctx, step.StepTargetID)
 		ref.ComponentID = meta.ComponentID
 		ref.ComponentName = meta.ComponentName
 		installName = meta.InstallName
-	case string(app.WorkflowStepTargetTypeInstallSandboxRun):
+	case string(app.WorkflowStepTargetTypeInstallSandboxRun),
+		string(app.WorkflowStepTargetTypeInstallSandboxRuns):
 		meta := h.lookupSandboxRunTargetMeta(ctx, step.StepTargetID)
 		ref.SandboxID = meta.SandboxID
 		installName = meta.InstallName
@@ -1014,12 +1134,17 @@ func (h *WebhookSignalLifecycleHook) listOrgWebhookTargets(ctx context.Context, 
 			URL:       trimmedURL,
 			Secret:    strings.TrimSpace(webhook.WebhookSecret),
 			Interests: effectiveInterests,
+			Match:     webhook.Match,
 		})
 	}
 
 	return targets, nil
 }
 
+// dedupeWebhookTargets collapses duplicate dispatch targets. Two targets are
+// considered duplicates when (URL, Secret, Match.Canonical()) match — same
+// URL with a different scope is intentionally a distinct target so a single
+// URL can subscribe to two different scoped views in the same delivery.
 func dedupeWebhookTargets(targets []webhookTarget) []webhookTarget {
 	uniqueTargets := make([]webhookTarget, 0, len(targets))
 	seen := make(map[string]struct{}, len(targets))
@@ -1029,7 +1154,7 @@ func dedupeWebhookTargets(targets []webhookTarget) []webhookTarget {
 			continue
 		}
 
-		key := target.URL + "\x00" + target.Secret
+		key := target.URL + "\x00" + target.Secret + "\x00" + target.Match.Canonical()
 		if _, ok := seen[key]; ok {
 			continue
 		}
