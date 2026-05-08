@@ -57,7 +57,7 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 	if queueSignalID != "" {
 		// Queue path: await signal completion via Temporal workflow updates
 		// instead of polling the job status.
-		if _, err := queueclient.AwaitAwaitSignal(ctx, queueSignalID); err != nil {
+		if _, err := queueclient.AwaitQueueSignal(ctx, queueSignalID); err != nil {
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
 	} else {
