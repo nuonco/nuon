@@ -38,15 +38,6 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	sg := newStepGroup()
 
 	steps := make([]*app.WorkflowStep, 0)
-	sg.nextGroup()
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationGenerateState,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-
-	steps = append(steps, step)
 
 	adhocActionRunID, isAdhoc := flw.Metadata["adhoc_action_run_id"]
 	if isAdhoc {
@@ -80,7 +71,7 @@ func RunActionWorkflow(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	runEnvVars["TRIGGER_TYPE"] = string(app.ActionWorkflowTriggerTypeManual)
 
 	sg.nextGroup()
-	step, err = createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
+	step, err := createActionWorkflowStep(ctx, installID, iaw, generics.FromPtrStr(triggeredByID), runEnvVars, flw.Role, sg)
 	if err != nil {
 		return nil, err
 	}

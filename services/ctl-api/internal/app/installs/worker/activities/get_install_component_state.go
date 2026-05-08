@@ -22,12 +22,11 @@ func (h *Activities) GetInstallComponentState(ctx context.Context, req GetInstal
 
 	res := h.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
-			return db.Scopes(
-				scopes.WithOverrideTable(views.CustomViewName(db, &app.InstallDeploy{}, "state_view_v1")),
-			)
-		}).
-		Preload("InstallDeploys.RunnerJobs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(db, &app.RunnerJob{}, ".created_at DESC"))
+			return db.
+				Scopes(scopes.WithOverrideTable(views.CustomViewName(db, &app.InstallDeploy{}, "state_view_v1"))).
+				Preload("RunnerJobs", func(db *gorm.DB) *gorm.DB {
+					return db.Order(views.TableOrViewName(db, &app.RunnerJob{}, ".created_at DESC"))
+				})
 		}).
 		Preload("Component").
 		Preload("TerraformWorkspace").

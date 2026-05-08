@@ -17,8 +17,10 @@ type Signal struct {
 	InstallID string
 }
 
-var _ signal.Signal = &Signal{}
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var (
+	_ signal.Signal              = &Signal{}
+	_ signal.SignalWithAutoRetry = (*Signal)(nil)
+)
 
 func (s *Signal) AutoRetry() bool { return true }
 

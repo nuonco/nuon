@@ -72,6 +72,7 @@ const (
 	OrgFeatureTerraformProviderMirror OrgFeature = "terraform-provider-mirror"
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
 	OrgFeatureTraceView               OrgFeature = "trace-view"
+	OrgFeatureStateGenV2              OrgFeature = "state-gen-v2"
 )
 
 type Org struct {
@@ -189,6 +190,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureAppBranchesUI:           false,
 		OrgFeatureTraceView:               false,
+		OrgFeatureStateGenV2:              false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -264,6 +266,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureTerraformProviderMirror,
 		OrgFeatureAppBranchesUI,
 		OrgFeatureTraceView,
+		OrgFeatureStateGenV2,
 	}
 }
 
@@ -300,6 +303,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTerraformProviderMirror: "Vendor terraform providers at build time and ship them inside the OCI artifact so install runners can `terraform init` without reaching registry.terraform.io",
 		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
 		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
+		OrgFeatureStateGenV2:              "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
 	}
 }
 
