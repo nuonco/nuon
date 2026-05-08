@@ -47,6 +47,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	auth := api.Group("/v1/auth")
 	{
 		auth.GET("/me", s.GetAuthMe)
+		auth.GET("/validate", s.ValidateToken)
 	}
 
 	return nil

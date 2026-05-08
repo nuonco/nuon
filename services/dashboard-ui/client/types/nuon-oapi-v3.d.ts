@@ -842,6 +842,13 @@ export interface paths {
      */
     get: operations["GetAuthMe"];
   };
+  "/v1/auth/validate": {
+    /**
+     * Validate authentication token
+     * @description Returns 200 if the provided token is valid, 401 otherwise.
+     */
+    get: operations["ValidateToken"];
+  };
   "/v1/builds": {
     /**
      * get builds for components
@@ -13824,6 +13831,28 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Validate authentication token
+   * @description Returns 200 if the provided token is valid, 401 otherwise.
+   */
+  ValidateToken: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: boolean;
+          };
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
