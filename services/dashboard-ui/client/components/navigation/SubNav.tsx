@@ -75,12 +75,21 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             i === 0 ? null : (
               <div
                 key={`section-${item.label}`}
-                className={cn('hidden md:flex items-center mt-4 mb-1', {
-                  'px-3': isPageSidebarOpen,
-                  'mx-2': !isPageSidebarOpen,
+                className={cn('hidden md:flex items-center gap-2', {
+                  'px-3 mt-2 mb-0.5': isPageSidebarOpen,
+                  'mx-2 mt-4 mb-1': !isPageSidebarOpen,
                 })}
               >
-                <div className="h-px w-full bg-cool-grey-200 dark:bg-white/10" />
+                {isPageSidebarOpen && (
+                  <Text
+                    variant="label"
+                    theme="neutral"
+                    className="shrink-0 font-mono uppercase tracking-wider text-[10px]"
+                  >
+                    {item.label}
+                  </Text>
+                )}
+                <div className="h-px flex-1 bg-cool-grey-200 dark:bg-white/10" />
               </div>
             )
           ) : (
