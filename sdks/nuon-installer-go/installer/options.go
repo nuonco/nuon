@@ -26,3 +26,10 @@ type Options struct {
 	LogStream *LogStreamConfig
 	StackRun  *StackRunConfig
 }
+
+// CreateRunURL is the single-argument bootstrap shape: the URL of the
+// create-run POST endpoint that the dashboard renders. Used by FromCreateRunURL.
+type CreateRunURL struct {
+	URL  string
+	Kind string // "provision" / "reprovision" / "deprovision"
+}

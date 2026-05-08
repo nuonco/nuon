@@ -29,12 +29,11 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/vcs/webhooks/:subscription_id/events"}:           {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
-	// SDK-driven stack runs (native-aws-provisioner). Mirror phone-home: public,
-	// with phone_home_id in the URL acting as the per-stack-version secret. No
-	// token mint, no bearer auth — accepts run state updates only.
-	{"POST", "/v1/installs/:install_id/stack-runs/:phone_home_id"}:            {},
-	{"POST", "/v1/installs/:install_id/stack-runs/:phone_home_id/kind/:kind"}: {},
-	{"PATCH", "/v1/installs/:install_id/stack-runs/:phone_home_id/:run_id"}:   {},
+	// SDK-driven stack runs (installer-cli / nuon-installer-go). Public,
+	// with phone_home_id in the URL as the per-stack-version secret —
+	// same threat model as the legacy phone-home endpoint.
+	{"POST", "/v1/stack-runs/:phone_home_id/kind/:kind"}: {},
+	{"PATCH", "/v1/stack-runs/:phone_home_id/:run_id"}:   {},
 
 	// runner auth: must be accessible w/out a token
 	{"POST", "/v1/runner-auth/aws"}:                   {},

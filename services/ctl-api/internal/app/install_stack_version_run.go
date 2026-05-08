@@ -148,6 +148,7 @@ type InstallStackVersionRun struct {
 // on the GET path.
 type InstallerSDKConfig struct {
 	InstallID    string `json:"install_id,omitempty"`
+	AWSRegion    string `json:"aws_region,omitempty"`
 	RunnerID     string `json:"runner_id,omitempty"`
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
 
