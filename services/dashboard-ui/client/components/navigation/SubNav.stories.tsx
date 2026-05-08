@@ -22,7 +22,7 @@ const linksWithSections: TNavItem[] = [
   { path: '/components', text: 'Components', iconVariant: 'Cards' as const },
   { path: '/roles', text: 'Roles', iconVariant: 'FileLock' as const },
   { path: '/policies', text: 'Policy reports', iconVariant: 'ShieldCheck' as const },
-  { type: 'section', label: 'Day-2' },
+  { type: 'section', label: 'Customer' },
   { path: '/drift', text: 'Drift evaluation', iconVariant: 'ScanIcon' as const },
   { path: '/actions', text: 'Actions', iconVariant: 'TerminalWindow' as const },
   { path: '/workflows', text: 'Workflows', iconVariant: 'TreeStructure' as const },
