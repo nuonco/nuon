@@ -11,24 +11,24 @@ import (
 
 // AggregatedQuery groups all executions of the same SQL statement.
 type AggregatedQuery struct {
-	SQL         string  `json:"sql"`
-	Table       string  `json:"table"`
-	Operation   string  `json:"operation"`
-	DBType      string  `json:"db_type"`
-	Source      string  `json:"source"`
-	Endpoint    string  `json:"endpoint"`
-	Count       int     `json:"count"`
-	TotalMS     float64 `json:"total_ms"`
-	AvgMS       float64 `json:"avg_ms"`
-	MinMS       float64 `json:"min_ms"`
-	MaxMS       float64 `json:"max_ms"`
-	TotalRows   int64   `json:"total_rows"`
-	MaxRows     int64   `json:"max_rows"`
-	MaxRespSize int     `json:"max_response_size"`
-	LastError   string  `json:"last_error,omitempty"`
-	Caller      string  `json:"caller"`
-	CallerURL   string  `json:"caller_url,omitempty"`
-	LastSeenAt  string  `json:"last_seen_at"`
+	SQL             string  `json:"sql" gorm:"column:sql"`
+	Table           string  `json:"table" gorm:"column:agg_table"`
+	Operation       string  `json:"operation" gorm:"column:agg_operation"`
+	DBType          string  `json:"db_type" gorm:"column:agg_db_type"`
+	Source          string  `json:"source" gorm:"column:agg_source"`
+	Endpoint        string  `json:"endpoint" gorm:"column:agg_endpoint"`
+	Count           int     `json:"count" gorm:"column:cnt"`
+	TotalMS         float64 `json:"total_ms" gorm:"column:total_ms"`
+	AvgMS           float64 `json:"avg_ms" gorm:"column:avg_ms"`
+	MinMS           float64 `json:"min_ms" gorm:"column:min_ms"`
+	MaxMS           float64 `json:"max_ms" gorm:"column:max_ms"`
+	TotalRows       int64   `json:"total_rows" gorm:"column:total_rows"`
+	MaxRows         int64   `json:"max_rows" gorm:"column:max_rows"`
+	MaxResponseSize int     `json:"max_response_size" gorm:"column:max_response_size"`
+	LastError       string  `json:"last_error,omitempty" gorm:"column:agg_last_error"`
+	Caller          string  `json:"caller" gorm:"column:agg_caller"`
+	CallerURL       string  `json:"caller_url,omitempty" gorm:"column:agg_caller_url"`
+	LastSeenAt      string  `json:"last_seen_at" gorm:"column:last_seen_at"`
 }
 
 func (s *service) Queries(c *gin.Context) {
@@ -99,8 +99,8 @@ func (s *service) Queries(c *gin.Context) {
 		if r.RowsAffected > agg.MaxRows {
 			agg.MaxRows = r.RowsAffected
 		}
-		if r.ResponseSize > agg.MaxRespSize {
-			agg.MaxRespSize = r.ResponseSize
+		if r.ResponseSize > agg.MaxResponseSize {
+			agg.MaxResponseSize = r.ResponseSize
 		}
 		if r.Error != "" {
 			agg.LastError = r.Error

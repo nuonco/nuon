@@ -24,8 +24,9 @@ func (s *service) QueueSignals(c *gin.Context) {
 	status := c.Query("status")
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
+	sortBy := c.Query("sort_by")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -60,8 +61,9 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	status := c.Query("status")
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
+	sortBy := c.Query("sort_by")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -90,14 +92,27 @@ func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	})
 }
 
-func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued string, page int) ([]app.QueueSignal, int, error) {
+var allowedSortColumns = map[string]string{
+	"created_at":      "created_at desc",
+	"updated_at":      "updated_at desc",
+	"execution_count": "execution_count desc",
+}
+
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued, sortBy string, page int) ([]app.QueueSignal, int, error) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
 
 	if search != "" {
-		query = query.Where("id = ? OR owner_id = ? OR queue_id = ?", search, search, search)
+		switch {
+		case len(search) >= 3 && search[:3] == "qsi":
+			query = query.Where("id = ?", search)
+		case len(search) >= 3 && search[:3] == "que":
+			query = query.Where("queue_id = ?", search)
+		default:
+			query = query.Where("owner_id = ?", search)
+		}
 	}
 	if ownerID != "" {
 		query = query.Where("owner_id = ?", ownerID)
@@ -128,8 +143,13 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 
 	offset := (page - 1) * queueSignalsPerPage
 
+	orderClause := "created_at desc"
+	if col, ok := allowedSortColumns[sortBy]; ok {
+		orderClause = col
+	}
+
 	res := query.
-		Order("created_at desc").
+		Order(orderClause).
 		Limit(queueSignalsPerPage).
 		Offset(offset).
 		Find(&signals)
