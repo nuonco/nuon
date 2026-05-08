@@ -68,6 +68,13 @@ type AppInstallStackVersion struct {
 	// quick link url
 	QuickLinkURL string `json:"quick_link_url,omitempty"`
 
+	// RunnerAPIURL is the externally-reachable runner-API host the installer-cli
+	// SDK should POST to. Populated transiently on read via AfterFind from
+	// Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
+	// surface vendors expose, so the customer's workstation can hit it even
+	// when ctl-api itself is private.
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
 	// runs
 	Runs []*AppInstallStackVersionRun `json:"runs"`
 

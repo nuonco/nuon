@@ -104,6 +104,8 @@ type ClientService interface {
 
 	CreateHelmRelease(params *CreateHelmReleaseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateHelmReleaseOK, error)
 
+	CreateInstallStackVersionRun(params *CreateInstallStackVersionRunParams, opts ...ClientOption) (*CreateInstallStackVersionRunCreated, error)
+
 	CreateRunnerHealthCheck(params *CreateRunnerHealthCheckParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerHealthCheckCreated, error)
 
 	CreateRunnerHeartBeat(params *CreateRunnerHeartBeatParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerHeartBeatCreated, error)
@@ -197,6 +199,8 @@ type ClientService interface {
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
 
 	UpdateInstallActionWorkflowRunStep(params *UpdateInstallActionWorkflowRunStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallActionWorkflowRunStepOK, error)
+
+	UpdateInstallStackVersionRun(params *UpdateInstallStackVersionRunParams, opts ...ClientOption) (*UpdateInstallStackVersionRunOK, error)
 
 	UpdatePulumiState(params *UpdatePulumiStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdatePulumiStateOK, error)
 
@@ -304,6 +308,51 @@ func (a *Client) CreateHelmRelease(params *CreateHelmReleaseParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateHelmRelease: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateInstallStackVersionRun creates a stack version run
+
+start a new run for an install stack version. Public endpoint, mirrors phone-home: the per-stack-version phone_home_id in the URL acts as the secret. Used by the AWS-native SDK provisioner; legacy CFN/TF flows use phone-home.
+*/
+func (a *Client) CreateInstallStackVersionRun(params *CreateInstallStackVersionRunParams, opts ...ClientOption) (*CreateInstallStackVersionRunCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateInstallStackVersionRunParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateInstallStackVersionRun",
+		Method:             "POST",
+		PathPattern:        "/v1/stack-runs/{phone_home_id}/kind/{kind}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateInstallStackVersionRunReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateInstallStackVersionRunCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateInstallStackVersionRun: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -2472,6 +2521,51 @@ func (a *Client) UpdateInstallActionWorkflowRunStep(params *UpdateInstallActionW
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateInstallActionWorkflowRunStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateInstallStackVersionRun updates a stack version run
+
+mark a run terminal (succeeded/failed). Public endpoint, mirrors phone-home: phone_home_id in the URL acts as the secret.
+*/
+func (a *Client) UpdateInstallStackVersionRun(params *UpdateInstallStackVersionRunParams, opts ...ClientOption) (*UpdateInstallStackVersionRunOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateInstallStackVersionRunParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateInstallStackVersionRun",
+		Method:             "PATCH",
+		PathPattern:        "/v1/stack-runs/{phone_home_id}/{run_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateInstallStackVersionRunReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateInstallStackVersionRunOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateInstallStackVersionRun: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

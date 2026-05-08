@@ -38,6 +38,13 @@ type InstallStackVersion struct {
 	PhoneHomeID  string `json:"phone_home_id,omitzero" temporaljson:"phone_home_id,omitzero,omitempty"`
 	PhoneHomeURL string `json:"phone_home_url,omitzero" temporaljson:"phone_home_url,omitzero,omitempty"`
 
+	// RunnerAPIURL is the externally-reachable runner-API host the installer-cli
+	// SDK should POST to. Populated transiently on read via AfterFind from
+	// Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
+	// surface vendors expose, so the customer's workstation can hit it even
+	// when ctl-api itself is private.
+	RunnerAPIURL string `json:"runner_api_url,omitzero" gorm:"-" temporaljson:"-"`
+
 	// aws configuration parameters
 	AWSBucketName string `json:"aws_bucket_name,omitzero" temporaljson:"aws_bucket_name,omitzero,omitempty"`
 	AWSBucketKey  string `json:"aws_bucket_key,omitzero" temporaljson:"aws_bucket_key,omitzero,omitempty"`
@@ -62,6 +69,28 @@ func (a *InstallStackVersion) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 	}
+}
+
+// AfterFind hydrates the transient RunnerAPIURL field by joining through
+// the install's runner group. Failure is non-fatal — the dashboard falls
+// back to a placeholder host in the rendered CLI command.
+func (a *InstallStackVersion) AfterFind(tx *gorm.DB) error {
+	if a.InstallID == "" {
+		return nil
+	}
+	var url string
+	// installs ←(polymorphic owner)→ runner_groups ←→ runner_group_settings
+	if err := tx.Session(&gorm.Session{NewDB: true}).
+		Table("installs").
+		Select("runner_group_settings.runner_api_url").
+		Joins("JOIN runner_groups ON runner_groups.owner_id = installs.id AND runner_groups.owner_type = 'installs'").
+		Joins("JOIN runner_group_settings ON runner_group_settings.runner_group_id = runner_groups.id").
+		Where("installs.id = ?", a.InstallID).
+		Limit(1).
+		Scan(&url).Error; err == nil {
+		a.RunnerAPIURL = url
+	}
+	return nil
 }
 
 func (a *InstallStackVersion) BeforeCreate(tx *gorm.DB) error {

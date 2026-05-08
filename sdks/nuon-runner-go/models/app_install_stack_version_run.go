@@ -37,15 +37,6 @@ type AppInstallStackVersionRun struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// input diff
-	InputDiff *AppStackVersionRunInputDiff `json:"input_diff,omitempty"`
-
-	// role diff
-	RoleDiff *AppStackVersionRunRoleDiff `json:"role_diff,omitempty"`
-
-	// run type
-	RunType AppStackVersionRunType `json:"run_type,omitempty"`
-
 	// Kind is the operation this run represents. provision = first-time create,
 	// reprovision = idempotent reconcile of an existing install, deprovision =
 	// tear-down. default:'provision' lets gorm auto-migrate back-fill historical
@@ -75,16 +66,6 @@ type AppInstallStackVersionRun struct {
 func (m *AppInstallStackVersionRun) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateInputDiff(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateRoleDiff(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateRunType(formats); err != nil {
-
 	if err := m.validateCompositeStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -100,29 +81,6 @@ func (m *AppInstallStackVersionRun) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppInstallStackVersionRun) validateInputDiff(formats strfmt.Registry) error {
-	if swag.IsZero(m.InputDiff) { // not required
-		return nil
-	}
-
-	if m.InputDiff != nil {
-		if err := m.InputDiff.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("input_diff")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("input_diff")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -149,50 +107,6 @@ func (m *AppInstallStackVersionRun) validateCompositeStatus(formats strfmt.Regis
 	return nil
 }
 
-func (m *AppInstallStackVersionRun) validateRoleDiff(formats strfmt.Registry) error {
-	if swag.IsZero(m.RoleDiff) { // not required
-		return nil
-	}
-
-	if m.RoleDiff != nil {
-		if err := m.RoleDiff.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("role_diff")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("role_diff")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *AppInstallStackVersionRun) validateRunType(formats strfmt.Registry) error {
-	if swag.IsZero(m.RunType) { // not required
-		return nil
-	}
-
-	if err := m.RunType.Validate(formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("run_type")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("run_type")
-		}
-
-		return err
-	}
-
-	return nil
-}
-
 func (m *AppInstallStackVersionRun) validateKind(formats strfmt.Registry) error {
 	if swag.IsZero(m.Kind) { // not required
 		return nil
@@ -213,18 +127,6 @@ func (m *AppInstallStackVersionRun) validateLogStream(formats strfmt.Registry) e
 func (m *AppInstallStackVersionRun) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.contextValidateInputDiff(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateRoleDiff(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.contextValidateRunType(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.contextValidateCompositeStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -240,31 +142,6 @@ func (m *AppInstallStackVersionRun) ContextValidate(ctx context.Context, formats
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *AppInstallStackVersionRun) contextValidateInputDiff(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.InputDiff != nil {
-
-		if swag.IsZero(m.InputDiff) { // not required
-			return nil
-		}
-
-		if err := m.InputDiff.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("input_diff")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("input_diff")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -293,54 +170,7 @@ func (m *AppInstallStackVersionRun) contextValidateCompositeStatus(ctx context.C
 	return nil
 }
 
-func (m *AppInstallStackVersionRun) contextValidateRoleDiff(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.RoleDiff != nil {
-
-		if swag.IsZero(m.RoleDiff) { // not required
-			return nil
-		}
-
-		if err := m.RoleDiff.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("role_diff")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("role_diff")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *AppInstallStackVersionRun) contextValidateKind(ctx context.Context, formats strfmt.Registry) error {
-
-	return nil
-}
-
-func (m *AppInstallStackVersionRun) contextValidateRunType(ctx context.Context, formats strfmt.Registry) error {
-
-	if swag.IsZero(m.RunType) { // not required
-		return nil
-	}
-
-	if err := m.RunType.ContextValidate(ctx, formats); err != nil {
-		ve := new(errors.Validation)
-		if stderrors.As(err, &ve) {
-			return ve.ValidateName("run_type")
-		}
-		ce := new(errors.CompositeError)
-		if stderrors.As(err, &ce) {
-			return ce.ValidateName("run_type")
-		}
-
-		return err
-	}
 
 	return nil
 }

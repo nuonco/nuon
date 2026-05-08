@@ -220,14 +220,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// stack lookup by stack_id
 	ge.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
 
-	// SDK-driven stack runs (installer-cli / nuon-installer-go). Public,
-	// with phone_home_id in the URL as the per-stack-version secret —
-	// same threat model as the legacy phone-home endpoint. The phone_home_id
-	// is unique per install_stack_version row; install_id is derived from
-	// the loaded row, not passed in the URL.
-	ge.POST("/v1/stack-runs/:phone_home_id/kind/:kind", s.CreateInstallStackVersionRun)
-	ge.PATCH("/v1/stack-runs/:phone_home_id/:run_id", s.UpdateInstallStackVersionRun)
-
 	// org-level workflow queries (must be registered before /:workflow_id group)
 	ge.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)
 	ge.GET("/v1/workflows", s.GetOrgWorkflows)
@@ -327,6 +319,14 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	// SDK-driven stack runs (installer-cli / nuon-installer-go). On the
+	// runner API so customer-side workstations can hit them whenever ctl-api
+	// itself is private (self-hosted) — the runner API is the
+	// externally-reachable surface vendors expose. phone_home_id in the URL
+	// is the per-stack-version secret, same threat model as the legacy
+	// /v1/installs/:install_id/phone-home/:phone_home_id endpoint.
+	api.POST("/v1/stack-runs/:phone_home_id/kind/:kind", s.CreateInstallStackVersionRun)
+	api.PATCH("/v1/stack-runs/:phone_home_id/:run_id", s.UpdateInstallStackVersionRun)
 	return nil
 }
 

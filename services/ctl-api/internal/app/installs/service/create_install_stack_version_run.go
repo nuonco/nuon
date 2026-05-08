@@ -25,7 +25,7 @@ const LogStreamOwnerTypeInstallStackVersionRuns = "install_stack_version_runs"
 // @Description			start a new run for an install stack version. Public endpoint, mirrors phone-home: the per-stack-version phone_home_id in the URL acts as the secret. Used by the AWS-native SDK provisioner; legacy CFN/TF flows use phone-home.
 // @Param					phone_home_id	path	string	true	"stack version phone-home ID (used as the URL secret)"
 // @Param					kind			path	string	true	"run kind (provision/reprovision/deprovision)"
-// @Tags					installs
+// @Tags					stacks
 // @Accept					json
 // @Produce				json
 // @Failure				404	{object}	stderr.ErrResponse

@@ -21,8 +21,6 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/sandboxes/:sandbox_id/releases"}:                           {},
 	{"POST", "/v1/general/waitlist"}:                                        {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}:          {},
-	{"POST", "/v1/stack-runs/:phone_home_id/kind/:kind"}: {},
-	{"PATCH", "/v1/stack-runs/:phone_home_id/:run_id"}:   {},
 	{"GET", "/v1/account"}:                                                  {},
 	{"GET", "/v1/account/user-journeys"}:                                    {},
 	{"POST", "/v1/account/user-journeys"}:                                   {},
