@@ -54,6 +54,7 @@ var WorkerInterceptorsModule = fx.Module("worker-interceptors",
 // used across multiple worker namespaces.
 var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
+	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewSlackSignalLifecycleHook)),
 	fx.Provide(signal.NewSignalLifecycleActivities),
 
 	fx.Provide(jobactivities.New),

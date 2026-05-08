@@ -294,3 +294,7 @@ func New(params Params) (*service, error) {
 	s.l.Info("admin-dashboard service initialized")
 	return s, nil
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

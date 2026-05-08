@@ -1,24 +1,29 @@
 import type { Interests } from '@/components/interests'
+import type { SubscriptionMatch } from '@/components/match/types'
 import { api } from '@/lib/api'
 import type { TWebhook } from '@/types'
 
 // PATCH /v1/orgs/current/webhooks/{webhook_id}
 //
 // Backend: services/ctl-api/internal/app/orgs/service/current_webhooks.go
-// (UpdateCurrentOrgWebhook). Replaces `interests` wholesale and (optionally)
-// rotates the signing secret. WebhookURL cannot be changed in place — delete
-// + recreate to rename.
+// (UpdateCurrentOrgWebhook). Replaces `interests` and `match` wholesale,
+// and (optionally) rotates the signing secret. WebhookURL cannot be
+// changed in place — delete + recreate to rename.
 //
 // Body shape:
-//   webhook_secret: string | undefined
+//   webhook_secret:
 //     - undefined → leave unchanged
 //     - ""        → clear the existing secret
 //     - "..."     → rotate to this value
 //   interests: Interests
 //     - PUT-style replacement of the entire interests filter
+//   match: SubscriptionMatch | null
+//     - PUT-style replacement of the routing predicate. `null` resets the
+//       row to org-wide; a non-null predicate replaces the existing scope.
 export type TUpdateCurrentOrgWebhookBody = {
   webhook_secret?: string
   interests: Interests
+  match?: SubscriptionMatch | null
 }
 
 export const updateCurrentOrgWebhook = ({

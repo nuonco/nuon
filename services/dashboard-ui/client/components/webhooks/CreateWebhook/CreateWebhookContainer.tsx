@@ -2,14 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import type { Interests } from '@/components/interests'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { createCurrentOrgWebhook } from '@/lib'
 import type { TAPIError } from '@/types'
-import { CreateWebhookModal } from './CreateWebhook'
+import { CreateWebhookModal, type CreateWebhookInput } from './CreateWebhook'
 
 const CreateWebhookModalContainer = (props: Record<string, any>) => {
   const { org } = useOrg()
@@ -18,20 +17,15 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
   const { addToast } = useToast()
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: ({
-      webhookUrl,
-      webhookSecret,
-      interests,
-    }: {
-      webhookUrl: string
-      webhookSecret: string
-      interests: Interests
-    }) =>
+    mutationFn: (input: CreateWebhookInput) =>
       createCurrentOrgWebhook({
         body: {
-          webhook_url: webhookUrl,
-          ...(webhookSecret ? { webhook_secret: webhookSecret } : {}),
-          interests,
+          webhook_url: input.webhookUrl,
+          ...(input.webhookSecret
+            ? { webhook_secret: input.webhookSecret }
+            : {}),
+          ...(input.match ? { match: input.match } : {}),
+          interests: input.interests,
         },
         orgId: org.id,
       }),
@@ -47,7 +41,7 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
     onError: (err: TAPIError) => {
       const heading =
         err?.status === 409
-          ? 'Webhook URL already exists'
+          ? 'Webhook already exists with this scope'
           : 'Unable to create webhook'
       addToast(
         <Toast heading={heading} theme="error">
@@ -64,7 +58,7 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
       ? {
           ...error,
           error:
-            'A webhook with this URL already exists for this org. Delete the existing webhook to recreate it.',
+            'A webhook with this URL already exists for this org with the same scope. Pick a different scope or delete the existing webhook to recreate it.',
         }
       : error
     : null
@@ -73,9 +67,7 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
     <CreateWebhookModal
       isPending={isPending}
       error={errorWithFriendlyConflict}
-      onSubmit={({ webhookUrl, webhookSecret, interests }) =>
-        mutate({ webhookUrl, webhookSecret, interests })
-      }
+      onSubmit={(input) => mutate(input)}
       {...props}
     />
   )

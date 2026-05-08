@@ -204,3 +204,7 @@ func New(params Params) *service {
 		featuresClient: params.FeaturesClient,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}
