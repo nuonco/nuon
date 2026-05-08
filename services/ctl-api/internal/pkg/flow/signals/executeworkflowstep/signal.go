@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
@@ -93,6 +94,8 @@ type Signal struct {
 	// update handler to pass the response through without re-fetching from DB.
 	approvalResponseID   string
 	approvalResponseType string
+
+	mw metrics.Writer
 }
 
 var (
@@ -101,7 +104,12 @@ var (
 	_ signal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ signal.SignalWithTimeout          = (*Signal)(nil)
+	_ signal.SignalWithParams           = (*Signal)(nil)
 )
+
+func (s *Signal) WithParams(params *signal.Params) {
+	s.mw = params.MW
+}
 
 func (s *Signal) Timeout() time.Duration {
 	if s.DerivedTimeout > 0 {
