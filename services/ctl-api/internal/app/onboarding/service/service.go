@@ -98,3 +98,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error {
 	return nil
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

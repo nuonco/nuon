@@ -22,6 +22,9 @@ type ServiceCreateCurrentOrgWebhookRequest struct {
 	// interests
 	Interests any `json:"interests,omitempty"`
 
+	// match
+	Match any `json:"match,omitempty"`
+
 	// webhook secret
 	WebhookSecret string `json:"webhook_secret,omitempty"`
 

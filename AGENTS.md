@@ -632,6 +632,71 @@ cat /tmp/verify/manifest.yaml
 - Build workflow may have failed - check Temporal UI for workflow status
 - Check runner logs for build errors
 
+## Notification Surfaces — Signal → Webhook + Slack Workflow (IMPORTANT)
+
+**IMPORTANT:** Whenever a new signal is created in `services/ctl-api/internal/app/**/signals/`, the work is NOT done at
+the signal definition. The signal must be propagated through every notification surface the platform exposes.
+
+### Required end-to-end workflow
+
+For every new signal, follow this sequence — do not stop after step 1:
+
+1. **Create + implement the webhook + Slack notification hook for the signal.**
+
+   - Wire the signal into the webhook dispatcher at `services/ctl-api/internal/pkg/queue/signal/hooks/webhook.go`
+     so emissions of the signal turn into outbound webhook deliveries.
+   - Wire the signal into the Slack notification hook in the same `hooks/` package (and any matching renderer in
+     `services/ctl-api/internal/app/slack/`) so emissions of the signal post into subscribed channels.
+   - Both hooks consult the per-row `Match` (routing predicate) and `Interests` (event filter) before delivery —
+     keep that contract intact.
+
+2. **Prompt the user for filter specifics — `match` and `interests`.**
+
+   - Ask the user explicitly: which `interests` resources/ops should this signal map to (installs / components /
+     actions / workflows; ops like `deploy`, `destroy`, `plan`; outcomes like `completion` / `failures`; approval
+     requests / responses), and how should `match` be interpreted for it (org-wide, specific entity IDs, or label
+     selector).
+   - Do NOT assume defaults — these decisions determine the dispatch-time `labels.EventTargets` and the
+     `interests.Interests` shape, and getting them wrong silently mis-routes deliveries.
+
+3. **Prompt the user to implement the new signal across every consumer surface — for BOTH webhooks and Slack.**
+
+   The signal must be exposed in every place a user can configure or observe a notification rule. Confirm with the
+   user before starting, then implement in:
+
+   - **Dashboard UI** (`services/dashboard-ui/client/components/`):
+     - `webhooks/CreateWebhook`, `webhooks/EditWebhook`, `webhooks/WebhooksTable`
+     - `slack/CreateChannelSubscription`, `slack/EditChannelSubscription`, `slack/ChannelSubscriptionsTable`
+     - `interests/` and `match/` pickers if the new signal introduces a new resource kind, op, or selector axis
+   - **CLI** (`bins/cli/`):
+     - The `nuon webhooks` and `nuon slack` (or equivalent notification) command groups — create / edit flows must
+       accept the new signal in their `--interests` / `--match` flag parsing.
+   - **Slack subscribe modal** (`services/ctl-api/internal/app/slack/service/subscribe_modal.go`):
+     - The `/nuon subscribe` slash-command modal renders the same picker surface — keep its options in lockstep
+       with the dashboard's `MatchPicker` / `InterestsPicker`.
+
+### Why this matters
+
+The webhook hook (`pkg/queue/signal/hooks/webhook.go`), the Slack hook (same package), the dashboard pickers
+(`client/components/match/`, `client/components/interests/`), the CLI flag parsers, and the Slack slash-command modal
+all share a single contract — `labels.SubscriptionMatch` + `interests.Interests`. Skipping any surface leaves users
+unable to subscribe to the new signal even though the backend emits it, which presents as a silent regression rather
+than an explicit error.
+
+### Quick reference
+
+| Layer                | Key file(s)                                                                    |
+| -------------------- | ------------------------------------------------------------------------------ |
+| Signal definition    | `services/ctl-api/internal/app/**/signals/v2/<signal>/signal.go`               |
+| Webhook hook         | `services/ctl-api/internal/pkg/queue/signal/hooks/webhook.go`                  |
+| Slack hook           | `services/ctl-api/internal/pkg/queue/signal/hooks/` (slack-side renderer)      |
+| Match contract       | `pkg/labels/match.go` (Go) ↔ `services/dashboard-ui/client/components/match/types.ts` (TS) |
+| Interests contract   | `services/ctl-api/internal/pkg/interests/` (Go) ↔ `services/dashboard-ui/client/components/interests/` (TS) |
+| Dashboard webhooks   | `services/dashboard-ui/client/components/webhooks/`                            |
+| Dashboard Slack      | `services/dashboard-ui/client/components/slack/`                               |
+| CLI commands         | `bins/cli/internal/cmd/webhooks/`, `bins/cli/internal/cmd/slack/`              |
+| Slack slash-command  | `services/ctl-api/internal/app/slack/service/subscribe_modal.go`               |
+
 ## Project Status
 
 Main branch: `main` Repository is clean with recent commits related to CLI improvements and authentication.

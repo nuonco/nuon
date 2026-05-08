@@ -86,3 +86,7 @@ func (s *service) getAccount(ctx *gin.Context, accountID string) (*app.Account, 
 
 	return &account, nil
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

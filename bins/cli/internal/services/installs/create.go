@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/browser"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/services/labels"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	appselector "github.com/nuonco/nuon/bins/cli/internal/ui/v3/app/selector"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/creator"
@@ -22,7 +23,7 @@ const (
 	statusAccessError = "access_error"
 )
 
-func (s *Service) Create(ctx context.Context, appID, name, region string, inputs []string, asJSON, noSelect bool) error {
+func (s *Service) Create(ctx context.Context, appID, name, region string, inputs, labelArgs []string, asJSON, noSelect bool) error {
 	if appID == "" {
 		selectedID, err := appselector.App(ctx, s.cfg, s.api)
 		if err != nil {
@@ -44,6 +45,14 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 		inputsMap[kvT[0]] = kvT[1]
 	}
 
+	labelsMap, removeKeys, err := labels.ParseArgs(labelArgs)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+	if len(removeKeys) > 0 {
+		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
+	}
+
 	if asJSON {
 		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
 			Name: &name,
@@ -51,6 +60,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 				Region: region,
 			},
 			Inputs: inputsMap,
+			Labels: labelsMap,
 		})
 		if err != nil {
 			return ui.PrintJSONError(err)
@@ -88,6 +98,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 			Region: region,
 		},
 		Inputs: inputsMap,
+		Labels: labelsMap,
 	})
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("error creating install: %w", err))

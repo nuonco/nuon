@@ -3,10 +3,13 @@ package signal
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"go.temporal.io/sdk/activity"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 )
 
@@ -14,16 +17,35 @@ type SignalLifecycleActivitiesParams struct {
 	fx.In
 
 	Hooks []SignalLifecycleHook `group:"signal_lifecycle_hooks"`
+	MW    metrics.Writer        `optional:"true"`
 }
 
 type SignalLifecycleActivities struct {
 	hooks []SignalLifecycleHook
+	mw    metrics.Writer
 }
 
 func NewSignalLifecycleActivities(params SignalLifecycleActivitiesParams) *SignalLifecycleActivities {
 	return &SignalLifecycleActivities{
 		hooks: params.Hooks,
+		mw:    params.MW,
 	}
+}
+
+// emitActivityLatency records the wrapper activity's wall-clock duration
+// tagged by Temporal namespace. Only emits when a metrics writer is wired
+// (tests skip metrics setup).
+func (a *SignalLifecycleActivities) emitActivityLatency(ctx context.Context, metricName string, startTS time.Time) {
+	if a.mw == nil {
+		return
+	}
+	namespace := ""
+	if info := activity.GetInfo(ctx); info.WorkflowNamespace != "" {
+		namespace = info.WorkflowNamespace
+	}
+	a.mw.Timing(metricName, time.Since(startTS), metrics.ToTags(map[string]string{
+		"namespace": namespace,
+	}))
 }
 
 type RunSignalLifecycleBeforePhaseRequest struct {
@@ -39,6 +61,9 @@ type RunSignalLifecycleBeforePhaseResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *SignalLifecycleActivities) RunSignalLifecycleBeforePhase(ctx context.Context, req *RunSignalLifecycleBeforePhaseRequest) (*RunSignalLifecycleBeforePhaseResponse, error) {
+	startTS := time.Now()
+	defer a.emitActivityLatency(ctx, "signal_lifecycle.before_phase.activity_latency", startTS)
+
 	if req == nil {
 		return nil, fmt.Errorf("run signal lifecycle before-phase request is nil")
 	}
@@ -98,6 +123,9 @@ type RunSignalLifecycleAfterPhaseRequest struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
 func (a *SignalLifecycleActivities) RunSignalLifecycleAfterPhase(ctx context.Context, req *RunSignalLifecycleAfterPhaseRequest) error {
+	startTS := time.Now()
+	defer a.emitActivityLatency(ctx, "signal_lifecycle.after_phase.activity_latency", startTS)
+
 	if req == nil {
 		return fmt.Errorf("run signal lifecycle after-phase request is nil")
 	}

@@ -21,8 +21,8 @@ nuon orgs webhooks list
 # Create a webhook (URL is required, secret is optional)
 nuon orgs webhooks create --url https://example.com/webhooks/workflow/lifecycle --secret <shared-secret>
 
-# Update a webhook's interests filter and/or rotate its signing secret
-nuon orgs webhooks update --webhook-id <webhook_id> --interests-file ./interests.json
+# Update a webhook's subscription (interests + match) and/or rotate its signing secret
+nuon orgs webhooks update --webhook-id <webhook_id> --subscription-file ./subscription.json
 nuon orgs webhooks update --webhook-id <webhook_id> --secret <new-shared-secret>
 
 # Delete a webhook
@@ -32,13 +32,17 @@ nuon orgs webhooks delete --webhook-id <webhook_id>
 A few constraints to be aware of:
 
 - The `--url` must be an absolute `http` or `https` URL with a host.
-- Webhook URLs are unique per Org — registering the same URL twice returns a conflict.
+- Webhook URLs are unique per Org **per scope**. The uniqueness key is
+  `(org_id, webhook_url, match)` — the same URL can be registered multiple times in one Org as long as each
+  registration uses a different [match predicate](#scoping-deliveries-with-match) (for example, once for "all installs"
+  and again for "components in env=prod"). Registering the exact same `(url, match)` twice returns a conflict.
 - The `--secret` is write-only. The API never returns it; responses include `has_secret: true|false` so you can tell
   whether one is configured.
-- The webhook URL is part of the `(org_id, webhook_url)` unique index and cannot be changed in place. To rename it,
-  delete the webhook and create a new one. Use the dashboard's edit action (or `PATCH /v1/orgs/current/webhooks/{webhook_id}`)
-  to rotate the signing secret or update the [interests filter](#filtering-events-with-interests) without recreating
-  the webhook.
+- The webhook URL is part of the `(org_id, webhook_url, match)` unique index and cannot be changed in place. To rename
+  it, delete the webhook and create a new one. Use the dashboard's edit action (or
+  `PATCH /v1/orgs/current/webhooks/{webhook_id}`) to rotate the signing secret or replace the
+  [interests filter](#filtering-events-with-interests) / [match predicate](#scoping-deliveries-with-match) without
+  recreating the webhook.
 
 ## Filtering events with interests
 
@@ -97,7 +101,7 @@ drift, set `drift_detected: true` on `components` and/or `sandboxes` (see below)
 | Field                | Type      | Default | Description                                                                                  |
 | -------------------- | --------- | ------- | -------------------------------------------------------------------------------------------- |
 | `ops`                | `[]string`| `[]`    | Sub-ops to subscribe to. An empty (or omitted) list means **every sub-op** for the resource. |
-| `outcome`            | `string`  | `"all"` | One of `all`, `completion`, or `failures`. Filters lifecycle events on terminal status.      |
+| `outcome`            | `string`  | `"all"` | One of `all`, `completion`, `failures`, or `none`. Filters lifecycle events on terminal status; `none` mutes lifecycle for this resource entirely. |
 | `approval_requests`  | `bool`    | `false` | Deliver workflow-step approval **requests** for this resource.                               |
 | `approval_responses` | `bool`    | `false` | Deliver workflow-step approval **responses** (approved / rejected) for this resource.        |
 | `drift_detected`     | `bool`    | `false` | Deliver a notification **only when drift is actually detected** during a drift scan. Only meaningful for `components` and `sandboxes`. |
@@ -107,6 +111,9 @@ drift, set `drift_detected: true` on `components` and/or `sandboxes` (see below)
 - `all` — every `started` + terminal event for the matched ops.
 - `completion` — terminal events only (`succeeded`, `failed`, `cancelled`); suppress `started`.
 - `failures` — only `failed` and `cancelled` terminal events.
+- `none` — mutes lifecycle events entirely for this resource. Drift and approval events are gated independently
+  and remain functional, so `none` is the right choice when you want a drift-only or approvals-only subscription
+  for this resource.
 
 Approval events do not have a started/succeeded/failed lifecycle, only a requested / approved / rejected handshake.
 They are gated **independently of `outcome`** by the `approval_requests` and `approval_responses` booleans.
@@ -161,39 +168,119 @@ Narrowly scoped — only component deploy failures:
 }
 ```
 
-### Setting interests via the CLI
+Drift only — components, no lifecycle, no approvals:
 
-`nuon orgs webhooks create` and `nuon orgs webhooks update` accept the configuration in three mutually exclusive ways:
-
-```sh
-# Default — subscribe to every supported event
-nuon orgs webhooks create --url https://example.com/hook
-
-# Inline JSON
-nuon orgs webhooks create --url https://example.com/hook \
-  --interests-json '{"resources":{"components":{"ops":["deploy"],"outcome":"failures"}}}'
-
-# From a file (recommended for non-trivial configs)
-nuon orgs webhooks create --url https://example.com/hook --interests-file ./interests.json
-
-# Replace the filter on an existing webhook
-nuon orgs webhooks update --webhook-id <webhook_id> --interests-file ./interests.json
+```json
+{
+  "resources": {
+    "components": { "outcome": "none", "drift_detected": true }
+  }
+}
 ```
 
-`update` replaces the interests configuration wholesale — it is not a deep merge. Pass `--secret <new>` to rotate the
-signing secret at the same time; omit `--secret` to leave the existing secret unchanged. The webhook URL is immutable
-(it's part of the `(org_id, webhook_url)` unique index) — delete and recreate to rename.
+### Setting interests via the CLI
+
+`nuon orgs webhooks create` and `nuon orgs webhooks update` take the full subscription — both the
+[interests filter](#filtering-events-with-interests) and the optional [match predicate](#scoping-deliveries-with-match)
+— as a single JSON document via `--subscription-json` (inline) or `--subscription-file` (path on disk). The two flags
+are mutually exclusive. Omit both to fall back to the default: every supported event in the Org, no scope.
+
+```sh
+# Default — subscribe to every supported event in the Org
+nuon orgs webhooks create --url https://example.com/hook
+
+# Inline JSON (interests only)
+nuon orgs webhooks create --url https://example.com/hook \
+  --subscription-json '{"interests":{"resources":{"components":{"ops":["deploy"],"outcome":"failures"}}}}'
+
+# Inline JSON (interests + match — scope to two specific installs)
+nuon orgs webhooks create --url https://example.com/hook \
+  --subscription-json '{"interests":{"all_events":true},"match":{"installs":{"ids":["ins_abc","ins_def"]}}}'
+
+# From a file (recommended for non-trivial configs)
+nuon orgs webhooks create --url https://example.com/hook --subscription-file ./subscription.json
+
+# Replace the subscription on an existing webhook
+nuon orgs webhooks update --webhook-id <webhook_id> --subscription-file ./subscription.json
+```
+
+The wire shape is `{"interests": {...}, "match": {...}}` — both keys are optional. A missing `interests` defaults to
+`{"all_events": true}` so you can scope a webhook with `--subscription-json '{"match":{...}}'` without restating the
+events filter. A missing or `null` `match` is the org-wide ("every entity") subscription.
+
+`update` replaces both `interests` and `match` wholesale — it is not a deep merge. Pass `--secret <new>` to rotate the
+signing secret at the same time; omit `--secret` to leave the existing secret unchanged. The webhook URL plus its
+`match` predicate together form the `(org_id, webhook_url, match)` unique index — delete and recreate to rename, or
+register a sibling row with a different `match` to deliver the same URL with a different scope.
 
 ### Setting interests via the dashboard
 
-The dashboard's webhook create + edit forms expose the same filter as an inline picker. Toggling **Send all events**
-off materializes the per-resource baseline shown above so you land on a sensible starting point instead of an empty
-config that silently drops every event. Saving the form persists the same JSON shape documented here.
+The dashboard's webhook create + edit forms expose the [interests filter](#filtering-events-with-interests) as an
+inline picker. Toggling **Send all events** off materializes the per-resource baseline shown above so you land on a
+sensible starting point instead of an empty config that silently drops every event. Saving the form persists the same
+JSON shape documented here.
 
-> **Keep these in sync.** The vocabulary tables and example payloads above mirror
-> `services/ctl-api/internal/pkg/interests/types.go` (the `SubOps` map and `Outcome` constants) and the
-> `interestsJSONHelp` constant in `bins/cli/cmd/orgs.go`. If you add a new resource or sub-op, update all three in
-> lockstep.
+> **Match in the dashboard.** The dashboard's webhook forms do not yet expose the
+> [match predicate](#scoping-deliveries-with-match), and saving from the dashboard resets the webhook to org-wide.
+> To create or preserve a scoped webhook, manage it from the [CLI](#setting-interests-via-the-cli).
+
+## Scoping deliveries with match
+
+By default a webhook is **org-wide** — it fires for every event the
+[interests filter](#filtering-events-with-interests) opts into, regardless of which install, component, or action
+triggered it. Attach a `match` predicate to scope deliveries to specific entities or to entities carrying specific
+labels.
+
+`match` is an object with up to three optional kinds — `installs`, `components`, `actions`. For each kind, list the
+`ids` you care about and/or a label `selector`:
+
+```json
+{
+  "match": {
+    "installs":   { "ids": ["ins_abc", "ins_def"] },
+    "components": { "selector": { "match_labels": { "env": "prod" } } }
+  }
+}
+```
+
+How matching works:
+
+- An event is delivered if **any** populated kind matches.
+- Within a kind, the entity matches if its ID is in `ids` **or** its labels satisfy `selector`.
+- A `selector` requires every `match_labels` entry to match (AND); use `"*"` as the value to require only that the
+  key is present.
+- An empty filter (`{}`) for a kind means "any entity of this kind".
+- Omit `match` entirely (or send `null`) for the org-wide default.
+
+### Examples
+
+Every event, but only for two specific installs:
+
+```json
+{
+  "interests": { "all_events": true },
+  "match":     { "installs": { "ids": ["ins_abc123", "ins_def456"] } }
+}
+```
+
+Drift-only on components labelled `env=prod`:
+
+```json
+{
+  "interests": {
+    "resources": {
+      "components": { "outcome": "none", "drift_detected": true }
+    }
+  },
+  "match": {
+    "components": { "selector": { "match_labels": { "env": "prod" } } }
+  }
+}
+```
+
+The same URL can be registered multiple times in one Org with different `match` predicates — for example, a noisy
+"all events" subscription to a staging endpoint plus a focused "drift only on env=prod components" subscription to a
+paging endpoint.
 
 ## Two primitives: workflows and workflow steps
 
