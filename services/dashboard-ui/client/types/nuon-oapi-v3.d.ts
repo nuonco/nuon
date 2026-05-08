@@ -4030,6 +4030,13 @@ export interface components {
       };
       id?: string;
       /**
+       * @description Kind is the operation this run represents. provision = first-time create,
+       * reprovision = idempotent reconcile of an existing install, deprovision =
+       * tear-down. default:'provision' lets gorm auto-migrate back-fill historical
+       * rows; BeforeCreate validates the value.
+       */
+      kind?: components["schemas"]["app.InstallStackVersionRunKind"];
+      /**
        * @description LogStream is populated transiently:
        *   - On the POST response: with WriteToken + RunnerAPIURL so the SDK can
        *     start pushing logs immediately.
@@ -4044,6 +4051,8 @@ export interface components {
       log_stream_id?: string;
       updated_at?: string;
     };
+    /** @enum {string} */
+    "app.InstallStackVersionRunKind": "provision" | "reprovision" | "deprovision";
     "app.InstallState": {
       archived?: boolean;
       contents?: string;
@@ -4828,7 +4837,7 @@ export interface components {
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "running" | "succeeded" | "failed" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "destroying" | "destroyed" | "running" | "succeeded" | "failed" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -5205,7 +5214,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "create_stack_version" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
     "blobstore.Blob": Record<string, never>;
     "cctx.SignalContext": {
       account_id?: string;

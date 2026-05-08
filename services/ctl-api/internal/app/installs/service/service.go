@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
-	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -42,7 +41,6 @@ type Params struct {
 	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
 	FlowsClient      *flowclient.Client
-	TClient          temporalclient.Client
 	EndpointAudit    *api.EndpointAudit
 }
 
@@ -63,7 +61,6 @@ type service struct {
 	evClient         eventloop.Client
 	queueClient      *queueclient.Client
 	flowsClient      *flowclient.Client
-	tClient          temporalclient.Client
 }
 
 var _ api.Service = (*service)(nil)
@@ -188,8 +185,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/stack", s.GetInstallStackByInstallID)
 		installs.GET("/stack-runs", s.GetInstallStackRuns)
 
-		// SDK-driven stack version runs (used when the native-aws-provisioner
-		// feature toggle is on; CFN/TF flows still use phone-home above).
+		// SDK-driven stack version runs (used by installer-cli / the
+		// nuon-installer-go SDK). CFN/TF flows still use phone-home above.
 		// These mirror the phone-home pattern: public, with phone_home_id
 		// in the URL acting as the per-stack-version secret.
 		installs.POST("/stack-runs/:phone_home_id", s.CreateInstallStackVersionRun)
@@ -360,7 +357,6 @@ func New(params Params) *service {
 		actionsHelpers:   params.ActionsHelpers,
 		featuresClient:   params.FeaturesClient,
 		flowsClient:      params.FlowsClient,
-		tClient:          params.TClient,
 	}
 }
 

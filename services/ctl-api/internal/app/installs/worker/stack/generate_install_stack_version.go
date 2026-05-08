@@ -121,17 +121,12 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 		return errors.Wrap(err, "unable to create cloudformation stack version")
 	}
 
-	// The native-aws-provisioner toggle path drives this workflow without a
-	// containing provision Workflow, so there's no WorkflowStep to point at
-	// the new stack version. Skip the target update when no step is provided.
-	if sreq.WorkflowStepID != "" {
-		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
-			StepID:         sreq.WorkflowStepID,
-			StepTargetID:   stackVersion.ID,
-			StepTargetType: plugins.TableName(w.db, stackVersion),
-		}); err != nil {
-			return errors.Wrap(err, "unable to update stack version")
-		}
+	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+		StepID:         sreq.WorkflowStepID,
+		StepTargetID:   stackVersion.ID,
+		StepTargetType: plugins.TableName(w.db, stackVersion),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update stack version")
 	}
 
 	// GCP uses a static Terraform module with tfvars.
@@ -183,19 +178,9 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	}
 
 	// AWS and Azure flow: full template generation + S3 upload.
-	// The runner token is embedded in the CFN/Bicep template for the legacy
-	// runner init script. Skip it on the native-aws-provisioner toggle path
-	// (no containing provision Workflow), since the runner's service account
-	// hasn't been provisioned yet and the SDK provisioner uses AWS credentials
-	// directly. Skipping here also avoids Temporal's default activity retry
-	// policy spinning forever on a "record not found" error.
-	var token *string
-	if sreq.WorkflowStepID != "" {
-		t, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
-		if err != nil {
-			return errors.Wrap(err, "unable to create runner token")
-		}
-		token = t
+	token, err := activities.AwaitCreateRunnerTokenRequestByRunnerID(ctx, install.RunnerID)
+	if err != nil {
+		return errors.Wrap(err, "unable to create runner token")
 	}
 
 	tmplByts := []byte{}
