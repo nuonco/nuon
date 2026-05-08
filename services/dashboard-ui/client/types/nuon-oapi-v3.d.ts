@@ -24199,6 +24199,10 @@ export interface operations {
    */
   DeleteVCSConnection: {
     parameters: {
+      query?: {
+        /** @description If true, also uninstall the GitHub App on the GitHub side. Defaults to false so other Nuon orgs sharing the same installation are not impacted. */
+        delete_github_app?: boolean;
+      };
       path: {
         /** @description Connection ID */
         connection_id: string;
