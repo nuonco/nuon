@@ -117,11 +117,10 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	var stateSignal signal.Signal
 	if stateGenV2 {
 		stateSignal = &statepartialgenerate.Signal{
-			InstallID:        installID,
-			Targets:          statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
-			TriggeredByID:    installID,
-			TriggeredByType:  "installs",
-			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+			InstallID:       installID,
+			Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
+			TriggeredByID:   installID,
+			TriggeredByType: "installs",
 		}
 	} else {
 		stateSignal = &generatestate.Signal{InstallID: installID}
