@@ -433,3 +433,19 @@ func NewSandboxModeConfigID() string {
 func NewSandboxModeSignalConfigID() string {
 	return shortid.NewNanoID("ssc")
 }
+
+func NewSlackInstallationID() string {
+	return shortid.NewNanoID("sli")
+}
+
+func NewSlackOrgLinkID() string {
+	return shortid.NewNanoID("slo")
+}
+
+func NewSlackChannelSubscriptionID() string {
+	return shortid.NewNanoID("slc")
+}
+
+func NewSlackThreadAnchorID() string {
+	return shortid.NewNanoID("sta")
+}

@@ -80,6 +80,7 @@ func (a *API) registerServices() error {
 			"internal":        svc.RegisterInternalRoutes,
 			"auth":            svc.RegisterAuthRoutes,
 			"admin-dashboard": svc.RegisterAdminDashboardRoutes,
+			"slack":           svc.RegisterSlackRoutes,
 		}[a.name]
 		if !ok {
 			return fmt.Errorf("%s", "invalid name "+a.name)

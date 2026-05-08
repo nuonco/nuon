@@ -348,3 +348,7 @@ func New(params Params) *service {
 		flowsClient:      params.FlowsClient,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

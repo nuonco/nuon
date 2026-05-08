@@ -10,7 +10,12 @@ import (
 )
 
 // UpdateWebhook calls PATCH /v1/orgs/current/webhooks/{webhook_id} to replace
-// the interests filter and optionally rotate the signing secret.
+// the webhook subscription (interests + match) and optionally rotate the
+// signing secret.
+//
+// The interests filter and match predicate are replaced wholesale every
+// call: omitting --subscription-json / --subscription-file resets the
+// webhook to the implicit default (every event in the org, no scoping).
 //
 // When webhookSecret is empty, the existing secret is left unchanged. When
 // non-empty, the API replaces the stored secret with the provided value.
@@ -21,7 +26,7 @@ import (
 func (s *Service) UpdateWebhook(
 	ctx context.Context,
 	webhookID, webhookSecret string,
-	interests InterestsFlags,
+	subscription SubscriptionFlags,
 	asJSON bool,
 ) error {
 	if s.cfg.OrgID == "" {
@@ -34,13 +39,14 @@ func (s *Service) UpdateWebhook(
 		return view.Error(fmt.Errorf("webhook id is required"))
 	}
 
-	resolvedInterests, err := interests.Resolve()
+	payload, err := resolveSubscription(ctx, s.api, s.cfg.Interactive, subscription)
 	if err != nil {
 		return view.Error(err)
 	}
 
 	req := &models.ServiceUpdateCurrentOrgWebhookRequest{
-		Interests:     resolvedInterests,
+		Interests:     payload.Interests,
+		Match:         payload.Match,
 		WebhookSecret: webhookSecret,
 	}
 

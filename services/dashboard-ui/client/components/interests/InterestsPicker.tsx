@@ -1,15 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { Toggle } from '@/components/common/form/Toggle'
-import { ApplyToAllBar } from './ApplyToAllBar'
 import { ResourceBlock } from './ResourceBlock'
 import { defaultInterests } from './defaults'
 import { RESOURCES_WITH_DRIFT_DETECTED } from './subops'
 import {
   ALL_RESOURCES,
   type Interests,
-  type Outcome,
   type ResourceCfg,
   type ResourceKind,
 } from './types'
@@ -24,13 +22,13 @@ const resourceSupportsDrift = (kind: ResourceKind): boolean =>
 // of services/ctl-api/internal/pkg/interests/types.go).
 //
 // Variant differences:
-//   - slack:   collapses approval_requests + approval_responses into ONE
-//              "Include approval events" checkbox. We always store both
-//              booleans split internally, and coerce both to the same value on
+//   - slack:   collapses approval_requests + approval_responses into a single
+//              "Approval events" category checkbox. We always store both
+//              booleans split internally and coerce both to the same value on
 //              write. (Choice: simplest; no indeterminate visual. The webhook
 //              variant remains the source of truth for the split shape.)
-//   - webhook: exposes approval_requests + approval_responses as two separate
-//              checkboxes.
+//   - webhook: ticking Approvals reveals a sub-row with the two booleans as
+//              separate checkboxes.
 //
 // The picker NEVER auto-reverts an empty resources map. Toggling all resources
 // off is a valid wire shape (`{}` — backend matcher returns false for every
@@ -49,13 +47,6 @@ export const InterestsPicker = ({
 }) => {
   const allEventsOn = !!value.all_events
   const resources = value.resources ?? {}
-
-  // Bulk-bar state lives here, not in the canonical value — it's a staging area
-  // for "Apply to all". We don't write into resources until the user clicks
-  // Apply.
-  const [bulkOutcome, setBulkOutcome] = useState<Outcome>('completion')
-  const [bulkApprovalRequests, setBulkApprovalRequests] = useState(true)
-  const [bulkApprovalResponses, setBulkApprovalResponses] = useState(true)
 
   const enabledKinds = useMemo(
     () =>
@@ -85,20 +76,6 @@ export const InterestsPicker = ({
     onChange({ resources: nextResources })
   }
 
-  const handleApplyToAll = () => {
-    if (enabledKinds.length === 0) return
-    const nextResources = { ...resources }
-    for (const kind of enabledKinds) {
-      nextResources[kind] = {
-        ...nextResources[kind],
-        outcome: bulkOutcome,
-        approval_requests: bulkApprovalRequests,
-        approval_responses: bulkApprovalResponses,
-      }
-    }
-    onChange({ resources: nextResources })
-  }
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3 dark:border-neutral-700">
@@ -113,18 +90,6 @@ export const InterestsPicker = ({
 
       {!allEventsOn ? (
         <div className="flex flex-col gap-3">
-          <ApplyToAllBar
-            variant={variant}
-            outcome={bulkOutcome}
-            onOutcomeChange={setBulkOutcome}
-            approvalRequests={bulkApprovalRequests}
-            approvalResponses={bulkApprovalResponses}
-            onApprovalRequestsChange={setBulkApprovalRequests}
-            onApprovalResponsesChange={setBulkApprovalResponses}
-            onApply={handleApplyToAll}
-            disabled={disabled || enabledKinds.length === 0}
-          />
-
           <div className="flex flex-col gap-2">
             {ALL_RESOURCES.map((kind) => {
               const enabled = Object.prototype.hasOwnProperty.call(

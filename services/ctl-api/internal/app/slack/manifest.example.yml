@@ -1,0 +1,98 @@
+# Slack app manifest for the Nuon Slack integration.
+#
+# Usage:
+#   1. Replace `<your-public-host>` below with the host that fronts ctl-api's
+#      Slack listener (port 8088). For local dev this is your cloudflare /
+#      ngrok tunnel; in stage/prod it's the public hostname routed to the
+#      ctl-api Slack listener.
+#   2. Visit https://api.slack.com/apps -> "Create New App" -> "From a manifest",
+#      paste this YAML, and create the app.
+#   3. Copy Client ID, Client Secret, and Signing Secret from "Basic
+#      Information" into your ~/.nuonctl-env.yml (local) or k8s secrets
+#      (deployed) under SLACK_CLIENT_ID, SLACK_CLIENT_SECRET,
+#      SLACK_SIGNING_SECRET.
+#   4. Set SLACK_OAUTH_REDIRECT_URL to the same redirect_urls value below
+#      (byte-for-byte match required by Slack).
+#
+# Endpoint conventions (handled by services/ctl-api/internal/app/slack/service):
+#   - /slack/oauth/callback  unsigned (browser redirect; trust via state JWT)
+#   - /slack/commands/nuon   signing-middleware verified
+#   - /slack/events          signing-middleware verified
+#   - /slack/interactions    signing-middleware verified
+#                            (modals, buttons, dynamic select options)
+#
+# Deploy order: ship the /slack/interactions handler returning 200 first, THEN
+# update the manifest below — Slack performs URL verification on the
+# interactivity request_url whenever the manifest is saved, and a 404 will
+# block the manifest update.
+
+display_information:
+  name: Nuon
+  description: Nuon BYOC deployment notifications in Slack.
+  background_color: "#0b0b0f"
+  long_description: |
+    Nuon posts deployment lifecycle events from your installs, sandboxes,
+    runners, and actions into the Slack channels you choose. Subscribe per
+    org, filter by interest (failures, components, sandboxes, runners,
+    actions).
+
+features:
+  bot_user:
+    display_name: Nuon
+    always_online: true
+  slash_commands:
+    - command: /nuon
+      url: https://<your-public-host>/slack/commands/nuon
+      description: Manage Nuon notifications in Slack
+      usage_hint: subscribe [install] | unsubscribe | status | help
+      should_escape: false
+
+oauth_config:
+  redirect_urls:
+    - https://<your-public-host>/slack/oauth/callback
+  scopes:
+    bot:
+      - chat:write
+      - chat:write.public
+      - channels:read
+      - groups:read
+      - team:read
+      - commands
+  pkce_enabled: false
+
+settings:
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
+  is_mcp_enabled: false
+
+  # Interactivity: subscribe / unsubscribe modals, Remove buttons inside
+  # the unsubscribe modal, and the install picker's external_select all
+  # POST to /slack/interactions. The endpoint is signing-middleware
+  # verified (X-Slack-Signature). message_menu_options_url shares the
+  # same endpoint — Slack uses payload.type to dispatch.
+  interactivity:
+    is_enabled: true
+    request_url: https://<your-public-host>/slack/interactions
+    message_menu_options_url: https://<your-public-host>/slack/interactions
+
+  # Bot events that drive cleanup paths. We deliberately avoid
+  # `conversations.connect:*` scopes — for our use case (bot invited to
+  # Slack Connect channels by the customer or vendor) the standard
+  # chat:write + channels:read + groups:read scopes are sufficient.
+  #
+  # Wired in services/ctl-api/internal/app/slack/service/slack_events.go:
+  #   - app_uninstalled / tokens_revoked → flip installation Status,
+  #     revoke org_links, soft-delete subs, drop thread anchors.
+  #   - channel_rename → update SlackChannelSubscription.ChannelName for
+  #     affected rows so audit logs / pickers stay readable.
+  #   - channel_archive / channel_left → soft-delete subs targeting that
+  #     channel (we cannot post into archived / left channels).
+  event_subscriptions:
+    request_url: https://<your-public-host>/slack/events
+    bot_events:
+      - app_uninstalled
+      - tokens_revoked
+      - channel_rename
+      - channel_archive
+      - channel_left
