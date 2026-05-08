@@ -20,7 +20,7 @@ func init() {
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
-	config.RegisterDefault("slack_http_port", "8088")
+	config.RegisterDefault("slack_http_port", "8089")
 	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
 	// (statejwt.New) and signing.Middleware construction don't fail boot
 	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
