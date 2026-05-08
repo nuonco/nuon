@@ -109,6 +109,7 @@ func init() {
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
 	config.RegisterDefault("nuon_auth_session_ttl", 24*60)
+	config.RegisterDefault("nuon_auth_token_ttl", 24*60)
 	config.RegisterDefault("nuon_auth_allowed_domains", []string{}) // defaults to an empty list so the empty string doesn't raise errors
 
 	// Blob storage configuration
@@ -195,6 +196,7 @@ type Config struct {
 	// Nuon Auth Config
 	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`
 	NuonAuthSessionTTL     int      `config:"nuon_auth_session_ttl"`
+	NuonAuthTokenTTL       int      `config:"nuon_auth_token_ttl"`
 	NuonAuthAllowedDomains []string `config:"nuon_auth_allowed_domains"` // domains from which emails can register
 	NuonAuthAllowAllUsers  bool     `config:"nuon_auth_allow_all_users"` // if true, any user with an allowedDomain can sign in
 
