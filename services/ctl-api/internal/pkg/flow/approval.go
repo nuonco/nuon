@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"go.temporal.io/sdk/temporal"
@@ -85,7 +84,7 @@ func (c *WorkflowConductor[DomainSignal]) waitForApprovalResponse(ctx workflow.C
 					ID: latestFlw.ID,
 					Status: app.CompositeStatus{
 						Status:                 app.WorkflowStepApprovalStatusApproved,
-						StatusHumanDescription: "auto approved for step " + strconv.Itoa(stp.Idx+1),
+						StatusHumanDescription: "auto approved for step " + stp.Name,
 						Metadata: map[string]any{
 							"step_idx": step.Idx,
 							"status":   "auto-approved",
