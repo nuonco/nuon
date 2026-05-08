@@ -89,6 +89,21 @@ bins/nuonctl/nuonctl
 bins/lsp/lsp
 *.vsix
 
+# local dev data (process-compose)
+.dev/
+preprocessed_configs/
+*.preprocessed_configuration.xml
+
+# direnv local config (copy from .envrc.example)
+.envrc
+
+# direnv cache
+.direnv/
+
+# nix build output symlinks
+result
+result-*
+
 # ignore workspaces
 ws-*/
 agent-day2/
