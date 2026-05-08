@@ -50,6 +50,7 @@ func init() {
 
 	// debug options
 	config.RegisterDefault("debug_enable_query_collector", false)
+	config.RegisterDefault("query_collector_disabled_tables", "")
 
 	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_mode_sleep", "5s")
@@ -155,20 +156,21 @@ type Config struct {
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
-	DBName                    string `config:"db_name" validate:"required"`
-	DBHost                    string `config:"db_host" validate:"required"`
-	DBReplicaHost             string `config:"db_replica_host"`
-	DBPort                    string `config:"db_port" validate:"required"`
-	DBSSLMode                 string `config:"db_ssl_mode" validate:"required"`
-	DBPassword                string `config:"db_password"`
-	DBUser                    string `config:"db_user" validate:"required"`
-	DBZapLog                  bool   `config:"db_use_zap"`
-	DBUseIAM                  bool   `config:"db_use_iam"`
-	DBRegion                  string `config:"db_region" validate:"required"`
-	CloudProvider             string `config:"cloud_provider"`
-	DBLogQueries              bool   `config:"db_log_queries"`
-	DebugEnableQueryCollector bool   `config:"debug_enable_query_collector"`
-	DBMaxConnections          int32  `config:"db_max_connections"`
+	DBName                       string `config:"db_name" validate:"required"`
+	DBHost                       string `config:"db_host" validate:"required"`
+	DBReplicaHost                string `config:"db_replica_host"`
+	DBPort                       string `config:"db_port" validate:"required"`
+	DBSSLMode                    string `config:"db_ssl_mode" validate:"required"`
+	DBPassword                   string `config:"db_password"`
+	DBUser                       string `config:"db_user" validate:"required"`
+	DBZapLog                     bool   `config:"db_use_zap"`
+	DBUseIAM                     bool   `config:"db_use_iam"`
+	DBRegion                     string `config:"db_region" validate:"required"`
+	CloudProvider                string `config:"cloud_provider"`
+	DBLogQueries                 bool   `config:"db_log_queries"`
+	DebugEnableQueryCollector    bool   `config:"debug_enable_query_collector"`
+	QueryCollectorDisabledTables string `config:"query_collector_disabled_tables"`
+	DBMaxConnections             int32  `config:"db_max_connections"`
 
 	// clickhouse connection parameters
 	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
