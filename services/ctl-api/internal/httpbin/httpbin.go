@@ -91,3 +91,7 @@ func New(params Params) (*Service, error) {
 		httpbin: h,
 	}, nil
 }
+
+func (s *Service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

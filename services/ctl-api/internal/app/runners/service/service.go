@@ -338,3 +338,7 @@ func New(params Params) *service {
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

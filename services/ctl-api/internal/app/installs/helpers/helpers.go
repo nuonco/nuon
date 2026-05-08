@@ -28,6 +28,10 @@ const (
 	// InstallWorkflowStepsQueueName is the queue that executes individual workflow steps
 	// as their own signals (when steps-workflows feature is enabled).
 	InstallWorkflowStepsQueueName = "install-workflow-steps"
+
+	// InstallStateManagerQueueName is the queue that handles state manager operations
+	// (force-regenerate, regenerate, hint) for an install.
+	InstallStateManagerQueueName = "state-manager"
 )
 
 type Params struct {

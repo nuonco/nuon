@@ -6,12 +6,21 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
+import { Error } from '@/views/Error'
 import { NotFound } from '@/views/NotFound'
 import { RouteError } from '@/views/RouteError'
 import { Onboarding } from '@/views/Onboarding'
 import { orgRoutes } from '@/views/org/routes'
 
 const BFFRedirect = () => {
+  const search = new URLSearchParams(window.location.search)
+  if (search.get('slack') === 'installed') {
+    const orgId = search.get('org_id')
+    if (orgId) {
+      window.location.replace(`/${orgId}/slack?slack=installed`)
+      return null
+    }
+  }
   window.location.href = '/'
   return null
 }
@@ -35,6 +44,7 @@ const router = createBrowserRouter([
     element: <AuthLayout />,
     errorElement: <RouteError />,
     children: [
+      { path: '/error', element: <Error /> },
       { path: '/onboarding', element: <Onboarding /> },
       ...orgRoutes,
       { path: '*', element: <NotFound /> },

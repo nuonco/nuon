@@ -20,6 +20,15 @@ func init() {
 	config.RegisterDefault("runner_http_port", "8083")
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
+	config.RegisterDefault("slack_http_port", "8089")
+	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
+	// (statejwt.New) and signing.Middleware construction don't fail boot
+	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
+	// nuon_auth_session_key. Other slack_* keys (client_id, client_secret,
+	// oauth_redirect_url) are only consumed inside handlers, so an unset
+	// value there fails the OAuth request — not boot.
+	config.RegisterDefault("slack_signing_secret", "insecure-slack-signing-secret-for-dev-only")
+	config.RegisterDefault("slack_state_jwt_secret", "insecure-slack-state-jwt-secret-for-dev-only")
 	config.RegisterDefault("worker_healthcheck_port", "8086")
 	config.RegisterDefault("worker_healthcheck_enabled", true)
 
@@ -41,6 +50,7 @@ func init() {
 
 	// debug options
 	config.RegisterDefault("debug_enable_query_collector", false)
+	config.RegisterDefault("query_collector_disabled_tables", "")
 
 	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_mode_sleep", "5s")
@@ -138,6 +148,7 @@ type Config struct {
 	AuthHTTPPort           string `config:"auth_http_port" validate:"required"`
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
 	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
+	SlackHTTPPort          string `config:"slack_http_port" validate:"required"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
@@ -145,20 +156,21 @@ type Config struct {
 	GracefulShutdownTimeout time.Duration `config:"graceful_shutdown_timeout" validate:"required"`
 
 	// psql connection parameters
-	DBName                    string `config:"db_name" validate:"required"`
-	DBHost                    string `config:"db_host" validate:"required"`
-	DBReplicaHost             string `config:"db_replica_host"`
-	DBPort                    string `config:"db_port" validate:"required"`
-	DBSSLMode                 string `config:"db_ssl_mode" validate:"required"`
-	DBPassword                string `config:"db_password"`
-	DBUser                    string `config:"db_user" validate:"required"`
-	DBZapLog                  bool   `config:"db_use_zap"`
-	DBUseIAM                  bool   `config:"db_use_iam"`
-	DBRegion                  string `config:"db_region" validate:"required"`
-	CloudProvider             string `config:"cloud_provider"`
-	DBLogQueries              bool   `config:"db_log_queries"`
-	DebugEnableQueryCollector bool   `config:"debug_enable_query_collector"`
-	DBMaxConnections          int32  `config:"db_max_connections"`
+	DBName                       string `config:"db_name" validate:"required"`
+	DBHost                       string `config:"db_host" validate:"required"`
+	DBReplicaHost                string `config:"db_replica_host"`
+	DBPort                       string `config:"db_port" validate:"required"`
+	DBSSLMode                    string `config:"db_ssl_mode" validate:"required"`
+	DBPassword                   string `config:"db_password"`
+	DBUser                       string `config:"db_user" validate:"required"`
+	DBZapLog                     bool   `config:"db_use_zap"`
+	DBUseIAM                     bool   `config:"db_use_iam"`
+	DBRegion                     string `config:"db_region" validate:"required"`
+	CloudProvider                string `config:"cloud_provider"`
+	DBLogQueries                 bool   `config:"db_log_queries"`
+	DebugEnableQueryCollector    bool   `config:"debug_enable_query_collector"`
+	QueryCollectorDisabledTables string `config:"query_collector_disabled_tables"`
+	DBMaxConnections             int32  `config:"db_max_connections"`
 
 	// clickhouse connection parameters
 	ClickhouseDBName         string        `config:"clickhouse_db_name" validate:"required"`
@@ -192,6 +204,16 @@ type Config struct {
 	RunnerMiddlewares         []string `config:"runner_middlewares"`
 	AuthMiddlewares           []string `config:"auth_middlewares"`
 	AdminDashboardMiddlewares []string `config:"admin_dashboard_middlewares"`
+	SlackMiddlewares          []string `config:"slack_middlewares"`
+
+	// Slack app configuration (Phase 0–4 of slackbot integration).
+	// Tokens are stored plaintext in DB; these env-var-driven values back
+	// OAuth + signed-webhook verification at the listener layer.
+	SlackClientID         string `config:"slack_client_id"`
+	SlackClientSecret     string `config:"slack_client_secret"`
+	SlackSigningSecret    string `config:"slack_signing_secret"`
+	SlackStateJWTSecret   string `config:"slack_state_jwt_secret"`
+	SlackOAuthRedirectURL string `config:"slack_oauth_redirect_url"`
 
 	// Nuon Auth Config
 	NuonAuthSessionKey     string   `config:"nuon_auth_session_key"`

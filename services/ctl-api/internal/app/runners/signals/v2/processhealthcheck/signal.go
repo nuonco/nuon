@@ -10,7 +10,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -29,12 +31,19 @@ const (
 type Signal struct {
 	RunnerID  string `json:"runner_id"`
 	ProcessID string `json:"process_id"`
+
+	mw metrics.Writer
 }
 
 var (
-	_ signal.Signal     = (*Signal)(nil)
-	_ signal.SleepAfter = (*Signal)(nil)
+	_ signal.Signal           = (*Signal)(nil)
+	_ signal.SleepAfter       = (*Signal)(nil)
+	_ signal.SignalWithParams = (*Signal)(nil)
 )
+
+func (s *Signal) WithParams(params *signal.Params) {
+	s.mw = params.MW
+}
 
 func (s *Signal) SleepAfter() time.Duration {
 	return 0
@@ -55,7 +64,50 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Execute(ctx workflow.Context) error {
+func (s *Signal) Execute(ctx workflow.Context) (err error) {
+	var startMs int64
+	_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+		return time.Now().UnixMilli()
+	}).Get(&startMs)
+
+	var installLabels map[string]string
+	var runnerType string
+	defer func() {
+		status := "ok"
+		if err != nil {
+			status = "error"
+		}
+		tagMap := make(map[string]string, len(installLabels)+3)
+		for k, v := range installLabels {
+			tagMap[k] = v
+		}
+		tagMap["status"] = status
+		tagMap["runner_id"] = s.RunnerID
+		tagMap["runner_type"] = runnerType
+		tags := metrics.ToTags(tagMap)
+
+		var endMs int64
+		_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+			return time.Now().UnixMilli()
+		}).Get(&endMs)
+		latency := time.Duration(endMs-startMs) * time.Millisecond
+
+		s.mw.Timing("runner.health_check.latency", latency, tags)
+	}()
+
+	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner")
+	}
+	runnerType = string(runner.RunnerGroup.Type)
+	if runner.RunnerGroup.OwnerType == "installs" {
+		install, err := installactivities.AwaitGetByInstallID(ctx, runner.RunnerGroup.OwnerID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install for runner")
+		}
+		installLabels = install.Labels
+	}
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get logger")

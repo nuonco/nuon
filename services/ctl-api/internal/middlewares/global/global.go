@@ -28,6 +28,7 @@ var globalEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/account/user-journeys/:journey_name/reset"}:             {},
 	{"POST", "/v1/account/user-journeys/:journey_name/complete"}:          {},
 	{"GET", "/v1/auth/me"}:                                                {},
+	{"GET", "/v1/auth/validate"}:                                          {},
 
 	// onboarding (pre-org steps are global; post-org steps require org auth)
 	{"GET", "/v1/onboarding/example-apps"}:                {},

@@ -103,3 +103,7 @@ func (s *service) getQueue(ctx *gin.Context, queueID string) (*app.Queue, error)
 
 	return &queue, nil
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}
