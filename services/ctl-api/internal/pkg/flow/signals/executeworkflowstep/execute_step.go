@@ -198,14 +198,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		"queue_signal_id", enqueueResp.QueueSignalID,
 	)
 
-	var awaitOpts []*workflow.ActivityOptions
-	if t, ok := sig.(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
-		awaitOpts = append(awaitOpts, &workflow.ActivityOptions{
-			ScheduleToCloseTimeout: t.Timeout(),
-		})
-	}
-
-	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, awaitOpts...)
+	_, err = client.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
 	if err != nil {
 		return errors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
 	}
