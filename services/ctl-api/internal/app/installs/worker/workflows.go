@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
@@ -37,7 +36,6 @@ type Params struct {
 	StackWorkflows      *stack.Workflows
 	ComponentsWorkflows *components.Workflows
 	ActionsWorkflows    *actions.Workflows
-	StateWorkflows      *state.Workflows
 	L                   *zap.Logger
 }
 
@@ -51,12 +49,10 @@ type Workflows struct {
 	db        *gorm.DB
 	l         *zap.Logger
 
-	// NOTE(sdboyer) temporary while we split up and refactor the workflows within the installs pkg
 	subwfSandbox    *sandbox.Workflows
 	subwfStack      *stack.Workflows
 	subwfComponents *components.Workflows
 	subwfActions    *actions.Workflows
-	stateWorkflows  *state.Workflows
 }
 
 func (w *Workflows) All() []any {
@@ -71,7 +67,6 @@ func (w *Workflows) All() []any {
 		w.SyncSecrets,
 		w.WorkflowApproval,
 		w.Forget,
-		w.GenerateStateAdmin,
 		w.PollDependencies,
 		w.ProvisionRunner,
 		w.ReprovisionRunner,
@@ -81,7 +76,6 @@ func (w *Workflows) All() []any {
 		w.Updated,
 		w.EventLoop,
 		w.ActionWorkflowTriggers,
-		w.stateWorkflows.GenerateState,
 		plan.CreateActionWorkflowRunPlan,
 		plan.CreateSandboxRunPlan,
 		plan.CreateDeployPlan,
@@ -119,7 +113,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		subwfStack:      params.StackWorkflows,
 		subwfComponents: params.ComponentsWorkflows,
 		subwfActions:    params.ActionsWorkflows,
-		stateWorkflows:  params.StateWorkflows,
 		l:               params.L,
 	}, nil
 }
