@@ -42,7 +42,6 @@ func init() {
 	// debug options
 	config.RegisterDefault("debug_enable_query_collector", false)
 	config.RegisterDefault("query_collector_disabled_tables", "")
-	config.RegisterDefault("query_collector_write_to_ch", false)
 
 	// defaults for sandbox mode
 	config.RegisterDefault("sandbox_mode_sleep", "5s")
@@ -160,7 +159,6 @@ type Config struct {
 	DBLogQueries                 bool   `config:"db_log_queries"`
 	DebugEnableQueryCollector    bool   `config:"debug_enable_query_collector"`
 	QueryCollectorDisabledTables string `config:"query_collector_disabled_tables"`
-	QueryCollectorWriteToCH      bool   `config:"query_collector_write_to_ch"`
 	DBMaxConnections             int32  `config:"db_max_connections"`
 
 	// clickhouse connection parameters

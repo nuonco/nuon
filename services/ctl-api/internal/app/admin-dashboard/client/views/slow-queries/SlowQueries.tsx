@@ -1,10 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { getQueries, clearQueries, explainQuery, type TQueryRecord } from '@/lib/admin-api'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { Badge } from '@/components/common/Badge'
+
+const SQL_KEYWORDS = /\b(SELECT|FROM|WHERE|AND|OR|LEFT JOIN|RIGHT JOIN|INNER JOIN|OUTER JOIN|FULL JOIN|JOIN|ON|ORDER BY|GROUP BY|HAVING|LIMIT|OFFSET|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|IN|NOT|IS|NULL|AS|CASE|WHEN|THEN|ELSE|END|DISTINCT|UNION|ALL|EXISTS|BETWEEN|LIKE|ILIKE|RETURNING)\b/gi
+
+function formatSQL(sql: string): string {
+  // Newline before major clauses
+  const breakBefore = /\b(SELECT|FROM|WHERE|AND|OR|LEFT JOIN|RIGHT JOIN|INNER JOIN|OUTER JOIN|FULL JOIN|JOIN|ON|ORDER BY|GROUP BY|HAVING|LIMIT|OFFSET|RETURNING|UNION)\b/gi
+  let formatted = sql.replace(/\s+/g, ' ').trim()
+  formatted = formatted.replace(breakBefore, (match) => {
+    const upper = match.toUpperCase()
+    if (upper === 'SELECT') return 'SELECT'
+    if (['AND', 'OR'].includes(upper)) return `\n  ${upper}`
+    if (upper.includes('JOIN') || upper === 'ON') return `\n  ${upper}`
+    return `\n${upper}`
+  })
+  return formatted
+}
 
 const SORT_OPTIONS = [
   { value: 'max_ms', label: 'Slowest (max)' },
@@ -176,9 +192,18 @@ export const SlowQueries = () => {
               </button>
               {isExpanded && (
                 <div className="border-t border-gray-100 dark:border-gray-800 px-3 py-2 space-y-2">
-                  <pre className="whitespace-pre-wrap break-all text-xs text-gray-700 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-800 rounded p-2 max-h-60 overflow-auto">
-                    {q.sql}
-                  </pre>
+                  <div className="relative group">
+                    <pre className="whitespace-pre-wrap break-all text-xs text-gray-700 dark:text-gray-300 font-mono bg-gray-50 dark:bg-gray-800 rounded p-2 pr-10 max-h-60 overflow-auto">
+                      {formatSQL(q.sql)}
+                    </pre>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(q.sql)}
+                      title="Copy SQL"
+                      className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity rounded bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Copy
+                    </button>
+                  </div>
                   <div className="flex items-center gap-2">
                     {q.operation === 'Query' && (
                       <button

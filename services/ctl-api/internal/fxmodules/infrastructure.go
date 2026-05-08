@@ -63,7 +63,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 	// Query collector (enabled by debug_enable_query_collector config)
 	fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
 		if cfg.DebugEnableQueryCollector {
-			return querycollector.NewCollector(5000, cfg.GitRef)
+			return querycollector.NewCollector(5000)
 		}
 		return nil
 	}),
@@ -74,7 +74,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 
 	// Query collector ClickHouse writer (optional, writes captured queries to CH)
 	fx.Invoke(func(lc fx.Lifecycle, p queryWriterParams) {
-		if !p.Cfg.QueryCollectorWriteToCH || p.Collector == nil {
+		if p.Collector == nil {
 			return
 		}
 

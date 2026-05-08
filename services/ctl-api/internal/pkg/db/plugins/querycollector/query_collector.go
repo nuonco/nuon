@@ -44,16 +44,14 @@ type Collector struct {
 	maxSize int
 	pos     int
 	total   int
-	gitRef  string
 	writer  *Writer
 }
 
 // NewCollector creates a new collector with the given max buffer size.
-func NewCollector(maxSize int, gitRef string) *Collector {
+func NewCollector(maxSize int) *Collector {
 	return &Collector{
 		records: make([]QueryRecord, 0, maxSize),
 		maxSize: maxSize,
-		gitRef:  gitRef,
 	}
 }
 
@@ -66,7 +64,7 @@ func (c *Collector) SetWriter(w *Writer) {
 
 // callerURL builds a GitHub permalink for the given caller string (file:line).
 func (c *Collector) callerURL(caller string) string {
-	if c.gitRef == "" || caller == "" {
+	if caller == "" {
 		return ""
 	}
 	idx := strings.LastIndex(caller, ":")
@@ -75,7 +73,7 @@ func (c *Collector) callerURL(caller string) string {
 	}
 	filePath := caller[:idx]
 	line := caller[idx+1:]
-	return fmt.Sprintf("https://github.com/nuonco/nuon/blob/%s/%s#L%s", c.gitRef, filePath, line)
+	return fmt.Sprintf("https://github.com/nuonco/nuon/tree/main/%s#L%s", filePath, line)
 }
 
 // Add inserts a record into the ring buffer and forwards to the writer if set.
