@@ -2,7 +2,7 @@
 #
 # Usage:
 #   1. Replace `<your-public-host>` below with the host that fronts ctl-api's
-#      Slack listener (port 8088). For local dev this is your cloudflare /
+#      Slack listener (port 8089). For local dev this is your cloudflare /
 #      ngrok tunnel; in stage/prod it's the public hostname routed to the
 #      ctl-api Slack listener.
 #   2. Visit https://api.slack.com/apps -> "Create New App" -> "From a manifest",
