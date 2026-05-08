@@ -2,13 +2,10 @@ package helpers
 
 import (
 	"context"
-	"time"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
-	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
@@ -19,30 +16,9 @@ func (h *Helpers) getSecrets(ctx context.Context, installID, runnerID string) (*
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.Wrap(err, "unable to get secrets")
 		}
-
-		return &state.SecretsState{}, nil
+		return ToSecretsState(nil), nil
 	}
-
-	var state state.SecretsState
-	decoderConfig := &mapstructure.DecoderConfig{
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToTimeHookFunc(time.RFC3339Nano),
-			pkggenerics.StringToMapDecodeHook(),
-		),
-		WeaklyTypedInput: true,
-		Result:           &state,
-	}
-	decoder, err := mapstructure.NewDecoder(decoderConfig)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create decoder")
-	}
-	if err := decoder.Decode(runnerJob.ParsedOutputs); err != nil {
-		return nil, errors.Wrap(err, "unable to parse aws outputs")
-	}
-
-	return &state, nil
+	return ToSecretsState(runnerJob.ParsedOutputs), nil
 }
 
 func (h *Helpers) getSecretsSyncRunnerJob(ctx context.Context, installID, runnerID string) (*app.RunnerJob, error) {

@@ -16,15 +16,9 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 
 	sg := newStepGroup()
 
-	sg.nextGroup() // generate install state
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationGenerateState,
-	}, flw.PlanOnly, WithSkippable(false))
-	steps = append(steps, step)
-
 	sg.nextGroup() // provision service accoun
 
-	step, err = sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &signals.Signal{
+	step, err := sg.installSignalStep(ctx, installID, "provision runner service account", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationProvisionRunner,
 	}, flw.PlanOnly)
 	if err != nil {

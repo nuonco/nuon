@@ -25,6 +25,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/reprovisionsandboxplan"
+	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 )
 
@@ -79,7 +80,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallSandboxRuns)
 	case executeactionworkflow.SignalType, actionworkflowrun.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallActionWorkflowRuns)
-	case generatestate.SignalType:
+	case generatestate.SignalType, statepartialgenerate.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStates)
 	}
 
@@ -104,8 +105,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		}
 	}
 
-	// Generate state is always hidden
-	if sigType == generatestate.SignalType {
+	if sigType == generatestate.SignalType || sigType == statepartialgenerate.SignalType {
 		meta.executionType = app.WorkflowStepExecutionTypeHidden
 	}
 
