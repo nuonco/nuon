@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -14,12 +15,5 @@ func (w *Workflows) getOrgStatePartial(ctx workflow.Context, installID string) (
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get org")
 	}
-
-	st := state.NewOrgState()
-	st.Populated = true
-	st.ID = org.ID
-	st.Name = org.Name
-	st.Status = string(org.Status)
-
-	return st, nil
+	return helpers.ToOrgState(*org), nil
 }

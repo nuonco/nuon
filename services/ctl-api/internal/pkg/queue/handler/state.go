@@ -65,6 +65,7 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
 		V:             h.v,
+		MW:            h.mw,
 		QueueSignalID: h.queueSignalID,
 	})
 

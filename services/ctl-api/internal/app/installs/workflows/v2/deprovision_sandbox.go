@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -36,16 +37,25 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
+	sg.nextGroupEager() // generate install state
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
-	steps = append(steps, step)
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 
-	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	if !stateGenV2 {
+		stateSignal := &generatestate.Signal{InstallID: installID}
+		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+
+	sg.nextGroupEager()
+
+	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {

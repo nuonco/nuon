@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentteardownsyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func TeardownComponents(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -52,14 +53,20 @@ func teardownComponents(ctx workflow.Context, flw *app.Workflow, sg *stepGroup, 
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroupEager() // generate install state
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 
-	steps = append(steps, step)
+	if !stateGenV2 {
+		stateSignal := &generatestate.Signal{InstallID: installID}
+		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreTeardownAllComponents, sg, appCfg, awData)
 	if err != nil {

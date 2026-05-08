@@ -12,12 +12,18 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -149,12 +155,38 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
-	if _, err := installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
-		InstallID:       install.ID,
-		TriggeredByID:   installDeploy.ID,
-		TriggeredByType: "install_deploys",
-	}); err != nil {
-		l.Warn("unable to generate state", zap.Error(err))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	if stateGenV2 {
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   install.ID,
+			OwnerType: "installs",
+			QueueName: installshelpers.InstallStateManagerQueueName,
+			Signal: &statepartialgenerate.Signal{
+				InstallID:       install.ID,
+				Targets:         statemanager.TargetsForHint(statemanager.HintDeployCompleted, s.InstallComponentID),
+				ForceAll:        true,
+				TriggeredByID:   installDeploy.ID,
+				TriggeredByType: "install_deploys",
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to hint state manager")
+		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+			return errors.Wrap(err, "unable to await state generation")
+		}
+
+	} else {
+		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
+			InstallID:       install.ID,
+			TriggeredByID:   installDeploy.ID,
+			TriggeredByType: "install_deploys",
+		}); err != nil {
+			return errors.Wrap(err, "unable to generate state")
+		}
 	}
 
 	return nil

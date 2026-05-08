@@ -33,10 +33,7 @@ type Workflows struct {
 
 func (w *Workflows) AllWorkflows() []interface{} {
 	wkflows := []interface{}{
-		// jobs
 		w.jobWorkflows.ExecuteJob,
-
-		// workflows
 		w.workflowWorkflows.GenerateWorkflowSteps,
 		w.workflowWorkflows.WaitForApprovalResponse,
 	}

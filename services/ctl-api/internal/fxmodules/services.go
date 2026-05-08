@@ -50,6 +50,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(queuesservice.New)),
 	// fx.Provide(api.AsService(releasesservice.New)), // removed - releases being deprecated
 	fx.Provide(api.AsService(runnerauthservice.New)),
+	fx.Provide(runnersservice.NewRunnerHeartbeatCache),
 	fx.Provide(api.AsService(runnersservice.New)),
 	fx.Provide(api.AsService(slackservice.New)),
 	fx.Provide(api.AsService(vcsservice.New)),

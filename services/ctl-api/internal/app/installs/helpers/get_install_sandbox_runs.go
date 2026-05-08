@@ -7,18 +7,12 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // getInstallSandboxRuns reads an install's sandbox runs from the DB.
 func (h *Helpers) getInstallSandboxRuns(ctx context.Context, installID string) ([]app.InstallSandboxRun, error) {
 	var installSandboxRuns []app.InstallSandboxRun
 	res := h.db.WithContext(ctx).
-		Scopes(
-			scopes.WithOverrideTable(views.CustomViewName(h.db, &app.InstallSandboxRun{}, "state_view_v1")),
-		).
-		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig").
 		Preload("AppSandboxConfig.PublicGitVCSConfig").
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").
@@ -29,9 +23,8 @@ func (h *Helpers) getInstallSandboxRuns(ctx context.Context, installID string) (
 		Preload("LogStream").
 		Where(app.InstallSandboxRun{
 			InstallID: installID,
-			Status:    "active",
 		}).
-		Order("created_at desc").
+		Order("updated_at desc").
 		Limit(5).
 		Find(&installSandboxRuns)
 	if res.Error != nil {

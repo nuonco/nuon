@@ -11,7 +11,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
@@ -170,7 +171,7 @@ func (w *Workflows) UpdateInstallStackOutputs(ctx workflow.Context, sreq signals
 		}
 	}
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   run.ID,
 		TriggeredByType: plugins.TableName(w.db, installStackOutputs),

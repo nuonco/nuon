@@ -10,12 +10,18 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -164,7 +170,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.executeActionWorkflowRun(ctx, installActionWorkflow.InstallID, actionWorkflowRun.ID); err != nil {
+	if err := s.executeActionWorkflowRun(ctx, install, actionWorkflowRun.ID); err != nil {
 		return errors.Wrap(err, "unable to execute action workflow run")
 	}
 
@@ -199,10 +205,16 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 		}
 	}
 
-	return s.executeActionWorkflowRun(ctx, run.InstallID, run.ID)
+	install, err := activities.AwaitGetByInstallID(ctx, run.InstallID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install for adhoc run")
+	}
+
+	return s.executeActionWorkflowRun(ctx, install, run.ID)
 }
 
-func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actionWorkflowRunID string) error {
+func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Install, actionWorkflowRunID string) error {
+	installID := install.ID
 	l := workflow.GetLogger(ctx)
 
 	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, actionWorkflowRunID)
@@ -315,12 +327,38 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID, actio
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	if _, err := state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
-		InstallID:       installID,
-		TriggeredByID:   actionWorkflowRunID,
-		TriggeredByType: "install_action_workflow_runs", // plugins.TableName would require db instance
-	}); err != nil {
-		l.Warn("unable to generate state", zap.Error(err))
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	if stateGenV2 {
+		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   installID,
+			OwnerType: "installs",
+			QueueName: installshelpers.InstallStateManagerQueueName,
+			Signal: &statepartialgenerate.Signal{
+				InstallID:       installID,
+				Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
+				ForceAll:        true,
+				TriggeredByID:   actionWorkflowRunID,
+				TriggeredByType: "install_action_workflow_runs",
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to hint state manager")
+		} else if _, err := queueclient.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+			return errors.Wrap(err, "unable to await state generation")
+		}
+
+	} else {
+		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
+			InstallID:       installID,
+			TriggeredByID:   actionWorkflowRunID,
+			TriggeredByType: "install_action_workflow_runs",
+		}); err != nil {
+			return errors.Wrap(err, "unable to generate state")
+		}
 	}
 
 	return nil

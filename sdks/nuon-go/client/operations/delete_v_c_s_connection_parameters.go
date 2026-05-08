@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewDeleteVCSConnectionParams creates a new DeleteVCSConnectionParams object,
@@ -66,6 +67,12 @@ type DeleteVCSConnectionParams struct {
 	   Connection ID
 	*/
 	ConnectionID string
+
+	/* DeleteGithubApp.
+
+	   If true, also uninstall the GitHub App on the GitHub side. Defaults to false so other Nuon orgs sharing the same installation are not impacted.
+	*/
+	DeleteGithubApp *bool
 
 	timeout    time.Duration
 	Context    context.Context
@@ -131,6 +138,17 @@ func (o *DeleteVCSConnectionParams) SetConnectionID(connectionID string) {
 	o.ConnectionID = connectionID
 }
 
+// WithDeleteGithubApp adds the deleteGithubApp to the delete v c s connection params
+func (o *DeleteVCSConnectionParams) WithDeleteGithubApp(deleteGithubApp *bool) *DeleteVCSConnectionParams {
+	o.SetDeleteGithubApp(deleteGithubApp)
+	return o
+}
+
+// SetDeleteGithubApp adds the deleteGithubApp to the delete v c s connection params
+func (o *DeleteVCSConnectionParams) SetDeleteGithubApp(deleteGithubApp *bool) {
+	o.DeleteGithubApp = deleteGithubApp
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *DeleteVCSConnectionParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -142,6 +160,23 @@ func (o *DeleteVCSConnectionParams) WriteToRequest(r runtime.ClientRequest, reg 
 	// path param connection_id
 	if err := r.SetPathParam("connection_id", o.ConnectionID); err != nil {
 		return err
+	}
+
+	if o.DeleteGithubApp != nil {
+
+		// query param delete_github_app
+		var qrDeleteGithubApp bool
+
+		if o.DeleteGithubApp != nil {
+			qrDeleteGithubApp = *o.DeleteGithubApp
+		}
+		qDeleteGithubApp := swag.FormatBool(qrDeleteGithubApp)
+		if qDeleteGithubApp != "" {
+
+			if err := r.SetQueryParam("delete_github_app", qDeleteGithubApp); err != nil {
+				return err
+			}
+		}
 	}
 
 	if len(res) > 0 {
