@@ -68,6 +68,11 @@ type Component struct {
 	Dependencies   []string              `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 	OperationRoles []EntityOperationRole `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 
+	// KubernetesContext is the name of a kubernetes_context this component
+	// targets. Empty means fall back to the implicit sandbox default (when
+	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
+	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty"`
+
 	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
 	TerraformModule    *TerraformModuleComponentConfig    `mapstructure:"terraform_module,omitempty" toml:"terraform_module,omitempty" jsonschema:"oneof_required=terraform_module" nuonhash:"omitempty"`
@@ -199,6 +204,9 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("infrastructure").
 		Field("operation_roles").Short("operation-specific IAM role assignments").
 		Long("Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, default roles are used based on operation type").
+		Field("kubernetes_context").Short("kubernetes context binding").
+		Long("Optional. Name of a kubernetes_context defined at the app level. If set, the component targets the cluster produced by that context's source component. If omitted, the component falls back to the sandbox cluster (when the sandbox emits cluster outputs)").
+		Example("data-cluster").
 		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("helm_chart").
 		Long("Configuration for Helm chart deployments. Required when type is 'helm_chart'").
 		Field("terraform_module").Short("terraform module component configuration").OneOfRequired("terraform_module").
