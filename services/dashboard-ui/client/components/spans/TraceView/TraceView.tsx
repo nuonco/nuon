@@ -58,7 +58,7 @@ export const TraceView = ({
           label: (
             <>
               <Icon variant="ListIcon" size="12" />
-              Logs
+              <span className="@max-[24rem]:hidden">Logs</span>
             </>
           ),
           ariaLabel: 'Show logs',
@@ -68,7 +68,7 @@ export const TraceView = ({
           label: (
             <>
               <Icon variant="TimerIcon" size="12" />
-              Timeline
+              <span className="@max-[24rem]:hidden">Timeline</span>
             </>
           ),
           ariaLabel: 'Show timeline',
