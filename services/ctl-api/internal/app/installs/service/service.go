@@ -185,16 +185,6 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		installs.GET("/stack", s.GetInstallStackByInstallID)
 		installs.GET("/stack-runs", s.GetInstallStackRuns)
 
-		// SDK-driven stack version runs (used by installer-cli / the
-		// nuon-installer-go SDK). CFN/TF flows still use phone-home above.
-		// These mirror the phone-home pattern: public, with phone_home_id
-		// in the URL acting as the per-stack-version secret.
-		installs.POST("/stack-runs/:phone_home_id", s.CreateInstallStackVersionRun)
-		// Kind-scoped variant: /stack-runs/{phone_home_id}/kind/{provision|reprovision|deprovision}.
-		// Distinct path segment ("kind") so this doesn't shadow the PATCH
-		// /stack-runs/:phone_home_id/:run_id terminal-update route.
-		installs.POST("/stack-runs/:phone_home_id/kind/:kind", s.CreateInstallStackVersionRun)
-		installs.PATCH("/stack-runs/:phone_home_id/:run_id", s.UpdateInstallStackVersionRun)
 		installs.GET("/generate-terraform-installer-config", s.GenerateTerraformInstallerConfig)
 
 		// available roles
@@ -228,6 +218,14 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 
 	// stack lookup by stack_id
 	ge.GET("/v1/installs/stacks/:stack_id", s.GetInstallStackByStackID)
+
+	// SDK-driven stack runs (installer-cli / nuon-installer-go). Public,
+	// with phone_home_id in the URL as the per-stack-version secret —
+	// same threat model as the legacy phone-home endpoint. The phone_home_id
+	// is unique per install_stack_version row; install_id is derived from
+	// the loaded row, not passed in the URL.
+	ge.POST("/v1/stack-runs/:phone_home_id/kind/:kind", s.CreateInstallStackVersionRun)
+	ge.PATCH("/v1/stack-runs/:phone_home_id/:run_id", s.UpdateInstallStackVersionRun)
 
 	// org-level workflow queries (must be registered before /:workflow_id group)
 	ge.GET("/v1/workflows/pending-approvals", s.GetOrgPendingApprovals)

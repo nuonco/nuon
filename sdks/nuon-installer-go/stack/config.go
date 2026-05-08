@@ -9,6 +9,7 @@ type Config struct {
 	// stack package without dragging State along. State.InstallID remains
 	// the source of truth at runtime; this field is convenience only.
 	InstallID string `json:"install_id,omitempty"`
+	AWSRegion string `json:"aws_region,omitempty"`
 
 	RunnerID     string `json:"runner_id,omitempty"`
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
