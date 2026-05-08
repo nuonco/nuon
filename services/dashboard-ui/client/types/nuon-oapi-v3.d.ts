@@ -4932,6 +4932,13 @@ export interface components {
        * gets dispatched. When empty, the step signal's TargetQueueName is used.
        */
       target_queue_id?: string;
+      /**
+       * @description Timeout is the execution timeout for this step, derived from the
+       * inner signal's Timeout() at step generation time. Used by the step-group
+       * to set ScheduleToCloseTimeout when awaiting step completion.
+       * Zero means use default fallback.
+       */
+      timeout?: string;
       updated_at?: string;
       /** @description Fields that are de-nested at read time using AfterQuery */
       workflow_id?: string;
@@ -4981,6 +4988,12 @@ export interface components {
       result_directive?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       steps?: components["schemas"]["app.WorkflowStep"][];
+      /**
+       * @description Timeout is the execution timeout for this group, derived from its
+       * steps' timeouts. For sequential groups: sum of step timeouts. For parallel
+       * groups: max of step timeouts. Zero means use default fallback.
+       */
+      timeout?: string;
       updated_at?: string;
       workflow_id?: string;
     };

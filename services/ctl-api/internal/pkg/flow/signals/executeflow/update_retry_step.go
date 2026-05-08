@@ -84,6 +84,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 				WorkflowStepGroupID: step.WorkflowStepGroupID,
 				StepTargetType:      step.StepTargetType,
 				RetryIndex:          step.RetryIndex + 1,
+				Timeout:             step.Timeout,
 			},
 		},
 	})
