@@ -33,8 +33,6 @@ func (m *middleware) Handler() gin.HandlerFunc {
 	}
 
 	return func(c *gin.Context) {
-		// Skip auth for static assets and public SPA routes that must be
-		// accessible without authentication (e.g. the login page).
 		if strings.HasPrefix(c.Request.URL.Path, "/assets/") ||
 			c.Request.URL.Path == "/login" ||
 			strings.HasPrefix(c.Request.URL.Path, "/auth/") {
@@ -63,8 +61,8 @@ func (m *middleware) Handler() gin.HandlerFunc {
 			return
 		}
 
-		m.l.Debug("auth middleware calling GetAuthMe", zap.String("path", c.Request.URL.Path))
-		if _, err := client.GetAuthMe(c.Request.Context()); err != nil {
+		m.l.Debug("auth middleware calling ValidateToken", zap.String("path", c.Request.URL.Path))
+		if err := client.ValidateToken(c.Request.Context()); err != nil {
 			m.l.Warn("auth check failed", zap.Error(err))
 			c.Redirect(http.StatusFound, loginURL)
 			c.Abort()
