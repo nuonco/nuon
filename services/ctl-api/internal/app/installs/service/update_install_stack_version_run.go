@@ -27,7 +27,6 @@ type UpdateInstallStackVersionRunRequest struct {
 // @ID						UpdateInstallStackVersionRun
 // @Summary				update a stack version run
 // @Description			mark a run terminal (succeeded/failed). Public endpoint, mirrors phone-home: phone_home_id in the URL acts as the secret.
-// @Param					install_id		path	string	true	"install ID"
 // @Param					phone_home_id	path	string	true	"stack version phone-home ID (used as the URL secret)"
 // @Param					run_id			path	string	true	"run ID"
 // @Param					req				body	UpdateInstallStackVersionRunRequest	true	"Input"
@@ -38,9 +37,8 @@ type UpdateInstallStackVersionRunRequest struct {
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.InstallStackVersionRun
-// @Router					/v1/installs/{install_id}/stack-runs/{phone_home_id}/{run_id} [patch]
+// @Router					/v1/stack-runs/{phone_home_id}/{run_id} [patch]
 func (s *service) UpdateInstallStackVersionRun(ctx *gin.Context) {
-	installID := ctx.Param("install_id")
 	phoneHomeID := ctx.Param("phone_home_id")
 	runID := ctx.Param("run_id")
 
@@ -57,10 +55,10 @@ func (s *service) UpdateInstallStackVersionRun(ctx *gin.Context) {
 		return
 	}
 
-	// Validate (install_id, phone_home_id) → stack version, then run.
+	// phone_home_id is unique per stack version; install_id derives from the row.
 	var stackVersion app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
-		Where(app.InstallStackVersion{InstallID: installID, PhoneHomeID: phoneHomeID}).
+		Where(app.InstallStackVersion{PhoneHomeID: phoneHomeID}).
 		First(&stackVersion); res.Error != nil {
 		if res.Error == gorm.ErrRecordNotFound {
 			ctx.Error(stderr.ErrNotFound{Err: res.Error, Description: "stack version not found"})
@@ -69,6 +67,7 @@ func (s *service) UpdateInstallStackVersionRun(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("load stack version: %w", res.Error))
 		return
 	}
+	installID := stackVersion.InstallID
 
 	var run app.InstallStackVersionRun
 	if res := s.db.WithContext(ctx).

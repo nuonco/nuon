@@ -46,6 +46,71 @@ type Installer struct {
 	// accountID is captured during stepValidateAWS so reportRun can build
 	// IAM role ARNs without a second sts call on the failure path.
 	accountID string
+
+	// preCreatedRun, when set, makes Run/Deprovision skip their own CreateRun
+	// call and use this response instead. Set by FromCreateRunURL — the URL
+	// flow calls CreateRun before we even know InstallID/AWSRegion, so by the
+	// time we get to Run() the response is already in hand.
+	preCreatedRun *stackrun.CreateRunResponse
+	runClient     *stackrun.Client
+}
+
+// FromCreateRunURL POSTs to the create-run URL the dashboard renders, then
+// bootstraps an Installer from the response. The CLI's single-argument flow
+// uses this — the caller doesn't need to know install_id, region, or
+// runner details up front; the API hands them back in the response.
+//
+// Kind ("provision" / "reprovision" / "deprovision") drives the kind path
+// segment on the POST and propagates into the run row in ctl-api.
+//
+// On success the returned Installer already has the CreateRun response
+// cached, so the next call to Run/Deprovision will not double-create.
+func FromCreateRunURL(ctx context.Context, in CreateRunURL) (*Installer, error) {
+	base, phoneHomeID, err := ParseCreateRunURL(in.URL)
+	if err != nil {
+		return nil, err
+	}
+	if in.Kind == "" {
+		return nil, fmt.Errorf("CreateRunURL.Kind required")
+	}
+
+	client := stackrun.New(stackrun.Config{
+		CtlAPIURL:   base,
+		PhoneHomeID: phoneHomeID,
+	})
+	resp, err := client.CreateRun(ctx, stackrun.RunKind(in.Kind))
+	if err != nil {
+		return nil, fmt.Errorf("create stack run: %w", err)
+	}
+	if resp.Config == nil {
+		return nil, fmt.Errorf("create stack run: ctl-api returned no config block")
+	}
+	if resp.Config.InstallID == "" || resp.Config.AWSRegion == "" {
+		return nil, fmt.Errorf("create stack run: config missing install_id or aws_region")
+	}
+
+	opts := Options{
+		InstallID: resp.Config.InstallID,
+		AWSRegion: resp.Config.AWSRegion,
+		StackRun: &StackRunConfig{
+			CtlAPIURL:   base,
+			PhoneHomeID: phoneHomeID,
+		},
+	}
+	if resp.LogStream != nil && resp.LogStream.ID != "" {
+		opts.LogStream = &LogStreamConfig{
+			ID:           resp.LogStream.ID,
+			WriteToken:   resp.LogStream.WriteToken,
+			RunnerAPIURL: resp.LogStream.RunnerAPIURL,
+		}
+	}
+	inst, err := New(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	inst.preCreatedRun = resp
+	inst.runClient = client
+	return inst, nil
 }
 
 // New builds an Installer. Caller must call Close to flush logs.
@@ -134,14 +199,25 @@ func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.Stat
 	var runClient *stackrun.Client
 	var runID string
 	if i.opts.StackRun != nil {
-		runClient = stackrun.New(stackrun.Config{
-			CtlAPIURL:   i.opts.StackRun.CtlAPIURL,
-			InstallID:   i.opts.InstallID,
-			PhoneHomeID: i.opts.StackRun.PhoneHomeID,
-		})
-		resp, err := runClient.CreateRun(ctx, kind)
-		if err != nil {
-			return st, fmt.Errorf("create stack run: %w", err)
+		runClient = i.runClient
+		if runClient == nil {
+			runClient = stackrun.New(stackrun.Config{
+				CtlAPIURL:   i.opts.StackRun.CtlAPIURL,
+				PhoneHomeID: i.opts.StackRun.PhoneHomeID,
+			})
+		}
+		// FromCreateRunURL already issued CreateRun before we knew install_id
+		// / region; reuse that response instead of double-creating.
+		var resp *stackrun.CreateRunResponse
+		if i.preCreatedRun != nil {
+			resp = i.preCreatedRun
+			i.preCreatedRun = nil
+		} else {
+			var err error
+			resp, err = runClient.CreateRun(ctx, kind)
+			if err != nil {
+				return st, fmt.Errorf("create stack run: %w", err)
+			}
 		}
 		runID = resp.ID
 		i.log.Info("created stack run", "run_id", runID)
@@ -321,12 +397,21 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 	// delete. If StackRun isn't configured, fall back to an empty config; the
 	// stack package's Delete* funcs all tolerate a sparse config.
 	if i.opts.StackRun != nil {
-		runClient := stackrun.New(stackrun.Config{
-			CtlAPIURL:   i.opts.StackRun.CtlAPIURL,
-			InstallID:   i.opts.InstallID,
-			PhoneHomeID: i.opts.StackRun.PhoneHomeID,
-		})
-		resp, err := runClient.CreateRun(ctx, stackrun.RunKindDeprovision)
+		runClient := i.runClient
+		if runClient == nil {
+			runClient = stackrun.New(stackrun.Config{
+				CtlAPIURL:   i.opts.StackRun.CtlAPIURL,
+				PhoneHomeID: i.opts.StackRun.PhoneHomeID,
+			})
+		}
+		var resp *stackrun.CreateRunResponse
+		var err error
+		if i.preCreatedRun != nil {
+			resp = i.preCreatedRun
+			i.preCreatedRun = nil
+		} else {
+			resp, err = runClient.CreateRun(ctx, stackrun.RunKindDeprovision)
+		}
 		if err != nil {
 			i.log.Warn("create deprovision run (continuing with empty config)", "err", err.Error())
 			i.cfg = &stack.Config{InstallID: i.opts.InstallID}

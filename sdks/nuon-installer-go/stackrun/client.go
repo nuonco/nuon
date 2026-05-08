@@ -22,7 +22,6 @@ import (
 // Config configures the client. All fields are required.
 type Config struct {
 	CtlAPIURL   string // base URL, e.g. https://api.nuon.co
-	InstallID   string
 	PhoneHomeID string // per-stack-version secret, in the URL path
 	HTTPClient  *http.Client
 }
@@ -84,9 +83,8 @@ func (c *Client) CreateRun(ctx context.Context, kind RunKind) (*CreateRunRespons
 		kind = RunKindProvision
 	}
 	url := fmt.Sprintf(
-		"%s/v1/installs/%s/stack-runs/%s/kind/%s",
+		"%s/v1/stack-runs/%s/kind/%s",
 		strings.TrimSuffix(c.cfg.CtlAPIURL, "/"),
-		c.cfg.InstallID,
 		c.cfg.PhoneHomeID,
 		kind,
 	)
@@ -107,9 +105,8 @@ type UpdateRunRequest struct {
 // UpdateRun marks a run as succeeded or failed and includes terminal data.
 func (c *Client) UpdateRun(ctx context.Context, runID string, req UpdateRunRequest) error {
 	url := fmt.Sprintf(
-		"%s/v1/installs/%s/stack-runs/%s/%s",
+		"%s/v1/stack-runs/%s/%s",
 		strings.TrimSuffix(c.cfg.CtlAPIURL, "/"),
-		c.cfg.InstallID,
 		c.cfg.PhoneHomeID,
 		runID,
 	)
