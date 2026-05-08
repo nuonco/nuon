@@ -89,7 +89,7 @@ export const AwaitAWSDetails = ({
           cli: (
             <CLITab
               phoneHomeId={version?.phone_home_id}
-              phoneHomeURL={version?.phone_home_url}
+              runnerAPIURL={version?.runner_api_url}
             />
           ),
         }}
@@ -250,18 +250,16 @@ const CloudFormationTab = ({
 
 interface ICLITab {
   phoneHomeId?: string
-  // phoneHomeURL is `{ctl_api_url}/v1/installs/{install_id}/phone-home/{phone_home_id}`.
-  // We strip the `/v1/...` suffix to recover the canonical ctl-api URL,
-  // which works for both production (https://api.nuon.co) and local dev
-  // (http://localhost:8081) without inferring from the dashboard origin.
-  phoneHomeURL?: string
+  // runnerAPIURL is the externally-reachable runner API host. The SDK
+  // endpoints live there so they work even when ctl-api itself is private
+  // (self-hosted vendors). Sourced server-side from the install's
+  // RunnerGroupSettings.
+  runnerAPIURL?: string
 }
 
-const CLITab = ({ phoneHomeId, phoneHomeURL }: ICLITab) => {
-  const ctlAPIURL = phoneHomeURL
-    ? phoneHomeURL.replace(/\/v1\/.*$/, '')
-    : 'https://api.nuon.co'
-  const createRunURL = `${ctlAPIURL}/v1/stack-runs/${phoneHomeId || '<phone-home-id>'}`
+const CLITab = ({ phoneHomeId, runnerAPIURL }: ICLITab) => {
+  const base = runnerAPIURL || 'https://api.nuon.co'
+  const createRunURL = `${base}/v1/stack-runs/${phoneHomeId || '<phone-home-id>'}`
 
   const cmd = `installer-cli provision ${createRunURL}`
 

@@ -1753,20 +1753,6 @@ export interface paths {
      */
     get: operations["GetInstallStackRuns"];
   };
-  "/v1/installs/{install_id}/stack-runs/{phone_home_id}": {
-    /**
-     * create a stack version run
-     * @description start a new run for an install stack version. Public endpoint, mirrors phone-home: the per-stack-version phone_home_id in the URL acts as the secret. Used by the AWS-native SDK provisioner; legacy CFN/TF flows use phone-home.
-     */
-    post: operations["CreateInstallStackVersionRun"];
-  };
-  "/v1/installs/{install_id}/stack-runs/{phone_home_id}/{run_id}": {
-    /**
-     * update a stack version run
-     * @description mark a run terminal (succeeded/failed). Public endpoint, mirrors phone-home: phone_home_id in the URL acts as the secret.
-     */
-    patch: operations["UpdateInstallStackVersionRun"];
-  };
   "/v1/installs/{install_id}/state": {
     /**
      * Get the current state of an install.
@@ -4006,6 +3992,14 @@ export interface components {
       phone_home_id?: string;
       phone_home_url?: string;
       quick_link_url?: string;
+      /**
+       * @description RunnerAPIURL is the externally-reachable runner-API host the installer-cli
+       * SDK should POST to. Populated transiently on read via AfterFind from
+       * Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
+       * surface vendors expose, so the customer's workstation can hit it even
+       * when ctl-api itself is private.
+       */
+      runner_api_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
       template_url?: string;
       terraform_checksum?: string;
@@ -6851,14 +6845,6 @@ export interface components {
     };
     "service.UpdateInstallRoleRequest": {
       enabled: boolean;
-    };
-    "service.UpdateInstallStackVersionRunRequest": {
-      data?: {
-        [key: string]: unknown;
-      };
-      /** @description Status must be "succeeded" or "failed"; runs are created as "running". */
-      status: components["schemas"]["app.Status"];
-      status_description?: string;
     };
     "service.UpdateOrgFeaturesRequest": {
       features: {
@@ -19846,88 +19832,6 @@ export interface operations {
       };
       /** @description Forbidden */
       403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * create a stack version run
-   * @description start a new run for an install stack version. Public endpoint, mirrors phone-home: the per-stack-version phone_home_id in the URL acts as the secret. Used by the AWS-native SDK provisioner; legacy CFN/TF flows use phone-home.
-   */
-  CreateInstallStackVersionRun: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-        /** @description stack version phone-home ID (used as the URL secret) */
-        phone_home_id: string;
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        content: {
-          "application/json": components["schemas"]["app.InstallStackVersionRun"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /**
-   * update a stack version run
-   * @description mark a run terminal (succeeded/failed). Public endpoint, mirrors phone-home: phone_home_id in the URL acts as the secret.
-   */
-  UpdateInstallStackVersionRun: {
-    parameters: {
-      path: {
-        /** @description install ID */
-        install_id: string;
-        /** @description stack version phone-home ID (used as the URL secret) */
-        phone_home_id: string;
-        /** @description run ID */
-        run_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.UpdateInstallStackVersionRunRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.InstallStackVersionRun"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
