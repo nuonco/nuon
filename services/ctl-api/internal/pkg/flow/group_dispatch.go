@@ -59,21 +59,16 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 		return "", errors.Wrapf(err, "unable to enqueue group signal for group %d", group.GroupIdx)
 	}
 
-	var awaitOpts []*workflow.ActivityOptions
-	if t, ok := signal.Signal(sig).(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
-		awaitOpts = append(awaitOpts, &workflow.ActivityOptions{
-			ScheduleToCloseTimeout: t.Timeout(),
-		})
-	}
+	timeoutOpts := signal.TimeoutActivityOpts(signal.DeriveTimeout(sig))
 
 	// Wait for the group to finish via the group-finished update handler.
 	// If the group has a StepGroupID, use ForwardGroupFinished for resilient
-	// completion tracking. Fall back to AwaitAwaitSignal for backward compat
+	// completion tracking. Fall back to AwaitQueueSignal for backward compat
 	// when no StepGroupID is available (legacy in-flight workflows).
 	if group.ID != "" {
 		resp, err := workflowactivities.AwaitForwardGroupFinished(ctx, workflowactivities.ForwardGroupFinishedRequest{
 			StepGroupID: group.ID,
-		}, awaitOpts...)
+		}, timeoutOpts)
 		if err != nil {
 			if ctx.Err() != nil {
 				cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
@@ -86,7 +81,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	}
 
 	// Legacy fallback: no StepGroupID, use framework-level finished handler.
-	_, err = client.AwaitAwaitSignal(ctx, enqueueResp.QueueSignalID, awaitOpts...)
+	_, err = client.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
