@@ -28,5 +28,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "06-fix-otel-log-attr-indexes",
 			Fn:   m.Migration006FixOtelLogAttrIndexes,
 		},
+		{
+			Name: "07-create-queries-table",
+			Fn:   m.Migration007CreateQueriesTable,
+		},
 	}
 }

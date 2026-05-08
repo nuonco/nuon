@@ -31,6 +31,7 @@ type QueryRecord struct {
 	Timestamp    time.Time     `json:"timestamp"`
 	Error        string        `json:"error,omitempty"`
 	Caller       string        `json:"caller"`
+	CallerURL    string        `json:"caller_url,omitempty"`
 	DBType       string        `json:"db_type"`
 	Source       string        `json:"source"`
 	Endpoint     string        `json:"endpoint"`
@@ -43,6 +44,7 @@ type Collector struct {
 	maxSize int
 	pos     int
 	total   int
+	writer  *Writer
 }
 
 // NewCollector creates a new collector with the given max buffer size.
@@ -53,10 +55,31 @@ func NewCollector(maxSize int) *Collector {
 	}
 }
 
-// Add inserts a record into the ring buffer.
-func (c *Collector) Add(r QueryRecord) {
+// SetWriter attaches a Writer that persists records to ClickHouse.
+func (c *Collector) SetWriter(w *Writer) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.writer = w
+}
+
+// callerURL builds a GitHub permalink for the given caller string (file:line).
+func (c *Collector) callerURL(caller string) string {
+	if caller == "" {
+		return ""
+	}
+	idx := strings.LastIndex(caller, ":")
+	if idx < 0 {
+		return ""
+	}
+	filePath := caller[:idx]
+	line := caller[idx+1:]
+	return fmt.Sprintf("https://github.com/nuonco/nuon/tree/main/%s#L%s", filePath, line)
+}
+
+// Add inserts a record into the ring buffer and forwards to the writer if set.
+func (c *Collector) Add(r QueryRecord) {
+	c.mu.Lock()
+	w := c.writer
 	c.total++
 	if len(c.records) < c.maxSize {
 		c.records = append(c.records, r)
@@ -64,6 +87,11 @@ func (c *Collector) Add(r QueryRecord) {
 		c.records[c.pos] = r
 	}
 	c.pos = (c.pos + 1) % c.maxSize
+	c.mu.Unlock()
+
+	if w != nil {
+		w.Write(r)
+	}
 }
 
 // Records returns a snapshot of all collected records (newest first).
@@ -186,6 +214,7 @@ func (p *Plugin) afterAll(tx *gorm.DB, operation string) {
 		}
 	}
 
+	caller := findCaller()
 	p.collector.Add(QueryRecord{
 		Table:        table,
 		Operation:    operation,
@@ -197,7 +226,8 @@ func (p *Plugin) afterAll(tx *gorm.DB, operation string) {
 		PreloadCount: len(tx.Statement.Preloads),
 		Timestamp:    startTS,
 		Error:        errStr,
-		Caller:       findCaller(),
+		Caller:       caller,
+		CallerURL:    p.collector.callerURL(caller),
 		DBType:       p.dbType,
 		Source:       source,
 		Endpoint:     endpoint,
