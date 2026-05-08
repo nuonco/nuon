@@ -152,6 +152,10 @@ export function getComponentConfigDisplayData(
           label: 'Image tag',
           value: config.external_image?.tag,
         },
+        {
+          label: 'Update policy',
+          value: config.external_image?.update_policy,
+        },
       ]
       break
 

@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -78,8 +79,13 @@ type CreateExternalImageComponentConfigRequest struct {
 	GCPGARImageConfig   *gcpGARImageConfigRequest   `json:"gcp_gar_image_config"`
 	AzureACRImageConfig *azureACRImageConfigRequest `json:"azure_acr_image_config"`
 
-	ImageURL                     string `json:"image_url" validate:"required"`
-	Tag                          string `json:"tag" validate:"required"`
+	ImageURL string `json:"image_url" validate:"required"`
+	Tag      string `json:"tag" validate:"required_without=UpdatePolicy"`
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2"). When set, the runner lists tags from the
+	// source registry, filters to those satisfying the constraint, and
+	// uses the highest matching tag. Tag becomes optional in this case.
+	UpdatePolicy                 string `json:"update_policy,omitempty"`
 	BuildTimeout                 string `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
 	DeployTimeout                string `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int   `json:"max_auto_retries,omitempty"`
@@ -120,6 +126,11 @@ func (c *CreateExternalImageComponentConfigRequest) Validate(v *validator.Valida
 	if c.MaxAutoRetries != nil {
 		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
 			return err
+		}
+	}
+	if c.UpdatePolicy != "" {
+		if err := updatepolicy.Validate(c.UpdatePolicy); err != nil {
+			return fmt.Errorf("invalid update_policy: %w", err)
 		}
 	}
 	return nil
@@ -217,6 +228,7 @@ func (s *service) createExternalImageComponentConfig(ctx context.Context, cmpID 
 	cfg := app.ExternalImageComponentConfig{
 		ImageURL:            req.ImageURL,
 		Tag:                 req.Tag,
+		UpdatePolicy:        req.UpdatePolicy,
 		AWSECRImageConfig:   req.AWSECRImageConfig.getAWSECRImageConfig(),
 		GCPGARImageConfig:   req.GCPGARImageConfig.getGCPGARImageConfig(),
 		AzureACRImageConfig: req.AzureACRImageConfig.getAzureACRImageConfig(),
