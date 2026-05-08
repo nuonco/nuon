@@ -115,7 +115,7 @@ func (s *Signal) Timeout() time.Duration {
 	if s.DerivedTimeout > 0 {
 		return s.DerivedTimeout
 	}
-	return 2 * time.Hour
+	return 30 * 24 * time.Hour
 }
 
 // LifecycleContext exposes the step + workflow identity to lifecycle hooks so

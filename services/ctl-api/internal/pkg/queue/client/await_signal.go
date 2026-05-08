@@ -19,7 +19,6 @@ import (
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
-// @schedule-to-close-timeout 2h
 // @heartbeat-timeout 60s
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
@@ -98,6 +97,12 @@ func terminalResponse(status app.Status, description string) (*handler.FinishedR
 		return nil, temporal.NewNonRetryableApplicationError(msg, "SIGNAL_FAILED", nil)
 	}
 	return &handler.FinishedResponse{Status: status, StatusDescription: description}, nil
+}
+
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+func (c *Client) GetQueueSignal(ctx context.Context, id string) (*app.QueueSignal, error) {
+	return c.getQueueSignal(ctx, id)
 }
 
 func (c *Client) getQueueSignal(ctx context.Context, id string) (*app.QueueSignal, error) {
