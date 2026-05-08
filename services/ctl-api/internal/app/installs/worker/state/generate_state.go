@@ -5,7 +5,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -31,6 +33,8 @@ type statePartial struct {
 // @task-timeout 30m
 // @id-template {{.CallerID}}-generate-state
 func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateRequest) (*state.State, error) {
+	start := workflow.Now(ctx)
+
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
@@ -224,6 +228,7 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 		InstallID:       req.InstallID,
 		TriggeredByID:   req.TriggeredByID,
 		TriggeredByType: req.TriggeredByType,
+		GeneratedBy:     app.InstallStateGenerateSourceLegacy,
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to write state")
 	}
@@ -233,6 +238,16 @@ func (w *Workflows) GenerateState(ctx workflow.Context, req *GenerateStateReques
 	}); err != nil {
 		return nil, errors.Wrap(err, "unable to purge stale state")
 	}
+
+	tags := metrics.ToTags(map[string]string{
+		"install_id":        req.InstallID,
+		"triggered_by_type": req.TriggeredByType,
+		"app_id":            install.AppID,
+		"app_name":          install.App.Name,
+		"app_config_id":     install.AppConfigID,
+	})
+	w.mw.Timing(ctx, "nuon.state.legacy.generate.duration", workflow.Now(ctx).Sub(start), tags...)
+	w.mw.Incr(ctx, "nuon.state.legacy.generate.count", tags...)
 
 	return is, nil
 }

@@ -135,7 +135,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			setupFunc: func() string {
 				return s.testInstall.ID
 			},
-			requestBody:    AdminInstallGenerateInstallStateRequest{},
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
@@ -167,7 +166,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			setupFunc: func() string {
 				return s.testInstall.Name
 			},
-			requestBody:    AdminInstallGenerateInstallStateRequest{},
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installName string) {
@@ -181,7 +179,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			setupFunc: func() string {
 				return "ins000000000000000000000000"
 			},
-			requestBody:      AdminInstallGenerateInstallStateRequest{},
 			expectedCode:     http.StatusNotFound,
 			expectedSignal:   false,
 			expectedNotFound: true,
