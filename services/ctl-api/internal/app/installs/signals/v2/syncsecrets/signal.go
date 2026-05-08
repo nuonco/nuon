@@ -40,7 +40,7 @@ var _ signal.SignalWithTimeout = (*Signal)(nil)
 func (s *Signal) AutoRetry() bool                       { return true }
 func (s *Signal) MaxRetries() int                       { return 3 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
-func (s *Signal) Timeout() time.Duration                { return 180 * 24 * time.Hour }
+func (s *Signal) Timeout() time.Duration                { return 2 * time.Hour }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)

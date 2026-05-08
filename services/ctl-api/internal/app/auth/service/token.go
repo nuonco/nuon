@@ -34,7 +34,7 @@ func (s *service) createToken(account *app.Account) (string, error) {
 		AccountID:   account.ID,
 		Token:       tokenValue,
 		TokenType:   app.TokenTypeNuon,
-		ExpiresAt:   now.Add(time.Duration(s.cfg.NuonAuthSessionTTL) * time.Minute),
+		ExpiresAt:   now.Add(time.Duration(s.cfg.NuonAuthTokenTTL) * time.Minute),
 		IssuedAt:    now,
 		Issuer:      s.domain,
 	}

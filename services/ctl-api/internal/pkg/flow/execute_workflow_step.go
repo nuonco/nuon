@@ -464,6 +464,7 @@ func (c *WorkflowConductor[DomainSignal]) cloneWorkflowStep(ctx workflow.Context
 				GroupRetryIdx:  step.GroupRetryIdx,
 				StepTargetType: step.StepTargetType,
 				RetryIndex:     newRetryIndex,
+				Timeout:        step.Timeout,
 				// StepTargetID intentionally omitted — the clone must create
 				// a fresh target when it executes, not reuse the original.
 			},
@@ -496,6 +497,7 @@ func (c *WorkflowConductor[DomainSignal]) createCloneSteps(ctx workflow.Context,
 			GroupRetryIdx:  step.GroupRetryIdx,
 			StepTargetType: step.StepTargetType,
 			RetryIndex:     retryIndex,
+			Timeout:        signal.DeriveTimeout(def.Signal),
 		})
 	}
 	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{Steps: steps})
