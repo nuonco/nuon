@@ -49,6 +49,12 @@ var AllResources = []ResourceKind{
 type Outcome string
 
 const (
+	// OutcomeNone mutes lifecycle events for the resource entirely. Approval and
+	// drift-detected events on the same resource are unaffected — they are gated
+	// independently by ApprovalRequests / ApprovalResponses / DriftDetected.
+	// Use this with DriftDetected=true to subscribe to drift-only, or with
+	// ApprovalRequests / ApprovalResponses to subscribe to approval-only flows.
+	OutcomeNone Outcome = "none"
 	// OutcomeAll forwards every started + terminal lifecycle event.
 	OutcomeAll Outcome = "all"
 	// OutcomeCompletion forwards only terminal events (succeeded / failed /

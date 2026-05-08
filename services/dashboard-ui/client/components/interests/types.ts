@@ -14,7 +14,7 @@ export type ResourceKind =
   | 'runners'
   | 'actions'
 
-export type Outcome = 'all' | 'completion' | 'failures'
+export type Outcome = 'none' | 'all' | 'completion' | 'failures'
 
 export interface ResourceCfg {
   ops?: string[]
@@ -66,6 +66,7 @@ export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
 }
 
 export const OUTCOME_LABELS: Record<Outcome, string> = {
+  none: 'Off',
   all: 'All activity',
   completion: 'On completion',
   failures: 'On failures',

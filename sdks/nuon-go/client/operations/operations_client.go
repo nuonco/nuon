@@ -59,6 +59,26 @@ type ClientOption func(*runtime.ClientOperation)
 //
 // Feel free to add you own set of options.
 
+// WithContentType allows the client to force the Content-Type header
+// to negotiate a specific Consumer from the server.
+//
+// You may use this option to set arbitrary extensions to your MIME media type.
+func WithContentType(mime string) ClientOption {
+	return func(r *runtime.ClientOperation) {
+		r.ConsumesMediaTypes = []string{mime}
+	}
+}
+
+// WithContentTypeApplicationJSON sets the Content-Type header to "application/json".
+func WithContentTypeApplicationJSON(r *runtime.ClientOperation) {
+	r.ConsumesMediaTypes = []string{"application/json"}
+}
+
+// WithContentTypeApplicationxWwwFormUrlencoded sets the Content-Type header to "application/x-www-form-urlencoded".
+func WithContentTypeApplicationxWwwFormUrlencoded(r *runtime.ClientOperation) {
+	r.ConsumesMediaTypes = []string{"application/x-www-form-urlencoded"}
+}
+
 // WithAccept allows the client to force the Accept header
 // to negotiate a specific Producer from the server.
 //
@@ -87,6 +107,11 @@ func WithAcceptApplicationPdf(r *runtime.ClientOperation) {
 // WithAcceptTextCsv sets the Accept header to "text/csv".
 func WithAcceptTextCsv(r *runtime.ClientOperation) {
 	r.ProducesMediaTypes = []string{"text/csv"}
+}
+
+// WithAcceptTextHTML sets the Accept header to "text/html".
+func WithAcceptTextHTML(r *runtime.ClientOperation) {
+	r.ProducesMediaTypes = []string{"text/html"}
 }
 
 // ClientService is the interface for Client methods
@@ -237,6 +262,10 @@ type ClientService interface {
 
 	CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error)
 
+	CreateSlackChannelSubscription(params *CreateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackChannelSubscriptionCreated, error)
+
+	CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackOrgLinkCreated, error)
+
 	CreateTerraformModuleComponentConfig(params *CreateTerraformModuleComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformModuleComponentConfigCreated, error)
 
 	CreateTerraformWorkspace(params *CreateTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateTerraformWorkspaceCreated, error)
@@ -272,6 +301,10 @@ type ClientService interface {
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
 	DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error)
+
+	DeleteSlackChannelSubscription(params *DeleteSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackChannelSubscriptionNoContent, error)
+
+	DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackOrgLinkNoContent, error)
 
 	DeleteTerraformWorkspace(params *DeleteTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteTerraformWorkspaceOK, error)
 
@@ -631,6 +664,8 @@ type ClientService interface {
 
 	GetRunnerSettings(params *GetRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerSettingsOK, error)
 
+	GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSlackInstallURLOK, error)
+
 	GetTerraformCurrentStateData(params *GetTerraformCurrentStateDataParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformCurrentStateDataOK, error)
 
 	GetTerraformStates(params *GetTerraformStatesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetTerraformStatesOK, error)
@@ -693,6 +728,14 @@ type ClientService interface {
 
 	ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListRunnerProcessesOK, error)
 
+	ListSlackChannelSubscriptions(params *ListSlackChannelSubscriptionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackChannelSubscriptionsOK, error)
+
+	ListSlackChannels(params *ListSlackChannelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackChannelsOK, error)
+
+	ListSlackInstallations(params *ListSlackInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackInstallationsOK, error)
+
+	ListSlackOrgLinks(params *ListSlackOrgLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackOrgLinksOK, error)
+
 	LockTerraformWorkspace(params *LockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LockTerraformWorkspaceOK, error)
 
 	LogStreamReadLogs(params *LogStreamReadLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadLogsOK, error)
@@ -732,6 +775,14 @@ type ClientService interface {
 	ShutdownRunnerProcess(params *ShutdownRunnerProcessParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutdownRunnerProcessCreated, error)
 
 	SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SkipWorkflowStepCreated, error)
+
+	SlackEvents(params *SlackEventsParams, opts ...ClientOption) (*SlackEventsOK, error)
+
+	SlackInteractions(params *SlackInteractionsParams, opts ...ClientOption) (*SlackInteractionsOK, error)
+
+	SlackOAuthCallback(params *SlackOAuthCallbackParams, opts ...ClientOption) error
+
+	SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error)
 
 	SyncSecrets(params *SyncSecretsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*SyncSecretsCreated, error)
 
@@ -782,6 +833,8 @@ type ClientService interface {
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
 
 	UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerSettingsOK, error)
+
+	UpdateSlackChannelSubscription(params *UpdateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSlackChannelSubscriptionOK, error)
 
 	UpdateTerraformState(params *UpdateTerraformStateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateTerraformStateOK, error)
 
@@ -4209,6 +4262,98 @@ func (a *Client) CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenPa
 }
 
 /*
+CreateSlackChannelSubscription creates a slack channel subscription
+
+Subscribes a Slack channel to events for the current org. The org_link_id must resolve to a verified SlackOrgLink belonging to the calling org; this is enforced at the DB query level (ABAC).
+*/
+func (a *Client) CreateSlackChannelSubscription(params *CreateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackChannelSubscriptionCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateSlackChannelSubscriptionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateSlackChannelSubscription",
+		Method:             "POST",
+		PathPattern:        "/v1/orgs/{org_id}/slack/channel-subscriptions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateSlackChannelSubscriptionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateSlackChannelSubscriptionCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateSlackChannelSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateSlackOrgLink binds a slack workspace to the current org
+
+Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
+*/
+func (a *Client) CreateSlackOrgLink(params *CreateSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackOrgLinkCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateSlackOrgLinkParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateSlackOrgLink",
+		Method:             "POST",
+		PathPattern:        "/v1/orgs/{org_id}/slack/org-links",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateSlackOrgLinkReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateSlackOrgLinkCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateSlackOrgLink: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateTerraformModuleComponentConfig creates a terraform component config
 
 Create a terraform component config.
@@ -5030,6 +5175,98 @@ func (a *Client) DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteOrg: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteSlackChannelSubscription deletes a slack channel subscription
+
+Soft-deletes a SlackChannelSubscription belonging to the current org. ABAC scoped at the DB query so callers cannot delete subscriptions outside their org.
+*/
+func (a *Client) DeleteSlackChannelSubscription(params *DeleteSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackChannelSubscriptionNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteSlackChannelSubscriptionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteSlackChannelSubscription",
+		Method:             "DELETE",
+		PathPattern:        "/v1/orgs/{org_id}/slack/channel-subscriptions/{sub_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteSlackChannelSubscriptionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteSlackChannelSubscriptionNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteSlackChannelSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteSlackOrgLink revokes a slack workspace org binding
+
+Soft-deletes the SlackOrgLink. Channel subscriptions cascade off via the FK. Idempotent if the link is already revoked.
+*/
+func (a *Client) DeleteSlackOrgLink(params *DeleteSlackOrgLinkParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackOrgLinkNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteSlackOrgLinkParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteSlackOrgLink",
+		Method:             "DELETE",
+		PathPattern:        "/v1/orgs/{org_id}/slack/org-links/{link_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteSlackOrgLinkReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteSlackOrgLinkNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteSlackOrgLink: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -13368,6 +13605,52 @@ func (a *Client) GetRunnerSettings(params *GetRunnerSettingsParams, authInfo run
 }
 
 /*
+GetSlackInstallURL gets the slack o auth install URL for the current org
+
+Returns a Slack OAuth v2 authorize URL with a signed state JWT bound to the calling account and org. The dashboard redirects the user to this URL to begin the install flow.
+*/
+func (a *Client) GetSlackInstallURL(params *GetSlackInstallURLParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetSlackInstallURLOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetSlackInstallURLParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetSlackInstallURL",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/{org_id}/slack/install-url",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetSlackInstallURLReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetSlackInstallURLOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetSlackInstallURL: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetTerraformCurrentStateData gets current terraform
 
 Returns the current terraform state.
@@ -14794,6 +15077,190 @@ func (a *Client) ListRunnerProcesses(params *ListRunnerProcessesParams, authInfo
 }
 
 /*
+ListSlackChannelSubscriptions lists slack channel subscriptions for the current org
+
+Returns the per-channel routing rules belonging to the calling org's verified Slack org links.
+*/
+func (a *Client) ListSlackChannelSubscriptions(params *ListSlackChannelSubscriptionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackChannelSubscriptionsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListSlackChannelSubscriptionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListSlackChannelSubscriptions",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/{org_id}/slack/channel-subscriptions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListSlackChannelSubscriptionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListSlackChannelSubscriptionsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListSlackChannelSubscriptions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListSlackChannels lists channels visible to a slack installation
+
+Calls Slack's conversations.list using the installation's bot token and returns the page of channels the bot can see. The installation must belong to a verified org link for the calling org.
+*/
+func (a *Client) ListSlackChannels(params *ListSlackChannelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackChannelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListSlackChannelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListSlackChannels",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/{org_id}/slack/installations/{installation_id}/channels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListSlackChannelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListSlackChannelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListSlackChannels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListSlackInstallations lists slack workspaces linked to the current org
+
+Returns every active Slack workspace installation that has a verified org link to the calling org.
+*/
+func (a *Client) ListSlackInstallations(params *ListSlackInstallationsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackInstallationsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListSlackInstallationsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListSlackInstallations",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/{org_id}/slack/installations",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListSlackInstallationsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListSlackInstallationsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListSlackInstallations: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ListSlackOrgLinks lists slack workspace bindings for the current org
+
+Returns the verified SlackOrgLink rows belonging to the calling org. Each row carries the link_id used by the channel-subscription create endpoint.
+*/
+func (a *Client) ListSlackOrgLinks(params *ListSlackOrgLinksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ListSlackOrgLinksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewListSlackOrgLinksParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ListSlackOrgLinks",
+		Method:             "GET",
+		PathPattern:        "/v1/orgs/{org_id}/slack/org-links",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListSlackOrgLinksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ListSlackOrgLinksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ListSlackOrgLinks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 LockTerraformWorkspace locks terraform state
 
 Lock a terraform workspace to prevent concurrent modifications.
@@ -15711,6 +16178,175 @@ func (a *Client) SkipWorkflowStep(params *SkipWorkflowStepParams, authInfo runti
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for SkipWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SlackEvents slacks events API webhook
+
+Receives lifecycle events from Slack: url_verification (handshake), app_uninstalled (workspace removed Nuon), tokens_revoked (bot token invalidated). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Returns 200 even for unhandled event types so Slack does not retry.
+*/
+func (a *Client) SlackEvents(params *SlackEventsParams, opts ...ClientOption) (*SlackEventsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSlackEventsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SlackEvents",
+		Method:             "POST",
+		PathPattern:        "/slack/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SlackEventsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SlackEventsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SlackEvents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SlackInteractions slacks interactivity and shortcuts request URL
+
+Receives interactive payloads (view_submission, block_actions, block_suggestion, shortcut). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Dispatches subscribe/unsubscribe modal submissions, block_actions (scope/notif radios, Remove buttons), and the install picker's external_select block_suggestion handshake. Returns 200 on every parseable envelope so Slack does not retry; unhandled payload types are logged and acked.
+*/
+func (a *Client) SlackInteractions(params *SlackInteractionsParams, opts ...ClientOption) (*SlackInteractionsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSlackInteractionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SlackInteractions",
+		Method:             "POST",
+		PathPattern:        "/slack/interactions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SlackInteractionsReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SlackInteractionsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SlackInteractions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+SlackOAuthCallback slacks o auth v2 redirect target
+
+Receives the OAuth `code` + signed-state JWT from Slack, exchanges the code for a workspace bot token via oauth.v2.access, persists the installation + org link, and redirects to the dashboard. NOT signed by Slack — trust comes from the state JWT signature. Enterprise Grid (org-wide) installs are rejected.
+*/
+func (a *Client) SlackOAuthCallback(params *SlackOAuthCallbackParams, opts ...ClientOption) error {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSlackOAuthCallbackParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SlackOAuthCallback",
+		Method:             "GET",
+		PathPattern:        "/slack/oauth/callback",
+		ProducesMediaTypes: []string{"text/html"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SlackOAuthCallbackReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	_, err := a.transport.Submit(op)
+	if err != nil {
+		return err
+	}
+	// no success response is defined: return nil
+
+	return nil
+}
+
+/*
+SlackSlashCommand slacks nuon slash command webhook
+
+Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
+*/
+func (a *Client) SlackSlashCommand(params *SlackSlashCommandParams, opts ...ClientOption) (*SlackSlashCommandOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewSlackSlashCommandParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "SlackSlashCommand",
+		Method:             "POST",
+		PathPattern:        "/slack/commands/nuon",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/x-www-form-urlencoded"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &SlackSlashCommandReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*SlackSlashCommandOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for SlackSlashCommand: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -16871,6 +17507,52 @@ func (a *Client) UpdateRunnerSettings(params *UpdateRunnerSettingsParams, authIn
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateRunnerSettings: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateSlackChannelSubscription updates a slack channel subscription
+
+Mutates a per-channel routing rule. Pass only the fields you want to change. Updating `match` may collide with the `(team_id, channel_id, org_link_id, match_canonical)` unique index — the API returns 409 with a clear description in that case so the dashboard can render the same toast it shows on a duplicate create. The subscription must belong to the calling org (ABAC enforced at the DB query level).
+*/
+func (a *Client) UpdateSlackChannelSubscription(params *UpdateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateSlackChannelSubscriptionOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateSlackChannelSubscriptionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateSlackChannelSubscription",
+		Method:             "PATCH",
+		PathPattern:        "/v1/orgs/{org_id}/slack/channel-subscriptions/{sub_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateSlackChannelSubscriptionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateSlackChannelSubscriptionOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateSlackChannelSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

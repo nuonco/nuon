@@ -18,6 +18,7 @@ import (
 	queuesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/queues/service"
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
+	slackservice "github.com/nuonco/nuon/services/ctl-api/internal/app/slack/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/health"
 	"github.com/nuonco/nuon/services/ctl-api/internal/httpbin"
@@ -29,6 +30,8 @@ import (
 // sharedServices are services needed by public, runner, and internal APIs.
 // These do NOT include authservice which has strict config requirements.
 var sharedServices = fx.Options(
+	// Shared library providers needed by domain services.
+	SlackLibsModule,
 	// Infrastructure services (no swagger routes).
 	fx.Provide(api.AsService(docs.New)),
 	fx.Provide(api.AsService(health.New)),
@@ -49,6 +52,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(runnerauthservice.New)),
 	fx.Provide(runnersservice.NewRunnerHeartbeatCache),
 	fx.Provide(api.AsService(runnersservice.New)),
+	fx.Provide(api.AsService(slackservice.New)),
 	fx.Provide(api.AsService(vcsservice.New)),
 	fx.Provide(api.AsService(onboardingservice.New)),
 	fx.Provide(onboardingservice.NewCatalog),
@@ -74,6 +78,9 @@ var AdminDashboardServicesModule = fx.Module("admin-dashboard-services",
 	sharedServices,
 	fx.Provide(psql.AsPSQLReplica(psql.NewReplica)),
 )
+
+// SlackServicesModule provides services for the dedicated Slack API.
+var SlackServicesModule = fx.Module("slack-services", sharedServices)
 
 // AllServicesModule provides all services including authservice (for dev mode).
 var AllServicesModule = fx.Module("all-services",

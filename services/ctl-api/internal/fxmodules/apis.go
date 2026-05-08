@@ -48,6 +48,15 @@ var AdminDashboardAPIModule = fx.Module("admin-dashboard-api",
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )
 
+// SlackAPIModule provides the dedicated Slack-facing API server (OAuth
+// callback, slash commands, Events API webhooks).
+var SlackAPIModule = fx.Module("slack-api",
+	fx.Provide(api.NewEndpointAudit),
+	fx.Provide(api.AsAPI(api.NewSlackAPI)),
+	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
+	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
+)
+
 // AllAPIsModule provides all API servers (for running all in one process).
 var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.NewEndpointAudit),
@@ -56,6 +65,7 @@ var AllAPIsModule = fx.Module("all-apis",
 	fx.Provide(api.AsAPI(api.NewInternalAPI)),
 	fx.Provide(api.AsAPI(api.NewAuthAPI)),
 	fx.Provide(api.AsAPI(api.NewAdminDashboardAPI)),
+	fx.Provide(api.AsAPI(api.NewSlackAPI)),
 	fx.Invoke(db.DBGroupParam(func([]*gorm.DB) {})),
 	fx.Invoke(api.APIGroupParam(func([]*api.API) {})),
 )

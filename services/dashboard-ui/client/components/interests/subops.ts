@@ -16,7 +16,7 @@ export const SUB_OPS: Record<ResourceKind, string[]> = {
   components: ['deploy', 'teardown'],
   sandboxes: ['provision', 'reprovision', 'deprovision'],
   install_configurations: ['inputs', 'secrets'],
-  runners: ['provision', 'reprovision'],
+  runners: ['provision', 'reprovision', 'inactive'],
   actions: ['run'],
 }
 
@@ -39,6 +39,8 @@ const SUB_OP_LABELS: Record<string, string> = {
   // install_configurations
   inputs: 'Input updates',
   secrets: 'Secret syncs',
+  // runners
+  inactive: 'Inactive',
   // actions
   run: 'Run',
 }

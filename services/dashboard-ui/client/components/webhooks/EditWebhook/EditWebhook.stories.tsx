@@ -40,6 +40,36 @@ export const NoSecretConfigured = () => (
   </ModalStory>
 )
 
+export const ScopedToInstallLabels = () => (
+  <ModalStory>
+    <EditWebhookModal
+      webhook={{
+        ...baseWebhook,
+        match: {
+          installs: { selector: { match_labels: { env: 'prod', tier: '*' } } },
+        },
+      }}
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
+
+export const ScopedToSpecificInstalls = () => (
+  <ModalStory>
+    <EditWebhookModal
+      webhook={{
+        ...baseWebhook,
+        match: { installs: { ids: ['ins_001', 'ins_002'] } },
+      }}
+      isPending={false}
+      error={null}
+      onSubmit={noop}
+    />
+  </ModalStory>
+)
+
 export const PerResourceInterests = () => (
   <ModalStory>
     <EditWebhookModal
