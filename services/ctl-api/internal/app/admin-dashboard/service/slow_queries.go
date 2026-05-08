@@ -27,6 +27,7 @@ type AggregatedQuery struct {
 	MaxRespSize int     `json:"max_response_size"`
 	LastError   string  `json:"last_error,omitempty"`
 	Caller      string  `json:"caller"`
+	CallerURL   string  `json:"caller_url,omitempty"`
 	LastSeenAt  string  `json:"last_seen_at"`
 }
 
@@ -106,6 +107,9 @@ func (s *service) Queries(c *gin.Context) {
 		}
 		if r.Caller != "" {
 			agg.Caller = r.Caller
+		}
+		if r.CallerURL != "" {
+			agg.CallerURL = r.CallerURL
 		}
 		if r.Endpoint != "" {
 			agg.Endpoint = r.Endpoint

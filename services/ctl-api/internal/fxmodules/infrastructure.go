@@ -1,7 +1,12 @@
 package fxmodules
 
 import (
+	"context"
+	"strings"
+
 	"go.uber.org/fx"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -38,6 +43,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
+type queryWriterParams struct {
+	fx.In
+	Cfg       *internal.Config
+	Collector *querycollector.Collector
+	CHDB      *gorm.DB `name:"ch"`
+	L         *zap.Logger
+}
+
 // InfrastructureModule provides all core infrastructure dependencies
 // including config, logging, databases, temporal, and other shared services.
 var InfrastructureModule = fx.Module("infrastructure",
@@ -58,6 +71,41 @@ var InfrastructureModule = fx.Module("infrastructure",
 	// Database connections
 	fx.Provide(psql.AsPSQL(psql.New)),
 	fx.Provide(ch.AsCH(ch.New)),
+
+	// Query collector ClickHouse writer (optional, writes captured queries to CH)
+	fx.Invoke(func(lc fx.Lifecycle, p queryWriterParams) {
+		if p.Collector == nil {
+			return
+		}
+
+		disabledTables := make(map[string]struct{})
+		if p.Cfg.QueryCollectorDisabledTables != "" {
+			for _, t := range strings.Split(p.Cfg.QueryCollectorDisabledTables, ",") {
+				t = strings.TrimSpace(t)
+				if t != "" {
+					disabledTables[t] = struct{}{}
+				}
+			}
+		}
+
+		w := querycollector.NewWriter(querycollector.WriterConfig{
+			DB:             p.CHDB,
+			Logger:         p.L,
+			DisabledTables: disabledTables,
+		})
+		p.Collector.SetWriter(w)
+
+		lc.Append(fx.Hook{
+			OnStart: func(context.Context) error {
+				w.Start()
+				return nil
+			},
+			OnStop: func(context.Context) error {
+				w.Stop()
+				return nil
+			},
+		})
+	}),
 
 	// Blob storage service
 	fx.Provide(blobstore.NewService),
