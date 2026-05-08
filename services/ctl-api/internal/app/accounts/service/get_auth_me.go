@@ -40,14 +40,12 @@ func (s *service) GetAuthMe(ctx *gin.Context) {
 		return
 	}
 
-	// Get full account with identities
-	fullAccount, identities, err := s.getAccountWithIdentities(ctx, account.ID)
+	identities, err := s.getAccountIdentities(ctx, account.ID)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Filter identities to only include provider_type, name, picture
 	filteredIdentities := make([]AuthMeIdentity, len(identities))
 	for i, identity := range identities {
 		filteredIdentities[i] = AuthMeIdentity{
@@ -58,31 +56,20 @@ func (s *service) GetAuthMe(ctx *gin.Context) {
 	}
 
 	response := AuthMeResponse{
-		Account:    fullAccount,
+		Account:    account,
 		Identities: filteredIdentities,
 	}
 
 	ctx.JSON(http.StatusOK, response)
 }
 
-// getAccountWithIdentities fetches an account with its identities.
-func (s *service) getAccountWithIdentities(ctx *gin.Context, accountID string) (*app.Account, []app.AccountIdentity, error) {
-	var account app.Account
-
+func (s *service) getAccountIdentities(ctx *gin.Context, accountID string) ([]app.AccountIdentity, error) {
+	var identities []app.AccountIdentity
 	res := s.db.WithContext(ctx).
-		Preload("Roles").
-		Preload("Roles.Policies").
-		Preload("Roles.Org").
-		Preload("Identities").
-		Where("id = ?", accountID).
-		First(&account)
-
+		Where(&app.AccountIdentity{AccountID: accountID}).
+		Find(&identities)
 	if res.Error != nil {
-		return nil, nil, res.Error
+		return nil, res.Error
 	}
-
-	identities := account.Identities
-	account.Identities = nil // Clear from account since we return separately
-
-	return &account, identities, nil
+	return identities, nil
 }
