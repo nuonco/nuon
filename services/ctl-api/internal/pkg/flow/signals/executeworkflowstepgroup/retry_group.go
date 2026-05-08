@@ -113,6 +113,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 			GroupRetryIdx:  newGroupRetryIdx,
 			StepTargetType: step.StepTargetType,
 			RetryIndex:     0,
+			Timeout:        step.Timeout,
 		})
 	}
 

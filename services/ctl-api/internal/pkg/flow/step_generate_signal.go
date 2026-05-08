@@ -239,6 +239,7 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 			WorkflowStepGroupID: step.WorkflowStepGroupID,
 			StepQueueID:         step.StepQueueID,
 			TargetQueueID:       step.TargetQueueID,
+			Timeout:             step.Timeout,
 		})
 	}
 
