@@ -18,29 +18,31 @@ import (
 type Params struct {
 	fx.In
 
-	V             *validator.Validate
-	Cfg           *internal.Config
-	DB            *gorm.DB `name:"psql"`
-	CHDB          *gorm.DB `name:"ch"`
-	MW            metrics.Writer
-	L             *zap.Logger
-	EvClient      eventloop.Client
-	AccountClient *account.Client
-	Helpers       *helpers.Helpers
-	EndpointAudit *apiPkg.EndpointAudit
+	V                    *validator.Validate
+	Cfg                  *internal.Config
+	DB                   *gorm.DB `name:"psql"`
+	CHDB                 *gorm.DB `name:"ch"`
+	MW                   metrics.Writer
+	L                    *zap.Logger
+	EvClient             eventloop.Client
+	AccountClient        *account.Client
+	Helpers              *helpers.Helpers
+	EndpointAudit        *apiPkg.EndpointAudit
+	RunnerHeartbeatCache *RunnerHeartbeatCache
 }
 
 type service struct {
 	apiPkg.RouteRegister
-	v          *validator.Validate
-	l          *zap.Logger
-	db         *gorm.DB
-	chDB       *gorm.DB
-	mw         metrics.Writer
-	cfg        *internal.Config
-	evClient   eventloop.Client
-	acctClient *account.Client
-	helpers    *helpers.Helpers
+	v                    *validator.Validate
+	l                    *zap.Logger
+	db                   *gorm.DB
+	chDB                 *gorm.DB
+	mw                   metrics.Writer
+	cfg                  *internal.Config
+	evClient             eventloop.Client
+	acctClient           *account.Client
+	helpers              *helpers.Helpers
+	runnerHeartbeatCache *RunnerHeartbeatCache
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -324,14 +326,15 @@ func New(params Params) *service {
 		RouteRegister: apiPkg.RouteRegister{
 			EndpointAudit: params.EndpointAudit,
 		},
-		cfg:        params.Cfg,
-		l:          params.L,
-		v:          params.V,
-		db:         params.DB,
-		chDB:       params.CHDB,
-		mw:         params.MW,
-		evClient:   params.EvClient,
-		acctClient: params.AccountClient,
-		helpers:    params.Helpers,
+		cfg:                  params.Cfg,
+		l:                    params.L,
+		v:                    params.V,
+		db:                   params.DB,
+		chDB:                 params.CHDB,
+		mw:                   params.MW,
+		evClient:             params.EvClient,
+		acctClient:           params.AccountClient,
+		helpers:              params.Helpers,
+		runnerHeartbeatCache: params.RunnerHeartbeatCache,
 	}
 }
