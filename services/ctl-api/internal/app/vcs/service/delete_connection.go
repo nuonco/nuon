@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -16,7 +17,8 @@ import (
 // @ID 					 	DeleteVCSConnection
 // @Summary 			 	Deletes a VCS connection
 // @Description.markdown 	delete_vcs_connection.md
-// @Param connection_id  	path string true "Connection ID"
+// @Param connection_id  	path	string	true	"Connection ID"
+// @Param delete_github_app	query	bool	false	"If true, also uninstall the GitHub App on the GitHub side. Defaults to false so other Nuon orgs sharing the same installation are not impacted."
 // @Tags 				 	vcs
 // @Accept 				 	json
 // @Produce 			 	json
@@ -32,6 +34,16 @@ import (
 func (s *service) DeleteConnection(ctx *gin.Context) {
 	vcsID := ctx.Param("connection_id")
 
+	deleteGithubApp := false
+	if raw := ctx.Query("delete_github_app"); raw != "" {
+		parsed, err := strconv.ParseBool(raw)
+		if err != nil {
+			ctx.Error(fmt.Errorf("invalid delete_github_app value: %w", err))
+			return
+		}
+		deleteGithubApp = parsed
+	}
+
 	currentOrg, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -44,11 +56,12 @@ func (s *service) DeleteConnection(ctx *gin.Context) {
 		return
 	}
 
-	err = s.ghClient.DeleteInstallation(ctx, vcsConn.GithubInstallID)
-	if err != nil {
-		// If we can't delete the Github App installation, we should still try
-		// to delete the connection from our DB.
-		s.l.Info(err.Error())
+	if deleteGithubApp {
+		if err := s.ghClient.DeleteInstallation(ctx, vcsConn.GithubInstallID); err != nil {
+			// If we can't delete the Github App installation, we should still
+			// try to delete the connection from our DB.
+			s.l.Info(err.Error())
+		}
 	}
 
 	// Stop all queues owned by this VCS connection
