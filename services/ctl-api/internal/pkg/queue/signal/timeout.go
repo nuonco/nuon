@@ -8,7 +8,7 @@ import (
 
 // DefaultTimeout is the fallback timeout for signals that don't implement
 // SignalWithTimeout.
-const DefaultTimeout = 2 * time.Hour
+const DefaultTimeout = 30 * 24 * time.Hour
 
 // DeriveTimeout extracts the timeout from a signal that implements
 // SignalWithTimeout. Returns DefaultTimeout if the signal doesn't declare one.
