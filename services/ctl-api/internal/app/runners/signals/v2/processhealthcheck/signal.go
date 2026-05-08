@@ -71,16 +71,19 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}).Get(&startMs)
 
 	var installLabels map[string]string
+	var runnerType string
 	defer func() {
 		status := "ok"
 		if err != nil {
 			status = "error"
 		}
-		tagMap := make(map[string]string, len(installLabels)+1)
+		tagMap := make(map[string]string, len(installLabels)+3)
 		for k, v := range installLabels {
 			tagMap[k] = v
 		}
 		tagMap["status"] = status
+		tagMap["runner_id"] = s.RunnerID
+		tagMap["runner_type"] = runnerType
 		tags := metrics.ToTags(tagMap)
 
 		var endMs int64
@@ -96,6 +99,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
 	}
+	runnerType = string(runner.RunnerGroup.Type)
 	if runner.RunnerGroup.OwnerType == "installs" {
 		install, err := installactivities.AwaitGetByInstallID(ctx, runner.RunnerGroup.OwnerID)
 		if err != nil {
