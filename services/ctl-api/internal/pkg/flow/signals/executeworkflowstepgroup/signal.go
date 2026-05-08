@@ -77,6 +77,10 @@ type Signal struct {
 	// to the flow for group-level retry.
 	retryGroupRequested bool
 
+	// DerivedTimeout is set at dispatch time from the group's TimeoutSeconds.
+	// When non-zero, Timeout() returns this instead of the hardcoded fallback.
+	DerivedTimeout time.Duration `json:"derived_timeout,omitempty"`
+
 	// stepSignalIDs tracks in-flight step signal IDs for cancellation propagation.
 	stepSignalIDs []string
 
@@ -90,7 +94,12 @@ var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithUpdateHandlers = (*Signal)(nil)
 var _ signal.SignalWithTimeout = (*Signal)(nil)
 
-func (s *Signal) Timeout() time.Duration { return 180 * 24 * time.Hour }
+func (s *Signal) Timeout() time.Duration {
+	if s.DerivedTimeout > 0 {
+		return s.DerivedTimeout
+	}
+	return 2 * time.Hour
+}
 
 func (s *Signal) Type() signal.SignalType   { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }

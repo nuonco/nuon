@@ -35,6 +35,11 @@ type WorkflowStepGroup struct {
 	Name            string          `json:"name,omitzero" temporaljson:"name,omitzero,omitempty"`
 	ResultDirective string          `json:"result_directive,omitzero" gorm:"type:text;default:''" temporaljson:"result_directive,omitzero,omitempty"`
 
+	// Timeout is the execution timeout for this group, derived from its
+	// steps' timeouts. For sequential groups: sum of step timeouts. For parallel
+	// groups: max of step timeouts. Zero means use default fallback.
+	Timeout time.Duration `json:"timeout,omitzero" gorm:"default:0" swaggertype:"string" temporaljson:"timeout,omitzero,omitempty"`
+
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 
 	Steps []WorkflowStep `json:"steps,omitzero" gorm:"foreignKey:WorkflowStepGroupID;constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`

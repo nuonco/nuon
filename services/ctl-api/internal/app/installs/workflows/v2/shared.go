@@ -144,6 +144,8 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 		Skippable: true,
 	}
 
+	step.Timeout = signal.DeriveTimeout(sig)
+
 	if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
 		maxAutoRetries := mar.MaxAutoRetries(ctx)
 		if step.Status.Metadata == nil {
