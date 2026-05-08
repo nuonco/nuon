@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/panicker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/patcher"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/public"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/replica"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/size"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/timeout"
@@ -52,6 +53,7 @@ var MiddlewaresModule = fx.Module("middlewares",
 	fx.Provide(middlewares.AsMiddleware(audit.NewPublic)),
 	fx.Provide(middlewares.AsMiddleware(audit.NewInternal)),
 	fx.Provide(middlewares.AsMiddleware(audit.NewRunner)),
+	fx.Provide(middlewares.AsMiddleware(replica.New)),
 	fx.Provide(middlewares.AsMiddleware(panicker.New)),
 	fx.Provide(middlewares.AsMiddleware(tracer.New)),
 	fx.Provide(middlewares.AsMiddleware(chaos.New)),

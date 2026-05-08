@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"go.uber.org/fx"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -15,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
 // database represents the set of configuration options for creating a database connection. If UseIAM is set, we will
@@ -35,6 +37,7 @@ type database struct {
 
 	// pool configuration
 	MaxConnections int32
+	Role           string // "primary" or "replica", used for metrics tagging
 
 	Logger zapgorm2.Logger `validate:"required"`
 
@@ -88,7 +91,80 @@ func New(v *validator.Validate,
 	cfg *internal.Config,
 	qc *querycollector.Collector,
 ) (*gorm.DB, error) {
-	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBHost)
+	primary, err := newDatabase(cfg, l, metricsWriter, qc, cfg.DBHost)
+	if err != nil {
+		return nil, fmt.Errorf("unable to build primary database config: %w", err)
+	}
+	primary.Role = "primary"
+	if err := primary.Validate(v); err != nil {
+		return nil, err
+	}
+
+	primaryPool, err := primary.createPool()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create primary pool: %w", err)
+	}
+	primary.pool = primaryPool
+	primarySQL := stdlib.OpenDBFromPool(primaryPool)
+
+	// Build the routing ConnPool. If a replica host is configured, read
+	// queries on contexts marked with routing.WithReplica will be sent
+	// to the replica automatically.
+	var replica *database
+	connPool := routing.NewConnPool(primarySQL, nil)
+
+	if cfg.DBReplicaHost != "" {
+		replica, err = newDatabase(cfg, l, metricsWriter, qc, cfg.DBReplicaHost)
+		if err != nil {
+			return nil, fmt.Errorf("unable to build replica database config: %w", err)
+		}
+		replica.Role = "replica"
+		if err := replica.Validate(v); err != nil {
+			return nil, fmt.Errorf("unable to validate replica database: %w", err)
+		}
+
+		replicaPool, err := replica.createPool()
+		if err != nil {
+			return nil, fmt.Errorf("unable to create replica pool: %w", err)
+		}
+		replica.pool = replicaPool
+
+		connPool = routing.NewConnPool(primarySQL, stdlib.OpenDBFromPool(replicaPool))
+	}
+
+	// Open GORM with the primary dialector (for SQL generation / migrations),
+	// then swap the ConnPool to our routing pool.
+	postgresCfg := postgres.Config{Conn: primarySQL}
+	gormCfg := primary.gormConfig()
+
+	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)
+	if err != nil {
+		return nil, fmt.Errorf("unable to connect to database: %w", err)
+	}
+	db.ConnPool = connPool
+
+	if err := primary.registerPlugins(db); err != nil {
+		return nil, fmt.Errorf("unable to register plugins: %w", err)
+	}
+
+	lc.Append(fx.Hook{
+		OnStart: func(_ context.Context) error {
+			primary.startPoolBackgroundJob()
+			if replica != nil {
+				replica.startPoolBackgroundJob()
+			}
+			return nil
+		},
+		OnStop: func(_ context.Context) error {
+			primary.stopPoolBackgroundJob()
+			if replica != nil {
+				replica.stopPoolBackgroundJob()
+			}
+			return nil
+		},
+	})
+
+	return db, nil
 }
 
 // NewReplica errors if DBReplicaHost is empty so callers can't silently
@@ -106,18 +182,11 @@ func NewReplica(v *validator.Validate,
 	return open(v, l, metricsWriter, lc, cfg, qc, cfg.DBReplicaHost)
 }
 
-func open(v *validator.Validate,
-	l zapgorm2.Logger,
-	metricsWriter metrics.Writer,
-	lc fx.Lifecycle,
-	cfg *internal.Config,
-	qc *querycollector.Collector,
-	host string,
-) (*gorm.DB, error) {
-	ctx := context.Background()
-	ctx, cancelFn := context.WithCancel(ctx)
+// newDatabase builds a database struct from config for the given host.
+func newDatabase(cfg *internal.Config, l zapgorm2.Logger, metricsWriter metrics.Writer, qc *querycollector.Collector, host string) (*database, error) {
+	ctx, cancelFn := context.WithCancel(context.Background())
 
-	database := &database{
+	d := &database{
 		Logger:         l,
 		Host:           host,
 		User:           cfg.DBUser,
@@ -134,43 +203,57 @@ func open(v *validator.Validate,
 
 	switch {
 	case cfg.DBPassword != "":
-		database.Password = cfg.DBPassword
+		d.Password = cfg.DBPassword
 	case cfg.DBUseIAM && cfg.IsGCP():
-		database.PasswordFn = FetchGcpCloudSqlPassword
+		d.PasswordFn = FetchGcpCloudSqlPassword
 	case cfg.DBUseIAM:
-		database.PasswordFn = FetchIamTokenPassword
+		d.PasswordFn = FetchIamTokenPassword
 	}
-	if err := database.Validate(v); err != nil {
+
+	return d, nil
+}
+
+func open(v *validator.Validate,
+	l zapgorm2.Logger,
+	metricsWriter metrics.Writer,
+	lc fx.Lifecycle,
+	cfg *internal.Config,
+	qc *querycollector.Collector,
+	host string,
+) (*gorm.DB, error) {
+	d, err := newDatabase(cfg, l, metricsWriter, qc, host)
+	if err != nil {
+		return nil, err
+	}
+	if err := d.Validate(v); err != nil {
 		return nil, err
 	}
 
-	// create pool
-	pool, err := database.createPool()
+	pool, err := d.createPool()
 	if err != nil {
 		return nil, fmt.Errorf("unable to create database pool: %w", err)
 	}
-	database.pool = pool
+	d.pool = pool
 
-	postgresCfg := database.postgresConfig(pool)
-	gormCfg := database.gormConfig()
+	postgresCfg := d.postgresConfig(pool)
+	gormCfg := d.gormConfig()
 
 	db, err := gorm.Open(postgres.New(postgresCfg), gormCfg)
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
 	}
 
-	// register plugins
-	if err := database.registerPlugins(db); err != nil {
+	if err := d.registerPlugins(db); err != nil {
 		return nil, fmt.Errorf("unable to register plugins: %w", err)
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(_ context.Context) error {
-			database.startPoolBackgroundJob()
+			d.startPoolBackgroundJob()
 			return nil
 		},
 		OnStop: func(_ context.Context) error {
-			database.stopPoolBackgroundJob()
+			d.stopPoolBackgroundJob()
 			return nil
 		},
 	})
