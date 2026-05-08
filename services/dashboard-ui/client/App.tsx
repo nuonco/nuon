@@ -6,6 +6,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
 import { ConfigProvider } from '@/providers/config-provider'
+import { Error } from '@/views/Error'
 import { NotFound } from '@/views/NotFound'
 import { RouteError } from '@/views/RouteError'
 import { Onboarding } from '@/views/Onboarding'
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
     element: <AuthLayout />,
     errorElement: <RouteError />,
     children: [
+      { path: '/error', element: <Error /> },
       { path: '/onboarding', element: <Onboarding /> },
       ...orgRoutes,
       { path: '*', element: <NotFound /> },
