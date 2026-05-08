@@ -54,10 +54,6 @@ func (h *Workflows) getInstallComponentState(ctx workflow.Context, instCompID st
 
 	installDeploys := installComp.InstallDeploys
 	if len(installDeploys) < 1 {
-		l.Info("legacy state: component has no deploys, outputs will be empty",
-			zap.String("component_name", st.Name),
-			zap.String("install_component_id", instCompID),
-		)
 		return st, nil
 	}
 

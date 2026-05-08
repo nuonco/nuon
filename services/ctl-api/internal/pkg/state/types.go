@@ -5,14 +5,12 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	pkgstate "github.com/nuonco/nuon/pkg/types/state"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
 type ExecuteRegenerationRequest struct {
-	InstallID        string
-	TriggeredByID    string
-	TriggeredByType  string
-	StateGeneratedBy app.InstallStateGenerateSource
+	InstallID       string
+	TriggeredByID   string
+	TriggeredByType string
 
 	Targets        []PartialTarget
 	ForceAll       bool

@@ -166,12 +166,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
 			Signal: &statepartialgenerate.Signal{
-				InstallID:        install.ID,
-				Targets:          statemanager.TargetsForHint(statemanager.HintDeployCompleted, s.InstallComponentID),
-				ForceAll:         true,
-				TriggeredByID:    installDeploy.ID,
-				TriggeredByType:  "install_deploys",
-				StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+				InstallID:       install.ID,
+				Targets:         statemanager.TargetsForHint(statemanager.HintDeployCompleted, s.InstallComponentID),
+				ForceAll:        true,
+				TriggeredByID:   installDeploy.ID,
+				TriggeredByType: "install_deploys",
 			},
 		})
 		if err != nil {

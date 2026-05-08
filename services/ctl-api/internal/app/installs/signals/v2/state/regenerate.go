@@ -93,7 +93,7 @@ func Regenerate(ctx workflow.Context, req *state.ExecuteRegenerationRequest) (*s
 			InstallID:       req.InstallID,
 			TriggeredByID:   req.TriggeredByID,
 			TriggeredByType: req.TriggeredByType,
-			GeneratedBy:     req.StateGeneratedBy,
+			GeneratedBy:     app.InstallStateGenerateSourceStateManager,
 		}); err != nil {
 			return nil, errors.Wrap(err, "error while saving state")
 		}

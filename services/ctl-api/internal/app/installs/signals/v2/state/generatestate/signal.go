@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -54,11 +53,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		OwnerType: "installs",
 		QueueName: installshelpers.InstallStateManagerQueueName,
 		Signal: &statepartialgenerate.Signal{
-			InstallID:        s.InstallID,
-			AllTargets:       true,
-			TriggeredByID:    s.InstallID,
-			TriggeredByType:  "installs",
-			StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+			InstallID:       s.InstallID,
+			AllTargets:      true,
+			TriggeredByID:   s.InstallID,
+			TriggeredByType: "installs",
 		},
 	})
 	if err != nil {

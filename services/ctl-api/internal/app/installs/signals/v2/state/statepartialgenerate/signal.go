@@ -9,7 +9,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/pkg/metrics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	statesignals "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -20,13 +19,12 @@ const SignalType signal.SignalType = "state-partial-generate"
 
 // Signal generates state based on signal input
 type Signal struct {
-	InstallID        string
-	Targets          []state.PartialTarget
-	AllTargets       bool
-	ForceAll         bool
-	TriggeredByID    string
-	TriggeredByType  string
-	StateGeneratedBy app.InstallStateGenerateSource
+	InstallID       string
+	Targets         []state.PartialTarget
+	AllTargets      bool
+	ForceAll        bool
+	TriggeredByID   string
+	TriggeredByType string
 
 	v       *validator.Validate
 	metrics metrics.Writer
@@ -63,12 +61,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.Targets = pkgstate.AllPartialTargets()
 	}
 	resp, err := statesignals.Regenerate(ctx, &state.ExecuteRegenerationRequest{
-		InstallID:        s.InstallID,
-		Targets:          s.Targets,
-		TriggeredByID:    s.TriggeredByID,
-		TriggeredByType:  s.TriggeredByType,
-		StateGeneratedBy: s.StateGeneratedBy,
-		MetricsWriter:    s.metrics,
+		InstallID:       s.InstallID,
+		Targets:         s.Targets,
+		TriggeredByID:   s.TriggeredByID,
+		TriggeredByType: s.TriggeredByType,
+		MetricsWriter:   s.metrics,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to regenerate state")

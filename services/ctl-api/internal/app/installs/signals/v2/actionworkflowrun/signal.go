@@ -338,12 +338,11 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Ins
 			OwnerType: "installs",
 			QueueName: installshelpers.InstallStateManagerQueueName,
 			Signal: &statepartialgenerate.Signal{
-				InstallID:        installID,
-				Targets:          statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
-				ForceAll:         true,
-				TriggeredByID:    actionWorkflowRunID,
-				TriggeredByType:  "install_action_workflow_runs",
-				StateGeneratedBy: app.InstallStateGenerateSourceStateManager,
+				InstallID:       installID,
+				Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
+				ForceAll:        true,
+				TriggeredByID:   actionWorkflowRunID,
+				TriggeredByType: "install_action_workflow_runs",
 			},
 		})
 		if err != nil {
