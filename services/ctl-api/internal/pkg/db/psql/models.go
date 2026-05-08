@@ -72,6 +72,8 @@ func AllModels() []any {
 		&app.AppStackConfig{},
 		&app.AppOperationRoleConfig{},
 		&app.AppOperationRoleRule{},
+		&app.AppKubernetesContextsConfig{},
+		&app.AppKubernetesContextConfig{},
 
 		// installs
 		&app.AWSAccount{},

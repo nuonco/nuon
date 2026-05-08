@@ -64,6 +64,12 @@ type ComponentConfigConnection struct {
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
 
+	// KubernetesContextName is the name of an AppKubernetesContextConfig on
+	// the same AppConfig. Empty means fall back to the implicit sandbox
+	// default. Stored as a name (not an FK) so it remains stable across
+	// AppConfig versions, mirroring how component dependencies are tracked.
+	KubernetesContextName string `json:"kubernetes_context_name,omitzero" gorm:"default null" temporaljson:"kubernetes_context_name,omitzero,omitempty"`
+
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
 	PublicGitVCSConfig       *PublicGitVCSConfig       `gorm:"-" json:"-" temporaljson:"public_git_vcs_config,omitzero,omitempty"`
