@@ -1,11 +1,14 @@
 package awaitinstallstackversionrun
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
@@ -145,6 +148,49 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				"err_message": "install stack was not applied before expiring",
 			}),
 		})
+	}
+
+	// Not sandbox mode - poll for stack version run
+	v := validator.New()
+	var run *app.InstallStackVersionRun
+	if err := poll.Poll(ctx, v, poll.PollOpts{
+		MaxTS:           workflow.Now(ctx).Add(maxTimeout),
+		InitialInterval: time.Second * 15,
+		MaxInterval:     time.Minute * 15,
+		BackoffFactor:   1.15,
+		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
+			l := workflow.GetLogger(ctx)
+			l.Debug("checking install stack status again in "+dur.String(), zap.Duration("duration", dur))
+			return nil
+		},
+		Fn: func(ctx workflow.Context) error {
+			run, err = activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
+			if err != nil {
+				return err
+			}
+			// Legacy CFN/TF phone-home creates the run with full Data in one
+			// POST, so any run row meant the run was done. The SDK splits
+			// CreateRun (status=running, empty Data) from the terminal PATCH
+			// that fills Data. Poll until terminal so downstream
+			// UpdateInstallStackOutputs sees populated outputs.
+			switch run.Status.Status {
+			case app.InstallStackVersionRunStatusSucceeded:
+				return nil
+			case app.InstallStackVersionRunStatusFailed:
+				return errors.Wrap(poll.NonRetryableError, "stack run failed")
+			default:
+				return errors.New("stack run still running")
+			}
+		},
+	}); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: version.ID,
+				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusExpired, map[string]any{
+					"err_message": "install stack was not applied before expiring",
+				}),
+			})
+		}
 
 		if s.WorkflowStepID != "" {
 			statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{

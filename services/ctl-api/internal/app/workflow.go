@@ -23,12 +23,6 @@ const (
 	WorkflowTypeDeprovision        WorkflowType = "deprovision"
 	WorkflowTypeDeprovisionSandbox WorkflowType = "deprovision_sandbox"
 
-	// CreateStackVersion runs the template + tfvars generation for an
-	// install whose org has the native-aws-provisioner toggle on. The actual
-	// provisioning runs out-of-band via installer-cli; this row tracks the
-	// stack-version generation step.
-	WorkflowTypeCreateStackVersion WorkflowType = "create_stack_version"
-
 	// day-2 triggers
 	WorkflowTypeManualDeploy               WorkflowType = "manual_deploy"
 	WorkflowTypeInputUpdate                WorkflowType = "input_update"
