@@ -83,3 +83,7 @@ func New(params Params) *service {
 		cfg:  params.Cfg,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

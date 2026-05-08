@@ -86,3 +86,7 @@ func New(params Params) *service {
 		ghClient: ghClient,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

@@ -65,47 +65,66 @@ const maxRetries = 2
 const retryDelay = 500 * time.Millisecond
 
 func (h *RootHandler) Handle(c *gin.Context) {
+	start := time.Now()
+
 	token, err := c.Cookie(authCookie)
 	if (err != nil || token == "") && h.cfg.AuthServiceUrl != "" {
+		h.l.Info("root: no auth token, redirecting to auth service")
 		c.Redirect(http.StatusFound, h.cfg.AuthServiceUrl+"/?url="+url.QueryEscape(h.cfg.AppUrl))
 		return
 	}
 
+	hasToken := token != ""
+	_, orgCookieErr := c.Cookie(orgCookie)
+	hasOrgCookie := orgCookieErr == nil
+
+	h.l.Info("root: handling request",
+		zap.Bool("has_token", hasToken),
+		zap.Bool("has_org_cookie", hasOrgCookie),
+	)
+
+	// Trust the org session cookie and redirect immediately. The SPA's
+	// OrgProvider will validate the org and show an error if it's stale.
+	// This avoids an expensive GetOrg API call that loads all roles/policies
+	// for the account, which is slow for users with many orgs.
 	if orgId, err := c.Cookie(orgCookie); err == nil && orgId != "" {
-		orgClient, err := nuon.New(
-			nuon.WithURL(h.cfg.APIUrl),
-			nuon.WithAuthToken(token),
-			nuon.WithOrgID(orgId),
+		h.l.Info("root: redirecting to org from session cookie",
+			zap.String("org_id", orgId),
+			zap.Duration("duration", time.Since(start)),
 		)
-		if err == nil {
-			if org, err := orgClient.GetOrg(c.Request.Context()); err == nil {
-				c.Redirect(http.StatusFound, orgLandingPath(org))
-				return
-			} else {
-				h.l.Warn("failed to get org from session cookie",
-					zap.String("org_id", orgId),
-					zap.Error(err),
-				)
-			}
-		}
+		c.Redirect(http.StatusFound, "/"+orgId)
+		return
 	}
 
 	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
 	if err != nil {
-		h.l.Error("failed to create nuon client", zap.Error(err))
-		c.Redirect(http.StatusFound, "/onboarding")
+		h.l.Error("root: failed to create nuon client",
+			zap.Error(err),
+			zap.Duration("duration", time.Since(start)),
+		)
+		c.Redirect(http.StatusFound, "/error?reason=api-error")
 		return
 	}
 
+	h.l.Info("root: no org cookie, fetching orgs from API")
+
 	var orgs []*models.AppOrg
 	for attempt := 0; attempt <= maxRetries; attempt++ {
+		attemptStart := time.Now()
 		orgs, _, err = client.GetOrgs(c.Request.Context(), &models.GetPaginatedQuery{Limit: 1})
 		if err == nil {
+			h.l.Info("root: GetOrgs succeeded",
+				zap.Int("attempt", attempt+1),
+				zap.Int("org_count", len(orgs)),
+				zap.Duration("attempt_duration", time.Since(attemptStart)),
+			)
 			break
 		}
-		h.l.Warn("failed to get orgs",
+		h.l.Warn("root: GetOrgs failed",
 			zap.Error(err),
 			zap.Int("attempt", attempt+1),
+			zap.Bool("retryable", isRetryableError(err)),
+			zap.Duration("attempt_duration", time.Since(attemptStart)),
 		)
 		if !isRetryableError(err) || attempt == maxRetries {
 			break
@@ -114,18 +133,27 @@ func (h *RootHandler) Handle(c *gin.Context) {
 	}
 
 	if err != nil {
-		h.l.Error("all attempts to get orgs failed, redirecting to onboarding",
+		h.l.Error("root: all attempts to get orgs failed, redirecting to error page",
 			zap.Error(err),
+			zap.Duration("duration", time.Since(start)),
 		)
-		c.Redirect(http.StatusFound, "/onboarding")
+		c.Redirect(http.StatusFound, "/error?reason=orgs-failed")
 		return
 	}
 
 	if len(orgs) > 0 {
-		c.Redirect(http.StatusFound, orgLandingPath(orgs[0]))
+		dest := orgLandingPath(orgs[0])
+		h.l.Info("root: redirecting to org",
+			zap.String("org_id", orgs[0].ID),
+			zap.String("destination", dest),
+			zap.Duration("duration", time.Since(start)),
+		)
+		c.Redirect(http.StatusFound, dest)
 		return
 	}
 
-	h.l.Info("no orgs found for account, redirecting to onboarding")
+	h.l.Info("root: no orgs found, redirecting to onboarding",
+		zap.Duration("duration", time.Since(start)),
+	)
 	c.Redirect(http.StatusFound, "/onboarding")
 }

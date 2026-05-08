@@ -26,6 +26,12 @@ const EditWebhookModalContainer = ({
           ...(input.webhookSecret !== undefined
             ? { webhook_secret: input.webhookSecret }
             : {}),
+          // PATCH treats `match` with PUT semantics — explicit `null`
+          // resets to org-wide; an undefined wire value would mean "leave
+          // unchanged". Map `undefined` to `null` so the modal can clear
+          // the scope by toggling the radio back to "Everything in this
+          // org".
+          match: input.match ?? null,
           interests: input.interests,
         },
         orgId: org.id,
@@ -35,14 +41,18 @@ const EditWebhookModalContainer = ({
       queryClient.invalidateQueries({ queryKey: ['webhooks', org.id] })
       addToast(
         <Toast heading="Webhook updated" theme="success">
-          <Text>Filter and secret changes are live.</Text>
+          <Text>Filter, scope, and secret changes are live.</Text>
         </Toast>
       )
       removeModal(props.modalId)
     },
     onError: (err: TAPIError) => {
+      const heading =
+        err?.status === 409
+          ? 'Another webhook for this URL already uses this scope'
+          : 'Unable to update webhook'
       addToast(
-        <Toast heading="Unable to update webhook" theme="error">
+        <Toast heading={heading} theme="error">
           <Text>{err?.description || err?.error || 'Please try again.'}</Text>
         </Toast>
       )

@@ -199,3 +199,7 @@ func New(params Params) *service {
 		emitterClient:   params.EmitterClient,
 	}
 }
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

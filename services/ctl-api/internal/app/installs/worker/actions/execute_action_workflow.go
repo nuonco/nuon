@@ -10,14 +10,18 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
-	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -258,10 +262,17 @@ func (w *Workflows) executeActionWorkflowRun(ctx workflow.Context, installID, ac
 
 	w.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	_, err = installstate.AwaitGenerateState(ctx, &installstate.GenerateStateRequest{
-		InstallID:       installID,
-		TriggeredByID:   actionWorkflowRunID,
-		TriggeredByType: plugins.TableName(w.db, run),
+	sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   installID,
+		OwnerType: "installs",
+		QueueName: installshelpers.InstallStateManagerQueueName,
+		Signal: &statepartialgenerate.Signal{
+			InstallID:       installID,
+			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, ""),
+			ForceAll:        true,
+			TriggeredByID:   actionWorkflowRunID,
+			TriggeredByType: "install_action_workflow_runs",
+		},
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to generate state")

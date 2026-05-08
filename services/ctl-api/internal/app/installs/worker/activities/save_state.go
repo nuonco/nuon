@@ -12,9 +12,10 @@ import (
 type SaveStateRequest struct {
 	State *state.State `validate:"required"`
 
-	InstallID       string `validate:"required"`
-	TriggeredByID   string `validate:"required"`
-	TriggeredByType string `validate:"required"`
+	InstallID       string                         `validate:"required"`
+	TriggeredByID   string                         `validate:"required"`
+	TriggeredByType string                         `validate:"required"`
+	GeneratedBy     app.InstallStateGenerateSource `validate:"required"`
 }
 
 // @temporal-gen-v2 activity
@@ -24,6 +25,7 @@ func (a *Activities) SaveState(ctx context.Context, req *SaveStateRequest) (*app
 		TriggeredByID:   req.TriggeredByID,
 		TriggeredByType: req.TriggeredByType,
 		State:           req.State,
+		GeneratedBy:     req.GeneratedBy,
 	}
 
 	res := a.db.WithContext(ctx).

@@ -41,10 +41,6 @@ func (w *Workflows) getHandlers() map[eventloop.SignalType]func(workflow.Context
 			return nil
 		},
 		signals.OperationSyncActionWorkflowTriggers: w.handleSyncActionWorkflowTriggers,
-		signals.OperationGenerateState: func(ctx workflow.Context, input signals.RequestSignal) error {
-			return AwaitGenerateStateAdmin(ctx, input)
-		},
-
 		// NOTE(jm): these should be cross account to the runners namespace
 		signals.OperationAwaitRunnerHealthy: w.AwaitRunnerHealthy,
 		signals.OperationProvisionRunner: func(ctx workflow.Context, input signals.RequestSignal) error {

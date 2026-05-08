@@ -283,6 +283,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			install.GET("/admin-get-runner", s.AdminGetInstallRunner)
 			install.PATCH("/admin-update-runner", s.AdminUpdateInstallRunner)
 			install.POST("/admin-generate-state", s.AdminInstallGenerateInstallState)
+			install.POST("/admin-generate-state-v2", s.AdminInstallGenerateInstallStateV2)
 
 			// NOTE(JM): the following endpoints should be removed after workflows/independent runners are rolled out
 			install.POST("/admin-reprovision", s.ReprovisionInstall)
@@ -346,4 +347,8 @@ func New(params Params) *service {
 		featuresClient:   params.FeaturesClient,
 		flowsClient:      params.FlowsClient,
 	}
+}
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/service"
 	actionsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/service"
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
@@ -26,6 +27,7 @@ import (
 	queuesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/queues/service"
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
+	slackservice "github.com/nuonco/nuon/services/ctl-api/internal/app/slack/service"
 	vcsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/service"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 
@@ -50,6 +52,10 @@ func testDomainServices(ea *api.EndpointAudit) []api.Service {
 		queuesservice.New(queuesservice.Params{}),
 		runnerauthservice.New(runnerauthservice.Params{}),
 		runnersservice.New(runnersservice.Params{EndpointAudit: ea}),
+		slackservice.New(slackservice.Params{
+			EndpointAudit: ea,
+			Cfg:           &internal.Config{SlackSigningSecret: "test-signing-secret"},
+		}),
 		vcsservice.New(vcsservice.Params{}),
 		onboardingservice.New(onboardingservice.Params{EndpointAudit: ea}),
 	}
@@ -222,6 +228,7 @@ func TestSwaggerRoutesRegisteredInGin(t *testing.T) {
 			registers: []func(api.Service, *gin.Engine) error{
 				func(svc api.Service, e *gin.Engine) error { return svc.RegisterPublicRoutes(e) },
 				func(svc api.Service, e *gin.Engine) error { return svc.RegisterAuthRoutes(e) },
+				func(svc api.Service, e *gin.Engine) error { return svc.RegisterSlackRoutes(e) },
 			},
 		},
 		{
