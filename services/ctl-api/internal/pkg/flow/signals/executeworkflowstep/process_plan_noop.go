@@ -1,8 +1,6 @@
 package executeworkflowstep
 
 import (
-	"strconv"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -47,7 +45,7 @@ func (s *Signal) handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowSt
 		ID: step.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusAutoSkipped,
-			StatusHumanDescription: "Noop Plan, automatically skipped " + strconv.Itoa(step.Idx+1),
+			StatusHumanDescription: "Noop Plan, automatically skipped " + step.Name,
 			Metadata: map[string]any{
 				"step_idx": step.Idx,
 				"status":   "auto-skipped",
@@ -73,7 +71,7 @@ func (s *Signal) handleNoopDeployPlan(ctx workflow.Context, step *app.WorkflowSt
 		ID: nextStep.ID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusAutoSkipped,
-			StatusHumanDescription: "Noop Plan, automatically skipped " + strconv.Itoa(nextStep.Idx),
+			StatusHumanDescription: "Noop Plan, automatically skipped " + nextStep.Name,
 			Metadata: map[string]any{
 				"step_idx": nextStep.Idx,
 				"status":   "auto-skipped",
