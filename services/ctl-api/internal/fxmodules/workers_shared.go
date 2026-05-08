@@ -35,6 +35,7 @@ import (
 
 	// Register install queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateworkflowsteps"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 
 	// Register VCS queue signals

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -14,38 +15,14 @@ func (w *Workflows) getActionsStatePartial(ctx workflow.Context, installID strin
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get actions")
 	}
-
 	st := state.NewActionsState()
 	st.Populated = true
 	for _, action := range actions {
-		actWorkflowState, err := w.toActionWorkflow(ctx, action.ID)
+		act, err := activities.AwaitGetInstallActionWorkflowStateByInstallActionWorkflowID(ctx, action.ID)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to get action workfloow state")
+			return nil, errors.Wrap(err, "unable to get action workflow state")
 		}
-
-		st.Workflows[action.ActionWorkflow.Name] = actWorkflowState
+		st.Workflows[action.ActionWorkflow.Name] = helpers.ToActionWorkflowState(*act)
 	}
-
-	return st, nil
-}
-
-func (h *Workflows) toActionWorkflow(ctx workflow.Context, iawID string) (*state.ActionWorkflowState, error) {
-	act, err := activities.AwaitGetInstallActionWorkflowStateByInstallActionWorkflowID(ctx, iawID)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install action workflow id")
-	}
-
-	st := state.NewActionWorkflowState()
-	st.Populated = true
-	st.Status = string(act.Status)
-	st.ID = act.ActionWorkflow.ID
-
-	for _, run := range act.Runs {
-		if run.RunnerJob != nil {
-			st.Outputs = run.RunnerJob.ParsedOutputs
-			break
-		}
-	}
-
 	return st, nil
 }

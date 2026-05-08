@@ -22,14 +22,6 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	sg := newStepGroup()
 
-	sg.nextGroup() // generate install state
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &signals.Signal{
-		Type: signals.OperationGenerateState,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-
 	componentID, ok := flw.Metadata["component_id"]
 	if !ok {
 		return nil, errors.New("component id is not set on the install workflow for a manual deploy")
@@ -37,7 +29,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg.nextGroup() // await runner health
-	step, err = sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
+	step, err := sg.installSignalStep(ctx, installID, "await runner healthy", pgtype.Hstore{}, &signals.Signal{
 		Type: signals.OperationAwaitRunnerHealthy,
 	}, flw.PlanOnly)
 	if err != nil {

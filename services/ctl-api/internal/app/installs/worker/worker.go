@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	installdelegationdns "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/dns"
+	installsstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -30,14 +31,15 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	V            *validator.Validate
-	Cfg          *internal.Config
-	Tclient      temporalclient.Client
-	Wkflows      *Workflows
-	Acts         *activities.Activities
-	L            *zap.Logger
-	Lc           fx.Lifecycle
-	Interceptors []interceptor.WorkerInterceptor `group:"interceptors"`
+	V              *validator.Validate
+	Cfg            *internal.Config
+	Tclient        temporalclient.Client
+	Wkflows        *Workflows
+	Acts           *activities.Activities
+	StateWorkflows *installsstate.Workflows
+	L              *zap.Logger
+	Lc             fx.Lifecycle
+	Interceptors   []interceptor.WorkerInterceptor `group:"interceptors"`
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
@@ -68,6 +70,9 @@ func New(params WorkerParams) (*Worker, error) {
 	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(installdelegationdns.NewActivities(params.V, params.Cfg))
+
+	// register state workflows (legacy event-loop system)
+	wkr.RegisterWorkflow(params.StateWorkflows.GenerateState)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
