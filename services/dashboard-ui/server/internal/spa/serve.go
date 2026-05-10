@@ -33,6 +33,8 @@ type clientConfig struct {
 	IsBYOC                bool   `json:"isByoc"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
 	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
+
+	InstallerCliDownloadURL string `json:"installerCliDownloadUrl,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -53,6 +55,8 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		IsBYOC:                cfg.IsBYOC,
 		OnboardingV2:          cfg.OnboardingV2,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
+
+		InstallerCliDownloadURL: cfg.InstallerCliDownloadURL,
 	}
 }
 
