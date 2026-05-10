@@ -20,6 +20,7 @@ export type TRuntimeConfig = {
   onboardingV2?: boolean
   adminDashboardUrl?: string
   isDev?: boolean
+  installerCliDownloadUrl?: string
 }
 
 declare global {

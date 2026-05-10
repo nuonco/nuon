@@ -35,6 +35,8 @@ type clientConfig struct {
 	SFTrialEndpoint       string `json:"sfTrialEndpoint,omitempty"`
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
 	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
+
+	InstallerCliDownloadURL string `json:"installerCliDownloadUrl,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -56,6 +58,8 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		SFTrialEndpoint:       cfg.SFTrialEndpoint,
 		OnboardingV2:          cfg.OnboardingV2,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
+
+		InstallerCliDownloadURL: cfg.InstallerCliDownloadURL,
 	}
 }
 

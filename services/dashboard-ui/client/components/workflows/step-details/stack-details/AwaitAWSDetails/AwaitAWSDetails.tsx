@@ -8,6 +8,7 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { useConfig } from '@/hooks/use-config'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAWSDetails extends IStackDetails {
@@ -258,10 +259,13 @@ interface ICLITab {
 }
 
 const CLITab = ({ phoneHomeId, runnerAPIURL }: ICLITab) => {
+  const config = useConfig()
   const base = runnerAPIURL || 'https://api.nuon.co'
   const createRunURL = `${base}/v1/stack-runs/${phoneHomeId || '<phone-home-id>'}`
 
-  const cmd = `installer-cli provision ${createRunURL}`
+  const installerBase =
+    config.installerCliDownloadUrl || 'https://install.nuon.co/installer-cli'
+  const cmd = `curl -fsSL ${installerBase}/install.sh | sh -s -- provision ${createRunURL}`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
