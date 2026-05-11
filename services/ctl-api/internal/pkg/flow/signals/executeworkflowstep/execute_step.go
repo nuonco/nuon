@@ -1,10 +1,13 @@
 package executeworkflowstep
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -17,8 +20,41 @@ import (
 // Execute runs the full workflow step lifecycle. This replicates the logic from
 // WorkflowConductor.executeFlowStep but as a self-contained signal that fetches
 // its own state from the database.
-func (s *Signal) Execute(ctx workflow.Context) error {
+func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
+
+	var startMs int64
+	_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+		return time.Now().UnixMilli()
+	}).Get(&startMs)
+
+	var stepName, executionType string
+	defer func() {
+		if s.mw == nil {
+			return
+		}
+		status := "ok"
+		if err != nil {
+			status = "error"
+		}
+		tagMap := map[string]string{
+			"status":         status,
+			"workflow_type":  s.WorkflowType,
+			"owner_type":     s.OwnerType,
+			"step_name":      stepName,
+			"execution_type": executionType,
+		}
+		tags := metrics.ToTags(tagMap)
+
+		var endMs int64
+		_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
+			return time.Now().UnixMilli()
+		}).Get(&endMs)
+		latency := time.Duration(endMs-startMs) * time.Millisecond
+
+		s.mw.Timing("workflow_step.latency", latency, tags)
+		s.mw.Incr("workflow_step.executed", tags)
+	}()
 
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -30,6 +66,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get step")
 	}
+	stepName = step.Name
+	executionType = string(step.ExecutionType)
 
 	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
 	if err != nil {
