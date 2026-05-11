@@ -3,16 +3,12 @@ package generatestate
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "generate-full-state"
@@ -48,22 +44,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   s.InstallID,
-		OwnerType: "installs",
-		QueueName: installshelpers.InstallStateManagerQueueName,
-		Signal: &statepartialgenerate.Signal{
-			InstallID:       s.InstallID,
-			AllTargets:      true,
-			TriggeredByID:   s.InstallID,
-			TriggeredByType: "installs",
-		},
+	return stategen.HintOrGenerate(ctx, stategen.Request{
+		StateGenV2:      true,
+		InstallID:       s.InstallID,
+		AllTargets:      true,
+		TriggeredByID:   s.InstallID,
+		TriggeredByType: "installs",
 	})
-	if err != nil {
-		return errors.Wrap(err, "unable to force-regenerate state")
-	}
-	if _, err := queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID); err != nil {
-		return errors.Wrap(err, "unable to await state generation")
-	}
-	return nil
 }
