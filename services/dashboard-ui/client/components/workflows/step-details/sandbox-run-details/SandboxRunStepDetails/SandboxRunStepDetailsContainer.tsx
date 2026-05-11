@@ -14,7 +14,7 @@ export const SandboxRunStepDetailsContainer = ({ step }: ISandboxRunStepDetailsC
   const { data: sandboxRun, isLoading } = useQuery<TSandboxRun>({
     queryKey: ['sandbox-run', org?.id, step?.step_target_id],
     queryFn: () =>
-      getInstallSandboxRun({ orgId: org.id, runId: step!.step_target_id }),
+      getInstallSandboxRun({ orgId: org!.id, runId: step!.step_target_id }),
     enabled: !!org?.id && !!step?.step_target_id,
   })
 
