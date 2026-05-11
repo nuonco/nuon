@@ -6,13 +6,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/provisionserviceaccount"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -84,34 +81,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to check state-gen-v2 feature")
 	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-	if stateGenV2 {
-		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   s.InstallID,
-			OwnerType: "installs",
-			QueueName: installshelpers.InstallStateManagerQueueName,
-			Signal: &statepartialgenerate.Signal{
-				InstallID:       s.InstallID,
-				Targets:         statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
-				ForceAll:        true,
-				TriggeredByID:   install.RunnerID,
-				TriggeredByType: "runners",
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to hint state manager")
-		} else if _, err := queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID); err != nil {
-			return errors.Wrap(err, "unable to await state generation")
-		}
-
-	} else {
-		if _, err := workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
-			InstallID:       s.InstallID,
-			TriggeredByID:   install.RunnerID,
-			TriggeredByType: "runners",
-		}); err != nil {
-			return errors.Wrap(err, "unable to generate state")
-		}
+	if err := stategen.HintOrGenerate(ctx, stategen.Request{
+		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
+		InstallID:       s.InstallID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintRunnerUpdated, ""),
+		ForceAll:        true,
+		TriggeredByID:   install.RunnerID,
+		TriggeredByType: "runners",
+	}); err != nil {
+		return err
 	}
 
 	return nil
