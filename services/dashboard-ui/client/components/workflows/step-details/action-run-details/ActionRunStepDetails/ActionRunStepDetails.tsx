@@ -34,7 +34,7 @@ export const ActionRunStepDetails = ({
     )
   }
 
-  if (error) {
+  if (error || !actionRun) {
     return (
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong" theme="error">
