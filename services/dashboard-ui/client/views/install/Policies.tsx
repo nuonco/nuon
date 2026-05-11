@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
+import { PolicyReportsFilter } from '@/components/policies/PolicyReportsFilter'
 import { PolicyReportsTable } from '@/components/policies/PolicyReportsTable'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -71,14 +72,17 @@ export const Policies = () => {
           },
         ]}
       />
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Policy reports
-        </Text>
-        <Text theme="neutral">
-          View policy compliance reports for this install.
-        </Text>
-      </HeadingGroup>
+      <div className="flex items-start justify-between gap-4">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Policy reports
+          </Text>
+          <Text theme="neutral">
+            View policy compliance reports for this install.
+          </Text>
+        </HeadingGroup>
+        <PolicyReportsFilter />
+      </div>
 
       <div className="flex flex-auto">
         {isLoading ? (
