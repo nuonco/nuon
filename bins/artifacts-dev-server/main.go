@@ -100,7 +100,7 @@ func registerArtifact(mux *http.ServeMux, a artifact, repoRoot, cacheDir string)
 	// `/artifacts/<name>/` (behind serve) to be tolerant.
 	prefixes := []string{"/" + a.name, "/artifacts/" + a.name}
 
-	devPathRE := regexp.MustCompile(`/dev/` + regexp.QuoteMeta(a.bin) + `_([a-z0-9]+)_([a-z0-9]+)(\.gz|\.sha256)?$`)
+	devPathRE := regexp.MustCompile(`/dev/` + regexp.QuoteMeta(a.bin) + `_([a-z0-9]+)_([a-z0-9]+)(\.gz)?$`)
 
 	for _, prefix := range prefixes {
 		prefix := prefix
@@ -120,6 +120,29 @@ func registerArtifact(mux *http.ServeMux, a artifact, repoRoot, cacheDir string)
 		mux.HandleFunc(prefix+"/latest.txt", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			_, _ = io.WriteString(w, "dev\n")
+		})
+
+		mux.HandleFunc(prefix+"/dev/checksums.txt", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			for osarch := range allowed {
+				parts := strings.SplitN(osarch, "/", 2)
+				goos, goarch := parts[0], parts[1]
+				bin := filepath.Join(cacheDir, fmt.Sprintf("%s_%s_%s", a.bin, goos, goarch))
+				cmd := exec.Command("go", "build", "-o", bin, a.pkg)
+				cmd.Dir = repoRoot
+				cmd.Env = append(os.Environ(), "GOOS="+goos, "GOARCH="+goarch, "CGO_ENABLED=0")
+				cmd.Stderr = os.Stderr
+				if err := cmd.Run(); err != nil {
+					http.Error(w, "build failed: "+err.Error(), http.StatusInternalServerError)
+					return
+				}
+				sum, err := sha256File(bin)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				fmt.Fprintf(w, "%s  %s_%s_%s\n", sum, a.bin, goos, goarch)
+			}
 		})
 
 		mux.HandleFunc(prefix+"/dev/", func(w http.ResponseWriter, r *http.Request) {
@@ -143,17 +166,6 @@ func registerArtifact(mux *http.ServeMux, a artifact, repoRoot, cacheDir string)
 			cmd.Stdout = os.Stderr
 			if err := cmd.Run(); err != nil {
 				http.Error(w, "build failed: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-
-			if suffix == ".sha256" {
-				sum, err := sha256File(bin)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-				w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-				fmt.Fprintf(w, "%s  %s_%s_%s\n", sum, a.bin, goos, goarch)
 				return
 			}
 

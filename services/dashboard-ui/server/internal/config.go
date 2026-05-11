@@ -21,7 +21,7 @@ func init() {
 	config.RegisterDefault("nuon_api_url", "https://api.nuon.co")
 	config.RegisterDefault("nuon_app_url", "http://localhost:4000")
 	config.RegisterDefault("github_app_name", "nuon-connect")
-	config.RegisterDefault("installer_cli_download_url", "https://install.nuon.co/installer-cli")
+	config.RegisterDefault("installer_cli_download_url", "https://cdn.public.nuon.co/installer-cli")
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
