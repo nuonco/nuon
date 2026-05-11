@@ -23,6 +23,7 @@ func (s *syncer) createTerraformModuleComponentConfig(ctx context.Context, resou
 		Version:                  obj.TerraformVersion,
 		BuildTimeout:             obj.BuildTimeout,
 		DeployTimeout:            obj.DeployTimeout,
+		KubernetesContext:        comp.KubernetesContext,
 	}
 
 	if obj.MaxAutoRetries != nil {
