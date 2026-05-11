@@ -18,6 +18,13 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-installer-go/installer"
 )
 
+// Version is set at build time via:
+//
+//	go build -ldflags "-X main.Version=v0.1.0" ./bins/installer-cli
+//
+// Local builds and `go run` report "dev".
+var Version = "dev"
+
 const usage = `installer-cli — provision/reprovision/deprovision a Nuon install stack.
 
 Usage:
@@ -25,6 +32,7 @@ Usage:
   installer-cli reprovision  <create-run-url>
   installer-cli deprovision  <create-run-url>
   installer-cli status       --install-id <id> --region <region>
+  installer-cli version      [--json]
 
 The <create-run-url> is the POST endpoint the Nuon dashboard renders, e.g.
   https://api.nuon.co/v1/stack-runs/aws…
@@ -46,6 +54,8 @@ func main() {
 		runFromURL("deprovision")
 	case "status":
 		runStatus()
+	case "version", "--version", "-v":
+		runVersion()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n\n%s", os.Args[1], usage)
 		os.Exit(2)
@@ -116,6 +126,17 @@ func runStatus() {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(st)
+}
+
+func runVersion() {
+	fs := flag.NewFlagSet("version", flag.ExitOnError)
+	asJSON := fs.Bool("json", false, "emit JSON")
+	_ = fs.Parse(os.Args[2:])
+	if *asJSON {
+		_ = json.NewEncoder(os.Stdout).Encode(map[string]string{"version": Version})
+		return
+	}
+	fmt.Println(Version)
 }
 
 func fail(err error) {
