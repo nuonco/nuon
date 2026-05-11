@@ -67,9 +67,9 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			infraTests.POST("/deprovision", s.InfraTestsDeprovision)
 		}
 
-		// create users for testing/seeding
-		general.POST("/integration-user", s.CreateIntegrationUser)
-		general.POST("/seed-user", s.CreateSeedUser)
+		// create users for testing/seeding (public — bootstraps the calling identity itself)
+		s.POST(general, "/integration-user", s.CreateIntegrationUser, apiPkg.APIContextTypeInternal, true)
+		s.POST(general, "/seed-user", s.CreateSeedUser, apiPkg.APIContextTypeInternal, true)
 
 		// migrations
 		general.GET("/migrations", s.GetMigrations)
