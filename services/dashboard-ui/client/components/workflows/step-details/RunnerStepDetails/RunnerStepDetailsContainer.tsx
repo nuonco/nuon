@@ -9,11 +9,11 @@ interface IRunnerStepDetailsContainer extends IStepDetails {}
 
 export const RunnerStepDetailsContainer = ({ step }: IRunnerStepDetailsContainer) => {
   const { org } = useOrg()
-  const runnerId = step.step_target_id
+  const runnerId = step?.step_target_id
 
   const { data: settings } = useQuery({
     queryKey: ['runner-settings', org?.id, runnerId],
-    queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
+    queryFn: () => getRunnerSettings({ orgId: org!.id, runnerId: runnerId! }),
     enabled: !!org?.id && !!runnerId,
   })
 
@@ -21,8 +21,8 @@ export const RunnerStepDetailsContainer = ({ step }: IRunnerStepDetailsContainer
     queryKey: ['runner-processes-active', org?.id, runnerId],
     queryFn: () =>
       getRunnerProcesses({
-        orgId: org.id,
-        runnerId,
+        orgId: org!.id,
+        runnerId: runnerId!,
         status: 'pending,active,offline,pending-shutdown',
         limit: 2,
       }),

@@ -38,14 +38,14 @@ export const SandboxRunStepDetails = ({
         </Text>
 
         <Text variant="subtext">
-          <Link href={`/${orgId}/installs/${step.owner_id}/sandbox`}>
+          <Link href={`/${orgId}/installs/${step?.owner_id}/sandbox`}>
             View sandbox <Icon variant="CaretRight" />
           </Link>
         </Text>
 
         <Text variant="subtext">
           <Link
-            href={`/${orgId}/installs/${step.owner_id}/sandbox/runs/${step.step_target_id}`}
+            href={`/${orgId}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`}
           >
             View run logs <Icon variant="CaretRight" />
           </Link>
