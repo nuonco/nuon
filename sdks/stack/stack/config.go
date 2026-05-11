@@ -9,7 +9,14 @@ type Config struct {
 	// stack package without dragging State along. State.InstallID remains
 	// the source of truth at runtime; this field is convenience only.
 	InstallID string `json:"install_id,omitempty"`
+	OrgID     string `json:"org_id,omitempty"`
+	AppID     string `json:"app_id,omitempty"`
 	AWSRegion string `json:"aws_region,omitempty"`
+
+	// ClusterName resolves the EKS cluster-name tag value. Mirrors
+	// services/ctl-api/internal/pkg/stacks/cloudformation/nested_template_vpc.go
+	// getClusterName: install input "cluster_name" if set, else install_id.
+	ClusterName string `json:"cluster_name,omitempty"`
 
 	RunnerID     string `json:"runner_id,omitempty"`
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`

@@ -29,14 +29,51 @@ var (
 	privateSubnetCIDRs = []string{"10.128.1.0/24", "10.128.17.0/24"}
 )
 
-func tagSpec(rt ec2types.ResourceType, name, installID string) ec2types.TagSpecification {
-	return ec2types.TagSpecification{
-		ResourceType: rt,
-		Tags: []ec2types.Tag{
-			{Key: aws.String("Name"), Value: aws.String(name)},
-			{Key: aws.String(installIDTagKey), Value: aws.String(installID)},
-		},
+// tagSpec emits the common tag set every resource the sandbox terraform reads
+// expects: install/org/app IDs (filter keys) + Name. Per-resource extras
+// (visibility, network.nuon.co/domain, kubernetes.io/*) are appended.
+func tagSpec(rt ec2types.ResourceType, name string, st *State, extra ...ec2types.Tag) ec2types.TagSpecification {
+	tags := []ec2types.Tag{
+		{Key: aws.String("Name"), Value: aws.String(name)},
+		{Key: aws.String(installIDTagKey), Value: aws.String(st.InstallID)},
 	}
+	if st.OrgID != "" {
+		tags = append(tags, ec2types.Tag{Key: aws.String("org.nuon.co/id"), Value: aws.String(st.OrgID)})
+	}
+	if st.AppID != "" {
+		tags = append(tags, ec2types.Tag{Key: aws.String("app.nuon.co/id"), Value: aws.String(st.AppID)})
+	}
+	tags = append(tags, extra...)
+	return ec2types.TagSpecification{ResourceType: rt, Tags: tags}
+}
+
+// subnetTags returns the tag set per subnet role. Matches the canonical CFN
+// template (sandbox/exp/aws-cloudformation-templates/v0.1.4/vpc/eks/default/stack.yaml).
+// Public/private subnets carry kubernetes.io/cluster + kubernetes.io/role for EKS
+// LB subnet auto-discovery; runner subnet does not (it's not an EKS subnet).
+func subnetTags(role string, clusterName string) []ec2types.Tag {
+	switch role {
+	case "public":
+		return []ec2types.Tag{
+			{Key: aws.String("network.nuon.co/domain"), Value: aws.String("public")},
+			{Key: aws.String("visibility"), Value: aws.String("public")},
+			{Key: aws.String("kubernetes.io/cluster/" + clusterName), Value: aws.String("shared")},
+			{Key: aws.String("kubernetes.io/role/elb"), Value: aws.String("1")},
+		}
+	case "private":
+		return []ec2types.Tag{
+			{Key: aws.String("network.nuon.co/domain"), Value: aws.String("internal")},
+			{Key: aws.String("visibility"), Value: aws.String("private")},
+			{Key: aws.String("kubernetes.io/cluster/" + clusterName), Value: aws.String("shared")},
+			{Key: aws.String("kubernetes.io/role/internal-elb"), Value: aws.String("1")},
+		}
+	case "runner":
+		return []ec2types.Tag{
+			{Key: aws.String("network.nuon.co/domain"), Value: aws.String("runner")},
+			{Key: aws.String("visibility"), Value: aws.String("private")},
+		}
+	}
+	return nil
 }
 
 // CreateVPC ensures the VPC and all dependent network resources exist. Safe to
@@ -92,7 +129,7 @@ func ensureRunnerSubnet(ctx context.Context, log *slog.Logger, c *ec2.Client, st
 			VpcId:             &st.VPCID,
 			AvailabilityZone:  aws.String(azs[0]),
 			CidrBlock:         aws.String(runnerSubnetCIDR),
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st.InstallID)},
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st, subnetTags("runner", st.ClusterName)...)},
 		})
 		if err != nil {
 			return fmt.Errorf("create runner subnet: %w", err)
@@ -139,10 +176,13 @@ func ensureRunnerSecurityGroup(ctx context.Context, log *slog.Logger, c *ec2.Cli
 	} else {
 		name := "nuon-" + st.InstallID + "-runner"
 		cr, err := c.CreateSecurityGroup(ctx, &ec2.CreateSecurityGroupInput{
-			VpcId:             &st.VPCID,
-			GroupName:         aws.String(name),
-			Description:       aws.String("Nuon runner SG"),
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSecurityGroup, name, st.InstallID)},
+			VpcId:       &st.VPCID,
+			GroupName:   aws.String(name),
+			Description: aws.String("Nuon runner SG"),
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(
+				ec2types.ResourceTypeSecurityGroup, name, st,
+				ec2types.Tag{Key: aws.String("network.nuon.co/domain"), Value: aws.String("runner")},
+			)},
 		})
 		if err != nil {
 			return fmt.Errorf("create runner sg: %w", err)
@@ -198,7 +238,7 @@ func ensureVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 	} else {
 		out, err := c.CreateVpc(ctx, &ec2.CreateVpcInput{
 			CidrBlock:         aws.String(vpcCIDR),
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeVpc, "nuon-"+st.InstallID, st.InstallID)},
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeVpc, "nuon-"+st.InstallID, st)},
 		})
 		if err != nil {
 			return fmt.Errorf("create vpc: %w", err)
@@ -248,7 +288,7 @@ func ensureIGW(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 	}
 	if id == "" {
 		out, err := c.CreateInternetGateway(ctx, &ec2.CreateInternetGatewayInput{
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeInternetGateway, "nuon-"+st.InstallID, st.InstallID)},
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeInternetGateway, "nuon-"+st.InstallID, st)},
 		})
 		if err != nil {
 			return fmt.Errorf("create igw: %w", err)
@@ -284,11 +324,11 @@ func ensureIGW(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 }
 
 func ensureSubnets(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, azs []string) error {
-	pubIDs, err := ensureSubnetSet(ctx, log, c, st, azs, publicSubnetCIDRs, true, "public")
+	pubIDs, err := ensureSubnetSet(ctx, log, c, st, azs, publicSubnetCIDRs, true, "public", subnetTags("public", st.ClusterName))
 	if err != nil {
 		return err
 	}
-	privIDs, err := ensureSubnetSet(ctx, log, c, st, azs, privateSubnetCIDRs, false, "private")
+	privIDs, err := ensureSubnetSet(ctx, log, c, st, azs, privateSubnetCIDRs, false, "private", subnetTags("private", st.ClusterName))
 	if err != nil {
 		return err
 	}
@@ -300,7 +340,7 @@ func ensureSubnets(ctx context.Context, log *slog.Logger, c *ec2.Client, st *Sta
 // ensureSubnetSet returns CIDR-ordered subnet IDs, creating any missing CIDRs.
 // We index by CIDR (not list position) so partial state never causes us to
 // create overlapping subnets.
-func ensureSubnetSet(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, azs []string, cidrs []string, public bool, label string) ([]string, error) {
+func ensureSubnetSet(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, azs []string, cidrs []string, public bool, label string, extraTags []ec2types.Tag) ([]string, error) {
 	existing, err := findSubnetsForVPC(ctx, c, st.VPCID, st.InstallID)
 	if err != nil {
 		return nil, err
@@ -317,7 +357,7 @@ func ensureSubnetSet(ctx context.Context, log *slog.Logger, c *ec2.Client, st *S
 			VpcId:             &st.VPCID,
 			AvailabilityZone:  aws.String(azs[i]),
 			CidrBlock:         aws.String(cidr),
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st.InstallID)},
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeSubnet, name, st, extraTags...)},
 		})
 		if err != nil {
 			return nil, fmt.Errorf("create subnet %s: %w", name, err)
@@ -384,7 +424,7 @@ func ensureNAT(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 		out, err := c.CreateNatGateway(ctx, &ec2.CreateNatGatewayInput{
 			AllocationId:      &st.NATElasticIP,
 			SubnetId:          &st.PublicSubnetIDs[0],
-			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeNatgateway, "nuon-"+st.InstallID, st.InstallID)},
+			TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeNatgateway, "nuon-"+st.InstallID, st)},
 		})
 		if err != nil {
 			return fmt.Errorf("create nat: %w", err)
@@ -434,7 +474,7 @@ func ensureEIP(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 	}
 	alloc, err := c.AllocateAddress(ctx, &ec2.AllocateAddressInput{
 		Domain:            ec2types.DomainTypeVpc,
-		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeElasticIp, "nuon-"+st.InstallID, st.InstallID)},
+		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeElasticIp, "nuon-"+st.InstallID, st)},
 	})
 	if err != nil {
 		return fmt.Errorf("allocate eip: %w", err)
@@ -493,7 +533,7 @@ func ensureRouteTable(ctx context.Context, log *slog.Logger, c *ec2.Client, st *
 	}
 	cr, err := c.CreateRouteTable(ctx, &ec2.CreateRouteTableInput{
 		VpcId:             &st.VPCID,
-		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeRouteTable, name, st.InstallID)},
+		TagSpecifications: []ec2types.TagSpecification{tagSpec(ec2types.ResourceTypeRouteTable, name, st)},
 	})
 	if err != nil {
 		return "", fmt.Errorf("create route table %s: %w", name, err)
