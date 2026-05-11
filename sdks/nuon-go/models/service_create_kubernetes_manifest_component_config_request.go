@@ -40,6 +40,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
 
+	// kubernetes context
+	KubernetesContext string `json:"kubernetes_context,omitempty"`
+
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize struct {
 		ServiceKustomizeConfigRequest

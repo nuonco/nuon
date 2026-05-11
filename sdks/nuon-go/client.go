@@ -75,6 +75,9 @@ type Client interface {
 	GetLatestAppSecretsConfig(ctx context.Context, appID string) (*models.AppAppSecretsConfig, error)
 	GetAppSecretsConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppSecretsConfig, error)
 
+	// app kubernetes contexts config methods
+	CreateAppKubernetesContextsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppKubernetesContextsConfigRequest) (*models.AppAppKubernetesContextsConfig, error)
+
 	// app permissions config methods
 	CreateAppPermissionsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppPermissionsConfigRequest) (*models.AppAppPermissionsConfig, error)
 	GetLatestAppPermissionsConfig(ctx context.Context, appID string) (*models.AppAppPermissionsConfig, error)

@@ -192,6 +192,8 @@ type ClientService interface {
 
 	CreateAppJobComponentConfig(params *CreateAppJobComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppJobComponentConfigCreated, error)
 
+	CreateAppKubernetesContextsConfig(params *CreateAppKubernetesContextsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesContextsConfigCreated, error)
+
 	CreateAppKubernetesManifestComponentConfig(params *CreateAppKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesManifestComponentConfigCreated, error)
 
 	CreateAppOperationRoleConfig(params *CreateAppOperationRoleConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOperationRoleConfigCreated, error)
@@ -2662,6 +2664,52 @@ func (a *Client) CreateAppJobComponentConfig(params *CreateAppJobComponentConfig
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAppJobComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAppKubernetesContextsConfig creates a kubernetes contexts config
+
+Create the named kubernetes_context bindings for an app config version. Each context names a peer terraform_module or pulumi component that emits cluster connection details as outputs.
+*/
+func (a *Client) CreateAppKubernetesContextsConfig(params *CreateAppKubernetesContextsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesContextsConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppKubernetesContextsConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppKubernetesContextsConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/kubernetes-contexts-configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppKubernetesContextsConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAppKubernetesContextsConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAppKubernetesContextsConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
