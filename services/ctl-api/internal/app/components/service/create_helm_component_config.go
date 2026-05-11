@@ -42,6 +42,7 @@ type CreateHelmComponentConfigRequest struct {
 	Checksum       string                        `json:"checksum"`
 	DriftSchedule  *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
 }
 
 type HelmRepoConfigRequest struct {
@@ -235,6 +236,7 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		DefaultEnabled:               req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
 		OperationRoles:               operationRoles,
+		KubernetesContextName:  req.KubernetesContext,
 	}
 	if req.DriftSchedule != nil {
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule

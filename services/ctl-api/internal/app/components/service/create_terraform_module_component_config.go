@@ -40,6 +40,7 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	Checksum       string                        `json:"checksum"`
 	DriftSchedule  *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
 }
 
 const MinTerraformVersion = "1.8.0"
@@ -250,6 +251,7 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		DefaultEnabled:                 req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing:   req.AutoApproveOnPoliciesPassing,
 		OperationRoles:                 operationRoles,
+		KubernetesContextName:          req.KubernetesContext,
 	}
 	if req.DriftSchedule != nil {
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule
