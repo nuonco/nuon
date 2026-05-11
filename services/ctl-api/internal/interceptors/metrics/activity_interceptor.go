@@ -51,6 +51,7 @@ func (a *actInterceptor) ExecuteActivity(
 		Method:     "temporal",
 		RequestURI: info.WorkflowType.Name,
 		Context:    "worker",
+		Namespace:  info.WorkflowNamespace,
 		SignalType: info.ActivityType.Name,
 	}
 	ctx = context.WithValue(ctx, keys.MetricsKey, metricCtx)

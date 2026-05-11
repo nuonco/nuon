@@ -124,6 +124,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		"method:"+metricCtx.Method,
 		"endpoint:"+metricCtx.Endpoint,
 		"org_id:"+metricCtx.OrgID,
+		"namespace:"+metricCtx.Namespace,
 	)
 
 	respSize := 0
@@ -153,6 +154,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 			"endpoint", metricCtx.Endpoint,
 			"method", metricCtx.Method,
 			"org_id", metricCtx.OrgID,
+			"namespace", metricCtx.Namespace,
 			"response_size", respSize,
 		)
 	}
@@ -188,6 +190,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		"endpoint", metricCtx.Endpoint,
 		"method", metricCtx.Method,
 		"org_id", metricCtx.OrgID,
+		"namespace", metricCtx.Namespace,
 		"latency_ms", dur.Milliseconds(),
 		"prepared_sql", tx.Statement.SQL.String(),
 		"vars", tx.Statement.Vars,
