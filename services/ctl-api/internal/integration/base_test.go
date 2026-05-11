@@ -152,7 +152,7 @@ func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
 
 	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 	cfgReq.ConnectedGithubVcsConfig = nil
-	cfgReq.OperationRoles = nil // map keys are operation type enums; faker generates invalid
+	cfgReq.OperationRoles = nil
 	cfgReq.AppConfigID = appConfigID
 
 	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, appID, cfgReq)
@@ -160,9 +160,6 @@ func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
 	require.NotNil(s.T(), cfg)
 }
 
-// ensureAppConfig creates an app_config for the given app (the CLI does this via `nuon apps sync`)
-// and returns its id. Idempotent-ish: if the app already has configs, returns the latest.
-// Also patches the config to `active` so `createInstall` doesn't reject the app.
 func (s *baseIntegrationTestSuite) ensureAppConfig(appID string) string {
 	parentApp, err := s.apiClient.GetApp(s.ctx, appID)
 	require.NoError(s.T(), err)
@@ -171,7 +168,7 @@ func (s *baseIntegrationTestSuite) ensureAppConfig(appID string) string {
 	}
 
 	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppConfigRequest]()
-	cfgReq.CliVersion = "0.19.922" // faker generates non-semver strings; component graph check rejects them
+	cfgReq.CliVersion = "0.19.922"
 	cfg, err := s.apiClient.CreateAppConfig(s.ctx, appID, cfgReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
@@ -183,8 +180,6 @@ func (s *baseIntegrationTestSuite) ensureAppConfig(appID string) string {
 	return cfg.ID
 }
 
-// fakeRunnerConfigReq returns a fake CreateAppRunnerConfigRequest pinned to the app's
-// current AppConfigID so the FK validates, with a valid AppRunnerType.
 func (s *baseIntegrationTestSuite) fakeRunnerConfigReq(appID string) *models.ServiceCreateAppRunnerConfigRequest {
 	req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
 	req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
@@ -192,9 +187,6 @@ func (s *baseIntegrationTestSuite) fakeRunnerConfigReq(appID string) *models.Ser
 	return req
 }
 
-// fakeSandboxConfigReq returns a fake CreateAppSandboxConfigRequest pinned to the app's
-// current AppConfigID so the FK validates. Faker-generated VCS config + operation roles
-// are nilled out (the latter generates invalid enum keys server-side).
 func (s *baseIntegrationTestSuite) fakeSandboxConfigReq(appID string) *models.ServiceCreateAppSandboxConfigRequest {
 	req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 	req.ConnectedGithubVcsConfig = nil
@@ -246,7 +238,6 @@ func (s *baseIntegrationTestSuite) fakeInputRequest() *models.ServiceCreateAppIn
 	req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
 	req.Inputs = s.formatInputs(req.Inputs)
 
-	// faker generates random strings for input.Type; server only accepts a fixed enum
 	for k, input := range req.Inputs {
 		input.Type = "string"
 		req.Inputs[k] = input
@@ -261,7 +252,6 @@ func (s *baseIntegrationTestSuite) fakeInputRequest() *models.ServiceCreateAppIn
 
 func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {
 	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	// Component name regex allows only [a-z0-9_.{}]; uniqueName uses dashes, swap them out.
 	name := strings.ReplaceAll(s.uniqueName(s.formatInterpolatedString(*compReq.Name)), "-", "_")
 	compReq.Name = generics.ToPtr(name)
 	compReq.VarName = s.formatInterpolatedString(compReq.VarName)
@@ -277,7 +267,7 @@ func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstal
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 	fakeReq.AwsAccount.Region = "us-west-2"
 	fakeReq.Inputs = nil
-	fakeReq.InstallConfig = nil // faker generates non-URL strings for *_nested_template_url; let server default
+	fakeReq.InstallConfig = nil
 
 	install, err := s.apiClient.CreateInstall(s.ctx, appID, fakeReq)
 	require.NoError(s.T(), err)
