@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -70,6 +71,8 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 	// run after-phase hooks (best-effort)
 	h.runAfterPhaseSafe(ctx, event, outcomeFromError(err, dur))
 
+	h.emitExecuteMetrics(event, err, dur)
+
 	if err != nil {
 		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
@@ -120,6 +123,31 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 
 	h.setFinished(app.StatusSuccess, "")
 	return nil, nil
+}
+
+// emitExecuteMetrics records the latency and execution count for the signal's
+// Execute phase. Tags are sourced from the SignalPhaseEvent which already carries
+// lifecycle context populated by buildSignalPhaseEvent.
+func (h *handler) emitExecuteMetrics(event signal.SignalPhaseEvent, err error, dur time.Duration) {
+	if h.mw == nil {
+		return
+	}
+
+	status := "ok"
+	switch {
+	case err != nil && h.canceled:
+		status = "cancelled"
+	case err != nil:
+		status = "error"
+	}
+
+	tags := metrics.ToTags(map[string]string{
+		"signal_type": string(event.SignalType),
+		"owner_type":  event.OwnerType,
+		"status":      status,
+	})
+
+	h.mw.Timing("queue.signal.latency", dur, tags)
 }
 
 // runSignalExecute calls the user-provided signal Execute in a panic-safe boundary.
