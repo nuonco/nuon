@@ -88,6 +88,26 @@ Import from `@/lib`:
 import { getRunner, createInstallConfig } from '@/lib'
 ```
 
+## Defensive Data Access (CRITICAL)
+
+**Treat ALL API response data as potentially undefined — regardless of what the OpenAPI spec or TypeScript types say.** The API can return partial objects, null fields, or missing nested properties at any time. A single unguarded property access on undefined data crashes the entire page.
+
+- **Always use optional chaining (`?.`) when accessing nested API data.** Never trust that an object or its children exist just because the type says so: `step?.status?.status`, not `step.status.status`.
+- **Guard before rendering child components that depend on fetched data.** If `useQuery` returns data that children need, check `if (!data) return <Skeleton />` before rendering — don't leave it to children to handle undefined.
+- **Use nullish coalescing (`?? defaultValue`) for values in comparisons or arithmetic:** `(step?.execution_duration ?? 0) > 1000` not `step?.execution_duration > 1000`.
+- **Non-null assertions (`!`) are only acceptable inside `useQuery` `queryFn` callbacks** where the `enabled` guard guarantees the values exist.
+- **Provider hook values (`useOrg()`, `useInstall()`) can be undefined** during initial render. Always `org?.id`, never `org.id`, when passing to children or building URLs.
+
+```tsx
+// ✅ Defensive
+deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name
+if (error || !actionRun) return <ErrorState />
+
+// ❌ Will crash
+deploy.runner_jobs[0].install_role_usage.role_name
+if (error) return <ErrorState />  // actionRun still undefined below
+```
+
 ## State Management
 
 Access providers through custom hooks — never use `useContext` directly:

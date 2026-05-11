@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
@@ -33,6 +34,7 @@ func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) er
 		db:        w.db,
 		tClient:   w.tClient,
 		l:         w.l,
+		mw:        w.mw,
 		emitterID: req.EmitterID,
 		queueID:   req.QueueID,
 		state:     req.State,
@@ -61,6 +63,7 @@ type emitterWorkflow struct {
 	db      *gorm.DB
 	tClient temporalclient.Client
 	l       *zap.Logger
+	mw      tmetrics.Writer
 
 	emitterID string
 	queueID   string
