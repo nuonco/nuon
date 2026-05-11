@@ -19,9 +19,7 @@ type vcsIntegrationTestSuite struct {
 }
 
 func TestVCSSuite(t *testing.T) {
-	// TODO: fix integration tests - they require INTEGRATION_INTERNAL_API_URL and
-	// INTEGRATION_API_URL env vars which are not provided by the nuonctl test runner.
-	t.Skip("skipping: integration test suite needs INTEGRATION_INTERNAL_API_URL and INTEGRATION_API_URL")
+	t.Skip("TODO: faker-data validation issues; re-enable after test cleanup")
 
 	t.Parallel()
 
