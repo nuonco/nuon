@@ -223,8 +223,8 @@ func (s *PayloadConverterTestSuite) TestFromPayload_InvalidCatalogType() {
 	var resultSig signal.Signal
 	err := s.converter.FromPayload(invalidPayload, &resultSig)
 	require.Error(s.T(), err)
-	assert.Contains(s.T(), err.Error(), "invalid signal type")
-	assert.Contains(s.T(), err.Error(), "not registered")
+	assert.ErrorIs(s.T(), err, catalog.ErrSignalTypeNotRegistered)
+	assert.Contains(s.T(), err.Error(), "invalid-signal-type")
 }
 
 // TestFromPayload_NilPointer verifies error handling for nil valuePtr
