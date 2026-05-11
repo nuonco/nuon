@@ -148,19 +148,59 @@ func (s *baseIntegrationTestSuite) createAppWithInputs() *models.AppApp {
 }
 
 func (s *baseIntegrationTestSuite) createAppSandboxConfig(appID string) {
-	// create app sandbox config
+	appConfigID := s.ensureAppConfig(appID)
+
 	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
 	cfgReq.ConnectedGithubVcsConfig = nil
+	cfgReq.OperationRoles = nil
+	cfgReq.AppConfigID = appConfigID
 
 	cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, appID, cfgReq)
 	require.NoError(s.T(), err)
 	require.NotNil(s.T(), cfg)
 }
 
+func (s *baseIntegrationTestSuite) ensureAppConfig(appID string) string {
+	parentApp, err := s.apiClient.GetApp(s.ctx, appID)
+	require.NoError(s.T(), err)
+	if len(parentApp.AppConfigs) > 0 {
+		return parentApp.AppConfigs[0].ID
+	}
+
+	cfgReq := generics.GetFakeObj[*models.ServiceCreateAppConfigRequest]()
+	cfgReq.CliVersion = "0.19.922"
+	cfg, err := s.apiClient.CreateAppConfig(s.ctx, appID, cfgReq)
+	require.NoError(s.T(), err)
+	require.NotNil(s.T(), cfg)
+
+	_, err = s.apiClient.UpdateAppConfig(s.ctx, appID, cfg.ID, &models.ServiceUpdateAppConfigRequest{
+		Status: models.AppAppConfigStatusActive,
+	})
+	require.NoError(s.T(), err)
+	return cfg.ID
+}
+
+func (s *baseIntegrationTestSuite) fakeRunnerConfigReq(appID string) *models.ServiceCreateAppRunnerConfigRequest {
+	req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
+	req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+	req.AppConfigID = s.ensureAppConfig(appID)
+	return req
+}
+
+func (s *baseIntegrationTestSuite) fakeSandboxConfigReq(appID string) *models.ServiceCreateAppSandboxConfigRequest {
+	req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+	req.ConnectedGithubVcsConfig = nil
+	req.OperationRoles = nil
+	req.AppConfigID = s.ensureAppConfig(appID)
+	return req
+}
+
 func (s *baseIntegrationTestSuite) createAppRunnerConfig(appID string) {
-	// create app runner config
+	appConfigID := s.ensureAppConfig(appID)
+
 	runnerCfgReq := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
 	runnerCfgReq.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+	runnerCfgReq.AppConfigID = appConfigID
 
 	runnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, appID, runnerCfgReq)
 	require.NoError(s.T(), err)
@@ -198,7 +238,9 @@ func (s *baseIntegrationTestSuite) fakeInputRequest() *models.ServiceCreateAppIn
 	req := generics.GetFakeObj[*models.ServiceCreateAppInputConfigRequest]()
 	req.Inputs = s.formatInputs(req.Inputs)
 
-	for _, input := range req.Inputs {
+	for k, input := range req.Inputs {
+		input.Type = "string"
+		req.Inputs[k] = input
 		req.Groups[*input.Group] = models.ServiceAppGroupRequest{
 			Description: generics.GetFakeObj[*string](),
 			DisplayName: generics.GetFakeObj[*string](),
@@ -210,8 +252,8 @@ func (s *baseIntegrationTestSuite) fakeInputRequest() *models.ServiceCreateAppIn
 
 func (s *baseIntegrationTestSuite) createComponent(appID string) *models.AppComponent {
 	compReq := generics.GetFakeObj[*models.ServiceCreateComponentRequest]()
-	name := s.formatInterpolatedString(*compReq.Name)
-	compReq.Name = generics.ToPtr(s.uniqueName(name))
+	name := strings.ReplaceAll(s.uniqueName(s.formatInterpolatedString(*compReq.Name)), "-", "_")
+	compReq.Name = generics.ToPtr(name)
 	compReq.VarName = s.formatInterpolatedString(compReq.VarName)
 	compReq.Dependencies = []string{}
 
@@ -225,6 +267,7 @@ func (s *baseIntegrationTestSuite) createInstall(appID string) *models.AppInstal
 	fakeReq := generics.GetFakeObj[*models.ServiceCreateInstallRequest]()
 	fakeReq.AwsAccount.Region = "us-west-2"
 	fakeReq.Inputs = nil
+	fakeReq.InstallConfig = nil
 
 	install, err := s.apiClient.CreateInstall(s.ctx, appID, fakeReq)
 	require.NoError(s.T(), err)
