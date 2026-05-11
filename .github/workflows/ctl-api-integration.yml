@@ -1,0 +1,29 @@
+---
+name: ctl-api integration (manual)
+"on":
+  workflow_dispatch:
+    inputs:
+      local_nctl:
+        description: "Build nuonctl from this branch instead of pulling :latest"
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger mono integration workflow
+        env:
+          GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
+        run: |
+          gh workflow run ctl-api-integration.yml \
+            --repo nuonco/mono \
+            --field nuon_ref=${{ github.sha }} \
+            --field nuon_branch=${{ github.ref_name }} \
+            --field source_run_id=${{ github.run_id }} \
+            --field source_actor=${{ github.actor }} \
+            --field local_nctl=${{ inputs.local_nctl }}
