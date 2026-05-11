@@ -1,10 +1,4 @@
-// Package stackrun is a small HTTP client for the ctl-api stack-run
-// endpoints used by the AWS-native SDK provisioner.
-//
-// The endpoints are public and mirror the phone-home pattern: the per-
-// stack-version phone_home_id sits in the URL path as the secret. No
-// Authorization header, no Nuon API token.
-package stackrun
+package stack
 
 import (
 	"bytes"
@@ -15,23 +9,35 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/nuonco/nuon/sdks/nuon-installer-go/stack"
 )
 
-// Config configures the client. All fields are required.
-type Config struct {
+// Kind identifies the operation a stack run represents. Mirrors the ctl-api
+// `app.InstallStackVersionRunKind` enum.
+type Kind string
+
+const (
+	KindProvision   Kind = "provision"
+	KindReprovision Kind = "reprovision"
+	KindDeprovision Kind = "deprovision"
+)
+
+// runClientConfig configures the run client. CtlAPIURL + PhoneHomeID are required.
+type runClientConfig struct {
 	CtlAPIURL   string // base URL, e.g. https://api.nuon.co
 	PhoneHomeID string // per-stack-version secret, in the URL path
 	HTTPClient  *http.Client
 }
 
-type Client struct {
-	cfg Config
+// runClient is the small HTTP client for the ctl-api stack-run endpoints used
+// by the AWS-native SDK provisioner. The endpoints are public and mirror the
+// phone-home pattern: the per-stack-version phone_home_id sits in the URL path
+// as the secret. No Authorization header, no Nuon API token.
+type runClient struct {
+	cfg runClientConfig
 	hc  *http.Client
 }
 
-func New(cfg Config) *Client {
+func newRunClient(cfg runClientConfig) *runClient {
 	hc := cfg.HTTPClient
 	if hc == nil {
 		// Per-attempt timeout is intentionally short. doWithRetry retries up
@@ -40,47 +46,34 @@ func New(cfg Config) *Client {
 		// enough to fail the CLI fast when ctl-api is genuinely unreachable.
 		hc = &http.Client{Timeout: 10 * time.Second}
 	}
-	return &Client{cfg: cfg, hc: hc}
+	return &runClient{cfg: cfg, hc: hc}
 }
 
-// LogStream mirrors the transient app.LogStream fields ctl-api returns on
-// the create-run response. The SDK uses these to push OTLP logs back.
-type LogStream struct {
+// logStreamCreds mirrors the transient app.LogStream fields ctl-api returns
+// on the create-run response. The SDK uses these to push OTLP logs back.
+type logStreamCreds struct {
 	ID           string `json:"id"`
 	WriteToken   string `json:"write_token"`
 	RunnerAPIURL string `json:"runner_api_url"`
 }
 
-// CreateRunResponse mirrors the ctl-api response shape. Config is the
-// rendered tfvars-equivalent that the SDK threads into the stack package;
+// createRunResponse mirrors the ctl-api response shape. Config is the
+// rendered tfvars-equivalent that the SDK threads through provisioning;
 // ctl-api must populate it on every successful create-run, otherwise the
 // SDK has no idea what permissions/secrets/roles to provision.
-type CreateRunResponse struct {
-	ID                    string        `json:"id"`
-	InstallStackVersionID string        `json:"install_stack_version_id"`
-	LogStream             *LogStream    `json:"log_stream,omitempty"`
-	Config                *stack.Config `json:"config,omitempty"`
+type createRunResponse struct {
+	ID                    string          `json:"id"`
+	InstallStackVersionID string          `json:"install_stack_version_id"`
+	LogStream             *logStreamCreds `json:"log_stream,omitempty"`
+	Config                *Config         `json:"config,omitempty"`
 }
 
-// RunKind identifies the operation a stack run represents. Mirrors the
-// ctl-api `app.InstallStackVersionRunKind` enum.
-type RunKind string
-
-const (
-	RunKindProvision   RunKind = "provision"
-	RunKindReprovision RunKind = "reprovision"
-	RunKindDeprovision RunKind = "deprovision"
-)
-
-// CreateRun starts a new stack version run of the given kind. Returns the
-// full response so the caller can read the run ID + log-stream credentials.
-//
-// kind is appended to the URL as a /kind/{kind} segment so it can't shadow
-// the PATCH terminal-update route (which uses /:run_id at the same depth).
-// An empty kind defaults to provision.
-func (c *Client) CreateRun(ctx context.Context, kind RunKind) (*CreateRunResponse, error) {
+// createRun starts a new stack version run of the given kind. kind is
+// appended to the URL as a /kind/{kind} segment so it can't shadow the
+// PATCH terminal-update route. An empty kind defaults to provision.
+func (c *runClient) createRun(ctx context.Context, kind Kind) (*createRunResponse, error) {
 	if kind == "" {
-		kind = RunKindProvision
+		kind = KindProvision
 	}
 	url := fmt.Sprintf(
 		"%s/v1/stack-runs/%s/kind/%s",
@@ -88,22 +81,22 @@ func (c *Client) CreateRun(ctx context.Context, kind RunKind) (*CreateRunRespons
 		c.cfg.PhoneHomeID,
 		kind,
 	)
-	var out CreateRunResponse
+	var out createRunResponse
 	if err := c.doWithRetry(ctx, http.MethodPost, url, nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
-// UpdateRunRequest is the PATCH body. Status must be "succeeded" or "failed".
-type UpdateRunRequest struct {
+// updateRunRequest is the PATCH body. Status must be "succeeded" or "failed".
+type updateRunRequest struct {
 	Status            string         `json:"status"`
 	StatusDescription string         `json:"status_description,omitempty"`
 	Data              map[string]any `json:"data,omitempty"`
 }
 
-// UpdateRun marks a run as succeeded or failed and includes terminal data.
-func (c *Client) UpdateRun(ctx context.Context, runID string, req UpdateRunRequest) error {
+// updateRun marks a run as succeeded or failed and includes terminal data.
+func (c *runClient) updateRun(ctx context.Context, runID string, req updateRunRequest) error {
 	url := fmt.Sprintf(
 		"%s/v1/stack-runs/%s/%s",
 		strings.TrimSuffix(c.cfg.CtlAPIURL, "/"),
@@ -117,7 +110,7 @@ func (c *Client) UpdateRun(ctx context.Context, runID string, req UpdateRunReque
 // transient failures (network errors and 5xx). 4xx errors are returned
 // immediately. The backoff caps at 8s so total wall time on a hard outage
 // stays bounded.
-func (c *Client) doWithRetry(ctx context.Context, method, url string, body, out any) error {
+func (c *runClient) doWithRetry(ctx context.Context, method, url string, body, out any) error {
 	const maxAttempts = 5
 	const maxDelay = 8 * time.Second
 	var lastErr error

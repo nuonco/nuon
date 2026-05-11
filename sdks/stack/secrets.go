@@ -19,11 +19,11 @@ import (
 const secretAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 const secretLength = 63
 
-// EnsureSecrets creates auto-generated and customer-provided secrets in
+// ensureSecrets creates auto-generated and customer-provided secrets in
 // AWS Secrets Manager. Idempotent: existing secrets keep their stored value
 // (we only PutSecretValue when we just created the secret, mirroring TF's
 // `lifecycle { ignore_changes = [secret_string] }`).
-func EnsureSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *Config) error {
+func ensureSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *Config) error {
 	if st.SecretARNs == nil {
 		st.SecretARNs = map[string]string{}
 	}
@@ -68,7 +68,7 @@ func ensureSecret(ctx context.Context, log *slog.Logger, c *secretsmanager.Clien
 	if err == nil {
 		return aws.ToString(d.ARN), nil
 	}
-	if !IsAWSErrCode(err, "ResourceNotFoundException") {
+	if !isAWSErrCode(err, "ResourceNotFoundException") {
 		return "", fmt.Errorf("describe secret %s: %w", name, err)
 	}
 	cr, err := c.CreateSecret(ctx, &secretsmanager.CreateSecretInput{
@@ -80,7 +80,7 @@ func ensureSecret(ctx context.Context, log *slog.Logger, c *secretsmanager.Clien
 	})
 	if err != nil {
 		// Lost race: another invocation created it concurrently.
-		if IsAWSErrCode(err, "ResourceExistsException") {
+		if isAWSErrCode(err, "ResourceExistsException") {
 			d, derr := c.DescribeSecret(ctx, &secretsmanager.DescribeSecretInput{SecretId: &name})
 			if derr != nil {
 				return "", fmt.Errorf("describe after race %s: %w", name, derr)
@@ -109,10 +109,10 @@ func randomPassword() (string, error) {
 	return string(out), nil
 }
 
-// DeleteSecrets schedules deletion of every secret created for this install.
+// deleteSecrets schedules deletion of every secret created for this install.
 // Uses ForceDeleteWithoutRecovery so a re-provision can recreate by name
 // without waiting out the recovery window.
-func DeleteSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *Config) error {
+func deleteSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *Config) error {
 	prefix := cfg.Prefix()
 	names := []string{}
 	for _, n := range cfg.AutoGenerateSecrets {
@@ -126,7 +126,7 @@ func DeleteSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Clie
 			SecretId:                   aws.String(name),
 			ForceDeleteWithoutRecovery: aws.Bool(true),
 		})
-		if err != nil && !IsAWSErrCode(err, "ResourceNotFoundException") {
+		if err != nil && !isAWSErrCode(err, "ResourceNotFoundException") {
 			log.Warn("delete secret", "name", name, "err", err)
 		}
 	}

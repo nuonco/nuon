@@ -1,9 +1,12 @@
-// Package installer orchestrates AWS-native install stack provisioning.
+// Package stack is the Nuon Stack SDK. It provisions and tears down the AWS
+// resources that make up a Nuon install stack (VPC + subnets, IAM roles,
+// Secrets Manager entries, runner EC2 ASG) and reports run status back to
+// ctl-api over the public phone-home endpoint.
 //
-// It wires the AWS SDK clients to the stack package's resource provisioners
-// and emits structured logs through the logstream package, which targets
-// either stdout (dev) or the Nuon ctl-api OTLP log-stream ingest (production).
-package installer
+// Customer-facing clients (installer-cli, embedded Go consumers) construct an
+// Installer with FromURL when bootstrapping from a dashboard-rendered URL,
+// or with New for offline state inspection.
+package stack
 
 import (
 	"context"
@@ -20,9 +23,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 
-	"github.com/nuonco/nuon/sdks/nuon-installer-go/logstream"
-	"github.com/nuonco/nuon/sdks/nuon-installer-go/stack"
-	"github.com/nuonco/nuon/sdks/nuon-installer-go/stackrun"
+	"github.com/nuonco/nuon/sdks/stack/internal/logstream"
 )
 
 // Installer provisions and tears down an install stack in a customer AWS account.
@@ -39,46 +40,46 @@ type Installer struct {
 	logsc  *cloudwatchlogs.Client
 	smc    *secretsmanager.Client
 
-	// cfg is hydrated from the CreateRun response and threaded into every
-	// stack-package call. nil until Provision/Deprovision fetches it.
-	cfg *stack.Config
+	// cfg is hydrated from the createRun response and threaded into every
+	// resource provisioner. nil until Provision/Deprovision fetches it.
+	cfg *Config
 
 	// accountID is captured during stepValidateAWS so reportRun can build
 	// IAM role ARNs without a second sts call on the failure path.
 	accountID string
 
-	// preCreatedRun, when set, makes Run/Deprovision skip their own CreateRun
-	// call and use this response instead. Set by FromCreateRunURL — the URL
-	// flow calls CreateRun before we even know InstallID/AWSRegion, so by the
+	// preCreatedRun, when set, makes Run/Deprovision skip their own createRun
+	// call and use this response instead. Set by FromURL — the URL flow
+	// calls createRun before we even know InstallID/AWSRegion, so by the
 	// time we get to Run() the response is already in hand.
-	preCreatedRun *stackrun.CreateRunResponse
-	runClient     *stackrun.Client
+	preCreatedRun *createRunResponse
+	runClient     *runClient
 }
 
-// FromCreateRunURL POSTs to the create-run URL the dashboard renders, then
-// bootstraps an Installer from the response. The CLI's single-argument flow
-// uses this — the caller doesn't need to know install_id, region, or
-// runner details up front; the API hands them back in the response.
+// FromURL POSTs to the create-run URL the dashboard renders, then bootstraps
+// an Installer from the response. The CLI's single-argument flow uses this —
+// the caller doesn't need to know install_id, region, or runner details up
+// front; the API hands them back in the response.
 //
-// Kind ("provision" / "reprovision" / "deprovision") drives the kind path
-// segment on the POST and propagates into the run row in ctl-api.
+// Kind drives the kind path segment on the POST and propagates into the run
+// row in ctl-api.
 //
-// On success the returned Installer already has the CreateRun response
+// On success the returned Installer already has the createRun response
 // cached, so the next call to Run/Deprovision will not double-create.
-func FromCreateRunURL(ctx context.Context, in CreateRunURL) (*Installer, error) {
-	base, phoneHomeID, err := ParseCreateRunURL(in.URL)
+func FromURL(ctx context.Context, in URLOptions) (*Installer, error) {
+	base, phoneHomeID, err := parseURL(in.URL)
 	if err != nil {
 		return nil, err
 	}
 	if in.Kind == "" {
-		return nil, fmt.Errorf("CreateRunURL.Kind required")
+		return nil, fmt.Errorf("URLOptions.Kind required")
 	}
 
-	client := stackrun.New(stackrun.Config{
+	client := newRunClient(runClientConfig{
 		CtlAPIURL:   base,
 		PhoneHomeID: phoneHomeID,
 	})
-	resp, err := client.CreateRun(ctx, stackrun.RunKind(in.Kind))
+	resp, err := client.createRun(ctx, in.Kind)
 	if err != nil {
 		return nil, fmt.Errorf("create stack run: %w", err)
 	}
@@ -92,13 +93,13 @@ func FromCreateRunURL(ctx context.Context, in CreateRunURL) (*Installer, error) 
 	opts := Options{
 		InstallID: resp.Config.InstallID,
 		AWSRegion: resp.Config.AWSRegion,
-		StackRun: &StackRunConfig{
+		stackRun: &stackRunConfig{
 			CtlAPIURL:   base,
 			PhoneHomeID: phoneHomeID,
 		},
 	}
 	if resp.LogStream != nil && resp.LogStream.ID != "" {
-		opts.LogStream = &LogStreamConfig{
+		opts.logStream = &logStreamConfig{
 			ID:           resp.LogStream.ID,
 			WriteToken:   resp.LogStream.WriteToken,
 			RunnerAPIURL: resp.LogStream.RunnerAPIURL,
@@ -113,7 +114,9 @@ func FromCreateRunURL(ctx context.Context, in CreateRunURL) (*Installer, error) 
 	return inst, nil
 }
 
-// New builds an Installer. Caller must call Close to flush logs.
+// New builds an Installer from explicit Options. Use this for offline state
+// inspection (Status); use FromURL for actual provisioning. Caller must call
+// Close to flush logs.
 func New(ctx context.Context, opts Options) (*Installer, error) {
 	if opts.InstallID == "" {
 		return nil, fmt.Errorf("InstallID required")
@@ -123,14 +126,14 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 	}
 
 	var prov *logstream.Provider
-	if opts.LogStream == nil {
+	if opts.logStream == nil {
 		prov = logstream.NewStdout("stack")
 	} else {
 		var err error
 		prov, err = logstream.New(ctx, logstream.Config{
-			RunnerAPIURL: opts.LogStream.RunnerAPIURL,
-			LogStreamID:  opts.LogStream.ID,
-			WriteToken:   opts.LogStream.WriteToken,
+			RunnerAPIURL: opts.logStream.RunnerAPIURL,
+			LogStreamID:  opts.logStream.ID,
+			WriteToken:   opts.logStream.WriteToken,
 			ServiceName:  "stack",
 			Attrs: map[string]string{
 				"install_id": opts.InstallID,
@@ -171,24 +174,21 @@ func (i *Installer) Close(ctx context.Context) error {
 
 // Provision runs the full provisioning sequence. State is persisted to disk
 // after each successful step so a partial failure can be cleaned up by Deprovision.
-// Equivalent to Run(ctx, RunKindProvision).
-func (i *Installer) Provision(ctx context.Context) (*stack.State, error) {
-	return i.Run(ctx, stackrun.RunKindProvision)
+func (i *Installer) Provision(ctx context.Context) (*State, error) {
+	return i.run(ctx, KindProvision)
 }
 
 // Reprovision is a re-run on an existing install. Functionally identical to
 // Provision (both code paths are idempotent — every step is discover-or-create
 // keyed on the install_id tag) but recorded as a distinct run kind so the
 // dashboard can show first-time vs reconcile in the audit trail.
-func (i *Installer) Reprovision(ctx context.Context) (*stack.State, error) {
-	return i.Run(ctx, stackrun.RunKindReprovision)
+func (i *Installer) Reprovision(ctx context.Context) (*State, error) {
+	return i.run(ctx, KindReprovision)
 }
 
-// Run executes a provision-shaped workflow under the given kind. Exposed for
-// callers that want to label the run explicitly; most should use the
-// Provision / Reprovision wrappers.
-func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.State, error) {
-	st, err := stack.LoadState(i.opts.InstallID, i.opts.AWSRegion)
+// run executes a provision-shaped workflow under the given kind.
+func (i *Installer) run(ctx context.Context, kind Kind) (*State, error) {
+	st, err := loadState(i.opts.InstallID, i.opts.AWSRegion)
 	if err != nil {
 		return nil, err
 	}
@@ -196,25 +196,25 @@ func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.Stat
 	// Report to ctl-api as a stack run. Required when configured: the response
 	// also carries the OTLP log-stream credentials and the rendered Config we
 	// need for visibility and resource provisioning.
-	var runClient *stackrun.Client
+	var rc *runClient
 	var runID string
-	if i.opts.StackRun != nil {
-		runClient = i.runClient
-		if runClient == nil {
-			runClient = stackrun.New(stackrun.Config{
-				CtlAPIURL:   i.opts.StackRun.CtlAPIURL,
-				PhoneHomeID: i.opts.StackRun.PhoneHomeID,
+	if i.opts.stackRun != nil {
+		rc = i.runClient
+		if rc == nil {
+			rc = newRunClient(runClientConfig{
+				CtlAPIURL:   i.opts.stackRun.CtlAPIURL,
+				PhoneHomeID: i.opts.stackRun.PhoneHomeID,
 			})
 		}
-		// FromCreateRunURL already issued CreateRun before we knew install_id
-		// / region; reuse that response instead of double-creating.
-		var resp *stackrun.CreateRunResponse
+		// FromURL already issued createRun before we knew install_id /
+		// region; reuse that response instead of double-creating.
+		var resp *createRunResponse
 		if i.preCreatedRun != nil {
 			resp = i.preCreatedRun
 			i.preCreatedRun = nil
 		} else {
 			var err error
-			resp, err = runClient.CreateRun(ctx, kind)
+			resp, err = rc.createRun(ctx, kind)
 			if err != nil {
 				return st, fmt.Errorf("create stack run: %w", err)
 			}
@@ -227,7 +227,7 @@ func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.Stat
 		i.cfg = resp.Config
 		i.cfg.InstallID = i.opts.InstallID
 		// Propagate identity + cluster name into State so resource tagging
-		// callsites in stack/ can read them without holding cfg.
+		// callsites can read them without holding cfg.
 		st.OrgID = i.cfg.OrgID
 		st.AppID = i.cfg.AppID
 		st.ClusterName = i.cfg.ClusterName
@@ -272,31 +272,31 @@ func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.Stat
 			}
 		}
 	} else {
-		// No StackRun configured (e.g. --stdout-only): run with an empty
-		// config so VPC/log-group/secrets can still be exercised end-to-end.
-		i.cfg = &stack.Config{InstallID: i.opts.InstallID}
+		// No stackRun configured: run with an empty config so VPC/log-group/
+		// secrets can still be exercised end-to-end.
+		i.cfg = &Config{InstallID: i.opts.InstallID}
 	}
 
 	steps := []struct {
 		name string
-		run  func(context.Context, *slog.Logger, *stack.State) error
+		run  func(context.Context, *slog.Logger, *State) error
 	}{
 		{"validate-aws", i.stepValidateAWS},
-		{"create-vpc", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.CreateVPC(ctx, l, i.ec2c, s)
+		{"create-vpc", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return createVPC(ctx, l, i.ec2c, s)
 		}},
-		{"create-iam", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.CreateIAMRoles(ctx, l, i.iamc, i.stsc, s, i.cfg)
+		{"create-iam", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return createIAMRoles(ctx, l, i.iamc, i.stsc, s, i.cfg)
 		}},
-		{"create-secrets", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.EnsureSecrets(ctx, l, i.smc, s, i.cfg)
+		{"create-secrets", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return ensureSecrets(ctx, l, i.smc, s, i.cfg)
 		}},
-		{"create-runner-compute", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			// Cycle the running instance on every Run — initial provision is a
+		{"create-runner-compute", func(ctx context.Context, l *slog.Logger, s *State) error {
+			// Cycle the running instance on every run — initial provision is a
 			// no-op (no instance exists yet); reprovision picks up refreshed
 			// tags / AMI / user-data without manual intervention.
-			refresh := kind == stackrun.RunKindProvision || kind == stackrun.RunKindReprovision
-			return stack.EnsureRunnerCompute(ctx, l, i.ec2c, i.iamc, i.asgc, i.logsc, s, i.cfg, refresh)
+			refresh := kind == KindProvision || kind == KindReprovision
+			return ensureRunnerCompute(ctx, l, i.ec2c, i.iamc, i.asgc, i.logsc, s, i.cfg, refresh)
 		}},
 	}
 
@@ -305,26 +305,26 @@ func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.Stat
 		log.Info("step starting")
 		if err := s.run(ctx, log, st); err != nil {
 			log.Error("step failed", "err", err.Error())
-			i.reportRun(ctx, runClient, runID, "failed", err.Error(), st)
+			i.reportRun(ctx, rc, runID, "failed", err.Error(), st)
 			return st, fmt.Errorf("step %s: %w", s.name, err)
 		}
 		log.Info("step completed")
 	}
 
 	i.log.Info("provision complete", "runner_asg", st.RunnerASGName)
-	i.reportRun(ctx, runClient, runID, "succeeded", "", st)
+	i.reportRun(ctx, rc, runID, "succeeded", "", st)
 	return st, nil
 }
 
 // reportRun is best-effort; failures only log. Builds the phone-home payload
 // described in install-stacks/aws/phone_home.tf so app templates resolving
 // `nuon.install_stack.outputs.*` see identical key sets across CFN/TF/SDK.
-func (i *Installer) reportRun(ctx context.Context, c *stackrun.Client, runID, status, statusDesc string, st *stack.State) {
+func (i *Installer) reportRun(ctx context.Context, c *runClient, runID, status, statusDesc string, st *State) {
 	if c == nil || runID == "" {
 		return
 	}
 	data := i.buildPhoneHomePayload(st)
-	if err := c.UpdateRun(ctx, runID, stackrun.UpdateRunRequest{
+	if err := c.updateRun(ctx, runID, updateRunRequest{
 		Status:            status,
 		StatusDescription: statusDesc,
 		Data:              data,
@@ -333,7 +333,7 @@ func (i *Installer) reportRun(ctx context.Context, c *stackrun.Client, runID, st
 	}
 }
 
-func (i *Installer) buildPhoneHomePayload(st *stack.State) map[string]any {
+func (i *Installer) buildPhoneHomePayload(st *State) map[string]any {
 	roleARN := func(name string) string {
 		if name == "" || i.accountID == "" {
 			return ""
@@ -383,9 +383,7 @@ func (i *Installer) buildPhoneHomePayload(st *stack.State) map[string]any {
 	// templates reference `.nuon.install_stack.outputs.break_glass_role_arns`
 	// directly and explode if the key is missing. Empty Go maps stringify to
 	// "map[]" via fmt.Sprintf("%v", v); the StringToMapDecodeHook handles
-	// that input cleanly. The previous omit-when-empty workaround was for nil
-	// maps landing as NULL in hstore — non-nil empty maps don't have that
-	// problem.
+	// that input cleanly.
 	data["break_glass_role_arns"] = breakGlass
 	data["custom_role_arns"] = customRoles
 	data["install_inputs"] = installInputs
@@ -397,56 +395,56 @@ func (i *Installer) buildPhoneHomePayload(st *stack.State) map[string]any {
 
 // Deprovision tears down everything in the state file in reverse order.
 func (i *Installer) Deprovision(ctx context.Context) error {
-	st, err := stack.LoadState(i.opts.InstallID, i.opts.AWSRegion)
+	st, err := loadState(i.opts.InstallID, i.opts.AWSRegion)
 	if err != nil {
 		return err
 	}
 	// Hydrate config — Deprovision needs cfg to know which secret names to
-	// delete. If StackRun isn't configured, fall back to an empty config; the
-	// stack package's Delete* funcs all tolerate a sparse config.
-	if i.opts.StackRun != nil {
-		runClient := i.runClient
-		if runClient == nil {
-			runClient = stackrun.New(stackrun.Config{
-				CtlAPIURL:   i.opts.StackRun.CtlAPIURL,
-				PhoneHomeID: i.opts.StackRun.PhoneHomeID,
+	// delete. If stackRun isn't configured, fall back to an empty config; the
+	// Delete* funcs all tolerate a sparse config.
+	if i.opts.stackRun != nil {
+		rc := i.runClient
+		if rc == nil {
+			rc = newRunClient(runClientConfig{
+				CtlAPIURL:   i.opts.stackRun.CtlAPIURL,
+				PhoneHomeID: i.opts.stackRun.PhoneHomeID,
 			})
 		}
-		var resp *stackrun.CreateRunResponse
+		var resp *createRunResponse
 		var err error
 		if i.preCreatedRun != nil {
 			resp = i.preCreatedRun
 			i.preCreatedRun = nil
 		} else {
-			resp, err = runClient.CreateRun(ctx, stackrun.RunKindDeprovision)
+			resp, err = rc.createRun(ctx, KindDeprovision)
 		}
 		if err != nil {
 			i.log.Warn("create deprovision run (continuing with empty config)", "err", err.Error())
-			i.cfg = &stack.Config{InstallID: i.opts.InstallID}
+			i.cfg = &Config{InstallID: i.opts.InstallID}
 		} else if resp.Config != nil {
 			i.cfg = resp.Config
 			i.cfg.InstallID = i.opts.InstallID
 		} else {
-			i.cfg = &stack.Config{InstallID: i.opts.InstallID}
+			i.cfg = &Config{InstallID: i.opts.InstallID}
 		}
 	} else {
-		i.cfg = &stack.Config{InstallID: i.opts.InstallID}
+		i.cfg = &Config{InstallID: i.opts.InstallID}
 	}
 	steps := []struct {
 		name string
-		run  func(context.Context, *slog.Logger, *stack.State) error
+		run  func(context.Context, *slog.Logger, *State) error
 	}{
-		{"delete-runner-compute", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.DeleteRunnerCompute(ctx, l, i.ec2c, i.asgc, i.logsc, s)
+		{"delete-runner-compute", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return deleteRunnerCompute(ctx, l, i.ec2c, i.asgc, i.logsc, s)
 		}},
-		{"delete-secrets", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.DeleteSecrets(ctx, l, i.smc, s, i.cfg)
+		{"delete-secrets", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return deleteSecrets(ctx, l, i.smc, s, i.cfg)
 		}},
-		{"delete-iam", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.DeleteIAMRoles(ctx, l, i.iamc, s)
+		{"delete-iam", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return deleteIAMRoles(ctx, l, i.iamc, s)
 		}},
-		{"delete-vpc", func(ctx context.Context, l *slog.Logger, s *stack.State) error {
-			return stack.DeleteVPC(ctx, l, i.ec2c, s)
+		{"delete-vpc", func(ctx context.Context, l *slog.Logger, s *State) error {
+			return deleteVPC(ctx, l, i.ec2c, s)
 		}},
 	}
 	for _, s := range steps {
@@ -466,11 +464,11 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 }
 
 // Status returns the current persisted state.
-func (i *Installer) Status() (*stack.State, error) {
-	return stack.LoadState(i.opts.InstallID, i.opts.AWSRegion)
+func (i *Installer) Status() (*State, error) {
+	return loadState(i.opts.InstallID, i.opts.AWSRegion)
 }
 
-func (i *Installer) stepValidateAWS(ctx context.Context, log *slog.Logger, _ *stack.State) error {
+func (i *Installer) stepValidateAWS(ctx context.Context, log *slog.Logger, _ *State) error {
 	out, err := i.stsc.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
 		return fmt.Errorf("sts get-caller-identity: %w", err)

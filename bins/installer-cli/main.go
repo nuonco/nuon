@@ -15,7 +15,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/nuonco/nuon/sdks/nuon-installer-go/installer"
+	"github.com/nuonco/nuon/sdks/stack"
 )
 
 // Version is set at build time via:
@@ -71,7 +71,7 @@ func runFromURL(verb string) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	inst, err := installer.FromCreateRunURL(ctx, installer.CreateRunURL{URL: url, Kind: verb})
+	inst, err := stack.FromURL(ctx, stack.URLOptions{URL: url, Kind: stack.Kind(verb)})
 	if err != nil {
 		fail(err)
 	}
@@ -113,8 +113,8 @@ func runStatus() {
 	if *installID == "" {
 		fail(fmt.Errorf("--install-id is required"))
 	}
-	opts := installer.Options{InstallID: *installID, AWSRegion: *region}
-	inst, err := installer.New(context.Background(), opts)
+	opts := stack.Options{InstallID: *installID, AWSRegion: *region}
+	inst, err := stack.New(context.Background(), opts)
 	if err != nil {
 		fail(err)
 	}

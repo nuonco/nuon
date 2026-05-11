@@ -316,7 +316,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
-	// SDK-driven stack runs (installer-cli / nuon-installer-go). On the
+	// SDK-driven stack runs (installer-cli / stack). On the
 	// runner API so customer-side workstations can hit them whenever ctl-api
 	// itself is private (self-hosted) — the runner API is the
 	// externally-reachable surface vendors expose. phone_home_id in the URL
