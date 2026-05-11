@@ -60,8 +60,8 @@ type State struct {
 	SecretARNs map[string]string `json:"secret_arns,omitempty"`
 }
 
-// StatePath returns the on-disk location of the state file for an install.
-func StatePath(installID string) (string, error) {
+// statePath returns the on-disk location of the state file for an install.
+func statePath(installID string) (string, error) {
 	cache, err := os.UserCacheDir()
 	if err != nil {
 		return "", err
@@ -73,9 +73,9 @@ func StatePath(installID string) (string, error) {
 	return filepath.Join(dir, installID+".json"), nil
 }
 
-// LoadState reads state from disk; returns a fresh state if none exists.
-func LoadState(installID, region string) (*State, error) {
-	p, err := StatePath(installID)
+// loadState reads state from disk; returns a fresh state if none exists.
+func loadState(installID, region string) (*State, error) {
+	p, err := statePath(installID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func LoadState(installID, region string) (*State, error) {
 // Save flushes state to disk. Called after every successful resource create
 // so that a mid-flight failure leaves the state consistent for deprovision.
 func (s *State) Save() error {
-	p, err := StatePath(s.InstallID)
+	p, err := statePath(s.InstallID)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (s *State) Save() error {
 
 // Delete removes the state file (after deprovision).
 func (s *State) Delete() error {
-	p, err := StatePath(s.InstallID)
+	p, err := statePath(s.InstallID)
 	if err != nil {
 		return err
 	}

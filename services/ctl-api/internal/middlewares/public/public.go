@@ -29,7 +29,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/vcs/webhooks/:subscription_id/events"}:           {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
-	// SDK-driven stack runs (installer-cli / nuon-installer-go). Public,
+	// SDK-driven stack runs (installer-cli / stack). Public,
 	// with phone_home_id in the URL as the per-stack-version secret —
 	// same threat model as the legacy phone-home endpoint.
 	{"POST", "/v1/stack-runs/:phone_home_id/kind/:kind"}: {},

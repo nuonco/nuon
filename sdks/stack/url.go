@@ -1,4 +1,4 @@
-package installer
+package stack
 
 import (
 	"fmt"
@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-// ParseCreateRunURL splits a create-run URL into its base and phone_home_id
-// pieces. The path must end in `/v1/stack-runs/{phone_home_id}` — anything
-// before that becomes part of the base URL. This tolerates the dashboard's
+// parseURL splits a create-run URL into its base and phone_home_id pieces.
+// The path must end in `/v1/stack-runs/{phone_home_id}` — anything before
+// that becomes part of the base URL. This tolerates the dashboard's
 // reverse-proxy prefix (`/api/v1/...`) without making the dashboard care
 // about which deployment shape it's rendering for.
 //
 // Trailing slashes are tolerated. URLs with a `/kind/...` suffix are rejected
 // — the kind is appended by the SDK based on the operation, not the user.
 // Query strings and fragments are stripped.
-func ParseCreateRunURL(raw string) (base, phoneHomeID string, err error) {
+func parseURL(raw string) (base, phoneHomeID string, err error) {
 	if strings.TrimSpace(raw) == "" {
 		return "", "", fmt.Errorf("empty create-run URL")
 	}

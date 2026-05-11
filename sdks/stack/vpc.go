@@ -76,10 +76,10 @@ func subnetTags(role string, clusterName string) []ec2types.Tag {
 	return nil
 }
 
-// CreateVPC ensures the VPC and all dependent network resources exist. Safe to
+// createVPC ensures the VPC and all dependent network resources exist. Safe to
 // call repeatedly: each step is a discover-or-create, with AWS as the source of
 // truth and the state file used only as a cache.
-func CreateVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+func createVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
 	azs, err := pickAZs(ctx, c, 2)
 	if err != nil {
 		return err
@@ -155,7 +155,7 @@ func ensureRunnerSecurityGroup(ctx context.Context, log *slog.Logger, c *ec2.Cli
 		if err == nil && len(out.SecurityGroups) > 0 {
 			return nil
 		}
-		if err != nil && !IsAWSErrCode(err, "InvalidGroup.NotFound") {
+		if err != nil && !isAWSErrCode(err, "InvalidGroup.NotFound") {
 			return fmt.Errorf("describe runner sg: %w", err)
 		}
 		st.RunnerSecurityGroupID = ""
@@ -200,7 +200,7 @@ func ensureRunnerSecurityGroup(ctx context.Context, log *slog.Logger, c *ec2.Cli
 				GroupId: &st.RunnerSecurityGroupID,
 			}},
 		}},
-	}); err != nil && !IsAWSErrCode(err, "InvalidPermission.Duplicate") {
+	}); err != nil && !isAWSErrCode(err, "InvalidPermission.Duplicate") {
 		return fmt.Errorf("authorize ingress: %w", err)
 	}
 	// Egress 0.0.0.0/0 all ports. NB: AWS auto-creates a default allow-all
@@ -213,7 +213,7 @@ func ensureRunnerSecurityGroup(ctx context.Context, log *slog.Logger, c *ec2.Cli
 			IpProtocol: aws.String("-1"),
 			IpRanges:   []ec2types.IpRange{{CidrIp: aws.String("0.0.0.0/0")}},
 		}},
-	}); err != nil && !IsAWSErrCode(err, "InvalidPermission.Duplicate") {
+	}); err != nil && !isAWSErrCode(err, "InvalidPermission.Duplicate") {
 		return fmt.Errorf("authorize egress: %w", err)
 	}
 	return st.Save()
@@ -223,7 +223,7 @@ func ensureVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 	id, err := resolveByTag(ctx, c, ec2types.ResourceTypeVpc, st.VPCID, st.InstallID, func(id string) (bool, error) {
 		out, err := c.DescribeVpcs(ctx, &ec2.DescribeVpcsInput{VpcIds: []string{id}})
 		if err != nil {
-			if IsAWSErrCode(err, "InvalidVpcID.NotFound") {
+			if isAWSErrCode(err, "InvalidVpcID.NotFound") {
 				return false, nil
 			}
 			return false, err
@@ -276,7 +276,7 @@ func ensureIGW(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) 
 	id, err := resolveByTag(ctx, c, ec2types.ResourceTypeInternetGateway, st.IGWID, st.InstallID, func(id string) (bool, error) {
 		out, err := c.DescribeInternetGateways(ctx, &ec2.DescribeInternetGatewaysInput{InternetGatewayIds: []string{id}})
 		if err != nil {
-			if IsAWSErrCode(err, "InvalidInternetGatewayID.NotFound") {
+			if isAWSErrCode(err, "InvalidInternetGatewayID.NotFound") {
 				return false, nil
 			}
 			return false, err
@@ -552,7 +552,7 @@ func ensureRouteToIGW(ctx context.Context, c *ec2.Client, rtID, igwID string) er
 		DestinationCidrBlock: aws.String("0.0.0.0/0"),
 		GatewayId:            &igwID,
 	})
-	if err != nil && !IsAWSErrCode(err, "RouteAlreadyExists") {
+	if err != nil && !isAWSErrCode(err, "RouteAlreadyExists") {
 		return fmt.Errorf("create public route: %w", err)
 	}
 	return nil
@@ -567,7 +567,7 @@ func ensureRouteToNAT(ctx context.Context, c *ec2.Client, rtID, natID string) er
 		DestinationCidrBlock: aws.String("0.0.0.0/0"),
 		NatGatewayId:         &natID,
 	})
-	if err != nil && !IsAWSErrCode(err, "RouteAlreadyExists") {
+	if err != nil && !isAWSErrCode(err, "RouteAlreadyExists") {
 		return fmt.Errorf("create private route: %w", err)
 	}
 	return nil
@@ -681,8 +681,8 @@ func waitNATAvailable(ctx context.Context, c *ec2.Client, id string) error {
 	return fmt.Errorf("nat gateway %s not available within timeout", id)
 }
 
-// DeleteVPC tears down the VPC and dependent resources in reverse order. Idempotent.
-func DeleteVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
+// deleteVPC tears down the VPC and dependent resources in reverse order. Idempotent.
+func deleteVPC(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State) error {
 	if st.NATGatewayID != "" {
 		if _, err := c.DeleteNatGateway(ctx, &ec2.DeleteNatGatewayInput{NatGatewayId: &st.NATGatewayID}); err != nil {
 			log.Warn("delete nat (continuing)", "err", err)

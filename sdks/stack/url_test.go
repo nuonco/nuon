@@ -1,8 +1,8 @@
-package installer
+package stack
 
 import "testing"
 
-func TestParseCreateRunURL(t *testing.T) {
+func TestParseURL(t *testing.T) {
 	cases := []struct {
 		name        string
 		in          string
@@ -48,7 +48,7 @@ func TestParseCreateRunURL(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			base, phoneID, err := ParseCreateRunURL(c.in)
+			base, phoneID, err := parseURL(c.in)
 			if c.wantErr {
 				if err == nil {
 					t.Fatalf("want error, got base=%q phone=%q", base, phoneID)

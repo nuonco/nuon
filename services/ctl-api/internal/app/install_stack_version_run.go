@@ -138,12 +138,12 @@ type InstallStackVersionRun struct {
 	// SDK provisioner has everything it needs to apply the stack: runner ID,
 	// runner API URL, operation-role permissions, secrets, etc. Mirrors the TF
 	// tfvars contract at install-stacks/aws/variables.tf — see
-	// sdks/nuon-installer-go/stack/config.go for the SDK-side struct.
+	// sdks/stack/stack/config.go for the SDK-side struct.
 	SDKConfig *InstallerSDKConfig `json:"config,omitempty" gorm:"-" swaggerignore:"true"`
 }
 
 // InstallerSDKConfig is the JSON shape the SDK expects on CreateRunResponse.
-// Field tags match sdks/nuon-installer-go/stack/config.go exactly. Only
+// Field tags match sdks/stack/stack/config.go exactly. Only
 // populated on the create-run POST response — never persisted, never returned
 // on the GET path.
 type InstallerSDKConfig struct {

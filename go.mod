@@ -20,8 +20,8 @@ replace helm.sh/helm/v4 => helm.sh/helm/v4 v4.0.0-alpha.1
 // Use in-tree SDKs instead of external module
 replace (
 	github.com/nuonco/nuon/sdks/nuon-go => ./sdks/nuon-go
-	github.com/nuonco/nuon/sdks/nuon-installer-go => ./sdks/nuon-installer-go
 	github.com/nuonco/nuon/sdks/nuon-runner-go => ./sdks/nuon-runner-go
+	github.com/nuonco/nuon/sdks/stack => ./sdks/stack
 )
 
 replace github.com/pelletier/go-toml/v2 v2.2.4 => github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7
@@ -104,8 +104,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/nuonco/gin-swagger v1.6.2
-	github.com/nuonco/nuon/sdks/nuon-installer-go v0.0.0-00010101000000-000000000000
 	github.com/nuonco/nuon/sdks/nuon-runner-go v0.0.0-00010101000000-000000000000
+	github.com/nuonco/nuon/sdks/stack v0.0.0-00010101000000-000000000000
 	github.com/nuonco/sandboxes v1.34.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/open-policy-agent/opa v1.8.0
@@ -655,9 +655,9 @@ require (
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/y0ssar1an/q v1.0.10 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0 // indirect
-	go.opentelemetry.io/otel/trace v1.43.0 // indirect
-	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0
+	go.opentelemetry.io/otel/trace v1.43.0
+	go.opentelemetry.io/proto/otlp v1.10.0
 	go.temporal.io/sdk/contrib/tally v0.2.0
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
