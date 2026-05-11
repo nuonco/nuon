@@ -50,6 +50,15 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 			return true, nil
 		}
 
+		// periodically ensure the emitter is active
+		if _, err := e.ensureEmitterActive(ctx); err != nil {
+			return false, err
+		}
+		if e.stopped {
+			l.Info("emitter stopped - emitter terminated")
+			return true, nil
+		}
+
 		if err := workflow.Sleep(ctx, cronParentCheckInterval); err != nil {
 			return false, err
 		}
