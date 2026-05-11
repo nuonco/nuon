@@ -3,8 +3,10 @@ package signaldb
 import (
 	"database/sql/driver"
 	"encoding/json"
+	stderrors "errors"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -35,7 +37,18 @@ func (s *SignalData) Scan(value interface{}) error {
 		return errors.New("invalid type")
 	}
 
-	return s.unmarshalSignalJSON(bytes)
+	if err := s.unmarshalSignalJSON(bytes); err != nil {
+		// this was done to make this part of code rollback compatible, if a signal in db is not found in catalog
+		// it should handle the case since its very possible in case of new signal additions. Here, if its a
+		// signal not registered error, we return a nil signal and let caller handle the case.
+		if stderrors.Is(err, catalog.ErrSignalTypeNotRegistered) {
+			zap.L().Warn("signal type from DB not registered in catalog; leaving Signal nil",
+				zap.Error(err))
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 // MarshalJSON implements json.Marshaler so that standard JSON serialization
