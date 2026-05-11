@@ -43,7 +43,7 @@ done
 curl -fsSL https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh | bash
 `
 
-// EnsureRunnerCompute provisions the CloudWatch log group, looks up the AMI,
+// ensureRunnerCompute provisions the CloudWatch log group, looks up the AMI,
 // then ensures the launch template + ASG exist. Idempotent: each step
 // reconciles to the desired state.
 //
@@ -54,7 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scrip
 // Provision passes refresh=true on first creation as a no-op (no instance
 // exists to cycle); reprovision passes true to force a roll; deprovision
 // shouldn't call this at all.
-func EnsureRunnerCompute(ctx context.Context, log *slog.Logger, ec2c *ec2.Client, iamc *iam.Client, asgc *autoscaling.Client, logsc *cloudwatchlogs.Client, st *State, cfg *Config, refresh bool) error {
+func ensureRunnerCompute(ctx context.Context, log *slog.Logger, ec2c *ec2.Client, iamc *iam.Client, asgc *autoscaling.Client, logsc *cloudwatchlogs.Client, st *State, cfg *Config, refresh bool) error {
 	prefix := cfg.Prefix()
 
 	// Block on IAM propagation before referencing the instance profile in the
@@ -127,7 +127,7 @@ func isInvalidInstanceProfileErr(err error) bool {
 	if err == nil {
 		return false
 	}
-	if !IsAWSErrCode(err, "ValidationError") {
+	if !isAWSErrCode(err, "ValidationError") {
 		return false
 	}
 	msg := err.Error()
@@ -173,7 +173,7 @@ func startInstanceRefresh(ctx context.Context, log *slog.Logger, c *autoscaling.
 	if err != nil {
 		// First-time provision: no instances yet → AWS returns this and we
 		// continue. The ASG itself will launch the first instance.
-		if IsAWSErrCode(err, "InstanceRefreshInProgressFault") {
+		if isAWSErrCode(err, "InstanceRefreshInProgressFault") {
 			return nil
 		}
 		return fmt.Errorf("start instance refresh: %w", err)
@@ -200,7 +200,7 @@ func waitForInstanceProfile(ctx context.Context, log *slog.Logger, c *iam.Client
 					return nil
 				}
 			}
-		} else if !IsAWSErrCode(err, "NoSuchEntity") {
+		} else if !isAWSErrCode(err, "NoSuchEntity") {
 			return fmt.Errorf("get instance profile %s: %w", profileName, err)
 		}
 		if time.Now().After(deadline) {
@@ -235,7 +235,7 @@ func ensureLogGroup(ctx context.Context, log *slog.Logger, c *cloudwatchlogs.Cli
 		if _, err := c.CreateLogGroup(ctx, &cloudwatchlogs.CreateLogGroupInput{
 			LogGroupName: &name,
 			Tags:         map[string]string{installIDTagKey: st.InstallID},
-		}); err != nil && !IsAWSErrCode(err, "ResourceAlreadyExistsException") {
+		}); err != nil && !isAWSErrCode(err, "ResourceAlreadyExistsException") {
 			return fmt.Errorf("create log group: %w", err)
 		}
 		log.Info("created log group", "name", name)
@@ -329,7 +329,7 @@ func ensureLaunchTemplate(ctx context.Context, log *slog.Logger, c *ec2.Client, 
 	out, err := c.DescribeLaunchTemplates(ctx, &ec2.DescribeLaunchTemplatesInput{
 		LaunchTemplateNames: []string{name},
 	})
-	if err != nil && !IsAWSErrCode(err, "InvalidLaunchTemplateName.NotFoundException") {
+	if err != nil && !isAWSErrCode(err, "InvalidLaunchTemplateName.NotFoundException") {
 		return fmt.Errorf("describe launch template: %w", err)
 	}
 	if err == nil && len(out.LaunchTemplates) > 0 {
@@ -427,7 +427,7 @@ func ensureASG(ctx context.Context, log *slog.Logger, c *autoscaling.Client, st 
 		AutoScalingGroupName: &name,
 	}); err != nil {
 		// InstanceRefreshInProgress is fine — one is already running.
-		if !IsAWSErrCode(err, "InstanceRefreshInProgress") {
+		if !isAWSErrCode(err, "InstanceRefreshInProgress") {
 			log.Warn("start instance refresh (continuing)", "err", err)
 		}
 	}
@@ -450,10 +450,10 @@ func buildASGTags(asgName string, cfg *Config) []astypes.Tag {
 	return tags
 }
 
-// DeleteRunnerCompute tears down ASG, launch template, then log group. ASG
+// deleteRunnerCompute tears down ASG, launch template, then log group. ASG
 // must drain before launch template can be deleted; ForceDelete=true skips
 // the wait for instance termination.
-func DeleteRunnerCompute(ctx context.Context, log *slog.Logger, ec2c *ec2.Client, asgc *autoscaling.Client, logsc *cloudwatchlogs.Client, st *State) error {
+func deleteRunnerCompute(ctx context.Context, log *slog.Logger, ec2c *ec2.Client, asgc *autoscaling.Client, logsc *cloudwatchlogs.Client, st *State) error {
 	if st.RunnerASGName != "" {
 		if _, err := asgc.DeleteAutoScalingGroup(ctx, &autoscaling.DeleteAutoScalingGroupInput{
 			AutoScalingGroupName: &st.RunnerASGName,

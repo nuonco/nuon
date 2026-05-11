@@ -21,7 +21,7 @@ const ec2AssumePolicy = `{
   "Statement": [{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]
 }`
 
-// CreateIAMRoles is the SDK equivalent of install-stacks/aws/iam.tf. It
+// createIAMRoles is the SDK equivalent of install-stacks/aws/iam.tf. It
 // provisions, in order:
 //  1. The runner role + instance profile (EC2 trust).
 //  2. Operation roles (provision/maintenance/deprovision), each conditional
@@ -29,7 +29,7 @@ const ec2AssumePolicy = `{
 //  3. Dynamic break-glass and custom roles, keyed verbatim by map key.
 //  4. The runner inline policy (built last because its AssumeRole resources
 //     reference whichever ops/break-glass/custom roles ended up existing).
-func CreateIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *sts.Client, st *State, cfg *Config) error {
+func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *sts.Client, st *State, cfg *Config) error {
 	accountID, err := callerAccountID(ctx, stsc)
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trus
 	if err == nil {
 		return nil
 	}
-	if !IsAWSErrCode(err, "NoSuchEntity") {
+	if !isAWSErrCode(err, "NoSuchEntity") {
 		return fmt.Errorf("get role %s: %w", name, err)
 	}
 
@@ -159,10 +159,10 @@ func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trus
 			log.Info("created IAM role", "role", name)
 			return nil
 		}
-		if IsAWSErrCode(err, "EntityAlreadyExists") {
+		if isAWSErrCode(err, "EntityAlreadyExists") {
 			return nil
 		}
-		if IsAWSErrCode(err, "MalformedPolicyDocument") && time.Now().Before(deadline) {
+		if isAWSErrCode(err, "MalformedPolicyDocument") && time.Now().Before(deadline) {
 			log.Info("trust principal not yet propagated, retrying", "role", name, "delay", delay)
 			select {
 			case <-ctx.Done():
@@ -197,7 +197,7 @@ func ensureRoleWithPolicies(ctx context.Context, log *slog.Logger, c *iam.Client
 func ensureInstanceProfile(ctx context.Context, log *slog.Logger, c *iam.Client, name, role, installID string) error {
 	_, err := c.GetInstanceProfile(ctx, &iam.GetInstanceProfileInput{InstanceProfileName: &name})
 	if err != nil {
-		if !IsAWSErrCode(err, "NoSuchEntity") {
+		if !isAWSErrCode(err, "NoSuchEntity") {
 			return fmt.Errorf("get instance profile %s: %w", name, err)
 		}
 		if _, err := c.CreateInstanceProfile(ctx, &iam.CreateInstanceProfileInput{
@@ -205,7 +205,7 @@ func ensureInstanceProfile(ctx context.Context, log *slog.Logger, c *iam.Client,
 			Tags: []iamtypes.Tag{
 				{Key: aws.String(installIDTagKey), Value: &installID},
 			},
-		}); err != nil && !IsAWSErrCode(err, "EntityAlreadyExists") {
+		}); err != nil && !isAWSErrCode(err, "EntityAlreadyExists") {
 			return fmt.Errorf("create instance profile %s: %w", name, err)
 		}
 		log.Info("created instance profile", "name", name)
@@ -223,7 +223,7 @@ func ensureInstanceProfile(ctx context.Context, log *slog.Logger, c *iam.Client,
 	if _, err := c.AddRoleToInstanceProfile(ctx, &iam.AddRoleToInstanceProfileInput{
 		InstanceProfileName: &name,
 		RoleName:            &role,
-	}); err != nil && !IsAWSErrCode(err, "LimitExceeded") {
+	}); err != nil && !isAWSErrCode(err, "LimitExceeded") {
 		return fmt.Errorf("add role to profile: %w", err)
 	}
 	return nil
@@ -393,9 +393,9 @@ func sortedEnabledKeys(m map[string]RoleConfig) []string {
 	return keys
 }
 
-// DeleteIAMRoles tears down everything CreateIAMRoles built. Idempotent:
+// deleteIAMRoles tears down everything createIAMRoles built. Idempotent:
 // missing-role errors are swallowed so a partially-applied state still drains.
-func DeleteIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, st *State) error {
+func deleteIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, st *State) error {
 	// Detach the runner role from its instance profile + delete the profile.
 	if st.RunnerInstanceProfileName != "" {
 		if st.RunnerRoleName != "" {
@@ -404,7 +404,7 @@ func DeleteIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, st *St
 				RoleName:            &st.RunnerRoleName,
 			})
 		}
-		if _, err := c.DeleteInstanceProfile(ctx, &iam.DeleteInstanceProfileInput{InstanceProfileName: &st.RunnerInstanceProfileName}); err != nil && !IsAWSErrCode(err, "NoSuchEntity") {
+		if _, err := c.DeleteInstanceProfile(ctx, &iam.DeleteInstanceProfileInput{InstanceProfileName: &st.RunnerInstanceProfileName}); err != nil && !isAWSErrCode(err, "NoSuchEntity") {
 			log.Warn("delete instance profile", "name", st.RunnerInstanceProfileName, "err", err)
 		}
 		st.RunnerInstanceProfileName = ""
@@ -447,7 +447,7 @@ func deleteRole(ctx context.Context, log *slog.Logger, c *iam.Client, name strin
 			_, _ = c.DeleteRolePolicy(ctx, &iam.DeleteRolePolicyInput{RoleName: &name, PolicyName: &p})
 		}
 	}
-	if _, err := c.DeleteRole(ctx, &iam.DeleteRoleInput{RoleName: &name}); err != nil && !IsAWSErrCode(err, "NoSuchEntity") {
+	if _, err := c.DeleteRole(ctx, &iam.DeleteRoleInput{RoleName: &name}); err != nil && !isAWSErrCode(err, "NoSuchEntity") {
 		log.Warn("delete role", "role", name, "err", err)
 	}
 }

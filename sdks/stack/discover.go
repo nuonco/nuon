@@ -17,8 +17,8 @@ import (
 // renaming here requires a matching change there.
 const installIDTagKey = "install.nuon.co/id"
 
-// IsAWSErrCode reports whether err is an AWS API error with the given code.
-func IsAWSErrCode(err error, code string) bool {
+// isAWSErrCode reports whether err is an AWS API error with the given code.
+func isAWSErrCode(err error, code string) bool {
 	var ae smithy.APIError
 	return errors.As(err, &ae) && ae.ErrorCode() == code
 }
