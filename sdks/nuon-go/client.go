@@ -110,6 +110,7 @@ type Client interface {
 
 	// general methods
 	GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, error)
+	ValidateToken(ctx context.Context) error
 	GetCLIConfig(ctx context.Context) (*models.ServiceCLIConfig, error)
 	GetCurrentUser(ctx context.Context) (*models.AppAccount, error)
 	GetCloudPlatformRegions(ctx context.Context, cloudPlatform string) ([]*models.AppCloudPlatformRegion, error)
@@ -132,6 +133,8 @@ type Client interface {
 	ForgetInstall(ctx context.Context, installID string) (bool, error)
 	ReprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	DeprovisionInstall(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
+	AddInstallLabels(ctx context.Context, installID string, labels map[string]string) (*models.AppInstall, error)
+	RemoveInstallLabels(ctx context.Context, installID string, keys []string) (*models.AppInstall, error)
 
 	// install config
 	CreateInstallConfig(ctx context.Context, installID string, req *models.ServiceCreateInstallConfigRequest) (*models.AppInstallConfig, error)

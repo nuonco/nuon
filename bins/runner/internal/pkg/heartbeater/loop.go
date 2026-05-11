@@ -2,6 +2,7 @@ package heartbeater
 
 import (
 	"context"
+	"math/rand/v2"
 	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -35,13 +36,28 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 		return err
 	}
 
+	// ey: How does this work on the runner side? Do we have a ddog agent running?
+	// does this add noise for the api side metric?
 	h.mw.Incr("heart_beat.incr", tags)
 	h.mw.Timing("heart_beat.alive_time", aliveDur, tags)
 	return nil
 }
 
 func (h *HeartBeater) loop(ctx context.Context) {
+	// Smear initial heartbeat across the interval window so concurrent runners
+	// don't sync up and pile up requests on the API every interval. After the
+	// initial offset, ticks fire at exact intervals.
+	if h.settings.HeartBeatTimeout > 0 {
+		offset := rand.N(h.settings.HeartBeatTimeout)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(offset):
+		}
+	}
+
 	ticker := time.NewTicker(h.settings.HeartBeatTimeout)
+	defer ticker.Stop()
 
 	for {
 		select {

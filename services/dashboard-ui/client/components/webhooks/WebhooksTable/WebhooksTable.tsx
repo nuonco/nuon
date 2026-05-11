@@ -6,6 +6,7 @@ import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { describeMatch } from '@/components/match/types'
 import { DeleteWebhookButton } from '@/components/webhooks/DeleteWebhook'
 import { EditWebhookButton } from '@/components/webhooks/EditWebhook'
 import type { TWebhook } from '@/types'
@@ -22,11 +23,22 @@ export const WebhooksTable = ({
       {
         header: 'URL',
         accessorKey: 'webhook_url',
-        cell: (props) => (
-          <Code variant="inline" className="!px-2 !py-1">
-            {props.getValue<string>()}
-          </Code>
-        ),
+        cell: (props) => {
+          // Scope subtitle mirrors the Slack channel-subscriptions table /
+          // CLI describeMatch vocabulary so the dashboard, Slack modal,
+          // and CLI describe a row identically.
+          const scope = describeMatch(props.row.original.match)
+          return (
+            <div className="flex flex-col gap-1">
+              <Code variant="inline" className="!px-2 !py-1 w-fit">
+                {props.getValue<string>()}
+              </Code>
+              <Text variant="subtext" theme="neutral">
+                {scope}
+              </Text>
+            </div>
+          )
+        },
       },
       {
         header: 'Signing secret',

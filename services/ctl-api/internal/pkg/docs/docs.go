@@ -207,3 +207,7 @@ func New(cfg *internal.Config) *Docs {
 		cfg: cfg,
 	}
 }
+
+func (s *Docs) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
+}

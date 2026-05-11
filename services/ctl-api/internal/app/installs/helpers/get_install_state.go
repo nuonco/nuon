@@ -3,7 +3,9 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/conc/pool"
 	"gorm.io/gorm"
@@ -128,10 +130,10 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 	// build the state with all the resources here
 	is.ID = install.ID
 	is.Name = install.Name
-	is.Inputs = h.toInputState(install.CurrentInstallInputs, appCfg, redacted)
-	is.Cloud = h.toCloudAccount(install)
+	is.Inputs = h.ToInputState(install.CurrentInstallInputs, appCfg, redacted)
+	is.Cloud = h.ToCloudAccount(install)
 
-	comps := h.toComponents(installComps)
+	comps := h.ToComponents(installComps)
 	is.Components = make(map[string]any, 0)
 	for name, c := range comps.Components {
 		cMap, err := state.AsMap(c)
@@ -141,22 +143,23 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 
 		is.Components[name] = cMap
 	}
-	is.Components["comps"] = comps
 
-	is.App = h.toAppState(install.App)
-	is.Org = h.toOrgState(install.Org)
+	is.App = h.ToAppState(install.App)
+	is.Org = h.ToOrgState(install.Org)
 
 	if len(install.RunnerGroup.Runners) > 0 {
-		is.Runner = h.toRunnerState(install.RunnerGroup.Runners[0])
+		is.Runner = h.ToRunnerState(install.RunnerGroup.Runners[0])
 	}
 
-	is.Sandbox = h.toSandboxesState(sandboxRuns)
+	is.Sandbox = h.ToSandboxesState(sandboxRuns)
 	if len(sandboxRuns) > 0 {
-		is.Domain = h.toDomainState(&sandboxRuns[0])
+		is.Domain = h.ToDomainState(&sandboxRuns[0])
+	} else {
+		is.Domain = h.ToDomainState(nil)
 	}
 
-	is.Actions = h.toActions(actions)
-	is.InstallStack = h.toInstallStackState(stack)
+	is.Actions = h.ToActions(actions)
+	is.InstallStack = h.ToInstallStackState(stack)
 	is.Secrets = secrets
 	is.Labels = map[string]string(install.Labels)
 	// NOTE(JM): this is purely for historical and legacy reasons, and will be removed once we migrate all users to
@@ -203,210 +206,67 @@ func (h *Helpers) getStateInstall(ctx context.Context, installID string) (*app.I
 	return &install, nil
 }
 
-func (h *Helpers) toInstallStackState(stack *app.InstallStack) *state.InstallStackState {
-	if stack == nil || len(stack.InstallStackVersions) < 1 {
-		return nil
-	}
-
-	is := state.NewInstallStackState()
-	is.Populated = true
-
-	version := stack.InstallStackVersions[0]
-	is.QuickLinkURL = version.QuickLinkURL
-	is.TemplateURL = version.TemplateURL
-	is.TemplateJSON = string(version.Contents)
-	is.Checksum = version.Checksum
-	is.Status = string(version.Status.Status)
-	is.Outputs = stack.InstallStackOutputs.DataContents
-
-	return is
+func (h *Helpers) ToInstallStackState(stack *app.InstallStack) *state.InstallStackState {
+	return ToInstallStackState(stack)
 }
 
-func (h *Helpers) toInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
-	if inputs == nil {
-		return nil
-	}
-
-	inputValues := inputs.Values
-	if redacted {
-		inputValues = inputs.ValuesRedacted
-	}
-	if len(inputValues) < 1 {
-		return nil
-	}
-
-	is := state.NewInputsState()
-
-	for _, inp := range cfg.InputConfig.AppInputs {
-		val, ok := inputValues[inp.Name]
-		if !ok {
-			val = &inp.Default
-		}
-
-		is.Inputs[inp.Name] = pkggenerics.FromPtrStr(val)
-	}
-
-	return is
+func (h *Helpers) ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
+	return ToInputState(inputs, cfg, redacted)
 }
 
-func (h *Helpers) toCloudAccount(install *app.Install) *state.CloudAccount {
-	st := state.NewCloudAccount()
-
-	if install.AWSAccount != nil {
-		st.AWS = &state.AWSCloudAccount{
-			Region: install.AWSAccount.Region,
-		}
-	}
-
-	if install.AzureAccount != nil {
-		st.Azure = &state.AzureCloudAccount{
-			Location: install.AzureAccount.Location,
-		}
-	}
-
-	return st
+func (h *Helpers) ToCloudAccount(install *app.Install) *state.CloudAccount {
+	return ToCloudAccount(install)
 }
 
-func (h *Helpers) toSandboxesState(sandboxRuns []app.InstallSandboxRun) *state.SandboxState {
+func (h *Helpers) ToSandboxesState(sandboxRuns []app.InstallSandboxRun) *state.SandboxState {
 	if len(sandboxRuns) < 1 {
 		return state.NewSandboxState()
 	}
-
-	st := h.toSandboxRunState(sandboxRuns[0])
-	for _, run := range sandboxRuns[1:] {
-		runSt := h.toSandboxRunState(run)
-		st.RecentRuns = append(st.RecentRuns, runSt)
-	}
-
-	return st
+	return ToSandboxState(&sandboxRuns[0])
 }
 
-func (h *Helpers) toSandboxRunState(run app.InstallSandboxRun) *state.SandboxState {
-	st := state.NewSandboxState()
-
-	st.Populated = true
-	st.Status = string(run.Status)
-	st.Outputs = run.Outputs
-
-	publicVCSConfig := run.AppSandboxConfig.PublicGitVCSConfig
-	connectedVCSConfig := run.AppSandboxConfig.ConnectedGithubVCSConfig
-	if publicVCSConfig != nil {
-		st.Type = publicVCSConfig.Directory
-		st.Version = publicVCSConfig.Branch
-	}
-	if connectedVCSConfig != nil {
-		st.Type = connectedVCSConfig.Directory
-		st.Version = connectedVCSConfig.Branch
-	}
-
-	return st
+func (h *Helpers) ToAppState(currentApp app.App) *state.AppState {
+	return ToAppState(currentApp)
 }
 
-func (h *Helpers) toAppState(currentApp app.App) *state.AppState {
-	st := state.NewAppState()
-	st.Populated = true
-	st.ID = currentApp.ID
-	st.Name = currentApp.Name
-	st.Status = string(currentApp.Status)
-
-	for _, secr := range currentApp.AppSecrets {
-		st.Variables[secr.Name] = secr.Value
-	}
-
-	return st
+func (h *Helpers) ToOrgState(org app.Org) *state.OrgState {
+	return ToOrgState(org)
 }
 
-func (h *Helpers) toOrgState(org app.Org) *state.OrgState {
-	st := state.NewOrgState()
-	st.Populated = true
-	st.ID = org.ID
-	st.Name = org.Name
-	st.Status = string(org.Status)
-
-	return st
+func (h *Helpers) ToRunnerState(runner app.Runner) *state.RunnerState {
+	return ToRunnerState(runner)
 }
 
-func (h *Helpers) toRunnerState(runner app.Runner) *state.RunnerState {
-	st := state.NewRunnerState()
-	st.Populated = true
-	st.ID = runner.ID
-	st.RunnerGroupID = runner.RunnerGroupID
-	st.Status = string(runner.Status)
-
-	return st
+func (h *Helpers) ToDomainState(run *app.InstallSandboxRun) *state.DomainState {
+	return ToDomainState(run)
 }
 
-func (h *Helpers) toDomainState(run *app.InstallSandboxRun) *state.DomainState {
-	st := state.NewDomainState()
-	if run == nil {
-		return st
-	}
-
-	publicDomain, ok := run.Outputs["public_domain"].(string)
-	if ok {
-		st.PublicDomain = publicDomain
-	}
-
-	internalDomain, ok := run.Outputs["internal_domain"].(string)
-	if ok {
-		st.InternalDomain = internalDomain
-	}
-
-	return st
+func (h *Helpers) ToComponentState(installComp app.InstallComponent) *state.ComponentState {
+	return ToComponentState(installComp)
 }
 
-func (h *Helpers) toComponent(installComp app.InstallComponent) *state.ComponentState {
-	st := state.NewComponentState()
-
-	st.Populated = true
-	st.ComponentID = installComp.ComponentID
-	st.InstallComponentID = installComp.ID
-
-	installDeploys := installComp.InstallDeploys
-	if len(installDeploys) < 1 {
-		return st
-	}
-	st.Status = string(installDeploys[0].Status)
-	st.BuildID = string(installDeploys[0].ComponentBuildID)
-	st.Outputs = installDeploys[0].Outputs
-
-	return st
-}
-
-func (h *Helpers) toComponents(installComps []app.InstallComponent) *state.ComponentsState {
+func (h *Helpers) ToComponents(installComps []app.InstallComponent) *state.ComponentsState {
 	st := state.NewComponentsState()
 	st.Populated = true
 
 	for _, instCmp := range installComps {
-		st.Components[instCmp.Component.Name] = h.toComponent(instCmp)
+		st.Components[instCmp.Component.Name] = h.ToComponentState(instCmp)
 	}
 	return st
 }
 
-func (h *Helpers) toActions(installActions []app.InstallActionWorkflow) *state.ActionsState {
+func (h *Helpers) ToActions(installActions []app.InstallActionWorkflow) *state.ActionsState {
 	st := state.NewActionsState()
 	st.Populated = true
 
 	for _, instAct := range installActions {
-		st.Workflows[instAct.ActionWorkflow.Name] = h.toActionWorkflow(instAct)
+		st.Workflows[instAct.ActionWorkflow.Name] = h.ToActionWorkflowState(instAct)
 	}
 	return st
 }
 
-func (h *Helpers) toActionWorkflow(act app.InstallActionWorkflow) *state.ActionWorkflowState {
-	st := state.NewActionWorkflowState()
-	st.Populated = true
-	st.Status = string(act.Status)
-	st.ID = act.ActionWorkflow.ID
-
-	for _, run := range act.Runs {
-		if run.RunnerJob != nil {
-			st.Outputs = run.RunnerJob.ParsedOutputs
-			break
-		}
-	}
-
-	return st
+func (h *Helpers) ToActionWorkflowState(act app.InstallActionWorkflow) *state.ActionWorkflowState {
+	return ToActionWorkflowState(act)
 }
 
 // hydrateLabels fetches install labels and populates the Labels field on the
@@ -436,4 +296,198 @@ func (h *Helpers) getInstallStateFromDB(ctx context.Context, installID string) (
 	}
 
 	return is.State, nil
+}
+
+func (h *Helpers) MapLegacyFields(is *state.State) {
+	MapLegacyFields(is)
+}
+
+func ToInstallStackState(stack *app.InstallStack) *state.InstallStackState {
+	if stack == nil || len(stack.InstallStackVersions) < 1 {
+		return nil
+	}
+	is := state.NewInstallStackState()
+	is.Populated = true
+	version := stack.InstallStackVersions[0]
+	is.QuickLinkURL = version.QuickLinkURL
+	is.TemplateURL = version.TemplateURL
+	is.TemplateJSON = string(version.Contents)
+	is.Checksum = version.Checksum
+	is.Status = string(version.Status.Status)
+	is.Outputs = stack.InstallStackOutputs.DataContents
+	return is
+}
+
+func ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) *state.InputsState {
+	if inputs == nil {
+		return nil
+	}
+	inputValues := inputs.Values
+	if redacted {
+		inputValues = inputs.ValuesRedacted
+	}
+	if len(inputValues) < 1 {
+		return nil
+	}
+	is := state.NewInputsState()
+	for _, inp := range cfg.InputConfig.AppInputs {
+		val, ok := inputValues[inp.Name]
+		if !ok {
+			val = &inp.Default
+		}
+		is.Inputs[inp.Name] = pkggenerics.FromPtrStr(val)
+	}
+	return is
+}
+
+func ToAppState(currentApp app.App) *state.AppState {
+	st := state.NewAppState()
+	st.Populated = true
+	st.ID = currentApp.ID
+	st.Name = currentApp.Name
+	st.Status = string(currentApp.Status)
+	for _, secr := range currentApp.AppSecrets {
+		st.Variables[secr.Name] = secr.Value
+	}
+	return st
+}
+
+func ToOrgState(org app.Org) *state.OrgState {
+	st := state.NewOrgState()
+	st.Populated = true
+	st.ID = org.ID
+	st.Name = org.Name
+	st.Status = string(org.Status)
+	return st
+}
+
+func ToRunnerState(runner app.Runner) *state.RunnerState {
+	st := state.NewRunnerState()
+	st.Populated = true
+	st.ID = runner.ID
+	st.RunnerGroupID = runner.RunnerGroupID
+	st.Status = string(runner.Status)
+	return st
+}
+
+func ToDomainState(run *app.InstallSandboxRun) *state.DomainState {
+	st := state.NewDomainState()
+	if run == nil {
+		return st
+	}
+	if v, ok := run.Outputs["public_domain"].(string); ok {
+		st.PublicDomain = v
+	}
+	if v, ok := run.Outputs["internal_domain"].(string); ok {
+		st.InternalDomain = v
+	}
+	return st
+}
+
+func ToComponentState(installComp app.InstallComponent) *state.ComponentState {
+	st := state.NewComponentState()
+	st.Populated = true
+	st.Name = installComp.Component.Name
+	st.ComponentID = installComp.ComponentID
+	st.InstallComponentID = installComp.ID
+	if len(installComp.InstallDeploys) > 0 {
+		st.Status = string(installComp.InstallDeploys[0].Status)
+		st.BuildID = string(installComp.InstallDeploys[0].ComponentBuildID)
+		st.Outputs = installComp.InstallDeploys[0].Outputs
+	}
+	return st
+}
+
+func ToActionWorkflowState(act app.InstallActionWorkflow) *state.ActionWorkflowState {
+	st := state.NewActionWorkflowState()
+	st.Populated = true
+	st.Status = string(act.Status)
+	st.ID = act.ActionWorkflow.ID
+	for _, run := range act.Runs {
+		if run.RunnerJob != nil {
+			st.Outputs = run.RunnerJob.ParsedOutputs
+			break
+		}
+	}
+	return st
+}
+
+func ToSecretsState(parsedOutputs map[string]interface{}) *state.SecretsState {
+	empty := state.NewSecretsState()
+	if len(parsedOutputs) == 0 {
+		return &empty
+	}
+	var secretsState state.SecretsState
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToSliceHookFunc(","),
+			mapstructure.StringToTimeDurationHookFunc(),
+			mapstructure.StringToTimeHookFunc(time.RFC3339Nano),
+			pkggenerics.StringToMapDecodeHook(),
+		),
+		WeaklyTypedInput: true,
+		Result:           &secretsState,
+	}
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		return &empty
+	}
+	if err := decoder.Decode(parsedOutputs); err != nil {
+		return &empty
+	}
+	if secretsState == nil {
+		return &empty
+	}
+	return &secretsState
+}
+
+func ToSandboxState(run *app.InstallSandboxRun) *state.SandboxState {
+	st := state.NewSandboxState()
+	st.Populated = true
+	st.Status = string(run.Status)
+	st.Outputs = run.Outputs
+	if run.AppSandboxConfig.PublicGitVCSConfig != nil {
+		st.Type = run.AppSandboxConfig.PublicGitVCSConfig.Directory
+		st.Version = run.AppSandboxConfig.PublicGitVCSConfig.Branch
+	}
+	if run.AppSandboxConfig.ConnectedGithubVCSConfig != nil {
+		st.Type = run.AppSandboxConfig.ConnectedGithubVCSConfig.Directory
+		st.Version = run.AppSandboxConfig.ConnectedGithubVCSConfig.Branch
+	}
+	return st
+}
+
+func ToCloudAccount(install *app.Install) *state.CloudAccount {
+	st := state.NewCloudAccount()
+	if install.AWSAccount != nil {
+		st.AWS = &state.AWSCloudAccount{Region: install.AWSAccount.Region}
+	}
+	if install.AzureAccount != nil {
+		st.Azure = &state.AzureCloudAccount{Location: install.AzureAccount.Location}
+	}
+	if install.GCPAccount != nil {
+		st.GCP = &state.GCPCloudAccount{
+			ProjectID: install.GCPAccount.ProjectID,
+			Region:    install.GCPAccount.Region,
+		}
+	}
+	return st
+}
+
+func MapLegacyFields(is *state.State) {
+	is.Install = &state.InstallState{
+		Populated: true,
+		ID:        is.ID,
+		Name:      is.Name,
+	}
+	if is.Sandbox != nil {
+		is.Install.Sandbox = *is.Sandbox
+	}
+	if is.Domain != nil {
+		is.Install.PublicDomain = is.Domain.PublicDomain
+		is.Install.InternalDomain = is.Domain.InternalDomain
+	}
+	if is.Inputs != nil {
+		is.Install.Inputs = is.Inputs.Inputs
+	}
 }

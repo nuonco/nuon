@@ -11,7 +11,10 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
+	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
@@ -19,15 +22,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	sg := newStepGroup(flw)
 
-	sg.nextGroup()
 	steps := make([]*app.WorkflowStep, 0)
-	step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, &generatestate.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
@@ -94,7 +89,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	// If sandbox needs reprovision, add sandbox reprovision steps before component deploys
 	if sandboxNeedsReprovision {
-		sandboxSteps, err := getSandboxReprovisionSteps(ctx, installID, flw, sg, appConfig, awData)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, install, installID, flw, sg, appConfig, awData)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get sandbox reprovision steps")
 		}
@@ -112,6 +107,29 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
+
+	sg.nextGroup() // refresh inputs partial in state
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	var stateSignal signal.Signal
+	if stateGenV2 {
+		stateSignal = &statepartialgenerate.Signal{
+			InstallID:       installID,
+			Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
+			TriggeredByID:   installID,
+			TriggeredByType: "installs",
+		}
+	} else {
+		stateSignal = &generatestate.Signal{InstallID: installID}
+	}
+	step, err := sg.installSignalStep(ctx, installID, "update install state inputs", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
 
 	return sg.Result(steps), nil
 }

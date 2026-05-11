@@ -29,7 +29,7 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 		return errors.Wrap(err, "unable to enqueue drift-detected signal")
 	}
 
-	if _, err := client.AwaitAwaitSignal(ctx, resp.QueueSignalID); err != nil {
+	if _, err := client.AwaitQueueSignal(ctx, resp.QueueSignalID); err != nil {
 		return errors.Wrap(err, "drift-detected signal failed")
 	}
 	return nil

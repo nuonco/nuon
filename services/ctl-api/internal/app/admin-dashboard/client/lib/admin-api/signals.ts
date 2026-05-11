@@ -9,6 +9,7 @@ export const getQueueSignalsGlobal = (params: {
   namespace?: string
   status?: string
   enqueued?: string
+  sort_by?: string
   page?: number
 }) =>
   api<{ signals: TQueueSignal[]; page: number; total_pages: number; namespaces?: string[] }>({

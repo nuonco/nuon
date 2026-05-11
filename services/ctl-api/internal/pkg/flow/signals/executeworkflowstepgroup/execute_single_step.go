@@ -1,13 +1,14 @@
 package executeworkflowstepgroup
 
 import (
-	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
+	"github.com/pkg/errors"
 )
 
 // StepResult describes the outcome of executing a single step.
@@ -52,7 +53,7 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 	// via update-with-start.
 	resp, err := activities.AwaitForwardStepFinished(ctx, activities.ForwardStepFinishedRequest{
 		StepID: step.ID,
-	})
+	}, signal.TimeoutActivityOpts(step.Timeout))
 	if err != nil {
 		// Workflow-level cancellation.
 		if ctx.Err() != nil {

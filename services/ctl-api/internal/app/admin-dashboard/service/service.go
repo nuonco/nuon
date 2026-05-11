@@ -246,9 +246,9 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/sandbox-mode/runner-jobs/disable-all", s.SandboxModeDisableAllRunnerJobs)
 		api.POST("/sandbox-mode/templates/:template_key/apply", s.SandboxModeApplyFlowTemplate)
 
-		// Queries (dev-only)
-		api.GET("/queries", s.Queries)
-		api.POST("/queries/clear", s.ClearQueries)
+		// Queries
+		api.GET("/queries", s.QueriesClickHouse)
+		api.POST("/queries/explain", s.ExplainQuery)
 
 		// Query catalog
 		api.GET("/query-catalog", s.QueryCatalogList)
@@ -293,4 +293,8 @@ func New(params Params) (*service, error) {
 
 	s.l.Info("admin-dashboard service initialized")
 	return s, nil
+}
+
+func (s *service) RegisterSlackRoutes(api *gin.Engine) error {
+	return nil
 }

@@ -11,20 +11,29 @@ import {
   allEvents,
   type Interests,
 } from '@/components/interests'
+import { MatchPicker } from '@/components/match/MatchPicker'
+import type { SubscriptionMatch } from '@/components/match/types'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TWebhook } from '@/types'
 
 // EditWebhookModal — backed by the new PATCH /v1/orgs/current/webhooks/{id}
 // endpoint added in Phase D. URL is read-only (it's part of the unique index;
-// rename = delete + recreate). Secret rotation is opt-in via a checkbox; if
+// rename = delete + recreate). Secret rotation is opt-in via radio buttons; if
 // untouched, the field stays nil on the wire which the backend treats as
-// "leave unchanged". A "clear secret" toggle lets the user remove an existing
+// "leave unchanged". A "clear secret" radio lets the user remove an existing
 // secret without sending a replacement.
+//
+// `match` uses PUT semantics on the wire: passing `null` (mapped from
+// undefined in the container) clears the row to org-wide; passing a
+// SubscriptionMatch replaces the existing predicate. A predicate that
+// collapses onto an existing row's canonical key returns 409 from the
+// backend; the container surfaces that as a "Scope already used" toast.
 export type EditWebhookFormInput = {
   // undefined → leave unchanged (do not include in the PATCH body)
   // empty string → clear
   // string → rotate to this value
   webhookSecret: string | undefined
+  match: SubscriptionMatch | undefined
   interests: Interests
 }
 
@@ -44,6 +53,9 @@ export const EditWebhookModal = ({
     'keep'
   )
   const [webhookSecret, setWebhookSecret] = useState('')
+  const [match, setMatch] = useState<SubscriptionMatch | undefined>(
+    webhook.match
+  )
   const [interests, setInterests] = useState<Interests>(
     () => webhook.interests ?? allEvents()
   )
@@ -77,6 +89,7 @@ export const EditWebhookModal = ({
         onClick: () =>
           onSubmit({
             webhookSecret: computedSecret,
+            match,
             interests,
           }),
         variant: 'primary',
@@ -96,8 +109,8 @@ export const EditWebhookModal = ({
             {webhook.webhook_url}
           </Code>
           <Text variant="subtext" theme="neutral">
-            URLs are unique per org and cannot be changed. Delete + recreate
-            the webhook to rename.
+            URLs are unique per org per scope and cannot be changed in place.
+            Delete + recreate the webhook to rename.
           </Text>
         </div>
 
@@ -159,6 +172,14 @@ export const EditWebhookModal = ({
               autoComplete="off"
             />
           ) : null}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Scope</Label>
+          <Text variant="subtext" theme="neutral">
+            Filter which resources fire deliveries to this webhook.
+          </Text>
+          <MatchPicker value={match} onChange={setMatch} />
         </div>
 
         <div className="flex flex-col gap-2">

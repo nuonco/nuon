@@ -5,6 +5,7 @@ import { Text } from '@/components/common/Text'
 import type { TPulumiChangeAction } from '@/types'
 import { cn } from '@/utils/classnames'
 import { isComplex, isStringJson, semanticEqual } from '@/utils/terraform-utils'
+import { DiffLineExpandButton } from '../DiffLineExpandModal'
 import { TreeDiffValue } from '../terraform/TreeDiffValue'
 import {
   PULUMI_ACTION_BADGE_THEME,
@@ -79,6 +80,7 @@ function DetailedDiffBody({
 }) {
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+      <div className="min-w-fit">
       {Object.entries(detailedDiff).map(([prop, diff]) => {
         const prefix = getDiffPrefix(diff.kind)
         return (
@@ -97,6 +99,7 @@ function DetailedDiffBody({
           </div>
         )
       })}
+      </div>
     </div>
   )
 }
@@ -126,6 +129,7 @@ function InputsDiffBody({
 
   return (
     <div className="p-4 bg-code border-t shadow-xs min-h-[3rem] max-h-[40rem] overflow-auto font-mono text-[13px] leading-6">
+      <div className="min-w-fit">
       {keyValues.length ? (
         keyValues.map((value, idx) => {
           const prefix = value.changed
@@ -154,6 +158,8 @@ function InputsDiffBody({
 
           const formattedBefore = formatValue(value.before)
           const formattedAfter = formatValue(value.after)
+          const isLongValue =
+            formattedBefore.length > 40 || formattedAfter.length > 40
 
           return (
             <div
@@ -181,6 +187,14 @@ function InputsDiffBody({
                     >
                       {formattedAfter}
                     </span>
+                    {isLongValue && (
+                      <DiffLineExpandButton
+                        label={value.key}
+                        prefix={prefix.char as '~' | '+' | '-'}
+                        before={value.before}
+                        after={value.after}
+                      />
+                    )}
                   </>
                 ) : (
                   <>
@@ -191,6 +205,14 @@ function InputsDiffBody({
                     >
                       {formattedAfter}
                     </span>
+                    {isLongValue && (
+                      <DiffLineExpandButton
+                        label={value.key}
+                        prefix={prefix.char as '~' | '+' | '-'}
+                        before={value.before}
+                        after={value.after}
+                      />
+                    )}
                   </>
                 )}
               </span>
@@ -200,6 +222,7 @@ function InputsDiffBody({
       ) : (
         <Text family="mono">No values to display.</Text>
       )}
+      </div>
     </div>
   )
 }

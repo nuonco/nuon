@@ -17,6 +17,7 @@ export type TQueryRecord = {
   max_response_size: number
   last_error?: string
   caller: string
+  caller_url?: string
   last_seen_at: string
 }
 
@@ -25,13 +26,19 @@ export const getQueries = (params?: {
   table?: string
   db_type?: string
   source?: string
+  has_error?: string
   sort?: string
   min_duration_ms?: string
+  time_range?: string
 }) =>
   api<{ enabled: boolean; queries: TQueryRecord[]; tables: string[]; total: number }>({
     path: 'queries',
     params,
   })
 
-export const clearQueries = () =>
-  api<{ cleared: boolean }>({ path: 'queries/clear', method: 'POST' })
+export const explainQuery = (params: { sql: string; db_type: string }) =>
+  api<{ rows: Record<string, unknown>[]; error?: string }>({
+    path: 'queries/explain',
+    method: 'POST',
+    body: params,
+  })

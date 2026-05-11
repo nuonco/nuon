@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Input } from '@/components/common/form/Input'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TAPIError } from '@/types'
@@ -10,6 +11,8 @@ interface IRemoveConnectionModal extends Omit<IModal, 'onSubmit'> {
   connectionName: string
   isPending: boolean
   error?: TAPIError | null
+  deleteGithubApp: boolean
+  onDeleteGithubAppChange: (val: boolean) => void
   onSubmit: () => void
 }
 
@@ -17,6 +20,8 @@ export const RemoveConnectionModal = ({
   connectionName,
   isPending,
   error,
+  deleteGithubApp,
+  onDeleteGithubAppChange,
   onSubmit,
   ...props
 }: IRemoveConnectionModal) => {
@@ -91,12 +96,33 @@ export const RemoveConnectionModal = ({
           </ul>
         </div>
 
-        <Banner theme="warn">
-          <Text variant="body">
-            <strong>Warning:</strong> This action cannot be undone, but you can
-            reconnect later.
-          </Text>
-        </Banner>
+        <div className="flex flex-col gap-1">
+          <CheckboxInput
+            checked={deleteGithubApp}
+            onChange={(e) => onDeleteGithubAppChange(e.target.checked)}
+            labelProps={{
+              labelText: 'Also uninstall the Nuon GitHub App from GitHub',
+            }}
+          />
+        </div>
+
+        {deleteGithubApp ? (
+          <Banner theme="warn">
+            <Text variant="body">
+              <strong>Warning:</strong> The GitHub App will be uninstalled from
+              your GitHub account or organization. Any other Nuon org sharing
+              this installation will lose access.
+            </Text>
+          </Banner>
+        ) : (
+          <Banner theme="warn">
+            <Text variant="body">
+              <strong>Note:</strong> The Nuon GitHub App will remain installed
+              on your GitHub account or organization. To fully revoke access,
+              remove it manually from your GitHub settings after disconnecting.
+            </Text>
+          </Banner>
+        )}
 
         <div className="flex flex-col gap-2">
           <Text variant="body">

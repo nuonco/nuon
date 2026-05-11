@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type CreateRunnerHeartBeatRequest struct {
@@ -68,11 +69,21 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		return
 	}
 
+	var installID, installName string
+	if runner.RunnerGroup.OwnerType == plugins.TableName(s.db, app.Install{}) {
+		installID = runner.RunnerGroup.OwnerID
+		installName = s.heartbeatGetInstallName(ctx, installID)
+	}
+
 	tags := metrics.ToTags(map[string]string{
+		"org_id":         runner.OrgID,
 		"org_name":       runner.Org.Name,
-		"install_type":   string(runner.RunnerGroup.Type),
+		"runner_id":      runnerID,
+		"runner_type":    string(runner.RunnerGroup.Type),
 		"runner_version": req.Version,
-		"process":        string(req.Process),
+		"process_type":   string(req.Process),
+		"install_id":     installID,
+		"install_name":   installName,
 	})
 
 	s.mw.Incr("heart_beat.incr", tags)
@@ -106,6 +117,10 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 }
 
 func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app.Runner, error) {
+	if cached, ok := s.runnerHeartbeatCache.Runners.Get(runnerID); ok {
+		return cached, nil
+	}
+
 	// NOTE(fd): same as getRunner w/out the RunnerGroup.Settings preload. this is hit often enough we care to optimize.
 	runner := app.Runner{}
 	res := s.db.WithContext(ctx).
@@ -116,5 +131,26 @@ func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app
 		return nil, fmt.Errorf("unable to get runner: %w", res.Error)
 	}
 
+	s.runnerHeartbeatCache.Runners.Add(runnerID, &runner)
 	return &runner, nil
+}
+
+func (s *service) heartbeatGetInstallName(ctx context.Context, installID string) string {
+	if cached, ok := s.runnerHeartbeatCache.Installs.Get(installID); ok {
+		return cached.Name
+	}
+
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Select("id", "name").
+		First(&install, "id = ?", installID).Error; err != nil {
+		s.l.Warn("unable to look up install for heartbeat metric tag",
+			zap.String("install_id", installID),
+			zap.Error(err),
+		)
+		return ""
+	}
+
+	s.runnerHeartbeatCache.Installs.Add(installID, &install)
+	return install.Name
 }

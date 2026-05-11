@@ -19,7 +19,7 @@ import (
 	installscomponentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/components"
 	installssandboxworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/sandbox"
 	installsstackworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
-	installstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	installsstateworker "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	onboardingworker "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/worker"
 	orgsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker"
 	orgsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
@@ -67,7 +67,7 @@ var InstallsWorkerModule = fx.Module("worker-installs",
 	fx.Provide(installscomponentsworker.NewWorkflows),
 	fx.Provide(installssandboxworker.NewWorkflows),
 	fx.Provide(installsstackworker.NewWorkflows),
-	fx.Provide(installstate.New),
+	fx.Provide(installsstateworker.New),
 	fx.Provide(worker.AsWorker(installsworker.New)),
 )
 

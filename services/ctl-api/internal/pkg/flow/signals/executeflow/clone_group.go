@@ -127,6 +127,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 			StepTargetType:      step.StepTargetType,
 			RetryIndex:          0,
 			WorkflowStepGroupID: newGroupID,
+			Timeout:             step.Timeout,
 		})
 	}
 

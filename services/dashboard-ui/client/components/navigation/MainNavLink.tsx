@@ -54,7 +54,7 @@ export const MainNavLink = ({
           }
         )}
       >
-        <span className="flex-1 truncate flex items-center gap-1">
+        <span className="flex-1 flex items-center gap-1">
           {text}
           {isExternal ? <Icon variant="ArrowSquareOut" size={12} /> : null}
         </span>

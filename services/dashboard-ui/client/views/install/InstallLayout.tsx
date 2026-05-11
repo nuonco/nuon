@@ -54,9 +54,9 @@ const navLinks: TNavItem[] = [
   },
   { type: 'section', label: 'App' },
   {
-    path: `/stacks`,
-    iconVariant: 'Stack' as const,
-    text: 'Stacks',
+    path: `/components`,
+    iconVariant: 'Cards' as const,
+    text: 'Components',
   },
   {
     path: '/sandbox',
@@ -64,30 +64,25 @@ const navLinks: TNavItem[] = [
     text: 'Sandbox',
   },
   {
-    path: `/components`,
-    iconVariant: 'Cards' as const,
-    text: 'Components',
-  },
-  {
     path: `/roles`,
     iconVariant: 'FileLock' as const,
     text: 'Roles',
   },
   {
-    path: `/policies`,
-    iconVariant: 'ShieldCheck' as const,
-    text: 'Policy reports',
-  },
-  { type: 'section', label: 'Day-2' },
-  {
     path: `/actions`,
     iconVariant: 'TerminalWindow' as const,
     text: 'Actions',
   },
+  { type: 'section', label: 'Customer' },
   {
-    path: `/runner`,
-    iconVariant: 'SneakerMove' as const,
-    text: 'Install runner',
+    path: `/stacks`,
+    iconVariant: 'Stack' as const,
+    text: 'Stacks',
+  },
+  {
+    path: `/policies`,
+    iconVariant: 'ShieldCheck' as const,
+    text: 'Policy reports',
   },
   {
     path: `/inputs`,
@@ -98,6 +93,12 @@ const navLinks: TNavItem[] = [
     path: `/state`,
     iconVariant: 'CodeBlock' as const,
     text: 'View state',
+  },
+  { type: 'section', label: 'Advanced' },
+  {
+    path: `/runner`,
+    iconVariant: 'SneakerMove' as const,
+    text: 'Install runner',
   },
 ]
 

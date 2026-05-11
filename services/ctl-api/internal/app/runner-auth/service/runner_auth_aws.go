@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	awstypes "github.com/nuonco/nuon/pkg/types/aws"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -154,6 +155,18 @@ func extractInstanceIDFromSTSUserId(userId string) string {
 // @Success				200	{object}	RunnerAuthAWSResponse
 // @Router					/v1/runner-auth/aws [POST]
 func (s *service) RunnerAuthAWS(ctx *gin.Context) {
+	start := time.Now()
+	metricTags := map[string]string{
+		"cloud_provider": "aws",
+		"auth_method":    "sts",
+		"status":         "error",
+	}
+	defer func() {
+		if s.mw != nil {
+			s.mw.Timing("runner.auth.latency", time.Since(start), metrics.ToTags(metricTags))
+		}
+	}()
+
 	var req RunnerAuthAWSRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		s.l.Warn("runner auth: failed to parse request", zap.Error(err))
@@ -266,10 +279,30 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		ctx.Abort()
 		return
 	}
+	metricTags["runner_id"] = runner.ID
 
-	if err := s.validateRunnerAWSIdentity(reqCtx, runner, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
+	install, err := s.getInstallByRunnerGroup(reqCtx, &runner.RunnerGroup)
+	if err != nil {
+		s.l.Warn("runner auth: failed to get install for runner",
+			zap.String("runner_id", runnerID),
+			zap.Error(err))
+		ctx.Error(stderr.ErrAuthentication{
+			Err:         errors.New("authentication failed"),
+			Description: "runner not associated with an install",
+		})
+		ctx.Abort()
+		return
+	}
+	metricTags["install_id"] = install.ID
+	metricTags["install_name"] = install.Name
+	metricTags["org_id"] = install.OrgID
+
+	if err := s.validateRunnerAWSIdentity(reqCtx, install, callerIdentity.Result.Account, callerIdentity.Result.Arn); err != nil {
 		s.l.Warn("runner auth: AWS identity validation failed",
 			zap.String("runner_id", runnerID),
+			zap.String("install_id", install.ID),
+			zap.String("install_name", install.Name),
+			zap.String("org_id", install.OrgID),
 			zap.String("caller_account", callerIdentity.Result.Account),
 			zap.String("caller_arn", callerIdentity.Result.Arn),
 			zap.Error(err))
@@ -292,7 +325,11 @@ func (s *service) RunnerAuthAWS(ctx *gin.Context) {
 		return
 	}
 
+	metricTags["status"] = "ok"
 	s.l.Info("runner auth: authentication successful",
+		zap.String("install_id", install.ID),
+		zap.String("install_name", install.Name),
+		zap.String("org_id", install.OrgID),
 		zap.String("runner_id", runner.ID),
 		zap.String("instance_id", instanceID),
 		zap.String("account_id", callerIdentity.Result.Account))
@@ -445,12 +482,7 @@ func (s *service) getInstallByRunnerGroup(ctx context.Context, runnerGroup *app.
 	return &install, nil
 }
 
-func (s *service) validateRunnerAWSIdentity(ctx context.Context, runner *app.Runner, callerAccountID string, callerARN string) error {
-	install, err := s.getInstallByRunnerGroup(ctx, &runner.RunnerGroup)
-	if err != nil {
-		return fmt.Errorf("failed to get install for runner: %w", err)
-	}
-
+func (s *service) validateRunnerAWSIdentity(ctx context.Context, install *app.Install, callerAccountID string, callerARN string) error {
 	installStack, err := s.getInstallStackWithOutputs(ctx, install.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get install stack for install %s: %w", install.ID, err)

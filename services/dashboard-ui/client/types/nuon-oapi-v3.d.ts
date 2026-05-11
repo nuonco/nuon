@@ -5,6 +5,34 @@
 
 
 export interface paths {
+  "/slack/commands/nuon": {
+    /**
+     * Slack /nuon slash command webhook
+     * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
+     */
+    post: operations["SlackSlashCommand"];
+  };
+  "/slack/events": {
+    /**
+     * Slack Events API webhook
+     * @description Receives lifecycle events from Slack: url_verification (handshake), app_uninstalled (workspace removed Nuon), tokens_revoked (bot token invalidated). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Returns 200 even for unhandled event types so Slack does not retry.
+     */
+    post: operations["SlackEvents"];
+  };
+  "/slack/interactions": {
+    /**
+     * Slack interactivity & shortcuts request URL
+     * @description Receives interactive payloads (view_submission, block_actions, block_suggestion, shortcut). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Dispatches subscribe/unsubscribe modal submissions, block_actions (scope/notif radios, Remove buttons), and the install picker's external_select block_suggestion handshake. Returns 200 on every parseable envelope so Slack does not retry; unhandled payload types are logged and acked.
+     */
+    post: operations["SlackInteractions"];
+  };
+  "/slack/oauth/callback": {
+    /**
+     * Slack OAuth v2 redirect target
+     * @description Receives the OAuth `code` + signed-state JWT from Slack, exchanges the code for a workspace bot token via oauth.v2.access, persists the installation + org link, and redirects to the dashboard. NOT signed by Slack — trust comes from the state JWT signature. Enterprise Grid (org-wide) installs are rejected.
+     */
+    get: operations["SlackOAuthCallback"];
+  };
   "/v1/account": {
     /**
      * Get current account
@@ -813,6 +841,13 @@ export interface paths {
      * @description Returns the authenticated account with identity profile information (provider_type, name, picture)
      */
     get: operations["GetAuthMe"];
+  };
+  "/v1/auth/validate": {
+    /**
+     * Validate authentication token
+     * @description Returns 200 if the provided token is valid, 401 otherwise.
+     */
+    get: operations["ValidateToken"];
   };
   "/v1/builds": {
     /**
@@ -1989,6 +2024,70 @@ export interface paths {
      * Feature flags control access to specific platform capabilities and can be managed by administrators through the admin API endpoints.
      */
     get: operations["GetOrgFeatures"];
+  };
+  "/v1/orgs/{org_id}/slack/channel-subscriptions": {
+    /**
+     * List Slack channel subscriptions for the current org
+     * @description Returns the per-channel routing rules belonging to the calling org's verified Slack org links.
+     */
+    get: operations["ListSlackChannelSubscriptions"];
+    /**
+     * Create a Slack channel subscription
+     * @description Subscribes a Slack channel to events for the current org. The org_link_id must resolve to a verified SlackOrgLink belonging to the calling org; this is enforced at the DB query level (ABAC).
+     */
+    post: operations["CreateSlackChannelSubscription"];
+  };
+  "/v1/orgs/{org_id}/slack/channel-subscriptions/{sub_id}": {
+    /**
+     * Delete a Slack channel subscription
+     * @description Soft-deletes a SlackChannelSubscription belonging to the current org. ABAC scoped at the DB query so callers cannot delete subscriptions outside their org.
+     */
+    delete: operations["DeleteSlackChannelSubscription"];
+    /**
+     * Update a Slack channel subscription
+     * @description Mutates a per-channel routing rule. Pass only the fields you want to change. Updating `match` may collide with the `(team_id, channel_id, org_link_id, match_canonical)` unique index — the API returns 409 with a clear description in that case so the dashboard can render the same toast it shows on a duplicate create. The subscription must belong to the calling org (ABAC enforced at the DB query level).
+     */
+    patch: operations["UpdateSlackChannelSubscription"];
+  };
+  "/v1/orgs/{org_id}/slack/install-url": {
+    /**
+     * Get the Slack OAuth install URL for the current org
+     * @description Returns a Slack OAuth v2 authorize URL with a signed state JWT bound to the calling account and org. The dashboard redirects the user to this URL to begin the install flow.
+     */
+    get: operations["GetSlackInstallURL"];
+  };
+  "/v1/orgs/{org_id}/slack/installations": {
+    /**
+     * List Slack workspaces linked to the current org
+     * @description Returns every active Slack workspace installation that has a verified org link to the calling org.
+     */
+    get: operations["ListSlackInstallations"];
+  };
+  "/v1/orgs/{org_id}/slack/installations/{installation_id}/channels": {
+    /**
+     * List channels visible to a Slack installation
+     * @description Calls Slack's conversations.list using the installation's bot token and returns the page of channels the bot can see. The installation must belong to a verified org link for the calling org.
+     */
+    get: operations["ListSlackChannels"];
+  };
+  "/v1/orgs/{org_id}/slack/org-links": {
+    /**
+     * List Slack workspace bindings for the current org
+     * @description Returns the verified SlackOrgLink rows belonging to the calling org. Each row carries the link_id used by the channel-subscription create endpoint.
+     */
+    get: operations["ListSlackOrgLinks"];
+    /**
+     * Bind a Slack workspace to the current org
+     * @description Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
+     */
+    post: operations["CreateSlackOrgLink"];
+  };
+  "/v1/orgs/{org_id}/slack/org-links/{link_id}": {
+    /**
+     * Revoke a Slack workspace ↔ org binding
+     * @description Soft-deletes the SlackOrgLink. Channel subscriptions cascade off via the FK. Idempotent if the link is already revoked.
+     */
+    delete: operations["DeleteSlackOrgLink"];
   };
   "/v1/policy-reports": {
     /**
@@ -3922,6 +4021,7 @@ export interface components {
       contents?: string;
       created_at?: string;
       created_by_id?: string;
+      generated_by?: components["schemas"]["app.InstallStateGenerateSource"];
       id?: string;
       install_id?: string;
       stale_at?: components["schemas"]["generics.NullTime"];
@@ -3930,6 +4030,8 @@ export interface components {
       updated_at?: string;
       version?: number;
     };
+    /** @enum {string} */
+    "app.InstallStateGenerateSource": "legacy" | "state-manager";
     "app.JSONMap": {
       [key: string]: string;
     };
@@ -4634,6 +4736,67 @@ export interface components {
     "app.RunnerStatus": "error" | "active" | "pending" | "provisioning" | "deprovisioning" | "deprovisioned" | "reprovisioning" | "offline" | "awaiting-install-stack-run" | "unknown";
     /** @enum {string} */
     "app.SandboxRunType": "provision" | "reprovision" | "deprovision";
+    "app.SlackChannelSubscription": {
+      channel_id?: string;
+      channel_name?: string;
+      created_at?: string;
+      created_by_account_id?: string;
+      created_by_id?: string;
+      created_by_slack_user_id?: string;
+      id?: string;
+      /**
+       * @description Interests is the per-subscription event filter. Stored as JSONB; one
+       * shape is shared with webhooks (see internal/pkg/interests). New rows
+       * default to AllEvents=true via the create handler when the request omits
+       * the field.
+       */
+      interests?: Record<string, never>;
+      /**
+       * @description Match is the per-subscription routing predicate. Nil = match every
+       * event in the org. Non-nil = evaluated by labels.SubscriptionMatch
+       * against the dispatch-time labels.EventTargets. swaggertype:"object"
+       * keeps the SDK from materialising the full nested type tree.
+       */
+      match?: Record<string, never>;
+      /** @description OrgID is denormalized from OrgLink for query convenience. */
+      org_id?: string;
+      org_link_id?: string;
+      team_id?: string;
+      updated_at?: string;
+    };
+    "app.SlackInstallation": {
+      app_id?: string;
+      bot_user_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      enterprise_id?: string;
+      id?: string;
+      installed_by_account_id?: string;
+      installed_by_slack_user_id?: string;
+      scope?: string;
+      status?: components["schemas"]["app.SlackInstallationStatus"];
+      /**
+       * @description TeamID is the stable Slack workspace identifier (e.g. "T0123456789").
+       * Combined with deleted_at to allow re-installation after uninstall.
+       */
+      team_id?: string;
+      team_name?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.SlackInstallationStatus": "active" | "uninstalled" | "disabled";
+    "app.SlackOrgLink": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      linked_by_account_id?: string;
+      org_id?: string;
+      status?: components["schemas"]["app.SlackOrgLinkStatus"];
+      team_id?: string;
+      updated_at?: string;
+    };
+    /** @enum {string} */
+    "app.SlackOrgLinkStatus": "verified" | "revoked";
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
@@ -4932,6 +5095,13 @@ export interface components {
        * gets dispatched. When empty, the step signal's TargetQueueName is used.
        */
       target_queue_id?: string;
+      /**
+       * @description Timeout is the execution timeout for this step, derived from the
+       * inner signal's Timeout() at step generation time. Used by the step-group
+       * to set ScheduleToCloseTimeout when awaiting step completion.
+       * Zero means use default fallback.
+       */
+      timeout?: string;
       updated_at?: string;
       /** @description Fields that are de-nested at read time using AfterQuery */
       workflow_id?: string;
@@ -4981,6 +5151,12 @@ export interface components {
       result_directive?: string;
       status?: components["schemas"]["app.CompositeStatus"];
       steps?: components["schemas"]["app.WorkflowStep"][];
+      /**
+       * @description Timeout is the execution timeout for this group, derived from its
+       * steps' timeouts. For sequential groups: sum of step timeouts. For parallel
+       * groups: max of step timeouts. Zero means use default fallback.
+       */
+      timeout?: string;
       updated_at?: string;
       workflow_id?: string;
     };
@@ -5008,6 +5184,14 @@ export interface components {
       log_stream_id?: string;
       org_id?: string;
       trace_id?: string;
+    };
+    "client.Conversation": {
+      id?: string;
+      is_archived?: boolean;
+      is_channel?: boolean;
+      is_member?: boolean;
+      is_private?: boolean;
+      name?: string;
     };
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
@@ -5984,6 +6168,13 @@ export interface components {
       type: components["schemas"]["app.StackType"];
       vpc_nested_template_url?: string;
     };
+    "service.CreateChannelSubscriptionRequest": {
+      channel_id: string;
+      channel_name?: string;
+      interests?: Record<string, never>;
+      match?: Record<string, never>;
+      org_link_id: string;
+    };
     "service.CreateComponentBuildRequest": {
       git_ref?: string;
       use_latest?: boolean;
@@ -6005,6 +6196,7 @@ export interface components {
     };
     "service.CreateCurrentOrgWebhookRequest": {
       interests?: Record<string, never>;
+      match?: Record<string, never>;
       webhook_secret?: string;
       webhook_url: string;
     };
@@ -6123,6 +6315,13 @@ export interface components {
         [key: string]: string;
       };
       install_config?: components["schemas"]["helpers.CreateInstallConfigParams"];
+      /**
+       * @description Labels are key/value pairs to attach to the install at creation time.
+       * They are merged into the install's existing labels (which is empty for a brand-new install).
+       */
+      labels?: {
+        [key: string]: string;
+      };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
     };
@@ -6142,6 +6341,13 @@ export interface components {
         [key: string]: string;
       };
       install_config?: components["schemas"]["helpers.CreateInstallConfigParams"];
+      /**
+       * @description Labels are key/value pairs to attach to the install at creation time.
+       * They are merged into the install's existing labels (which is empty for a brand-new install).
+       */
+      labels?: {
+        [key: string]: string;
+      };
       metadata?: components["schemas"]["helpers.InstallMetadata"];
       name: string;
     };
@@ -6190,6 +6396,9 @@ export interface components {
     "service.CreateOrgInviteRequest": {
       email: string;
       role_type?: components["schemas"]["app.RoleType"];
+    };
+    "service.CreateOrgLinkRequest": {
+      team_id: string;
     };
     "service.CreateOrgRequest": {
       name: string;
@@ -6279,6 +6488,7 @@ export interface components {
       has_secret?: boolean;
       id?: string;
       interests?: Record<string, never>;
+      match?: Record<string, never>;
       org_id?: string;
       updated_at?: string;
       webhook_url?: string;
@@ -6307,6 +6517,9 @@ export interface components {
     "service.ForceShutdownRequest": Record<string, never>;
     "service.ForgetInstallComponentRequest": Record<string, never>;
     "service.ForgetInstallRequest": Record<string, never>;
+    "service.GetInstallURLResponse": {
+      url?: string;
+    };
     "service.GracefulShutdownRequest": Record<string, never>;
     "service.HelmRepoConfigRequest": {
       chart: string;
@@ -6361,6 +6574,10 @@ export interface components {
     };
     "service.LatestRunnerHeartBeats": {
       [key: string]: components["schemas"]["app.LatestRunnerHeartBeat"];
+    };
+    "service.ListChannelsResponse": {
+      channels?: components["schemas"]["client.Conversation"][];
+      next_cursor?: string;
     };
     "service.LogStreamSpan": {
       attributes?: {
@@ -6555,6 +6772,12 @@ export interface components {
       name?: string;
       slack_webhook_url?: string;
     };
+    "service.UpdateChannelSubscriptionRequest": {
+      channel_id?: string;
+      channel_name?: string;
+      interests?: Record<string, never>;
+      match?: Record<string, never>;
+    };
     "service.UpdateComponentRequest": {
       dependencies?: string[];
       labels?: {
@@ -6565,6 +6788,7 @@ export interface components {
     };
     "service.UpdateCurrentOrgWebhookRequest": {
       interests?: Record<string, never>;
+      match?: Record<string, never>;
       webhook_secret?: string;
     };
     "service.UpdateInstallConfigRequest": {
@@ -6681,6 +6905,13 @@ export interface components {
       service_account_email?: string;
       tag?: string;
       workload_identity_provider?: string;
+    };
+    "service.slackChallengeResponse": {
+      challenge?: string;
+    };
+    "service.slashResponse": {
+      response_type?: string;
+      text?: string;
     };
     "signaldb.SignalData": {
       signal?: unknown;
@@ -6813,6 +7044,110 @@ export type external = Record<string, never>;
 
 export interface operations {
 
+  /**
+   * Slack /nuon slash command webhook
+   * @description Slack invokes this endpoint when a user runs `/nuon <subcommand>` in any channel of an installed workspace. Authenticated via the Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Subcommands: subscribe, unsubscribe, status, help. Responses are ephemeral.
+   */
+  SlackSlashCommand: {
+    requestBody?: {
+      content: {
+        "application/x-www-form-urlencoded": {
+          /** @description Channel ID the command was invoked in */
+          channel_id: string;
+          /** @description Channel name */
+          channel_name?: string;
+          /** @description The slash command itself (e.g. /nuon) */
+          command: string;
+          /** @description Slack team (workspace) ID */
+          team_id: string;
+          /** @description Subcommand text */
+          text?: string;
+          /** @description Slack user ID who invoked the command */
+          user_id: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.slashResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Slack Events API webhook
+   * @description Receives lifecycle events from Slack: url_verification (handshake), app_uninstalled (workspace removed Nuon), tokens_revoked (bot token invalidated). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Returns 200 even for unhandled event types so Slack does not retry.
+   */
+  SlackEvents: {
+    /** @description Slack event envelope */
+    requestBody: {
+      content: {
+        "application/json": Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description For url_verification: returns challenge. Otherwise empty body. */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.slackChallengeResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Slack interactivity & shortcuts request URL
+   * @description Receives interactive payloads (view_submission, block_actions, block_suggestion, shortcut). Authenticated via Slack signing-secret middleware (X-Slack-Signature + X-Slack-Request-Timestamp); not via API key. Dispatches subscribe/unsubscribe modal submissions, block_actions (scope/notif radios, Remove buttons), and the install picker's external_select block_suggestion handshake. Returns 200 on every parseable envelope so Slack does not retry; unhandled payload types are logged and acked.
+   */
+  SlackInteractions: {
+    requestBody?: {
+      content: {
+        "application/x-www-form-urlencoded": {
+          /** @description JSON-encoded interaction payload */
+          payload: string;
+        };
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: never;
+      };
+    };
+  };
+  /**
+   * Slack OAuth v2 redirect target
+   * @description Receives the OAuth `code` + signed-state JWT from Slack, exchanges the code for a workspace bot token via oauth.v2.access, persists the installation + org link, and redirects to the dashboard. NOT signed by Slack — trust comes from the state JWT signature. Enterprise Grid (org-wide) installs are rejected.
+   */
+  SlackOAuthCallback: {
+    parameters: {
+      query: {
+        /** @description OAuth authorization code from Slack */
+        code: string;
+        /** @description Signed state JWT issued by GetInstallURL */
+        state: string;
+      };
+    };
+    responses: {
+      /** @description Redirect to dashboard with ?slack=installed */
+      302: {
+        content: never;
+      };
+      /** @description HTML error page */
+      400: {
+        content: never;
+      };
+      /** @description HTML error page */
+      401: {
+        content: never;
+      };
+      /** @description HTML error page */
+      500: {
+        content: never;
+      };
+    };
+  };
   /**
    * Get current account
    * @description Get the current account with user journeys and other data
@@ -13496,6 +13831,28 @@ export interface operations {
       };
       /** @description Internal Server Error */
       500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Validate authentication token
+   * @description Returns 200 if the provided token is valid, 401 otherwise.
+   */
+  ValidateToken: {
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: boolean;
+          };
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -21105,6 +21462,470 @@ export interface operations {
     };
   };
   /**
+   * List Slack channel subscriptions for the current org
+   * @description Returns the per-channel routing rules belonging to the calling org's verified Slack org links.
+   */
+  ListSlackChannelSubscriptions: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.SlackChannelSubscription"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Create a Slack channel subscription
+   * @description Subscribes a Slack channel to events for the current org. The org_link_id must resolve to a verified SlackOrgLink belonging to the calling org; this is enforced at the DB query level (ABAC).
+   */
+  CreateSlackChannelSubscription: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateChannelSubscriptionRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.SlackChannelSubscription"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Delete a Slack channel subscription
+   * @description Soft-deletes a SlackChannelSubscription belonging to the current org. ABAC scoped at the DB query so callers cannot delete subscriptions outside their org.
+   */
+  DeleteSlackChannelSubscription: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+        /** @description Slack channel subscription ID */
+        sub_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Update a Slack channel subscription
+   * @description Mutates a per-channel routing rule. Pass only the fields you want to change. Updating `match` may collide with the `(team_id, channel_id, org_link_id, match_canonical)` unique index — the API returns 409 with a clear description in that case so the dashboard can render the same toast it shows on a duplicate create. The subscription must belong to the calling org (ABAC enforced at the DB query level).
+   */
+  UpdateSlackChannelSubscription: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+        /** @description Subscription ID */
+        sub_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateChannelSubscriptionRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.SlackChannelSubscription"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get the Slack OAuth install URL for the current org
+   * @description Returns a Slack OAuth v2 authorize URL with a signed state JWT bound to the calling account and org. The dashboard redirects the user to this URL to begin the install flow.
+   */
+  GetSlackInstallURL: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.GetInstallURLResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List Slack workspaces linked to the current org
+   * @description Returns every active Slack workspace installation that has a verified org link to the calling org.
+   */
+  ListSlackInstallations: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.SlackInstallation"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List channels visible to a Slack installation
+   * @description Calls Slack's conversations.list using the installation's bot token and returns the page of channels the bot can see. The installation must belong to a verified org link for the calling org.
+   */
+  ListSlackChannels: {
+    parameters: {
+      query?: {
+        /** @description Slack cursor for pagination */
+        cursor?: string;
+        /** @description Page size (Slack default 100, max 1000) */
+        limit?: number;
+        /** @description Comma-separated channel types (e.g. public_channel,private_channel) */
+        types?: string;
+      };
+      path: {
+        /** @description Org ID */
+        org_id: string;
+        /** @description Slack installation ID */
+        installation_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.ListChannelsResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * List Slack workspace bindings for the current org
+   * @description Returns the verified SlackOrgLink rows belonging to the calling org. Each row carries the link_id used by the channel-subscription create endpoint.
+   */
+  ListSlackOrgLinks: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.SlackOrgLink"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Bind a Slack workspace to the current org
+   * @description Creates a verified SlackOrgLink between the supplied TeamID and the calling org. Used by the Phase 4 confirmation flow when a user finishes the Slack OAuth round-trip and selects the Nuon org to attach the workspace to.
+   */
+  CreateSlackOrgLink: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateOrgLinkRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.SlackOrgLink"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Revoke a Slack workspace ↔ org binding
+   * @description Soft-deletes the SlackOrgLink. Channel subscriptions cascade off via the FK. Idempotent if the link is already revoked.
+   */
+  DeleteSlackOrgLink: {
+    parameters: {
+      path: {
+        /** @description Org ID */
+        org_id: string;
+        /** @description Slack org link ID */
+        link_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * get policy reports
    * @description Returns policy reports for the current organization.
    */
@@ -24183,6 +25004,10 @@ export interface operations {
    */
   DeleteVCSConnection: {
     parameters: {
+      query?: {
+        /** @description If true, also uninstall the GitHub App on the GitHub side. Defaults to false so other Nuon orgs sharing the same installation are not impacted. */
+        delete_github_app?: boolean;
+      };
       path: {
         /** @description Connection ID */
         connection_id: string;

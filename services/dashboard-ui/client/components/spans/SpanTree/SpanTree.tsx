@@ -41,16 +41,11 @@ export const SpanTree = ({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="@container flex flex-col">
       <div className="flex items-center justify-between gap-3 px-2 h-14 border-b border-cool-grey-200 dark:border-dark-grey-600">
-        <div className="flex items-baseline gap-2">
-          <Text variant="body" weight="strong">
-            Trace
-          </Text>
-          <Text variant="body" theme="neutral">
-            {spans.length} span{spans.length === 1 ? '' : 's'}
-          </Text>
-        </div>
+        <Text variant="body" theme="neutral">
+          {spans.length} span{spans.length === 1 ? '' : 's'}
+        </Text>
         <div className="flex items-center gap-2">
           {headerActions}
           <Button
@@ -58,12 +53,13 @@ export const SpanTree = ({
             variant="ghost"
             onClick={isAllExpanded ? onCollapseAll : onExpandAll}
             aria-pressed={!isAllExpanded}
+            aria-label={isAllExpanded ? 'Collapse all' : 'Expand all'}
           >
             <Icon
-              variant={isAllExpanded ? 'CaretUpDownIcon' : 'CaretDownIcon'}
+              variant={isAllExpanded ? 'ArrowsInLineVertical' : 'ArrowsOutLineVertical'}
               size="12"
             />
-            {isAllExpanded ? 'Collapse' : 'Expand'}
+            <span className="@max-[24rem]:hidden">{isAllExpanded ? 'Collapse' : 'Expand'}</span>
           </Button>
         </div>
       </div>

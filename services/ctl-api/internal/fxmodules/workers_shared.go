@@ -35,6 +35,7 @@ import (
 
 	// Register install queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateworkflowsteps"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 
 	// Register VCS queue signals
@@ -53,6 +54,7 @@ var WorkerInterceptorsModule = fx.Module("worker-interceptors",
 // used across multiple worker namespaces.
 var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
+	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewSlackSignalLifecycleHook)),
 	fx.Provide(signal.NewSignalLifecycleActivities),
 
 	fx.Provide(jobactivities.New),

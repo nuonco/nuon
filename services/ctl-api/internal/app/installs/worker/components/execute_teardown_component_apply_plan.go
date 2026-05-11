@@ -10,7 +10,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -74,7 +75,7 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 	w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	w.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 
-	_, err = state.AwaitGenerateState(ctx, &state.GenerateStateRequest{
+	_, err = workerstate.AwaitGenerateState(ctx, &workerstate.GenerateStateRequest{
 		InstallID:       install.ID,
 		TriggeredByID:   installDeploy.ID,
 		TriggeredByType: plugins.TableName(w.db, installDeploy),
@@ -83,5 +84,5 @@ func (w *Workflows) ExecuteTeardownComponentApplyPlan(ctx workflow.Context, sreq
 		return errors.Wrap(err, "unable to generate state")
 	}
 
-	return err
+	return nil
 }

@@ -59,6 +59,16 @@ export const TraceViewContainer = ({
     [searchParams, setSearchParams]
   )
 
+  useEffect(() => {
+    return () => {
+      const params = new URLSearchParams(window.location.search)
+      if (params.has('span_id')) {
+        params.delete('span_id')
+        setSearchParams(params, { replace: true })
+      }
+    }
+  }, [])
+
   // Cross-link: when the user clicks a log row in the right pane, the
   // LogViewerProvider exposes the active log via useLogViewer. Each log
   // record already carries span_id from otelzap, so we mirror it onto

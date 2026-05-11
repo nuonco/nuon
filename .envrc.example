@@ -1,0 +1,3 @@
+use flake
+dotenv_if_exists .env.dev
+export GITHUB_APP_KEY="$(cat .dev/github-app-key.pem 2>/dev/null || echo dummy)"

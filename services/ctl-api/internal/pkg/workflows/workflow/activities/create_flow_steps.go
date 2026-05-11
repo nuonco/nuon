@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
@@ -28,6 +29,7 @@ type CreateFlowStep struct {
 	StepTargetType      string                        `json:"step_target_type"`
 	StepTargetID        string                        `json:"step_target_id"`
 	RetryIndex          int                           `json:"retry_index"`
+	Timeout             time.Duration                 `json:"timeout"`
 
 	StepQueueID   string `json:"step_queue_id"`
 	TargetQueueID string `json:"target_queue_id"`
@@ -67,6 +69,7 @@ func (a *Activities) PkgWorkflowsFlowCreateFlowSteps(ctx context.Context, reqs C
 			StepTargetType:      req.StepTargetType,
 			StepTargetID:        req.StepTargetID,
 			RetryIndex:          req.RetryIndex,
+			Timeout:             req.Timeout,
 			StepQueueID:         req.StepQueueID,
 			TargetQueueID:       req.TargetQueueID,
 			Signal:              req.Signal,

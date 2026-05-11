@@ -19,6 +19,13 @@ func (c *client) GetAuthMe(ctx context.Context) (*models.ServiceAuthMeResponse, 
 	return resp.Payload, nil
 }
 
+func (c *client) ValidateToken(ctx context.Context) error {
+	_, err := c.genClient.Operations.ValidateToken(&operations.ValidateTokenParams{
+		Context: ctx,
+	}, c.getApiKeyAuthInfo())
+	return err
+}
+
 func (c *client) GetCurrentUser(ctx context.Context) (*models.AppAccount, error) {
 	resp, err := c.genClient.Operations.GetCurrentUser(&operations.GetCurrentUserParams{
 		Context: ctx,

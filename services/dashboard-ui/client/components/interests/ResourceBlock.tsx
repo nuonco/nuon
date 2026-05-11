@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
@@ -18,11 +18,23 @@ import {
 // locally; the outer picker owns the canonical Interests value and just
 // receives diff callbacks.
 //
-// Slack variant collapses approval_requests + approval_responses into a single
-// "Include approval events" checkbox. We always keep the two booleans split on
-// the underlying ResourceCfg and coerce both to the same value on slack write
-// (documented choice — simplest, no indeterminate visual). Webhook variant
-// exposes both checkboxes.
+// Progressive-disclosure layout:
+//   - Body is a single "Which event categories?" checkbox group
+//     (Lifecycle / Approvals / Drift detection).
+//   - Drift only renders for components + sandboxes (mirrors the Go
+//     SupportsDriftDetected helper). The matcher silently drops drift workflow
+//     lifecycle events entirely, so this toggle is the *only* knob that
+//     surfaces drift notifications.
+//   - Lifecycle details (outcome radio + the "Narrow to specific operations"
+//     sub-ops disclosure) only appear when Lifecycle is ticked.
+//   - Webhook approvals reveal exposes both approval_requests +
+//     approval_responses checkboxes; slack collapses both into the single
+//     category checkbox and writes the same value to both booleans.
+//
+// Outcome semantics on the wire:
+//   - outcome: 'none' = lifecycle category off (drift / approvals still flow if
+//     enabled). We toggle Lifecycle off by writing 'none' and remember the
+//     previously-selected outcome locally so re-enabling restores it.
 export const ResourceBlock = ({
   variant,
   kind,
@@ -41,35 +53,45 @@ export const ResourceBlock = ({
   disabled?: boolean
 }) => {
   const [expanded, setExpanded] = useState(false)
+  const [subOpsExpanded, setSubOpsExpanded] = useState(false)
 
   const ops = cfg.ops ?? []
   const outcome: Outcome = cfg.outcome ?? 'all'
   const approvalRequests = !!cfg.approval_requests
   const approvalResponses = !!cfg.approval_responses
-  const slackApprovalChecked = approvalRequests || approvalResponses
+  const approvalsOn = approvalRequests || approvalResponses
   const driftDetected = !!cfg.drift_detected
-  // Only components and sandboxes can produce a drift_detected event (mirrors
-  // the Go SupportsDriftDetected helper). The matcher silently drops drift
-  // workflow lifecycle events entirely, so the toggle is the *only* knob that
-  // ever fires drift notifications — render it only where it can actually fire.
   const supportsDrift = RESOURCES_WITH_DRIFT_DETECTED.has(kind)
 
-  const opSummary =
-    ops.length === 0 ? 'all ops' : `${ops.length} op${ops.length === 1 ? '' : 's'}`
-  const approvalSummary =
-    approvalRequests && approvalResponses
-      ? 'approvals'
-      : approvalRequests
-        ? 'approval requests'
-        : approvalResponses
-          ? 'approval responses'
-          : null
+  const lifecycleOn = outcome !== 'none'
 
-  const summaryParts = enabled
-    ? [opSummary, OUTCOME_LABELS[outcome].toLowerCase(), approvalSummary].filter(
-        Boolean
-      ) as string[]
-    : ['off']
+  // Remember the last non-'none' outcome so toggling Lifecycle off → on
+  // restores what the user had picked instead of resetting to 'completion'.
+  const lastLifecycleOutcomeRef = useRef<Exclude<Outcome, 'none'>>(
+    outcome === 'none' ? 'completion' : outcome
+  )
+  if (outcome !== 'none') {
+    lastLifecycleOutcomeRef.current = outcome
+  }
+
+  const buildSummary = (): { text: string; theme: 'neutral' | 'warn' } => {
+    if (!enabled) return { text: 'off', theme: 'neutral' }
+
+    const driftActive = supportsDrift && driftDetected
+    const parts: string[] = []
+    if (lifecycleOn) parts.push(OUTCOME_LABELS[outcome].toLowerCase())
+    if (approvalsOn) parts.push('approvals')
+    if (driftActive) parts.push('drift')
+
+    if (parts.length === 0) {
+      return { text: 'no events', theme: 'warn' }
+    }
+    if (parts.length === 1 && driftActive && !lifecycleOn && !approvalsOn) {
+      return { text: 'drift only', theme: 'neutral' }
+    }
+    return { text: parts.join(' · '), theme: 'neutral' }
+  }
+  const summary = buildSummary()
 
   const setOps = (nextOps: string[]) => {
     onChange({ ...cfg, ops: nextOps })
@@ -93,6 +115,18 @@ export const ResourceBlock = ({
 
   const setDriftDetected = (next: boolean) => {
     onChange({ ...cfg, drift_detected: next })
+  }
+
+  const toggleLifecycle = (next: boolean) => {
+    if (next) {
+      setOutcome(lastLifecycleOutcomeRef.current)
+    } else {
+      setOutcome('none')
+    }
+  }
+
+  const toggleApprovals = (next: boolean) => {
+    setApproval(next, next)
   }
 
   return (
@@ -125,8 +159,12 @@ export const ResourceBlock = ({
           }}
         />
 
-        <Text variant="subtext" theme="neutral" className="ml-auto !mr-2 truncate">
-          {summaryParts.join(' · ')}
+        <Text
+          variant="subtext"
+          theme={summary.theme}
+          className="ml-auto !mr-2 truncate"
+        >
+          {summary.text}
         </Text>
 
         <button
@@ -151,69 +189,121 @@ export const ResourceBlock = ({
         >
           <div className="flex flex-col gap-2">
             <Text variant="subtext" weight="strong">
-              Sub-operations
+              Which event categories?
             </Text>
-            <Text variant="subtext" theme="neutral">
-              Leave all unchecked to receive every sub-operation.
-            </Text>
-            <div className="flex flex-wrap">
-              {SUB_OPS[kind].map((op) => (
-                <CheckboxInput
-                  key={op}
-                  id={`interests-${kind}-op-${op}`}
-                  checked={ops.includes(op)}
-                  onChange={() => toggleOp(op)}
-                  disabled={disabled}
-                  labelProps={{
-                    labelText: labelForSubOp(op),
-                    labelTextProps: { variant: 'subtext' },
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Text variant="subtext" weight="strong">
-              Notify on
-            </Text>
-            <div className="flex flex-wrap gap-x-2">
-              {(['all', 'completion', 'failures'] as Outcome[]).map((o) => (
-                <RadioInput
-                  key={o}
-                  name={`interests-${kind}-outcome`}
-                  value={o}
-                  checked={outcome === o}
-                  onChange={() => setOutcome(o)}
-                  disabled={disabled}
-                  labelProps={{
-                    labelText: OUTCOME_LABELS[o],
-                    labelTextProps: { variant: 'subtext' },
-                  }}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Text variant="subtext" weight="strong">
-              Approval events
-            </Text>
-            {variant === 'slack' ? (
+            <div className="flex flex-col gap-1">
               <CheckboxInput
-                id={`interests-${kind}-approval`}
-                checked={slackApprovalChecked}
-                onChange={(e) =>
-                  setApproval(e.target.checked, e.target.checked)
-                }
+                id={`interests-${kind}-cat-lifecycle`}
+                checked={lifecycleOn}
+                onChange={(e) => toggleLifecycle(e.target.checked)}
                 disabled={disabled}
                 labelProps={{
-                  labelText: 'Include approval events',
+                  labelText: 'Lifecycle events (deploys, teardowns)',
                   labelTextProps: { variant: 'subtext' },
                 }}
               />
-            ) : (
-              <div className="flex flex-col">
+              <CheckboxInput
+                id={`interests-${kind}-cat-approvals`}
+                checked={approvalsOn}
+                onChange={(e) => toggleApprovals(e.target.checked)}
+                disabled={disabled}
+                labelProps={{
+                  labelText: 'Approval events',
+                  labelTextProps: { variant: 'subtext' },
+                }}
+              />
+              {supportsDrift ? (
+                <CheckboxInput
+                  id={`interests-${kind}-cat-drift`}
+                  checked={driftDetected}
+                  onChange={(e) => setDriftDetected(e.target.checked)}
+                  disabled={disabled}
+                  labelProps={{
+                    labelText: 'Drift detection',
+                    labelTextProps: { variant: 'subtext' },
+                  }}
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {lifecycleOn ? (
+            <div className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800/40">
+              <Text variant="subtext" weight="strong">
+                Lifecycle filter
+              </Text>
+              <div className="flex flex-wrap gap-x-2">
+                {(['all', 'completion', 'failures'] as Exclude<
+                  Outcome,
+                  'none'
+                >[]).map((o) => (
+                  <RadioInput
+                    key={o}
+                    name={`interests-${kind}-outcome`}
+                    value={o}
+                    checked={outcome === o}
+                    onChange={() => setOutcome(o)}
+                    disabled={disabled}
+                    labelProps={{
+                      labelText: OUTCOME_LABELS[o],
+                      labelTextProps: { variant: 'subtext' },
+                    }}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                aria-expanded={subOpsExpanded}
+                aria-controls={`interests-${kind}-subops`}
+                onClick={() => setSubOpsExpanded((v) => !v)}
+                disabled={disabled}
+                className={cn(
+                  'mt-1 flex items-center gap-1 self-start rounded-md text-left',
+                  'hover:underline',
+                  disabled && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <Icon variant={subOpsExpanded ? 'CaretDown' : 'CaretRight'} />
+                <Text variant="subtext" theme="neutral">
+                  Narrow to specific operations (optional)
+                </Text>
+              </button>
+
+              {subOpsExpanded ? (
+                <div
+                  id={`interests-${kind}-subops`}
+                  className="flex flex-col gap-1"
+                >
+                  <Text variant="subtext" theme="neutral">
+                    Leave all unchecked to receive every sub-operation.
+                  </Text>
+                  <div className="flex flex-wrap gap-x-3">
+                    {SUB_OPS[kind].map((op) => (
+                      <CheckboxInput
+                        key={op}
+                        id={`interests-${kind}-op-${op}`}
+                        checked={ops.includes(op)}
+                        onChange={() => toggleOp(op)}
+                        disabled={disabled}
+                        labelProps={{
+                          labelText: labelForSubOp(op),
+                          labelTextProps: { variant: 'subtext' },
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {variant === 'webhook' && approvalsOn ? (
+            <div className="flex flex-col gap-2 rounded-md border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-800/40">
+              <Text variant="subtext" weight="strong">
+                Approval filter
+              </Text>
+              <div className="flex flex-col gap-1">
                 <CheckboxInput
                   id={`interests-${kind}-approval-req`}
                   checked={approvalRequests}
@@ -239,25 +329,6 @@ export const ResourceBlock = ({
                   }}
                 />
               </div>
-            )}
-          </div>
-
-          {supportsDrift ? (
-            <div className="flex flex-col gap-2">
-              <Text variant="subtext" weight="strong">
-                Drift detection
-              </Text>
-              <CheckboxInput
-                id={`interests-${kind}-drift-detected`}
-                checked={driftDetected}
-                onChange={(e) => setDriftDetected(e.target.checked)}
-                disabled={disabled}
-                labelProps={{
-                  labelText:
-                    'Notify only when drift is actually detected (not for clean drift scans)',
-                  labelTextProps: { variant: 'subtext' },
-                }}
-              />
             </div>
           ) : null}
         </div>
