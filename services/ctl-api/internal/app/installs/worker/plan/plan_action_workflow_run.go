@@ -86,9 +86,11 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	}
 	var clusterInfo *kube.ClusterInfo
 	if run.EnableKubeConfig.Valid && run.EnableKubeConfig.Bool {
-		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+		// Action workflow runs aren't bound to a specific component, so we
+		// always fall through to the sandbox-default context.
+		clusterInfo, err = p.resolveKubernetesContext(ctx, nil, appCfg, stack, state, cloudAuth)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get cluster info")
+			return nil, nil, errors.Wrap(err, "unable to resolve kubernetes context")
 		}
 	}
 
