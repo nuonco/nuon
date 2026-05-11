@@ -148,7 +148,6 @@ func (h *handler) emitExecuteMetrics(event signal.SignalPhaseEvent, err error, d
 	})
 
 	h.mw.Timing("queue.signal.latency", dur, tags)
-	h.mw.Incr("queue.signal.executed", tags)
 }
 
 // runSignalExecute calls the user-provided signal Execute in a panic-safe boundary.
