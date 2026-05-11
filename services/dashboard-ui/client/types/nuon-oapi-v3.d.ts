@@ -649,6 +649,13 @@ export interface paths {
      */
     post: operations["CreateInstall"];
   };
+  "/v1/apps/{app_id}/kubernetes-contexts-configs": {
+    /**
+     * create a kubernetes contexts config
+     * @description Create the named kubernetes_context bindings for an app config version. Each context names a peer terraform_module or pulumi component that emits cluster connection details as outputs.
+     */
+    post: operations["CreateAppKubernetesContextsConfig"];
+  };
   "/v1/apps/{app_id}/latest-break-glass-config": {
     /**
      * get latest app break glass config
@@ -3251,6 +3258,7 @@ export interface components {
       id?: string;
       input?: components["schemas"]["app.AppInputConfig"];
       intermediate_config?: components["schemas"]["blobstore.Blob"];
+      kubernetes_contexts?: components["schemas"]["app.AppKubernetesContextsConfig"];
       operation_role_config?: components["schemas"]["app.AppOperationRoleConfig"];
       org_id?: string;
       permissions?: components["schemas"]["app.AppPermissionsConfig"];
@@ -3324,6 +3332,29 @@ export interface components {
     };
     /** @enum {string} */
     "app.AppInputSource": "vendor" | "customer";
+    "app.AppKubernetesContextConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      app_kubernetes_contexts_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      name?: string;
+      org_id?: string;
+      source_component_id?: string;
+      source_component_name?: string;
+      updated_at?: string;
+    };
+    "app.AppKubernetesContextsConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      contexts?: components["schemas"]["app.AppKubernetesContextConfig"][];
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      org_id?: string;
+      updated_at?: string;
+    };
     "app.AppOperationRoleConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -3711,6 +3742,13 @@ export interface components {
       helm?: components["schemas"]["app.HelmComponentConfig"];
       id?: string;
       job?: components["schemas"]["app.JobComponentConfig"];
+      /**
+       * @description KubernetesContextName is the name of an AppKubernetesContextConfig on
+       * the same AppConfig. Empty means fall back to the implicit sandbox
+       * default. Stored as a name (not an FK) so it remains stable across
+       * AppConfig versions, mirroring how component dependencies are tracked.
+       */
+      kubernetes_context_name?: string;
       kubernetes_manifest?: components["schemas"]["app.KubernetesManifestComponentConfig"];
       max_auto_retries?: number;
       /** @description Operation roles map: operation type -> role name */
@@ -6666,6 +6704,14 @@ export interface components {
       /** @description New, optional fields */
       type?: string;
     };
+    "service.AppKubernetesContext": {
+      /**
+       * @description Component is the name of the peer terraform_module or pulumi component
+       * that emits cluster connection details as outputs.
+       */
+      component: string;
+      name: string;
+    };
     "service.AppPolicyConfig": {
       components?: string[];
       contents: string;
@@ -6882,6 +6928,10 @@ export interface components {
         [key: string]: components["schemas"]["service.AppInputRequest"];
       };
     };
+    "service.CreateAppKubernetesContextsConfigRequest": {
+      app_config_id: string;
+      contexts?: components["schemas"]["service.AppKubernetesContext"][];
+    };
     "service.CreateAppOperationRoleConfigRequest": {
       app_config_id: string;
       rules: components["schemas"]["service.OperationRoleRuleRequest"][];
@@ -7071,6 +7121,7 @@ export interface components {
       deploy_timeout?: string;
       drift_schedule?: string;
       helm_repo_config?: components["schemas"]["service.HelmRepoConfigRequest"];
+      kubernetes_context?: string;
       max_auto_retries?: number;
       namespace?: string;
       operation_roles?: {
@@ -7213,6 +7264,7 @@ export interface components {
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
       drift_schedule?: string;
+      kubernetes_context?: string;
       /** @description Kustomize configuration (mutually exclusive with Manifest) */
       kustomize?: components["schemas"]["service.KustomizeConfigRequest"];
       /** @description Inline manifest (mutually exclusive with Kustomize) */
@@ -7262,6 +7314,7 @@ export interface components {
       env_vars: {
         [key: string]: string;
       };
+      kubernetes_context?: string;
       max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
@@ -7341,6 +7394,7 @@ export interface components {
       env_vars: {
         [key: string]: string;
       };
+      kubernetes_context?: string;
       max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
@@ -13364,6 +13418,62 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * create a kubernetes contexts config
+   * @description Create the named kubernetes_context bindings for an app config version. Each context names a peer terraform_module or pulumi component that emits cluster connection details as outputs.
+   */
+  CreateAppKubernetesContextsConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateAppKubernetesContextsConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.AppKubernetesContextsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

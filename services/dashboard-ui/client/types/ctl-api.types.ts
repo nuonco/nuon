@@ -15,6 +15,10 @@ export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+export type TAppKubernetesContextsConfig =
+  components['schemas']['app.AppKubernetesContextsConfig']
+export type TAppKubernetesContextConfig =
+  components['schemas']['app.AppKubernetesContextConfig']
 export type TAppSandboxBuild = {
   id: string
   created_by_id?: string
