@@ -11,8 +11,11 @@ import (
 )
 
 // installIDTagKey is the tag we set on every taggable AWS resource so we can
-// discover it without consulting the local state file.
-const installIDTagKey = "nuon:install_id"
+// discover it without consulting the local state file. This is a stable
+// contract with the sandbox terraform's data-source filters at
+// /Users/jordanacosta/projects/github.com/nuonco/aws-eks-sandbox/data.tf —
+// renaming here requires a matching change there.
+const installIDTagKey = "install.nuon.co/id"
 
 // IsAWSErrCode reports whether err is an AWS API error with the given code.
 func IsAWSErrCode(err error, code string) bool {

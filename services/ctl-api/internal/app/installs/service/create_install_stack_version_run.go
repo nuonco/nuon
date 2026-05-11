@@ -235,9 +235,23 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 		supportARNs = []string{s.cfg.RunnerDefaultSupportIAMRole}
 	}
 
+	// Cluster name mirrors the CloudFormation renderer's getClusterName: the
+	// install input "cluster_name" if set, else the install ID. This becomes
+	// the value of the kubernetes.io/cluster/<name> subnet tag the EKS sandbox
+	// terraform expects.
+	clusterName := install.ID
+	if install.CurrentInstallInputs != nil {
+		if v, ok := install.CurrentInstallInputs.Values["cluster_name"]; ok && v != nil && *v != "" {
+			clusterName = *v
+		}
+	}
+
 	return &app.InstallerSDKConfig{
 		InstallID:    install.ID,
+		OrgID:        install.OrgID,
+		AppID:        install.AppID,
 		AWSRegion:    install.AWSAccount.Region,
+		ClusterName:  clusterName,
 		RunnerID:     install.RunnerID,
 		RunnerAPIURL: runnerAPIURL,
 
