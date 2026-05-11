@@ -70,15 +70,15 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return time.Now().UnixMilli()
 	}).Get(&startMs)
 
-	var installLabels map[string]string
+	var ownerLabels map[string]string
 	var runnerType string
 	defer func() {
 		status := "ok"
 		if err != nil {
 			status = "error"
 		}
-		tagMap := make(map[string]string, len(installLabels)+3)
-		for k, v := range installLabels {
+		tagMap := make(map[string]string, len(ownerLabels)+3)
+		for k, v := range ownerLabels {
 			tagMap[k] = v
 		}
 		tagMap["status"] = status
@@ -100,12 +100,15 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get runner")
 	}
 	runnerType = string(runner.RunnerGroup.Type)
-	if runner.RunnerGroup.OwnerType == "installs" {
+	switch runner.RunnerGroup.OwnerType {
+	case "installs":
 		install, err := installactivities.AwaitGetByInstallID(ctx, runner.RunnerGroup.OwnerID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install for runner")
 		}
-		installLabels = install.Labels
+		ownerLabels = install.Labels
+	case "orgs":
+		ownerLabels = runner.Org.Labels
 	}
 
 	l, err := log.WorkflowLogger(ctx)
@@ -187,6 +190,20 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to update process status to inactive")
+		}
+
+		stopTagMap := make(map[string]string, len(ownerLabels)+4)
+		for k, v := range ownerLabels {
+			stopTagMap[k] = v
+		}
+		stopTagMap["runner_id"] = s.RunnerID
+		stopTagMap["runner_type"] = runnerType
+		stopTagMap["process_id"] = s.ProcessID
+		stopTagMap["process_type"] = string(process.Type)
+		stopTags := metrics.ToTags(stopTagMap)
+		s.mw.Incr("runner.process.stop", stopTags)
+		if process.StartedAt != nil {
+			s.mw.Timing("runner.process.latency", workflow.Now(ctx).Sub(*process.StartedAt), stopTags)
 		}
 
 		// Enqueue on_inactive signal before stopping the queue
