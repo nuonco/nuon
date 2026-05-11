@@ -70,21 +70,31 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 	}
 
 	var installID, installName string
-	if runner.RunnerGroup.OwnerType == plugins.TableName(s.db, app.Install{}) {
+	var ownerLabels map[string]string
+	switch runner.RunnerGroup.OwnerType {
+	case plugins.TableName(s.db, app.Install{}):
 		installID = runner.RunnerGroup.OwnerID
-		installName = s.heartbeatGetInstallName(ctx, installID)
+		if install := s.heartbeatGetInstall(ctx, installID); install != nil {
+			installName = install.Name
+			ownerLabels = install.Labels
+		}
+	case plugins.TableName(s.db, app.Org{}):
+		ownerLabels = runner.Org.Labels
 	}
 
-	tags := metrics.ToTags(map[string]string{
-		"org_id":         runner.OrgID,
-		"org_name":       runner.Org.Name,
-		"runner_id":      runnerID,
-		"runner_type":    string(runner.RunnerGroup.Type),
-		"runner_version": req.Version,
-		"process_type":   string(req.Process),
-		"install_id":     installID,
-		"install_name":   installName,
-	})
+	tagMap := make(map[string]string, len(ownerLabels)+8)
+	for k, v := range ownerLabels {
+		tagMap[k] = v
+	}
+	tagMap["org_id"] = runner.OrgID
+	tagMap["org_name"] = runner.Org.Name
+	tagMap["runner_id"] = runnerID
+	tagMap["runner_type"] = string(runner.RunnerGroup.Type)
+	tagMap["runner_version"] = req.Version
+	tagMap["process_type"] = string(req.Process)
+	tagMap["install_id"] = installID
+	tagMap["install_name"] = installName
+	tags := metrics.ToTags(tagMap)
 
 	s.mw.Incr("runner.heart_beat", tags)
 	s.mw.Timing("runner.heart_beat.alive_time", req.AliveTime, tags)
@@ -135,22 +145,22 @@ func (s *service) heartbeatGetRunner(ctx context.Context, runnerID string) (*app
 	return &runner, nil
 }
 
-func (s *service) heartbeatGetInstallName(ctx context.Context, installID string) string {
+func (s *service) heartbeatGetInstall(ctx context.Context, installID string) *app.Install {
 	if cached, ok := s.runnerHeartbeatCache.Installs.Get(installID); ok {
-		return cached.Name
+		return cached
 	}
 
 	var install app.Install
 	if err := s.db.WithContext(ctx).
-		Select("id", "name").
+		Select("id", "name", "labels").
 		First(&install, "id = ?", installID).Error; err != nil {
 		s.l.Warn("unable to look up install for heartbeat metric tag",
 			zap.String("install_id", installID),
 			zap.Error(err),
 		)
-		return ""
+		return nil
 	}
 
 	s.runnerHeartbeatCache.Installs.Add(installID, &install)
-	return install.Name
+	return &install
 }

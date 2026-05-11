@@ -18,6 +18,7 @@ func (a *Activities) GetEmitter(ctx context.Context, req *GetEmitterRequest) (*a
 	var emitter app.QueueEmitter
 
 	if res := a.db.WithContext(ctx).
+		Preload("Queue").
 		Where("id = ?", req.EmitterID).
 		First(&emitter); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get emitter")

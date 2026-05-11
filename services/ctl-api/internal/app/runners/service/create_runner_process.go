@@ -7,10 +7,13 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 )
 
 type CreateRunnerProcessRequest struct {
@@ -55,7 +58,48 @@ func (s *service) CreateRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
+	s.emitProcessStart(ctx, runnerID, process)
+
 	ctx.JSON(http.StatusCreated, process)
+}
+
+func (s *service) emitProcessStart(ctx context.Context, runnerID string, process *app.RunnerProcess) {
+	runner, err := s.heartbeatGetRunner(ctx, runnerID)
+	if err != nil {
+		s.l.Warn("unable to fetch runner for runner.process.start metric",
+			zap.String("runner_id", runnerID),
+			zap.Error(err),
+		)
+		return
+	}
+
+	var installID, installName string
+	var ownerLabels map[string]string
+	switch runner.RunnerGroup.OwnerType {
+	case plugins.TableName(s.db, app.Install{}):
+		installID = runner.RunnerGroup.OwnerID
+		if install := s.heartbeatGetInstall(ctx, installID); install != nil {
+			installName = install.Name
+			ownerLabels = install.Labels
+		}
+	case plugins.TableName(s.db, app.Org{}):
+		ownerLabels = runner.Org.Labels
+	}
+
+	tagMap := make(map[string]string, len(ownerLabels)+8)
+	for k, v := range ownerLabels {
+		tagMap[k] = v
+	}
+	tagMap["org_id"] = runner.OrgID
+	tagMap["org_name"] = runner.Org.Name
+	tagMap["runner_id"] = runnerID
+	tagMap["runner_type"] = string(runner.RunnerGroup.Type)
+	tagMap["process_id"] = process.ID
+	tagMap["process_type"] = string(process.Type)
+	tagMap["install_id"] = installID
+	tagMap["install_name"] = installName
+
+	s.mw.Incr("runner.process.start", metrics.ToTags(tagMap))
 }
 
 func (s *service) createRunnerProcess(ctx context.Context, runnerID string, req CreateRunnerProcessRequest) (*app.RunnerProcess, error) {

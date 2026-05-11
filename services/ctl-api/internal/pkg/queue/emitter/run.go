@@ -5,12 +5,13 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
 
-func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
+func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return false, err
@@ -38,6 +39,15 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to get emitter")
 	}
 
+	if workflow.GetInfo(ctx).ContinuedExecutionRunID == "" {
+		e.emitLifecycleMetric(ctx, "queues.signal_emitter.start", emitter)
+	}
+	defer func() {
+		if finished || err != nil {
+			e.emitLifecycleMetric(ctx, "queues.signal_emitter.stop", emitter)
+		}
+	}()
+
 	switch emitter.Mode {
 	case app.QueueEmitterModeCron:
 		return e.runCronMode(ctx, l, emitter)
@@ -46,6 +56,15 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 	default:
 		return false, errors.Errorf("unknown emitter mode: %s", emitter.Mode)
 	}
+}
+
+func (e *emitterWorkflow) emitLifecycleMetric(ctx workflow.Context, name string, emitter *app.QueueEmitter) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type": string(emitter.SignalType),
+		"mode":        string(emitter.Mode),
+		"owner_type":  emitter.Queue.OwnerType,
+	})
+	e.mw.Incr(ctx, name, tags...)
 }
 
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
