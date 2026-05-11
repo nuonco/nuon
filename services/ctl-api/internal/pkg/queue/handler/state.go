@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -53,10 +54,15 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	sig, err := activities.AwaitGetQueueSignalSignalByQueueSignalID(ctx, h.queueSignalID)
 	if err != nil {
+		if catalog.IsSignalTypeNotRegistered(err) {
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+				QueueSignalID:     h.queueSignalID,
+				Status:            app.StatusPending,
+				StatusDescription: "signal type not registered in current build; parked for redeploy",
+			})
+			return nil
+		}
 		return errors.Wrap(err, "unable to get signal")
-	}
-	if sig == nil {
-		panic("signal was nil")
 	}
 	h.sig = sig
 
