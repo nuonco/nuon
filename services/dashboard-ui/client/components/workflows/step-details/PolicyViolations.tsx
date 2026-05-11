@@ -1,5 +1,4 @@
 import { Card } from '@/components/common/Card'
-import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TWorkflowStep } from '@/types'
@@ -14,7 +13,6 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
     denyViolations,
     warnViolations,
     denyCount,
-    warnCount,
     hasPolicyData,
     hasViolations,
   } = getPolicyViolationCounts(step)
@@ -40,15 +38,6 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                 {denyCount} {denyCount === 1 ? 'violation' : 'violations'}
               </Text>
             ) : null}
-            {warnCount > 0 ? (
-              <Text
-                variant="subtext"
-                weight="strong"
-                className="text-orange-800 dark:text-orange-500"
-              >
-                {warnCount} {warnCount === 1 ? 'warning' : 'warnings'}
-              </Text>
-            ) : null}
             {!hasViolations ? (
               <Text
                 variant="subtext"
@@ -62,74 +51,37 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
         </div>
 
         {hasViolations ? (
-          <div className="flex flex-col">
-            {denyCount > 0 ? (
-              <Expand
-                id={`policy-denies-${step.id}`}
-                heading={
-                  <div className="flex items-center gap-2 text-red-600 dark:text-red-500">
-                    <Icon variant="XCircle" size={14} />
-                    <Text variant="subtext" weight="strong">
-                      Policy {denyCount === 1 ? 'Violation' : 'Violations'}
-                    </Text>
-                  </div>
-                }
-                className="border-b border-cool-grey-200 dark:border-dark-grey-600 last:border-b-0"
-                headerClassName="!p-3"
+          <div className="flex flex-col gap-2 p-4">
+            {denyViolations.map((violation, index) => (
+              <div
+                key={`deny-${violation.policy_id}-${index}`}
+                className="flex items-start gap-2 rounded-md p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
               >
-                <ul className="px-4 pb-3 space-y-2">
-                  {denyViolations.map((violation, index) => (
-                    <li
-                      key={`deny-${violation.policy_id}-${index}`}
-                      className="flex items-start gap-2"
-                    >
-                      <Icon
-                        variant="CaretRight"
-                        size={12}
-                        className="mt-1 shrink-0"
-                      />
-                      <Text variant="subtext">
-                        {violation.message || 'Policy check failed'}
-                      </Text>
-                    </li>
-                  ))}
-                </ul>
-              </Expand>
-            ) : null}
-
-            {warnCount > 0 ? (
-              <Expand
-                id={`policy-warnings-${step.id}`}
-                heading={
-                  <div className="flex items-center gap-2 text-orange-800 dark:text-orange-500">
-                    <Icon variant="Warning" size={14} />
-                    <Text variant="subtext" weight="strong">
-                      Policy {warnCount === 1 ? 'Warning' : 'Warnings'}
-                    </Text>
-                  </div>
-                }
-                className="border-b border-cool-grey-200 dark:border-dark-grey-600 last:border-b-0"
-                headerClassName="!p-3"
+                <Icon
+                  variant="XCircle"
+                  size={14}
+                  className="mt-0.5 shrink-0"
+                />
+                <Text variant="subtext">
+                  {violation.message || 'Policy check failed'}
+                </Text>
+              </div>
+            ))}
+            {warnViolations.map((violation, index) => (
+              <div
+                key={`warn-${violation.policy_id}-${index}`}
+                className="flex items-start gap-2 rounded-md p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"
               >
-                <ul className="px-4 pb-3 space-y-2">
-                  {warnViolations.map((violation, index) => (
-                    <li
-                      key={`warn-${violation.policy_id}-${index}`}
-                      className="flex items-start gap-2"
-                    >
-                      <Icon
-                        variant="CaretRight"
-                        size={12}
-                        className="mt-1 shrink-0"
-                      />
-                      <Text variant="subtext">
-                        {violation.message || 'Policy warning'}
-                      </Text>
-                    </li>
-                  ))}
-                </ul>
-              </Expand>
-            ) : null}
+                <Icon
+                  variant="Warning"
+                  size={14}
+                  className="mt-0.5 shrink-0"
+                />
+                <Text variant="subtext">
+                  {violation.message || 'Policy warning'}
+                </Text>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="p-4">
