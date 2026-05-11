@@ -7,6 +7,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	compositeerrorshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/composite_errors/helpers"
 	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
@@ -26,4 +27,5 @@ var HelpersModule = fx.Module("helpers",
 	fx.Provide(installshelpers.New),
 	fx.Provide(runnershelpers.New),
 	fx.Provide(generalhelpers.New),
+	fx.Provide(compositeerrorshelpers.New),
 )

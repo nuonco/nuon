@@ -3,6 +3,7 @@ package workflows
 import (
 	"go.uber.org/fx"
 
+	ceactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/composite_errors/activities"
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitteractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
@@ -37,6 +38,9 @@ type Params struct {
 	SignalsActivities         *signalsactivities.Activities
 	SignalLifecycleActivities *signal.SignalLifecycleActivities
 	EmitterClient             *emitterclient.Client
+
+	// composite errors
+	CompositeErrorActivities *ceactivities.Activities
 }
 
 type Activities struct {
@@ -52,6 +56,7 @@ type Activities struct {
 	QueueClient               *queueclient.Client
 	EmitterClient             *emitterclient.Client
 	SignalLifecycleActivities *signal.SignalLifecycleActivities
+	CompositeErrorActivities  *ceactivities.Activities
 }
 
 func (a *Activities) AllActivities() []any {
@@ -68,6 +73,7 @@ func (a *Activities) AllActivities() []any {
 		a.QueueClient,
 		a.EmitterClient,
 		a.SignalLifecycleActivities,
+		a.CompositeErrorActivities,
 	}
 }
 
@@ -85,5 +91,6 @@ func NewActivities(params Params) *Activities {
 		QueueClient:               params.QueueClient,
 		EmitterClient:             params.EmitterClient,
 		SignalLifecycleActivities: params.SignalLifecycleActivities,
+		CompositeErrorActivities:  params.CompositeErrorActivities,
 	}
 }

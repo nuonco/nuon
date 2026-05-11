@@ -3,6 +3,7 @@ package fxmodules
 import (
 	"go.uber.org/fx"
 
+	ceactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/composite_errors/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/interceptors"
 	cctxinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/cctx"
 	metricsinterceptor "github.com/nuonco/nuon/services/ctl-api/internal/interceptors/metrics"
@@ -66,6 +67,7 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(statusactivities.New),
 	fx.Provide(activities.New),
 	fx.Provide(onboardingactivities.New),
+	fx.Provide(ceactivities.New),
 
 	// workflows
 	fx.Provide(job.New),
