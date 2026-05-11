@@ -101,9 +101,9 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, errors.Wrap(err, "unable to get auth for deploy")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	clusterInfo, err := p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster info")
+		return nil, errors.Wrap(err, "unable to resolve kubernetes context")
 	}
 
 	return &plantypes.KubernetesManifestDeployPlan{
