@@ -33,6 +33,9 @@ type ConfigDir struct {
 
 	OperationRolesConfig *config.OperationRolesConfig `name:"operation_roles"`
 
+	KubernetesContexts    *config.KubernetesContextsConfig `name:"kubernetes_contexts"`
+	KubernetesContextsDir []*config.KubernetesContext      `name:"kubernetes_contexts"`
+
 	BreakGlass    *config.BreakGlass      `name:"break_glass"`
 	BreakGlassDir []*config.AppAWSIAMRole `name:"break_glass"`
 
@@ -133,6 +136,27 @@ func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
 	}, nil
 }
 
+func (c *ConfigDir) getKubernetesContexts() (*config.KubernetesContextsConfig, error) {
+	if c.KubernetesContexts == nil && len(c.KubernetesContextsDir) < 1 {
+		return nil, nil
+	}
+
+	if c.KubernetesContexts != nil && len(c.KubernetesContextsDir) > 0 {
+		return nil, ParseErr{
+			Description: "Can not provide kubernetes_contexts both with a kubernetes_contexts.toml and kubernetes_contexts/ directory",
+			Err:         errors.New("Can not provide kubernetes_contexts both with a kubernetes_contexts.toml and kubernetes_contexts/ directory"),
+		}
+	}
+
+	if c.KubernetesContexts != nil {
+		return c.KubernetesContexts, nil
+	}
+
+	return &config.KubernetesContextsConfig{
+		Contexts: c.KubernetesContextsDir,
+	}, nil
+}
+
 func (c *ConfigDir) getBreakGlass() (*config.BreakGlass, error) {
 	if c.BreakGlass == nil && len(c.BreakGlassDir) < 1 {
 		return nil, nil
@@ -194,6 +218,10 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	kubernetesContexts, err := c.getKubernetesContexts()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &config.AppConfig{
 		Components:     c.Components,
@@ -211,6 +239,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Stack:          c.Stack,
 		Policies:       policies,
 		OperationRoles: operationRoles,
+		KubernetesContexts: kubernetesContexts,
 	}
 
 	if c.Metadata != nil {
