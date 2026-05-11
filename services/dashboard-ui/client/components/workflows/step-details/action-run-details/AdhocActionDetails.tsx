@@ -31,7 +31,7 @@ export const AdhocActionDetails = ({ actionRun }: IAdhocActionDetails) => {
               theme="neutral"
             >
               {toSentenceCase(firstStep?.status)}{' '}
-              {firstStep?.execution_duration > 1000000 ? (
+              {(firstStep?.execution_duration ?? 0) > 1000000 ? (
                 <>
                   in{' '}
                   <Duration

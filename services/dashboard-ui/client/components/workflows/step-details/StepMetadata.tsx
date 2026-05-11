@@ -9,13 +9,14 @@ import { Time } from '@/components/common/Time'
 import { Link } from '@/components/common/Link'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
+import type { TWorkflowStep } from '@/types'
 import type { IStepDetails } from './types'
 
 const StepHistoryStatus = ({
   status,
   id,
 }: {
-  status: IStepDetails['step']['status']['history'][number]
+  status: NonNullable<NonNullable<TWorkflowStep['status']>['history']>[number]
   id: string
 }) => {
   const description = status.status_human_description
@@ -66,27 +67,29 @@ export const StepMetadata = ({ step }: IStepDetails) => {
         }
       >
         <div className="border-t flex flex-col p-4 divide-y">
-          {step.status?.history?.map((status, idx) => (
+          {step?.status?.history?.map((status, idx) => (
             <StepHistoryStatus
               key={`${status.created_at_ts}-${idx}`}
               status={status}
               id={`step-history-${idx}`}
             />
           ))}
-          <StepHistoryStatus status={step.status} id="step-history-current" />
+          {step?.status ? (
+            <StepHistoryStatus status={step.status} id="step-history-current" />
+          ) : null}
         </div>
       </Expand>
 
-      {step.status?.metadata?.retry_type && (
+      {step?.status?.metadata?.retry_type && (
         <div className="flex flex-col gap-1 border rounded-md p-4">
           <Text variant="label" theme="neutral">
             Retry info
           </Text>
           <Text variant="subtext">Type: {step.status.metadata.retry_type as string}</Text>
-          {step.status.metadata.retry_idx !== undefined && (
+          {step.status.metadata?.retry_idx !== undefined && (
             <Text variant="subtext">
               Attempt: {step.status.metadata.retry_idx as number}
-              {step.status.metadata.max_retries !== undefined
+              {step.status.metadata?.max_retries !== undefined
                 ? ` / ${step.status.metadata.max_retries}`
                 : ''}
             </Text>
