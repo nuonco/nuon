@@ -449,3 +449,7 @@ func NewSlackChannelSubscriptionID() string {
 func NewSlackThreadAnchorID() string {
 	return shortid.NewNanoID("sta")
 }
+
+func NewCompositeErrorID() string {
+	return shortid.NewNanoID("cer")
+}

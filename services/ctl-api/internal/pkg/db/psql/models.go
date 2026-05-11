@@ -182,5 +182,9 @@ func AllModels() []any {
 
 		// onboarding
 		&app.Onboarding{},
+
+		// composite errors
+		&app.CompositeError{},
+		&app.CompositeErrorCause{},
 	}
 }
