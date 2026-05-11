@@ -14,7 +14,7 @@ fi
 set -eu
 
 # DEFAULT_BASE_URL: the devserver rewrites this line at request time.
-BASE_URL="${INSTALLER_CLI_BASE_URL:-https://install.nuon.co/installer-cli}"
+BASE_URL="${INSTALLER_CLI_BASE_URL:-https://cdn.public.nuon.co/installer-cli}"
 
 NAME=installer-cli
 DIR=$(mktemp -d)
