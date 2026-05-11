@@ -72,6 +72,8 @@ func (h *Helpers) HardDelete(ctx context.Context, orgID string) error {
 		&app.Policy{},
 		&app.AccountRole{},
 		&app.Role{},
+		&app.QueueSignal{},
+		&app.Queue{},
 	}
 	for _, obj := range childObjs {
 		res := h.db.WithContext(ctx).Unscoped().

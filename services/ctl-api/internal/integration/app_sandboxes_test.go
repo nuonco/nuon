@@ -46,7 +46,7 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 	s.T().Run("updates installs to reference new sandbox", func(t *testing.T) {
 		install := s.createInstall(s.appID)
 
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.ConnectedGithubVcsConfig = nil
 
 		appSandboxCfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
@@ -60,7 +60,7 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 	})
 
 	s.T().Run("successfully stores public vcs config", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.ConnectedGithubVcsConfig = nil
 
 		cfg, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
@@ -84,7 +84,7 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 			return
 		}
 
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 
@@ -109,7 +109,7 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 			return
 		}
 
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("mono")
 
@@ -124,7 +124,7 @@ func (s *appSandboxesSuite) TestCreateAppSandboxConfig() {
 			return
 		}
 
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("some-other-user/mono")
 
@@ -141,7 +141,7 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 			return
 		}
 
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.PublicGitVcsConfig = nil
 		req.ConnectedGithubVcsConfig.Repo = generics.ToPtr("nuonco/nuon")
 		_, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
@@ -154,7 +154,7 @@ func (s *appSandboxesSuite) TestGetAppSandboxLatestConfig() {
 	})
 
 	s.T().Run("success with public vcs connection", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppSandboxConfigRequest]()
+		req := s.fakeSandboxConfigReq(s.appID)
 		req.ConnectedGithubVcsConfig = nil
 		_, err := s.apiClient.CreateAppSandboxConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)

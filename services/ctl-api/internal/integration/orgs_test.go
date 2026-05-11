@@ -209,5 +209,8 @@ func (s *orgsIntegrationTestSuite) TestDeleteOrg() {
 		deleted, err := s.apiClient.DeleteOrg(s.ctx)
 		require.NoError(t, err)
 		require.True(t, deleted)
+
+		_, err = s.apiClient.GetOrg(s.ctx)
+		require.Error(t, err, "expected GetOrg to fail after delete")
 	})
 }

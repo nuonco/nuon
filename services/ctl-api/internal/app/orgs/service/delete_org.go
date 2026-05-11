@@ -58,7 +58,7 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 			return
 		}
 
-		ctx.JSON(http.StatusOK, app.EmptyResponse{})
+		ctx.JSON(http.StatusOK, true)
 		return
 	}
 
