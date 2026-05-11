@@ -9,7 +9,7 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// EnsureInstallQueues creates the four install queues if they don't already exist.
+// EnsureInstallQueues creates the install queues if they don't already exist.
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) error {
 	queues := []struct {
@@ -20,6 +20,7 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		{InstallSignalsQueueName, 20},
 		{InstallWorkflowStepGroupsQueueName, 10},
 		{InstallWorkflowStepsQueueName, 10},
+		{InstallStateManagerQueueName, 5},
 	}
 
 	ownerType := plugins.TableName(s.db, app.Install{})

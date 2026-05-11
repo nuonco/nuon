@@ -173,7 +173,7 @@ export const InstallDetail = () => {
               View Dashboard
             </a>
           )}
-          <Link to={`/queues?search=${install.id}`} className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 underline">
+          <Link to={`/queues?owner_id=${install.id}`} className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200 underline">
             View Queues
           </Link>
         </div>
