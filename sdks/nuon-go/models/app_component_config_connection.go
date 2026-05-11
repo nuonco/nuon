@@ -68,6 +68,12 @@ type AppComponentConfigConnection struct {
 	// job
 	Job *AppJobComponentConfig `json:"job,omitempty"`
 
+	// KubernetesContextName is the name of an AppKubernetesContextConfig on
+	// the same AppConfig. Empty means fall back to the implicit sandbox
+	// default. Stored as a name (not an FK) so it remains stable across
+	// AppConfig versions, mirroring how component dependencies are tracked.
+	KubernetesContextName string `json:"kubernetes_context_name,omitempty"`
+
 	// kubernetes manifest
 	KubernetesManifest *AppKubernetesManifestComponentConfig `json:"kubernetes_manifest,omitempty"`
 
