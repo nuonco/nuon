@@ -3,6 +3,7 @@ package log
 import (
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func NewFXLog() (fxevent.Logger, error) {
@@ -11,7 +12,11 @@ func NewFXLog() (fxevent.Logger, error) {
 		return nil, err
 	}
 
-	return &fxevent.ZapLogger{
+	fxzl := &fxevent.ZapLogger{
 		Logger: zl,
-	}, nil
+	}
+	fxzl.UseErrorLevel(zapcore.DebugLevel)
+	fxzl.UseLogLevel(zapcore.DebugLevel)
+
+	return fxzl, nil
 }
