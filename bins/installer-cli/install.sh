@@ -53,14 +53,19 @@ if [ "$success" -eq 0 ]; then
   fi
 fi
 
-# Verify SHA256 checksum. Skip with INSTALLER_CLI_SKIP_CHECKSUM=true.
+# Verify SHA256 checksum against the published checksums.txt. Skip with
+# INSTALLER_CLI_SKIP_CHECKSUM=true.
 if [ "${INSTALLER_CLI_SKIP_CHECKSUM:-}" != "true" ]; then
-  sha_url="$BASE_URL/$VERSION/${NAME}_${OS}_${ARCH}.sha256"
-  if ! curl -fsSL -o "$DIR/$NAME.sha256" "$sha_url"; then
-    echo "installer-cli: failed to fetch checksum from $sha_url" >&2
+  sums_url="$BASE_URL/$VERSION/checksums.txt"
+  if ! curl -fsSL -o "$DIR/checksums.txt" "$sums_url"; then
+    echo "installer-cli: failed to fetch $sums_url" >&2
     exit 1
   fi
-  expected=$(awk '{print $1}' "$DIR/$NAME.sha256")
+  expected=$(awk -v f="${NAME}_${OS}_${ARCH}" '$2 == f {print $1; exit}' "$DIR/checksums.txt")
+  if [ -z "$expected" ]; then
+    echo "installer-cli: no checksum entry for ${NAME}_${OS}_${ARCH} in checksums.txt" >&2
+    exit 1
+  fi
   if command -v shasum >/dev/null 2>&1; then
     actual=$(shasum -a 256 "$DIR/$NAME" | awk '{print $1}')
   elif command -v sha256sum >/dev/null 2>&1; then
