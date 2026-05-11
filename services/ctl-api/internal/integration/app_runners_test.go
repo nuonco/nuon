@@ -20,10 +20,6 @@ type appRunnersSuite struct {
 }
 
 func TestAppRunnersSuite(t *testing.T) {
-	// TODO: fix integration tests - they require INTEGRATION_INTERNAL_API_URL and
-	// INTEGRATION_API_URL env vars which are not provided by the nuonctl test runner.
-	t.Skip("skipping: integration test suite needs INTEGRATION_INTERNAL_API_URL and INTEGRATION_API_URL")
-
 	t.Parallel()
 
 	integration := os.Getenv("INTEGRATION")
@@ -60,8 +56,7 @@ func (s *appRunnersSuite) createApp() *models.AppApp {
 
 func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 	s.T().Run("successfully created", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		cfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -78,8 +73,7 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 	s.T().Run("updates installs to reference new runner", func(t *testing.T) {
 		install := s.createInstall(s.appID)
 
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		appRunnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -92,8 +86,7 @@ func (s *appRunnersSuite) TestCreateAppRunnerConfig() {
 	})
 
 	s.T().Run("errors on invalid app id", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		appRunnerCfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, generics.GetFakeObj[string](), req)
 		require.Error(t, err)
@@ -110,8 +103,7 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 	})
 
 	s.T().Run("success", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		cfg, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -126,8 +118,7 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 	})
 
 	s.T().Run("returns correct one when multiple", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		cfg1, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -154,8 +145,7 @@ func (s *appRunnersSuite) TestGetAppRunnerLatestConfig() {
 
 func (s *appRunnersSuite) TestGetAppRunnerConfigs() {
 	s.T().Run("success", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		cfg1, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
@@ -167,8 +157,7 @@ func (s *appRunnersSuite) TestGetAppRunnerConfigs() {
 	})
 
 	s.T().Run("returns in correct order", func(t *testing.T) {
-		req := generics.GetFakeObj[*models.ServiceCreateAppRunnerConfigRequest]()
-		req.Type = models.NewAppAppRunnerType(models.AppAppRunnerTypeAwsDashEcs)
+		req := s.fakeRunnerConfigReq(s.appID)
 
 		cfg1, err := s.apiClient.CreateAppRunnerConfig(s.ctx, s.appID, req)
 		require.NoError(t, err)
