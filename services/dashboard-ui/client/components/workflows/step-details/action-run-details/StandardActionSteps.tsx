@@ -9,6 +9,8 @@ import { toSentenceCase } from '@/utils/string-utils'
 import type { IStandardActionSteps } from './types'
 
 export const StandardActionSteps = ({ actionRun }: IStandardActionSteps) => {
+  if (!actionRun?.steps) return null
+
   const hydratedSteps = sortByIdx(
     hydrateActionRunSteps({
       steps: actionRun.steps,

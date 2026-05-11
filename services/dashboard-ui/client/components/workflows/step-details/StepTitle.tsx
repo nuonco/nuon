@@ -10,11 +10,11 @@ export const StepTitle = ({ step }: IStepDetails) => {
     <span className="flex items-center gap-4 overflow-hidden w-72 md:w-fit">
       <Status
         isWithoutText
-        status={step?.retried ? 'retried' : step.status?.status || 'unknown'}
+        status={step?.retried ? 'retried' : step?.status?.status || 'unknown'}
         variant="timeline"
       />
       <Text nowrap className="!inline-block truncate" variant="base">
-        {toSentenceCase(step.name)}
+        {toSentenceCase(step?.name)}
       </Text>
     </span>
   )

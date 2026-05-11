@@ -45,7 +45,7 @@ export const DeployStepDetails = ({
             </Text>
             <Text variant="subtext">
               <Link
-                href={`/${orgId}/installs/${step.owner_id}/components/${deploy?.component_id}`}
+                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}`}
               >
                 View component <Icon variant="CaretRight" />
               </Link>
@@ -53,7 +53,7 @@ export const DeployStepDetails = ({
 
             <Text variant="subtext">
               <Link
-                href={`/${orgId}/installs/${step.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
+                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
               >
                 View deploy logs <Icon variant="CaretRight" />
               </Link>
