@@ -15,6 +15,7 @@ type MetricContext struct {
 	OrgID      string
 	RunnerID   string
 	Context    string
+	Namespace  string
 
 	IsPanic      bool
 	IsTimeout    bool
