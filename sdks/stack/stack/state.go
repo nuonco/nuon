@@ -18,8 +18,11 @@ import (
 // is gone. State just lets us skip those Describe calls on the happy path and
 // gives Deprovision a quick handle on what to tear down.
 type State struct {
-	InstallID string `json:"install_id"`
-	Region    string `json:"region"`
+	InstallID   string `json:"install_id"`
+	OrgID       string `json:"org_id,omitempty"`
+	AppID       string `json:"app_id,omitempty"`
+	ClusterName string `json:"cluster_name,omitempty"`
+	Region      string `json:"region"`
 
 	// Networking
 	VPCID            string   `json:"vpc_id,omitempty"`

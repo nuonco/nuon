@@ -226,6 +226,14 @@ func (i *Installer) Run(ctx context.Context, kind stackrun.RunKind) (*stack.Stat
 		}
 		i.cfg = resp.Config
 		i.cfg.InstallID = i.opts.InstallID
+		// Propagate identity + cluster name into State so resource tagging
+		// callsites in stack/ can read them without holding cfg.
+		st.OrgID = i.cfg.OrgID
+		st.AppID = i.cfg.AppID
+		st.ClusterName = i.cfg.ClusterName
+		if st.ClusterName == "" {
+			st.ClusterName = i.opts.InstallID
+		}
 		// Validate the bootstrap fields before any AWS resources change. The
 		// runner's init script reads nuon_runner_id / nuon_runner_api_url
 		// from EC2 instance tags via IMDSv2 — empty values would let

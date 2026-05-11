@@ -358,7 +358,7 @@ func ensureLaunchTemplate(ctx context.Context, log *slog.Logger, c *ec2.Client, 
 		LaunchTemplateName: &name,
 		LaunchTemplateData: ltData,
 		TagSpecifications: []ec2types.TagSpecification{
-			tagSpec(ec2types.ResourceTypeLaunchTemplate, name, st.InstallID),
+			tagSpec(ec2types.ResourceTypeLaunchTemplate, name, st),
 		},
 	})
 	if err != nil {
