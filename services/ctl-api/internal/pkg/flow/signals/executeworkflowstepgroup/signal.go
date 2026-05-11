@@ -92,11 +92,13 @@ type Signal struct {
 	mw metrics.Writer
 }
 
-var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
-var _ signal.SignalWithUpdateHandlers = (*Signal)(nil)
-var _ signal.SignalWithTimeout = (*Signal)(nil)
-var _ signal.SignalWithParams = (*Signal)(nil)
+var (
+	_ signal.Signal                   = (*Signal)(nil)
+	_ signal.SignalWithCancel         = (*Signal)(nil)
+	_ signal.SignalWithUpdateHandlers = (*Signal)(nil)
+	_ signal.SignalWithTimeout        = (*Signal)(nil)
+	_ signal.SignalWithParams         = (*Signal)(nil)
+)
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.mw = params.MW
@@ -106,7 +108,7 @@ func (s *Signal) Timeout() time.Duration {
 	if s.DerivedTimeout > 0 {
 		return s.DerivedTimeout
 	}
-	return 2 * time.Hour
+	return 30 * 24 * time.Hour
 }
 
 func (s *Signal) Type() signal.SignalType   { return SignalType }
