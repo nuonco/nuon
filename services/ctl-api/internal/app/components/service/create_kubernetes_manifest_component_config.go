@@ -39,7 +39,8 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	// VCS configuration for kustomize sources
 	basicVCSConfigRequest
 
-	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	OperationRoles    map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
 }
 
 // KustomizeConfigRequest defines kustomize options in API requests
@@ -251,6 +252,7 @@ func (s *service) createKubernetesManifestComponentConfig(
 		DeployTimeout:                     req.DeployTimeout,
 		MaxAutoRetries:                    req.MaxAutoRetries,
 		OperationRoles:                    operationRoles,
+		KubernetesContextName:             req.KubernetesContext,
 	}
 
 	if req.DriftSchedule != nil {
