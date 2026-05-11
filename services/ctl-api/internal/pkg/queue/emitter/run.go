@@ -5,12 +5,13 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
 
-func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
+func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return false, err
@@ -48,6 +49,16 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 	}
 }
 
+func (e *emitterWorkflow) emitFireMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type": string(emitter.SignalType),
+		"mode":        string(emitter.Mode),
+		"owner_type":  emitter.Queue.OwnerType,
+		"status":      status,
+	})
+	e.mw.Incr(ctx, "queues.signal_emitter.fire", tags...)
+}
+
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
@@ -55,16 +66,20 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
+		e.emitFireMetric(ctx, emitter, "error")
 		return errors.Wrap(err, "unable to emit signal")
 	}
 
 	if resp.Skipped {
+		e.emitFireMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", e.emitterID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
+
+	e.emitFireMetric(ctx, emitter, "emitted")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
