@@ -15,7 +15,7 @@ export interface IStackStepDetails extends IStepDetails {
 }
 
 export const StackStepDetails = ({ step, stack, isLoading }: IStackStepDetails) => {
-  const isGenerateStack = step.name === 'generate install stack'
+  const isGenerateStack = step?.name === 'generate install stack'
   const version = stack?.versions?.at(0)
   const linksReady = !!version?.template_url || !!version?.contents
 

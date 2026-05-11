@@ -15,9 +15,9 @@ export const DeployStepDetailsContainer = ({ step }: IStepDetails) => {
     queryKey: ['deploy', org?.id, step?.owner_id, step?.step_target_id],
     queryFn: () =>
       getDeploy({
-        orgId: org.id,
-        installId: step.owner_id,
-        deployId: step.step_target_id,
+        orgId: org!.id,
+        installId: step!.owner_id,
+        deployId: step!.step_target_id,
       }),
     enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
   })
