@@ -5,7 +5,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"go.temporal.io/sdk/temporal"
 )
 
 // @temporal-gen-v2 activity
@@ -19,6 +21,13 @@ func (a *Activities) getQueueSignalSignal(ctx context.Context, queueSignalID str
 		return nil, generics.TemporalGormError(err, "unable to get queue signal")
 	}
 
+	if queueSignal.Signal.Signal == nil {
+		return nil, temporal.NewNonRetryableApplicationError(
+			"signal type not registered in catalog",
+			catalog.SignalTypeNotRegisteredErrorType,
+			nil,
+		)
+	}
 	return queueSignal.Signal.Signal, nil
 }
 

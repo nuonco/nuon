@@ -4,14 +4,14 @@ import (
 	"errors"
 	"fmt"
 
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-// ErrSignalTypeNotRegistered is returned by NewFromType when the given signal
-// type is not present in the catalog. Callers can use errors.Is to detect this
-// specific condition — e.g. to gracefully skip stale DB rows that reference
-// deprecated signal types instead of failing the whole query.
 var ErrSignalTypeNotRegistered = errors.New("signal type not registered")
+
+const SignalTypeNotRegisteredErrorType = "SignalTypeNotRegistered"
 
 func NewFromType(typ signal.SignalType) (signal.Signal, error) {
 	constructor, ok := SignalCatalog[typ]
@@ -20,4 +20,18 @@ func NewFromType(typ signal.SignalType) (signal.Signal, error) {
 	}
 
 	return constructor(), nil
+}
+
+func IsSignalTypeNotRegistered(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, ErrSignalTypeNotRegistered) {
+		return true
+	}
+	var appErr *temporal.ApplicationError
+	if errors.As(err, &appErr) && appErr.Type() == SignalTypeNotRegisteredErrorType {
+		return true
+	}
+	return false
 }
