@@ -86,8 +86,8 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 		"install_name":   installName,
 	})
 
-	s.mw.Incr("heart_beat.incr", tags)
-	s.mw.Timing("heart_beat.alive_time", req.AliveTime, tags)
+	s.mw.Incr("runner.heart_beat", tags)
+	s.mw.Timing("runner.heart_beat.alive_time", req.AliveTime, tags)
 
 	ctx.JSON(http.StatusCreated, heartBeat)
 }
