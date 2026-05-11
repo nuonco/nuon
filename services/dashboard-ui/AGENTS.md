@@ -252,6 +252,63 @@ import { getRunner, createInstallConfig } from '@/lib'
 
 `api()` throws `TAPIError` on non-2xx responses. Catch in `useMutation` `onError` or use TanStack Query's error state.
 
+## Defensive Data Access (CRITICAL)
+
+**Treat all API response data as potentially undefined — regardless of what the OpenAPI spec or TypeScript types say.** The API can return partial objects, null fields, or missing nested properties at any time. A single unguarded property access on undefined data will crash the entire page with an error boundary.
+
+### Rules
+
+1. **Always use optional chaining (`?.`) when accessing nested API data.** Never assume an object or its children exist just because the type says they will.
+
+   ```tsx
+   // ✅ Correct — defensive
+   step?.status?.status
+   actionRun?.config?.steps
+   deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name
+
+   // ❌ Wrong — will crash if any intermediate value is undefined
+   step.status.status
+   actionRun.config.steps
+   deploy.runner_jobs[0].install_role_usage.role_name
+   ```
+
+2. **Guard before rendering child components that depend on fetched data.** If a parent fetches data and passes it to children, add a null/undefined check before rendering the children — don't rely on the children to handle it.
+
+   ```tsx
+   // ✅ Correct — guard before rendering
+   if (error || !actionRun) {
+     return <ErrorState />
+   }
+   return <ActionRunDetails actionRun={actionRun} />
+
+   // ❌ Wrong — children will crash if actionRun is undefined
+   if (error) return <ErrorState />
+   return <ActionRunDetails actionRun={actionRun} />
+   ```
+
+3. **Use nullish coalescing (`?? defaultValue`) for values used in comparisons or arithmetic.**
+
+   ```tsx
+   // ✅ Correct
+   (step?.execution_duration ?? 0) > 1000000
+
+   // ❌ Wrong — undefined > 1000000 is always false but hides bugs
+   step?.execution_duration > 1000000
+   ```
+
+4. **In `useQuery` `queryFn` callbacks, use non-null assertions (`!`) only when the `enabled` guard guarantees the values exist.** This is the one place non-null assertions are acceptable — the `enabled` flag prevents the queryFn from running when values are missing.
+
+   ```tsx
+   // ✅ Correct — enabled guarantees org and step exist when queryFn runs
+   useQuery({
+     queryKey: ['deploy', org?.id, step?.step_target_id],
+     queryFn: () => getDeploy({ orgId: org!.id, deployId: step!.step_target_id }),
+     enabled: !!org?.id && !!step?.step_target_id,
+   })
+   ```
+
+5. **Provider hook values (`useOrg()`, `useInstall()`, etc.) can also be undefined** during initial render or when the provider is still loading. Always use `org?.id`, never `org.id`, when passing values to child components or building URLs.
+
 ## State Management
 
 ### Provider Hierarchy

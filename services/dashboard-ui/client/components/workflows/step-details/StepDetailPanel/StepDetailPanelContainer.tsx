@@ -62,7 +62,7 @@ export const StepDetailPanelContainer = ({
     queryKey: ['workflow-step', org?.id, initStep.install_workflow_id, initStep.id],
     queryFn: () =>
       getWorkflowStep({
-        orgId: org.id,
+        orgId: org!.id,
         workflowId: initStep.install_workflow_id,
         workflowStepId: initStep.id,
       }),
