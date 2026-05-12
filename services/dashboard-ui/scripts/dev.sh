@@ -20,4 +20,4 @@ else
     echo "Warning: port file not found, falling back to default"
 fi
 
-npm run dev
+bun run dev
