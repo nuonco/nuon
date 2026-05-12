@@ -1,0 +1,41 @@
+---
+title: '035 - Slack Integration'
+description: 'Install Nuon into a Slack workspace and route install, workflow, approval, and drift events into your channels.'
+boost: 0.3
+---
+
+_May 12, 2026_
+
+## Slack integration
+
+The Nuon Slack app is now available. Connect a workspace from your org's **Slack** page in the [dashboard](https://app.nuon.co/), then run `/nuon subscribe` in any channel to route install, workflow, approval, and drift events into Slack.
+
+<div style={{
+  backgroundImage: 'url(/images/guides/slack/slack-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/guides/slack/subscribe-channel-modal.png"
+    alt="Subscribe a channel modal"
+    style={{
+      width: '100%',
+      maxWidth: '420px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+See the [Slack guide](/guides/slack) for the full walkthrough — workspace linking, channel subscriptions, slash commands, and how events render in threads.
+
+## Also in this release
+
+- **AWS install stacks now use IID-based runner auth by default.**
+- **Workflow timeouts** apply at every stage of execution.
+- **Dashboard refinements** across policy reports, install navigation, and the trace viewer.
