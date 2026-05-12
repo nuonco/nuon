@@ -165,6 +165,18 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 	}, nil
 }
 
+// PreparedConfig returns the rendered Config attached to the pre-created run
+// returned by FromURL. It's only populated between FromURL and the first
+// Provision/Reprovision/Deprovision call — once the run starts, the cached
+// response is consumed and this returns nil. Callers that want to preview
+// the install config before kicking off provisioning use this.
+func (i *Installer) PreparedConfig() *Config {
+	if i.preCreatedRun == nil {
+		return nil
+	}
+	return i.preCreatedRun.Config
+}
+
 func (i *Installer) Close(ctx context.Context) error {
 	if i.prov != nil {
 		return i.prov.Shutdown(ctx)
