@@ -35,7 +35,12 @@ export function parseInstallStackSummaryToTableData(
       ),
       runs: version?.runs?.length?.toString() || '-',
       createdAt: version?.created_at,
-      more: <StackVersionActions version={version} />,
+      more: (
+        <StackVersionDetails
+          version={version}
+          installStackOutputs={stack?.install_stack_outputs}
+        />
+      ),
     }
   })
 }
