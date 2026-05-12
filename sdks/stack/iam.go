@@ -29,7 +29,7 @@ const ec2AssumePolicy = `{
 //  3. Dynamic break-glass and custom roles, keyed verbatim by map key.
 //  4. The runner inline policy (built last because its AssumeRole resources
 //     reference whichever ops/break-glass/custom roles ended up existing).
-func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *sts.Client, st *State, cfg *Config) error {
+func createIAMRoles(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client, stsc *sts.Client, st *State, cfg *Config) error {
 	accountID, err := callerAccountID(ctx, stsc)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 
 	// 1. Runner role + instance profile.
 	st.RunnerRoleName = prefix + "-runner"
-	if err := ensureRole(ctx, log, c, st.RunnerRoleName, ec2AssumePolicy, st.InstallID); err != nil {
+	if err := ensureRole(ctx, log, sysLog, c, st.RunnerRoleName, ec2AssumePolicy, st.InstallID); err != nil {
 		return err
 	}
 	st.RunnerInstanceProfileName = prefix + "-runner"
@@ -63,7 +63,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 	provisionInline := resolveInline(cfg.ProvisionInlinePolicyDocument, cfg.ProvisionPermissions)
 	if provisionInline != "" || len(cfg.ProvisionManagedPolicyARNs) > 0 {
 		st.ProvisionRoleName = prefix + "-provision"
-		if err := ensureRoleWithPolicies(ctx, log, c, st.ProvisionRoleName, trust, provisionInline,
+		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, st.ProvisionRoleName, trust, provisionInline,
 			prefix+"-provision-inline", cfg.ProvisionManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
@@ -71,7 +71,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 	maintenanceInline := resolveInline(cfg.MaintenanceInlinePolicyDocument, cfg.MaintenancePermissions)
 	if maintenanceInline != "" || len(cfg.MaintenanceManagedPolicyARNs) > 0 {
 		st.MaintenanceRoleName = prefix + "-maintenance"
-		if err := ensureRoleWithPolicies(ctx, log, c, st.MaintenanceRoleName, trust, maintenanceInline,
+		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, st.MaintenanceRoleName, trust, maintenanceInline,
 			prefix+"-maintenance-inline", cfg.MaintenanceManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
@@ -79,7 +79,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 	deprovisionInline := resolveInline(cfg.DeprovisionInlinePolicyDocument, cfg.DeprovisionPermissions)
 	if deprovisionInline != "" || len(cfg.DeprovisionManagedPolicyARNs) > 0 {
 		st.DeprovisionRoleName = prefix + "-deprovision"
-		if err := ensureRoleWithPolicies(ctx, log, c, st.DeprovisionRoleName, trust, deprovisionInline,
+		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, st.DeprovisionRoleName, trust, deprovisionInline,
 			prefix+"-deprovision-inline", cfg.DeprovisionManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 	for _, k := range sortedEnabledKeys(cfg.BreakGlassRoles) {
 		v := cfg.BreakGlassRoles[k]
 		inline := resolveInline(v.InlinePolicyDocument, v.Permissions)
-		if err := ensureRoleWithPolicies(ctx, log, c, k, trust, inline, k+"-inline", v.ManagedPolicyARNs, st.InstallID); err != nil {
+		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, k, trust, inline, k+"-inline", v.ManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
 		st.BreakGlassRoleNames = append(st.BreakGlassRoleNames, k)
@@ -99,7 +99,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 	for _, k := range sortedEnabledKeys(cfg.CustomRoles) {
 		v := cfg.CustomRoles[k]
 		inline := resolveInline(v.InlinePolicyDocument, v.Permissions)
-		if err := ensureRoleWithPolicies(ctx, log, c, k, trust, inline, k+"-inline", v.ManagedPolicyARNs, st.InstallID); err != nil {
+		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, k, trust, inline, k+"-inline", v.ManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
 		st.CustomRoleNames = append(st.CustomRoleNames, k)
@@ -136,7 +136,7 @@ func createIAMRoles(ctx context.Context, log *slog.Logger, c *iam.Client, stsc *
 // "Invalid principal in policy" until the referenced role's ARN is visible
 // globally. TF works around this with implicit `depends_on` ordering plus AWS
 // provider-level retries; we retry inline.
-func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trust, installID string) error {
+func ensureRole(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client, name, trust, installID string) error {
 	_, err := c.GetRole(ctx, &iam.GetRoleInput{RoleName: &name})
 	if err == nil {
 		return nil
@@ -163,7 +163,7 @@ func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trus
 			return nil
 		}
 		if isAWSErrCode(err, "MalformedPolicyDocument") && time.Now().Before(deadline) {
-			log.Info("trust principal not yet propagated, retrying", "role", name, "delay", delay)
+			sysLog.Info("trust principal not yet propagated, retrying", "role", name, "delay", delay)
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -181,9 +181,9 @@ func ensureRole(ctx context.Context, log *slog.Logger, c *iam.Client, name, trus
 // ensureRoleWithPolicies provisions an IAM role then attaches/refreshes its
 // inline policy and managed-policy attachments. Inline policy is omitted
 // when inlineDoc is empty (matching the TF count=0 branch).
-func ensureRoleWithPolicies(ctx context.Context, log *slog.Logger, c *iam.Client,
+func ensureRoleWithPolicies(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client,
 	name, trust, inlineDoc, inlineName string, managedARNs []string, installID string) error {
-	if err := ensureRole(ctx, log, c, name, trust, installID); err != nil {
+	if err := ensureRole(ctx, log, sysLog, c, name, trust, installID); err != nil {
 		return err
 	}
 	if inlineDoc != "" {

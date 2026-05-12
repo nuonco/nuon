@@ -29,8 +29,14 @@ import (
 // Installer provisions and tears down an install stack in a customer AWS account.
 type Installer struct {
 	opts Options
-	log  *slog.Logger
-	prov *logstream.Provider
+	// log emits under OTEL scope "oteljob" — user-visible job output the
+	// dashboard surfaces by default (resource progress, step status, run
+	// completion). sysLog emits under scope "system" for internal chatter
+	// (transient retries, best-effort phone-home failures) that the dashboard
+	// hides unless the user toggles "Include system logs".
+	log    *slog.Logger
+	sysLog *slog.Logger
+	prov   *logstream.Provider
 
 	awsCfg aws.Config
 	ec2c   *ec2.Client
@@ -154,6 +160,7 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 	return &Installer{
 		opts:   opts,
 		log:    prov.Logger().With("install_id", opts.InstallID, "aws_region", opts.AWSRegion),
+		sysLog: prov.SystemLogger().With("install_id", opts.InstallID, "aws_region", opts.AWSRegion),
 		prov:   prov,
 		awsCfg: awsCfg,
 		ec2c:   ec2.NewFromConfig(awsCfg),
@@ -271,13 +278,17 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*State, error) {
 				},
 			})
 			if err != nil {
-				i.log.Warn("init otlp log stream failed (continuing with prior logger)", "err", err.Error())
+				i.sysLog.Warn("init otlp log stream failed (continuing with prior logger)", "err", err.Error())
 			} else {
 				if i.prov != nil {
 					_ = i.prov.Shutdown(ctx)
 				}
 				i.prov = otelProv
 				i.log = otelProv.Logger().With(
+					"install_id", i.opts.InstallID,
+					"aws_region", i.opts.AWSRegion,
+				)
+				i.sysLog = otelProv.SystemLogger().With(
 					"install_id", i.opts.InstallID,
 					"aws_region", i.opts.AWSRegion,
 				)
@@ -298,7 +309,7 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*State, error) {
 			return createVPC(ctx, l, i.ec2c, s)
 		}},
 		{"create-iam", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return createIAMRoles(ctx, l, i.iamc, i.stsc, s, i.cfg)
+			return createIAMRoles(ctx, l, i.sysLog, i.iamc, i.stsc, s, i.cfg)
 		}},
 		{"create-secrets", func(ctx context.Context, l *slog.Logger, s *State) error {
 			return ensureSecrets(ctx, l, i.smc, s, i.cfg)
@@ -341,7 +352,7 @@ func (i *Installer) reportRun(ctx context.Context, c *runClient, runID, status, 
 		StatusDescription: statusDesc,
 		Data:              data,
 	}); err != nil {
-		i.log.Warn("update stack run failed", "err", err.Error(), "status", status)
+		i.sysLog.Warn("update stack run failed", "err", err.Error(), "status", status)
 	}
 }
 
@@ -431,7 +442,7 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 			resp, err = rc.createRun(ctx, KindDeprovision)
 		}
 		if err != nil {
-			i.log.Warn("create deprovision run (continuing with empty config)", "err", err.Error())
+			i.sysLog.Warn("create deprovision run (continuing with empty config)", "err", err.Error())
 			i.cfg = &Config{InstallID: i.opts.InstallID}
 		} else if resp.Config != nil {
 			i.cfg = resp.Config
