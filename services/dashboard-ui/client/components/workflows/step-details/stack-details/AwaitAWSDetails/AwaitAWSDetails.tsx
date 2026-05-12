@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { useConfig } from '@/hooks/use-config'
+import { useOrg } from '@/hooks/use-org'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAWSDetails extends IStackDetails {
@@ -63,38 +64,69 @@ export const AwaitAWSDetails = ({
     () => parseTfvars(versionExt?.terraform_contents),
     [versionExt?.terraform_contents]
   )
+  const hasTerraform = tfvarsContent.length > 0
+
+  const { org } = useOrg()
+  const stackV2 = !!org?.features?.['stack-manager-cli']
 
   return (
     <div className="flex flex-col gap-4">
       <Text variant="base" weight="strong">
-        Setup your install stack
+        Setup instructions
       </Text>
 
-      <Tabs
-        initActiveTab="cloudformation"
-        tabLabels={{ cli: 'CLI' }}
-        tabs={{
-          cloudformation: (
-            <CloudFormationTab
-              version={version}
-              installId={installId}
-              installAwsRegion={installAwsRegion}
-            />
-          ),
-          terraform: (
-            <TerraformTab
-              tfvarsContent={tfvarsContent}
-              installId={installId}
-            />
-          ),
-          cli: (
-            <CLITab
-              phoneHomeId={version?.phone_home_id}
-              runnerAPIURL={version?.runner_api_url}
-            />
-          ),
-        }}
-      />
+      {stackV2 ? (
+        <Tabs
+          initActiveTab="cloudformation"
+          tabLabels={{ cli: 'CLI' }}
+          tabs={{
+            cloudformation: (
+              <CloudFormationTab
+                version={version}
+                installId={installId}
+                installAwsRegion={installAwsRegion}
+              />
+            ),
+            terraform: (
+              <TerraformTab
+                tfvarsContent={tfvarsContent}
+                installId={installId}
+              />
+            ),
+            cli: (
+              <CLITab
+                phoneHomeId={version?.phone_home_id}
+                runnerAPIURL={version?.runner_api_url}
+              />
+            ),
+          }}
+        />
+      ) : hasTerraform ? (
+        <Tabs
+          initActiveTab="cloudformation"
+          tabs={{
+            cloudformation: (
+              <CloudFormationTab
+                version={version}
+                installId={installId}
+                installAwsRegion={installAwsRegion}
+              />
+            ),
+            terraform: (
+              <TerraformTab
+                tfvarsContent={tfvarsContent}
+                installId={installId}
+              />
+            ),
+          }}
+        />
+      ) : (
+        <CloudFormationTab
+          version={version}
+          installId={installId}
+          installAwsRegion={installAwsRegion}
+        />
+      )}
     </div>
   )
 }

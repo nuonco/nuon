@@ -23,9 +23,17 @@ import type { IStackDetails } from '../types'
 
 interface IAwaitStackDetails extends IStackDetails {
   runnerType?: string
+  hideStatusCard?: boolean
+  outputsAbove?: boolean
 }
 
-export const AwaitStackDetails = ({ stack, runnerType, ...props }: IAwaitStackDetails) => {
+export const AwaitStackDetails = ({
+  stack,
+  runnerType,
+  hideStatusCard,
+  outputsAbove,
+  ...props
+}: IAwaitStackDetails) => {
   const outputValues = useMemo(
     () => objectToKeyValueArray(stack?.install_stack_outputs?.data_contents),
     [stack?.install_stack_outputs]
@@ -33,36 +41,45 @@ export const AwaitStackDetails = ({ stack, runnerType, ...props }: IAwaitStackDe
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <Text>
-          Install stack{' '}
-          {stack?.versions?.at(0)?.composite_status?.status === 'active'
-            ? 'up and running'
-            : 'is waiting to run'}
-        </Text>
+      {hideStatusCard ? null : (
+        <Card>
+          <Text>
+            Install stack{' '}
+            {stack?.versions?.at(0)?.composite_status?.status === 'active'
+              ? 'up and running'
+              : 'is waiting to run'}
+          </Text>
 
-        <div className="grid grid-cols-4">
-          <LabeledStatus
-            label="Current status"
-            statusProps={{
-              status: stack?.versions?.at(0)?.composite_status?.status,
-            }}
-            tooltipProps={{
-              tipContent:
-                stack?.versions?.at(0)?.composite_status
-                  ?.status_human_description,
-            }}
-          />
-
-          <LabeledValue label="Last checked">
-            <Time
-              variant="subtext"
-              time={stack?.versions?.at(0)?.runs?.at(-1)?.updated_at}
-              format="relative"
+          <div className="grid grid-cols-4">
+            <LabeledStatus
+              label="Current status"
+              statusProps={{
+                status: stack?.versions?.at(0)?.composite_status?.status,
+              }}
+              tooltipProps={{
+                tipContent:
+                  stack?.versions?.at(0)?.composite_status
+                    ?.status_human_description,
+              }}
             />
-          </LabeledValue>
-        </div>
-      </Card>
+
+            <LabeledValue label="Last checked">
+              <Time
+                variant="subtext"
+                time={stack?.versions?.at(0)?.runs?.at(-1)?.updated_at}
+                format="relative"
+              />
+            </LabeledValue>
+          </div>
+        </Card>
+      )}
+
+      {outputsAbove ? (
+        <Card>
+          <Text>Stack outputs</Text>
+          <KeyValueList values={outputValues} />
+        </Card>
+      ) : null}
 
       {runnerType?.startsWith('aws') ? (
         <AwaitAWSDetails stack={stack} {...props} />
@@ -72,10 +89,12 @@ export const AwaitStackDetails = ({ stack, runnerType, ...props }: IAwaitStackDe
         <AwaitAzureDetails stack={stack} {...props} />
       )}
 
-      <Card>
-        <Text>Stack outputs</Text>
-        <KeyValueList values={outputValues} />
-      </Card>
+      {outputsAbove ? null : (
+        <Card>
+          <Text>Stack outputs</Text>
+          <KeyValueList values={outputValues} />
+        </Card>
+      )}
     </div>
   )
 }
