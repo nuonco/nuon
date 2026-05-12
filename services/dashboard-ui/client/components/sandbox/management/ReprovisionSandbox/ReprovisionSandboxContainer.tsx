@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -41,9 +40,7 @@ export const ReprovisionSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id },
       })
       addToast(
-        <Toast heading="Reprovision initiated" theme="success">
-          <Text>Sandbox reprovision workflow has been started successfully.</Text>
-        </Toast>
+        <Toast heading="Sandbox reprovision started" theme="info" />
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -63,9 +60,7 @@ export const ReprovisionSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id, err: err?.error },
       })
       addToast(
-        <Toast heading="Sandbox reprovision failed" theme="error">
-          <Text>Failed to start sandbox reprovision. Please try again.</Text>
-        </Toast>
+        <Toast heading="Sandbox reprovision failed" theme="error" />
       )
     },
   })
