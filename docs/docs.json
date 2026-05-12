@@ -166,7 +166,6 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
-              "guides/notifications",
               "guides/team-management"
             ]
           },
@@ -176,6 +175,7 @@
             "pages": [
               "guides/control-plane-integration",
               "guides/github-actions",
+              "guides/slack",
               "guides/webhooks",
               "guides/ai-and-apps"
             ]
@@ -269,6 +269,8 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/035-slack-integration",
+          "updates/034-aws-terraform-install-stack",
           "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
           "updates/031-operation-roles",
@@ -385,6 +387,10 @@
     {
       "source": "/guides/programmatic-install-config",
       "destination": "/guides/install-configs"
+    },
+    {
+      "source": "/guides/notifications",
+      "destination": "/guides/slack"
     }
   ]
 }

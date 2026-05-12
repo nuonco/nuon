@@ -1,0 +1,95 @@
+---
+title: 'Slack'
+description: 'Send install, workflow, approval, and drift events directly to slack.'
+icon: 'slack'
+boost: 2
+keywords: ["slack", "slack app", "slack integration", "slack notifications", "slack workspace", "channel subscriptions", "nuon subscribe", "/nuon subscribe", "slack oauth", "deploy notifications", "approval notifications", "drift notifications", "slack workflow events", "install events slack"]
+---
+
+Send install, workflow, approval, and drift events to Slack.
+
+## Connect a Slack workspace
+
+From the [dashboard](https://app.nuon.co/), open your org's **Slack** page and click **Add to Slack**. You'll be redirected through Slack's standard OAuth flow and brought back to the dashboard once the workspace is connected.
+
+From the modal, you can configure which channels will receive updates and what updates to receive (e.g. all installs or select installs)
+
+<div style={{
+  backgroundImage: 'url(/images/guides/slack/slack-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/guides/slack/subscribe-channel-modal.png"
+    alt="Subscribe a channel modal"
+    style={{
+      width: '100%',
+      maxWidth: '420px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Linked workspaces appear in the **Connected workspaces** table on the org's Slack page. Each row can be revoked at any time — revoking removes the link between that workspace and the current org without affecting other orgs that workspace is linked to.
+
+Subscriptions are per-channel. For example:
+
+* `/nuon subscribe` in `#deploys`
+* `/nuon subscribe` in `#oncall` 
+
+This creates two independent subscriptions, each with its own scope and event filter.
+
+## How events appear in Slack
+
+Workflow events post as a **parent message** with **threaded replies** for individual steps and approvals. A long-running install deploy shows up as a single conversation rather than dozens of top-level messages, and approvals reply inline on the parent so the audit trail stays in one place.
+
+Drift detection results post as standalone top-level messages (not threaded), since drift scans run on their own schedule and aren't tied to a parent workflow.
+
+<div style={{
+  backgroundImage: 'url(/images/guides/slack/slack-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/guides/slack/slack-events-thread.png"
+    alt="Nuon Slack events with threaded workflow replies"
+    style={{
+      width: '100%',
+      maxWidth: '720px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+## Slash commands
+
+The Nuon Slack app exposes four slash commands:
+
+| Command | What it does |
+| ------- | ------------ |
+| `/nuon subscribe` | Open the subscribe modal in the current channel |
+| `/nuon unsubscribe` | Open the unsubscribe modal listing this channel's active subscriptions |
+| `/nuon status` | Show the workspace's installation, linked orgs, and this channel's subscriptions (ephemeral — only you see it) |
+| `/nuon help` | Show command help |
+
+All four work in any channel where the Nuon Slack app has been added.
+
+## Disconnecting
+
+To stop a channel from receiving events, run `/nuon unsubscribe` in the channel and select the subscriptions to remove.
+
+To unlink a workspace from a Nuon org entirely, open the org's **Slack** page in the dashboard and delete the workspace row from the **Connected workspaces** table. 
+
+This revokes only the link between that workspace and the current org. The Slack app itself remains installed in the workspace and can still be linked to other orgs.
