@@ -46,7 +46,7 @@ admin-dashboard/
 │   ├── providers/config-provider.tsx
 │   ├── types/admin.types.ts    ← shared response types
 │   └── utils/format.ts
-├── package.json                ← npm scripts (dev, build, tsc)
+├── package.json                ← bun scripts (dev, build, tsc)
 ├── postcss.config.js
 └── scripts/hash-assets.js      ← prod step: content-hashed asset filenames
 ```
@@ -103,18 +103,18 @@ The other four `Register*Routes` methods return `nil` — admin-dashboard only u
 
 ```bash
 cd services/ctl-api/internal/app/admin-dashboard
-npm install
-npm run dev   # esbuild --watch + postcss --watch + browser-sync
+bun install
+bun run dev   # esbuild --watch + postcss --watch + browser-sync
 ```
 
 In a second terminal, run ctl-api so the BFF listens on `:8087`. Open `http://localhost:8088` (browser-sync proxy) for live-reload, or `http://localhost:8087` to hit the Go server directly.
 
-`npm run dev` writes to `dist/`. `spa.go`'s `registerStaticSPA` serves that directory and falls back to `dist/index.html` for client-side routes.
+`bun run dev` writes to `dist/`. `spa.go`'s `registerStaticSPA` serves that directory and falls back to `dist/index.html` for client-side routes.
 
 ## Production build
 
 ```bash
-npm run build
+bun run build
 ```
 
 Produces content-hashed `dist/assets/*` and rewrites `index.html` link/script tags via `scripts/hash-assets.js`. The Go server serves `/assets/*` with long cache headers and `index.html` with `no-cache`.
