@@ -34,12 +34,21 @@ type Config struct {
 }
 
 // Provider holds an OTEL log provider that must be shut down when done.
+//
+// Logger() emits records under the OTEL instrumentation scope "oteljob" — the
+// runner's convention for user-visible job output, which the dashboard surfaces
+// by default. SystemLogger() currently aliases Logger() (everything emits as
+// oteljob); the accessor is preserved so call sites can be migrated to a
+// real "system" scope iteratively as we validate which records belong in the
+// hidden-by-default bucket.
 type Provider struct {
 	lp     *sdklog.LoggerProvider
-	logger *slog.Logger
+	user   *slog.Logger
+	system *slog.Logger
 }
 
-func (p *Provider) Logger() *slog.Logger { return p.logger }
+func (p *Provider) Logger() *slog.Logger       { return p.user }
+func (p *Provider) SystemLogger() *slog.Logger { return p.system }
 
 func (p *Provider) Shutdown(ctx context.Context) error {
 	if p.lp == nil {
@@ -75,9 +84,12 @@ func (h teeHandler) WithGroup(name string) slog.Handler {
 }
 
 // NewStdout returns a Provider that writes to stdout. Useful for local dev.
+// Both Logger() and SystemLogger() return the same stdout logger — the
+// oteljob/system split only matters once records reach the dashboard.
 func NewStdout(serviceName string) *Provider {
 	h := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
-	return &Provider{logger: slog.New(h).With("service", serviceName)}
+	l := slog.New(h).With("service", serviceName)
+	return &Provider{user: l, system: l}
 }
 
 // New creates an OTLP-backed Provider. Caller must call Shutdown.
@@ -114,10 +126,17 @@ func New(ctx context.Context, cfg Config) (*Provider, error) {
 		)),
 	)
 
-	otelLogger := otelslog.NewLogger(cfg.ServiceName, otelslog.WithLoggerProvider(lp))
+	// One OTEL logger under scope "oteljob" — the runner's convention for
+	// user-visible job output, which the dashboard surfaces by default. Each
+	// CLI invocation is shaped like a single runner job (short-lived, no
+	// long-running process), so for now everything emits under oteljob.
+	// SystemLogger aliases this logger; individual call sites will migrate to
+	// a real "system"-scoped logger iteratively as we validate which records
+	// belong in the hidden-by-default bucket.
+	otelLogger := otelslog.NewLogger("oteljob", otelslog.WithLoggerProvider(lp))
 
 	// Tee through stdout so the customer running the CLI also sees progress.
 	stdoutH := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
 	logger := slog.New(teeHandler{a: stdoutH, b: otelLogger.Handler()}).With("service", cfg.ServiceName)
-	return &Provider{lp: lp, logger: logger}, nil
+	return &Provider{lp: lp, user: logger, system: logger}, nil
 }
