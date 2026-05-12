@@ -17,7 +17,11 @@ import { useOrg } from '@/hooks/use-org'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
-import type { TInstallStack, TWorkflowStep } from '@/types'
+import type {
+  TInstallStack,
+  TInstallStackOutputs,
+  TWorkflowStep,
+} from '@/types'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 import { indexToOrdinal } from '@/utils/string-utils'
@@ -88,11 +92,17 @@ export const StackVersionDetails = ({
         {stackV2 ? (
           <>
             <StackVersionRuns version={version} />
-            <StackVersionLinks version={version} />
+            <StackVersionLinks
+              version={version}
+              installStackOutputs={installStackOutputs}
+            />
           </>
         ) : (
           <>
-            <StackVersionLinks version={version} />
+            <StackVersionLinks
+              version={version}
+              installStackOutputs={installStackOutputs}
+            />
             <StackVersionRuns version={version} />
           </>
         )}
@@ -105,19 +115,30 @@ export const StackVersionDetails = ({
   )
 }
 
-const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
+const StackVersionLinks = ({
+  version,
+  installStackOutputs,
+}: {
+  version: TStackVersion
+  installStackOutputs?: TInstallStackOutputs
+}) => {
   const { org } = useOrg()
-  const stackV2 = !!org?.features?.['native-aws-provisioner']
+  const stackV2 = !!org?.features?.['stack-manager-cli']
   const { install } = useInstall()
 
   if (stackV2) {
-    const stack = { versions: [version] } as unknown as TInstallStack
+    const stack = {
+      versions: [version],
+      install_stack_outputs: installStackOutputs,
+    } as unknown as TInstallStack
     const step = {} as TWorkflowStep
     return (
       <AwaitStackDetails
         stack={stack}
         step={step}
         runnerType={install?.app_runner_config?.app_runner_type}
+        hideStatusCard
+        outputsAbove
       />
     )
   }
@@ -183,7 +204,6 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
               key={run?.id}
               id={`run-${run?.id}`}
               className="border rounded-md"
-              isOpen={idx === 0}
               heading={
                 stackV2 ? (
                   <span className="flex items-center gap-2">
