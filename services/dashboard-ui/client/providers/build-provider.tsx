@@ -1,6 +1,7 @@
 import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getComponentBuild } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -20,12 +21,14 @@ export function BuildProvider({
   children,
   buildId,
   componentId,
+  componentName,
   pollInterval = 10000,
   shouldPoll = true,
 }: {
   children: ReactNode
   buildId: string
   componentId: string
+  componentName?: string
   pollInterval?: number
   shouldPoll?: boolean
 }) {
@@ -36,6 +39,12 @@ export function BuildProvider({
     queryFn: () => getComponentBuild({ orgId: org.id!, componentId, buildId }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org.id && !!componentId && !!buildId,
+  })
+
+  useStatusToast({
+    status: build?.status_v2?.status,
+    label: componentName ?? build?.component_name,
+    resourceType: 'build',
   })
 
   useEffect(() => {

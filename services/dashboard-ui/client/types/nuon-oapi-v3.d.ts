@@ -5101,7 +5101,7 @@ export interface components {
        * to set ScheduleToCloseTimeout when awaiting step completion.
        * Zero means use default fallback.
        */
-      timeout?: string;
+      timeout?: number;
       updated_at?: string;
       /** @description Fields that are de-nested at read time using AfterQuery */
       workflow_id?: string;
@@ -5156,7 +5156,7 @@ export interface components {
        * steps' timeouts. For sequential groups: sum of step timeouts. For parallel
        * groups: max of step timeouts. Zero means use default fallback.
        */
-      timeout?: string;
+      timeout?: number;
       updated_at?: string;
       workflow_id?: string;
     };
