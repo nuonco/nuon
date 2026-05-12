@@ -46,11 +46,6 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 		return
 	}
 
-	if onboarding.CurrentStep != app.OnboardingStepOrganization {
-		ctx.Error(fmt.Errorf("expected step %s but current step is %s", app.OnboardingStepOrganization, onboarding.CurrentStep))
-		return
-	}
-
 	var req CompleteOrganizationStepRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
@@ -59,6 +54,15 @@ func (s *service) CompleteOrganizationStep(ctx *gin.Context) {
 
 	if err := s.v.Struct(&req); err != nil {
 		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		return
+	}
+
+	// Switching an existing org is allowed before any resources have been
+	// provisioned in this onboarding session (i.e. no app/install yet), even
+	// if the current step has advanced past "organization".
+	canReAttachExistingOrg := req.OrgID != "" && onboarding.AppID == nil && onboarding.InstallID == nil
+	if onboarding.CurrentStep != app.OnboardingStepOrganization && !canReAttachExistingOrg {
+		ctx.Error(fmt.Errorf("expected step %s but current step is %s", app.OnboardingStepOrganization, onboarding.CurrentStep))
 		return
 	}
 
@@ -116,9 +120,13 @@ func (s *service) attachExistingOrg(ctx *gin.Context, account *app.Account, onbo
 		return
 	}
 
-	// Update onboarding with org reference and advance step
+	// Update onboarding with org reference. Only advance the step if we
+	// haven't already moved past the organization step (e.g. when the user
+	// is switching orgs from a later step before any resources exist).
 	onboarding.OrgID = &orgID
-	onboarding.CurrentStep = app.OnboardingStepYourStack
+	if onboarding.CurrentStep == app.OnboardingStepOrganization {
+		onboarding.CurrentStep = app.OnboardingStepYourStack
+	}
 	onboarding.StepStatus = app.OnboardingStepStatusActive
 	onboarding.SetCompositeStatus(ctx, app.Status(app.OnboardingStepStatusActive))
 
