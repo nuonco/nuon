@@ -60,6 +60,16 @@ func (e *emitterWorkflow) emitLifecycleMetric(ctx workflow.Context, name string,
 	e.mw.Incr(ctx, name, tags...)
 }
 
+func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type":  string(emitter.SignalType),
+		"emitter_type": string(emitter.Mode),
+		"owner_type":   emitter.Queue.OwnerType,
+		"status":       status,
+	})
+	e.mw.Incr(ctx, "queue.emitter.signal_emitted", tags...)
+}
+
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
@@ -67,16 +77,20 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
+		e.emitSignalMetric(ctx, emitter, "error")
 		return errors.Wrap(err, "unable to emit signal")
 	}
 
 	if resp.Skipped {
+		e.emitSignalMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", e.emitterID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
+
+	e.emitSignalMetric(ctx, emitter, "ok")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
