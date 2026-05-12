@@ -111,6 +111,26 @@ func (s *service) CreateInstallStackVersionRun(ctx *gin.Context) {
 	}
 	run.SDKConfig = cfg
 
+	// Merge the install's latest stored input values onto the response so
+	// the installer-cli wizard can render them on the App step. Kept here
+	// rather than inside buildInstallerSDKConfig to avoid touching the hot
+	// path for stack-run creation — a missing inputs row is not an error.
+	var ins app.InstallInputs
+	if err := s.db.WithContext(reqCtx).
+		Where(app.InstallInputs{InstallID: installID}).
+		Order("created_at DESC").
+		Limit(1).
+		First(&ins).Error; err == nil {
+		if cfg.InstallInputs == nil {
+			cfg.InstallInputs = map[string]string{}
+		}
+		for k, v := range ins.Values {
+			if v != nil {
+				cfg.InstallInputs[k] = *v
+			}
+		}
+	}
+
 	ctx.JSON(http.StatusCreated, run)
 }
 
