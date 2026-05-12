@@ -1006,6 +1006,15 @@ StatusHumanDescription: "awaiting approval " + strconv.Itoa(step.Idx+1),
 `step.Idx` is an internal counter that can reach into the thousands for long-running workflows — it is not meaningful to
 users. `step.Name` is the human-readable identifier (e.g., `terraform-plan`, `terraform-apply`).
 
+## Feature Flags
+
+Feature flags are defined in `internal/app/org.go`. When adding a new feature flag:
+
+1. Add the `OrgFeature` constant (with the other constants)
+2. **Append it to the bottom of the `GetFeatures()` slice** — this list is in chronological order (oldest first) and the admin UI displays them newest-first. Never insert into the middle of the list.
+3. Add a description in `GetFeatureDescriptions()`
+4. Set the default value in the `BeforeCreate` hook
+
 ## Logging Conventions
 
 **Never use `fmt.Println` for logging.** See [conventions/logging.md](/conventions/logging.md) for full guidelines.
