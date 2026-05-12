@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard'
 import { WelcomeStep } from '@/components/onboarding/steps/WelcomeStep'
 import { CreateOrgStep } from '@/components/onboarding/steps/CreateOrgStep'
@@ -15,7 +16,7 @@ import { OnboardingJourneyProvider } from '@/providers/onboarding-journey-provid
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { ToastProvider } from '@/providers/toast-provider'
 import { useConfig } from '@/hooks/use-config'
-import { createOnboarding } from '@/lib'
+import { createOnboarding, completeOrganizationStep } from '@/lib'
 import type { TOnboarding } from '@/types'
 
 const ONBOARDING_STEP_TO_INDEX: Record<string, number> = {
@@ -77,9 +78,9 @@ const STEPS = [
 const STEPS_V2 = [
   {
     id: 'v2-step-1',
-    title: 'Creating your organization',
+    title: 'Create your organization',
     navLabel: 'Organization',
-    description: "Your organization is where you'll manage apps and installs.",
+    hideTitle: true,
     component: WelcomeNameOrgStep,
   },
   {
@@ -114,6 +115,8 @@ const STEPS_V2 = [
 
 export function Onboarding() {
   const { onboardingV2 } = useConfig()
+  const [searchParams] = useSearchParams()
+  const requestedOrgId = searchParams.get('org_id')
   const steps = onboardingV2 ? STEPS_V2 : STEPS
   const [initialSharedData, setInitialSharedData] = useState<
     Record<string, unknown> | undefined
@@ -122,13 +125,31 @@ export function Onboarding() {
   useEffect(() => {
     if (!onboardingV2) return
     let cancelled = false
-    createOnboarding().then((ob) => {
-      if (!cancelled) setInitialSharedData({ onboarding: ob })
-    }).catch(() => {
-      if (!cancelled) setInitialSharedData({})
-    })
+    const load = async () => {
+      try {
+        let ob = await createOnboarding()
+        // Auto-attach the org passed in via `?org_id=` whenever it differs
+        // from whatever is currently associated with the onboarding session.
+        // The backend rejects switching after resources have been created,
+        // in which case we just fall through and let the user see the wizard
+        // in its existing state.
+        if (requestedOrgId && ob.org_id !== requestedOrgId) {
+          try {
+            ob = await completeOrganizationStep({
+              body: { org_id: requestedOrgId },
+            })
+          } catch {
+            // Fall through; the wizard will render existing state.
+          }
+        }
+        if (!cancelled) setInitialSharedData({ onboarding: ob })
+      } catch {
+        if (!cancelled) setInitialSharedData({})
+      }
+    }
+    load()
     return () => { cancelled = true }
-  }, [onboardingV2])
+  }, [onboardingV2, requestedOrgId])
 
   if (!initialSharedData) return null
 
