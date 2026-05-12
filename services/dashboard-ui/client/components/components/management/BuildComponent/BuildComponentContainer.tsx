@@ -2,8 +2,8 @@ import { useLocation, useNavigate } from 'react-router'
 import { useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/common/Badge'
 import { type IButtonAsButton } from '@/components/common/Button'
-import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { type IModal } from '@/components/surfaces/Modal'
 import { useApp } from '@/hooks/use-app'
@@ -50,9 +50,7 @@ export const BuildComponentModalContainer = ({
     mutationFn: () => buildComponent({ componentId: component.id, orgId: org.id }),
     onSuccess: (build) => {
       addToast(
-        <Toast heading={`${component.name} build started`} theme="success">
-          <Text>Build for {component.name} was started.</Text>
-        </Toast>
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{component.name}</Badge> build started</span>} theme="info" />
       )
       removeModal(props.modalId)
       if (build?.id) {
@@ -61,9 +59,7 @@ export const BuildComponentModalContainer = ({
     },
     onError: () => {
       addToast(
-        <Toast heading="Component build failed" theme="error">
-          <Text>Unable to build {component.name} component.</Text>
-        </Toast>
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{component.name}</Badge> build failed</span>} theme="error" />
       )
     },
   })

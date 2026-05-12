@@ -1,6 +1,7 @@
 import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getDeploy } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -36,6 +37,12 @@ export function DeployProvider({
     queryFn: () => getDeploy({ orgId: org.id!, installId, deployId }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org.id && !!installId && !!deployId,
+  })
+
+  useStatusToast({
+    status: deploy?.status_v2?.status,
+    label: deploy?.component_name,
+    resourceType: 'deploy',
   })
 
   useEffect(() => {
