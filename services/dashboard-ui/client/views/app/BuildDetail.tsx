@@ -111,7 +111,7 @@ export const BuildDetail = () => {
           { path: `/${org?.id}/apps/${app?.id}/components/${componentId}/builds/${buildId}`, text: 'Build' },
         ]}
       />
-      <BuildProvider buildId={buildId!} componentId={componentId!} shouldPoll>
+      <BuildProvider buildId={buildId!} componentId={componentId!} componentName={component?.name} shouldPoll>
         <BuildDetailInner component={component} />
       </BuildProvider>
     </div>

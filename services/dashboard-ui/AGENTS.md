@@ -648,6 +648,50 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 
 The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
 
+## Toast Patterns
+
+### Mutation toasts (action triggered)
+
+When a mutation kicks off a long-running job (build, deploy, reprovision, etc.), show a **heading-only** toast with `theme="info"`. Use a `Badge variant="code" size="md"` for the entity name when one exists. No body copy.
+
+```tsx
+addToast(
+  <Toast
+    heading={
+      <span className="inline-flex items-center gap-1.5">
+        <Badge variant="code" size="md">{component.name}</Badge> build started
+      </span>
+    }
+    theme="info"
+  />
+)
+```
+
+For actions without a named entity (sandbox operations), use a plain string heading:
+
+```tsx
+addToast(<Toast heading="Sandbox reprovision started" theme="info" />)
+```
+
+For mutation errors use `theme="error"` with the same pattern.
+
+### Completion toasts (status transition)
+
+Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook watches a status string and fires a toast once when it transitions from a non-terminal status to a terminal one (success/error). It will NOT fire if the page loads with an already-terminal status.
+
+```tsx
+// In a provider that polls
+useStatusToast({
+  status: build?.status_v2?.status,
+  label: build?.component_name,  // optional — shown in a Badge
+  resourceType: 'build',         // e.g. "build succeeded" / "deploy failed"
+})
+```
+
+The hook uses `getStatusTheme()` from `client/utils/status-utils.ts` to determine whether a status is terminal (success/error theme) or non-terminal (info/warn/neutral). It tracks whether a non-terminal status has been seen — only then will a transition to terminal fire the toast.
+
+**Already wired into**: `build-provider`, `deploy-provider`, `sandbox-build-provider`, `sandbox-run-provider`.
+
 ## Dates, Times & Durations
 
 **Always use [Luxon](https://moment.github.io/luxon/) for date/time operations.** Never use raw `Date` objects or manual millisecond math.
