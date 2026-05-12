@@ -78,15 +78,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	var orgID string
 	var installID string
 	defer func() {
-		status := "ok"
-		if err != nil {
-			status = "error"
-		}
-		tagMap := make(map[string]string, len(ownerLabels)+8)
+		tagMap := make(map[string]string, len(ownerLabels)+7)
 		for k, v := range ownerLabels {
 			tagMap[k] = v
 		}
-		tagMap["status"] = status
 		tagMap["runner_id"] = s.RunnerID
 		tagMap["runner_type"] = runnerType
 		tagMap["runner_status"] = runnerStatus
