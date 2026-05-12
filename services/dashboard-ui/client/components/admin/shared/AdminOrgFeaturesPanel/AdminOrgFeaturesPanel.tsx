@@ -4,12 +4,13 @@ import { Text } from '@/components/common/Text'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
+import type { TOrgFeatureInfo } from '@/lib'
 import type { TOrg } from '@/types'
 
 interface IAdminOrgFeaturesPanel extends Omit<IPanel, 'onSubmit'> {
   org: TOrg
   orgId: string
-  featuresList: string[]
+  featuresList: TOrgFeatureInfo[]
   isLoading: boolean
   isSubmitting: boolean
   error?: string
@@ -38,7 +39,7 @@ export const AdminOrgFeaturesPanel = ({
       size={size}
       {...props}
     >
-      <div className="flex flex-col gap-6">
+      <div className="@container flex flex-col gap-6">
         <Text variant="body" className="text-gray-600 dark:text-gray-300">
           Configure feature flags for organization: <span className="font-mono">{orgId}</span>
         </Text>
@@ -67,14 +68,24 @@ export const AdminOrgFeaturesPanel = ({
           </div>
         ) : featuresList.length > 0 ? (
           <form id="features-form" onSubmit={onSubmit}>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {featuresList.map((feature) => (
+            <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4 gap-4">
+              {[...featuresList].reverse().map((feature) => (
                 <CheckboxInput
-                  key={feature}
-                  name={feature}
-                  defaultChecked={org?.features?.[feature] || false}
+                  key={feature.name}
+                  name={feature.name}
+                  defaultChecked={org?.features?.[feature.name] || false}
                   labelProps={{
-                    labelText: feature,
+                    className: '!items-start',
+                    labelText: (
+                      <div className="flex flex-col gap-0.5">
+                        <span>{feature.name}</span>
+                        {feature.description && (
+                          <Text variant="subtext" className="text-gray-500 dark:text-gray-400">
+                            {feature.description}
+                          </Text>
+                        )}
+                      </div>
+                    ),
                   }}
                 />
               ))}

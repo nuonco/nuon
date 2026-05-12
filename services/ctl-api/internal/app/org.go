@@ -257,16 +257,16 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureStratusWorkflow,
 		OrgFeatureTerraformInstaller,
 		OrgFeatureDashboardSSE,
-		OrgFeatureUserManagedFeatures,
 		OrgFeatureQueues,
-		OrgFeatureSupportRole,
+		OrgFeatureUserManagedFeatures,
 		OrgFeatureParallelRunnerJobs,
+		OrgFeatureSupportRole,
 		OrgFeatureInstallRename,
 		OrgFeatureDeployOutputs,
 		OrgFeatureTerraformProviderMirror,
+		OrgFeatureStateGenV2,
 		OrgFeatureAppBranchesUI,
 		OrgFeatureTraceView,
-		OrgFeatureStateGenV2,
 	}
 }
 
