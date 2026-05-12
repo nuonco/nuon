@@ -2,7 +2,7 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { getLogStream } from '@/lib'
-import { Loading } from '@/components/common/Loading'
+import { LogsPageSkeleton } from '@/components/log-stream/SSELogs'
 import type { TLogStream } from '@/types'
 
 type LogStreamContextValue = {
@@ -21,7 +21,7 @@ export function LogStreamProvider({
   shouldPoll = false,
 }: {
   children: ReactNode
-  logStreamId: string
+  logStreamId?: string
   pollInterval?: number
   shouldPoll?: boolean
 }) {
@@ -33,7 +33,7 @@ export function LogStreamProvider({
     enabled: !!org.id && !!logStreamId,
   })
 
-  if (isLoading || !logStream) return <Loading />
+  if (isLoading || !logStream) return <LogsPageSkeleton />
 
   return (
     <LogStreamContext.Provider value={{ logStream, refresh: refetch }}>
