@@ -89,6 +89,14 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 				"queue_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "emitter_id_queue_id_deleted_at"),
+			Columns: []string{
+				"emitter_id",
+				"queue_id",
+				"deleted_at",
+			},
+		},
 	}
 }
 
