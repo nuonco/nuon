@@ -41,7 +41,9 @@ const SandboxRunDetailContent = () => {
   })
 
   const step = workflow?.steps
-    ?.filter((s) => s?.step_target_id === sandboxRun?.id)
+    ?.filter(
+      (s) => s?.step_target_id === sandboxRun?.id && s?.execution_type === 'approval'
+    )
     ?.at(-1) ?? null
 
   const { hasResponded } = useRespondedApprovals()
