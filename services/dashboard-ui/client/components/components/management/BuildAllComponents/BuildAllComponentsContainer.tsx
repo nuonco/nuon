@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/common/Badge'
 import { type IButtonAsButton } from '@/components/common/Button'
-import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { type IModal } from '@/components/surfaces/Modal'
 import { useApp } from '@/hooks/use-app'
@@ -35,17 +35,13 @@ export const BuildAllComponentsModalContainer = ({ ...props }: IModal) => {
     mutationFn: () => buildComponents({ appId: app.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
-        <Toast heading={`${app.name} component builds started`} theme="success">
-          <Text>Build all components workflow was started.</Text>
-        </Toast>
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{app.name}</Badge> builds started</span>} theme="info" />
       )
       removeModal(props.modalId)
     },
     onError: () => {
       addToast(
-        <Toast heading="Component builds failed" theme="error">
-          <Text>Unable to build all components for {app.name}.</Text>
-        </Toast>
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{app.name}</Badge> builds failed</span>} theme="error" />
       )
     },
   })

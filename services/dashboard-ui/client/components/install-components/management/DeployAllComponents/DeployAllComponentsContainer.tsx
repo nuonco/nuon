@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -45,9 +45,7 @@ export const DeployAllComponentsModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={`${install.name} component deployments started`} theme="success">
-          <Text>Deploy all components workflow was created.</Text>
-        </Toast>
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{install.name}</Badge> deployments started</span>} theme="info" />
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -71,9 +69,7 @@ export const DeployAllComponentsModalContainer = ({
         },
       })
       addToast(
-        <Toast heading="Deployments failed" theme="error">
-          <Text>Unable to deploy all components to {install.name}.</Text>
-        </Toast>
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{install.name}</Badge> deployments failed</span>} theme="error" />
       )
     },
   })
