@@ -47,10 +47,17 @@ var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithRetryGroup = (*Signal)(nil)
 
-func (s *Signal) AutoRetry() bool                       { return true }
-func (s *Signal) MaxRetries() int                       { return 5 }
-func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
-func (s *Signal) RetryGroup() bool                      { return true }
+func (s *Signal) AutoRetry() bool  { return true }
+func (s *Signal) MaxRetries() int  { return 5 }
+func (s *Signal) RetryGroup() bool { return true }
+
+func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
+	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, s.InstallSandboxID)
+	if err != nil || install == nil {
+		return 0
+	}
+	return install.AppSandboxConfig.GetMaxAutoRetries()
+}
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
