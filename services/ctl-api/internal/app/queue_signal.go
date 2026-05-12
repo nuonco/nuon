@@ -90,12 +90,12 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 			},
 		},
 		{
-			Name: indexes.Name(db, &QueueSignal{}, "emitter_id_queue_id_deleted_at"),
+			Name: indexes.Name(db, &QueueSignal{}, "emitter_id_queue_id_inflight"),
 			Columns: []string{
 				"emitter_id",
 				"queue_id",
-				"deleted_at",
 			},
+			Option: "WHERE deleted_at = 0 AND (status->>'status') IN ('queued','in_progress')",
 		},
 	}
 }
