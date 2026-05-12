@@ -13,8 +13,10 @@ export const adminGetOrgRunner = ({ orgId }: { orgId: string }) =>
 export const adminGetInstallRunner = ({ installId }: { installId: string }) =>
   api<TRunner>({ baseUrl: '/admin', path: `installs/${installId}/admin-get-runner` })
 
+export type TOrgFeatureInfo = { name: string; description: string }
+
 export const adminGetOrgFeaturesList = () =>
-  api<string[]>({ baseUrl: '/admin', path: `orgs/admin-features` })
+  api<TOrgFeatureInfo[]>({ baseUrl: '/admin', path: `orgs/admin-features` })
 
 export const adminAddSupportUsersToOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-support-users` })

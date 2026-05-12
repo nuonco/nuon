@@ -116,26 +116,23 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 	testCases := []struct {
 		name                  string
 		expectedCode          int
-		validateResponseFunc  func([]app.OrgFeature)
+		validateResponseFunc  func([]app.OrgFeatureInfo)
 		validateResponseCount func(int)
 	}{
 		{
-			name:         "returns all available org features",
+			name:         "returns all available org features with descriptions",
 			expectedCode: http.StatusOK,
-			validateResponseFunc: func(features []app.OrgFeature) {
-				// Verify all expected features are present
+			validateResponseFunc: func(features []app.OrgFeatureInfo) {
 				expectedFeatures := app.GetFeatures()
 				require.Len(s.T(), features, len(expectedFeatures))
 
-				// Create a map for easier lookup
-				featureMap := make(map[app.OrgFeature]bool)
+				featureMap := make(map[string]bool)
 				for _, feature := range features {
-					featureMap[feature] = true
+					featureMap[feature.Name] = true
 				}
 
-				// Verify each expected feature is in the response
 				for _, expectedFeature := range expectedFeatures {
-					assert.True(s.T(), featureMap[expectedFeature],
+					assert.True(s.T(), featureMap[string(expectedFeature)],
 						"Expected feature %s to be in response", expectedFeature)
 				}
 			},
@@ -143,16 +140,14 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 		{
 			name:         "returns consistent feature list across multiple calls",
 			expectedCode: http.StatusOK,
-			validateResponseFunc: func(features []app.OrgFeature) {
-				// Make a second request
+			validateResponseFunc: func(features []app.OrgFeatureInfo) {
 				rr2 := s.makeRequest(http.MethodGet, "/v1/orgs/admin-features")
 				require.Equal(s.T(), http.StatusOK, rr2.Code)
 
-				var features2 []app.OrgFeature
+				var features2 []app.OrgFeatureInfo
 				err := json.Unmarshal(rr2.Body.Bytes(), &features2)
 				require.NoError(s.T(), err)
 
-				// Verify both responses are identical
 				require.Equal(s.T(), features, features2,
 					"Feature lists should be consistent across calls")
 			},
@@ -160,11 +155,10 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 		{
 			name:         "includes all documented features",
 			expectedCode: http.StatusOK,
-			validateResponseFunc: func(features []app.OrgFeature) {
-				// Verify specific critical features are present
-				featureMap := make(map[app.OrgFeature]bool)
+			validateResponseFunc: func(features []app.OrgFeatureInfo) {
+				featureMap := make(map[string]bool)
 				for _, feature := range features {
-					featureMap[feature] = true
+					featureMap[feature.Name] = true
 				}
 
 				criticalFeatures := []app.OrgFeature{
@@ -187,7 +181,7 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 				}
 
 				for _, criticalFeature := range criticalFeatures {
-					assert.True(s.T(), featureMap[criticalFeature],
+					assert.True(s.T(), featureMap[string(criticalFeature)],
 						"Critical feature %s should be in response", criticalFeature)
 				}
 			},
@@ -203,16 +197,25 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 		{
 			name:         "returns valid JSON array",
 			expectedCode: http.StatusOK,
-			validateResponseFunc: func(features []app.OrgFeature) {
+			validateResponseFunc: func(features []app.OrgFeatureInfo) {
 				require.NotNil(s.T(), features,
 					"Response should be a valid JSON array, not null")
+			},
+		},
+		{
+			name:         "all features have descriptions",
+			expectedCode: http.StatusOK,
+			validateResponseFunc: func(features []app.OrgFeatureInfo) {
+				for _, feature := range features {
+					assert.NotEmpty(s.T(), feature.Description,
+						"Feature %s should have a description", feature.Name)
+				}
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Make request
 			rr := s.makeRequest(http.MethodGet, "/v1/orgs/admin-features")
 
 			if rr.Code != tc.expectedCode {
@@ -220,20 +223,17 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// Parse response
-			var features []app.OrgFeature
+			var features []app.OrgFeatureInfo
 			err := json.Unmarshal(rr.Body.Bytes(), &features)
 			if err != nil {
 				s.T().Logf("Unmarshal error. Body: %s", rr.Body.String())
 			}
 			require.NoError(s.T(), err)
 
-			// Run count validation if provided
 			if tc.validateResponseCount != nil {
 				tc.validateResponseCount(len(features))
 			}
 
-			// Run response validation if provided
 			if tc.validateResponseFunc != nil {
 				tc.validateResponseFunc(features)
 			}
@@ -267,8 +267,6 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeaturesHTTPMethods() {
 			method:       http.MethodDelete,
 			expectedCode: http.StatusNotFound,
 		},
-		// Note: PATCH is actually supported on /admin-features (AdminUpdateOrgsFeatures endpoint)
-		// so it's not included in the "not supported" test cases
 	}
 
 	for _, tc := range testCases {
@@ -281,9 +279,8 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeaturesHTTPMethods() {
 			}
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
-			// For successful GET, verify response is valid JSON array
 			if tc.expectedCode == http.StatusOK {
-				var features []app.OrgFeature
+				var features []app.OrgFeatureInfo
 				err := json.Unmarshal(rr.Body.Bytes(), &features)
 				require.NoError(s.T(), err)
 				require.NotNil(s.T(), features)
@@ -306,31 +303,30 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeaturesResponseFormat() {
 			},
 		},
 		{
-			name: "returns array of strings",
+			name: "returns array of objects with name and description",
 			validateFunc: func(rr *httptest.ResponseRecorder) {
-				var features []string
+				var features []app.OrgFeatureInfo
 				err := json.Unmarshal(rr.Body.Bytes(), &features)
 				require.NoError(s.T(), err)
 
-				// Verify each feature is a non-empty string
 				for _, feature := range features {
-					assert.NotEmpty(s.T(), feature,
-						"Each feature should be a non-empty string")
+					assert.NotEmpty(s.T(), feature.Name,
+						"Each feature should have a non-empty name")
+					assert.NotEmpty(s.T(), feature.Description,
+						"Each feature should have a non-empty description")
 				}
 			},
 		},
 		{
-			name: "features have expected string format",
+			name: "feature names have expected string format",
 			validateFunc: func(rr *httptest.ResponseRecorder) {
-				var features []string
+				var features []app.OrgFeatureInfo
 				err := json.Unmarshal(rr.Body.Bytes(), &features)
 				require.NoError(s.T(), err)
 
-				// Verify features follow expected naming pattern (kebab-case)
 				for _, feature := range features {
-					// All features should contain hyphens (kebab-case)
-					assert.Regexp(s.T(), `^[a-z]+(-[a-z]+)*$`, feature,
-						"Feature %s should be in kebab-case format", feature)
+					assert.Regexp(s.T(), `^[a-z]+(-[a-z0-9]+)*$`, feature.Name,
+						"Feature %s should be in kebab-case format", feature.Name)
 				}
 			},
 		},
@@ -352,51 +348,36 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeaturesResponseFormat() {
 			}
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
-			// Run validation
 			tc.validateFunc(rr)
 		})
 	}
 }
 
 func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeaturesMatchesGetFeatures() {
-	s.Run("API response matches app.GetFeatures()", func() {
-		// Make API request
+	s.Run("API response matches app.GetFeaturesWithDescriptions()", func() {
 		rr := s.makeRequest(http.MethodGet, "/v1/orgs/admin-features")
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
-		// Parse API response
-		var apiFeatures []app.OrgFeature
+		var apiFeatures []app.OrgFeatureInfo
 		err := json.Unmarshal(rr.Body.Bytes(), &apiFeatures)
 		require.NoError(s.T(), err)
 
-		// Get features from function
-		functionFeatures := app.GetFeatures()
+		functionFeatures := app.GetFeaturesWithDescriptions()
 
-		// Verify counts match
 		require.Equal(s.T(), len(functionFeatures), len(apiFeatures),
-			"API response count should match GetFeatures() count")
+			"API response count should match GetFeaturesWithDescriptions() count")
 
-		// Create maps for comparison
-		apiFeatureMap := make(map[app.OrgFeature]bool)
+		apiFeatureMap := make(map[string]string)
 		for _, feature := range apiFeatures {
-			apiFeatureMap[feature] = true
+			apiFeatureMap[feature.Name] = feature.Description
 		}
 
-		// Verify all function features are in API response
 		for _, funcFeature := range functionFeatures {
-			assert.True(s.T(), apiFeatureMap[funcFeature],
-				"Feature %s from GetFeatures() should be in API response", funcFeature)
-		}
-
-		// Verify no extra features in API response
-		functionFeatureMap := make(map[app.OrgFeature]bool)
-		for _, feature := range functionFeatures {
-			functionFeatureMap[feature] = true
-		}
-
-		for _, apiFeature := range apiFeatures {
-			assert.True(s.T(), functionFeatureMap[apiFeature],
-				"API response feature %s should exist in GetFeatures()", apiFeature)
+			desc, ok := apiFeatureMap[funcFeature.Name]
+			assert.True(s.T(), ok,
+				"Feature %s from GetFeaturesWithDescriptions() should be in API response", funcFeature.Name)
+			assert.Equal(s.T(), funcFeature.Description, desc,
+				"Description for feature %s should match", funcFeature.Name)
 		}
 	})
 }
