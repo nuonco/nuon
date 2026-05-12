@@ -675,18 +675,18 @@ Do not add comments unless the logic is genuinely non-obvious. Never write comme
 ## Key Scripts
 
 ```bash
-npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
-npm run build          # Production build (minified)
-npm run build:js       # Build JS only
-npm run build:css      # Build CSS only
-npm run lint           # ESLint for the SPA
-npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
-npx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
-npm run dev:ladle      # Ladle component stories
-npm test               # Vitest tests
-npm run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
-npm run test:e2e:ui    # Playwright interactive UI mode
-npm run test:e2e:headed # Playwright with visible browser
+bun run dev            # Development: esbuild watch + PostCSS + BrowserSync
+bun run build          # Production build (minified)
+bun run build:js       # Build JS only
+bun run build:css      # Build CSS only
+bun run lint           # ESLint for the SPA
+bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
+bunx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
+bun run dev:ladle      # Ladle component stories
+bun run test           # Vitest tests
+bun run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
+bun run test:e2e:ui    # Playwright interactive UI mode
+bun run test:e2e:headed # Playwright with visible browser
 ```
 
 **Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
@@ -699,16 +699,16 @@ Smoke tests in `e2e/` that run against a live local or staging environment. Chro
 
 - Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
 - An admin account email with access to the admin API
-- Playwright browsers installed: `npx playwright install chromium`
+- Playwright browsers installed: `bunx playwright install chromium`
 
 ### Running
 
 ```bash
 # Creates a fresh test org, runs tests, deletes org on teardown
-E2E_EMAIL=you@nuon.co npm run test:e2e
+E2E_EMAIL=you@nuon.co bun run test:e2e
 
 # Use an existing org (skips create/teardown)
-E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
+E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX bun run test:e2e
 ```
 
 ### Environment variables
