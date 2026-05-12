@@ -66,7 +66,11 @@ export const StepDetailPanelContainer = ({
         workflowId: initStep.install_workflow_id,
         workflowStepId: initStep.id,
       }),
-    refetchInterval: shouldPoll ? pollInterval : false,
+    refetchInterval: (query) => {
+      if (!shouldPoll) return false
+      if (query.state.data?.finished) return 30_000
+      return pollInterval
+    },
     initialData: initStep,
     enabled: !!org?.id,
   })
