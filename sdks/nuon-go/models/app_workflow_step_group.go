@@ -59,7 +59,7 @@ type AppWorkflowStepGroup struct {
 	// Timeout is the execution timeout for this group, derived from its
 	// steps' timeouts. For sequential groups: sum of step timeouts. For parallel
 	// groups: max of step timeouts. Zero means use default fallback.
-	Timeout string `json:"timeout,omitempty"`
+	Timeout int64 `json:"timeout,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
