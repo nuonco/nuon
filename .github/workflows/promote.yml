@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to promote from'
+        required: true
+        default: 'main'
 
 permissions:
   contents: write
@@ -34,12 +40,13 @@ jobs:
       - uses: actions-ecosystem/action-get-merged-pull-request@v1
         name: get merged pr
         id: merged_pr
+        if: github.event_name == 'push'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: update promote output
         id: output
-        if: contains( steps.merged_pr.outputs.labels, 'promote-all' )
+        if: github.event_name == 'workflow_dispatch' || contains( steps.merged_pr.outputs.labels, 'promote-all' )
         run: echo "promote=true" >> "$GITHUB_OUTPUT"
 
   tag:
@@ -55,6 +62,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v6
         with:
+          ref: ${{ inputs.branch || github.ref }}
           fetch-depth: 0
 
       - name: Set git_ref output
@@ -84,6 +92,8 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.PROMOTIONS_SLACK_WEBHOOK_URL }}
           SLACK_MESSAGE: |
             ⛴  promoting `${{ needs.tag.outputs.git_ref }}` to `${{needs.tag.outputs.semver}}`
+            *branch* - ${{ inputs.branch || 'main' }}
+            *trigger* - ${{ github.event_name == 'workflow_dispatch' && format('manual ({0})', github.actor) || 'merged PR' }}
             *stage* - true
             *prod* - true
 
@@ -124,6 +134,11 @@ jobs:
     if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch || github.ref }}
+
       - name: Push tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
