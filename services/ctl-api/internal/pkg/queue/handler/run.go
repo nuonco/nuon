@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -41,6 +44,21 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	}
 	if h.stopped {
 		return true, nil
+	}
+
+	// Notify the AwaitSignal child workflow (if any) that execution is complete.
+	// Uses a deterministic workflow ID so no registration is needed.
+	if h.finished {
+		awaiterWorkflowID := fmt.Sprintf("await-signal-%s", h.queueSignalID)
+		resp := &FinishedResponse{
+			Status:            h.finishedStatus,
+			StatusDescription: h.finishedErr,
+		}
+		fut := workflow.SignalExternalWorkflow(ctx, awaiterWorkflowID, "", DoneSignalName, resp)
+		// Best-effort: awaiter may not exist or may have already completed.
+		if err := fut.Get(ctx, nil); err != nil {
+			l.Debug("failed to signal awaiter (may not exist)", zap.Error(err))
+		}
 	}
 
 	// Once execution has completed, keep the workflow alive for a cache period

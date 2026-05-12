@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/awaiter"
 	queueemitter "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
@@ -20,6 +21,7 @@ type WorkflowParams struct {
 	QueueEmitterWorkflows *queueemitter.Workflows
 	EnqueuerWorkflows     *enqueuer.Workflows
 	HandlerWorkflows      *handler.Workflows
+	AwaiterWorkflows      *awaiter.Workflows
 }
 
 type Workflows struct {
@@ -29,6 +31,7 @@ type Workflows struct {
 	queueemitterWorkflows *queueemitter.Workflows
 	enqueuerWorkflows     *enqueuer.Workflows
 	handlerWorkflows      *handler.Workflows
+	awaiterWorkflows      *awaiter.Workflows
 }
 
 func (w *Workflows) AllWorkflows() []interface{} {
@@ -42,6 +45,7 @@ func (w *Workflows) AllWorkflows() []interface{} {
 	wkflows = append(wkflows, w.queueemitterWorkflows.All()...)
 	wkflows = append(wkflows, w.enqueuerWorkflows.All()...)
 	wkflows = append(wkflows, w.handlerWorkflows.All()...)
+	wkflows = append(wkflows, w.awaiterWorkflows.All()...)
 
 	return wkflows
 }
@@ -54,5 +58,6 @@ func NewWorkflows(params WorkflowParams) *Workflows {
 		queueemitterWorkflows: params.QueueEmitterWorkflows,
 		enqueuerWorkflows:     params.EnqueuerWorkflows,
 		handlerWorkflows:      params.HandlerWorkflows,
+		awaiterWorkflows:      params.AwaiterWorkflows,
 	}
 }

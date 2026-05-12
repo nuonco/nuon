@@ -12,26 +12,12 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-
-	enumsv1 "go.temporal.io/api/enums/v1"
 )
 
 const (
 	metricsWorkflowCronTab string = "*/1 * * * *"
 	metricsWorkflowName    string = "general-metrics-cron"
 )
-
-func (w *Workflows) startMetricsWorkflow(ctx workflow.Context) {
-	cwo := workflow.ChildWorkflowOptions{
-		WorkflowID:            metricsWorkflowName,
-		CronSchedule:          metricsWorkflowCronTab,
-		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
-		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_TERMINATE,
-	}
-	ctx = workflow.WithChildOptions(ctx, cwo)
-
-	workflow.ExecuteChildWorkflow(ctx, w.Metrics)
-}
 
 func (w *Workflows) Metrics(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
@@ -82,6 +68,12 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		},
 		"queue_signal_enqueue": func(ctx workflow.Context) error {
 			return w.writeQueueSignalEnqueueMetrics(ctx)
+		},
+		"runner_health": func(ctx workflow.Context) error {
+			return w.writeRunnerHealthMetrics(ctx)
+		},
+		"unenqueued_signals": func(ctx workflow.Context) error {
+			return w.writeUnenqueuedSignalMetrics(ctx)
 		},
 	}
 
@@ -245,6 +237,52 @@ func (w *Workflows) temporalNamespaceMetrics(ctx workflow.Context, ns string) er
 
 	w.mw.Gauge(ctx, "eventloops.expected_count",
 		float64(m.ExpectedEventLoops),
+		metrics.ToTags(defaultTags)...)
+
+	return nil
+}
+
+func (w *Workflows) writeRunnerHealthMetrics(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true"}
+
+	m, err := activities.AwaitGetRunnerHealthMetrics(ctx, activities.GetRunnerHealthMetricsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner health metrics")
+	}
+
+	w.mw.Gauge(ctx, "runner_groups.org.total",
+		float64(m.OrgRunnerGroupsTotal),
+		metrics.ToTags(defaultTags)...)
+
+	w.mw.Gauge(ctx, "runner_groups.org.missing_process",
+		float64(m.OrgRunnerGroupsMissingProcess),
+		metrics.ToTags(defaultTags)...)
+
+	w.mw.Gauge(ctx, "runner_groups.install.total",
+		float64(m.InstallRunnerGroupsTotal),
+		metrics.ToTags(defaultTags)...)
+
+	w.mw.Gauge(ctx, "runner_groups.install.missing_process",
+		float64(m.InstallRunnerGroupsMissingProcess),
+		metrics.ToTags(defaultTags)...)
+
+	return nil
+}
+
+func (w *Workflows) writeUnenqueuedSignalMetrics(ctx workflow.Context) error {
+	defaultTags := map[string]string{"general": "true"}
+
+	m, err := activities.AwaitGetUnenqueuedSignalMetrics(ctx, activities.GetUnenqueuedSignalMetricsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get unenqueued signal metrics")
+	}
+
+	w.mw.Gauge(ctx, "queue_signals.unenqueued.total",
+		float64(m.Total),
+		metrics.ToTags(defaultTags)...)
+
+	w.mw.Gauge(ctx, "queue_signals.unenqueued.stale",
+		float64(m.Stale),
 		metrics.ToTags(defaultTags)...)
 
 	return nil

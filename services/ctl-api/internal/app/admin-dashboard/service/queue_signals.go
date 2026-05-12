@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -13,7 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-const queueSignalsPerPage = 100
+const queueSignalsPerPage = 500
 
 func (s *service) QueueSignals(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -25,8 +26,9 @@ func (s *service) QueueSignals(c *gin.Context) {
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
 	sortBy := c.Query("sort_by")
+	since := c.Query("since")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, since, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -62,8 +64,9 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
 	sortBy := c.Query("sort_by")
+	since := c.Query("since")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, since, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -98,22 +101,43 @@ var allowedSortColumns = map[string]string{
 	"execution_count": "execution_count desc",
 }
 
-func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued, sortBy string, page int) ([]app.QueueSignal, int, error) {
+// allowedSinceDurations maps the "since" query param values to Go durations.
+var allowedSinceDurations = map[string]time.Duration{
+	"15m": 15 * time.Minute,
+	"1h":  1 * time.Hour,
+	"6h":  6 * time.Hour,
+	"24h": 24 * time.Hour,
+	"7d":  7 * 24 * time.Hour,
+}
+
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued, sortBy, since string, page int) ([]app.QueueSignal, int, error) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
 
+	// When searching by a specific ID, skip the time filter so we always find it.
+	isIDSearch := false
 	if search != "" {
 		switch {
 		case len(search) >= 3 && search[:3] == "qsi":
 			query = query.Where("id = ?", search)
+			isIDSearch = true
 		case len(search) >= 3 && search[:3] == "que":
 			query = query.Where("queue_id = ?", search)
+			isIDSearch = true
 		default:
 			query = query.Where("owner_id = ?", search)
 		}
 	}
+
+	// Apply time threshold unless doing an ID-based search.
+	if !isIDSearch {
+		if dur, ok := allowedSinceDurations[since]; ok {
+			query = query.Where("created_at >= ?", time.Now().Add(-dur))
+		}
+	}
+
 	if ownerID != "" {
 		query = query.Where("owner_id = ?", ownerID)
 	}

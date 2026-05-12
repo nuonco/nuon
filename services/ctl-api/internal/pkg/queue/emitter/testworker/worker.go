@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	queueactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/awaiter"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
@@ -39,6 +40,7 @@ type WorkerParams struct {
 	EmitterWkflows *emitter.Workflows
 	QueueWkflows   *queue.Workflows
 	HandlerWkflows *handler.Workflows
+	AwaiterWkflows *awaiter.Workflows
 	EmitterActs    *activities.Activities
 	QueueActs      *queueactivities.Activities
 	QueueClient    *queueclient.Client
@@ -85,6 +87,9 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterWorkflow(wkflow)
 	}
 	for _, wkflow := range params.HandlerWkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range params.AwaiterWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
 

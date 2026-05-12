@@ -10,6 +10,10 @@ import (
 const (
 	FinishedHandlerName string = "finished"
 	FinishedHandlerType        = handlerTypeUpdate
+
+	// DoneSignalName is the Temporal signal channel name used to notify the
+	// AwaitSignal child workflow that the handler has finished executing.
+	DoneSignalName = "done"
 )
 
 type FinishedRequest struct{}

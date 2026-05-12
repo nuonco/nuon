@@ -30,6 +30,7 @@ export const QueueSignals = () => {
   const [enqueued, setEnqueued] = useState('')
   const [status, setStatus] = useState('')
   const [sortBy, setSortBy] = useState('')
+  const [since, setSince] = useState('1h')
   const [page, setPage] = useState(1)
 
   const { data: typeOptions } = useQuery({
@@ -38,7 +39,7 @@ export const QueueSignals = () => {
   })
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, status, sortBy, ownerID, page],
+    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, status, sortBy, since, ownerID, page],
     queryFn: () => getQueueSignalsGlobal({
       search,
       signal_type: signalType || undefined,
@@ -46,6 +47,7 @@ export const QueueSignals = () => {
       enqueued: enqueued || undefined,
       status: status || undefined,
       sort_by: sortBy || undefined,
+      since: search ? undefined : since || undefined,
       owner_id: ownerID,
       page,
     }),
@@ -63,10 +65,22 @@ export const QueueSignals = () => {
     <div>
       <h1 className="page-heading">Queue signals</h1>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
         <div className="w-full sm:w-64">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by ID, owner, queue..." />
         </div>
+        <select
+          value={since}
+          onChange={(e) => { setSince(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          <option value="15m">Last 15 min</option>
+          <option value="1h">Last 1 hour</option>
+          <option value="6h">Last 6 hours</option>
+          <option value="24h">Last 24 hours</option>
+          <option value="7d">Last 7 days</option>
+          <option value="">All time</option>
+        </select>
         <select
           value={signalType}
           onChange={(e) => { setSignalType(e.target.value); setPage(1) }}

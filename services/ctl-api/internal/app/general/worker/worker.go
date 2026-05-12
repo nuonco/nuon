@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
+	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/interceptor"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -74,11 +77,12 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	params.LC.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(ctx context.Context) error {
 			params.L.Info("starting general worker")
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()
+			startMetricsWorkflowOnBoot(ctx, params.Tclient, params.L)
 			return nil
 		},
 		OnStop: func(_ context.Context) error {
@@ -87,4 +91,26 @@ func New(params WorkerParams) (*Worker, error) {
 	})
 
 	return &Worker{wkr}, nil
+}
+
+// startMetricsWorkflowOnBoot ensures the general-metrics cron workflow is running.
+// Uses WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING so this is idempotent across
+// multiple worker boots.
+func startMetricsWorkflowOnBoot(ctx context.Context, tClient temporalclient.Client, l *zap.Logger) {
+	opts := tclient.StartWorkflowOptions{
+		ID:                       metricsWorkflowName,
+		TaskQueue:                pkgworkflows.APITaskQueue,
+		CronSchedule:             metricsWorkflowCronTab,
+		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+
+	_, err := tClient.ExecuteWorkflowInNamespace(ctx, defaultNamespace, opts, "Metrics")
+	if err != nil {
+		l.Warn("unable to start general-metrics workflow", zap.Error(err))
+		return
+	}
+	l.Info("general-metrics workflow started")
 }

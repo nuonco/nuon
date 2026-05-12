@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/awaiter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 )
@@ -37,6 +38,7 @@ type WorkerParams struct {
 	Tclient        temporalclient.Client
 	QueueWkflows   *queue.Workflows
 	HandlerWkflows *handler.Workflows
+	AwaiterWkflows *awaiter.Workflows
 	HandlerActs    *handleractivities.Activities
 	Acts           *activities.Activities
 	L              *zap.Logger
@@ -67,6 +69,9 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterWorkflow(wkflow)
 	}
 	for _, wkflow := range params.HandlerWkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+	for _, wkflow := range params.AwaiterWkflows.All() {
 		wkr.RegisterWorkflow(wkflow)
 	}
 
