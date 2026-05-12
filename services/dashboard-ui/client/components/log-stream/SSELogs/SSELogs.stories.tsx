@@ -929,4 +929,8 @@ export const Loading = () => {
   )
 }
 
+import { LogsPageSkeleton } from './SSELogs'
+
 export const Skeleton = () => <LogsSkeleton />
+
+export const PageSkeleton = () => <LogsPageSkeleton />
