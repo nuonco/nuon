@@ -117,10 +117,10 @@ Based on the repository structure, these commands are likely useful:
 cd bins/cli && go run main.go
 
 # Dashboard UI development
-cd services/dashboard-ui && npm run dev
+cd services/dashboard-ui && bun run dev
 
 # Wiki development
-cd services/wiki && npm run dev
+cd services/wiki && bun run dev
 ```
 
 ### Infrastructure
@@ -137,7 +137,7 @@ cd infra/[module] && terraform plan
 go test ./...
 
 # Frontend tests
-cd services/dashboard-ui && npm test
+cd services/dashboard-ui && bun run test
 ```
 
 ### Code Generation
