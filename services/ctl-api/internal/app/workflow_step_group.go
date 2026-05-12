@@ -38,7 +38,7 @@ type WorkflowStepGroup struct {
 	// Timeout is the execution timeout for this group, derived from its
 	// steps' timeouts. For sequential groups: sum of step timeouts. For parallel
 	// groups: max of step timeouts. Zero means use default fallback.
-	Timeout time.Duration `json:"timeout,omitzero" gorm:"default:0" swaggertype:"string" temporaljson:"timeout,omitzero,omitempty"`
+	Timeout time.Duration `json:"timeout,omitzero" gorm:"default:0" swaggertype:"primitive,integer" temporaljson:"timeout,omitzero,omitempty"`
 
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 
