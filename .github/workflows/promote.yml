@@ -134,6 +134,11 @@ jobs:
     if: ${{ needs.merged_pr.outputs.promote == 'true' }} && always()
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch || github.ref }}
+
       - name: Push tag
         uses: mathieudutour/github-tag-action@v6.1
         with:
