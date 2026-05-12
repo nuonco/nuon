@@ -36,27 +36,43 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 			zap.Time("scheduled-at", *emitter.ScheduledAt),
 		)
 
-		// Wait until the scheduled time, but also listen for stop signal
+		// Wait until the scheduled time, periodically checking that the
+		// emitter and queue still exist so we don't linger after deletion.
 		timerFuture := workflow.NewTimer(ctx, waitDuration)
-
-		selector := workflow.NewSelector(ctx)
 		var timerFired bool
 
-		selector.AddFuture(timerFuture, func(f workflow.Future) {
-			timerFired = true
-		})
+		for !timerFired {
+			checkTimer := workflow.NewTimer(ctx, cronParentCheckInterval)
 
-		selector.Select(ctx)
+			selector := workflow.NewSelector(ctx)
+			selector.AddFuture(timerFuture, func(f workflow.Future) {
+				timerFired = true
+			})
+			selector.AddFuture(checkTimer, func(f workflow.Future) {})
+			selector.Select(ctx)
 
-		// Check if we were stopped while waiting
-		if e.stopped {
-			l.Info("emitter stopped while waiting")
-			return true, nil
-		}
+			if e.stopped {
+				l.Info("emitter stopped while waiting")
+				return true, nil
+			}
 
-		if !timerFired {
-			// Continue-as-new to refresh state and try again
-			return false, nil
+			if !timerFired {
+				if _, err := e.ensureEmitterActive(ctx); err != nil {
+					return false, err
+				}
+				if e.stopped {
+					l.Info("emitter deleted while waiting")
+					return true, nil
+				}
+
+				if err := e.ensureQueueActive(ctx); err != nil {
+					return false, err
+				}
+				if e.stopped {
+					l.Info("queue terminated while waiting")
+					return true, nil
+				}
+			}
 		}
 	}
 
