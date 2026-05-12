@@ -31,6 +31,7 @@ export const WorkflowContext = createContext<WorkflowContextValue | undefined>(u
 
 const FAST_POLL_MS = 250
 const SLOW_POLL_MS = 4000
+const FINISHED_POLL_MS = 30_000
 const FAST_POLL_DURATION_MS = 60_000
 
 export const WorkflowProvider = ({
@@ -60,18 +61,17 @@ export const WorkflowProvider = ({
     return () => clearTimeout(timer)
   }, [shouldPoll])
 
-  const activePollInterval = pollingEnabled
-    ? fastPoll
-      ? FAST_POLL_MS
-      : pollInterval
-    : false
-
   const { addToast } = useToast()
 
   const { data: workflow, isLoading, error } = useQuery({
     queryKey: ['workflow', org.id!, workflowId],
     queryFn: () => getWorkflow({ orgId: org.id!, workflowId }),
-    refetchInterval: activePollInterval,
+    refetchInterval: (query) => {
+      if (!pollingEnabled) return false
+      if (query.state.data?.finished) return FINISHED_POLL_MS
+      if (fastPoll) return FAST_POLL_MS
+      return pollInterval
+    },
     enabled: !!org.id && !!workflowId,
   })
 
