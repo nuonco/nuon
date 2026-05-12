@@ -95,7 +95,7 @@ jobs:
 
       # Services that need k8s charts deploy via mono repo
       - name: ⬆️ Deploy Stage (k8s services)
-        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp", "installer-cli"]'), inputs.service) }}
+        if: ${{ inputs.stage && !contains(fromJSON('["runner", "cli", "lsp", "stack-manager"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo nuonco/mono \
@@ -109,7 +109,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_DEPLOY_TOKEN }}
 
       - name: 🌎 Deploy Prod (k8s services)
-        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp", "installer-cli"]'), inputs.service) }}
+        if: ${{ inputs.prod && !contains(fromJSON('["runner", "cli", "lsp", "stack-manager"]'), inputs.service) }}
         run: |
           gh workflow run deploy-public-services.yml \
             --repo nuonco/mono \
@@ -124,12 +124,12 @@ jobs:
 
       # Artifacts (runner, cli, lsp) deploy directly via nuonctl - no k8s needed
       - name: ⬆️ Deploy Stage (artifacts)
-        if: ${{ inputs.stage && contains(fromJSON('["runner", "cli", "lsp", "installer-cli"]'), inputs.service) }}
+        if: ${{ inputs.stage && contains(fromJSON('["runner", "cli", "lsp", "stack-manager"]'), inputs.service) }}
         run: |
           CI=true nuonctl deploys deploy ${{inputs.service}} --env=stage --tag=${{inputs.tag}}
 
       - name: 🌎 Deploy Prod (artifacts)
-        if: ${{ inputs.prod && contains(fromJSON('["runner", "cli", "lsp", "installer-cli"]'), inputs.service) }}
+        if: ${{ inputs.prod && contains(fromJSON('["runner", "cli", "lsp", "stack-manager"]'), inputs.service) }}
         run: |
           CI=true nuonctl deploys deploy ${{inputs.service}} --env=prod --tag=${{inputs.tag}}
 

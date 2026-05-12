@@ -264,14 +264,14 @@ const CLITab = ({ phoneHomeId, runnerAPIURL }: ICLITab) => {
   const createRunURL = `${base}/v1/stack-runs/${phoneHomeId || '<phone-home-id>'}`
 
   const installerBase =
-    config.installerCliDownloadUrl || 'https://install.nuon.co/installer-cli'
+    config.stackManagerDownloadUrl || 'https://install.nuon.co/stack-manager'
   const cmd = `curl -fsSL ${installerBase}/install.sh | sh -s -- provision ${createRunURL}`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
       <Card>
         <span className="flex justify-between items-center">
-          <Text weight="strong">Provision with installer-cli</Text>
+          <Text weight="strong">Provision with stack-manager</Text>
           <ClickToCopyButton textToCopy={cmd} />
         </span>
         <Text variant="subtext" theme="neutral">
