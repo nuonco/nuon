@@ -7,7 +7,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
@@ -81,20 +80,16 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
-		w.emitFireMetric(ctx, emitter, "error")
 		return err
 	}
 
 	if resp.Skipped {
-		w.emitFireMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", emitter.ID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
-
-	w.emitFireMetric(ctx, emitter, "emitted")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
@@ -117,14 +112,4 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 	}
 
 	return nil
-}
-
-func (w *Workflows) emitFireMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
-	tags := metrics.ToTags(map[string]string{
-		"signal_type": string(emitter.SignalType),
-		"mode":        string(emitter.Mode),
-		"owner_type":  emitter.Queue.OwnerType,
-		"status":      status,
-	})
-	w.mw.Incr(ctx, "queues.signal_emitter.fire", tags...)
 }
