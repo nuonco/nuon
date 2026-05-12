@@ -16,6 +16,7 @@ import (
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -209,13 +210,20 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 	return nil
 }
 
-// updateBuildStatus updates the build status
-func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
+// updateBuildStatus updates the build status. An optional CompositeErrorData
+// can be passed as the final argument to also persist a typed structured
+// error against the build's composite_error column.
+func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string, ces ...*compositeerrors.CompositeErrorData) {
 	l := workflow.GetLogger(ctx)
+	var ce *compositeerrors.CompositeErrorData
+	if len(ces) > 0 {
+		ce = ces[0]
+	}
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
 		BuildID:           bldID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		CompositeError:    ce,
 	})
 	if err != nil {
 		l.Error("unable to update build status",

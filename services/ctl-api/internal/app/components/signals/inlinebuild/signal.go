@@ -14,6 +14,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors/types/validation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -128,7 +130,12 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 	}
 
 	if comp.Status != app.ComponentStatusActive {
-		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "component is not active")
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "component is not active",
+			compositeerrors.New(&validation.Error{
+				Field:   "component.status",
+				Message: "component must be active before a build can run",
+				Got:     string(comp.Status),
+			}))
 		return notify(fmt.Errorf("component is not active"))
 	}
 
@@ -226,13 +233,20 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 	return nil
 }
 
-// updateBuildStatus updates the build status.
-func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
+// updateBuildStatus updates the build status. An optional CompositeErrorData
+// can be passed as the final argument to also persist a typed structured
+// error against the build's composite_error column.
+func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string, ces ...*compositeerrors.CompositeErrorData) {
 	l := workflow.GetLogger(ctx)
+	var ce *compositeerrors.CompositeErrorData
+	if len(ces) > 0 {
+		ce = ces[0]
+	}
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
 		BuildID:           bldID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		CompositeError:    ce,
 	})
 	if err != nil {
 		l.Error("unable to update build status",

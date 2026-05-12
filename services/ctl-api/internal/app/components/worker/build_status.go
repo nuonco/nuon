@@ -6,15 +6,24 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string) {
+// updateBuildStatus updates the build status. An optional CompositeErrorData
+// can be passed as the final argument to also persist a typed structured
+// error against the build's composite_error column.
+func (w *Workflows) updateBuildStatus(ctx workflow.Context, bldID string, status app.ComponentBuildStatus, statusDescription string, ces ...*compositeerrors.CompositeErrorData) {
 	l := workflow.GetLogger(ctx)
+	var ce *compositeerrors.CompositeErrorData
+	if len(ces) > 0 {
+		ce = ces[0]
+	}
 	err := activities.AwaitUpdateBuildStatus(ctx, activities.UpdateBuildStatus{
 		BuildID:           bldID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		CompositeError:    ce,
 	})
 	if err != nil {
 		l.Error("unable to update build status",

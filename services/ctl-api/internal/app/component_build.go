@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -54,6 +55,11 @@ type ComponentBuild struct {
 	Status            ComponentBuildStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string               `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus      `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
+
+	// CompositeError is the typed, structured error attached to this build,
+	// when one applies. Optional — set inline at failure sites via
+	// compositeerrors.New(&someTypedError{}).
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitzero" gorm:"type:jsonb" temporaljson:"composite_error,omitzero,omitempty"`
 
 	GitRef *string `json:"git_ref,omitzero" temporaljson:"git_ref,omitzero,omitempty"`
 
