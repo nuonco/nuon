@@ -1,4 +1,4 @@
-package composite_error
+package compositeerrors
 
 import (
 	"database/sql/driver"
@@ -16,7 +16,7 @@ import (
 //
 // Owners opt in by adding:
 //
-//	CompositeError *composite_error.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb"`
+//	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb"`
 type CompositeErrorData struct {
 	Type     Type            `json:"type"`
 	Severity Severity        `json:"severity"`
@@ -53,7 +53,7 @@ func (c *CompositeErrorData) Scan(value any) error {
 	case string:
 		bytes = []byte(v)
 	default:
-		return fmt.Errorf("composite_error: cannot scan type %T", value)
+		return fmt.Errorf("compositeerrors: cannot scan type %T", value)
 	}
 
 	if len(bytes) == 0 || string(bytes) == "null" {

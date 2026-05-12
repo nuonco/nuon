@@ -1,4 +1,4 @@
-// Package composite_error defines the typed, embedded error abstraction used
+// Package compositeerrors defines the typed, embedded error abstraction used
 // across the Nuon platform.
 //
 // A CompositeError is a regular Go error (it satisfies the standard error
@@ -15,9 +15,9 @@
 // the read path is a plain JSONB unmarshal with no registry lookup.
 //
 // New typed errors are added by writing a struct that implements
-// CompositeError in its own package (e.g. pkg/composite_error/terraform/,
-// pkg/composite_error/validation/). There is no central registration step.
-package composite_error
+// CompositeError in its own subpackage (e.g. compositeerrors/terraform/,
+// compositeerrors/validation/). There is no central registration step.
+package compositeerrors
 
 // Type is the discriminator string for a CompositeError implementation
 // (e.g. "terraform.error", "validation"). Stored on the persisted
