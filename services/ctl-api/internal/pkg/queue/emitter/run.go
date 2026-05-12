@@ -39,6 +39,15 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to get emitter")
 	}
 
+	if workflow.GetInfo(ctx).ContinuedExecutionRunID == "" {
+		e.emitLifecycleMetric(ctx, "queues.signal_emitter.start", emitter)
+	}
+	defer func() {
+		if finished || err != nil {
+			e.emitLifecycleMetric(ctx, "queues.signal_emitter.stop", emitter)
+		}
+	}()
+
 	switch emitter.Mode {
 	case app.QueueEmitterModeCron:
 		return e.runCronMode(ctx, l, emitter)
@@ -49,14 +58,13 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	}
 }
 
-func (e *emitterWorkflow) emitFireMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
+func (e *emitterWorkflow) emitLifecycleMetric(ctx workflow.Context, name string, emitter *app.QueueEmitter) {
 	tags := metrics.ToTags(map[string]string{
 		"signal_type": string(emitter.SignalType),
 		"mode":        string(emitter.Mode),
 		"owner_type":  emitter.Queue.OwnerType,
-		"status":      status,
 	})
-	e.mw.Incr(ctx, "queues.signal_emitter.fire", tags...)
+	e.mw.Incr(ctx, name, tags...)
 }
 
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
@@ -66,20 +74,16 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
-		e.emitFireMetric(ctx, emitter, "error")
 		return errors.Wrap(err, "unable to emit signal")
 	}
 
 	if resp.Skipped {
-		e.emitFireMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", e.emitterID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
-
-	e.emitFireMetric(ctx, emitter, "emitted")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
