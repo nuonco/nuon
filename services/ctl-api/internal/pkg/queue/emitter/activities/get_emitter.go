@@ -3,9 +3,8 @@ package activities
 import (
 	"context"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetEmitterRequest struct {
@@ -21,7 +20,7 @@ func (a *Activities) GetEmitter(ctx context.Context, req *GetEmitterRequest) (*a
 		Preload("Queue").
 		Where("id = ?", req.EmitterID).
 		First(&emitter); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get emitter")
+		return nil, generics.TemporalGormError(res.Error, "unable to get emitter")
 	}
 
 	return &emitter, nil

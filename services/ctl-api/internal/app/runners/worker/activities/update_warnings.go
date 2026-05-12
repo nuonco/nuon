@@ -12,8 +12,8 @@ import (
 )
 
 type UpdateWarningsRequest struct {
-	RunnerID   string         `validate:"required"`
-	Warnings   pq.StringArray `validate:"required"`
+	RunnerID   string `validate:"required"`
+	Warnings   pq.StringArray
 	IsAliasTag bool
 }
 

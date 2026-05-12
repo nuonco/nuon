@@ -22,6 +22,16 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
+	// Fetch the emitter from DB and set e.queueID from the authoritative record.
+	emitter, err := e.ensureEmitterActive(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to check emitter status")
+	}
+	if e.stopped {
+		l.Info("emitter not found, stopping")
+		return true, nil
+	}
+
 	// Check if the queue still exists before proceeding.
 	if err := e.ensureQueueActive(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to check queue status")
@@ -30,23 +40,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		l.Info("queue terminated, stopping emitter")
 		return true, nil
 	}
-
-	l.Info("fetching emitter configuration")
-	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{
-		EmitterID: e.emitterID,
-	})
-	if err != nil {
-		return false, errors.Wrap(err, "unable to get emitter")
-	}
-
-	if workflow.GetInfo(ctx).ContinuedExecutionRunID == "" {
-		e.emitLifecycleMetric(ctx, "queues.signal_emitter.start", emitter)
-	}
-	defer func() {
-		if finished || err != nil {
-			e.emitLifecycleMetric(ctx, "queues.signal_emitter.stop", emitter)
-		}
-	}()
 
 	switch emitter.Mode {
 	case app.QueueEmitterModeCron:
@@ -67,6 +60,16 @@ func (e *emitterWorkflow) emitLifecycleMetric(ctx workflow.Context, name string,
 	e.mw.Incr(ctx, name, tags...)
 }
 
+func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type":  string(emitter.SignalType),
+		"emitter_type": string(emitter.Mode),
+		"owner_type":   emitter.Queue.OwnerType,
+		"status":       status,
+	})
+	e.mw.Incr(ctx, "queue.emitter.signal_emitted", tags...)
+}
+
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
@@ -74,16 +77,20 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
+		e.emitSignalMetric(ctx, emitter, "error")
 		return errors.Wrap(err, "unable to emit signal")
 	}
 
 	if resp.Skipped {
+		e.emitSignalMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", e.emitterID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
+
+	e.emitSignalMetric(ctx, emitter, "ok")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
