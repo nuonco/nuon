@@ -75,10 +75,14 @@ export const AwaitStackDetails = ({
       )}
 
       {outputsAbove ? (
-        <Card>
-          <Text>Stack outputs</Text>
-          <KeyValueList values={outputValues} />
-        </Card>
+        <div className="flex flex-col gap-4">
+          <Text variant="base" weight="strong">
+            Outputs
+          </Text>
+          <Card>
+            <KeyValueList values={outputValues} />
+          </Card>
+        </div>
       ) : null}
 
       {runnerType?.startsWith('aws') ? (
