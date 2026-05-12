@@ -28,18 +28,18 @@ import (
 )
 
 type artifact struct {
-	name       string // URL prefix segment, e.g. "installer-cli"
-	pkg        string // Go package path, e.g. "./bins/installer-cli"
-	bin        string // output binary basename, e.g. "installer-cli"
+	name       string // URL prefix segment, e.g. "stack-manager"
+	pkg        string // Go package path, e.g. "./bins/stack-manager"
+	bin        string // output binary basename, e.g. "stack-manager"
 	scriptPath string // relative install.sh path inside repo root
 }
 
 var artifacts = []artifact{
 	{
-		name:       "installer-cli",
-		pkg:        "./bins/installer-cli",
-		bin:        "installer-cli",
-		scriptPath: "bins/installer-cli/install.sh",
+		name:       "stack-manager",
+		pkg:        "./bins/stack-manager",
+		bin:        "stack-manager",
+		scriptPath: "bins/stack-manager/install.sh",
 	},
 }
 
@@ -252,7 +252,7 @@ func rewriteBase(script, base string) string {
 		if strings.Contains(line, "# DEFAULT_BASE_URL") {
 			for j := i + 1; j < len(lines); j++ {
 				if strings.HasPrefix(strings.TrimSpace(lines[j]), "BASE_URL=") {
-					lines[j] = fmt.Sprintf(`BASE_URL="${INSTALLER_CLI_BASE_URL:-%s}"`, base)
+					lines[j] = fmt.Sprintf(`BASE_URL="${STACK_MANAGER_BASE_URL:-%s}"`, base)
 					return strings.Join(lines, "\n")
 				}
 			}

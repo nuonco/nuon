@@ -204,7 +204,7 @@ func waitForInstanceProfile(ctx context.Context, log *slog.Logger, c *iam.Client
 			return fmt.Errorf("get instance profile %s: %w", profileName, err)
 		}
 		if time.Now().After(deadline) {
-			return fmt.Errorf("instance profile %s not visible after 60s — IAM may still be propagating, or the cached name points to a deleted/foreign profile (try `installer-cli deprovision` or delete the local state file to recover)", profileName)
+			return fmt.Errorf("instance profile %s not visible after 60s — IAM may still be propagating, or the cached name points to a deleted/foreign profile (try `stack-manager deprovision` or delete the local state file to recover)", profileName)
 		}
 		if !logged {
 			log.Info("waiting for IAM instance profile to propagate", "name", profileName)

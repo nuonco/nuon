@@ -4093,7 +4093,7 @@ export interface components {
       phone_home_url?: string
       quick_link_url?: string
       /**
-       * @description RunnerAPIURL is the externally-reachable runner-API host the installer-cli
+       * @description RunnerAPIURL is the externally-reachable runner-API host the stack-manager
        * SDK should POST to. Populated transiently on read via AfterFind from
        * Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
        * surface vendors expose, so the customer's workstation can hit it even

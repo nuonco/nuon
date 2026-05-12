@@ -26,8 +26,8 @@ services: |
     - pkg/**
     - sdks/**
 
-  installer-cli:
-    - bins/installer-cli/**
+  stack-manager:
+    - bins/stack-manager/**
     - go.mod
     - go.sum
     - pkg/**
