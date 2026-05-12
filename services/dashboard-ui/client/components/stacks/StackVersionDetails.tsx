@@ -1,9 +1,11 @@
 import { Badge } from '@/components/common/Badge'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
+import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { KeyValueList } from '@/components/common/KeyValueList'
+import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -16,20 +18,24 @@ import type {
   TWorkflowStep,
   TInstallStackVersionRun,
 } from '@/types'
+import { useOrg } from '@/hooks/use-org'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
+import { indexToOrdinal } from '@/utils/string-utils'
 
 type TStackVersion = TInstallStack['versions'][number]
 
 export const StackVersionDetails = ({
-  version,
   ...props
 }: {
   version: TStackVersion
+  installStackOutputs?: TInstallStackOutputs
 } & IPanel) => {
+  const { org } = useOrg()
+  const stackV2 = !!org?.features?.['stack-manager-cli']
   return (
     <Panel
       size="3/4"
@@ -63,9 +69,17 @@ export const StackVersionDetails = ({
       }
     >
       <div className="flex flex-col gap-12 my-8">
-        <StackVersionLinks version={version} />
-
-        <StackVersionRuns version={version} />
+        {stackV2 ? (
+          <>
+            <StackVersionRuns version={version} />
+            <StackVersionLinks version={version} />
+          </>
+        ) : (
+          <>
+            <StackVersionLinks version={version} />
+            <StackVersionRuns version={version} />
+          </>
+        )}
       </div>
 
       <Divider dividerWord="Metadata" />
@@ -75,21 +89,57 @@ export const StackVersionDetails = ({
   )
 }
 
-// StackVersionLinks renders the full contents of the provision workflow's
-// "await install stack" step panel, scoped to the version this panel is
-// displaying. AwaitStackDetails reads stack?.versions?.at(0); we wrap the
-// single version so the embedded platform block targets it.
 const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
+  const { org } = useOrg()
+  const stackV2 = !!org?.features?.['native-aws-provisioner']
   const { install } = useInstall()
-  const stack = { versions: [version] } as unknown as TInstallStack
-  const step = {} as TWorkflowStep
+
+  if (stackV2) {
+    const stack = { versions: [version] } as unknown as TInstallStack
+    const step = {} as TWorkflowStep
+    return (
+      <AwaitStackDetails
+        stack={stack}
+        step={step}
+        runnerType={install?.app_runner_config?.app_runner_type}
+      />
+    )
+  }
 
   return (
-    <AwaitStackDetails
-      stack={stack}
-      step={step}
-      runnerType={install?.app_runner_config?.app_runner_type}
-    />
+    <div className="flex flex-col gap-4">
+      <Text variant="base" weight="strong">
+        Links
+      </Text>
+
+      {version?.quick_link_url ? (
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1">
+          <span className="flex justify-between items-center">
+            <Text variant="body" weight="strong">
+              Install quick link
+            </Text>
+            <ClickToCopyButton textToCopy={version.quick_link_url} />
+          </span>
+          <Link href={version.quick_link_url} isExternal>
+            <Code>{version.quick_link_url}</Code>
+          </Link>
+        </div>
+      ) : null}
+
+      {version?.template_url ? (
+        <div className="border rounded-md shadow p-2 flex flex-col gap-1 mt-3">
+          <span className="flex justify-between items-center">
+            <Text variant="body" weight="strong">
+              Install template
+            </Text>
+            <ClickToCopyButton textToCopy={version.template_url} />
+          </span>
+          <Link href={version.template_url} isExternal>
+            <Code>{version.template_url}</Code>
+          </Link>
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -184,6 +234,8 @@ const RunDiffs = ({ run }: { run: TInstallStackVersionRun }) => {
 }
 
 const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
+  const { org } = useOrg()
+  const stackV2 = !!org?.features?.['stack-manager-cli']
   const runs = version?.runs ?? []
   return (
     <div className="flex flex-col gap-4">
@@ -193,9 +245,7 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
 
       {runs.length ? (
         runs.map((run, idx) => {
-          // The OpenAPI types haven't been regenerated to include the
-          // run-scoped log stream + kind yet; widen with a local cast (same
-          // pattern used for terraform_contents on AwaitAWSDetails).
+          const ordinalIdx = (version?.runs?.length ?? 0) - 1 - idx
           const runExt = run as typeof run & {
             log_stream?: { id?: string; open?: boolean }
             kind?: 'provision' | 'reprovision' | 'deprovision'
@@ -217,12 +267,22 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                   <RunTypeBadge runType={run?.run_type} />
                   <Text variant="base" weight="strong">
                     {kind}
+                stackV2 ? (
+                  <span className="flex items-center gap-2">
+                    <Text variant="base" weight="strong">
+                      {kind}
+                    </Text>
+                    <Status status={run?.composite_status?.status} />
+                    <Text variant="subtext">
+                      <Time time={run?.created_at} />
+                    </Text>
+                  </span>
+                ) : (
+                  <Text variant="base">
+                    {indexToOrdinal(ordinalIdx)} run &middot;{' '}
+                    <Time variant="subtext" time={run?.created_at} />
                   </Text>
-                  <Status status={run?.composite_status?.status} />
-                  <Text variant="subtext">
-                    <Time time={run?.created_at} />
-                  </Text>
-                </span>
+                )
               }
             >
               <div className="border-t p-4 flex flex-col gap-4">
@@ -244,7 +304,7 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                       values={objectToKeyValueArray(run?.data_contents || {})}
                     />
                   </div>
-                {logStreamID ? (
+                {stackV2 && logStreamID ? (
                   <LogStreamProvider shouldPoll logStreamId={logStreamID}>
                     <UnifiedLogsProvider>
                       <LogViewerProvider>
