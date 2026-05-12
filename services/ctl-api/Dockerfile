@@ -5,19 +5,21 @@ ARG RUNTIME_IMAGE=runtimeimage
 
 FROM node:20-alpine AS admin-dashboard-build
 
+RUN npm i -g bun
+
 WORKDIR /src
 
 COPY --link internal/app/admin-dashboard/package.json \
-     internal/app/admin-dashboard/package-lock.json \
+     internal/app/admin-dashboard/bun.lock \
      ./
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-admin-dashboard npm ci
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-admin-dashboard bun install --frozen-lockfile
 
 COPY --link internal/app/admin-dashboard/client ./client
 COPY --link internal/app/admin-dashboard/scripts ./scripts
 COPY --link internal/app/admin-dashboard/postcss.config.js ./
 
-RUN npm run build
+RUN bun run build
 
 # --- Go service build ---
 
