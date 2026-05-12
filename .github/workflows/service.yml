@@ -135,5 +135,23 @@ jobs:
 
       - name: 💾 Save cache
         run: |
-          CI=true nuonctl builds release ${{inputs.service}} --tag=${{inputs.tag}} --push=false --write-cache --max-mode
-          CI=true nuonctl tests run-all ${{inputs.service}} --write-cache --max-mode
+          CI=true nuonctl builds release ${{inputs.service}} --tag=${{inputs.tag}} --push=false --write-cache --max-mode > /tmp/save-cache-build.log 2>&1 &
+          BUILD_PID=$!
+          CI=true nuonctl tests run-all ${{inputs.service}} --write-cache --max-mode > /tmp/save-cache-tests.log 2>&1 &
+          TESTS_PID=$!
+
+          BUILD_RC=0; TESTS_RC=0
+          wait $BUILD_PID || BUILD_RC=$?
+          wait $TESTS_PID || TESTS_RC=$?
+
+          echo "::group::builds release --write-cache log"
+          cat /tmp/save-cache-build.log
+          echo "::endgroup::"
+          echo "::group::tests run-all --write-cache log"
+          cat /tmp/save-cache-tests.log
+          echo "::endgroup::"
+
+          if [ $BUILD_RC -ne 0 ] || [ $TESTS_RC -ne 0 ]; then
+            echo "save-cache failed: builds=$BUILD_RC tests=$TESTS_RC"
+            exit 1
+          fi
