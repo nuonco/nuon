@@ -88,7 +88,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string
 	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
 		Preload("AppSandboxConfig").
 		Preload("InstallSandboxRuns", func(db *gorm.DB) *gorm.DB {
-			return db.Order("install_sandbox_runs.created_at DESC")
+			return db.Order("install_sandbox_runs.created_at DESC").Limit(5)
 		}).
 		Preload("AWSAccount").
 		Preload("AppRunnerConfig").
