@@ -71,7 +71,7 @@ jobs:
     name: 🔍 Lint pkg
     needs:
       - prepare
-    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.prepare.outputs.services != '[]' && needs.prepare.outputs.services != '' && (contains(needs.prepare.outputs.services, 'ctl-api') || contains(needs.prepare.outputs.services, 'runner') || contains(needs.prepare.outputs.services, 'cli') || contains(needs.prepare.outputs.services, 'installer-cli') || contains(needs.prepare.outputs.services, 'lsp') || contains(needs.prepare.outputs.services, 'workers-')) }}
+    if: ${{ !cancelled() && !contains(github.event.pull_request.labels.*.name, 'promote') && needs.prepare.outputs.services != '[]' && needs.prepare.outputs.services != '' && (contains(needs.prepare.outputs.services, 'ctl-api') || contains(needs.prepare.outputs.services, 'runner') || contains(needs.prepare.outputs.services, 'cli') || contains(needs.prepare.outputs.services, 'stack-manager') || contains(needs.prepare.outputs.services, 'lsp') || contains(needs.prepare.outputs.services, 'workers-')) }}
     runs-on: build-only
     timeout-minutes: 15
     env:

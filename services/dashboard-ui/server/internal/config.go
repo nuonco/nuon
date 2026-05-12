@@ -21,7 +21,7 @@ func init() {
 	config.RegisterDefault("nuon_api_url", "https://api.nuon.co")
 	config.RegisterDefault("nuon_app_url", "http://localhost:4000")
 	config.RegisterDefault("github_app_name", "nuon-connect")
-	config.RegisterDefault("installer_cli_download_url", "https://cdn.public.nuon.co/installer-cli")
+	config.RegisterDefault("stack_manager_download_url", "https://cdn.public.nuon.co/stack-manager")
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
 	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
@@ -55,7 +55,7 @@ type Config struct {
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
 	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
 
-	InstallerCliDownloadURL string `config:"installer_cli_download_url"`
+	StackManagerDownloadURL string `config:"stack_manager_download_url"`
 }
 
 func NewConfig() (*Config, error) {

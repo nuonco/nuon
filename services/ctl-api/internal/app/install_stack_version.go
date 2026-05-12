@@ -38,7 +38,7 @@ type InstallStackVersion struct {
 	PhoneHomeID  string `json:"phone_home_id,omitzero" temporaljson:"phone_home_id,omitzero,omitempty"`
 	PhoneHomeURL string `json:"phone_home_url,omitzero" temporaljson:"phone_home_url,omitzero,omitempty"`
 
-	// RunnerAPIURL is the externally-reachable runner-API host the installer-cli
+	// RunnerAPIURL is the externally-reachable runner-API host the stack-manager
 	// SDK should POST to. Populated transiently on read via AfterFind from
 	// Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
 	// surface vendors expose, so the customer's workstation can hit it even
