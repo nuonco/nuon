@@ -1,6 +1,7 @@
 import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getInstallSandboxRun } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -34,6 +35,11 @@ export function SandboxRunProvider({
     queryFn: () => getInstallSandboxRun({ orgId: org.id!, runId }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org.id && !!runId,
+  })
+
+  useStatusToast({
+    status: sandboxRun?.status_v2?.status,
+    resourceType: 'sandbox run',
   })
 
   useEffect(() => {

@@ -54,7 +54,7 @@ export const BuildComponentModalContainer = ({
       )
       removeModal(props.modalId)
       if (build?.id) {
-        navigate(`${pathname}/builds/${build.id}`, { state: { watchBuild: true } })
+        navigate(`${pathname}/builds/${build.id}`)
       }
     },
     onError: () => {
