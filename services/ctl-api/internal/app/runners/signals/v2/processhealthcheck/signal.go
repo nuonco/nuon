@@ -75,12 +75,14 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	var runnerStatus string
 	var runnerVersion string
 	var processType string
+	var orgID string
+	var installID string
 	defer func() {
 		status := "ok"
 		if err != nil {
 			status = "error"
 		}
-		tagMap := make(map[string]string, len(ownerLabels)+6)
+		tagMap := make(map[string]string, len(ownerLabels)+8)
 		for k, v := range ownerLabels {
 			tagMap[k] = v
 		}
@@ -90,6 +92,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		tagMap["runner_status"] = runnerStatus
 		tagMap["runner_version"] = runnerVersion
 		tagMap["process_type"] = processType
+		tagMap["org_id"] = orgID
+		if installID != "" {
+			tagMap["install_id"] = installID
+		}
 		tags := metrics.ToTags(tagMap)
 
 		var endMs int64
@@ -107,8 +113,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	}
 	runnerType = string(runner.RunnerGroup.Type)
 	runnerStatus = string(runner.Status)
+	orgID = runner.OrgID
 	switch runner.RunnerGroup.OwnerType {
 	case "installs":
+		installID = runner.RunnerGroup.OwnerID
 		install, err := installactivities.AwaitGetByInstallID(ctx, runner.RunnerGroup.OwnerID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install for runner")
@@ -203,7 +211,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 			return errors.Wrap(err, "unable to update process status to inactive")
 		}
 
-		stopTagMap := make(map[string]string, len(ownerLabels)+6)
+		stopTagMap := make(map[string]string, len(ownerLabels)+8)
 		for k, v := range ownerLabels {
 			stopTagMap[k] = v
 		}
@@ -213,6 +221,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		stopTagMap["runner_version"] = runnerVersion
 		stopTagMap["process_id"] = s.ProcessID
 		stopTagMap["process_type"] = string(process.Type)
+		stopTagMap["org_id"] = orgID
+		if installID != "" {
+			stopTagMap["install_id"] = installID
+		}
 		stopTags := metrics.ToTags(stopTagMap)
 		s.mw.Incr("runner.process.stop", stopTags)
 		if process.StartedAt != nil {
