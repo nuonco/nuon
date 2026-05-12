@@ -14,7 +14,7 @@ export const ActionRunStepDetailsContainer = ({ step }: IActionRunDetails) => {
     isLoading,
   } = useQuery<TInstallActionRun>({
     queryKey: ['action-run', org?.id, step?.owner_id, step?.step_target_id],
-    queryFn: () => getInstallActionRun({ orgId: org.id, installId: step.owner_id, runId: step.step_target_id }),
+    queryFn: () => getInstallActionRun({ orgId: org!.id, installId: step!.owner_id, runId: step!.step_target_id }),
     enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
   })
 

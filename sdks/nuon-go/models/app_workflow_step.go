@@ -133,7 +133,7 @@ type AppWorkflowStep struct {
 	// inner signal's Timeout() at step generation time. Used by the step-group
 	// to set ScheduleToCloseTimeout when awaiting step completion.
 	// Zero means use default fallback.
-	Timeout string `json:"timeout,omitempty"`
+	Timeout int64 `json:"timeout,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

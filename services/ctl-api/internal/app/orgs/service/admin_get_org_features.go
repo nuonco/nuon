@@ -15,8 +15,8 @@ import (
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
-// @Success				200	{array}	string
+// @Success				200	{array}	app.OrgFeatureInfo
 // @Router					/v1/orgs/admin-features  [GET]
 func (s *service) AdminGetOrgFeatures(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, app.GetFeatures())
+	ctx.JSON(http.StatusOK, app.GetFeaturesWithDescriptions())
 }

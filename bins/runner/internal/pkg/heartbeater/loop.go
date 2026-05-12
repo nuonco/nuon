@@ -38,8 +38,8 @@ func (h *HeartBeater) writeHeartBeat(ctx context.Context) error {
 
 	// ey: How does this work on the runner side? Do we have a ddog agent running?
 	// does this add noise for the api side metric?
-	h.mw.Incr("heart_beat.incr", tags)
-	h.mw.Timing("heart_beat.alive_time", aliveDur, tags)
+	h.mw.Incr("runner.heart_beat", tags)
+	h.mw.Timing("runner.heart_beat.alive_time", aliveDur, tags)
 	return nil
 }
 

@@ -252,6 +252,63 @@ import { getRunner, createInstallConfig } from '@/lib'
 
 `api()` throws `TAPIError` on non-2xx responses. Catch in `useMutation` `onError` or use TanStack Query's error state.
 
+## Defensive Data Access (CRITICAL)
+
+**Treat all API response data as potentially undefined — regardless of what the OpenAPI spec or TypeScript types say.** The API can return partial objects, null fields, or missing nested properties at any time. A single unguarded property access on undefined data will crash the entire page with an error boundary.
+
+### Rules
+
+1. **Always use optional chaining (`?.`) when accessing nested API data.** Never assume an object or its children exist just because the type says they will.
+
+   ```tsx
+   // ✅ Correct — defensive
+   step?.status?.status
+   actionRun?.config?.steps
+   deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name
+
+   // ❌ Wrong — will crash if any intermediate value is undefined
+   step.status.status
+   actionRun.config.steps
+   deploy.runner_jobs[0].install_role_usage.role_name
+   ```
+
+2. **Guard before rendering child components that depend on fetched data.** If a parent fetches data and passes it to children, add a null/undefined check before rendering the children — don't rely on the children to handle it.
+
+   ```tsx
+   // ✅ Correct — guard before rendering
+   if (error || !actionRun) {
+     return <ErrorState />
+   }
+   return <ActionRunDetails actionRun={actionRun} />
+
+   // ❌ Wrong — children will crash if actionRun is undefined
+   if (error) return <ErrorState />
+   return <ActionRunDetails actionRun={actionRun} />
+   ```
+
+3. **Use nullish coalescing (`?? defaultValue`) for values used in comparisons or arithmetic.**
+
+   ```tsx
+   // ✅ Correct
+   (step?.execution_duration ?? 0) > 1000000
+
+   // ❌ Wrong — undefined > 1000000 is always false but hides bugs
+   step?.execution_duration > 1000000
+   ```
+
+4. **In `useQuery` `queryFn` callbacks, use non-null assertions (`!`) only when the `enabled` guard guarantees the values exist.** This is the one place non-null assertions are acceptable — the `enabled` flag prevents the queryFn from running when values are missing.
+
+   ```tsx
+   // ✅ Correct — enabled guarantees org and step exist when queryFn runs
+   useQuery({
+     queryKey: ['deploy', org?.id, step?.step_target_id],
+     queryFn: () => getDeploy({ orgId: org!.id, deployId: step!.step_target_id }),
+     enabled: !!org?.id && !!step?.step_target_id,
+   })
+   ```
+
+5. **Provider hook values (`useOrg()`, `useInstall()`, etc.) can also be undefined** during initial render or when the provider is still loading. Always use `org?.id`, never `org.id`, when passing values to child components or building URLs.
+
 ## State Management
 
 ### Provider Hierarchy
@@ -325,7 +382,7 @@ if (org?.features?.['deploy-outputs']) {
 }
 ```
 
-Feature flags are defined in `services/ctl-api/internal/app/org.go` (constants, `GetFeatures()` registry, and `GetFeatureDescriptions()`). To add a new flag, add it to all three places in that file.
+Feature flags are defined in `services/ctl-api/internal/app/org.go` (constants, `GetFeatures()` registry, and `GetFeatureDescriptions()`). To add a new flag, add it to all three places in that file. **Always append new flags to the bottom of the `GetFeatures()` slice** — the list is in chronological order and the admin UI displays them newest-first.
 
 ## Runtime Config (`useConfig()`)
 
@@ -618,18 +675,18 @@ Do not add comments unless the logic is genuinely non-obvious. Never write comme
 ## Key Scripts
 
 ```bash
-npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
-npm run build          # Production build (minified)
-npm run build:js       # Build JS only
-npm run build:css      # Build CSS only
-npm run lint           # ESLint for the SPA
-npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
-npx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
-npm run dev:ladle      # Ladle component stories
-npm test               # Vitest tests
-npm run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
-npm run test:e2e:ui    # Playwright interactive UI mode
-npm run test:e2e:headed # Playwright with visible browser
+bun run dev            # Development: esbuild watch + PostCSS + BrowserSync
+bun run build          # Production build (minified)
+bun run build:js       # Build JS only
+bun run build:css      # Build CSS only
+bun run lint           # ESLint for the SPA
+bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
+bunx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
+bun run dev:ladle      # Ladle component stories
+bun run test           # Vitest tests
+bun run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
+bun run test:e2e:ui    # Playwright interactive UI mode
+bun run test:e2e:headed # Playwright with visible browser
 ```
 
 **Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
@@ -642,16 +699,16 @@ Smoke tests in `e2e/` that run against a live local or staging environment. Chro
 
 - Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
 - An admin account email with access to the admin API
-- Playwright browsers installed: `npx playwright install chromium`
+- Playwright browsers installed: `bunx playwright install chromium`
 
 ### Running
 
 ```bash
 # Creates a fresh test org, runs tests, deletes org on teardown
-E2E_EMAIL=you@nuon.co npm run test:e2e
+E2E_EMAIL=you@nuon.co bun run test:e2e
 
 # Use an existing org (skips create/teardown)
-E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
+E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX bun run test:e2e
 ```
 
 ### Environment variables
