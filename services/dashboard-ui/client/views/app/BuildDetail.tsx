@@ -1,5 +1,6 @@
-import { useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { useRef, useEffect } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -89,8 +90,17 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
 
 export const BuildDetail = () => {
   const { componentId, buildId } = useParams()
+  const { state } = useLocation()
+  const navigate = useNavigate()
+  const watchBuild = useRef(!!state?.watchBuild)
   const { org } = useOrg()
   const { app } = useApp()
+
+  useEffect(() => {
+    if (state?.watchBuild) {
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [])
 
   const { data: component } = useQuery({
     queryKey: ['component', org?.id, app?.id, componentId],
@@ -111,7 +121,7 @@ export const BuildDetail = () => {
           { path: `/${org?.id}/apps/${app?.id}/components/${componentId}/builds/${buildId}`, text: 'Build' },
         ]}
       />
-      <BuildProvider buildId={buildId!} componentId={componentId!} shouldPoll>
+      <BuildProvider buildId={buildId!} componentId={componentId!} componentName={component?.name} watchBuild={watchBuild.current} shouldPoll>
         <BuildDetailInner component={component} />
       </BuildProvider>
     </div>
