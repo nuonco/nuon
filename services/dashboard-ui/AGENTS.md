@@ -382,7 +382,7 @@ if (org?.features?.['deploy-outputs']) {
 }
 ```
 
-Feature flags are defined in `services/ctl-api/internal/app/org.go` (constants, `GetFeatures()` registry, and `GetFeatureDescriptions()`). To add a new flag, add it to all three places in that file.
+Feature flags are defined in `services/ctl-api/internal/app/org.go` (constants, `GetFeatures()` registry, and `GetFeatureDescriptions()`). To add a new flag, add it to all three places in that file. **Always append new flags to the bottom of the `GetFeatures()` slice** — the list is in chronological order and the admin UI displays them newest-first.
 
 ## Runtime Config (`useConfig()`)
 
