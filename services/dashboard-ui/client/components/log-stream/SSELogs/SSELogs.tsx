@@ -9,12 +9,40 @@ import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 import { cn } from '@/utils/classnames'
 import { LogSeverity } from '../LogSeverity'
 import { LogLineSkeleton } from '../LogLine'
+import { Skeleton } from '@/components/common/Skeleton'
 import { LogFilters } from '../log-filters/LogFilters'
 
 export const LogsSkeleton = () => {
   return Array.from({ length: 20 }).map((_, idx) => (
     <LogLineSkeleton key={`log-line-${idx}`} />
   ))
+}
+
+export const LogsPageSkeleton = () => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col flex-auto">
+        <div className="border-b">
+          <div className="flex items-center justify-between gap-4 py-4 w-full">
+            <Skeleton height="36px" width="240px" />
+            <div className="flex items-center gap-2">
+              <Skeleton height="36px" width="100px" />
+              <Skeleton height="36px" width="100px" />
+            </div>
+          </div>
+          <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
+            <Skeleton height="14px" width="3rem" />
+            <Skeleton height="14px" width="4rem" />
+            <Skeleton height="14px" width="3rem" />
+            <Skeleton height="14px" width="4rem" />
+          </div>
+        </div>
+        <div className="flex flex-col divide-y">
+          <LogsSkeleton />
+        </div>
+      </div>
+    </div>
+  )
 }
 
 interface ISSELogs {
