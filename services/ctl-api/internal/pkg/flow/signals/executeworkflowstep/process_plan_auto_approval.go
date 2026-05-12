@@ -12,15 +12,16 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// autoApprovalCheck builds the auto-approval plan check.
-// shouldRun is always true — processPlan only runs for approval steps, so we
-// always evaluate auto-approval. The run function checks the workflow's
-// ApprovalOption and short-circuits if approve-all is set.
+// autoApprovalCheck builds the auto-approval plan check. Skipped in plan-only
+// mode so planOnlyCheck owns the approval semantics (writing drift-detected /
+// no-drift target status and firing the drift-detected signal). Without this
+// guard, auto-approve short-circuits the plan-check loop and the drift scan
+// run never gets a terminal status.
 func (s *Signal) autoApprovalCheck(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) planCheck {
 	return planCheck{
 		name: "auto-approval",
 		shouldRun: func() bool {
-			return true
+			return !flw.PlanOnly
 		},
 		run: func() (bool, error) {
 			return s.runAutoApprovalCheck(ctx, step, flw)
