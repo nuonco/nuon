@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
@@ -73,6 +74,16 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 	return nil
 }
 
+func (w *Workflows) emitSignalMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type":  string(emitter.SignalType),
+		"emitter_type": string(emitter.Mode),
+		"owner_type":   emitter.Queue.OwnerType,
+		"status":       status,
+	})
+	w.mw.Incr(ctx, "queue.emitter.signal_emitted", tags...)
+}
+
 func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
@@ -80,16 +91,20 @@ func (w *Workflows) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
+		w.emitSignalMetric(ctx, emitter, "error")
 		return err
 	}
 
 	if resp.Skipped {
+		w.emitSignalMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", emitter.ID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
+
+	w.emitSignalMetric(ctx, emitter, "ok")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),
