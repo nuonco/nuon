@@ -17,6 +17,14 @@ set -eu
 BASE_URL="${INSTALLER_CLI_BASE_URL:-https://cdn.public.nuon.co/installer-cli}"
 
 NAME=installer-cli
+
+# Install dir defaults to ~/.local/bin (XDG-standard, often already on PATH).
+# We can't use ~/.nuon/bin — the `nuon` CLI keeps its config at ~/.nuon as a
+# regular file, so `mkdir -p ~/.nuon/bin` fails. Override with
+# INSTALLER_CLI_INSTALL_DIR if you want it somewhere else.
+INSTALL_DIR="${INSTALLER_CLI_INSTALL_DIR:-$HOME/.local/bin}"
+mkdir -p "$INSTALL_DIR"
+
 DIR=$(mktemp -d)
 trap 'rm -rf "$DIR"' EXIT
 
@@ -82,4 +90,15 @@ fi
 
 chmod +x "$DIR/$NAME"
 
-exec "$DIR/$NAME" "$@"
+# Move the verified binary to its persistent home so the user can re-invoke
+# `installer-cli` without re-downloading.
+mv "$DIR/$NAME" "$INSTALL_DIR/$NAME"
+INSTALLED="$INSTALL_DIR/$NAME"
+
+echo "installer-cli: installed to $INSTALLED" >&2
+case ":$PATH:" in
+  *":$INSTALL_DIR:"*) ;;
+  *) echo "installer-cli: add $INSTALL_DIR to your PATH to invoke it directly." >&2 ;;
+esac
+
+exec "$INSTALLED" "$@"
