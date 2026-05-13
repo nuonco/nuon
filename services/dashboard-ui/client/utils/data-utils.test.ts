@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { objectToKeyValueArray, decodeAsString } from './data-utils'
 
 describe('data-utils', () => {

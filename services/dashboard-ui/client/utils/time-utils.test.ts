@@ -1,19 +1,21 @@
 // @ts-nocheck
 
-import { describe, expect, test, beforeAll, afterAll, vi } from 'vitest'
+import { describe, expect, test, beforeAll, afterAll, spyOn } from 'bun:test'
 import { isRecentTimestamp } from './time-utils'
 import { DateTime } from 'luxon'
 
 describe('time-utils', () => {
   describe('isRecentTimestamp', () => {
+    let nowSpy: ReturnType<typeof spyOn>
+
     beforeAll(() => {
-      vi.spyOn(DateTime, 'now').mockReturnValue(
+      nowSpy = spyOn(DateTime, 'now').mockReturnValue(
         DateTime.fromISO('2023-01-01T10:00:00.000Z')
       )
     })
 
     afterAll(() => {
-      vi.restoreAllMocks()
+      nowSpy.mockRestore()
     })
 
     test('should return true for timestamp within default 60s window', () => {
