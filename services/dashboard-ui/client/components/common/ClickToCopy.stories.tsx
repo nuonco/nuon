@@ -258,7 +258,7 @@ export const UsageExamples = () => (
       <div className="p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
         <div className="flex items-start gap-3">
           <Icon
-            variant="Info"
+            variant="InfoIcon"
             size="16"
             className="text-blue-600 dark:text-blue-400 mt-0.5"
           />
@@ -284,7 +284,7 @@ export const UsageExamples = () => (
       <div className="p-4 border rounded-lg bg-red-50 dark:bg-red-950/20">
         <div className="flex items-start gap-3">
           <Icon
-            variant="WarningCircle"
+            variant="WarningCircleIcon"
             size="16"
             className="text-red-600 dark:text-red-400 mt-0.5"
           />

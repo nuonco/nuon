@@ -302,15 +302,15 @@ export const IntegratedTableLoading = () => (
           filterActions={
             <div className="flex gap-2">
               <Button variant="ghost" size="sm">
-                <Icon variant="Sliders" size="16" />
+                <Icon variant="SlidersIcon" size="16" />
                 Role
               </Button>
               <Button variant="ghost" size="sm">
-                <Icon variant="Sliders" size="16" />
+                <Icon variant="SlidersIcon" size="16" />
                 Status
               </Button>
               <Button variant="primary" size="sm">
-                <Icon variant="Plus" size="16" />
+                <Icon variant="PlusIcon" size="16" />
                 Add User
               </Button>
             </div>

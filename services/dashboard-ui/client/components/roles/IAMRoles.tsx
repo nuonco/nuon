@@ -56,7 +56,7 @@ export const IAMRoleBoundaryExpand = ({
             isExternal
           >
             Learn more about permission boundaries{' '}
-            <Icon variant="ArrowSquareOut" />
+            <Icon variant="ArrowSquareOutIcon" />
           </Link>
         </Text>
       )}
@@ -119,7 +119,7 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                 href={`https://docs.aws.amazon.com/aws-managed-policy/latest/reference/${policy?.managed_policy_name}.html`}
                 size="sm"
               >
-                <Icon variant="ArrowSquareOut" />
+                <Icon variant="ArrowSquareOutIcon" />
               </Button>
             </>
           ) : null}
@@ -142,7 +142,7 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                   className: '!p-1',
                   children: (
                     <span>
-                      <Icon variant="BracketsCurly" />
+                      <Icon variant="BracketsCurlyIcon" />
                     </span>
                   ),
                   size: 'sm',

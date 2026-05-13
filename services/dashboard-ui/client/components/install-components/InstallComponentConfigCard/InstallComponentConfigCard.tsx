@@ -166,7 +166,7 @@ export const InstallComponentConfigCard = ({
           <Link
             href={`/${orgId}/apps/${installAppId}/configs/${installAppConfigId}/components/${config?.component_id}`}
           >
-            Component configuration <Icon variant="Question" />
+            Component configuration <Icon variant="QuestionIcon" />
           </Link>
         </Text>
       </Card>

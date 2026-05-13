@@ -76,9 +76,9 @@ export const ConnectGithubButton = ({
       }}
       {...props}
     >
-      {isIconFirst ? <Icon variant="Plus" /> : null}
+      {isIconFirst ? <Icon variant="PlusIcon" /> : null}
       {children}
-      {!isIconFirst ? <Icon variant="Plus" /> : null}
+      {!isIconFirst ? <Icon variant="PlusIcon" /> : null}
     </Button>
   )
 }

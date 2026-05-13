@@ -73,7 +73,7 @@ export const EditWebhookModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="WebhooksLogo" size="24" />
+          <Icon variant="WebhooksLogoIcon" size="24" />
           Edit webhook
         </Text>
       }

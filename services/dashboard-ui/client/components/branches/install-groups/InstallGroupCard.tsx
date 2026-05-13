@@ -78,7 +78,7 @@ export const InstallGroupCard = ({
               )}
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Icon variant="Cloud" size={16} />
+                <Icon variant="CloudIcon" size={16} />
                 <Text variant="base" className="truncate">
                   {install.name}
                 </Text>
@@ -91,7 +91,7 @@ export const InstallGroupCard = ({
                   onRemoveInstall(install.id)
                 }}
               >
-                <Icon variant="X" size={14} />
+                <Icon variant="XIcon" size={14} />
               </Button>
             </Button>
           ))

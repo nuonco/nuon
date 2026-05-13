@@ -16,7 +16,7 @@ export const TerraformWorkspaceLockBadge = ({
 
   return (
     <Badge variant="code" size="sm" theme="warn" className="flex items-center gap-1.5">
-      <Icon variant="Lock" size={12} />
+      <Icon variant="LockIcon" size={12} />
       <span>
         Locked by {operation}
         {who ? ` (${who})` : ''}

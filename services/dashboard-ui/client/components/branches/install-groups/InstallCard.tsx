@@ -47,7 +47,7 @@ export const InstallCard = ({ install, isDragging, isDisabled }: IInstallCard) =
         }
       )}
     >
-      <Icon variant="Cloud" size={16} />
+      <Icon variant="CloudIcon" size={16} />
       <Text variant="base" className="truncate flex-1">
         {install.name}
       </Text>

@@ -29,7 +29,7 @@ export const WorkflowStepDetail = ({ step, onClose }: IWorkflowStepDetail) => {
             Step details
           </Text>
           <Button variant="ghost" size="sm" onClick={onClose}>
-            <Icon variant="X" size={20} />
+            <Icon variant="XIcon" size={20} />
           </Button>
         </div>
 

@@ -42,7 +42,7 @@ export const ShutdownRunnerModal = ({
             weight="strong"
             theme="warn"
           >
-            <Icon variant="Power" size="24" />
+            <Icon variant="PowerIcon" size="24" />
             {label}?
           </Text>
         </div>
@@ -55,7 +55,7 @@ export const ShutdownRunnerModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Power" />
+            <Icon variant="PowerIcon" />
             {label}
           </span>
         ),
@@ -130,9 +130,9 @@ export const ShutdownRunnerButton = ({
       onClick={() => onOpenModal()}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="Power" />}
+      {props?.isMenuButton ? null : <Icon variant="PowerIcon" />}
       {label}
-      {props?.isMenuButton ? <Icon variant="Power" /> : null}
+      {props?.isMenuButton ? <Icon variant="PowerIcon" /> : null}
     </Button>
   )
 }

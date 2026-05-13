@@ -72,7 +72,7 @@ export const AdminOrgSection = ({
       }
       metadata={metadata}
     >
-      <AdminActionGroup title="Org settings" icon="Users">
+      <AdminActionGroup title="Org settings" icon="UsersIcon">
         <AdminActionCard
           title="Add support users"
           description="Add all Nuon support users to current org"
@@ -86,7 +86,7 @@ export const AdminOrgSection = ({
         <AdminFeatureToggleCard org={org} orgId={orgId} />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Infrastructure" icon="HardDrives" variant="warning">
+      <AdminActionGroup title="Infrastructure" icon="HardDrivesIcon" variant="warning">
         <AdminActionCard
           title="Reprovision org"
           description="Reprovision current org infrastructure"
@@ -130,7 +130,7 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Runner control" icon="Play">
+      <AdminActionGroup title="Runner control" icon="PlayIcon">
         <AdminActionCard
           title="Restart all runners"
           description="Restart all of current org runners"
@@ -164,7 +164,7 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Teardown & cleanup" icon="Trash" variant="danger">
+      <AdminActionGroup title="Teardown & cleanup" icon="TrashIcon" variant="danger">
         <AdminActionCard
           title="Deprovision org"
           description="Deprovision all org infrastructure. Keeps database records but tears down cloud resources."
@@ -197,7 +197,7 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Security & debug" icon="Shield" variant="danger">
+      <AdminActionGroup title="Security & debug" icon="ShieldIcon" variant="danger">
         <AdminActionCard
           title="Invalidate runner token"
           description="Invalidate runner service account token"

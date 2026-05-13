@@ -17,12 +17,12 @@ export type ParsedQuery = {
 }
 
 export const STATIC_PAGES: (SpotlightResult & { feature?: string })[] = [
-  { label: 'Dashboard', path: '/', icon: 'House', feature: 'org-dashboard' },
-  { label: 'Apps', path: '/apps', icon: 'AppWindow' },
-  { label: 'Installs', path: '/installs', icon: 'Cube' },
-  { label: 'Team', path: '/team', icon: 'UsersThree' },
-  { label: 'Build runner', path: '/runner', icon: 'Hammer' },
-  { label: 'Webhooks', path: '/webhooks', icon: 'WebhooksLogo' },
+  { label: 'Dashboard', path: '/', icon: 'HouseIcon', feature: 'org-dashboard' },
+  { label: 'Apps', path: '/apps', icon: 'AppWindowIcon' },
+  { label: 'Installs', path: '/installs', icon: 'CubeIcon' },
+  { label: 'Team', path: '/team', icon: 'UsersThreeIcon' },
+  { label: 'Build runner', path: '/runner', icon: 'HammerIcon' },
+  { label: 'Webhooks', path: '/webhooks', icon: 'WebhooksLogoIcon' },
 ]
 
 export const INSTALL_SUB_PAGES = [

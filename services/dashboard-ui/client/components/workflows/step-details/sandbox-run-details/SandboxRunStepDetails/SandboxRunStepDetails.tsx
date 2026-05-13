@@ -39,7 +39,7 @@ export const SandboxRunStepDetails = ({
 
         <Text variant="subtext">
           <Link href={`/${orgId}/installs/${step?.owner_id}/sandbox`}>
-            View sandbox <Icon variant="CaretRight" />
+            View sandbox <Icon variant="CaretRightIcon" />
           </Link>
         </Text>
 
@@ -47,7 +47,7 @@ export const SandboxRunStepDetails = ({
           <Link
             href={`/${orgId}/installs/${step?.owner_id}/sandbox/runs/${step?.step_target_id}`}
           >
-            View run logs <Icon variant="CaretRight" />
+            View run logs <Icon variant="CaretRightIcon" />
           </Link>
         </Text>
 

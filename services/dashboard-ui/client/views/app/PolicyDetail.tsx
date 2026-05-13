@@ -132,12 +132,12 @@ export const PolicyDetail = () => {
             <Text weight="strong">Applicable Components</Text>
             {isSandboxPolicy ? (
               <div className="flex items-center gap-2">
-                <Icon variant="ShippingContainer" size={16} />
+                <Icon variant="ShippingContainerIcon" size={16} />
                 <Text variant="subtext">Sandbox</Text>
               </div>
             ) : isAllComponents ? (
               <div className="flex items-center gap-2">
-                <Icon variant="Cards" size={16} />
+                <Icon variant="CardsIcon" size={16} />
                 <Text variant="subtext">All components</Text>
               </div>
             ) : (
@@ -150,10 +150,10 @@ export const PolicyDetail = () => {
                       to={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
                       className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
                     >
-                      <Icon variant="Cards" size={14} />
+                      <Icon variant="CardsIcon" size={14} />
                       <Text variant="body">{comp}</Text>
                       <Icon
-                        variant="ArrowSquareOut"
+                        variant="ArrowSquareOutIcon"
                         size={12}
                         className="ml-auto text-grey-400"
                       />
@@ -163,7 +163,7 @@ export const PolicyDetail = () => {
                       key={comp}
                       className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600"
                     >
-                      <Icon variant="Cards" size={14} />
+                      <Icon variant="CardsIcon" size={14} />
                       <Text variant="body">{comp}</Text>
                     </div>
                   )

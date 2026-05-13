@@ -9,7 +9,7 @@ export const Default = () => (
     basePath="/org-123"
     path="/installs"
     text="Installs"
-    iconVariant="ShippingContainer"
+    iconVariant="ShippingContainerIcon"
   />
 )
 
@@ -18,7 +18,7 @@ export const Active = () => (
     basePath=""
     path="/"
     text="Dashboard"
-    iconVariant="HouseSimple"
+    iconVariant="HouseSimpleIcon"
   />
 )
 
@@ -27,7 +27,7 @@ export const External = () => (
     basePath="/org-123"
     path="https://docs.nuon.co"
     text="Docs"
-    iconVariant="BookOpen"
+    iconVariant="BookOpenIcon"
     isExternal
   />
 )

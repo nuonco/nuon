@@ -219,19 +219,19 @@ export const WithIcons = () => (
       <h4 className="text-sm font-medium">Icons with Text</h4>
       <div className="flex flex-wrap gap-4 items-center">
         <Button variant="primary">
-          <Icon variant="Plus" size="16" />
+          <Icon variant="PlusIcon" size="16" />
           Create New
         </Button>
         <Button variant="secondary">
-          <Icon variant="Download" size="16" />
+          <Icon variant="DownloadIcon" size="16" />
           Download
         </Button>
         <Button variant="danger">
-          <Icon variant="Trash" size="16" />
+          <Icon variant="TrashIcon" size="16" />
           Delete
         </Button>
         <Button variant="ghost">
-          <Icon variant="Gear" size="16" />
+          <Icon variant="GearIcon" size="16" />
           Settings
         </Button>
       </div>
@@ -241,16 +241,16 @@ export const WithIcons = () => (
       <h4 className="text-sm font-medium">Icon Only Buttons</h4>
       <div className="flex flex-wrap gap-4 items-center">
         <Button className="!p-2" variant="primary">
-          <Icon variant="Plus" size="18" />
+          <Icon variant="PlusIcon" size="18" />
         </Button>
         <Button className="!p-2" variant="secondary">
-          <Icon variant="Eraser" size="18" />
+          <Icon variant="EraserIcon" size="18" />
         </Button>
         <Button className="!p-2" variant="danger">
-          <Icon variant="X" size="18" />
+          <Icon variant="XIcon" size="18" />
         </Button>
         <Button className="!p-2" variant="ghost">
-          <Icon variant="DotsThreeVertical" size="18" weight="bold" />
+          <Icon variant="DotsThreeVerticalIcon" size="18" weight="bold" />
         </Button>
       </div>
     </div>
@@ -259,19 +259,19 @@ export const WithIcons = () => (
       <h4 className="text-sm font-medium">Icon Position Examples</h4>
       <div className="flex flex-wrap gap-4 items-center">
         <Button variant="primary">
-          <Icon variant="ArrowLeft" size="16" />
+          <Icon variant="ArrowLeftIcon" size="16" />
           Back
         </Button>
         <Button variant="primary">
           Next
-          <Icon variant="ArrowRight" size="16" />
+          <Icon variant="ArrowRightIcon" size="16" />
         </Button>
         <Button variant="secondary">
-          <Icon variant="ArrowSquareOut" size="16" />
+          <Icon variant="ArrowSquareOutIcon" size="16" />
           Open External
         </Button>
         <Button variant="secondary">
-          <Icon variant="FloppyDisk" size="16" />
+          <Icon variant="FloppyDiskIcon" size="16" />
           Save Changes
         </Button>
       </div>
@@ -281,18 +281,18 @@ export const WithIcons = () => (
       <h4 className="text-sm font-medium">Different Sizes with Icons</h4>
       <div className="flex flex-wrap gap-4 items-center">
         <Button size="xs" variant="ghost">
-          <Icon variant="Info" size="12" />
+          <Icon variant="InfoIcon" size="12" />
         </Button>
         <Button size="sm">
-          <Icon variant="CheckCircle" size="14" />
+          <Icon variant="CheckCircleIcon" size="14" />
           Confirm
         </Button>
         <Button size="md" variant="primary">
-          <Icon variant="Upload" size="16" />
+          <Icon variant="UploadIcon" size="16" />
           Upload File
         </Button>
         <Button size="lg" variant="secondary">
-          <Icon variant="Database" size="18" />
+          <Icon variant="DatabaseIcon" size="18" />
           View Database
         </Button>
       </div>

@@ -103,7 +103,7 @@ export const ChannelSelect = ({
           {buttonLabel}
         </span>
         <Icon
-          variant="CaretDown"
+          variant="CaretDownIcon"
           className={cn('ml-2 transition-transform flex-shrink-0', {
             'rotate-180': isOpen,
           })}
@@ -170,7 +170,7 @@ export const ChannelSelect = ({
                         {channel.name ? `#${channel.name}` : channelId}
                       </span>
                       {channel.is_private ? (
-                        <Icon variant="Lock" size={12} />
+                        <Icon variant="LockIcon" size={12} />
                       ) : null}
                     </button>
                   )

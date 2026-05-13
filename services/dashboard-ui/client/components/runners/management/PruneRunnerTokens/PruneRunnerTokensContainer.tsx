@@ -21,9 +21,9 @@ export const PruneRunnerTokensButton = ({ ...props }: IButtonAsButton) => {
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="Key" />}
+      {props?.isMenuButton ? null : <Icon variant="KeyIcon" />}
       Prune old tokens
-      {props?.isMenuButton ? <Icon variant="Key" /> : null}
+      {props?.isMenuButton ? <Icon variant="KeyIcon" /> : null}
     </Button>
   )
 }

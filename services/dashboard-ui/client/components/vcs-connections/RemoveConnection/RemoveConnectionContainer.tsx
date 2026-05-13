@@ -89,7 +89,7 @@ export const RemoveConnectionButton = ({
       className="!text-red-800 dark:!text-red-500 !p-2 w-full justify-between"
     >
       Remove connection
-      <Icon variant="Trash" />
+      <Icon variant="TrashIcon" />
     </Button>
   )
 }

@@ -274,7 +274,7 @@ export const InteractiveTooltips = () => (
                         {dep.name}
                       </Text>
                     </div>
-                    <Icon variant="CaretRight" size="12" />
+                    <Icon variant="CaretRightIcon" size="12" />
                   </div>
                 ))}
               </div>

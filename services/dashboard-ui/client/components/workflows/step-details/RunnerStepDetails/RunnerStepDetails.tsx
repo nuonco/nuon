@@ -33,7 +33,7 @@ export const RunnerStepDetails = ({
 
         <Text variant="subtext">
           <Link href={`/${orgId}/installs/${step?.owner_id}/runner`}>
-            View runner <Icon variant="CaretRight" />
+            View runner <Icon variant="CaretRightIcon" />
           </Link>
         </Text>
       </div>

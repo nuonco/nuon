@@ -52,9 +52,9 @@ export const BuildSandboxButton = ({ ...props }: IButtonAsButton) => {
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="Hammer" />}
+      {props?.isMenuButton ? null : <Icon variant="HammerIcon" />}
       Build sandbox
-      {props?.isMenuButton ? <Icon variant="Hammer" /> : null}
+      {props?.isMenuButton ? <Icon variant="HammerIcon" /> : null}
     </Button>
   )
 }

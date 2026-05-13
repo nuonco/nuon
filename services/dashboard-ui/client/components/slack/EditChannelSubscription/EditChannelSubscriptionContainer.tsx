@@ -87,7 +87,7 @@ export const EditChannelSubscriptionButton = ({
 
   return (
     <Button variant="ghost" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="PencilSimple" />
+      <Icon variant="PencilSimpleIcon" />
       Edit
     </Button>
   )

@@ -34,7 +34,7 @@ export const DeprovisionStackButton = ({
       {...props}
     >
       Deprovision stack
-      <Icon variant="StackMinus" />
+      <Icon variant="StackMinusIcon" />
     </Button>
   )
 }

@@ -40,7 +40,7 @@ export const RemoveConnectionModal = ({
           weight="strong"
           theme="error"
         >
-          <Icon variant="Trash" size="24" />
+          <Icon variant="TrashIcon" size="24" />
           Are you sure you want to disconnect this GitHub account?
         </Text>
       }
@@ -51,7 +51,7 @@ export const RemoveConnectionModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Trash" />
+            <Icon variant="TrashIcon" />
             Disconnect GitHub
           </span>
         ),

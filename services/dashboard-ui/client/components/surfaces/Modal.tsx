@@ -111,7 +111,7 @@ export const ModalBase = ({
                 aria-label="Close modal"
                 variant="ghost"
               >
-                <Icon variant="X" />
+                <Icon variant="XIcon" />
               </Button>
             </div>
           </div>

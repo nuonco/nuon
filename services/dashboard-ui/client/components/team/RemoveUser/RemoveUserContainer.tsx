@@ -63,7 +63,7 @@ export const RemoveUserButton = ({
       {...props}
     >
       Remove user
-      {props?.isMenuButton ? <Icon variant="UserMinus" /> : null}
+      {props?.isMenuButton ? <Icon variant="UserMinusIcon" /> : null}
     </Button>
   )
 }

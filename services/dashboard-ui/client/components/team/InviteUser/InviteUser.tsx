@@ -27,7 +27,7 @@ export const InviteUserModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="UserPlus" size="24" />
+          <Icon variant="UserPlusIcon" size="24" />
           Invite team member
         </Text>
       }
@@ -38,7 +38,7 @@ export const InviteUserModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="UserPlus" />
+            <Icon variant="UserPlusIcon" />
             Invite user
           </span>
         ),
