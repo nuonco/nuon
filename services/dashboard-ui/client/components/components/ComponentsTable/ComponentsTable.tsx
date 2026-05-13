@@ -170,14 +170,11 @@ export const ComponentsTable = ({
   filterActions,
   pagination,
 }: IComponentsTable) => {
-  if (isLoading) {
-    return <ComponentsTableSkeleton />
-  }
-
   return (
     <Table<TComponentRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       filterActions={filterActions}
       emptyStateProps={{
         emptyMessage: 'No components found or configured.',

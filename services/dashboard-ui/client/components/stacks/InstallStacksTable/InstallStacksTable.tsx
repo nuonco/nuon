@@ -102,13 +102,13 @@ export const InstallStacksTable = ({
   isLoading,
   pagination,
 }: IInstallStacksTable) => {
-  if (isLoading) return <InstallStacksTableSkeleton />
-  if (!data) return null
+  if (!data && !isLoading) return null
 
   return (
     <Table<TInstallStackRow>
       columns={columns}
-      data={data}
+      data={data ?? []}
+      isLoading={isLoading}
       emptyMessage="No stack found"
       pagination={pagination}
       searchPlaceholder="Search stack version..."

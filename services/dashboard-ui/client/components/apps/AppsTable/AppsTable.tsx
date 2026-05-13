@@ -123,14 +123,11 @@ export const AppsTable = ({
   emptyStateAction,
   pagination,
 }: IAppsTable) => {
-  if (isLoading) {
-    return <AppsTableSkeleton />
-  }
-
   return (
     <Table<TAppRow>
       data={data}
       columns={columns}
+      isLoading={isLoading}
       emptyStateProps={{
         variant: 'app',
         emptyTitle: 'No apps yet',

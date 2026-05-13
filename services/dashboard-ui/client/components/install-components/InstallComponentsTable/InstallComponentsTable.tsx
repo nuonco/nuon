@@ -197,12 +197,11 @@ export const InstallComponentsTable = ({
   pagination,
   isLoading,
 }: IInstallComponentsTable) => {
-  if (isLoading) return <InstallComponentsTableSkeleton />
-
   return (
     <Table<InstallComponentRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       filterActions={filterActions}
       emptyMessage="No components found"
       pagination={pagination}

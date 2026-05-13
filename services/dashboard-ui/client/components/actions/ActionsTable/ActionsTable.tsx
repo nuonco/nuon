@@ -134,14 +134,11 @@ export const ActionsTable = ({
   filterActions,
   pagination,
 }: IActionsTable) => {
-  if (isLoading) {
-    return <ActionsTableSkeleton />
-  }
-
   return (
     <Table<TActionRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       emptyStateProps={{
         variant: 'actions',
         emptyMessage:
