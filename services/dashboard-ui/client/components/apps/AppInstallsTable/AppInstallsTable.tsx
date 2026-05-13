@@ -119,14 +119,11 @@ export const AppInstallsTable = ({
   emptyAction,
   pagination,
 }: IAppInstallsTable) => {
-  if (isLoading) {
-    return <AppInstallsTableSkeleton />
-  }
-
   return (
     <Table<InstallRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       emptyStateProps={{
         emptyMessage:
           'An install is an instance of an application running in a customer cloud account.',

@@ -83,14 +83,11 @@ interface IBranchesTable {
 }
 
 export const BranchesTable = ({ data, isLoading, pagination }: IBranchesTable) => {
-  if (isLoading) {
-    return <TableSkeleton columns={columns} skeletonRows={5} />
-  }
-
   return (
     <Table<TBranchRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       emptyStateProps={{
         emptyMessage:
           'Create your first app branch to get started with version management.',
