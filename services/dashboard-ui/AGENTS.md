@@ -648,6 +648,50 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 
 The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
 
+## Toast Patterns
+
+### Mutation toasts (action triggered)
+
+When a mutation kicks off a long-running job (build, deploy, reprovision, etc.), show a **heading-only** toast with `theme="info"`. Use a `Badge variant="code" size="md"` for the entity name when one exists. No body copy.
+
+```tsx
+addToast(
+  <Toast
+    heading={
+      <span className="inline-flex items-center gap-1.5">
+        <Badge variant="code" size="md">{component.name}</Badge> build started
+      </span>
+    }
+    theme="info"
+  />
+)
+```
+
+For actions without a named entity (sandbox operations), use a plain string heading:
+
+```tsx
+addToast(<Toast heading="Sandbox reprovision started" theme="info" />)
+```
+
+For mutation errors use `theme="error"` with the same pattern.
+
+### Completion toasts (status transition)
+
+Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook watches a status string and fires a toast once when it transitions from a non-terminal status to a terminal one (success/error). It will NOT fire if the page loads with an already-terminal status.
+
+```tsx
+// In a provider that polls
+useStatusToast({
+  status: build?.status_v2?.status,
+  label: build?.component_name,  // optional — shown in a Badge
+  resourceType: 'build',         // e.g. "build succeeded" / "deploy failed"
+})
+```
+
+The hook uses `getStatusTheme()` from `client/utils/status-utils.ts` to determine whether a status is terminal (success/error theme) or non-terminal (info/warn/neutral). It tracks whether a non-terminal status has been seen — only then will a transition to terminal fire the toast.
+
+**Already wired into**: `build-provider`, `deploy-provider`, `sandbox-build-provider`, `sandbox-run-provider`.
+
 ## Dates, Times & Durations
 
 **Always use [Luxon](https://moment.github.io/luxon/) for date/time operations.** Never use raw `Date` objects or manual millisecond math.
@@ -675,18 +719,18 @@ Do not add comments unless the logic is genuinely non-obvious. Never write comme
 ## Key Scripts
 
 ```bash
-npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
-npm run build          # Production build (minified)
-npm run build:js       # Build JS only
-npm run build:css      # Build CSS only
-npm run lint           # ESLint for the SPA
-npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
-npx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
-npm run dev:ladle      # Ladle component stories
-npm test               # Vitest tests
-npm run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
-npm run test:e2e:ui    # Playwright interactive UI mode
-npm run test:e2e:headed # Playwright with visible browser
+bun run dev            # Development: esbuild watch + PostCSS + BrowserSync
+bun run build          # Production build (minified)
+bun run build:js       # Build JS only
+bun run build:css      # Build CSS only
+bun run lint           # ESLint for the SPA
+bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
+bunx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
+bun run dev:ladle      # Ladle component stories
+bun run test           # Vitest tests
+bun run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
+bun run test:e2e:ui    # Playwright interactive UI mode
+bun run test:e2e:headed # Playwright with visible browser
 ```
 
 **Do NOT run build commands** (`build`, `build:js`, `build:css`) unless explicitly asked. A dev process (nctl) is already running that handles builds automatically.
@@ -699,16 +743,16 @@ Smoke tests in `e2e/` that run against a live local or staging environment. Chro
 
 - Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
 - An admin account email with access to the admin API
-- Playwright browsers installed: `npx playwright install chromium`
+- Playwright browsers installed: `bunx playwright install chromium`
 
 ### Running
 
 ```bash
 # Creates a fresh test org, runs tests, deletes org on teardown
-E2E_EMAIL=you@nuon.co npm run test:e2e
+E2E_EMAIL=you@nuon.co bun run test:e2e
 
 # Use an existing org (skips create/teardown)
-E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
+E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX bun run test:e2e
 ```
 
 ### Environment variables

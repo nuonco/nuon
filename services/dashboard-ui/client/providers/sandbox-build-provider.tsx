@@ -2,6 +2,7 @@ import { createContext, useEffect, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
+import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getSandboxBuild } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -41,6 +42,11 @@ export function SandboxBuildProvider({
     queryFn: () => getSandboxBuild({ orgId: org.id, appId: app.id, buildId }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org.id && !!app.id && !!buildId,
+  })
+
+  useStatusToast({
+    status: build?.status_v2?.status,
+    resourceType: 'sandbox build',
   })
 
   useEffect(() => {
