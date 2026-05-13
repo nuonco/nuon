@@ -32,7 +32,7 @@ export const AdminOrgFeaturesPanel = ({
     <Panel
       heading={
         <div className="flex items-center gap-3">
-          <Icon variant="Sliders" size="24" />
+          <Icon variant="SlidersIcon" size="24" />
           <Text weight="strong" variant="h2">Organization features</Text>
         </div>
       }
@@ -109,7 +109,7 @@ export const AdminOrgFeaturesPanel = ({
           </form>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Icon variant="Warning" size="48" className="text-gray-400 mb-4" />
+            <Icon variant="WarningIcon" size="48" className="text-gray-400 mb-4" />
             <Text variant="base" weight="strong" className="mb-2">No features available</Text>
             <Text variant="subtext">No feature flags are configured for this organization.</Text>
           </div>

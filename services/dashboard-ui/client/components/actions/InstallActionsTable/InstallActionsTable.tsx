@@ -47,7 +47,7 @@ export function parseInstallActionsLatestRunsToTableData(
           />
         </Text>
       ) : (
-        <Icon variant="Minus" />
+        <Icon variant="MinusIcon" />
       ),
       actionRunDuration: recentRun ? (
         <Text flex className="gap-2">
@@ -55,7 +55,7 @@ export function parseInstallActionsLatestRunsToTableData(
           <Duration nanoseconds={recentRun?.execution_time} variant="subtext" />
         </Text>
       ) : (
-        <Icon variant="Minus" />
+        <Icon variant="MinusIcon" />
       ),
       actionStatus: recentRun ? (
         <StatusWithDescription
@@ -68,7 +68,7 @@ export function parseInstallActionsLatestRunsToTableData(
           }}
         />
       ) : (
-        <Icon variant="Minus" />
+        <Icon variant="MinusIcon" />
       ),
       actionTrigger: recentRun ? (
         <ActionTriggerType
@@ -77,7 +77,7 @@ export function parseInstallActionsLatestRunsToTableData(
           triggerType={recentRun?.triggered_by_type as TActionConfigTriggerType}
         />
       ) : (
-        <Icon variant="Minus" />
+        <Icon variant="MinusIcon" />
       ),
       labels: (() => {
         const lbls = actionWithRuns.action_workflow?.labels

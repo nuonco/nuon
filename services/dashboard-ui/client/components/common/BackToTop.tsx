@@ -53,7 +53,7 @@ export const BackToTop = ({ containerId = 'page-scroll-container', scrollOffset 
           onClick={() => scrollToTop(containerId)}
           size="lg"
         >
-          <Icon size={18} variant="ArrowUp" />
+          <Icon size={18} variant="ArrowUpIcon" />
           <span className="!text-foreground text-sm font-strong">
             Back to top
           </span>

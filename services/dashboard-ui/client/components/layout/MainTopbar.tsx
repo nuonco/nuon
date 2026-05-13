@@ -56,7 +56,7 @@ export const MainTopbar = ({
               position="bottom"
             >
               <Badge variant="code" theme="neutral" size="sm" className="shrink-0">
-                <Icon variant="TestTube" size={14} className="xl:hidden" />
+                <Icon variant="TestTubeIcon" size={14} className="xl:hidden" />
                 <span className="hidden xl:inline whitespace-nowrap">Sandbox mode</span>
               </Badge>
             </Tooltip>

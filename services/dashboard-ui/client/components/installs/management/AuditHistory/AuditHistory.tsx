@@ -31,7 +31,7 @@ export const AuditHistoryModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="ClockClockwise" size="24" />
+          <Icon variant="ClockClockwiseIcon" size="24" />
           Audit history
         </Text>
       }
@@ -49,7 +49,7 @@ export const AuditHistoryModal = ({
           : {
               children: (
                 <span className="flex items-center gap-2">
-                  <Icon variant="DownloadSimple" size="18" /> Download CSV
+                  <Icon variant="DownloadSimpleIcon" size="18" /> Download CSV
                 </span>
               ),
               onClick: onDownload,

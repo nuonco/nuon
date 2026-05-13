@@ -40,7 +40,7 @@ const CLOUD_PLATFORM_CONFIG: Record<
   },
   unknown: {
     abbr: 'Unknown',
-    iconVariant: 'Question',
+    iconVariant: 'QuestionIcon',
     iconVariantColor: 'Question',
     name: 'Unknown',
   },

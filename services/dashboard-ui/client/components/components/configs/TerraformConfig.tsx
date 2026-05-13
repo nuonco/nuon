@@ -24,7 +24,7 @@ export const TerraformVariablesFilesModal = ({
     <Modal
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
-          <Icon variant="FileCode" size="20" />
+          <Icon variant="FileCodeIcon" size="20" />
           Terraform Variables Files
         </Text>
       }
@@ -66,7 +66,7 @@ export const TerraformVariablesModal = ({
     <Modal
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
-          <Icon variant="List" size="20" />
+          <Icon variant="ListIcon" size="20" />
           Terraform Variables
         </Text>
       }

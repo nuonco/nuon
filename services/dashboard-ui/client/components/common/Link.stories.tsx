@@ -125,16 +125,16 @@ export const ExternalLinks = () => (
       <h4 className="text-sm font-medium">External Link Examples</h4>
       <div className="space-y-3 p-4 border rounded-lg">
         <Link href="https://docs.nuon.co" isExternal>
-          <Icon variant="ArrowSquareOut" size="16" />
+          <Icon variant="ArrowSquareOutIcon" size="16" />
           Documentation
         </Link>
         <Link href="https://github.com/nuonplatform" isExternal variant="ghost">
-          <Icon variant="GithubLogo" size="16" />
+          <Icon variant="GithubLogoIcon" size="16" />
           GitHub Repository
         </Link>
         <Link href="https://nuon.co/support" isExternal>
           Support Center
-          <Icon variant="ArrowSquareOut" size="16" />
+          <Icon variant="ArrowSquareOutIcon" size="16" />
         </Link>
       </div>
     </div>
@@ -166,20 +166,20 @@ export const WithIcons = () => (
       <h4 className="text-sm font-medium">Icon Positioning</h4>
       <div className="space-y-3 p-4 border rounded-lg">
         <Link href="#" variant="default">
-          <Icon variant="House" size="16" />
+          <Icon variant="HouseIcon" size="16" />
           Home Page
         </Link>
         <Link href="#" variant="ghost">
-          <Icon variant="Gear" size="16" />
+          <Icon variant="GearIcon" size="16" />
           Settings
         </Link>
         <Link href="#" variant="nav">
-          <Icon variant="ChartBar" size="16" />
+          <Icon variant="ChartBarIcon" size="16" />
           Analytics Dashboard
         </Link>
         <Link href="#" variant="default">
           View Profile
-          <Icon variant="ArrowRight" size="16" />
+          <Icon variant="ArrowRightIcon" size="16" />
         </Link>
       </div>
     </div>
@@ -188,19 +188,19 @@ export const WithIcons = () => (
       <h4 className="text-sm font-medium">Navigation with Icons</h4>
       <div className="space-y-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
         <Link href="#" variant="nav">
-          <Icon variant="SquaresFour" size="18" />
+          <Icon variant="SquaresFourIcon" size="18" />
           Dashboard
         </Link>
         <Link href="#" variant="nav" isActive>
-          <Icon variant="Stack" size="18" />
+          <Icon variant="StackIcon" size="18" />
           Applications
         </Link>
         <Link href="#" variant="nav">
-          <Icon variant="Users" size="18" />
+          <Icon variant="UsersIcon" size="18" />
           Team
         </Link>
         <Link href="#" variant="nav">
-          <Icon variant="Gear" size="18" />
+          <Icon variant="GearIcon" size="18" />
           Settings
         </Link>
       </div>
@@ -248,15 +248,15 @@ export const UsagePatterns = () => (
       <h4 className="text-sm font-medium">Action Links</h4>
       <div className="flex flex-wrap gap-3 p-4 border rounded-lg">
         <Link href="/create" variant="ghost">
-          <Icon variant="Plus" size="16" />
+          <Icon variant="PlusIcon" size="16" />
           Create New
         </Link>
         <Link href="/import" variant="ghost">
-          <Icon variant="Upload" size="16" />
+          <Icon variant="UploadIcon" size="16" />
           Import Data
         </Link>
         <Link href="/export" variant="ghost">
-          <Icon variant="Download" size="16" />
+          <Icon variant="DownloadIcon" size="16" />
           Export
         </Link>
       </div>
@@ -268,11 +268,11 @@ export const UsagePatterns = () => (
         <Link href="/org" variant="breadcrumb">
           Organization
         </Link>
-        <Icon variant="CaretRight" size="12" className="text-gray-400" />
+        <Icon variant="CaretRightIcon" size="12" className="text-gray-400" />
         <Link href="/org/apps" variant="breadcrumb">
           Applications
         </Link>
-        <Icon variant="CaretRight" size="12" className="text-gray-400" />
+        <Icon variant="CaretRightIcon" size="12" className="text-gray-400" />
         <Link href="/org/apps/my-app" variant="breadcrumb" isActive>
           My Application
         </Link>

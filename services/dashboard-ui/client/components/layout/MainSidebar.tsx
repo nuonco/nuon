@@ -53,7 +53,7 @@ export const MainSidebar = ({
             className="!w-full"
             buttonClassName="!w-full"
             hideOrgSettings={hideOrgContent}
-            icon={<Icon variant="CaretUp" />}
+            icon={<Icon variant="CaretUpIcon" />}
             position="above"
           />
         </div>

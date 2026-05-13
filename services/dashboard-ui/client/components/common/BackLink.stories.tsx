@@ -58,7 +58,7 @@ export const CustomContent = () => (
         <BackLink>Return to dashboard</BackLink>
         <BackLink>← Previous page</BackLink>
         <BackLink>
-          <Icon variant="House" size="16" />
+          <Icon variant="HouseIcon" size="16" />
           Back to home
         </BackLink>
       </div>
@@ -68,15 +68,15 @@ export const CustomContent = () => (
       <h4 className="text-sm font-medium">Contextual BackLinks</h4>
       <div className="space-y-3 p-4 border rounded-lg">
         <BackLink>
-          <Icon variant="CaretLeft" weight="bold" />
+          <Icon variant="CaretLeftIcon" weight="bold" />
           Back to applications
         </BackLink>
         <BackLink>
-          <Icon variant="CaretLeft" weight="bold" />
+          <Icon variant="CaretLeftIcon" weight="bold" />
           Return to project list
         </BackLink>
         <BackLink>
-          <Icon variant="ArrowLeft" size="16" />
+          <Icon variant="ArrowLeftIcon" size="16" />
           Back to settings
         </BackLink>
       </div>
@@ -189,7 +189,7 @@ export const UsageExamples = () => (
       <h4 className="text-sm font-medium">Breadcrumb Alternative</h4>
       <div className="border rounded-lg p-4">
         <BackLink>
-          <Icon variant="CaretLeft" weight="bold" />
+          <Icon variant="CaretLeftIcon" weight="bold" />
           Projects / My Application
         </BackLink>
         <div className="mt-4">

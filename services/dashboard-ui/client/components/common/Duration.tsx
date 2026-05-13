@@ -36,7 +36,7 @@ export const Duration = ({
     if (nanoseconds === 0) {
       return (
         <Text {...props}>
-          <Icon variant="Minus" />
+          <Icon variant="MinusIcon" />
         </Text>
       )
     }
@@ -69,7 +69,7 @@ export const Duration = ({
           })
         )
       ) : (
-        <Icon variant="Minus" />
+        <Icon variant="MinusIcon" />
       )}
     </Text>
   )

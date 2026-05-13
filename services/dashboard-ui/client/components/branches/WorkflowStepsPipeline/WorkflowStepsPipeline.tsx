@@ -66,13 +66,13 @@ export const WorkflowStepsPipeline = ({
                   }`}
                 >
                   {isInProgress ? (
-                    <Icon variant="Play" size={32} />
+                    <Icon variant="PlayIcon" size={32} />
                   ) : isSuccess ? (
-                    <Icon variant="Check" size={32} />
+                    <Icon variant="CheckIcon" size={32} />
                   ) : isError ? (
-                    <Icon variant="X" size={32} />
+                    <Icon variant="XIcon" size={32} />
                   ) : (
-                    <Icon variant="Clock" size={28} />
+                    <Icon variant="ClockIcon" size={28} />
                   )}
                 </div>
 
@@ -108,7 +108,7 @@ export const WorkflowStepsPipeline = ({
               {idx < steps.length - 1 && (
                 <div className="flex items-center">
                   <Icon
-                    variant="ArrowRight"
+                    variant="ArrowRightIcon"
                     size={36}
                     className={`transition-colors ${
                       isSuccess

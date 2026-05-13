@@ -19,7 +19,7 @@ export const AdminRunnersCard = ({ onOpenPanel }: IAdminRunnersCard) => {
       </div>
 
       <Button onClick={onOpenPanel} variant="secondary">
-        <Icon variant="SlidersHorizontal" />
+        <Icon variant="SlidersHorizontalIcon" />
         Manage runners
       </Button>
     </div>

@@ -34,7 +34,7 @@ export const DeprovisionModal = ({
           weight="strong"
           theme="error"
         >
-          <Icon variant="ArrowDown" size="24" />
+          <Icon variant="ArrowDownIcon" size="24" />
           Deprovision entire install
         </Text>
       }
@@ -45,7 +45,7 @@ export const DeprovisionModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="ArrowDown" />
+            <Icon variant="ArrowDownIcon" />
             Deprovision install
           </span>
         ),

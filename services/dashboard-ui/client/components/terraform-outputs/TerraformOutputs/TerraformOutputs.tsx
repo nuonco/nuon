@@ -51,8 +51,8 @@ export const TerraformOutputs = ({
             value={viewMode}
             onChange={updateViewMode}
             options={[
-              { value: 'grid', label: <Icon variant="ListDashes" size={16} />, ariaLabel: 'Grid view' },
-              { value: 'json', label: <Icon variant="BracketsCurly" size={16} />, ariaLabel: 'JSON view' },
+              { value: 'grid', label: <Icon variant="ListDashesIcon" size={16} />, ariaLabel: 'Grid view' },
+              { value: 'json', label: <Icon variant="BracketsCurlyIcon" size={16} />, ariaLabel: 'JSON view' },
             ]}
           />
           <ClickToCopyButton

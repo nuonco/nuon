@@ -21,7 +21,7 @@ export const ConfirmOverrideModal = ({
           weight="strong"
           theme="warn"
         >
-          <Icon variant="Warning" size="24" />
+          <Icon variant="WarningIcon" size="24" />
           Override changes to this install?
         </Text>
       }
@@ -89,7 +89,7 @@ export const EnableAutoApproveModal = ({
       primaryActionTrigger={{
         children: isSuccess ? (
           <span className="flex items-center gap-2">
-            <Icon variant="CheckCircle" /> Settings updated
+            <Icon variant="CheckCircleIcon" /> Settings updated
           </span>
         ) : isPending ? (
           <span className="flex items-center gap-2">

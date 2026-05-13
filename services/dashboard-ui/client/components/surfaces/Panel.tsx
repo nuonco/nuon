@@ -145,7 +145,7 @@ export const PanelBase = ({
                   onClick={handleClose}
                   aria-label="Close panel"
                 >
-                  <Icon variant="ArrowLineRight" />
+                  <Icon variant="ArrowLineRightIcon" />
                 </Button>
               </Tooltip>
             </div>

@@ -162,7 +162,7 @@ export const StepDetailPanelButton = ({
       size="sm"
       onClick={handleAddPanel}
     >
-      View details <Icon variant="CaretRight" />
+      View details <Icon variant="CaretRightIcon" />
     </Button>
   )
 }

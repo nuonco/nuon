@@ -29,7 +29,7 @@ export const EnableConfigSyncModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="FileCloud" size="24" />
+          <Icon variant="FileCloudIcon" size="24" />
           {modalHeading}
         </Text>
       }

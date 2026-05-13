@@ -43,7 +43,7 @@ export const AdminRunnersPanel = ({
     <Panel
       heading={
         <div className="flex items-center gap-3">
-          <Icon variant="SlidersHorizontal" size="24" />
+          <Icon variant="SlidersHorizontalIcon" size="24" />
           <Text weight="strong" variant="h2">
             All {orgName} Runners
           </Text>
@@ -70,7 +70,7 @@ export const AdminRunnersPanel = ({
               </>
             ) : (
               <>
-                <Icon variant="ArrowClockwise" />
+                <Icon variant="ArrowClockwiseIcon" />
                 Restart all runners
               </>
             )}
@@ -103,7 +103,7 @@ export const AdminRunnersPanel = ({
           ) : (
             <Card className="p-6 text-center">
               <Icon
-                variant="Warning"
+                variant="WarningIcon"
                 size="48"
                 className="text-gray-400 mb-4 mx-auto"
               />
@@ -149,7 +149,7 @@ export const AdminRunnersPanel = ({
           ) : (
             <Card className="p-6 text-center">
               <Icon
-                variant="Warning"
+                variant="WarningIcon"
                 size="48"
                 className="text-gray-400 mb-4 mx-auto"
               />

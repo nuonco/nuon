@@ -25,7 +25,7 @@ export const UnlockTerraformWorkspaceModal = ({
       heading={
         <div className="flex flex-col gap-2">
           <Text flex className="gap-4" variant="h3" weight="strong">
-            <Icon variant="LockOpen" size="24" />
+            <Icon variant="LockOpenIcon" size="24" />
             Unlock Terraform workspace
           </Text>
           <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">
@@ -41,7 +41,7 @@ export const UnlockTerraformWorkspaceModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="LockOpen" />
+            <Icon variant="LockOpenIcon" />
             Force unlock
           </span>
         ),

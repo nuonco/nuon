@@ -62,7 +62,7 @@ export const OrgSummary = ({
         >
           {org.sandbox_mode && (
             <Icon
-              variant="TestTube"
+              variant="TestTubeIcon"
               className="!w-[12px] !h-[12px] shrink-0"
               size="12"
             />

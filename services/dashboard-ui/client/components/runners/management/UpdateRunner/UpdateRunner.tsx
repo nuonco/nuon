@@ -61,7 +61,7 @@ export const UpdateRunnerModal = ({
             weight="strong"
             theme="info"
           >
-            <Icon variant="ArrowsCounterClockwise" size="24" />
+            <Icon variant="ArrowsCounterClockwiseIcon" size="24" />
             {modalHeading}
           </Text>
         </div>
@@ -74,7 +74,7 @@ export const UpdateRunnerModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="ArrowsCounterClockwise" />
+            <Icon variant="ArrowsCounterClockwiseIcon" />
             {submitLabel}
           </span>
         ),
@@ -128,9 +128,9 @@ export const UpdateRunnerButton = ({
       onClick={() => onOpenModal()}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="ArrowsCounterClockwise" />}
+      {props?.isMenuButton ? null : <Icon variant="ArrowsCounterClockwiseIcon" />}
       {label}
-      {props?.isMenuButton ? <Icon variant="ArrowsCounterClockwise" /> : null}
+      {props?.isMenuButton ? <Icon variant="ArrowsCounterClockwiseIcon" /> : null}
     </Button>
   )
 }
