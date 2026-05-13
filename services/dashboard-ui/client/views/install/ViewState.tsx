@@ -66,7 +66,7 @@ export const ViewState = () => {
                 setIsCopied(true)
               }}
             >
-              <Icon variant={isCopied ? 'Check' : 'Copy'} size="16" />
+              <Icon variant={isCopied ? 'CheckIcon' : 'CopyIcon'} size="16" />
             </Button>
             <Button
               variant="secondary"

@@ -124,7 +124,7 @@ export const UserDropdown = ({
               </Toast>
             )
           }}>
-            {muted ? 'Enable' : 'Disable'} notifications <Icon variant={muted ? 'Bell' : 'BellSlash'} />
+            {muted ? 'Enable' : 'Disable'} notifications <Icon variant={muted ? 'BellIcon' : 'BellSlashIcon'} />
           </Button>
         ) : notificationsSupported && notificationPermission !== 'denied' ? (
           <Button onClick={async () => {

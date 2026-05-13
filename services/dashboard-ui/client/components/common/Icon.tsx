@@ -177,6 +177,16 @@ import {
   XIcon,
   XCircleIcon,
   XLogoIcon,
+  ArrowsInLineVerticalIcon,
+  ArrowsOutLineVerticalIcon,
+  BellSlashIcon,
+  ClockCountdownIcon,
+  CornersInIcon,
+  MinusCircleIcon,
+  ProhibitIcon,
+  RepeatIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
 } from '@phosphor-icons/react'
 import type { IconProps as PhosphorIconProps } from '@phosphor-icons/react'
 import { Loading } from './Loading'
@@ -368,6 +378,16 @@ const phosphorIcons = {
   XIcon,
   XCircleIcon,
   XLogoIcon,
+  ArrowsInLineVerticalIcon,
+  ArrowsOutLineVerticalIcon,
+  BellSlashIcon,
+  ClockCountdownIcon,
+  CornersInIcon,
+  MinusCircleIcon,
+  ProhibitIcon,
+  RepeatIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
 } as const
 
 type CustomIconVariant = keyof typeof customIcons

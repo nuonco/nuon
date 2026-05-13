@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -86,17 +85,6 @@ func (h *Handler) publicFS() fs.FS {
 // This MUST be called after all API routes are registered so that API routes
 // take precedence.
 func (h *Handler) RegisterRoutes(e *gin.Engine) error {
-	if h.cfg.DashboardDev {
-		h.l.Info("dashboard dev mode: SPA requests will be proxied to Vite dev server")
-		return h.registerDevProxy(e)
-	}
-
-	return h.registerStatic(e)
-}
-
-// registerStatic serves the SPA from the dist directory on disk.
-// Static files (favicons, robots.txt, etc.) are served from the public directory.
-func (h *Handler) registerStatic(e *gin.Engine) error {
 	distDir := h.cfg.DistDir
 	if distDir == "" {
 		distDir = "./dist"
@@ -136,6 +124,12 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 		distFileServer = http.FileServer(http.FS(distFS))
 		e.GET("/assets/*filepath", func(c *gin.Context) {
 			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+			fp := c.Param("filepath")
+			if strings.HasSuffix(fp, ".js") {
+				c.Header("Content-Type", "application/javascript")
+			} else if strings.HasSuffix(fp, ".css") {
+				c.Header("Content-Type", "text/css")
+			}
 			distFileServer.ServeHTTP(c.Writer, c.Request)
 		})
 	}
@@ -181,64 +175,6 @@ func (h *Handler) registerStatic(e *gin.Engine) error {
 
 		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 		c.Data(http.StatusOK, "text/html; charset=utf-8", h.indexHTML)
-	})
-
-	return nil
-}
-
-// registerDevProxy proxies non-API requests to the dev server.
-// Static files from the public directory are served directly without proxying.
-func (h *Handler) registerDevProxy(e *gin.Engine) error {
-	publicFS := h.publicFS()
-	authHandler := authmw.New(h.cfg, h.l).Handler()
-
-	e.NoRoute(func(c *gin.Context) {
-		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
-			return
-		}
-
-		if publicFS != nil {
-			filePath := strings.TrimPrefix(c.Request.URL.Path, "/")
-			if _, err := fs.Stat(publicFS, filePath); err == nil {
-				http.FileServer(http.FS(publicFS)).ServeHTTP(c.Writer, c.Request)
-				return
-			}
-		}
-
-		authHandler(c)
-		if c.IsAborted() {
-			return
-		}
-
-		proxy := &http.Transport{}
-		target := "http://localhost:5173" + c.Request.URL.Path
-		if c.Request.URL.RawQuery != "" {
-			target += "?" + c.Request.URL.RawQuery
-		}
-
-		req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, target, c.Request.Body)
-		if err != nil {
-			c.Status(http.StatusBadGateway)
-			return
-		}
-		req.Header = c.Request.Header
-
-		resp, err := proxy.RoundTrip(req)
-		if err != nil {
-			h.l.Warn("vite dev server proxy error", zap.Error(err))
-			c.Status(http.StatusBadGateway)
-			return
-		}
-		defer resp.Body.Close()
-
-		for k, vs := range resp.Header {
-			for _, v := range vs {
-				c.Writer.Header().Add(k, v)
-			}
-		}
-		c.Status(resp.StatusCode)
-		io.Copy(c.Writer, resp.Body)
 	})
 
 	return nil

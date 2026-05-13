@@ -128,7 +128,7 @@ export const PanelBase = ({
                     }
                   >
                     <Icon
-                      variant={size === 'full' ? 'CornersIn' : 'CornersOut'}
+                      variant={size === 'full' ? 'CornersInIcon' : 'CornersOutIcon'}
                     />
                   </Button>
                 </Tooltip>

@@ -41,7 +41,7 @@ export const EnableConfigSyncModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant={isManagedByConfig ? 'ToggleRight' : 'ToggleLeft'} />
+            <Icon variant={isManagedByConfig ? 'ToggleRightIcon' : 'ToggleLeftIcon'} />
             {buttonText}
           </span>
         ),
