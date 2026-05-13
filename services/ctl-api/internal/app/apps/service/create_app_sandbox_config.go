@@ -24,6 +24,7 @@ type CreateAppSandboxConfigRequest struct {
 
 	TerraformVersion string  `json:"terraform_version" validate:"required"`
 	DriftSchedule    *string `json:"drift_schedule,omitempty"`
+	MaxAutoRetries   *int    `json:"max_auto_retries,omitempty"`
 
 	VariablesFiles []string           `json:"variables_files,omitempty"`
 	Variables      map[string]*string `json:"variables" validate:"required"`
@@ -46,6 +47,12 @@ func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 			if !slices.Contains(app.ValidOperations, operation) {
 				return fmt.Errorf("invalid operation type: %s. Valid operations: %v", operation, app.ValidOperations)
 			}
+		}
+	}
+
+	if c.MaxAutoRetries != nil {
+		if err := validateMaxAutoRetries(*c.MaxAutoRetries); err != nil {
+			return err
 		}
 	}
 
@@ -179,6 +186,7 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		TerraformVersion:         req.TerraformVersion,
 		References:               pq.StringArray(req.References),
 		OperationRoles:           operationRoles,
+		MaxAutoRetries:           req.MaxAutoRetries,
 	}
 
 	if req.DriftSchedule != nil {
