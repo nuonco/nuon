@@ -14,6 +14,7 @@ import {
   adminRestartOrg,
   adminRestartOrgRunners,
   adminRestartOrgQueues,
+  adminForceRestartOrgQueues,
   adminMigrateOrgQueues,
   adminRestartRunner,
   adminGracefulRunnerShutdown,
@@ -104,11 +105,20 @@ export const AdminOrgSection = ({
         />
         <AdminActionCard
           title="Restart org queues"
-          description="Restart all queue workflows for this org"
+          description="Send a restart hint to all queue workflows for this org"
           action={() => adminRestartOrgQueues({ orgId, adminEmail })}
           variant="warning"
           requiresConfirmation
-          confirmationText="This will restart all queue workflows for this organization. Continue?"
+          confirmationText="This will send a restart hint to all queue workflows. Each queue will restart on its next poll cycle (~1-3 min)."
+        />
+        <AdminActionCard
+          title="Force restart org queues"
+          description="Immediately terminate and restart all queue workflows for this org"
+          action={() => adminForceRestartOrgQueues({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          confirmationText="This will immediately terminate and restart ALL queue workflows for this organization. Any in-flight signals will be abandoned. In practice, most long-lived signals are caught awaiting an execute finished, so this should be safe if graceful restarts aren't working."
         />
         <AdminActionCard
           title="Migrate org queues"

@@ -4,7 +4,7 @@ import { Badge } from './Badge'
 function getStatus(s: any): string {
   if (!s) return ''
   if (typeof s === 'string') return s
-  if (typeof s === 'object' && s.status) return String(s.status)
+  if (typeof s === 'object' && s.status) return getStatus(s.status)
   return String(s)
 }
 
@@ -42,7 +42,7 @@ export const StatusHistory = ({ status, defaultExpanded = false, maxCollapsed = 
               </div>
               {h.created_at_ts > 0 && (
                 <div className="text-gray-400 font-mono text-[10px] dark:text-gray-500">
-                  {new Date(h.created_at_ts / 1000000).toISOString().replace('T', ' ').slice(0, 19)} UTC
+                  {new Date(h.created_at_ts * 1000).toISOString().replace('T', ' ').slice(0, 19)} UTC
                 </div>
               )}
               {h.metadata && Object.keys(h.metadata).length > 0 && (

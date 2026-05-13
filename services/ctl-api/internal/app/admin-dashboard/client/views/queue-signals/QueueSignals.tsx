@@ -30,6 +30,7 @@ export const QueueSignals = () => {
   const [enqueued, setEnqueued] = useState('')
   const [status, setStatus] = useState('')
   const [sortBy, setSortBy] = useState('')
+  const [since, setSince] = useState('15m')
   const [page, setPage] = useState(1)
 
   const { data: typeOptions } = useQuery({
@@ -38,7 +39,7 @@ export const QueueSignals = () => {
   })
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, status, sortBy, ownerID, page],
+    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, status, sortBy, since, ownerID, page],
     queryFn: () => getQueueSignalsGlobal({
       search,
       signal_type: signalType || undefined,
@@ -46,6 +47,7 @@ export const QueueSignals = () => {
       enqueued: enqueued || undefined,
       status: status || undefined,
       sort_by: sortBy || undefined,
+      since,
       owner_id: ownerID,
       page,
     }),
@@ -109,6 +111,16 @@ export const QueueSignals = () => {
           <option value="">Newest first</option>
           <option value="updated_at">Recently updated</option>
           <option value="execution_count">Most executed</option>
+        </select>
+        <select
+          value={since}
+          onChange={(e) => { setSince(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          <option value="15m">Last 15 min</option>
+          <option value="1h">Last 1 hour</option>
+          <option value="12h">Last 12 hours</option>
+          <option value="24h">Last 24 hours</option>
         </select>
       </div>
 

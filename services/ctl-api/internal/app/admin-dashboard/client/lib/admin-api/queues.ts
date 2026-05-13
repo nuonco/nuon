@@ -39,11 +39,17 @@ export const getQueueEmitterDetail = (queueId: string, emitterId: string) =>
 export const getSignalGraph = (queueId: string, signalId: string, depth = 1) =>
   api<{ graph: any; temporal_ui_url: string }>({ path: `queues/${queueId}/signals/${signalId}/graph`, params: { depth } })
 
-export const restartQueue = (id: string) =>
-  api<{ status: string }>({ path: `queues/${id}/restart`, method: 'POST' })
+export const hintRestartQueue = (id: string) =>
+  api<{ status: string }>({ path: `queues/${id}/hint-restart`, method: 'POST' })
 
 export const forceRestartQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/force-restart`, method: 'POST' })
+
+export const checkCANQueue = (id: string) =>
+  api<{ workflow_type: string; namespace: string; history_length: number; history_max: number; hint_requested: boolean; restarting: boolean }>({
+    path: `queues/${id}/check-can`,
+    method: 'POST',
+  })
 
 export const clearQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/clear`, method: 'POST' })

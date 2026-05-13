@@ -2,14 +2,21 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
-	tclient "go.temporal.io/sdk/client"
+	"go.uber.org/zap"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
+	tclient "go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
+
+	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 )
 
+// ForceRestart terminates the running queue workflow and starts a fresh one.
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) ForceRestart(ctx context.Context, queueID string) error {
@@ -22,20 +29,44 @@ func (c *Client) ForceRestart(ctx context.Context, queueID string) error {
 		ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
 	}
 
-	_, err = c.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
-		UpdateOptions: tclient.UpdateWorkflowOptions{
-			WorkflowID:   q.Workflow.ID,
-			UpdateName:   queue.ForceRestartUpdateName,
-			WaitForStage: tclient.WorkflowUpdateStageAccepted,
-			Args: []any{
-				queue.ForceRestartRequest{},
-			},
-		},
-		StartWorkflowOperation: c.queueStartOperation(q),
-	})
-	if err != nil {
-		return errors.Wrap(err, "unable to call update handler")
+	wkflowReq := queue.QueueWorkflowRequest{
+		QueueID: q.ID,
+		Version: c.cfg.Version,
 	}
+	opts := tclient.StartWorkflowOptions{
+		ID:        q.Workflow.ID,
+		TaskQueue: workflows.APITaskQueue,
+		Memo: map[string]any{
+			"type":          "queue",
+			"id":            q.ID,
+			"name":          q.Name,
+			"owner-id":      q.OwnerID,
+			"owner-type":    q.OwnerType,
+			"max-in-flight": q.MaxInFlight,
+			"max-depth":     q.MaxDepth,
+			"idle-timeout":  time.Duration(q.IdleTimeout).String(),
+		},
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+
+	wkflowRun, err := c.tClient.ExecuteWorkflowInNamespace(ctx,
+		q.Workflow.Namespace,
+		opts,
+		"Queue",
+		wkflowReq,
+	)
+	if err != nil {
+		return errors.Wrap(err, "unable to force restart queue workflow")
+	}
+
+	c.l.Debug("queue force restarted",
+		zap.String("namespace", q.Workflow.Namespace),
+		zap.String("id", q.Workflow.ID),
+		zap.String("run-id", wkflowRun.GetRunID()),
+	)
 
 	return nil
 }
