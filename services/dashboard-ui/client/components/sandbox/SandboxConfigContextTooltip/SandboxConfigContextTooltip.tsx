@@ -93,7 +93,7 @@ function getSandboxConfigItems(
     items.push({
       id: `config-env-vars`,
       title: 'Environment variables',
-      leftContent: <Icon variant="List" />,
+      leftContent: <Icon variant="ListIcon" />,
       onClick: () => {
         const modal = (
           <SandboxEnvironmentVariablesModal
@@ -171,7 +171,7 @@ export const SandboxConfigContextTooltip = ({
           >
             Sandbox configuration
           </Link>
-          <Icon variant="Question" />
+          <Icon variant="QuestionIcon" />
         </Text>
       )}
     </ContextTooltip>

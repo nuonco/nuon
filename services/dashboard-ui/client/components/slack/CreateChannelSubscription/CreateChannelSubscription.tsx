@@ -95,7 +95,7 @@ export const CreateChannelSubscriptionModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="SlackLogo" size="24" />
+          <Icon variant="SlackLogoIcon" size="24" />
           Subscribe a channel
         </Text>
       }
@@ -106,7 +106,7 @@ export const CreateChannelSubscriptionModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Plus" />
+            <Icon variant="PlusIcon" />
             Subscribe channel
           </span>
         ),

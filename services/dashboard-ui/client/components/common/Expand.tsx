@@ -32,9 +32,9 @@ export const Expand = ({
   }, [isOpen])
 
   const expandIcon = isExpanded ? (
-    <Icon variant="CaretUp" />
+    <Icon variant="CaretUpIcon" />
   ) : (
-    <Icon variant="CaretDown" />
+    <Icon variant="CaretDownIcon" />
   )
 
   return (

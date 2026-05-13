@@ -50,6 +50,9 @@ type AppAppSandboxConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// max auto retries
+	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
+
 	// Operation roles map: operation type -> role name
 	OperationRoles map[string]string `json:"operation_roles,omitempty"`
 

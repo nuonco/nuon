@@ -33,7 +33,7 @@ const mockState = {
 
 const unlockButton = (
   <Button variant="danger" size="sm">
-    <Icon variant="LockOpen" size={14} />
+    <Icon variant="LockOpenIcon" size={14} />
     Unlock Terraform state
   </Button>
 )

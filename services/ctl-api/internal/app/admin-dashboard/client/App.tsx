@@ -29,6 +29,7 @@ import { SandboxMode } from '@/views/sandbox-mode/SandboxMode'
 import { TemporalWorkers } from '@/views/temporal-workers/TemporalWorkers'
 import { TemporalWorkerDetail } from '@/views/temporal-workers/TemporalWorkerDetail'
 import { TemporalWorkflows } from '@/views/temporal-workflows/TemporalWorkflows'
+import { WorkflowIndex } from '@/views/temporal-workflows/WorkflowIndex'
 import { SlowQueries } from '@/views/slow-queries/SlowQueries'
 import { QueryCatalog } from '@/views/query-catalog/QueryCatalog'
 import { RunnerUptime } from '@/views/runner-uptime/RunnerUptime'
@@ -73,6 +74,7 @@ const router = createBrowserRouter([
       { path: 'temporal-workers', element: <TemporalWorkers /> },
       { path: 'temporal-workers/:namespace', element: <TemporalWorkerDetail /> },
       { path: 'temporal-workflows', element: <TemporalWorkflows /> },
+      { path: 'workflow-index', element: <WorkflowIndex /> },
       { path: 'queries', element: <SlowQueries /> },
       { path: 'query-catalog', element: <QueryCatalog /> },
       { path: 'runner-uptime', element: <RunnerUptime /> },

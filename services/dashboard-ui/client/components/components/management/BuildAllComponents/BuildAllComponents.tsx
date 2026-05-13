@@ -12,7 +12,7 @@ export const BuildAllComponentsButton = ({
   return (
     <Button onClick={onClick} {...props}>
       Build all components
-      <Icon variant="Hammer" />
+      <Icon variant="HammerIcon" />
     </Button>
   )
 }
@@ -41,7 +41,7 @@ export const BuildAllComponentsModal = ({
           weight="strong"
           theme="info"
         >
-          <Icon variant="Hammer" size="24" />
+          <Icon variant="HammerIcon" size="24" />
           Build all components for {appName}?
         </Text>
       }

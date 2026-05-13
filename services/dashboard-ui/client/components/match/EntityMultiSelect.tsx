@@ -161,7 +161,7 @@ export const EntityMultiSelect = ({
                 onClick={() => toggle(c.id)}
                 className="hover:opacity-80"
               >
-                <Icon variant="X" size="12" />
+                <Icon variant="XIcon" size="12" />
               </button>
             </Badge>
           ))}
@@ -204,7 +204,7 @@ export const EntityMultiSelect = ({
                         {r.name || r.id}
                       </Text>
                     </span>
-                    {checked ? <Icon variant="Check" size="16" /> : null}
+                    {checked ? <Icon variant="CheckIcon" size="16" /> : null}
                   </button>
                 </li>
               )

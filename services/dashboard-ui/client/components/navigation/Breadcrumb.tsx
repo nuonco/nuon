@@ -7,7 +7,7 @@ import { Text } from '@/components/common/Text'
 import { useBreadcrumb } from '@/hooks/use-breadcrumb'
 import type { TNavLink } from '@/types'
 
-const Separator = () => <Icon variant="CaretRight" className="muted" />
+const Separator = () => <Icon variant="CaretRightIcon" className="muted" />
 
 const BreadcrumbItem = ({
   crumb,

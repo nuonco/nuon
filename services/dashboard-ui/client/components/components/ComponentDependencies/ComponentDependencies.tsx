@@ -68,7 +68,7 @@ export const ComponentDependencies = ({
   return isLoading ? (
     <Skeleton height="27px" width="33px" />
   ) : depSummaries?.length === 0 ? (
-    <Icon variant="Minus" />
+    <Icon variant="MinusIcon" />
   ) : (
     <ComponentsTooltip
       title="Total dependencies"

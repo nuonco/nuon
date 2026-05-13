@@ -178,7 +178,7 @@ export const ResourceBlock = ({
             (!enabled || disabled) && 'opacity-50 cursor-not-allowed'
           )}
         >
-          <Icon variant={expanded ? 'CaretUp' : 'CaretDown'} />
+          <Icon variant={expanded ? 'CaretUpIcon' : 'CaretDownIcon'} />
         </button>
       </div>
 
@@ -264,7 +264,7 @@ export const ResourceBlock = ({
                   disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
-                <Icon variant={subOpsExpanded ? 'CaretDown' : 'CaretRight'} />
+                <Icon variant={subOpsExpanded ? 'CaretDownIcon' : 'CaretRightIcon'} />
                 <Text variant="subtext" theme="neutral">
                   Narrow to specific operations (optional)
                 </Text>

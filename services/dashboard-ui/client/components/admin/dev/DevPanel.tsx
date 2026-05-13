@@ -9,7 +9,7 @@ export const DevPanel = ({ size = '3/4', ...props }: IPanel) => {
       heading={
         <div className="flex items-center gap-3">
           <Icon
-            variant="Terminal"
+            variant="TerminalIcon"
             size="24"
             className="text-teal-600 dark:text-teal-400"
           />

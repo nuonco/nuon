@@ -82,7 +82,7 @@ export const WizardNav = ({
                 >
                   {isComplete && !isActive ? (
                     <Icon
-                      variant="Check"
+                      variant="CheckIcon"
                       size={14}
                       weight="bold"
                       className="text-white"

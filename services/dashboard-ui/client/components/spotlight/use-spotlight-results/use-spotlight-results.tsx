@@ -172,7 +172,7 @@ export function useSpotlightResults(
         label: app.name ?? app.id!,
         tag: 'app',
         path: `/apps/${app.id}`,
-        icon: 'AppWindow',
+        icon: 'AppWindowIcon',
       }))
       const nameInstalls = installsResult?.data ?? []
       const runnerInstalls = runnerInstallsResult?.data ?? []
@@ -187,14 +187,14 @@ export function useSpotlightResults(
         subtitle: install.app?.name,
         tag: 'install',
         path: `/installs/${install.id}/runner`,
-        icon: 'Cube',
+        icon: 'CubeIcon',
       }))
       const installs = allInstalls.map((install): SpotlightResult => ({
         label: install.name ?? install.id!,
         subtitle: install.app?.name,
         tag: 'install',
         path: `/installs/${install.id}`,
-        icon: 'Cube',
+        icon: 'CubeIcon',
       }))
       return [...matched, ...apps, ...runnerPages, ...installs]
     }
@@ -210,14 +210,14 @@ export function useSpotlightResults(
             label: name,
             tag: 'app',
             path: `/apps/${appId}`,
-            icon: 'AppWindow',
+            icon: 'AppWindowIcon',
           })
           for (const sub of appSubPages) {
             const entry = {
               label: `${name} › ${sub}`,
               tag: 'app',
               path: `/apps/${appId}/${sub.toLowerCase()}`,
-              icon: 'AppWindow' as TIconVariant,
+              icon: 'AppWindowIcon' as TIconVariant,
             }
             if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
             items.push(entry)
@@ -227,7 +227,7 @@ export function useSpotlightResults(
           {
             label: `${name} › Build all components`,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<AppBuildAllComponentsModal appId={appId} />),
           },
         ]
@@ -262,7 +262,7 @@ export function useSpotlightResults(
               subtitle: install.app?.name,
               tag: 'install',
               path: `/installs/${installId}/runner`,
-              icon: 'Cube',
+              icon: 'CubeIcon',
             })
           }
           items.push({
@@ -270,7 +270,7 @@ export function useSpotlightResults(
             subtitle: install.app?.name,
             tag: 'install',
             path: `/installs/${installId}`,
-            icon: 'Cube',
+            icon: 'CubeIcon',
           })
           for (const sub of INSTALL_SUB_PAGES) {
             const entry = {
@@ -278,7 +278,7 @@ export function useSpotlightResults(
               subtitle: install.app?.name,
               tag: 'install',
               path: `/installs/${installId}/${sub.toLowerCase()}`,
-              icon: 'Cube' as TIconVariant,
+              icon: 'CubeIcon' as TIconVariant,
             }
             if (parsed.query && !tokenMatch(entry.label, parsed.query)) continue
             items.push(entry)
@@ -289,70 +289,70 @@ export function useSpotlightResults(
             label: `${name} › Deploy all components`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
           },
           {
             label: `${name} › Edit inputs`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallEditInputsModal installId={installId} />),
           },
           {
             label: `${name} › Edit stack overrides`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallEditStackOverridesModal installId={installId} />),
           },
           {
             label: `${name} › Reprovision install`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallReprovisionModal installId={installId} />),
           },
           {
             label: `${name} › Reprovision sandbox`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallReprovisionSandboxModal installId={installId} />),
           },
           ...(install.runner_id ? [{
             label: `${name} › Restart runner`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<RestartRunnerModal runnerId={install.runner_id!} />),
           } satisfies SpotlightResult] : []),
           {
             label: `${name} › Run adhoc action`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
           },
           {
             label: `${name} › Sync secrets`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallSyncSecretsModal installId={installId} />),
           },
           {
             label: `${name} › View current inputs`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallViewCurrentInputsModal installId={installId} />),
           },
           {
             label: `${name} › View state`,
             subtitle: install.app?.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<InstallViewStateModal installId={installId} />),
           },
         ]
@@ -371,7 +371,7 @@ export function useSpotlightResults(
         label: org.name ?? org.id!,
         tag: 'org',
         path: `/${org.id}`,
-        icon: 'Buildings',
+        icon: 'BuildingsIcon',
       }))
     }
 
@@ -390,7 +390,7 @@ export function useSpotlightResults(
               label: `${app.name} › ${action.name}`,
               tag: 'action',
               path: `/apps/${app.id}/actions/${action.id}`,
-              icon: 'AppWindow',
+              icon: 'AppWindowIcon',
             })
           }
         }
@@ -406,7 +406,7 @@ export function useSpotlightResults(
               subtitle: install.app?.name,
               tag: 'action',
               path: `/installs/${install.id}/actions/${action.action_workflow_id}`,
-              icon: 'Cube',
+              icon: 'CubeIcon',
             })
           }
           const fullAction = appActionMap.get(action.action_workflow_id!) ?? actionWorkflow
@@ -417,7 +417,7 @@ export function useSpotlightResults(
               label: `${install.name} › ${name} › Run`,
               subtitle: install.app?.name,
               tag: 'command',
-              icon: 'Lightning',
+              icon: 'LightningIcon',
               action: () => addModal?.(
                 <SpotlightRunActionModal
                   installId={install.id!}
@@ -444,14 +444,14 @@ export function useSpotlightResults(
               label: `${app.name} › ${comp.name}`,
               tag: 'component',
               path: `/apps/${app.id}/components/${comp.id}`,
-              icon: 'AppWindow',
+              icon: 'AppWindowIcon',
             })
           }
           const buildCmd: SpotlightResult = {
             label: `${app.name} › ${comp.name} › Build`,
             subtitle: app.name,
             tag: 'command',
-            icon: 'Lightning',
+            icon: 'LightningIcon',
             action: () => addModal?.(<SpotlightBuildComponentModal appId={app.id!} component={comp} />),
           }
           const cmdName = 'Build'
@@ -469,7 +469,7 @@ export function useSpotlightResults(
               label: `${install.name} › ${compName}`,
               tag: 'component',
               path: `/installs/${installId}/components/${comp.component_id}`,
-              icon: 'Cube',
+              icon: 'CubeIcon',
             })
           }
           if (comp.component) {
@@ -479,21 +479,21 @@ export function useSpotlightResults(
                 label: `${install.name} › ${compName} › Deploy`,
                 subtitle: install.app?.name,
                 tag: 'command',
-                icon: 'Lightning',
+                icon: 'LightningIcon',
                 action: () => addModal?.(<SpotlightDeployComponentModal installId={installId} component={component} />),
               },
               {
                 label: `${install.name} › ${compName} › Teardown`,
                 subtitle: install.app?.name,
                 tag: 'command',
-                icon: 'Lightning',
+                icon: 'LightningIcon',
                 action: () => addModal?.(<SpotlightTeardownComponentModal installId={installId} component={component} />),
               },
               {
                 label: `${install.name} › ${compName} › Drift scan`,
                 subtitle: install.app?.name,
                 tag: 'command',
-                icon: 'Lightning',
+                icon: 'LightningIcon',
                 action: () => addModal?.(<SpotlightDriftScanComponentModal installId={installId} component={component} />),
               },
             ]

@@ -12,7 +12,7 @@ export const AdminPanel = ({ size = '3/4', ...props }: IPanel) => {
     <Panel
       heading={
         <div className="flex items-center gap-3">
-          <Icon variant="Gear" size="24" />
+          <Icon variant="GearIcon" size="24" />
           <Text weight="strong" variant="h2">
             Admin Controls
           </Text>

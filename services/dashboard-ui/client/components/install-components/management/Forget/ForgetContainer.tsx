@@ -107,9 +107,9 @@ export const ForgetComponentButton = ({
       {...props}
       className="!text-red-800 dark:!text-red-500"
     >
-      {props?.isMenuButton ? null : <Icon variant="Trash" />}
+      {props?.isMenuButton ? null : <Icon variant="TrashIcon" />}
       Forget component
-      {props?.isMenuButton ? <Icon variant="Trash" /> : null}
+      {props?.isMenuButton ? <Icon variant="TrashIcon" /> : null}
     </Button>
   )
 }

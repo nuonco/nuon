@@ -301,7 +301,7 @@ Rules:
 
 ### Icons
 
-**Use the `Icon` component for ALL icons** — never import from `lucide-react`, `heroicons`, or any other package.
+**Use the `Icon` component for ALL icons** — never import from `lucide-react`, `heroicons`, or any other package. **Always use the `Icon` suffix** for variant names (e.g., `HouseIcon` not `House`).
 
 ```tsx
 // ✅ Correct
@@ -313,6 +313,11 @@ import { Search } from 'lucide-react'
 ```
 
 Browse icons at https://phosphoricons.com. Custom cloud provider icons are in the `customIcons` map in `Icon.tsx`.
+
+**Adding a new icon:** The `Icon` component uses a static map of explicitly imported Phosphor icons for tree-shaking. If you use a variant that isn't in the map, a dev-mode console warning will tell you. To add it, update `client/components/common/Icon.tsx`:
+
+1. Add the named import: `import { NewIconNameIcon } from '@phosphor-icons/react'`
+2. Add it to the `phosphorIcons` object: `NewIconNameIcon,`
 
 ### Links & Navigation
 
@@ -329,7 +334,7 @@ import { Link } from '@/components/common/Link'
 // ✅ Correct — nav button
 import { Button } from '@/components/common/Button'
 <Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
-  <Icon variant="ArrowRight" size={16} />
+  <Icon variant="ArrowRightIcon" size={16} />
 </Button>
 
 // ❌ Wrong

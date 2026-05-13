@@ -64,7 +64,7 @@ function getConfigItems(
             config.helm.helm_config_json.values_files.length > 0 && {
               id: `config-values-files-`,
               title: 'Values files',
-              leftContent: <Icon variant="FileCode" />,
+              leftContent: <Icon variant="FileCodeIcon" />,
               onClick: () => {
                 const modal = (
                   <HelmValuesFilesModal
@@ -79,7 +79,7 @@ function getConfigItems(
             Object.keys(config.helm.helm_config_json.values).length > 0 && {
               id: `config-values-`,
               title: 'Values',
-              leftContent: <Icon variant="List" />,
+              leftContent: <Icon variant="ListIcon" />,
               onClick: () => {
                 const modal = (
                   <HelmValuesModal
@@ -109,7 +109,7 @@ function getConfigItems(
           config?.kubernetes_manifest?.manifest && {
             id: `config-manifest-`,
             title: 'Manifest',
-            leftContent: <Icon variant="FileCode" />,
+            leftContent: <Icon variant="FileCodeIcon" />,
             onClick: () => {
               const modal = (
                 <KubernetesManifestModal
@@ -135,7 +135,7 @@ function getConfigItems(
             config.terraform_module.variables_files.length > 0 && {
               id: `config-variables-files-`,
               title: 'Variables files',
-              leftContent: <Icon variant="FileCode" />,
+              leftContent: <Icon variant="FileCodeIcon" />,
               onClick: () => {
                 const modal = (
                   <TerraformVariablesFilesModal
@@ -150,7 +150,7 @@ function getConfigItems(
             Object.keys(config.terraform_module.variables).length > 0 && {
               id: `config-variables-`,
               title: 'Variables',
-              leftContent: <Icon variant="List" />,
+              leftContent: <Icon variant="ListIcon" />,
               onClick: () => {
                 const modal = (
                   <TerraformVariablesModal
@@ -186,7 +186,7 @@ function getConfigItems(
             Object.keys(config.pulumi.config).length > 0 && {
               id: `config-pulumi-config-`,
               title: 'Config',
-              leftContent: <Icon variant="List" />,
+              leftContent: <Icon variant="ListIcon" />,
               onClick: () => {
                 const modal = (
                   <PulumiConfigModal
@@ -201,7 +201,7 @@ function getConfigItems(
             Object.keys(config.pulumi.env_vars).length > 0 && {
               id: `config-pulumi-env-vars-`,
               title: 'Env vars',
-              leftContent: <Icon variant="List" />,
+              leftContent: <Icon variant="ListIcon" />,
               onClick: () => {
                 const modal = (
                   <PulumiEnvVarsModal
@@ -313,7 +313,7 @@ export const ComponentConfigContextTooltip = ({
           >
             Component configuration
           </Link>
-          <Icon variant="Question" />
+          <Icon variant="QuestionIcon" />
         </Text>
       )}
     </ContextTooltip>

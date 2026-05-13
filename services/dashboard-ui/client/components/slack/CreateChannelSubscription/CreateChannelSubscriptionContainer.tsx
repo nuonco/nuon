@@ -163,7 +163,7 @@ export const CreateChannelSubscriptionButton = ({
 
   return (
     <Button variant="primary" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="Plus" />
+      <Icon variant="PlusIcon" />
       Subscribe channel
     </Button>
   )

@@ -71,7 +71,7 @@ const COMPONENT_TYPE_CONFIG: Record<
   unknown: {
     abbr: 'Unknown',
     brandColorClass: '',
-    icon: 'Question',
+    icon: 'QuestionIcon',
     name: 'Unknown',
   },
 } as const

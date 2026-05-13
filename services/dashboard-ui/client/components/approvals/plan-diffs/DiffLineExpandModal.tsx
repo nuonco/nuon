@@ -113,7 +113,7 @@ export const DiffLineExpandButton = ({
       title="Expand value"
       aria-label={`Expand ${label}`}
     >
-      <Icon variant="ArrowsOut" size={12} />
+      <Icon variant="ArrowsOutIcon" size={12} />
     </button>
   )
 }

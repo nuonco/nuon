@@ -155,9 +155,9 @@ export const DeployComponentButton = ({
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="CloudArrowUp" />}
+      {props?.isMenuButton ? null : <Icon variant="CloudArrowUpIcon" />}
       Deploy component
-      {props?.isMenuButton ? <Icon variant="CloudArrowUp" /> : null}
+      {props?.isMenuButton ? <Icon variant="CloudArrowUpIcon" /> : null}
     </Button>
   )
 }

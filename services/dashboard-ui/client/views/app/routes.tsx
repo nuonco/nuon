@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { redirect, type RouteObject } from 'react-router'
 import { AppLayout } from './AppLayout'
 import { Overview } from './Overview'
@@ -9,8 +10,11 @@ import { ActionDetail } from './ActionDetail'
 import { Roles } from './Roles'
 import { PoliciesLayout } from './PoliciesLayout'
 import { Policies } from './Policies'
-import { PolicyAnalytics } from './PolicyAnalytics'
 import { PolicyDetail } from './PolicyDetail'
+
+const PolicyAnalytics = lazy(() =>
+  import('./PolicyAnalytics').then((m) => ({ default: m.PolicyAnalytics }))
+)
 import { Installs } from './Installs'
 import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
@@ -52,7 +56,7 @@ export const appRoutes: RouteObject[] = [
         element: <PoliciesLayout />,
         children: [
           { index: true, element: <Policies /> },
-          { path: 'analytics', element: <PolicyAnalytics /> },
+          { path: 'analytics', element: <Suspense><PolicyAnalytics /></Suspense> },
         ],
       },
       {

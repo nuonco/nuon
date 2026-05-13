@@ -32,6 +32,7 @@ func (q *queue) startHintListener(ctx workflow.Context) {
 				if l != nil {
 					l.Info("restart hint detected, triggering continue-as-new")
 				}
+				q.setStatus(gCtx, l, QueueStatusRestartAccepted)
 				q.restarted = true
 				return
 			}

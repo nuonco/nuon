@@ -23,7 +23,7 @@ export const DeprovisionStackModal = ({
           weight="strong"
           theme="warn"
         >
-          <Icon variant="StackMinus" size="24" />
+          <Icon variant="StackMinusIcon" size="24" />
           Deprovision stack for {installName}?
         </Text>
       }

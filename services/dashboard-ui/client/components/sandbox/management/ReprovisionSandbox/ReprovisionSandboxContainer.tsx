@@ -98,9 +98,9 @@ export const ReprovisionSandboxButton = ({
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="BoxArrowUp" />}
+      {props?.isMenuButton ? null : <Icon variant="BoxArrowUpIcon" />}
       Reprovision sandbox
-      {props?.isMenuButton ? <Icon variant="BoxArrowUp" /> : null}
+      {props?.isMenuButton ? <Icon variant="BoxArrowUpIcon" /> : null}
     </Button>
   )
 }

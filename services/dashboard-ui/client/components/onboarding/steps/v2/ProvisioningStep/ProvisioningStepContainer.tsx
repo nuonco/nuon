@@ -323,7 +323,7 @@ function ProgressRing({
   if (status === 'done') {
     return (
       <div className="flex items-center justify-center shrink-0 animate-[scale-in_0.3s_ease-out]" style={{ width: size, height: size }}>
-        <Icon variant="CheckCircle" size={size} weight="fill" theme="success" />
+        <Icon variant="CheckCircleIcon" size={size} weight="fill" theme="success" />
       </div>
     )
   }
@@ -331,7 +331,7 @@ function ProgressRing({
   if (status === 'error') {
     return (
       <div className="flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-        <Icon variant="XCircle" size={size} weight="fill" theme="error" />
+        <Icon variant="XCircleIcon" size={size} weight="fill" theme="error" />
       </div>
     )
   }
@@ -495,7 +495,7 @@ function ProvisioningRow({ row, isLast, runnerMeta, quickLinkUrl, workflowUrl }:
           className="shrink-0"
           onClick={() => window.open(quickLinkUrl, '_blank', 'noopener,noreferrer')}
         >
-          Launch in AWS <Icon variant="ArrowSquareOut" size={14} />
+          Launch in AWS <Icon variant="ArrowSquareOutIcon" size={14} />
         </Button>
       )}
       {row.status === 'error' && workflowUrl && (
@@ -590,7 +590,7 @@ export const ProvisioningStepContainer = ({
           </div>
           {appDone ? (
             <div className="flex items-center gap-2 shrink-0">
-              <Icon variant="CheckCircle" size={20} weight="fill" theme="success" />
+              <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" />
               <Text variant="body" weight="strong" theme="success">All resources provisioned</Text>
             </div>
           ) : (
@@ -664,7 +664,7 @@ export const ProvisioningStepContainer = ({
       <div className="flex justify-between">
         {onGoBack ? (
           <Button type="button" variant="secondary" onClick={onGoBack}>
-            <Icon variant="CaretLeft" weight="bold" /> Back
+            <Icon variant="CaretLeftIcon" weight="bold" /> Back
           </Button>
         ) : (
           <div />
@@ -675,7 +675,7 @@ export const ProvisioningStepContainer = ({
           disabled={!isFinished || isError || deployPending}
           onClick={() => completeDeploy()}
         >
-          {deployPending ? 'Completing...' : 'Continue'} {!deployPending && <Icon variant="CaretRight" weight="bold" />}
+          {deployPending ? 'Completing...' : 'Continue'} {!deployPending && <Icon variant="CaretRightIcon" weight="bold" />}
         </Button>
       </div>
     </div>

@@ -5,7 +5,7 @@ import tailwindcss from "@tailwindcss/postcss";
 import { watch } from "fs";
 
 const INPUT = new URL("../client/styles.css", import.meta.url).pathname;
-const OUTPUT = new URL("../dist/styles.css", import.meta.url).pathname;
+const OUTPUT = new URL("../dist/assets/styles.css", import.meta.url).pathname;
 
 const isWatch = process.argv.includes("--watch");
 

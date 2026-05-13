@@ -91,7 +91,7 @@ export const InstallActionManualRunModal = ({
           </>
         ) : (
           <>
-            <Icon variant="Play" />
+            <Icon variant="PlayIcon" />
             Run action
           </>
         ),
@@ -153,7 +153,7 @@ export const InstallActionManualRunModal = ({
                         size="sm"
                         aria-label={`Remove custom env var ${cv + 1}`}
                       >
-                        <Icon variant="X" size="12" />
+                        <Icon variant="XIcon" size="12" />
                       </Button>
                     </legend>
                     <label className="flex flex-col gap-1">
@@ -191,7 +191,7 @@ export const InstallActionManualRunModal = ({
                   setCustomVars((vars) => [...vars, vars.length])
                 }}
               >
-                <Icon variant="Plus" />
+                <Icon variant="PlusIcon" />
                 Add environment variable
               </Button>
             </div>

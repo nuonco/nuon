@@ -46,9 +46,9 @@ export const UnlockTerraformWorkspaceButton = ({
 
   return (
     <Button onClick={() => addModal(modal)} {...props}>
-      {props?.isMenuButton ? null : <Icon variant="LockOpen" />}
+      {props?.isMenuButton ? null : <Icon variant="LockOpenIcon" />}
       Unlock Terraform state
-      {props?.isMenuButton ? <Icon variant="LockOpen" /> : null}
+      {props?.isMenuButton ? <Icon variant="LockOpenIcon" /> : null}
     </Button>
   )
 }

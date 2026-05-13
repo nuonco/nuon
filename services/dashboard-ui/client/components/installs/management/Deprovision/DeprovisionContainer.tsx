@@ -79,7 +79,7 @@ export const DeprovisionButton = ({
       {...props}
     >
       Deprovision install
-      <Icon variant="ArrowDown" />
+      <Icon variant="ArrowDownIcon" />
     </Button>
   )
 }

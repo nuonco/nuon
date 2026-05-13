@@ -124,7 +124,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
           {liveParsed.prefix && rawPrefix ? (
             <label className="relative w-full flex items-center rounded-md border h-[36px] bg-white dark:bg-dark-grey-900">
               <Icon
-                variant="MagnifyingGlass"
+                variant="MagnifyingGlassIcon"
                 className="text-cool-grey-500 dark:text-cool-grey-700 ml-2 shrink-0"
               />
               <Badge size="sm" variant="code" theme="neutral" className="ml-1.5 shrink-0">
@@ -152,7 +152,7 @@ export const SpotlightModal = ({ orgId, onClose, onNavigate, onAddModal, orgFeat
                   title="clear search"
                   onClick={() => setRaw('')}
                 >
-                  <Icon variant="XCircle" />
+                  <Icon variant="XCircleIcon" />
                 </Button>
               )}
             </label>

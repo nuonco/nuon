@@ -80,33 +80,33 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
 
 const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   // Success
-  active: 'CheckCircle',
-  ok: 'CheckCircle',
-  finished: 'CheckCircle',
-  healthy: 'CheckCircle',
-  connected: 'CheckCircle',
-  approved: 'CheckCircle',
-  success: 'CheckCircle',
+  active: 'CheckCircleIcon',
+  ok: 'CheckCircleIcon',
+  finished: 'CheckCircleIcon',
+  healthy: 'CheckCircleIcon',
+  connected: 'CheckCircleIcon',
+  approved: 'CheckCircleIcon',
+  success: 'CheckCircleIcon',
 
   // Error
-  failed: 'XCircle',
-  error: 'XCircle',
-  bad: 'XCircle',
-  'access-error': 'XCircle',
-  access_error: 'XCircle',
-  'timed-out': 'XCircle',
-  unknown: 'XCircle',
-  unhealthy: 'XCircle',
-  'not connected': 'XCircle',
-  'not-connected': 'XCircle',
-  policy_failed: 'XCircle',
+  failed: 'XCircleIcon',
+  error: 'XCircleIcon',
+  bad: 'XCircleIcon',
+  'access-error': 'XCircleIcon',
+  access_error: 'XCircleIcon',
+  'timed-out': 'XCircleIcon',
+  unknown: 'XCircleIcon',
+  unhealthy: 'XCircleIcon',
+  'not connected': 'XCircleIcon',
+  'not-connected': 'XCircleIcon',
+  policy_failed: 'XCircleIcon',
 
   // Warn
-  'approval-denied': 'Warning',
-  'approval-awaiting': 'Warning',
-  cancelled: 'Warning',
-  outdated: 'Warning',
-  warn: 'Warning',
+  'approval-denied': 'WarningIcon',
+  'approval-awaiting': 'WarningIcon',
+  cancelled: 'WarningIcon',
+  outdated: 'WarningIcon',
+  warn: 'WarningIcon',
 
   // Info
   executing: 'Loading',
@@ -124,23 +124,23 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   info: 'Loading',
 
   // Neutral
-  noop: 'ClockCountdown',
-  inactive: 'ClockCountdown',
-  pending: 'ClockCountdown',
-  offline: 'ClockCountdown',
-  'Not deployed': 'ClockCountdown',
-  'No build': 'ClockCountdown',
-  deprovisioned: 'ClockCountdown',
+  noop: 'ClockCountdownIcon',
+  inactive: 'ClockCountdownIcon',
+  pending: 'ClockCountdownIcon',
+  offline: 'ClockCountdownIcon',
+  'Not deployed': 'ClockCountdownIcon',
+  'No build': 'ClockCountdownIcon',
+  deprovisioned: 'ClockCountdownIcon',
 
   // skipped
-  'auto-skipped': 'MinusCircle',
-  'user-skipped': 'MinusCircle',
-  retried: 'Repeat',
+  'auto-skipped': 'MinusCircleIcon',
+  'user-skipped': 'MinusCircleIcon',
+  retried: 'RepeatIcon',
 
   // Brand
-  special: 'Prohibit',
-  'not-attempted': 'Prohibit',
-  discarded: 'Prohibit',
+  special: 'ProhibitIcon',
+  'not-attempted': 'ProhibitIcon',
+  discarded: 'ProhibitIcon',
 
   // skeleton
   skeleton: 'none' as TIconVariant,
@@ -151,7 +151,7 @@ export function getStatusTheme(status: string): TStatusTheme {
 }
 
 export function getStatusIconVariant(status: string): TIconVariant {
-  return STATUS_ICON_MAP[status] ?? 'ClockCountdown'
+  return STATUS_ICON_MAP[status] ?? 'ClockCountdownIcon'
 }
 
 const THEME_PRIORITY: TStatusTheme[] = [

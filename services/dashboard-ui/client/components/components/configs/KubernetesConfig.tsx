@@ -15,7 +15,7 @@ export const KubernetesManifestModal = ({
   <Modal
     heading={
       <Text variant="h3" weight="strong" flex className="gap-2">
-        <Icon variant="FileCode" size="20" />
+        <Icon variant="FileCodeIcon" size="20" />
         Kubernetes Manifest
       </Text>
     }

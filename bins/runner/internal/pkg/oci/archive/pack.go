@@ -51,7 +51,7 @@ func (r *archive) Pack(ctx context.Context, log *zap.Logger, filePaths []FileRef
 		}
 
 		fileDescriptors = append(fileDescriptors, fileDescriptor)
-		log.Info("packed file", zap.String("path", f.RelPath), zap.String("abspath", f.AbsPath))
+		log.Debug("packed file", zap.String("path", f.RelPath), zap.String("abspath", f.AbsPath))
 	}
 
 	descriptor, err := oras.Pack(ctx, r.store, defaultArtifactType, fileDescriptors, oras.PackOptions{

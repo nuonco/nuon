@@ -42,9 +42,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	for _, queue := range queues {
-		if err := queueclient.AwaitRestart(ctx, queue.ID); err != nil {
-			l.Error("unable to restart queue", zap.String("queue_id", queue.ID))
-			return fmt.Errorf("unable to restart queue %s: %w", queue.ID, err)
+		if err := queueclient.AwaitHintRestartSingle(ctx, queue.ID); err != nil {
+			l.Error("unable to hint restart queue", zap.String("queue_id", queue.ID))
+			return fmt.Errorf("unable to hint restart queue %s: %w", queue.ID, err)
 		}
 
 		emitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, queue.ID)

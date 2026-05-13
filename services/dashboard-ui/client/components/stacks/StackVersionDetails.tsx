@@ -65,7 +65,7 @@ export const StackVersionDetails = ({
       triggerButton={{
         children: (
           <>
-            <Icon variant="Info" />
+            <Icon variant="InfoIcon" />
           </>
         ),
         className: '!p-1',

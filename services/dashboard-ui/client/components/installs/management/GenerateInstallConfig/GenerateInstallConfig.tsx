@@ -30,7 +30,7 @@ export const GenerateInstallConfigModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="FileCode" size="24" />
+          <Icon variant="FileCodeIcon" size="24" />
           Generate Install Config
         </Text>
       }
@@ -48,7 +48,7 @@ export const GenerateInstallConfigModal = ({
           : {
               children: (
                 <span className="flex items-center gap-2">
-                  <Icon variant="DownloadSimple" size="18" /> Download TOML
+                  <Icon variant="DownloadSimpleIcon" size="18" /> Download TOML
                 </span>
               ),
               onClick: onDownload,

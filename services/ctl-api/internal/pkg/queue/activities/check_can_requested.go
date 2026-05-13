@@ -28,3 +28,24 @@ func (a *Activities) checkCANRequested(ctx context.Context, queueID string) (boo
 
 	return true, nil
 }
+
+// clearCANRequested removes the restart_hint key from the queue's status_v2 metadata.
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+// @as-wrapper
+// @wrapper-prefix QueueInternal
+func (a *Activities) clearCANRequested(ctx context.Context, queueID string) error {
+	res := a.db.WithContext(ctx).Exec(`
+		UPDATE queues
+		SET status_v2 = jsonb_set(
+			COALESCE(status_v2::jsonb, '{}'::jsonb),
+			'{metadata}',
+			COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb) - 'restart_hint'
+		)
+		WHERE id = ? AND deleted_at = 0
+	`, queueID)
+	if res.Error != nil {
+		return generics.TemporalGormError(res.Error, "unable to clear restart_hint on queue")
+	}
+	return nil
+}

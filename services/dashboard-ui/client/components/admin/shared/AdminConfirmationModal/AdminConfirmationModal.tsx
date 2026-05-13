@@ -20,11 +20,11 @@ interface IAdminConfirmationModal extends IModal {
 const getWarningIcon = (variant: IAdminConfirmationModal['variant']) => {
   switch (variant) {
     case 'danger':
-      return 'Warning'
+      return 'WarningIcon'
     case 'warning':
-      return 'Warning'
+      return 'WarningIcon'
     default:
-      return 'Info'
+      return 'InfoIcon'
   }
 }
 

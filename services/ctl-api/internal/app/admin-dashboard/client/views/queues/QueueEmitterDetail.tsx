@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { getQueueEmitterDetail } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
+import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId } from '@/utils/format'
@@ -48,22 +49,21 @@ export const QueueEmitterDetail = () => {
           <h1 className="text-lg font-semibold">{emitter.name || 'Emitter'}</h1>
           <Badge>{emitter.mode}</Badge>
           <Badge variant="status" status={status}>{status || 'unknown'}</Badge>
-          {temporalUIUrl && emitter.workflow?.id && emitter.workflow?.namespace && (
-            <a
-              href={`${temporalUIUrl}/namespaces/${emitter.workflow.namespace}/workflows/${emitter.workflow.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-            >
-              View in Temporal &rarr;
-            </a>
-          )}
         </div>
         <div className="space-y-1 text-xs">
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Emitter ID:</span> <span className="font-mono select-all">{emitter.id}</span></div>
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Queue ID:</span> <Link to={`/queues/${emitter.queue_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{emitter.queue_id}</Link></div>
         </div>
       </div>
+
+      {/* Temporal workflow stats */}
+      {temporalUIUrl && emitter.workflow?.id && emitter.workflow?.namespace && (
+        <TemporalWorkflowCard
+          temporalUIUrl={temporalUIUrl}
+          namespace={emitter.workflow.namespace}
+          workflowId={emitter.workflow.id}
+        />
+      )}
 
       {/* Configuration + Runtime state */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

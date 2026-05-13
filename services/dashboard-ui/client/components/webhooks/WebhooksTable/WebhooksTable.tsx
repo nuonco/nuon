@@ -46,11 +46,11 @@ export const WebhooksTable = ({
         cell: (props) =>
           props.getValue<boolean>() ? (
             <Text variant="subtext" flex>
-              <Icon variant="LockKey" size={14} /> Configured
+              <Icon variant="LockKeyIcon" size={14} /> Configured
             </Text>
           ) : (
             <Text variant="subtext" theme="neutral" flex>
-              <Icon variant="LockKeyOpen" size={14} /> None
+              <Icon variant="LockKeyOpenIcon" size={14} /> None
             </Text>
           ),
       },

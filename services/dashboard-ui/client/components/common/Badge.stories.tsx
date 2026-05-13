@@ -32,19 +32,19 @@ export const BasicUsage = () => (
       <h4 className="text-sm font-medium">With Icons</h4>
       <div className="flex flex-wrap gap-3">
         <Badge theme="success">
-          <Icon variant="CheckCircle" size="12" />
+          <Icon variant="CheckCircleIcon" size="12" />
           Verified
         </Badge>
         <Badge theme="error">
-          <Icon variant="WarningCircle" size="12" />
+          <Icon variant="WarningCircleIcon" size="12" />
           Failed
         </Badge>
         <Badge theme="info">
-          <Icon variant="Info" size="12" />
+          <Icon variant="InfoIcon" size="12" />
           Beta
         </Badge>
         <Badge theme="warn">
-          <Icon variant="Warning" size="12" />
+          <Icon variant="WarningIcon" size="12" />
           Deprecated
         </Badge>
       </div>
@@ -172,15 +172,15 @@ export const Sizes = () => (
       <h4 className="text-sm font-medium">Sizes with Icons</h4>
       <div className="flex gap-4 items-center">
         <Badge size="sm" theme="success">
-          <Icon variant="CheckCircle" size="10" />
+          <Icon variant="CheckCircleIcon" size="10" />
           Done
         </Badge>
         <Badge size="md" theme="info">
-          <Icon variant="Info" size="11" />
+          <Icon variant="InfoIcon" size="11" />
           Notice
         </Badge>
         <Badge size="lg" theme="error">
-          <Icon variant="WarningCircle" size="12" />
+          <Icon variant="WarningCircleIcon" size="12" />
           Error
         </Badge>
       </div>
@@ -263,7 +263,7 @@ export const Variants = () => (
       <h4 className="text-sm font-medium">Default Variant Examples</h4>
       <div className="flex flex-wrap gap-3">
         <Badge variant="default" theme="success">
-          <Icon variant="CheckCircle" size="12" />
+          <Icon variant="CheckCircleIcon" size="12" />
           Verified
         </Badge>
         <Badge variant="default" theme="brand">
@@ -312,7 +312,7 @@ export const UsageExamples = () => (
           <div className="flex items-center gap-3">
             <Text weight="strong">Production Deployment</Text>
             <Badge theme="success" size="sm">
-              <Icon variant="CheckCircle" size="10" />
+              <Icon variant="CheckCircleIcon" size="10" />
               Live
             </Badge>
           </div>
@@ -324,7 +324,7 @@ export const UsageExamples = () => (
           <div className="flex items-center gap-3">
             <Text weight="strong">Staging Environment</Text>
             <Badge theme="warn" size="sm">
-              <Icon variant="Warning" size="10" />
+              <Icon variant="WarningIcon" size="10" />
               Maintenance
             </Badge>
           </div>
@@ -336,7 +336,7 @@ export const UsageExamples = () => (
           <div className="flex items-center gap-3">
             <Text weight="strong">Development Build</Text>
             <Badge theme="error" size="sm">
-              <Icon variant="WarningCircle" size="10" />
+              <Icon variant="WarningCircleIcon" size="10" />
               Failed
             </Badge>
           </div>

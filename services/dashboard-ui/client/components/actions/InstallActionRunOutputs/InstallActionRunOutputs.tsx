@@ -51,12 +51,12 @@ export const InstallActionRunOutputs = ({
                       className="gap-1"
                       variant="subtext"
                     >
-                      <Icon variant="Package" />
+                      <Icon variant="PackageIcon" />
                       {outputCount} item{outputCount > 1 ? 's' : null}
                     </Text>
                     {step?.execution_duration ? (
                       <Text flex className="gap-1">
-                        <Icon variant="Timer" />
+                        <Icon variant="TimerIcon" />
                         <Duration
                           nanoseconds={step?.execution_duration}
                           variant="subtext"
@@ -83,7 +83,7 @@ export const InstallActionRunOutputs = ({
                       variant="label"
                       theme="neutral"
                     >
-                      <Icon variant="FloppyDisk" size="13" />{' '}
+                      <Icon variant="FloppyDiskIcon" size="13" />{' '}
                       {getOutputSize(outputs)}
                     </Text>
                   </Text>
