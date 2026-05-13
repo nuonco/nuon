@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { type IPagination } from '@/components/common/Pagination'
@@ -10,7 +9,6 @@ import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel } from '@/components/surfaces/Panel'
-import { useSurfaces } from '@/hooks/use-surfaces'
 import { InstallRoleDetail } from '../InstallRoleDetail'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
 
@@ -27,33 +25,6 @@ function RolePanelHeading({ role }: { role: TInstallRole }) {
         {role.app_role_config?.description}
       </Text>
     </div>
-  )
-}
-
-function ViewRoleButton({ role }: { role: TInstallRole }) {
-  const { addPanel } = useSurfaces()
-
-  return (
-    <Button
-      variant="ghost"
-      className={panelLinkClass}
-      onClick={() =>
-        addPanel(
-          <Panel
-            size="3/4"
-            panelKey={role.id}
-            heading={<RolePanelHeading role={role} />}
-          >
-            <InstallRoleDetail installRole={role} />
-          </Panel>,
-          role.id
-        )
-      }
-    >
-      <span className="flex items-center gap-1.5">
-        View <Icon variant="CaretRightIcon" />
-      </span>
-    </Button>
   )
 }
 
@@ -74,7 +45,7 @@ export const InstallRolesTable = ({
         cell: ({ row }) => (
           <Panel
             size="3/4"
-            panelKey={row.original.id}
+            panelKey={`${row.original.id}-name`}
             heading={<RolePanelHeading role={row.original} />}
             triggerButton={{
               variant: 'ghost',
@@ -129,7 +100,24 @@ export const InstallRolesTable = ({
         id: 'actions',
         header: '',
         enableSorting: false,
-        cell: ({ row }) => <ViewRoleButton role={row.original} />,
+        cell: ({ row }) => (
+          <Panel
+            size="3/4"
+            panelKey={`${row.original.id}-action`}
+            heading={<RolePanelHeading role={row.original} />}
+            triggerButton={{
+              variant: 'ghost',
+              className: panelLinkClass,
+              children: (
+                <span className="flex items-center gap-1.5">
+                  View <Icon variant="CaretRightIcon" />
+                </span>
+              ),
+            }}
+          >
+            <InstallRoleDetail installRole={row.original} />
+          </Panel>
+        ),
       },
     ],
     []
