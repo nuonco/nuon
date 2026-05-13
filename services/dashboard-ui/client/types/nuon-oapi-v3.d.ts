@@ -3221,7 +3221,6 @@ export interface components {
         [key: string]: string;
       };
       id?: string;
-      max_auto_retries?: number;
       /** @description Operation roles map: operation type -> role name */
       operation_roles?: {
         [key: string]: string;
@@ -6141,7 +6140,6 @@ export interface components {
       env_vars: {
         [key: string]: string;
       };
-      max_auto_retries?: number;
       operation_roles?: {
         [key: string]: string;
       };
