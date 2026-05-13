@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { getJobHref, getJobName, getJobExecutionStatus } from './runner-utils'
 import type { TRunnerJob } from '@/types'
 

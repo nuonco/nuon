@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { hasNewerAppConfig, hasStackConfigChanged, normalizeAppInputGroups } from './app-utils'
 import type { TAppConfig, TInstall } from '@/types'
 

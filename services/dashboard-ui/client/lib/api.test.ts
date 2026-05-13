@@ -1,4 +1,4 @@
-import { expect, test, vi, beforeAll, afterEach, afterAll } from 'vitest'
+import { expect, test, mock, beforeAll, afterEach, afterAll } from 'bun:test'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import type { TApp } from '../types'
@@ -14,7 +14,7 @@ const server = setupServer(
 )
 
 Object.defineProperty(window, 'location', {
-  value: { ...window.location, reload: vi.fn() },
+  value: { ...window.location, reload: mock() },
 })
 
 beforeAll(() => server.listen())

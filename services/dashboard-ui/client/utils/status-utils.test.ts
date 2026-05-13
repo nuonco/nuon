@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { getStatusTheme, getStatusIconVariant } from './status-utils'
 
 describe('status-utils', () => {
