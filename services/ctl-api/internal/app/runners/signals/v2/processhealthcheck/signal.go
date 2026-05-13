@@ -12,7 +12,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -112,7 +111,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	switch runner.RunnerGroup.OwnerType {
 	case "installs":
 		installID = runner.RunnerGroup.OwnerID
-		install, err := installactivities.AwaitGetByInstallID(ctx, runner.RunnerGroup.OwnerID)
+		install, err := activities.AwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install for runner")
 		}
