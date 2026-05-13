@@ -12,7 +12,7 @@ export const useLogServerFilters = (): TLogStreamFilters => {
   return useMemo(() => {
     const f: TLogStreamFilters = {}
 
-    const includeSystemLogs = searchParams.get('system_logs') === 'true'
+    const includeSystemLogs = searchParams.get('system_logs') !== 'false'
     if (!includeSystemLogs) f.scope_name = ['oteljob']
 
     const severities = searchParams.getAll('severity')
