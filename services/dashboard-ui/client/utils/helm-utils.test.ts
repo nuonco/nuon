@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { parseHelmPlan } from './helm-utils'
 import type { THelmPlan } from '@/types'
 
