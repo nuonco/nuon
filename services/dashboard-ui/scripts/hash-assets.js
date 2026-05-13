@@ -1,41 +1,37 @@
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+const dist = new URL("../dist/", import.meta.url).pathname;
 
-const dist = path.resolve(__dirname, "../dist");
-
-const meta = JSON.parse(fs.readFileSync(path.join(dist, "meta.json"), "utf8"));
+const meta = await Bun.file(`${dist}meta.json`).json();
 
 const outputFiles = Object.keys(meta.outputs);
 const jsFile = outputFiles.find((f) => f.endsWith(".js"));
-const cssFromEsbuild = outputFiles.find((f) => f.endsWith(".css"));
+const cssFromBundler = outputFiles.find((f) => f.endsWith(".css"));
 
-const jsBasename = jsFile ? path.basename(jsFile) : null;
-const cssFromEsbuildBasename = cssFromEsbuild
-  ? path.basename(cssFromEsbuild)
-  : null;
+const basename = (f) => f.split("/").pop();
+const jsBasename = jsFile ? basename(jsFile) : null;
+const cssFromBundlerBasename = cssFromBundler ? basename(cssFromBundler) : null;
 
-const stylesPath = path.join(dist, "styles.css");
+const stylesFile = Bun.file(`${dist}styles.css`);
 let stylesHashedName = null;
-if (fs.existsSync(stylesPath)) {
-  const content = fs.readFileSync(stylesPath);
-  const hash = crypto.createHash("md5").update(content).digest("hex").slice(0, 8);
+if (await stylesFile.exists()) {
+  const content = await stylesFile.arrayBuffer();
+  const hash = new Bun.CryptoHasher("md5")
+    .update(content)
+    .digest("hex")
+    .slice(0, 8);
   stylesHashedName = `styles-${hash}.css`;
-  fs.copyFileSync(stylesPath, path.join(dist, "assets", stylesHashedName));
-  fs.unlinkSync(stylesPath);
+  await Bun.write(`${dist}assets/${stylesHashedName}`, stylesFile);
+  const { unlinkSync } = require("fs");
+  unlinkSync(`${dist}styles.css`);
 }
 
-let html = fs.readFileSync(
-  path.resolve(__dirname, "../client/index.html"),
-  "utf8",
-);
+let html = await Bun.file(new URL("../client/index.html", import.meta.url).pathname).text();
 
 if (jsBasename) {
   html = html.replace(`/app.js`, `/assets/${jsBasename}`);
 }
 
-if (cssFromEsbuildBasename) {
-  html = html.replace(`/app.css`, `/assets/${cssFromEsbuildBasename}`);
+if (cssFromBundlerBasename) {
+  html = html.replace(`/app.css`, `/assets/${cssFromBundlerBasename}`);
 } else {
   html = html.replace(
     /\s*<link\s+rel="stylesheet"\s+href="\/app\.css"\s*\/?\s*>\s*/,
@@ -47,11 +43,11 @@ if (stylesHashedName) {
   html = html.replace(`/styles.css`, `/assets/${stylesHashedName}`);
 }
 
-fs.writeFileSync(path.join(dist, "index.html"), html);
+await Bun.write(`${dist}index.html`, html);
 
 console.log("Asset hashing complete:");
 if (jsBasename) console.log(`  JS:     /assets/${jsBasename}`);
-if (cssFromEsbuildBasename)
-  console.log(`  CSS:    /assets/${cssFromEsbuildBasename}`);
+if (cssFromBundlerBasename)
+  console.log(`  CSS:    /assets/${cssFromBundlerBasename}`);
 if (stylesHashedName)
   console.log(`  Styles: /assets/${stylesHashedName}`);

@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid'
 import React, {
   useEffect,
   createContext,
@@ -9,6 +8,8 @@ import React, {
 import { createPortal } from 'react-dom'
 import { TransitionDiv } from '@/components/common/TransitionDiv'
 import { type IToast } from '@/components/surfaces/Toast'
+
+const uuid = () => crypto.randomUUID()
 
 type TToast = React.ReactElement<IToast & { ref?: React.Ref<HTMLDivElement> }>
 
