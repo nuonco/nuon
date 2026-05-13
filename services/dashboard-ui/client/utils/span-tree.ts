@@ -1,12 +1,9 @@
+import { DateTime, Duration } from 'luxon'
 import type { TSpan } from '@/types'
 
 export type TSpanNode = {
   span: TSpan
   children: TSpanNode[]
-  // True iff this span or any descendant has status_code === 'Error'.
-  // The runner only sets Error on the failing leaf — the UI bubbles the
-  // ✗ marker up the ancestor chain so a failed deep span surfaces at the
-  // top of the tree.
   hasErrorDescendant: boolean
   depth: number
 }
@@ -14,10 +11,6 @@ export type TSpanNode = {
 const isError = (span: TSpan) =>
   (span.status_code ?? '').toLowerCase() === 'error'
 
-// Build a forest from a flat span list. Roots are spans whose
-// parent_span_id is missing or refers to a span outside the slice
-// (e.g. a parent span ingested separately). Siblings are sorted by
-// start_time so the tree reads top-to-bottom in time order.
 export const buildSpanForest = (spans: TSpan[]): TSpanNode[] => {
   if (!spans?.length) return []
 
@@ -43,8 +36,8 @@ export const buildSpanForest = (spans: TSpan[]): TSpanNode[] => {
   }
 
   const sortByStart = (a: TSpanNode, b: TSpanNode) =>
-    new Date(a.span.start_time).getTime() -
-    new Date(b.span.start_time).getTime()
+    DateTime.fromISO(a.span.start_time).toMillis() -
+    DateTime.fromISO(b.span.start_time).toMillis()
 
   const visit = (node: TSpanNode, depth: number) => {
     node.depth = depth
@@ -62,9 +55,6 @@ export const buildSpanForest = (spans: TSpan[]): TSpanNode[] => {
   return roots
 }
 
-// Build a reverse adjacency map (parent_span_id → child span ids) directly
-// from a flat span list, without paying for the full forest construction.
-// Used by collectDescendantIds for the span→logs cross-link.
 const buildChildIndex = (spans: TSpan[]): Map<string, string[]> => {
   const out = new Map<string, string[]>()
   for (const s of spans) {
@@ -77,19 +67,6 @@ const buildChildIndex = (spans: TSpan[]): Map<string, string[]> => {
   return out
 }
 
-// Returns the set { spanId, ...descendants } for a given span.
-//
-// Used by useLogFilters to expand a single ?span_id=... URL param into the
-// full set of span ids whose logs should be shown when the user clicks a
-// parent span in the trace tree. Most runner-emitted logs are tagged with
-// the parent step span_id (step.execute, step.fetching, …) rather than a
-// leaf tool span — without this expansion, clicking step.execute would only
-// match logs that happened to come from explicit op.Start scopes, which is
-// almost none of them.
-//
-// If the span is missing from the list (e.g. URL ?span_id=… points at a
-// span that hasn't been ingested yet), we return just { spanId } so the
-// existing exact-match behavior is preserved.
 export const collectDescendantIds = (
   spans: TSpan[],
   spanId: string
@@ -111,8 +88,6 @@ export const collectDescendantIds = (
   return out
 }
 
-// Flatten a forest into an iteration list (depth-first, in tree order).
-// Useful for keyboard navigation and Gantt rendering.
 export const flattenForest = (forest: TSpanNode[]): TSpanNode[] => {
   const out: TSpanNode[] = []
   const walk = (node: TSpanNode) => {
@@ -123,32 +98,28 @@ export const flattenForest = (forest: TSpanNode[]): TSpanNode[] => {
   return out
 }
 
-// Earliest start across all spans (epoch ms). Used as the timeline origin.
 export const traceStart = (spans: TSpan[]): number => {
   if (!spans?.length) return 0
   return spans.reduce((min, s) => {
-    const t = new Date(s.start_time).getTime()
+    const t = DateTime.fromISO(s.start_time).toMillis()
     return t < min ? t : min
   }, Number.POSITIVE_INFINITY)
 }
 
-// Latest end across all spans (epoch ms). Used for the timeline width.
 export const traceEnd = (spans: TSpan[]): number => {
   if (!spans?.length) return 0
   return spans.reduce((max, s) => {
-    const t = new Date(s.end_time).getTime()
+    const t = DateTime.fromISO(s.end_time).toMillis()
     return t > max ? t : max
   }, Number.NEGATIVE_INFINITY)
 }
 
 export const formatDurationNs = (ns: number): string => {
   if (!Number.isFinite(ns) || ns <= 0) return '—'
-  const ms = ns / 1_000_000
-  if (ms < 1) return `${ns} ns`
-  if (ms < 1000) return `${ms.toFixed(1)} ms`
-  const s = ms / 1000
-  if (s < 60) return `${s.toFixed(2)} s`
-  const m = Math.floor(s / 60)
-  const r = s - m * 60
-  return `${m}m ${r.toFixed(0)}s`
+  const dur = Duration.fromMillis(ns / 1_000_000).shiftTo('minutes', 'seconds', 'milliseconds')
+  const { minutes, seconds, milliseconds } = dur.toObject()
+  if ((minutes ?? 0) > 0) return `${minutes}m ${Math.round(seconds ?? 0)}s`
+  if ((seconds ?? 0) >= 1) return `${((seconds ?? 0) + (milliseconds ?? 0) / 1000).toFixed(2)} s`
+  if ((milliseconds ?? 0) >= 1) return `${(milliseconds ?? 0).toFixed(1)} ms`
+  return `${Math.round(ns)} ns`
 }
