@@ -82,7 +82,7 @@ export const EnableAutoApproveModal = ({
           weight="strong"
           theme="info"
         >
-          <Icon variant={isApproveAll ? "ToggleRight" : "ToggleLeft"} size="24" />
+          <Icon variant={isApproveAll ? "ToggleRightIcon" : "ToggleLeftIcon"} size="24" />
           {buttonText}?
         </Text>
       }
@@ -97,7 +97,7 @@ export const EnableAutoApproveModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant={isApproveAll ? "ToggleRight" : "ToggleLeft"} />
+            <Icon variant={isApproveAll ? "ToggleRightIcon" : "ToggleLeftIcon"} />
             {buttonText}
           </span>
         ),

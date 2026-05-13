@@ -11,8 +11,8 @@ interface ICloudPlatform extends Omit<IText, 'children'> {
 
 interface ICloudPlatformConfig {
   abbr: string
-  iconVariant: 'AWS' | 'Azure' | 'GCP' | 'Question'
-  iconVariantColor: 'AWSColor' | 'AzureColor' | 'GCPColor' | 'Question'
+  iconVariant: 'AWS' | 'Azure' | 'GCP' | 'QuestionIcon'
+  iconVariantColor: 'AWSColor' | 'AzureColor' | 'GCPColor' | 'QuestionIcon'
   name: string
 }
 
@@ -41,7 +41,7 @@ const CLOUD_PLATFORM_CONFIG: Record<
   unknown: {
     abbr: 'Unknown',
     iconVariant: 'QuestionIcon',
-    iconVariantColor: 'Question',
+    iconVariantColor: 'QuestionIcon',
     name: 'Unknown',
   },
 } as const

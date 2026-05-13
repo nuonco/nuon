@@ -19,19 +19,19 @@ export const Default = () => (
         basePath="/org-123/installs/install-456"
         path="overview"
         text="Overview"
-        iconVariant="HouseSimple"
+        iconVariant="HouseSimpleIcon"
       />
       <SubNavLink
         basePath="/org-123/installs/install-456"
         path="components"
         text="Components"
-        iconVariant="Stack"
+        iconVariant="StackIcon"
       />
       <SubNavLink
         basePath="/org-123/installs/install-456"
         path="deploys"
         text="Deploys"
-        iconVariant="ShippingContainer"
+        iconVariant="ShippingContainerIcon"
       />
     </nav>
   </PageSidebarContext.Provider>

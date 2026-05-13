@@ -60,9 +60,8 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 
 // Handler serves SPA static assets and the index.html fallback.
 type Handler struct {
-	cfg       *internal.Config
-	l         *zap.Logger
-	indexHTML []byte
+	cfg *internal.Config
+	l   *zap.Logger
 }
 
 func NewHandler(cfg *internal.Config, l *zap.Logger) *Handler {
@@ -99,24 +98,20 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		hasDistDir = false
 	}
 
-	hasSPAFallback := false
-	if hasDistDir {
-		if _, err := fs.Stat(distFS, "index.html"); err != nil {
-			h.l.Warn("no index.html in dist — SPA fallback disabled", zap.String("dist_dir", distDir))
-		} else {
-			hasSPAFallback = true
-			raw, err := fs.ReadFile(distFS, "index.html")
-			if err != nil {
-				h.l.Error("failed to read index.html at startup", zap.Error(err))
-				hasSPAFallback = false
-			} else {
-				cc := buildClientConfig(h.cfg)
-				b, _ := json.Marshal(cc)
-				h.l.Info("injecting client config into index.html", zap.String("apiUrl", cc.APIUrl), zap.String("appUrl", cc.AppUrl))
-				script := fmt.Sprintf(`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script>`, b)
-				h.indexHTML = bytes.Replace(raw, []byte("</head>"), []byte(script+"</head>"), 1)
-			}
+	cc := buildClientConfig(h.cfg)
+	ccJSON, _ := json.Marshal(cc)
+	configScript := []byte(fmt.Sprintf(`<script id="nuon-config">window.__NUON_CONFIG__=%s;</script>`, ccJSON))
+	h.l.Info("prepared client config", zap.String("apiUrl", cc.APIUrl), zap.String("appUrl", cc.AppUrl))
+
+	serveIndex := func(c *gin.Context) {
+		raw, err := fs.ReadFile(distFS, "index.html")
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
 		}
+		html := bytes.Replace(raw, []byte("</head>"), append(configScript, []byte("</head>")...), 1)
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
 
 	var distFileServer http.Handler
@@ -130,6 +125,20 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 			} else if strings.HasSuffix(fp, ".css") {
 				ct = "text/css"
 			}
+
+			if ct != "" && strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
+				gzPath := "assets" + fp + ".gz"
+				if _, err := fs.Stat(distFS, gzPath); err == nil {
+					c.Header("Content-Type", ct)
+					c.Header("Content-Encoding", "gzip")
+					c.Header("Cache-Control", "public, max-age=31536000, immutable")
+					c.Header("Vary", "Accept-Encoding")
+					gz, _ := fs.ReadFile(distFS, gzPath)
+					c.Data(http.StatusOK, ct, gz)
+					return
+				}
+			}
+
 			w := c.Writer
 			if ct != "" {
 				w = &mimeOverrideWriter{ResponseWriter: w, contentType: ct}
@@ -173,13 +182,7 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 			return
 		}
 
-		if !hasSPAFallback {
-			c.Status(http.StatusNotFound)
-			return
-		}
-
-		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
-		c.Data(http.StatusOK, "text/html; charset=utf-8", h.indexHTML)
+		serveIndex(c)
 	})
 
 	return nil
