@@ -83,6 +83,7 @@ const (
 	OrgFeatureNotebooks            OrgFeature = "notebooks"
 	OrgFeatureNativeAWSProvisioner OrgFeature = "native-aws-provisioner"
 	OrgFeatureStackManagerCLI      OrgFeature = "stack-manager-cli"
+	OrgFeatureStackCLI             OrgFeature = "stack-cli"
 )
 
 type Org struct {
@@ -206,6 +207,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNotebooks:               false,
 		OrgFeatureNativeAWSProvisioner:    false,
 		OrgFeatureStackManagerCLI:         false,
+		OrgFeatureStackCLI:                false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -258,7 +260,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureNotebooks,
 		OrgFeatureNativeAWSProvisioner,
 		OrgFeatureStateGenV2,
-		OrgFeatureStackManagerCLI,
+		OrgFeatureStackCLI,
 	}
 }
 
@@ -295,6 +297,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureNotebooks:               "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
 		OrgFeatureNativeAWSProvisioner:    "When enabled, creating an install does not start a provision workflow. Persists the install and an install stack version only; the AWS-native SDK provisioner drives provisioning out-of-band.",
 		OrgFeatureStackManagerCLI:         "Enable the stack-manager CLI flow: surface the CLI provisioning tab on install stacks, embed per-run logs, and skip starting a provision workflow on install creation (the stack-manager CLI drives provisioning out-of-band).",
+		OrgFeatureStackCLI:                "Enable the stack-cli CLI flow: surface the CLI provisioning tab on install stacks, embed per-run logs, and skip starting a provision workflow on install creation (the stack-cli CLI drives provisioning out-of-band).",
 	}
 }
 

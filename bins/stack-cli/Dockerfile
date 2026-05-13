@@ -2,8 +2,8 @@ ARG BUILD_IMAGE=buildimage
 
 FROM ${BUILD_IMAGE} AS code
 
-ARG BIN_NAME=stack-manager
-ARG SERVICE=stack-manager
+ARG BIN_NAME=stack-cli
+ARG SERVICE=stack-cli
 
 WORKDIR /src/bins/${SERVICE}
 
@@ -27,13 +27,13 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
 
 FROM code AS lint
 COPY .golangci.yml .
-RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-stack-manager \
+RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-stack-cli \
     --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml -v
 
 FROM code AS build-darwin-arm64
-ARG BIN_NAME=stack-manager
+ARG BIN_NAME=stack-cli
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     -o /out/${BIN_NAME}_darwin_arm64 .
 
 FROM code AS build-darwin-amd64
-ARG BIN_NAME=stack-manager
+ARG BIN_NAME=stack-cli
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
@@ -53,7 +53,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     -o /out/${BIN_NAME}_darwin_amd64 .
 
 FROM code AS build-linux-arm64
-ARG BIN_NAME=stack-manager
+ARG BIN_NAME=stack-cli
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
@@ -63,7 +63,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
     -o /out/${BIN_NAME}_linux_arm64 .
 
 FROM code AS build-linux-amd64
-ARG BIN_NAME=stack-manager
+ARG BIN_NAME=stack-cli
 ARG tag=
 RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
@@ -81,7 +81,7 @@ COPY --from=build-linux-amd64  /out/ /
 FROM alpine:latest AS artifacts
 RUN apk add --no-cache pigz
 
-ARG BIN_NAME=stack-manager
+ARG BIN_NAME=stack-cli
 
 COPY --from=artifacts-build / /artifacts/
 COPY install.sh /artifacts/install.sh
@@ -95,7 +95,7 @@ RUN cd /artifacts && \
 FROM alpine:latest AS export-linux-amd64
 RUN apk add --no-cache pigz
 
-ARG BIN_NAME=stack-manager
+ARG BIN_NAME=stack-cli
 
 COPY --from=build-linux-amd64 /out/${BIN_NAME}_linux_amd64 /artifacts/${BIN_NAME}_linux_amd64
 

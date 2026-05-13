@@ -34,7 +34,7 @@ type clientConfig struct {
 	OnboardingV2          bool   `json:"onboardingV2,omitempty"`
 	AdminDashboardUrl     string `json:"adminDashboardUrl,omitempty"`
 
-	StackManagerDownloadURL string `json:"stackManagerDownloadUrl,omitempty"`
+	StackCliDownloadURL string `json:"stackCliDownloadUrl,omitempty"`
 }
 
 func buildClientConfig(cfg *internal.Config) clientConfig {
@@ -56,7 +56,7 @@ func buildClientConfig(cfg *internal.Config) clientConfig {
 		OnboardingV2:          cfg.OnboardingV2,
 		AdminDashboardUrl:     cfg.AdminDashboardUrl,
 
-		StackManagerDownloadURL: cfg.StackManagerDownloadURL,
+		StackCliDownloadURL: cfg.StackCliDownloadURL,
 	}
 }
 
