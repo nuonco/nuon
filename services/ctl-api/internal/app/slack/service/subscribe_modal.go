@@ -94,6 +94,7 @@ const (
 	categoryOptionLifecycle = "lifecycle"
 	categoryOptionApprovals = "approvals"
 	categoryOptionDrift     = "drift"
+	categoryOptionStackRuns = "stack_runs"
 
 	// Per-resource lifecycle radio values; mirrors interests.Outcome.
 	// outcomeOptionNone is no longer rendered in the radio — un-ticking the
@@ -197,6 +198,7 @@ type subscribeResourceCfg struct {
 	Ops       []string // sub-op slugs (matches interests.SubOps[kind])
 	Approvals bool     // collapses approval_requests + approval_responses
 	Drift     bool     // only meaningful for components / sandboxes
+	StackRuns bool     // only meaningful for installs (SDK provisioner runs)
 	Outcome   string   // outcomeOptionNone | outcomeOptionAll | outcomeOptionCompletion | outcomeOptionFailures
 }
 
@@ -741,6 +743,7 @@ func seedResourcesForRender(in map[interests.ResourceKind]subscribeResourceCfg) 
 			Ops:       append([]string(nil), cfg.Ops...),
 			Approvals: cfg.ApprovalRequests || cfg.ApprovalResponses,
 			Drift:     cfg.DriftDetected,
+			StackRuns: cfg.StackRuns,
 			Outcome:   outcomeFromInterests(cfg.Outcome),
 		}
 	}
@@ -899,6 +902,16 @@ func buildResourceCategoriesBlock(kind interests.ResourceKind, cfg subscribeReso
 		options = append(options, driftOpt)
 		if cfg.Drift {
 			initial = append(initial, driftOpt)
+		}
+	}
+	if interests.SupportsStackRuns(kind) {
+		stackRunsOpt := map[string]any{
+			"text":  map[string]any{"type": "plain_text", "text": "Stack runs (SDK provisioner)"},
+			"value": categoryOptionStackRuns,
+		}
+		options = append(options, stackRunsOpt)
+		if cfg.StackRuns {
+			initial = append(initial, stackRunsOpt)
 		}
 	}
 
@@ -1496,6 +1509,7 @@ func renderResourcesFromInterests(in interests.Interests) map[interests.Resource
 				Ops:       append([]string(nil), cfg.Ops...),
 				Approvals: cfg.ApprovalRequests || cfg.ApprovalResponses,
 				Drift:     cfg.DriftDetected,
+				StackRuns: cfg.StackRuns,
 				Outcome:   outcomeFromInterests(cfg.Outcome),
 			}
 			continue
@@ -1832,6 +1846,9 @@ func buildSpecificEventsInterests(in map[interests.ResourceKind]subscribeResourc
 		}
 		if cfg.Drift && interests.SupportsDriftDetected(kind) {
 			rc.DriftDetected = true
+		}
+		if cfg.StackRuns && interests.SupportsStackRuns(kind) {
+			rc.StackRuns = true
 		}
 		out.Resources[kind] = rc
 	}
@@ -2215,6 +2232,8 @@ func readResourceRenderStateFromValues(
 				cfg.Approvals = true
 			case categoryOptionDrift:
 				cfg.Drift = true
+			case categoryOptionStackRuns:
+				cfg.StackRuns = true
 			}
 		}
 

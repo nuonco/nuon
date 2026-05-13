@@ -28,6 +28,10 @@ export interface ResourceCfg {
   // are unconditionally suppressed by the matcher — this flag is the only
   // knob that surfaces drift to subscribers.
   drift_detected?: boolean
+  // stack_runs gates the install-stack-run-* notification signals fired by
+  // the AWS-native SDK provisioner endpoints. Independent of `outcome` and
+  // `ops`. Only meaningful for installs (see RESOURCES_WITH_STACK_RUNS).
+  stack_runs?: boolean
 }
 
 export interface Interests {
@@ -56,8 +60,14 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
   actions: 'Actions',
 }
 
+// Resources whose ResourceCfg.stack_runs flag is meaningful. Mirrors the Go
+// helper SupportsStackRuns. Used by ResourceBlock to decide whether to render
+// the "Stack runs" checkbox.
+export const RESOURCES_WITH_STACK_RUNS: ResourceKind[] = ['installs']
+
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
-  installs: 'Install provision, deprovision, reprovision lifecycle.',
+  installs:
+    'Install provision, deprovision, reprovision lifecycle. Toggle stack runs to be notified when the SDK provisioner begins, succeeds, or fails.',
   components: 'Per-component deploy and teardown. Toggle drift detected to be notified when drift is found.',
   sandboxes: 'Sandbox provision, reprovision, deprovision. Toggle drift detected to be notified when drift is found.',
   install_configurations: 'Install input updates and secret syncs.',

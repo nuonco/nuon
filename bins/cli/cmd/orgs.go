@@ -262,6 +262,10 @@ INTERESTS
                         actually detected during a drift scan (independent
                         of outcome). Only meaningful for components and
                         sandboxes.
+    stack_runs          bool, deliver SDK provisioner stack-run lifecycle
+                        events (started / succeeded / failed) for the
+                        install. Independent of outcome and ops. Only
+                        meaningful for installs.
 
 MATCH
 
@@ -310,6 +314,18 @@ EXAMPLES
       },
       "match": {
         "components": {"selector": {"match_labels": {"env": "prod"}}}
+      }
+    }
+
+  Stack-run notifications (SDK provisioner) on a single install:
+    {
+      "interests": {
+        "resources": {
+          "installs": {"outcome": "none", "stack_runs": true}
+        }
+      },
+      "match": {
+        "installs": {"ids": ["ins_abc123"]}
       }
     }
 

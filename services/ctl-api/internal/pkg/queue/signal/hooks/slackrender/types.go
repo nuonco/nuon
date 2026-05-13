@@ -22,6 +22,7 @@ const (
 	KindWorkflow             = "workflow"
 	KindWorkflowStep         = "workflow_step"
 	KindWorkflowStepApproval = "workflow_step_approval"
+	KindInstallStackRun      = "install_stack_run"
 )
 
 // Transition values for Event.Transition. British "cancelled" is the
@@ -135,6 +136,21 @@ type ContextLinks struct {
 	RespondAPI string
 }
 
+// InstallRef identifies an install for stack-run events.
+type InstallRef struct {
+	ID   string
+	Name string
+}
+
+// StackRunRef projects the SDK provisioner run that produced an install stack
+// run lifecycle event.
+type StackRunRef struct {
+	ID             string
+	Kind           string
+	StackID        string
+	StackVersionID string
+}
+
 // Event is the input to every Build* renderer function. It mirrors the
 // ctl-api webhook payload shape (lifecycleEventData) one-to-one so the
 // slack lifecycle hook can build it from the same enrichment sources.
@@ -151,6 +167,10 @@ type Event struct {
 	Outcome  *Outcome
 	Approval *ApprovalRef
 	Links    *ContextLinks
+
+	// Install and StackRun are populated for install_stack_run events.
+	Install  *InstallRef
+	StackRun *StackRunRef
 }
 
 // IsTerminal reports whether the event represents a terminal transition.

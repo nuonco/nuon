@@ -80,6 +80,8 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return cfg.ApprovalResponses
 	case eventClassDriftDetected:
 		return cfg.DriftDetected
+	case eventClassStackRun:
+		return cfg.StackRuns
 	case eventClassLifecycle:
 		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
 			return false

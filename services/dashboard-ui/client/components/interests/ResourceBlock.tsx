@@ -9,6 +9,7 @@ import {
   OUTCOME_LABELS,
   RESOURCE_DESCRIPTIONS,
   RESOURCE_LABELS,
+  RESOURCES_WITH_STACK_RUNS,
   type Outcome,
   type ResourceCfg,
   type ResourceKind,
@@ -62,6 +63,8 @@ export const ResourceBlock = ({
   const approvalsOn = approvalRequests || approvalResponses
   const driftDetected = !!cfg.drift_detected
   const supportsDrift = RESOURCES_WITH_DRIFT_DETECTED.has(kind)
+  const stackRunsOn = !!cfg.stack_runs
+  const supportsStackRuns = RESOURCES_WITH_STACK_RUNS.includes(kind)
 
   const lifecycleOn = outcome !== 'none'
 
@@ -78,16 +81,27 @@ export const ResourceBlock = ({
     if (!enabled) return { text: 'off', theme: 'neutral' }
 
     const driftActive = supportsDrift && driftDetected
+    const stackRunsActive = supportsStackRuns && stackRunsOn
     const parts: string[] = []
     if (lifecycleOn) parts.push(OUTCOME_LABELS[outcome].toLowerCase())
     if (approvalsOn) parts.push('approvals')
     if (driftActive) parts.push('drift')
+    if (stackRunsActive) parts.push('stack runs')
 
     if (parts.length === 0) {
       return { text: 'no events', theme: 'warn' }
     }
     if (parts.length === 1 && driftActive && !lifecycleOn && !approvalsOn) {
       return { text: 'drift only', theme: 'neutral' }
+    }
+    if (
+      parts.length === 1 &&
+      stackRunsActive &&
+      !lifecycleOn &&
+      !approvalsOn &&
+      !driftActive
+    ) {
+      return { text: 'stack runs only', theme: 'neutral' }
     }
     return { text: parts.join(' · '), theme: 'neutral' }
   }
@@ -115,6 +129,10 @@ export const ResourceBlock = ({
 
   const setDriftDetected = (next: boolean) => {
     onChange({ ...cfg, drift_detected: next })
+  }
+
+  const setStackRuns = (next: boolean) => {
+    onChange({ ...cfg, stack_runs: next })
   }
 
   const toggleLifecycle = (next: boolean) => {
@@ -220,6 +238,18 @@ export const ResourceBlock = ({
                   disabled={disabled}
                   labelProps={{
                     labelText: 'Drift detection',
+                    labelTextProps: { variant: 'subtext' },
+                  }}
+                />
+              ) : null}
+              {supportsStackRuns ? (
+                <CheckboxInput
+                  id={`interests-${kind}-cat-stack-runs`}
+                  checked={stackRunsOn}
+                  onChange={(e) => setStackRuns(e.target.checked)}
+                  disabled={disabled}
+                  labelProps={{
+                    labelText: 'Stack runs (SDK provisioner)',
                     labelTextProps: { variant: 'subtext' },
                   }}
                 />

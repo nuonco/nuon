@@ -105,6 +105,7 @@ drift, set `drift_detected: true` on `components` and/or `sandboxes` (see below)
 | `approval_requests`  | `bool`    | `false` | Deliver workflow-step approval **requests** for this resource.                               |
 | `approval_responses` | `bool`    | `false` | Deliver workflow-step approval **responses** (approved / rejected) for this resource.        |
 | `drift_detected`     | `bool`    | `false` | Deliver a notification **only when drift is actually detected** during a drift scan. Only meaningful for `components` and `sandboxes`. |
+| `stack_runs`         | `bool`    | `false` | Deliver SDK provisioner stack-run lifecycle events (`started` / `succeeded` / `failed`). Independent of `outcome` and `ops`. Only meaningful for `installs`. |
 
 `outcome` semantics:
 
@@ -125,6 +126,15 @@ notification fires once per component (inside `drift_run`) or once per sandbox (
 `drift_run_reprovision_sandbox`) whenever the plan-only check finds non-no-op changes. It works for
 both manually triggered and scheduled drift scans, and is gated **independently of `outcome`** — the
 same way `approval_requests` / `approval_responses` are.
+
+#### Install stack runs (SDK provisioner)
+
+To receive notifications when the AWS-native SDK provisioner begins, succeeds, or fails a stack
+run on an install, set `stack_runs: true` on `installs`. Each transition is its own single-shot
+event delivered as a `com.nuon.install_stack_run.lifecycle.v1` CloudEvent. The `kind` field on the
+event identifies whether the run was a `provision`, `reprovision`, or `deprovision`. Gated
+**independently of `outcome`** so a `stack_runs`-only subscription can mute install workflow
+lifecycle events while still receiving SDK provisioner notifications.
 
 #### Runner inactivity
 

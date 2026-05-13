@@ -156,7 +156,10 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeExecuteWorkflowStep,
 		signalTypeWorkflowStepApprovalRequest,
 		signalTypeWorkflowStepApprovalResponse,
-		signalTypeDriftDetected:
+		signalTypeDriftDetected,
+		signalTypeStackRunStarted,
+		signalTypeStackRunSucceeded,
+		signalTypeStackRunFailed:
 		return true
 	default:
 		return false
@@ -173,7 +176,9 @@ func (h *SlackSignalLifecycleHook) BeforePhase(ctx context.Context, event signal
 	// matching comment in webhook.go. Drift-detected is a single-shot
 	// notification carrier (its Execute is a no-op) so a "started" emission
 	// would just produce a duplicate message right before the real one.
-	if isApprovalSignalType(event.SignalType) || event.SignalType == signalTypeDriftDetected {
+	if isApprovalSignalType(event.SignalType) ||
+		event.SignalType == signalTypeDriftDetected ||
+		isStackRunSignalType(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -356,9 +361,15 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 			// in interests.Matches), so each detection is its own top-level
 			// message linked directly to the affected component or sandbox.
 			var err error
-			if event.SignalType == signalTypeDriftDetected {
+			switch {
+			case event.SignalType == signalTypeDriftDetected:
 				err = h.postFlatDriftDetected(ctx, install, sub, rendered)
-			} else {
+			case isStackRunSignalType(event.SignalType):
+				// Stack-run notifications are single-shot, install-scoped
+				// events with no surrounding workflow envelope — post them
+				// as flat top-level messages, same as drift-detected.
+				err = h.postFlatStackRun(ctx, install, sub, rendered)
+			default:
 				err = h.postOrThread(ctx, install, sub, data, rendered, logger)
 			}
 			if err == nil {
@@ -548,6 +559,27 @@ func (h *SlackSignalLifecycleHook) postFlatDriftDetected(
 	return nil
 }
 
+// postFlatStackRun posts a standalone install-stack-run notification to a
+// single channel subscription. There is no parent anchor / thread / rollup
+// — stack-run events aren't part of a workflow envelope, so each transition
+// lands as its own top-level message linked to the affected install.
+func (h *SlackSignalLifecycleHook) postFlatStackRun(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+) error {
+	msg := slackrender.BuildStackRunMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack install-stack-run message: %w", err)
+	}
+	return nil
+}
+
 // lookupAnchor selects the anchor row for (team, channel, workflow). Returns
 // found=false on gorm.ErrRecordNotFound; non-nil error otherwise.
 func (h *SlackSignalLifecycleHook) lookupAnchor(ctx context.Context, teamID, channelID, workflowID string) (app.SlackThreadAnchor, bool, error) {
@@ -636,6 +668,20 @@ func buildRenderEvent(data lifecycleEventData) renderEvent {
 			Component:  data.Links.Component,
 			Approval:   data.Links.Approval,
 			RespondAPI: data.Links.RespondAPI,
+		}
+	}
+	if data.Install != nil {
+		e.Install = &slackrender.InstallRef{
+			ID:   data.Install.ID,
+			Name: data.Install.Name,
+		}
+	}
+	if data.StackRun != nil {
+		e.StackRun = &slackrender.StackRunRef{
+			ID:             data.StackRun.ID,
+			Kind:           data.StackRun.Kind,
+			StackID:        data.StackRun.StackID,
+			StackVersionID: data.StackRun.StackVersionID,
 		}
 	}
 

@@ -90,6 +90,13 @@ func SupportsDriftDetected(kind ResourceKind) bool {
 	return kind == ResourceComponents || kind == ResourceSandboxes
 }
 
+// SupportsStackRuns reports whether StackRuns is meaningful for the given
+// resource. Currently true only for installs — stack runs are the AWS-native
+// SDK provisioner's begin/succeed/fail notifications, attached to an install.
+func SupportsStackRuns(kind ResourceKind) bool {
+	return kind == ResourceInstalls
+}
+
 // Interests is the full per-subscriber config. Stored as JSONB on both
 // slack_channel_subscriptions and webhooks.
 //
@@ -127,6 +134,14 @@ type ResourceCfg struct {
 	ApprovalRequests  bool     `json:"approval_requests,omitempty"`
 	ApprovalResponses bool     `json:"approval_responses,omitempty"`
 	DriftDetected     bool     `json:"drift_detected,omitempty"`
+	// StackRuns gates the install-stack-run-* notification signals fired by
+	// the AWS-native SDK provisioner (CreateInstallStackVersionRun /
+	// UpdateInstallStackVersionRun). Independent of Outcome and Ops — when
+	// true, subscribers receive started / succeeded / failed events for
+	// stack runs on the install. Only meaningful when SupportsStackRuns
+	// returns true (installs); set on other resources is harmless but
+	// never matches.
+	StackRuns bool `json:"stack_runs,omitempty"`
 }
 
 // IsZero is true for the zero-value Interests (no AllEvents, no resources).

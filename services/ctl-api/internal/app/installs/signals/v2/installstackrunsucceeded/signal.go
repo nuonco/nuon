@@ -39,7 +39,7 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	}
 	return signal.SignalLifecycleContext{
 		InstallID: installID,
-		Operation: "install-stack-run-succeeded",
+		Operation: s.Kind,
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
 	}

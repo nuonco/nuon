@@ -57,6 +57,118 @@ func BuildFlatMessage(e Event) Message {
 	return BuildChildMessage(e)
 }
 
+// BuildStackRunMessage renders a standalone (non-threaded) install stack
+// run lifecycle notification — emitted by the AWS-native SDK provisioner
+// endpoints. Each transition (started / succeeded / failed) is its own
+// top-level message linked directly to the affected install. Headline:
+//
+//	▶ Stack run started on install <name> (provision)
+//	✅ Stack run succeeded on install <name> (reprovision)
+//	❌ Stack run failed on install <name> (deprovision)
+func BuildStackRunMessage(e Event) Message {
+	headline := stackRunHeadline(e)
+	subline := stackRunSubline(e)
+	footer := stackRunFooterParts(e)
+	links := stackRunLinks(e)
+
+	return Message{
+		Text:   plainStackRunHeadline(e),
+		Blocks: buildBlocks(headline, subline, footer, links),
+	}
+}
+
+// stackRunHeadline returns the bold section line for a stack-run event.
+func stackRunHeadline(e Event) string {
+	installName := ""
+	if e.Install != nil {
+		installName = e.Install.Name
+		if installName == "" {
+			installName = truncateID(e.Install.ID, 10)
+		}
+	} else if e.Workflow.OwnerName != "" {
+		installName = e.Workflow.OwnerName
+	}
+
+	kind := ""
+	if e.StackRun != nil {
+		kind = e.StackRun.Kind
+	}
+
+	emoji := statusEmoji(e.Transition)
+	phrase := transitionPhrase(e.Transition)
+	headline := emoji + " *Stack run " + phrase + "*"
+	if installName != "" {
+		headline = headline + " on install " + slackEscape(installName)
+	}
+	if kind != "" {
+		headline = headline + " (`" + slackEscape(kind) + "`)"
+	}
+	return headline
+}
+
+// stackRunSubline surfaces the failure reason when present.
+func stackRunSubline(e Event) string {
+	if e.Transition != TransitionFailed || e.Outcome == nil || e.Outcome.Error == "" {
+		return ""
+	}
+	return slackEscape(e.Outcome.Error)
+}
+
+// stackRunFooterParts builds the small grey context block: org + install
+// chips. Workflow/elapsed are omitted — stack runs aren't workflow events.
+func stackRunFooterParts(e Event) []string {
+	parts := []string{}
+	if e.OrgName != "" {
+		parts = append(parts, "org: "+e.OrgName)
+	} else if e.OrgID != "" {
+		parts = append(parts, "org: "+truncateID(e.OrgID, 10))
+	}
+	if e.Install != nil {
+		if e.Install.Name != "" {
+			parts = append(parts, "install: "+e.Install.Name)
+		} else if e.Install.ID != "" {
+			parts = append(parts, "install: "+truncateID(e.Install.ID, 10))
+		}
+	}
+	return parts
+}
+
+// stackRunLinks returns a single "Open in Nuon" chip pointed at the install.
+func stackRunLinks(e Event) []LinkChip {
+	links := []LinkChip{}
+	if e.Links == nil {
+		return links
+	}
+	if l := firstNonEmptyLink(e.Links,
+		func(l *ContextLinks) string { return l.Install },
+		func(l *ContextLinks) string { return l.Org },
+	); l != "" {
+		links = append(links, LinkChip{Label: "Open in Nuon", URL: l})
+	}
+	return links
+}
+
+// plainStackRunHeadline renders the message-text fallback for stack-run
+// events (used in notification previews / when Slack falls back to plaintext).
+func plainStackRunHeadline(e Event) string {
+	installName := ""
+	if e.Install != nil {
+		installName = e.Install.Name
+	}
+	kind := ""
+	if e.StackRun != nil {
+		kind = e.StackRun.Kind
+	}
+	out := statusEmoji(e.Transition) + " Stack run " + transitionPhrase(e.Transition)
+	if installName != "" {
+		out += " on install " + installName
+	}
+	if kind != "" {
+		out += " (" + kind + ")"
+	}
+	return out
+}
+
 // BuildDriftDetectedMessage renders a standalone (non-threaded) drift
 // notification.
 //

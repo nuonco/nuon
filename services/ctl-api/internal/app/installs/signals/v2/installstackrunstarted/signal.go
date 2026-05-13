@@ -41,7 +41,11 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	}
 	return signal.SignalLifecycleContext{
 		InstallID: installID,
-		Operation: "install-stack-run-started",
+		// Operation carries the run kind (provision/reprovision/deprovision)
+		// so the interests classifier can map this event onto the matching
+		// install sub-op slug. The transition (started/succeeded/failed) is
+		// derived from the SignalType, not Operation.
+		Operation: s.Kind,
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
 	}

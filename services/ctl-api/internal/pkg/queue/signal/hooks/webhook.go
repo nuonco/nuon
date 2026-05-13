@@ -38,10 +38,12 @@ const (
 	cloudEventTypeWorkflow             = "com.nuon.workflow.lifecycle.v1"
 	cloudEventTypeWorkflowStep         = "com.nuon.workflow_step.lifecycle.v1"
 	cloudEventTypeWorkflowStepApproval = "com.nuon.workflow_step.approval.v1"
+	cloudEventTypeInstallStackRun      = "com.nuon.install_stack_run.lifecycle.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
 	kindWorkflowStepApproval = "workflow_step_approval"
+	kindInstallStackRun      = "install_stack_run"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -87,7 +89,25 @@ const (
 	// observed actual changes. Its lifecycle events are how subscribers who
 	// opted into per-resource `drift_detected: true` get notified.
 	signalTypeDriftDetected signal.SignalType = "drift-detected"
+
+	// signalTypeStackRun* mirror the install-stack-run-* notification signals
+	// in services/ctl-api/internal/app/installs/signals/v2/installstackrun{started,
+	// succeeded,failed}. Each is a single-shot notification fired from the
+	// SDK provisioner endpoints; the hook emits a single
+	// install_stack_run.lifecycle.v1 event per signal and skips BeforePhase
+	// to avoid a duplicate started/succeeded pair.
+	signalTypeStackRunStarted   signal.SignalType = "install-stack-run-started"
+	signalTypeStackRunSucceeded signal.SignalType = "install-stack-run-succeeded"
+	signalTypeStackRunFailed    signal.SignalType = "install-stack-run-failed"
 )
+
+// isStackRunSignalType returns true for the three SDK-provisioner stack-run
+// lifecycle signals projected as install_stack_run.lifecycle.v1 events.
+func isStackRunSignalType(t signal.SignalType) bool {
+	return t == signalTypeStackRunStarted ||
+		t == signalTypeStackRunSucceeded ||
+		t == signalTypeStackRunFailed
+}
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
 // approval webhook payloads. Slack message limits and consumer log budgets
@@ -205,7 +225,10 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeExecuteWorkflowStep,
 		signalTypeWorkflowStepApprovalRequest,
 		signalTypeWorkflowStepApprovalResponse,
-		signalTypeDriftDetected:
+		signalTypeDriftDetected,
+		signalTypeStackRunStarted,
+		signalTypeStackRunSucceeded,
+		signalTypeStackRunFailed:
 		return true
 	default:
 		return false
@@ -220,10 +243,13 @@ func (h *WebhookSignalLifecycleHook) BeforePhase(ctx context.Context, event sign
 
 	// Approval signals don't have a "started" semantic: a request has either
 	// happened (requested) or it hasn't, and a response is intrinsically
-	// terminal (approved / rejected). Drift-detected is a single-shot
-	// notification (its Execute is a no-op) — a "started" emission would
-	// just produce a duplicate event before the real one. Skip both.
-	if isApprovalSignalType(event.SignalType) || event.SignalType == signalTypeDriftDetected {
+	// terminal (approved / rejected). Drift-detected and the stack-run
+	// transition signals are single-shot notifications (their Execute is a
+	// no-op) — a "started" emission would just produce a duplicate event
+	// before the real one. Skip all three classes here.
+	if isApprovalSignalType(event.SignalType) ||
+		event.SignalType == signalTypeDriftDetected ||
+		isStackRunSignalType(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -296,6 +322,30 @@ type lifecycleEventData struct {
 	Outcome  *lifecycleOutcome `json:"outcome,omitempty"`
 	Approval *approvalRef      `json:"approval,omitempty"`
 	Links    *contextLinks     `json:"links,omitempty"`
+
+	// Install and StackRun are populated for install_stack_run.lifecycle.v1
+	// events. They reference the install and the SDK provisioner run that
+	// the signal pertains to. Omitted on all other event kinds.
+	Install  *installRef  `json:"install,omitempty"`
+	StackRun *stackRunRef `json:"stack_run,omitempty"`
+}
+
+// installRef identifies an install for stack-run lifecycle events. Workflow
+// events surface the install via workflow.owner_*; stack runs aren't part of
+// the workflow envelope, so they get their own block.
+type installRef struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
+// stackRunRef projects the SDK provisioner run that produced this event. ID
+// is the run ID, Kind is the run kind (provision / reprovision / deprovision),
+// and StackVersionID / StackID identify the parent rows when available.
+type stackRunRef struct {
+	ID             string `json:"id,omitempty"`
+	Kind           string `json:"kind"`
+	StackID        string `json:"stack_id,omitempty"`
+	StackVersionID string `json:"stack_version_id,omitempty"`
 }
 
 type workflowRef struct {
@@ -434,6 +484,8 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeWorkflowStep
 	case kindWorkflowStepApproval:
 		ceType = cloudEventTypeWorkflowStepApproval
+	case kindInstallStackRun:
+		ceType = cloudEventTypeInstallStackRun
 	}
 
 	subject := buildSubject(event, data)
@@ -536,6 +588,10 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 
 	if isApprovalSignalType(event.SignalType) {
 		return h.buildApprovalEventData(ctx, event, outcome)
+	}
+
+	if isStackRunSignalType(event.SignalType) {
+		return h.buildStackRunEventData(ctx, event, outcome)
 	}
 
 	kind := kindWorkflow
@@ -705,6 +761,212 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 	}
 
 	return data, true
+}
+
+// stackRunSignalPayload mirrors the fields each of the install-stack-run-*
+// notification signals carries in its persisted `signal` JSONB column. The
+// shape is shared across started/succeeded/failed because every signal in
+// that family carries the same identity fields. Declared locally (instead of
+// importing the signal packages) to keep this hook free of domain-signal
+// imports.
+type stackRunSignalPayload struct {
+	InstallID              string `json:"install_id"`
+	InstallStackID         string `json:"install_stack_id"`
+	InstallStackVersionID  string `json:"install_stack_version_id"`
+	InstallStackVersionRun string `json:"install_stack_version_run_id"`
+	Kind                   string `json:"kind"`
+}
+
+// loadStackRunSignalPayload fetches the queue_signals row for the given
+// queueSignalID and unmarshals the embedded signal data into a
+// stackRunSignalPayload. The `signal` column is JSON of the form
+// {"type": "...", "data": {...}}; we decode the outer envelope and then the
+// inner data into our local struct so we only pull the four identity fields
+// we need without importing the signal packages.
+func (h *WebhookSignalLifecycleHook) loadStackRunSignalPayload(ctx context.Context, queueSignalID string) (stackRunSignalPayload, bool) {
+	if h.db == nil || queueSignalID == "" {
+		return stackRunSignalPayload{}, false
+	}
+	var row struct {
+		Signal []byte `gorm:"column:signal"`
+	}
+	if err := h.db.WithContext(ctx).
+		Table("queue_signals").
+		Select("signal").
+		Where("id = ?", queueSignalID).
+		Scan(&row).Error; err != nil || len(row.Signal) == 0 {
+		return stackRunSignalPayload{}, false
+	}
+	var envelope struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(row.Signal, &envelope); err != nil || len(envelope.Data) == 0 {
+		return stackRunSignalPayload{}, false
+	}
+	var payload stackRunSignalPayload
+	if err := json.Unmarshal(envelope.Data, &payload); err != nil {
+		return stackRunSignalPayload{}, false
+	}
+	return payload, true
+}
+
+// lookupInstallName resolves the install's display name for stack-run events.
+// Best-effort: returns "" on any DB error so the webhook still ships without
+// the human-readable name.
+func (h *WebhookSignalLifecycleHook) lookupInstallName(ctx context.Context, installID string) string {
+	if h.db == nil || installID == "" {
+		return ""
+	}
+	var row struct{ Name string }
+	if err := h.db.WithContext(ctx).
+		Table("installs").
+		Select("name").
+		Where("id = ?", installID).
+		Scan(&row).Error; err != nil {
+		return ""
+	}
+	return row.Name
+}
+
+// mapStackRunTransition turns the SignalType into the public transition string
+// for an install_stack_run.lifecycle.v1 event. Returns "" for unknown types so
+// the caller can drop the event rather than ship an empty transition.
+func mapStackRunTransition(t signal.SignalType) string {
+	switch t {
+	case signalTypeStackRunStarted:
+		return transitionStarted
+	case signalTypeStackRunSucceeded:
+		return transitionSucceeded
+	case signalTypeStackRunFailed:
+		return transitionFailed
+	}
+	return ""
+}
+
+// buildStackRunEventData projects a stack-run notification signal into an
+// install_stack_run.lifecycle.v1 payload. Each signal is single-shot, so the
+// transition is derived from the SignalType (not the outcome). install_id +
+// run identity fields are pulled from the queue_signals row's stored payload.
+// We only emit on the execute phase's success outcome — validation failures
+// of the wrapper signal are not part of the public vocabulary.
+func (h *WebhookSignalLifecycleHook) buildStackRunEventData(ctx context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	if event.Phase != signal.SignalPhaseExecute || outcome == nil ||
+		outcome.Status != signal.SignalStatusSuccess {
+		return lifecycleEventData{}, false
+	}
+
+	transition := mapStackRunTransition(event.SignalType)
+	if transition == "" {
+		return lifecycleEventData{}, false
+	}
+
+	// Pull the identity fields from the stored signal payload. install_id
+	// may also be present on event.InstallID (set via LifecycleContext);
+	// prefer the payload to keep the install / stack / run identities in
+	// lockstep with what the signal was constructed with.
+	payload, _ := h.loadStackRunSignalPayload(ctx, event.QueueSignalID)
+	installID := payload.InstallID
+	if installID == "" && event.InstallID != nil {
+		installID = *event.InstallID
+	}
+	if installID == "" {
+		return lifecycleEventData{}, false
+	}
+
+	kind := payload.Kind
+	if kind == "" {
+		// Operation carries the kind too (set by the signal's
+		// LifecycleContext); use it as a fallback for stack-run events
+		// enqueued before the payload was guaranteed to be populated.
+		kind = event.Operation
+	}
+
+	installName := event.OwnerName
+	if installName == "" {
+		installName = h.lookupInstallName(ctx, installID)
+	}
+
+	data := lifecycleEventData{
+		Kind:       kindInstallStackRun,
+		Transition: transition,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		// Workflow is required by the envelope schema, but stack runs aren't
+		// owned by a workflow. Surface the install as the workflow owner so
+		// consumers that already key off workflow.owner_* keep working.
+		Workflow: workflowRef{
+			OwnerID:   installID,
+			OwnerType: "installs",
+			OwnerName: installName,
+		},
+		Install: &installRef{
+			ID:   installID,
+			Name: installName,
+		},
+		StackRun: &stackRunRef{
+			ID:             payload.InstallStackVersionRun,
+			Kind:           kind,
+			StackID:        payload.InstallStackID,
+			StackVersionID: payload.InstallStackVersionID,
+		},
+	}
+
+	if event.Phase != signal.SignalPhaseExecute {
+		// Defensive: covered by the early return above, but keeps the
+		// outcome block populated only when we have a real terminal outcome.
+		data.Outcome = nil
+	} else if event.SignalType == signalTypeStackRunFailed {
+		// The failed signal carries the run's status description in its
+		// payload; surface it as the outcome error so consumers can render a
+		// failure reason without a follow-up API call.
+		var failedPayload struct {
+			StatusDescription string `json:"status_description"`
+		}
+		_ = h.loadFailedDescription(ctx, event.QueueSignalID, &failedPayload)
+		data.Outcome = &lifecycleOutcome{
+			Status: statusFailed,
+			Error:  failedPayload.StatusDescription,
+		}
+	} else if event.SignalType == signalTypeStackRunSucceeded {
+		data.Outcome = &lifecycleOutcome{Status: statusSucceeded}
+	}
+
+	if h.appURL != "" && event.OrgID != "" && installID != "" {
+		data.Links = &contextLinks{
+			Org:     h.dashboardURL(event.OrgID),
+			Install: h.dashboardURL(event.OrgID, "installs", installID),
+		}
+	}
+
+	return data, true
+}
+
+// loadFailedDescription pulls the status_description from the stored signal
+// payload of an install-stack-run-failed event. The shape includes an extra
+// status_description field that the shared stackRunSignalPayload does not
+// carry; rather than widen the shared struct, we re-read the data envelope
+// into the caller's struct.
+func (h *WebhookSignalLifecycleHook) loadFailedDescription(ctx context.Context, queueSignalID string, out any) error {
+	if h.db == nil || queueSignalID == "" {
+		return nil
+	}
+	var row struct {
+		Signal []byte `gorm:"column:signal"`
+	}
+	if err := h.db.WithContext(ctx).
+		Table("queue_signals").
+		Select("signal").
+		Where("id = ?", queueSignalID).
+		Scan(&row).Error; err != nil || len(row.Signal) == 0 {
+		return err
+	}
+	var envelope struct {
+		Data json.RawMessage `json:"data"`
+	}
+	if err := json.Unmarshal(row.Signal, &envelope); err != nil || len(envelope.Data) == 0 {
+		return err
+	}
+	return json.Unmarshal(envelope.Data, out)
 }
 
 // mapApprovalResponseTransition translates a WorkflowStepResponseType into

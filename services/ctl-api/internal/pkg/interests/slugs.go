@@ -48,6 +48,17 @@ const (
 	SlugEventDriftDetected = SlugPrefixEvent + "drift.detected"
 )
 
+// Install stack run lifecycle slugs. Emitted by the install-stack-run-*
+// notification signals fired by the SDK provisioner endpoints. Each signal
+// is single-shot and maps to exactly one event slug. Subscribers opt in via
+// the per-resource `stack_runs` flag, which is gated independently of
+// `outcome` and `ops`.
+const (
+	SlugEventStackRunStarted   = SlugPrefixEvent + "installs.stack_run.started"
+	SlugEventStackRunSucceeded = SlugPrefixEvent + "installs.stack_run.succeeded"
+	SlugEventStackRunFailed    = SlugPrefixEvent + "installs.stack_run.failed"
+)
+
 // ResourceSlug returns "resource:<kind>".
 func ResourceSlug(kind ResourceKind) string {
 	return SlugPrefixResource + string(kind)

@@ -25,6 +25,15 @@ const (
 	// it; the classifier maps it onto (runners, inactive) so subscribers can
 	// opt into a notification.
 	signalTypeOnInactive signal.SignalType = "on_inactive"
+
+	// signalTypeStackRun* mirror the install-stack-run-* notification signals
+	// defined in services/ctl-api/internal/app/installs/signals/v2/
+	// installstackrun{started,succeeded,failed}. The classifier maps each
+	// SignalType to (installs, <kind>) where <kind> is the run kind passed
+	// in event.Operation (provision / reprovision / deprovision).
+	signalTypeStackRunStarted   signal.SignalType = "install-stack-run-started"
+	signalTypeStackRunSucceeded signal.SignalType = "install-stack-run-succeeded"
+	signalTypeStackRunFailed    signal.SignalType = "install-stack-run-failed"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -53,6 +62,18 @@ const (
 	eventClassApprovalRequest
 	eventClassApprovalResponse
 	eventClassDriftDetected
+	eventClassStackRun
+)
+
+// stackRunTransition is the resolved started/succeeded/failed transition for
+// a stack-run event. Determined from the SignalType (not the outcome) because
+// each transition is its own single-shot signal.
+type stackRunTransition string
+
+const (
+	stackRunTransitionStarted   stackRunTransition = "started"
+	stackRunTransitionSucceeded stackRunTransition = "succeeded"
+	stackRunTransitionFailed    stackRunTransition = "failed"
 )
 
 // approvalResponseType is the resolved approved/rejected outcome of an
@@ -85,6 +106,11 @@ type facts struct {
 	// approved/rejected outcome could be resolved (DB lookup). Empty
 	// otherwise; the response slug falls back to the generic form.
 	ApprovalResponse approvalResponseType
+
+	// StackRun is set for stack-run lifecycle events. Identifies the
+	// transition (started / succeeded / failed) determined from the
+	// SignalType. Empty for non-stack-run events.
+	StackRun stackRunTransition
 }
 
 // IsTerminal reports whether this is an after-phase / final event (vs the
@@ -203,6 +229,28 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = ResourceRunners
 		f.Op = "inactive"
 		f.EventClass = eventClassLifecycle
+		f.Resolved = true
+		return f
+
+	case signalTypeStackRunStarted, signalTypeStackRunSucceeded, signalTypeStackRunFailed:
+		// Stack-run notification signals carry the run kind in
+		// event.Operation (provision / reprovision / deprovision). Anything
+		// else means a caller misconfigured the LifecycleContext — skip.
+		op := event.Operation
+		if !isStackRunKind(op) {
+			return f
+		}
+		f.Resource = ResourceInstalls
+		f.Op = op
+		f.EventClass = eventClassStackRun
+		switch event.SignalType {
+		case signalTypeStackRunStarted:
+			f.StackRun = stackRunTransitionStarted
+		case signalTypeStackRunSucceeded:
+			f.StackRun = stackRunTransitionSucceeded
+		case signalTypeStackRunFailed:
+			f.StackRun = stackRunTransitionFailed
+		}
 		f.Resolved = true
 		return f
 
@@ -366,6 +414,18 @@ func stepResolutionFromParent(parentWorkflowType string) (ResourceKind, string, 
 	return "", "", false
 }
 
+// isStackRunKind reports whether s is one of the supported install stack run
+// kinds. Stack-run signals stash the kind in event.Operation; an empty or
+// unknown value means the signal was constructed without the kind and the
+// classifier refuses to map it onto an install sub-op.
+func isStackRunKind(s string) bool {
+	switch s {
+	case "provision", "reprovision", "deprovision":
+		return true
+	}
+	return false
+}
+
 // stepRow mirrors the install_workflow_steps columns we read for step-target
 // resolution. Declared locally (instead of importing app.WorkflowStep) to
 // avoid an import cycle once the slack/webhook models embed Interests.
@@ -482,6 +542,17 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassDriftDetected:
 		slugs = append(slugs, SlugEventDriftDetected)
+		return slugs
+
+	case eventClassStackRun:
+		switch f.StackRun {
+		case stackRunTransitionStarted:
+			slugs = append(slugs, SlugEventStackRunStarted)
+		case stackRunTransitionSucceeded:
+			slugs = append(slugs, SlugEventStackRunSucceeded, SlugOutcomeCompletion)
+		case stackRunTransitionFailed:
+			slugs = append(slugs, SlugEventStackRunFailed, SlugOutcomeCompletion, SlugOutcomeFailures)
+		}
 		return slugs
 	}
 
