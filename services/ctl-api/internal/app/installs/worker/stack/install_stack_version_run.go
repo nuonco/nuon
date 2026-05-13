@@ -133,6 +133,59 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 		return errors.Wrap(err, "unable to get install stack run in time")
 	}
 
+	if !install.SandboxMode.Bool {
+		runner, err := activities.AwaitGetRunnerByID(ctx, install.RunnerID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get runner")
+		}
+		processType := app.InstallProcessForRunnerGroupType(runner.RunnerGroup.Type)
+		if processType == app.RunnerProcessTypeUnknown {
+			return errors.Errorf("unsupported runner group type %s for heartbeat gating", runner.RunnerGroup.Type)
+		}
+
+		const freshWindow = 30 * time.Second
+
+		if err := poll.Poll(ctx, w.v, poll.PollOpts{
+			MaxTS:           workflow.Now(ctx).Add(30 * time.Minute),
+			InitialInterval: 10 * time.Second,
+			MaxInterval:     30 * time.Second,
+			BackoffFactor:   1.1,
+			Fn: func(ctx workflow.Context) error {
+				hb, err := activities.AwaitGetLatestRunnerHeartBeat(ctx, activities.GetLatestRunnerHeartBeatRequest{
+					RunnerID:    install.RunnerID,
+					ProcessType: processType,
+				})
+				if err != nil {
+					return err
+				}
+				if age := workflow.Now(ctx).Sub(hb.CreatedAt); age > freshWindow {
+					return errors.Errorf("heartbeat is stale (%s old)", age)
+				}
+				return nil
+			},
+			PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
+				l, _ := log.WorkflowLogger(ctx)
+				if l != nil {
+					l.Debug("waiting for runner to heartbeat", zap.Duration("next_check_in", dur))
+				}
+				return nil
+			},
+		}); err != nil {
+			if statusErr := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: sreq.WorkflowStepID,
+				Status: app.CompositeStatus{
+					Status: app.StatusError,
+					Metadata: map[string]any{
+						"err_step_message": "Runner did not start heartbeating in time. Check the EC2 instance and runner logs.",
+					},
+				},
+			}); statusErr != nil {
+				return status.WrapStatusErr(err, statusErr)
+			}
+			return errors.Wrap(err, "runner did not start heartbeating in time")
+		}
+	}
+
 	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
 		Type:                     runnersignals.OperationInstallStackVersionRun,
 		InstallStackVersionRunID: run.ID,
