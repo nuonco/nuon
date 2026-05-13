@@ -28,6 +28,7 @@ type EmitSignalResponse struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*EmitSignalResponse, error) {
+	// Get the emitter to access its signal template
 	var emitter app.QueueEmitter
 	if res := a.db.WithContext(ctx).
 		Where("id = ?", req.EmitterID).
@@ -39,6 +40,8 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		return nil, errors.New("emitter has no signal template configured")
 	}
 
+	// Atomically claim the in-flight slot to prevent backup. Succeeds when no
+	// prior claim exists or the existing claim has aged past the TTL.
 	claim := a.db.WithContext(ctx).
 		Model(&app.QueueEmitter{}).
 		Where("id = ?", req.EmitterID).
@@ -55,11 +58,13 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		return &EmitSignalResponse{Skipped: true}, nil
 	}
 
+	// Look up the queue so we can propagate its owner to the signal.
 	var queue app.Queue
 	if res := a.db.WithContext(ctx).First(&queue, "id = ?", req.QueueID); res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get queue")
 	}
 
+	// Enqueue the signal to the queue using the queue client
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
 		QueueID:   req.QueueID,
 		Signal:    emitter.SignalTemplate.Signal,
@@ -67,6 +72,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		OwnerType: queue.OwnerType,
 	})
 	if err != nil {
+		// Release the claim so the next tick can retry.
 		_ = a.db.WithContext(ctx).
 			Model(&app.QueueEmitter{}).
 			Where("id = ?", req.EmitterID).
