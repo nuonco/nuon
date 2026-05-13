@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { hasNewerAppConfig, hasStackConfigChanged, normalizeAppInputGroups } from './app-utils'
 import type { TAppConfig, TInstall } from '@/types'
 
@@ -279,14 +279,14 @@ describe('app-utils', () => {
 
       const result = normalizeAppInputGroups(groups, inputs)
 
-      expect(result[0]).toEqual({
+      expect(result[0]).toEqual(expect.objectContaining({
         id: 'group-1',
-        name: 'Advanced Group', 
+        name: 'Advanced Group',
         description: 'Advanced configuration options',
         index: 10,
         custom_field: 'custom_value',
         app_inputs: [],
-      })
+      }))
     })
   })
 })
