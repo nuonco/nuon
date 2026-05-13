@@ -44,7 +44,14 @@ const mockSpans: TSpan[] = [
     end_time: '2026-01-01T00:00:10.000Z',
     duration_ns: 8_000_000_000,
     status_code: 'Ok',
-    attributes: { 'nuon.tool': 'terraform', 'nuon.op': 'init' },
+    attributes: {
+      'nuon.tool': 'terraform',
+      'nuon.op': 'init',
+      'runner_job.id': 'jobe37y0720x19xezfgqzifskw',
+      'runner_job_execution.id': 'rjeabc123',
+      'runner_job_execution_step.name': 'plan',
+      'terraform.version': '1.7.5',
+    },
   },
   {
     span_id: 'tf-plan',
@@ -55,7 +62,15 @@ const mockSpans: TSpan[] = [
     duration_ns: 20_000_000_000,
     status_code: 'Error',
     status_message: 'plan failed: invalid resource',
-    attributes: { 'nuon.tool': 'terraform', 'nuon.op': 'plan' },
+    attributes: {
+      'nuon.tool': 'terraform',
+      'nuon.op': 'plan',
+      'runner_job.id': 'jobe37y0720x19xezfgqzifskw',
+      'runner_job_execution.id': 'rjeabc123',
+      'runner_job_execution_step.name': 'plan',
+      'terraform.workspace': 'default',
+      'terraform.exit_code': '1',
+    },
   },
   {
     span_id: 'step-cleanup',

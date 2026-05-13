@@ -114,6 +114,53 @@ export const traceEnd = (spans: TSpan[]): number => {
   }, Number.NEGATIVE_INFINITY)
 }
 
+// Runner-internal spans are the scaffolding the runner emits around every
+// job: the per-step `step.<name>` spans (fetching, planning, applying, …)
+// and any other span whose nuon.tool == "runner" that isn't itself a job
+// root. End users almost always want to see the high-level job span plus
+// the tool operations underneath it (terraform.plan, helm.install,
+// git.clone, …) — not the intermediate runner machinery.
+//
+// `filterRunnerInternal` drops those scaffolding spans and re-parents
+// their children to the nearest visible ancestor so the tree still
+// reads top-to-bottom: job.deploy → terraform.plan instead of
+// job.deploy → step.planning → terraform.plan.
+//
+// Job spans (nuon.tool == "runner" with nuon.job.type set) are kept —
+// they're the user-recognized unit of work and anchor the timeline.
+const isRunnerInternal = (span: TSpan): boolean => {
+  const attrs = span.attributes
+  if (!attrs) return false
+  if (attrs['nuon.tool'] !== 'runner') return false
+  if (attrs['nuon.job.type']) return false
+  return true
+}
+
+export const filterRunnerInternal = (spans: TSpan[]): TSpan[] => {
+  if (!spans?.length) return spans
+  const byId = new Map<string, TSpan>()
+  for (const s of spans) byId.set(s.span_id, s)
+
+  const findVisibleAncestor = (id: string | undefined): string | undefined => {
+    let cur = id
+    while (cur) {
+      const span = byId.get(cur)
+      if (!span) return undefined
+      if (!isRunnerInternal(span)) return cur
+      cur = span.parent_span_id
+    }
+    return undefined
+  }
+
+  const out: TSpan[] = []
+  for (const s of spans) {
+    if (isRunnerInternal(s)) continue
+    const newParent = findVisibleAncestor(s.parent_span_id)
+    out.push(newParent === s.parent_span_id ? s : { ...s, parent_span_id: newParent })
+  }
+  return out
+}
+
 export const formatDurationNs = (ns: number): string => {
   if (!Number.isFinite(ns) || ns <= 0) return '—'
   const dur = Duration.fromMillis(ns / 1_000_000).shiftTo('minutes', 'seconds', 'milliseconds')
