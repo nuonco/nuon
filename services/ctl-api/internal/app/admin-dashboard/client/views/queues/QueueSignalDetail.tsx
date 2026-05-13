@@ -6,6 +6,7 @@ import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
 import { StatusHistory } from '@/components/common/StatusHistory'
 import { SignalFlowGraph } from '@/components/common/SignalFlowGraph'
+import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId, formatDuration } from '@/utils/format'
@@ -94,11 +95,6 @@ export const QueueSignalDetail = () => {
           <h1 className="text-lg font-semibold">Signal</h1>
           <Badge>{signal?.type}</Badge>
           <Badge variant="status" status={status}>{status}</Badge>
-          {temporalUIUrl && signal?.workflow?.id && signal?.workflow?.namespace && (
-            <a href={`${temporalUIUrl}/namespaces/${signal.workflow.namespace}/workflows/${signal.workflow.id}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
-              View in Temporal &rarr;
-            </a>
-          )}
           <Link to={`/queues/${queueId}/signals/${signalId}/graph`} className="inline-flex items-center rounded-md bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 px-2 py-1 text-xs font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900">
             View as graph
           </Link>
@@ -120,6 +116,15 @@ export const QueueSignalDetail = () => {
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Queue ID:</span> <Link to={`/queues/${signal?.queue_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{signal?.queue_id}</Link></div>
         </div>
       </div>
+
+      {/* Temporal workflow stats */}
+      {temporalUIUrl && signal?.workflow?.id && signal?.workflow?.namespace && (
+        <TemporalWorkflowCard
+          temporalUIUrl={temporalUIUrl}
+          namespace={signal.workflow.namespace}
+          workflowId={signal.workflow.id}
+        />
+      )}
 
       {/* Signal attributes */}
       {attrs && (

@@ -45,11 +45,6 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 			w.resumeHandler,
 			nil,
 		},
-		RestartUpdateName: {
-			handlerTypeUpdate,
-			w.restartUpdateHandler,
-			nil,
-		},
 		StopUpdateName: {
 			handlerTypeUpdate,
 			w.stopUpdateHandler,
@@ -60,9 +55,9 @@ func (w *queue) registerHandlers(ctx workflow.Context) error {
 			w.directExecuteHandler,
 			nil,
 		},
-		ForceRestartUpdateName: {
+		CheckCANUpdateName: {
 			handlerTypeUpdate,
-			w.forceRestartHandler,
+			w.checkCANHandler,
 			nil,
 		},
 	}

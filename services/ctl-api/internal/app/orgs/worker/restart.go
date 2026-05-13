@@ -26,7 +26,7 @@ func (w *Workflows) Restart(ctx workflow.Context, sreq signals.RequestSignal) er
 
 	for _, ev := range evs {
 		if ev.WorkflowRef != nil {
-			queueclient.AwaitRestart(ctx, ev.ID)
+			queueclient.AwaitHintRestartSingle(ctx, ev.ID)
 			continue
 		}
 

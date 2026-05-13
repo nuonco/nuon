@@ -205,13 +205,17 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
 		api.GET("/queues/:id/signals/:signal_id/graph", s.SignalGraph)
 		api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
-		api.POST("/queues/:id/restart", s.RestartQueue)
+		api.POST("/queues/:id/hint-restart", s.HintRestartQueue)
 		api.POST("/queues/:id/force-restart", s.ForceRestartQueue)
+		api.POST("/queues/:id/check-can", s.CheckCANQueue)
 		api.POST("/queues/:id/clear", s.ClearQueue)
 		api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
 
 		// Temporal workflow viewer
 		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
+		api.GET("/temporal-workflows/index", s.TemporalWorkflowIndex)
+		api.GET("/temporal-workflows/namespaces", s.TemporalWorkflowNamespaces)
+		api.GET("/temporal-workflows/stats", s.TemporalWorkflowStats)
 
 		// Temporal workers
 		api.GET("/temporal-workers", s.TemporalWorkers)

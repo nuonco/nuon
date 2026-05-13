@@ -19,12 +19,11 @@ var statusTimestampKeys = []string{
 }
 
 const (
-	QueueStatusReady          = "ready"
-	QueueStatusRestartPending = "restart-pending"
-	QueueStatusRestarted      = "restarted"
-	QueueStatusForceRestarted = "force-restarted"
-	QueueStatusIdle           = "idle"
-	QueueStatusStopped        = "stopped"
+	QueueStatusReady           = "ready"
+	QueueStatusRestartAccepted = "restart-accepted, pending signals"
+	QueueStatusRestarted       = "restarted"
+	QueueStatusIdle            = "idle"
+	QueueStatusStopped         = "stopped"
 )
 
 var maxAliveTime time.Duration = time.Hour * 24 * 7
@@ -73,23 +72,18 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
 
+	l.Info("starting restart listeners")
+	q.startHintListener(ctx)
+	q.startCANListener(ctx)
+
 	q.setStatus(ctx, l, QueueStatusReady)
 	q.ready = true
 
 	if _, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
-		if q.forceRestarted {
-			return true
-		}
-
-		// all graceful and wait until active workers is empty, to prevent orphaning an handler.
+		// Wait until active workers drain before restarting or stopping.
 		return (q.restarted || q.stopped || q.isIdle(ctx)) && q.activeWorkers == 0
 	}); err != nil {
 		return false, err
-	}
-
-	if q.forceRestarted {
-		q.setStatus(ctx, l, QueueStatusForceRestarted)
-		return false, nil
 	}
 
 	if q.restarted {
