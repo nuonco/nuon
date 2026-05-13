@@ -46,9 +46,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			continue
 		}
 
-		if err := queueclient.AwaitRestart(ctx, ev.ID); err != nil {
-			l.Error("unable to restart queue", zap.String("queue_id", ev.ID), zap.String("namespace", ev.Namespace))
-			return fmt.Errorf("unable to restart queue %s: %w", ev.ID, err)
+		if err := queueclient.AwaitHintRestartSingle(ctx, ev.ID); err != nil {
+			l.Error("unable to hint restart queue", zap.String("queue_id", ev.ID), zap.String("namespace", ev.Namespace))
+			return fmt.Errorf("unable to hint restart queue %s: %w", ev.ID, err)
 		}
 	}
 
