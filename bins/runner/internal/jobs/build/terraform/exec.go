@@ -41,9 +41,9 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	// this flag — it auto-detects the mirror at unpack time.
 	if h.state.cfg != nil && h.state.cfg.VendorProviders {
 		l.Info("vendoring terraform providers via filesystem mirror")
-		opMirrorCtx, endMirror := op.Tool(ctx, "terraform", "provider_mirror")
-		err := h.generateProviderMirror(opMirrorCtx, src.AbsPath())
-		endMirror(err)
+		opVendorCtx, endVendor := op.Tool(ctx, "terraform", "vendor")
+		err := h.generateProviderMirror(opVendorCtx, src.AbsPath())
+		endVendor(err)
 		if err != nil {
 			l.Error("failed to generate provider mirror", zap.Error(err))
 			h.writeErrorResult(ctx, "vendor providers", err)
