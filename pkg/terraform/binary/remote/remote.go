@@ -38,6 +38,14 @@ func New(v *validator.Validate, opts ...remoteOption) (*remote, error) {
 	return auth, nil
 }
 
+// Source returns the binary source label used by tracing in
+// pkg/terraform/workspace.LoadBinary. "remote" means the binary is
+// downloaded from releases.hashicorp.com via hc-install; the cost shows
+// up under the terraform.binary_install span emitted by Install.
+func (r *remote) Source() string {
+	return "remote"
+}
+
 func WithVersion(v string) remoteOption {
 	return func(s *remote) error {
 		ver, err := version.NewVersion(v)

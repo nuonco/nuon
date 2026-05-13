@@ -7,17 +7,20 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
+	"github.com/hashicorp/terraform-exec/tfexec"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 
@@ -115,41 +118,63 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 		zap.Strings("platforms", platforms),
 	)
 
-	execPath, cleanup, err := installTerraform(ctx, l, tfVersion)
-	if err != nil {
+	var execPath string
+	var cleanup func()
+	if err := op.Run(ctx, "terraform", "install_cli", func(ctx context.Context) error {
+		var ierr error
+		execPath, cleanup, ierr = installTerraform(ctx, l, tfVersion)
+		return ierr
+	}); err != nil {
 		return fmt.Errorf("unable to install terraform binary for mirror: %w", err)
 	}
 	defer cleanup()
 
+	tf, err := newBuildTerraform(execPath, srcDir)
+	if err != nil {
+		return fmt.Errorf("unable to construct tfexec client: %w", err)
+	}
+
 	// Vendor remote modules first. `terraform providers mirror` resolves
 	// provider requirements transitively through the module graph, so the
 	// modules need to be on disk before we mirror providers.
-	if err := vendorModules(ctx, l, execPath, srcDir); err != nil {
+	if err := op.Run(ctx, "terraform", "vendor_modules", func(ctx context.Context) error {
+		return vendorModules(ctx, l, tf)
+	}); err != nil {
 		return fmt.Errorf("unable to vendor terraform modules: %w", err)
 	}
 
 	// Update the lockfile to carry hashes for every platform we mirror.
 	// Done before `providers mirror` so the mirror downloads honor the
 	// versions the lockfile pins.
-	if err := lockProviders(ctx, l, execPath, srcDir, platforms); err != nil {
+	if err := op.Run(ctx, "terraform", "lock_providers", func(ctx context.Context) error {
+		return lockProviders(ctx, l, tf, srcDir, platforms)
+	}); err != nil {
 		return fmt.Errorf("unable to update terraform lockfile: %w", err)
 	}
 
-	mirrorDir := filepath.Join(srcDir, workspace.DefaultFilesystemMirrorDir)
-	if err := os.MkdirAll(mirrorDir, 0o755); err != nil {
-		return fmt.Errorf("unable to create mirror dir: %w", err)
-	}
+	if err := op.Run(ctx, "terraform", "mirror_providers", func(ctx context.Context) error {
+		mirrorDir := filepath.Join(srcDir, workspace.DefaultFilesystemMirrorDir)
+		if err := os.MkdirAll(mirrorDir, 0o755); err != nil {
+			return fmt.Errorf("unable to create mirror dir: %w", err)
+		}
 
-	args := []string{"providers", "mirror"}
-	for _, p := range platforms {
-		args = append(args, "-platform="+p)
-	}
-	args = append(args, mirrorDir)
+		mirrorOpts := make([]tfexec.ProvidersMirrorOption, 0, len(platforms))
+		for _, p := range platforms {
+			mirrorOpts = append(mirrorOpts, tfexec.Platform(p))
+		}
 
-	l.Info("running terraform providers mirror", zap.String("mirror_dir", mirrorDir))
+		l.Info("running terraform providers mirror", zap.String("mirror_dir", mirrorDir))
 
-	if err := runTerraform(ctx, l, execPath, srcDir, args...); err != nil {
-		return fmt.Errorf("terraform providers mirror failed: %w", err)
+		if err := runTF(l, "providers mirror", func(stdout, stderr io.Writer) error {
+			tf.SetStdout(stdout)
+			tf.SetStderr(stderr)
+			return tf.ProvidersMirror(ctx, mirrorDir, mirrorOpts...)
+		}); err != nil {
+			return fmt.Errorf("terraform providers mirror failed: %w", err)
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	// Now that the provider mirror is in place, also vendor the terraform
@@ -157,7 +182,9 @@ func (h *handler) generateProviderMirror(ctx context.Context, srcDir string) err
 	// fetch from releases.hashicorp.com for `terraform_<ver>_<plat>.zip`
 	// either). Reuses the host-platform binary we already installed above
 	// to avoid a redundant download in the modal single-platform case.
-	if err := vendorTerraformBinary(ctx, l, execPath, srcDir, tfVersion, platforms); err != nil {
+	if err := op.Run(ctx, "terraform", "vendor_cli", func(ctx context.Context) error {
+		return vendorTerraformBinary(ctx, l, execPath, srcDir, tfVersion, platforms)
+	}); err != nil {
 		return fmt.Errorf("unable to vendor terraform binary: %w", err)
 	}
 
@@ -289,7 +316,7 @@ const terraformLockFile = ".terraform.lock.hcl"
 // signal a developer has that the build runner is touching their lockfile
 // on their behalf — the install side will silently consume whatever we
 // produce here.
-func lockProviders(ctx context.Context, l *zap.Logger, execPath, srcDir string, platforms []string) error {
+func lockProviders(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform, srcDir string, platforms []string) error {
 	lockPath := filepath.Join(srcDir, terraformLockFile)
 
 	pre, preErr := os.ReadFile(lockPath)
@@ -305,14 +332,18 @@ func lockProviders(ctx context.Context, l *zap.Logger, execPath, srcDir string, 
 		return fmt.Errorf("unable to read existing lockfile %s: %w", lockPath, preErr)
 	}
 
-	args := []string{"providers", "lock"}
+	opts := make([]tfexec.ProvidersLockOption, 0, len(platforms))
 	for _, p := range platforms {
-		args = append(args, "-platform="+p)
+		opts = append(opts, tfexec.Platform(p))
 	}
 
 	l.Info("running terraform providers lock")
 
-	if err := runTerraform(ctx, l, execPath, srcDir, args...); err != nil {
+	if err := runTF(l, "providers lock", func(stdout, stderr io.Writer) error {
+		tf.SetStdout(stdout)
+		tf.SetStderr(stderr)
+		return tf.ProvidersLock(ctx, opts...)
+	}); err != nil {
 		return fmt.Errorf("terraform providers lock failed: %w", err)
 	}
 
@@ -365,44 +396,107 @@ func lockProviders(ctx context.Context, l *zap.Logger, execPath, srcDir string, 
 // runner's environment. The same constraint applied before this feature —
 // the install runner needed those creds at deploy time — but is now visible
 // at build time instead.
-func vendorModules(ctx context.Context, l *zap.Logger, execPath, srcDir string) error {
+func vendorModules(ctx context.Context, l *zap.Logger, tf *tfexec.Terraform) error {
 	l.Info("running terraform get to vendor modules")
 
-	if err := runTerraform(ctx, l, execPath, srcDir, "get"); err != nil {
+	if err := runTF(l, "get", func(stdout, stderr io.Writer) error {
+		tf.SetStdout(stdout)
+		tf.SetStderr(stderr)
+		return tf.Get(ctx)
+	}); err != nil {
 		return fmt.Errorf("terraform get failed: %w", err)
 	}
 
 	return nil
 }
 
-// runTerraform invokes the terraform CLI with the given args, working
-// directory, and a scrubbed environment. Stdout/Stderr are streamed line-by-
-// line through zap.
-func runTerraform(ctx context.Context, l *zap.Logger, execPath, srcDir string, args ...string) error {
-	cmd := exec.CommandContext(ctx, execPath, args...)
-	cmd.Dir = srcDir
-	cmd.Env = scrubbedEnv(os.Environ())
-	cmd.Stdout = newZapWriter(l, false)
-	cmd.Stderr = newZapWriter(l, true)
-	return cmd.Run()
+// newBuildTerraform constructs a *tfexec.Terraform pointing at srcDir
+// with a scrubbed environment, suitable for the build-time vendoring
+// commands (`get`, `providers lock`, `providers mirror`).
+//
+// stdout/stderr are intentionally left unset — each runTF call attaches
+// fresh capture buffers so its log entry only contains output from the
+// command it ran, not output from a sibling command on the same client.
+func newBuildTerraform(execPath, srcDir string) (*tfexec.Terraform, error) {
+	tf, err := tfexec.NewTerraform(srcDir, execPath)
+	if err != nil {
+		return nil, fmt.Errorf("init tfexec: %w", err)
+	}
+	if err := tf.SetEnv(scrubbedEnvMap(os.Environ())); err != nil {
+		return nil, fmt.Errorf("set tfexec env: %w", err)
+	}
+	return tf, nil
 }
 
-// scrubbedEnv returns env with any TF CLI variables that could redirect
-// provider/module resolution stripped out. We want the build runner's
-// terraform invocations to use only the in-workspace .terraformrc (when
-// any) we control — never a host-side override.
-func scrubbedEnv(env []string) []string {
-	out := make([]string, 0, len(env))
+// runTF runs a single terraform command via tfexec while capturing its
+// stdout and stderr into in-memory buffers, then emits exactly one zap
+// entry summarising the command:
+//
+//   - Info on success ("terraform <name> completed")
+//   - Warn on failure ("terraform <name> failed", with the wrapped error)
+//
+// Captured output is attached as `stdout` / `stderr` zap fields after a
+// one-shot ANSI escape strip, so terraform's colored diagnostic boxes
+// (`╷ │ ╵`) read as plain text in the log. Empty streams are omitted.
+//
+// Trade-off vs. the prior per-line zapWriter: no real-time progress
+// during the command (the operator sees output once it returns). For
+// the three short build-time commands this is acceptable, and it lets
+// us drop the line buffer + envelope state machine entirely — terraform
+// can change anything inside the box without breaking us, because we no
+// longer parse the box.
+func runTF(l *zap.Logger, name string, fn func(stdout, stderr io.Writer) error) error {
+	var stdout, stderr bytes.Buffer
+	err := fn(&stdout, &stderr)
+
+	fields := make([]zap.Field, 0, 3)
+	if s := strings.TrimRight(stripANSI(stdout.String()), "\n"); s != "" {
+		fields = append(fields, zap.String("stdout", s))
+	}
+	if s := strings.TrimRight(stripANSI(stderr.String()), "\n"); s != "" {
+		fields = append(fields, zap.String("stderr", s))
+	}
+
+	if err != nil {
+		fields = append(fields, zap.Error(err))
+		l.Warn("terraform "+name+" failed", fields...)
+		return err
+	}
+	l.Info("terraform "+name+" completed", fields...)
+	return nil
+}
+
+// ansiEscapeRe matches CSI SGR sequences ("\x1b[…m"), which terraform
+// uses to color its diagnostic envelope and severity labels. Stripped
+// once at the end of each command so log search is grep-friendly.
+var ansiEscapeRe = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
+func stripANSI(s string) string {
+	return ansiEscapeRe.ReplaceAllString(s, "")
+}
+
+// scrubbedEnvMap returns env (in os.Environ "K=V" form) as a map with
+// any TF CLI variables that could redirect provider/module resolution
+// stripped out. We want the build runner's terraform invocations to use
+// only the in-workspace .terraformrc (when any) we control — never a
+// host-side override. Map form is required by tfexec.SetEnv.
+func scrubbedEnvMap(env []string) map[string]string {
+	out := make(map[string]string, len(env))
 	for _, kv := range env {
+		i := strings.IndexByte(kv, '=')
+		if i < 0 {
+			continue
+		}
+		k, v := kv[:i], kv[i+1:]
 		drop := false
-		for _, k := range scrubbedTFEnvVars {
-			if strings.HasPrefix(kv, k+"=") {
+		for _, sk := range scrubbedTFEnvVars {
+			if k == sk {
 				drop = true
 				break
 			}
 		}
 		if !drop {
-			out = append(out, kv)
+			out[k] = v
 		}
 	}
 	return out
@@ -438,43 +532,16 @@ func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, f
 		InstallDir: installDir,
 	}
 
+	_, endInstall := op.Start(ctx, "terraform", "binary_install",
+		attribute.String("terraform.version", ver),
+		attribute.String("install.dir", installDir),
+	)
 	execPath, err := installer.Install(ctx)
+	endInstall(err)
 	if err != nil {
 		cleanup()
 		return "", nil, fmt.Errorf("unable to install terraform %s: %w", ver, err)
 	}
 
 	return execPath, cleanup, nil
-}
-
-// zapWriter adapts a *zap.Logger to io.Writer so it can be wired up as the
-// Stdout/Stderr of an exec.Cmd. We split incoming buffers on newlines and
-// emit one zap entry per non-empty line; without that split, multi-line
-// terraform output would be flattened into single log entries containing
-// embedded "\n", and partial-line writes would emit half-lines as their
-// own entries. Stderr lines log at Warn, stdout at Info.
-type zapWriter struct {
-	l        *zap.Logger
-	isStderr bool
-}
-
-func newZapWriter(l *zap.Logger, isStderr bool) *zapWriter {
-	return &zapWriter{l: l, isStderr: isStderr}
-}
-
-func (z *zapWriter) Write(p []byte) (int, error) {
-	if len(p) == 0 {
-		return 0, nil
-	}
-	for _, line := range strings.Split(strings.TrimRight(string(p), "\n"), "\n") {
-		if line == "" {
-			continue
-		}
-		if z.isStderr {
-			z.l.Warn("terraform: " + line)
-		} else {
-			z.l.Info("terraform: " + line)
-		}
-	}
-	return len(p), nil
 }
