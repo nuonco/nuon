@@ -56,7 +56,7 @@ export const MainNavLink = ({
       >
         <span className="flex-1 flex items-center gap-1">
           {text}
-          {isExternal ? <Icon variant="ArrowSquareOut" size={12} /> : null}
+          {isExternal ? <Icon variant="ArrowSquareOutIcon" size={12} /> : null}
         </span>
         {shortcut && !isExternal ? (
           <span className="opacity-0 group-hover/nav-link:opacity-100 transition-opacity">

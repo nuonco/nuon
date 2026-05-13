@@ -33,7 +33,7 @@ export const ForgetComponentModal = ({
           weight="strong"
           theme="error"
         >
-          <Icon variant="Trash" size="24" />
+          <Icon variant="TrashIcon" size="24" />
           Forget {componentName}
         </Text>
       }
@@ -44,7 +44,7 @@ export const ForgetComponentModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Trash" />
+            <Icon variant="TrashIcon" />
             Forget component
           </span>
         ),

@@ -68,7 +68,7 @@ export const DeleteWebhookButton = ({
       onClick={() => addModal(modal)}
       {...props}
     >
-      <Icon variant="Trash" />
+      <Icon variant="TrashIcon" />
       Delete
     </Button>
   )

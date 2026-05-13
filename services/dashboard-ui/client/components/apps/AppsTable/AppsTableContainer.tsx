@@ -37,7 +37,7 @@ export const AppsTableContainer = ({
       isLoading={isLoading}
       emptyStateAction={
         <Button href={`/onboarding?org_id=${org.id}`}>
-          <Icon size="14" variant="AppWindow" />
+          <Icon size="14" variant="AppWindowIcon" />
           Create app
         </Button>
       }

@@ -79,7 +79,7 @@ export const SyncSecretsButton = ({
       {...props}
     >
       Sync secrets
-      <Icon variant="Key" />
+      <Icon variant="KeyIcon" />
     </Button>
   )
 }

@@ -290,15 +290,15 @@ export const SearchAndFiltering = () => (
         filterActions={
           <div className="flex gap-2">
             <Button variant="ghost" size="sm">
-              <Icon variant="Sliders" size="16" />
+              <Icon variant="SlidersIcon" size="16" />
               Role
             </Button>
             <Button variant="ghost" size="sm">
-              <Icon variant="Sliders" size="16" />
+              <Icon variant="SlidersIcon" size="16" />
               Status
             </Button>
             <Button variant="primary" size="sm">
-              <Icon variant="Plus" size="16" />
+              <Icon variant="PlusIcon" size="16" />
               Add User
             </Button>
           </div>
@@ -409,15 +409,15 @@ export const CustomCellRendering = () => (
         filterActions={
           <div className="flex gap-2">
             <Button variant="ghost" size="sm">
-              <Icon variant="Sliders" size="16" />
+              <Icon variant="SlidersIcon" size="16" />
               Platform
             </Button>
             <Button variant="ghost" size="sm">
-              <Icon variant="Sliders" size="16" />
+              <Icon variant="SlidersIcon" size="16" />
               Status
             </Button>
             <Button variant="primary" size="sm">
-              <Icon variant="Plus" size="16" />
+              <Icon variant="PlusIcon" size="16" />
               New App
             </Button>
           </div>
@@ -560,15 +560,15 @@ export const UsageExamples = () => (
         filterActions={
           <div className="flex gap-2">
             <Button variant="ghost" size="sm">
-              <Icon variant="CloudArrowDown" size="16" />
+              <Icon variant="CloudArrowDownIcon" size="16" />
               All Platforms
             </Button>
             <Button variant="ghost" size="sm">
-              <Icon variant="Pulse" size="16" />
+              <Icon variant="PulseIcon" size="16" />
               Status Filter
             </Button>
             <Button variant="primary" size="sm">
-              <Icon variant="Plus" size="16" />
+              <Icon variant="PlusIcon" size="16" />
               Deploy New
             </Button>
           </div>

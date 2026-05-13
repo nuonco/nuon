@@ -11,24 +11,24 @@ export interface IAdminActionCard {
 }
 
 const getActionIcon = (title: string, variant: IAdminActionCard['variant']) => {
-  if (title.toLowerCase().includes('add') || title.toLowerCase().includes('support user')) return 'UserPlus'
-  if (title.toLowerCase().includes('remove') || title.toLowerCase().includes('support user')) return 'UserMinus'
-  if (title.toLowerCase().includes('reprovision')) return 'ArrowClockwise'
-  if (title.toLowerCase().includes('restart')) return 'ArrowCounterClockwise'
-  if (title.toLowerCase().includes('teardown') || title.toLowerCase().includes('force')) return 'Trash'
-  if (title.toLowerCase().includes('shutdown') && title.toLowerCase().includes('graceful')) return 'Power'
-  if (title.toLowerCase().includes('shutdown') || title.toLowerCase().includes('stop')) return 'Stop'
-  if (title.toLowerCase().includes('invalidate') || title.toLowerCase().includes('token')) return 'Key'
-  if (title.toLowerCase().includes('debug')) return 'Bug'
-  if (title.toLowerCase().includes('update') || title.toLowerCase().includes('sandbox')) return 'Upload'
+  if (title.toLowerCase().includes('add') || title.toLowerCase().includes('support user')) return 'UserPlusIcon'
+  if (title.toLowerCase().includes('remove') || title.toLowerCase().includes('support user')) return 'UserMinusIcon'
+  if (title.toLowerCase().includes('reprovision')) return 'ArrowClockwiseIcon'
+  if (title.toLowerCase().includes('restart')) return 'ArrowCounterClockwiseIcon'
+  if (title.toLowerCase().includes('teardown') || title.toLowerCase().includes('force')) return 'TrashIcon'
+  if (title.toLowerCase().includes('shutdown') && title.toLowerCase().includes('graceful')) return 'PowerIcon'
+  if (title.toLowerCase().includes('shutdown') || title.toLowerCase().includes('stop')) return 'StopIcon'
+  if (title.toLowerCase().includes('invalidate') || title.toLowerCase().includes('token')) return 'KeyIcon'
+  if (title.toLowerCase().includes('debug')) return 'BugIcon'
+  if (title.toLowerCase().includes('update') || title.toLowerCase().includes('sandbox')) return 'UploadIcon'
 
   switch (variant) {
     case 'warning':
-      return 'Warning'
+      return 'WarningIcon'
     case 'danger':
-      return 'Warning'
+      return 'WarningIcon'
     default:
-      return 'Play'
+      return 'PlayIcon'
   }
 }
 

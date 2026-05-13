@@ -91,7 +91,7 @@ function ActivityCell({ install }: { install: TInstall }) {
                 id: 'created-by',
                 title: createdBy.email,
                 subtitle: `via ${createdBy.source}`,
-                leftContent: <Icon variant="User" size={16} />,
+                leftContent: <Icon variant="UserIcon" size={16} />,
               },
             ]
           : []),
@@ -101,7 +101,7 @@ function ActivityCell({ install }: { install: TInstall }) {
           subtitle: (
             <Time variant="label" time={install?.created_at} format="long-datetime" />
           ),
-          leftContent: <Icon variant="PlusCircle" size={16} />,
+          leftContent: <Icon variant="PlusCircleIcon" size={16} />,
         },
         {
           id: 'updated',
@@ -109,13 +109,13 @@ function ActivityCell({ install }: { install: TInstall }) {
           subtitle: (
             <Time variant="label" time={install?.updated_at} format="long-datetime" />
           ),
-          leftContent: <Icon variant="ClockCounterClockwise" size={16} />,
+          leftContent: <Icon variant="ClockCounterClockwiseIcon" size={16} />,
         },
       ]}
     >
       <span className="inline-flex items-center gap-1.5 cursor-default">
         <Time time={install?.updated_at} variant="subtext" format="relative" />
-        <Icon variant="Info" size={12} theme="neutral" />
+        <Icon variant="InfoIcon" size={12} theme="neutral" />
       </span>
     </ContextTooltip>
   )

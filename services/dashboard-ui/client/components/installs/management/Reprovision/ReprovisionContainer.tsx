@@ -93,7 +93,7 @@ export const ReprovisionButton = ({
       {...props}
     >
       Reprovision install
-      <Icon variant="ArrowURightUp" />
+      <Icon variant="ArrowURightUpIcon" />
     </Button>
   )
 }

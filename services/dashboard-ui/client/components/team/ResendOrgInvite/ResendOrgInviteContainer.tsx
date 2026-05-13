@@ -62,7 +62,7 @@ export const ResendOrgInviteButton = ({
   return (
     <Button onClick={() => addModal(modal)} {...props}>
       Resend
-      {props?.isMenuButton ? <Icon variant="Envelope" /> : null}
+      {props?.isMenuButton ? <Icon variant="EnvelopeIcon" /> : null}
     </Button>
   )
 }

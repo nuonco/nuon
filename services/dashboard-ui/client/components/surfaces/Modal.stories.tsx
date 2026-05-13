@@ -361,7 +361,7 @@ const FooterActionsDemo = () => {
         }}
         footerActions={
           <div className="flex items-center gap-2">
-            <Icon variant="Info" size={16} />
+            <Icon variant="InfoIcon" size={16} />
             <Text variant="subtext" theme="neutral">
               This will take approximately 5 minutes
             </Text>
@@ -401,7 +401,7 @@ const FooterActionsDemo = () => {
               variant="ghost" 
               onClick={() => alert('Auto-save enabled!')}
             >
-              <Icon variant="Lightning" size={16} />
+              <Icon variant="LightningIcon" size={16} />
               Enable Auto-save
             </Button>
             <div className="text-sm text-gray-500">|</div>
@@ -717,7 +717,7 @@ export const FooterActions = () => (
   }}
   footerActions={
     <div className="flex items-center gap-2">
-      <Icon variant="Info" size={16} />
+      <Icon variant="InfoIcon" size={16} />
       <Text variant="subtext" theme="neutral">
         This will take approximately 5 minutes
       </Text>

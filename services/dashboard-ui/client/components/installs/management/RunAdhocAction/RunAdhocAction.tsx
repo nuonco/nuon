@@ -280,7 +280,7 @@ export const RunAdhocActionModal = ({
                 setCustomEnvVars((vars) => [...vars, vars.length])
               }}
             >
-              <Icon variant="Plus" size="16" />
+              <Icon variant="PlusIcon" size="16" />
               Add variable
             </Button>
           </div>
@@ -331,7 +331,7 @@ export const RunAdhocActionModal = ({
                 }}
                 className="mb-1"
               >
-                <Icon variant="X" size="16" />
+                <Icon variant="XIcon" size="16" />
               </Button>
             </fieldset>
           ))}

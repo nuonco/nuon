@@ -58,7 +58,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                 className="flex items-start gap-2 rounded-md p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
               >
                 <Icon
-                  variant="XCircle"
+                  variant="XCircleIcon"
                   size={14}
                   className="mt-0.5 shrink-0"
                 />
@@ -73,7 +73,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
                 className="flex items-start gap-2 rounded-md p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400"
               >
                 <Icon
-                  variant="Warning"
+                  variant="WarningIcon"
                   size={14}
                   className="mt-0.5 shrink-0"
                 />

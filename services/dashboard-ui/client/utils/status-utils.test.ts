@@ -76,23 +76,23 @@ describe('status-utils', () => {
 
   describe('getStatusIconVariant', () => {
     test('should return CheckCircle for success statuses', () => {
-      expect(getStatusIconVariant('active')).toBe('CheckCircle')
-      expect(getStatusIconVariant('ok')).toBe('CheckCircle')
-      expect(getStatusIconVariant('finished')).toBe('CheckCircle')
-      expect(getStatusIconVariant('approved')).toBe('CheckCircle')
+      expect(getStatusIconVariant('active')).toBe('CheckCircleIcon')
+      expect(getStatusIconVariant('ok')).toBe('CheckCircleIcon')
+      expect(getStatusIconVariant('finished')).toBe('CheckCircleIcon')
+      expect(getStatusIconVariant('approved')).toBe('CheckCircleIcon')
     })
 
     test('should return XCircle for error statuses', () => {
-      expect(getStatusIconVariant('failed')).toBe('XCircle')
-      expect(getStatusIconVariant('error')).toBe('XCircle')
-      expect(getStatusIconVariant('bad')).toBe('XCircle')
-      expect(getStatusIconVariant('unhealthy')).toBe('XCircle')
+      expect(getStatusIconVariant('failed')).toBe('XCircleIcon')
+      expect(getStatusIconVariant('error')).toBe('XCircleIcon')
+      expect(getStatusIconVariant('bad')).toBe('XCircleIcon')
+      expect(getStatusIconVariant('unhealthy')).toBe('XCircleIcon')
     })
 
     test('should return Warning for warning statuses', () => {
-      expect(getStatusIconVariant('approval-denied')).toBe('Warning')
-      expect(getStatusIconVariant('cancelled')).toBe('Warning')
-      expect(getStatusIconVariant('outdated')).toBe('Warning')
+      expect(getStatusIconVariant('approval-denied')).toBe('WarningIcon')
+      expect(getStatusIconVariant('cancelled')).toBe('WarningIcon')
+      expect(getStatusIconVariant('outdated')).toBe('WarningIcon')
     })
 
     test('should return Loading for info statuses', () => {
@@ -102,22 +102,22 @@ describe('status-utils', () => {
     })
 
     test('should return ClockCountdown for neutral statuses', () => {
-      expect(getStatusIconVariant('pending')).toBe('ClockCountdown')
-      expect(getStatusIconVariant('inactive')).toBe('ClockCountdown')
-      expect(getStatusIconVariant('offline')).toBe('ClockCountdown')
+      expect(getStatusIconVariant('pending')).toBe('ClockCountdownIcon')
+      expect(getStatusIconVariant('inactive')).toBe('ClockCountdownIcon')
+      expect(getStatusIconVariant('offline')).toBe('ClockCountdownIcon')
     })
 
     test('should return special icons for specific statuses', () => {
-      expect(getStatusIconVariant('user-skipped')).toBe('MinusCircle')
-      expect(getStatusIconVariant('retried')).toBe('Repeat')
-      expect(getStatusIconVariant('special')).toBe('Prohibit')
-      expect(getStatusIconVariant('not-attempted')).toBe('Prohibit')
+      expect(getStatusIconVariant('user-skipped')).toBe('MinusCircleIcon')
+      expect(getStatusIconVariant('retried')).toBe('RepeatIcon')
+      expect(getStatusIconVariant('special')).toBe('ProhibitIcon')
+      expect(getStatusIconVariant('not-attempted')).toBe('ProhibitIcon')
       expect(getStatusIconVariant('skeleton')).toBe('none' as any)
     })
 
     test('should return ClockCountdown for unknown statuses', () => {
-      expect(getStatusIconVariant('unknown-status')).toBe('ClockCountdown')
-      expect(getStatusIconVariant('')).toBe('ClockCountdown')
+      expect(getStatusIconVariant('unknown-status')).toBe('ClockCountdownIcon')
+      expect(getStatusIconVariant('')).toBe('ClockCountdownIcon')
     })
   })
 })

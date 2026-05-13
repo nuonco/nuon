@@ -141,11 +141,11 @@ export const UsageExamples = () => (
         <Divider dividerWord="OR" />
 
         <Button variant="secondary" className="w-full">
-          <Icon variant="Globe" size="16" />
+          <Icon variant="GlobeIcon" size="16" />
           Continue with Google
         </Button>
         <Button variant="secondary" className="w-full">
-          <Icon variant="GithubLogo" size="16" />
+          <Icon variant="GithubLogoIcon" size="16" />
           Continue with GitHub
         </Button>
       </div>

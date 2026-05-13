@@ -50,7 +50,7 @@ export const TeardownComponentModal = ({
             weight="strong"
             theme="error"
           >
-            <Icon variant="Warning" size="24" />
+            <Icon variant="WarningIcon" size="24" />
             Teardown {component.name} component
           </Text>
           <Text

@@ -29,7 +29,7 @@ export const EnableConfigSyncModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="FileCloud" size="24" />
+          <Icon variant="FileCloudIcon" size="24" />
           {modalHeading}
         </Text>
       }
@@ -41,7 +41,7 @@ export const EnableConfigSyncModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant={isManagedByConfig ? 'ToggleRight' : 'ToggleLeft'} />
+            <Icon variant={isManagedByConfig ? 'ToggleRightIcon' : 'ToggleLeftIcon'} />
             {buttonText}
           </span>
         ),

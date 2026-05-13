@@ -68,7 +68,7 @@ export const DeleteOrgLinkButton = ({
       onClick={() => addModal(modal)}
       {...props}
     >
-      <Icon variant="Trash" />
+      <Icon variant="TrashIcon" />
       Unlink
     </Button>
   )

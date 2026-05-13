@@ -43,7 +43,7 @@ export const CreateWebhookModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="WebhooksLogo" size="24" />
+          <Icon variant="WebhooksLogoIcon" size="24" />
           Create webhook
         </Text>
       }
@@ -54,7 +54,7 @@ export const CreateWebhookModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Plus" />
+            <Icon variant="PlusIcon" />
             Create webhook
           </span>
         ),

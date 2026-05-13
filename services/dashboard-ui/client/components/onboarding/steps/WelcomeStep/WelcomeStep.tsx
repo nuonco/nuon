@@ -51,7 +51,7 @@ export const WelcomeStep = ({ isPending, nextStepTitle, onSubmit, onAdvance }: I
               Saving...
             </span>
           ) : (
-            <>{nextStepTitle ?? 'Continue'} <Icon variant="CaretRight" weight="bold" /></>
+            <>{nextStepTitle ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" /></>
           )}
         </Button>
       </div>

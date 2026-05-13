@@ -9,7 +9,7 @@ export const BackLink = ({
   className,
   children = (
     <>
-      <Icon variant="CaretLeft" weight="bold" /> Back
+      <Icon variant="CaretLeftIcon" weight="bold" /> Back
     </>
   ),
   variant = 'base',

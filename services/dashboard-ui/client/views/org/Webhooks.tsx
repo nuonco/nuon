@@ -67,7 +67,7 @@ export const Webhooks = () => {
                 className="text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1"
               >
                 Read the docs
-                <Icon variant="ArrowSquareOut" size={14} />
+                <Icon variant="ArrowSquareOutIcon" size={14} />
               </a>
             </Text>
             <SamplePayload />
