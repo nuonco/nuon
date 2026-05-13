@@ -86,6 +86,16 @@ Use sentence case for all UI text (headings, buttons, labels, tab labels). Never
 
 For `Tabs`: keys are rendered via `toSentenceCase(camelToWords(key))` which lowercases everything after the first character — always write keys all-lowercase (`'create your own app'`, not `'Create Your Own App'`).
 
+## Icons
+
+Use the `Icon` component from `@/components/common/Icon` for ALL icons. Always use the `Icon` suffix for variant names (e.g., `HouseIcon` not `House`).
+
+If you need a Phosphor icon that isn't already available, add it to `client/components/common/Icon.tsx`:
+1. Add the named import: `import { NewIconNameIcon } from '@phosphor-icons/react'`
+2. Add it to the `phosphorIcons` object: `NewIconNameIcon,`
+
+Never import directly from `@phosphor-icons/react`, `lucide-react`, or `heroicons` in component files.
+
 ## Anti-Patterns
 
 - **Do not** create a component that duplicates an existing one — always check existing components first
@@ -95,3 +105,4 @@ For `Tabs`: keys are rendered via `toSentenceCase(camelToWords(key))` which lowe
 - **Do not** leave both a flat file and directory with the same name — delete the flat file after migrating to the directory pattern
 - **Do not** skip the `.stories.tsx` file — every component directory must have one
 - **Do not** use `StoryObj` or `render:` in stories — Ladle v5 requires plain function exports
+- **Do not** import icons directly from `@phosphor-icons/react` — always use the `Icon` component

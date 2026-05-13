@@ -136,7 +136,7 @@ const BranchDetailContent = () => {
             Workflow runs
           </Text>
           <Link href={`/${orgId}/apps/${appId}/branches/${branchId}/runs`}>
-            View all <Icon variant="CaretRight" />
+            View all <Icon variant="CaretRightIcon" />
           </Link>
         </div>
 
@@ -167,7 +167,7 @@ const BranchDetailContent = () => {
                   caption={<ID>{run.id}</ID>}
                   underline={commitSha ? (
                     <span className="flex items-center gap-1.5">
-                      <Icon variant="GitCommit" size={12} />
+                      <Icon variant="GitCommitIcon" size={12} />
                       {commitSha.substring(0, 7)}
                     </span>
                   ) : undefined}

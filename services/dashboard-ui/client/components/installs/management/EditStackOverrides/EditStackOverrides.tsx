@@ -95,7 +95,7 @@ export const EditStackOverridesModal = ({
       childrenClassName="overflow-y-auto"
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="StackSimple" size="24" />
+          <Icon variant="StackSimpleIcon" size="24" />
           Edit stack overrides
         </Text>
       }
@@ -164,7 +164,7 @@ export const EditStackOverridesModal = ({
           <div className="flex items-center justify-between">
             <Text variant="subtext" weight="strong">Custom nested stacks</Text>
             <Button variant="ghost" size="sm" onClick={handleAddStack}>
-              <Icon variant="Plus" />
+              <Icon variant="PlusIcon" />
               Add stack
             </Button>
           </div>
@@ -187,7 +187,7 @@ export const EditStackOverridesModal = ({
                       size="sm"
                       onClick={() => handleRemoveStack(idx)}
                     >
-                      <Icon variant="Trash" />
+                      <Icon variant="TrashIcon" />
                     </Button>
                   </div>
                   <div className="grid grid-cols-[1fr_2fr_auto] gap-2">

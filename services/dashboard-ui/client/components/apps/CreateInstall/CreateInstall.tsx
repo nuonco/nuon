@@ -139,7 +139,7 @@ export const CreateInstallModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="Cube" size="24" />
+          <Icon variant="CubeIcon" size="24" />
           Create install
         </Text>
       }
@@ -156,7 +156,7 @@ export const CreateInstallModal = ({
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Icon variant="Cube" />
+                  <Icon variant="CubeIcon" />
                   Create install
                 </span>
               ),
@@ -205,7 +205,7 @@ export const CreateInstallButton = ({
       onClick={onClick}
       {...props}
     >
-      <Icon variant="Cube" />
+      <Icon variant="CubeIcon" />
       Create install
     </Button>
   )

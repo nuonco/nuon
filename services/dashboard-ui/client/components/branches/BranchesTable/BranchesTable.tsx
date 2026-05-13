@@ -69,7 +69,7 @@ const columns: ColumnDef<TBranchRow>[] = [
     cell: (info) => (
       <Text>
         <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRight" />
+          View <Icon variant="CaretRightIcon" />
         </Link>
       </Text>
     ),

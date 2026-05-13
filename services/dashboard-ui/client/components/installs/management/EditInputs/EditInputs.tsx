@@ -37,7 +37,7 @@ export const ConfirmUpdateModal = ({
           weight="strong"
           theme="warn"
         >
-          <Icon variant="Warning" size="24" />
+          <Icon variant="WarningIcon" size="24" />
           Override changes to this install?
         </Text>
       }
@@ -149,7 +149,7 @@ export const EditInputsFormModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="PencilSimpleLine" size="24" />
+          <Icon variant="PencilSimpleLineIcon" size="24" />
           {showNameField ? 'Edit install' : 'Edit install inputs'}
         </Text>
       }
@@ -163,7 +163,7 @@ export const EditInputsFormModal = ({
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  <Icon variant="Cube" />
+                  <Icon variant="CubeIcon" />
                   {showNameField ? 'Update install' : 'Update inputs'}
                 </span>
               ),

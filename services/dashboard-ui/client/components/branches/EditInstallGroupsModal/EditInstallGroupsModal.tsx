@@ -205,7 +205,7 @@ export const EditInstallGroupsModal = ({
                   Install groups ({groups.length})
                 </Text>
                 <Button onClick={addNewGroup} variant="secondary" size="sm">
-                  <Icon variant="Plus" size={16} />
+                  <Icon variant="PlusIcon" size={16} />
                   Add group
                 </Button>
               </div>

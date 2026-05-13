@@ -80,7 +80,7 @@ export const AuditHistoryButton = ({ ...props }: IButtonAsButton) => {
       {...props}
     >
       Audit history
-      <Icon variant="ClockClockwise" />
+      <Icon variant="ClockClockwiseIcon" />
     </Button>
   )
 }

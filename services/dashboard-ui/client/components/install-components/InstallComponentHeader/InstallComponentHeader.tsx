@@ -83,14 +83,14 @@ export const InstallComponentHeader = ({
               >
                 <Menu className="w-56">
                   <Button>
-                    Redeploy component <Icon variant="CloudArrowUp" />
+                    Redeploy component <Icon variant="CloudArrowUpIcon" />
                   </Button>
                   <Button>
-                    Teardown component <Icon variant="CloudArrowDown" />
+                    Teardown component <Icon variant="CloudArrowDownIcon" />
                   </Button>
                   {installComponent?.component?.type === 'terraform_module' ? (
                     <Button>
-                      Unlock Terraform state <Icon variant="LockOpen" />
+                      Unlock Terraform state <Icon variant="LockOpenIcon" />
                     </Button>
                   ) : null}
                 </Menu>

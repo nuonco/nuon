@@ -191,7 +191,7 @@ export const ViewCurrentInputsModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="ListChecks" size="24" />
+          <Icon variant="ListChecksIcon" size="24" />
           Current inputs
         </Text>
       }

@@ -50,7 +50,7 @@ export const MainNav = ({
     ? [
         ...MAIN_LINKS,
         {
-          iconVariant: 'Users' as const,
+          iconVariant: 'UsersIcon' as const,
           path: customerPortalUrl,
           text: 'Customer Portal',
           isExternal: true,

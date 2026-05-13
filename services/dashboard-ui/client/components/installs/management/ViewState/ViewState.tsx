@@ -22,7 +22,7 @@ export const ViewStateModal = ({ state, error, isLoading, ...props }: IViewState
           variant="h3"
           weight="strong"
         >
-          <Icon variant="CodeBlock" size="24" />
+          <Icon variant="CodeBlockIcon" size="24" />
           View install state
         </Text>
       }

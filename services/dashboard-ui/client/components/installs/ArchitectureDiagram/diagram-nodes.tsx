@@ -194,7 +194,7 @@ export const ComponentCardNode = memo(({ data }: NodeProps) => {
                 subtitle: 'Deploy history & logs',
                 href: deploysHref,
                 leftContent: (
-                  <Icon variant="ClockCounterClockwise" size={16} />
+                  <Icon variant="ClockCounterClockwiseIcon" size={16} />
                 ),
               },
             ]
@@ -265,7 +265,7 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
             id: 'description',
             title: 'Description',
             subtitle: role.description,
-            leftContent: <Icon variant="Info" size={16} />,
+            leftContent: <Icon variant="InfoIcon" size={16} />,
           },
         ]
       : []),
@@ -288,7 +288,7 @@ export const RoleCardNode = memo(({ data }: NodeProps) => {
                 )}
               </span>
             ),
-            leftContent: <Icon variant="ShieldCheck" size={16} />,
+            leftContent: <Icon variant="ShieldCheckIcon" size={16} />,
           },
         ]
       : []),

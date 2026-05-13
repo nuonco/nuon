@@ -264,7 +264,7 @@ export const CustomContent = () => (
           className="border rounded-lg"
           heading={
             <div className="flex items-center gap-2">
-              <Icon variant="Warning" size="16" className="text-orange-600" />
+              <Icon variant="WarningIcon" size="16" className="text-orange-600" />
               <Text weight="strong">Configuration Issues</Text>
               <Badge theme="warn" size="sm">
                 3 Issues

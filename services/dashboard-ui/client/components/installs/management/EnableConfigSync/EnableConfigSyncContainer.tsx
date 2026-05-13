@@ -85,7 +85,7 @@ export const EnableConfigSyncButton = ({ ...props }: IEnableConfigSync & IButton
       {...props}
     >
       {buttonText}
-      <Icon variant="FileCloud" />
+      <Icon variant="FileCloudIcon" />
     </Button>
   )
 }

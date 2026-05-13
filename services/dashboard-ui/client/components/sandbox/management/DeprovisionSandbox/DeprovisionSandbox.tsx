@@ -39,7 +39,7 @@ export const DeprovisionSandboxModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="BoxArrowDown" />
+            <Icon variant="BoxArrowDownIcon" />
             Deprovision sandbox
           </span>
         ),

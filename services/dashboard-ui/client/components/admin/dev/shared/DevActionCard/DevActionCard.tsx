@@ -14,23 +14,23 @@ const getActionIcon = (
   title: string,
   variant: IDevActionCard['variant']
 ) => {
-  if (title.toLowerCase().includes('seed')) return 'Database'
-  if (title.toLowerCase().includes('reset')) return 'ArrowCounterClockwise'
-  if (title.toLowerCase().includes('sync')) return 'ArrowsClockwise'
-  if (title.toLowerCase().includes('generate')) return 'MagicWand'
-  if (title.toLowerCase().includes('mock')) return 'Cube'
-  if (title.toLowerCase().includes('log')) return 'Terminal'
-  if (title.toLowerCase().includes('cache')) return 'Lightning'
-  if (title.toLowerCase().includes('migrate')) return 'ArrowRight'
-  if (title.toLowerCase().includes('test')) return 'Flask'
+  if (title.toLowerCase().includes('seed')) return 'DatabaseIcon'
+  if (title.toLowerCase().includes('reset')) return 'ArrowCounterClockwiseIcon'
+  if (title.toLowerCase().includes('sync')) return 'ArrowsClockwiseIcon'
+  if (title.toLowerCase().includes('generate')) return 'MagicWandIcon'
+  if (title.toLowerCase().includes('mock')) return 'CubeIcon'
+  if (title.toLowerCase().includes('log')) return 'TerminalIcon'
+  if (title.toLowerCase().includes('cache')) return 'LightningIcon'
+  if (title.toLowerCase().includes('migrate')) return 'ArrowRightIcon'
+  if (title.toLowerCase().includes('test')) return 'FlaskIcon'
 
   switch (variant) {
     case 'warning':
-      return 'Warning'
+      return 'WarningIcon'
     case 'danger':
-      return 'Warning'
+      return 'WarningIcon'
     default:
-      return 'Play'
+      return 'PlayIcon'
   }
 }
 

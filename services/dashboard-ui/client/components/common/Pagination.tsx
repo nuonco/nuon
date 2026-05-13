@@ -66,7 +66,7 @@ export const Pagination = ({
         onClick={handlePrev}
         title="previous"
       >
-        <Icon variant="ArrowLeft" />
+        <Icon variant="ArrowLeftIcon" />
       </Button>
 
       <Button
@@ -74,7 +74,7 @@ export const Pagination = ({
         onClick={handleNext}
         title="next"
       >
-        <Icon variant="ArrowRight" />
+        <Icon variant="ArrowRightIcon" />
       </Button>
     </div>
   )

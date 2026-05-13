@@ -79,7 +79,7 @@ export function WorkflowApprovalsProvider({
             <Text>Workflow step needs approved.</Text>
             {workflowUrl ? (
               <Link href={workflowUrl}>
-                View details <Icon variant="CaretRight" />
+                View details <Icon variant="CaretRightIcon" />
               </Link>
             ) : (
               'A workflow step is waiting for your approval.'

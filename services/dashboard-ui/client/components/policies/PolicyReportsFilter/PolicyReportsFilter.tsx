@@ -63,7 +63,7 @@ export function PolicyReportsFilter({
       alignment="right"
       buttonText={
         <>
-          <Icon variant="FunnelSimple" />
+          <Icon variant="FunnelSimpleIcon" />
           Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
         </>
       }
@@ -132,7 +132,7 @@ export function PolicyReportsFilter({
               variant="ghost"
             >
               Clear filters
-              <Icon variant="X" />
+              <Icon variant="XIcon" />
             </Button>
           </div>
         </form>

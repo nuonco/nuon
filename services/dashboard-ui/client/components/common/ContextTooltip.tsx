@@ -112,7 +112,7 @@ export const ContextTooltip = ({
                         {item.rightContent || (
                           <Icon
                             className="self-center ml-auto"
-                            variant="CaretRight"
+                            variant="CaretRightIcon"
                           />
                         )}
                       </span>

@@ -289,7 +289,7 @@ export const UsageExamples = () => (
       <div className="space-y-3 border rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="ClockClockwise" size="16" className="text-blue-600" />
+            <Icon variant="ClockClockwiseIcon" size="16" className="text-blue-600" />
             <div>
               <Text weight="strong">Infrastructure Drift Check</Text>
               <Text variant="subtext" theme="neutral">
@@ -301,7 +301,7 @@ export const UsageExamples = () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="ClockClockwise" size="16" className="text-blue-600" />
+            <Icon variant="ClockClockwiseIcon" size="16" className="text-blue-600" />
             <div>
               <Text weight="strong">Security Compliance Scan</Text>
               <Text variant="subtext" theme="neutral">
@@ -313,7 +313,7 @@ export const UsageExamples = () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="ClockClockwise" size="16" className="text-blue-600" />
+            <Icon variant="ClockClockwiseIcon" size="16" className="text-blue-600" />
             <div>
               <Text weight="strong">Configuration Audit</Text>
               <Text variant="subtext" theme="neutral">

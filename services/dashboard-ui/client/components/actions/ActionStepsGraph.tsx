@@ -65,7 +65,7 @@ export const ActionStepGraph = ({
                     className="gap-1"
                     variant="label"
                   >
-                    <Icon variant="Timer" size="13" />
+                    <Icon variant="TimerIcon" size="13" />
                     <Duration
                       nanoseconds={s?.execution_duration}
                       variant="label"

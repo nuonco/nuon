@@ -59,7 +59,7 @@ export const EditChannelSubscriptionModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
-          <Icon variant="SlackLogo" size="24" />
+          <Icon variant="SlackLogoIcon" size="24" />
           Edit channel subscription
         </Text>
       }
@@ -70,7 +70,7 @@ export const EditChannelSubscriptionModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Check" />
+            <Icon variant="CheckIcon" />
             Save changes
           </span>
         ),

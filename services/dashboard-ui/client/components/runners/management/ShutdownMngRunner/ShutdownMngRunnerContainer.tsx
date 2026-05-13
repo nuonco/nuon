@@ -36,9 +36,9 @@ export const ShutdownMngRunnerButton = ({ runnerId, processId, showRunnerLabel, 
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="Power" />}
+      {props?.isMenuButton ? null : <Icon variant="PowerIcon" />}
       {label}
-      {props?.isMenuButton ? <Icon variant="Power" /> : null}
+      {props?.isMenuButton ? <Icon variant="PowerIcon" /> : null}
     </Button>
   )
 }
