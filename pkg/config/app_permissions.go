@@ -95,8 +95,15 @@ func (a *PermissionsConfig) Validate() error {
 		roleNames[role.Name] = true
 	}
 
-	if a.ProvisionRole == nil || a.DeprovisionRole == nil || a.MaintenanceRole == nil {
-		return errors.New("provision, deprovision and maintenance permissions are required")
+	if a.ProvisionRole == nil {
+		return errors.New("missing permission with type `provision`")
 	}
+	if a.MaintenanceRole == nil {
+		return errors.New("missing permission with type `maintenance`")
+	}
+	if a.DeprovisionRole == nil {
+		return errors.New("missing permission with type `deprovision`")
+	}
+
 	return nil
 }
