@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { getStatusTheme, getStatusIconVariant } from './status-utils'
 
 describe('status-utils', () => {
@@ -112,7 +112,7 @@ describe('status-utils', () => {
       expect(getStatusIconVariant('retried')).toBe('Repeat')
       expect(getStatusIconVariant('special')).toBe('Prohibit')
       expect(getStatusIconVariant('not-attempted')).toBe('Prohibit')
-      expect(getStatusIconVariant('skeleton')).toBe('none')
+      expect(getStatusIconVariant('skeleton')).toBe('none' as any)
     })
 
     test('should return ClockCountdown for unknown statuses', () => {

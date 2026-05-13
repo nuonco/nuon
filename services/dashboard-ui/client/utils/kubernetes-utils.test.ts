@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { parseKubernetesPlan } from './kubernetes-utils'
 import type { TKubernetesPlan, TKubernetesPlanItem } from '@/types'
 
