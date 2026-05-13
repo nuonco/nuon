@@ -40,7 +40,7 @@ Rules:
 Run the new spec:
 
 ```bash
-cd services/dashboard-ui && E2E_EMAIL=${E2E_EMAIL} E2E_ORG_ID=${E2E_ORG_ID} npx playwright test -c e2e/playwright.config.ts e2e/specs/<name>.spec.ts
+cd services/dashboard-ui && E2E_EMAIL=${E2E_EMAIL} E2E_ORG_ID=${E2E_ORG_ID} bunx playwright test -c e2e/playwright.config.ts e2e/specs/<name>.spec.ts
 ```
 
 If the test fails, read the error output and fix the spec. Do not modify the flow markdown unless the user asks — the flow is the source of truth.
