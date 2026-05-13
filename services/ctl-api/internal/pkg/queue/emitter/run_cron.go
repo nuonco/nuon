@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/can"
 )
 
 const (
@@ -39,6 +40,16 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 		if e.stopped {
 			l.Info("emitter stopped")
 			return true, nil
+		}
+
+		// History-driven CAN: rotate before Temporal's 50K hard limit, even if
+		// the 1h time bound hasn't elapsed.
+		if can.ShouldContinueAsNew(ctx) {
+			l.Info("history-driven continue-as-new",
+				zap.Int("history_length", workflow.GetInfo(ctx).GetCurrentHistoryLength()),
+				zap.Bool("server_suggested", workflow.GetInfo(ctx).GetContinueAsNewSuggested()),
+			)
+			return false, nil
 		}
 
 		if _, err := e.ensureEmitterActive(ctx); err != nil {

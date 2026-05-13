@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/can"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -82,7 +83,9 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		}
 
 		// all graceful and wait until active workers is empty, to prevent orphaning an handler.
-		return (q.restarted || q.stopped || q.isIdle(ctx)) && q.activeWorkers == 0
+		// History-aware CAN is also gated on activeWorkers == 0 so we don't orphan
+		// in-flight handlers; a busy queue will get its CAN on the next quiet moment.
+		return (q.restarted || q.stopped || q.isIdle(ctx) || can.ShouldContinueAsNew(ctx)) && q.activeWorkers == 0
 	}); err != nil {
 		return false, err
 	}
@@ -93,6 +96,16 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	}
 
 	if q.restarted {
+		q.setStatus(ctx, l, QueueStatusRestarted)
+		return false, nil
+	}
+
+	// History-driven CAN: rotate before Temporal's 50K hard limit.
+	if can.ShouldContinueAsNew(ctx) {
+		l.Info("history-driven continue-as-new",
+			zap.Int("history_length", workflow.GetInfo(ctx).GetCurrentHistoryLength()),
+			zap.Bool("server_suggested", workflow.GetInfo(ctx).GetContinueAsNewSuggested()),
+		)
 		q.setStatus(ctx, l, QueueStatusRestarted)
 		return false, nil
 	}

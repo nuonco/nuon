@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/can"
 )
 
 const (
@@ -38,6 +40,12 @@ func (w *Workflows) EnqueuerSweep(ctx workflow.Context, req SweepWorkflowRequest
 
 		if err := AwaitSweep(ctx, &SweepRequest{}); err != nil {
 			workflow.GetLogger(ctx).Warn("sweep activity failed", "error", err)
+		}
+
+		// History-driven CAN: rotate before Temporal's 50K hard limit, even if
+		// the 24h time bound hasn't elapsed.
+		if can.ShouldContinueAsNew(ctx) {
+			break
 		}
 	}
 
