@@ -8,6 +8,7 @@ import (
 
 	"github.com/dustin/go-humanize"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/zap"
 	"oras.land/oras-go/v2"
 	"oras.land/oras-go/v2/content"
@@ -37,6 +38,10 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	pullStart := time.Now()
 
 	timers := new(sync.Map)
+	// spans holds the op.EndFunc per layer digest so PostCopy can finalize
+	// the child span PreCopy opened. Per-layer pulls run concurrently via
+	// oras's worker pool, so a sync.Map is required.
+	spans := new(sync.Map)
 	var totalBytes int64
 
 	fields := func(desc ocispec.Descriptor) []zap.Field {
@@ -50,6 +55,15 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	opts := oras.DefaultCopyOptions
 	opts.PreCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		timers.Store(desc.Digest, time.Now())
+		// Open a child of the surrounding oci.unpack span so per-layer
+		// pull duration is visible in traces (e.g. to spot the bundled
+		// terraform binaries layer dominating the pull).
+		_, end := op.Start(ctx, "oci", "pull_layer",
+			attribute.String("oci.digest", string(desc.Digest)),
+			attribute.String("oci.media_type", desc.MediaType),
+			attribute.Int64("oci.size_bytes", desc.Size),
+		)
+		spans.Store(desc.Digest, end)
 		l.Info(
 			fmt.Sprintf("pulling %s of size %s", desc.MediaType, humanize.Bytes(uint64(desc.Size))),
 			fields(desc)...,
@@ -58,6 +72,9 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	}
 	opts.PostCopy = func(ctx context.Context, desc ocispec.Descriptor) error {
 		totalBytes += desc.Size
+		if endFn, ok := spans.LoadAndDelete(desc.Digest); ok {
+			endFn.(op.EndFunc)(nil)
+		}
 		if ti, ok := timers.Load(desc.Digest); ok {
 			t := ti.(time.Time)
 			l.Info(
@@ -78,6 +95,14 @@ func (a *archive) Unpack(ctx context.Context, srcCfg *configs.OCIRegistryReposit
 	}
 
 	manifest, err := oras.Copy(ctx, srcRepo, tag, a.store, tag, opts)
+	// Finalize any layer spans whose PostCopy never fired (typically the
+	// failure case below; PreCopy may also have started spans for layers
+	// the caller cancelled mid-flight). Done before the error return so
+	// no spans leak on the failure path.
+	spans.Range(func(_, v any) bool {
+		v.(op.EndFunc)(err)
+		return true
+	})
 	if err != nil {
 		return fmt.Errorf("unable to copy image: %w", err)
 	}
