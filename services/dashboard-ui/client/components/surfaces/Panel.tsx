@@ -128,7 +128,7 @@ export const PanelBase = ({
                     }
                   >
                     <Icon
-                      variant={size === 'full' ? 'CornersIn' : 'CornersOut'}
+                      variant={size === 'full' ? 'CornersInIcon' : 'CornersOutIcon'}
                     />
                   </Button>
                 </Tooltip>
@@ -145,7 +145,7 @@ export const PanelBase = ({
                   onClick={handleClose}
                   aria-label="Close panel"
                 >
-                  <Icon variant="ArrowLineRight" />
+                  <Icon variant="ArrowLineRightIcon" />
                 </Button>
               </Tooltip>
             </div>

@@ -31,7 +31,7 @@ export const PulumiConfigModal = ({
     <Modal
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
-          <Icon variant="List" size="20" />
+          <Icon variant="ListIcon" size="20" />
           Pulumi config
         </Text>
       }
@@ -73,7 +73,7 @@ export const PulumiEnvVarsModal = ({
     <Modal
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
-          <Icon variant="List" size="20" />
+          <Icon variant="ListIcon" size="20" />
           Pulumi env vars
         </Text>
       }

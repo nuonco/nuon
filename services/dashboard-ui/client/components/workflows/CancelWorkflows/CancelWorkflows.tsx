@@ -34,7 +34,7 @@ export const CancelWorkflowsModal = ({
           weight="strong"
           theme="error"
         >
-          <Icon variant="Warning" size="24" />
+          <Icon variant="WarningIcon" size="24" />
           {`Cancel ${count} workflow${count === 1 ? '' : 's'}?`}
         </Text>
       }

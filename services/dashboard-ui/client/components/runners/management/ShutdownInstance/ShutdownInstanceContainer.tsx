@@ -24,9 +24,9 @@ export const ShutdownInstanceButton = ({ ...props }: IButtonAsButton) => {
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="CloudArrowDown" />}
+      {props?.isMenuButton ? null : <Icon variant="CloudArrowDownIcon" />}
       Restart instance
-      {props?.isMenuButton ? <Icon variant="CloudArrowDown" /> : null}
+      {props?.isMenuButton ? <Icon variant="CloudArrowDownIcon" /> : null}
     </Button>
   )
 }

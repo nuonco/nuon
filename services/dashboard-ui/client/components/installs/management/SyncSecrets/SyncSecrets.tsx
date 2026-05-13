@@ -27,7 +27,7 @@ export const SyncSecretsModal = ({
           weight="strong"
           theme="info"
         >
-          <Icon variant="Key" size="24" />
+          <Icon variant="KeyIcon" size="24" />
           Sync secrets?
         </Text>
       }

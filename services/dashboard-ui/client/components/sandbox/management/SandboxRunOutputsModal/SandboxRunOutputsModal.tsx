@@ -28,7 +28,7 @@ export const SandboxRunOutputsModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="CodeBlock" size="24" />
+          <Icon variant="CodeBlockIcon" size="24" />
           {headingText}
         </Text>
       }
@@ -79,9 +79,9 @@ export const SandboxRunOutputsButton = ({
       onClick={onOpen}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="CodeBlock" />}
+      {props?.isMenuButton ? null : <Icon variant="CodeBlockIcon" />}
       View outputs
-      {props?.isMenuButton ? <Icon variant="CodeBlock" /> : null}
+      {props?.isMenuButton ? <Icon variant="CodeBlockIcon" /> : null}
     </Button>
   )
 }

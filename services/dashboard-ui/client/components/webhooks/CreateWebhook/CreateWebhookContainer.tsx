@@ -81,7 +81,7 @@ export const CreateWebhookButton = ({
 
   return (
     <Button variant="primary" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="Plus" />
+      <Icon variant="PlusIcon" />
       Create webhook
     </Button>
   )

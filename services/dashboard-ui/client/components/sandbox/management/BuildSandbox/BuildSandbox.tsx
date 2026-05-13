@@ -27,7 +27,7 @@ export const BuildSandboxModal = ({
           weight="strong"
           theme="info"
         >
-          <Icon variant="Hammer" size="24" />
+          <Icon variant="HammerIcon" size="24" />
           Build sandbox?
         </Text>
       }

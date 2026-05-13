@@ -178,7 +178,7 @@ export const InitialActiveTab = () => (
           settings: (
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Icon variant="Gear" size="20" />
+                <Icon variant="GearIcon" size="20" />
                 <Text weight="strong">Settings - Initially Active!</Text>
               </div>
               <Text>

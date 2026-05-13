@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useState, lazy, Suspense } from 'react'
+import React, { lazy, Suspense } from 'react'
 import { cn } from '@/utils/classnames'
 import { CodeBlock } from '../CodeBlock'
 import { JSONViewer } from '../JSONViewer'
@@ -11,49 +11,6 @@ const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-surface-rendered'])
 
 const isFlowchart = (code: string) => /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(code.trim().split('\n')[0])
 
-const MermaidSvgDiagram = ({ code }: { code: string }) => {
-  const [svg, setSvg] = useState<string>('')
-  const [error, setError] = useState<string>('')
-  const reactId = useId()
-  const id = `mermaid-${reactId.replace(/:/g, '')}`
-
-  useEffect(() => {
-    const renderMermaid = async () => {
-      try {
-        const mermaid = await import('mermaid')
-        mermaid.default.initialize({
-          startOnLoad: false,
-          theme: 'neutral',
-          securityLevel: 'loose',
-          fontFamily: 'inherit',
-        })
-
-        const { svg: renderedSvg } = await mermaid.default.render(`${id}-render`, code)
-        const cleaned = renderedSvg
-          .replace(/\s+height="[\d.]+"/, '')
-          .replace(/\s+style="[^"]*max-width:[^"]*"/, ' style="width: 100%"')
-        setSvg(cleaned)
-      } catch (err) {
-        console.error('Mermaid error:', err)
-        setError(`Mermaid Error: ${err}`)
-      }
-    }
-
-    renderMermaid()
-  }, [code, id])
-
-  if (error) {
-    return <pre className="text-red-600 dark:text-red-400">{error}</pre>
-  }
-
-  return (
-    <div
-      className="mermaid-diagram text-center my-4 min-h-[100px] border rounded-lg border-color p-4 bg-white dark:invert dark:hue-rotate-180"
-      dangerouslySetInnerHTML={{ __html: svg || 'Loading diagram...' }}
-    />
-  )
-}
-
 function renderCodeBlock(language: string, codeString: string) {
   if (language === 'mermaid') {
     if (isFlowchart(codeString)) {
@@ -63,7 +20,7 @@ function renderCodeBlock(language: string, codeString: string) {
         </Suspense>
       )
     }
-    return <MermaidSvgDiagram code={codeString} />
+    return <CodeBlock language="mermaid">{codeString}</CodeBlock>
   }
 
   if (language === 'json' || language === 'jsonc') {

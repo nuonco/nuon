@@ -19,7 +19,7 @@ export const VCSConnectionsStatusIndicator = ({
       variant="subtext"
       className="!flex gap-1.5 items-center cursor-default"
     >
-      <Icon variant="GitBranch" size={14} />
+      <Icon variant="GitBranchIcon" size={14} />
     </Text>
   </ContextTooltip>
 )

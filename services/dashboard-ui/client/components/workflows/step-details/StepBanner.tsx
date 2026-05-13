@@ -55,7 +55,7 @@ export const StepBanner = ({
             <div className="flex items-end gap-4">
               {onViewDetails ? (
                 <Button variant="ghost" size="md" onClick={onViewDetails}>
-                  View details <Icon variant="CaretRight" />
+                  View details <Icon variant="CaretRightIcon" />
                 </Button>
               ) : null}
               {bannerCfg.theme === 'error' ? (

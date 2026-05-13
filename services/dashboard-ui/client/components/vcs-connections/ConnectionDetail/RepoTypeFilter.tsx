@@ -10,9 +10,9 @@ export type TRepoFilterType = 'public' | 'private' | 'fork'
 export const REPO_FILTER_OPTIONS: TRepoFilterType[] = ['public', 'private', 'fork']
 
 const FILTER_LABELS: Record<TRepoFilterType, React.ReactNode> = {
-  public: <><Icon variant="Globe" size={12} /> public</>,
-  private: <><Icon variant="Lock" size={12} /> private</>,
-  fork: <><Icon variant="GitFork" size={12} /> fork</>,
+  public: <><Icon variant="GlobeIcon" size={12} /> public</>,
+  private: <><Icon variant="LockIcon" size={12} /> private</>,
+  fork: <><Icon variant="GitForkIcon" size={12} /> fork</>,
 }
 
 interface IRepoTypeFilter {

@@ -23,7 +23,7 @@ export const SearchInput = forwardRef<HTMLInputElement, ISearchInput>(
     return (
       <label className={cn('relative w-fit flex', labelClassName)}>
         <Icon
-          variant="MagnifyingGlass"
+          variant="MagnifyingGlassIcon"
           className="text-cool-grey-500 dark:text-cool-grey-700 absolute top-2.5 left-2"
         />
         <input
@@ -47,7 +47,7 @@ export const SearchInput = forwardRef<HTMLInputElement, ISearchInput>(
             title="clear search"
             onClick={() => (onClear ? onClear() : onChange(''))}
           >
-            <Icon variant="XCircle" />
+            <Icon variant="XCircleIcon" />
           </Button>
         ) : null}
       </label>

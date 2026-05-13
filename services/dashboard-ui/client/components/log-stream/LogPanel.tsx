@@ -64,11 +64,11 @@ const LogPanelNavHint = () => (
       Use
       <span className="inline-flex items-center gap-1">
         <Badge variant="code" size="sm">
-          <Icon variant="ArrowUp" />
+          <Icon variant="ArrowUpIcon" />
         </Badge>
         /
         <Badge variant="code" size="sm">
-          <Icon variant="ArrowDown" />
+          <Icon variant="ArrowDownIcon" />
         </Badge>
         or
         <Badge variant="code" size="sm">

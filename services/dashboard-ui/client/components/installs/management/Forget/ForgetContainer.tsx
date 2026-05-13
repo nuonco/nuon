@@ -75,7 +75,7 @@ export const ForgetButton = ({
       variant="danger"
     >
       Forget install
-      <Icon variant="Trash" />
+      <Icon variant="TrashIcon" />
     </Button>
   )
 }

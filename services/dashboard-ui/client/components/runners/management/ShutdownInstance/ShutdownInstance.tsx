@@ -26,7 +26,7 @@ export const ShutdownInstanceModal = ({
             weight="strong"
             theme="warn"
           >
-            <Icon variant="CloudArrowDown" size="24" />
+            <Icon variant="CloudArrowDownIcon" size="24" />
             Restart runner instance?
           </Text>
         </div>
@@ -39,7 +39,7 @@ export const ShutdownInstanceModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="CloudArrowDown" />
+            <Icon variant="CloudArrowDownIcon" />
             Restart instance
           </span>
         ),

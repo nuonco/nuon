@@ -110,7 +110,7 @@ export const EnableAutoApproveButton = ({
   const isInstallManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const buttonText = isApproveAll ? 'Disable auto approval' : 'Enable auto approval'
-  const buttonIcon = isApproveAll ? 'ToggleRight' : 'ToggleLeft'
+  const buttonIcon = isApproveAll ? 'ToggleRightIcon' : 'ToggleLeftIcon'
 
   const handleClick = () => {
     if (isInstallManagedByConfig) {

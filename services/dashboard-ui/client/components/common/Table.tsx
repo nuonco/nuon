@@ -128,9 +128,9 @@ export function TableBase<TData extends object>({
                       {header.column.getCanSort() && (
                         <span>
                           {header.column.getIsSorted() === 'asc' ? (
-                            <Icon variant="SortDescending" />
+                            <Icon variant="SortDescendingIcon" />
                           ) : header.column.getIsSorted() === 'desc' ? (
-                            <Icon variant="SortAscending" />
+                            <Icon variant="SortAscendingIcon" />
                           ) : (
                             ''
                           )}
