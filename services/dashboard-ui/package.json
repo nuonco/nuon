@@ -5,12 +5,12 @@
   "scripts": {
     "dev": "mkdir -p dist && bun run dev:html && bun run --parallel dev:css dev:ts dev:bs generate-api-types",
     "dev:ladle": "ladle dev",
-    "dev:css": "postcss client/styles.css -o dist/styles.css -w",
+    "dev:css": "bun scripts/build-css.js --watch",
     "dev:ts": "bun build client/index.tsx --outdir=dist --entry-naming='app.[ext]' --sourcemap --define 'process.env.NODE_ENV=\"development\"' --watch",
     "dev:html": "cp client/index.html dist/index.html",
     "dev:bs": "browser-sync start --proxy localhost:${HTTP_PORT:-4000} --files 'dist/**/*' --no-open --port $((${HTTP_PORT:-4000}+1))",
     "build:js": "bun build client/index.tsx --outdir=dist/assets --entry-naming='[name]-[hash].[ext]' --minify --define 'process.env.NODE_ENV=\"production\"' --metafile=dist/meta.json",
-    "build:css": "NODE_ENV=production postcss client/styles.css -o dist/styles.css",
+    "build:css": "NODE_ENV=production bun scripts/build-css.js",
     "build": "mkdir -p dist/assets && bun run --parallel build:js build:css && bun scripts/hash-assets.js",
     "generate-api-types": "bun ./scripts/generate-api-types.js",
     "lint": "eslint \"client/**/*.{ts,tsx}\"",
@@ -72,7 +72,6 @@
     "msw": "2.10.4",
     "openapi-typescript": "6.7.6",
     "postcss": "8.5.6",
-    "postcss-cli": "11.0.1",
     "prettier": "3.6.2",
     "tailwindcss": "4.1.13",
     "typescript": "5.9.2"
