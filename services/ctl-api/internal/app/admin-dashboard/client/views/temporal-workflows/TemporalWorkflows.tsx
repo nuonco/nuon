@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router'
 import { getTemporalWorkflows } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
+import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDuration, truncateId } from '@/utils/format'
@@ -81,16 +82,6 @@ export const TemporalWorkflows = () => {
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <h2 className="text-lg font-semibold">Workflow</h2>
               <Badge variant="status" status={wfInfo.status}>{wfInfo.status}</Badge>
-              {temporalUIUrl && data?.namespace && data?.workflow_id && (
-                <a
-                  href={`${temporalUIUrl}/namespaces/${data.namespace}/workflows/${data.workflow_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                >
-                  View in Temporal &rarr;
-                </a>
-              )}
             </div>
             <div className="space-y-1 text-xs">
               <div className="flex items-center gap-2">
@@ -137,6 +128,15 @@ export const TemporalWorkflows = () => {
               )}
             </div>
           </div>
+
+          {/* Temporal workflow stats card */}
+          {temporalUIUrl && data?.namespace && data?.workflow_id && (
+            <TemporalWorkflowCard
+              temporalUIUrl={temporalUIUrl}
+              namespace={data.namespace}
+              workflowId={data.workflow_id}
+            />
+          )}
 
           {/* Failures section */}
           {(wfInfo.status === 'Failed' || wfInfo.status === 'Timed Out') && (

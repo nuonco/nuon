@@ -15,6 +15,7 @@ import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { InfoModal } from '@/components/common/InfoModal';
 import { Pagination } from '@/components/common/Pagination';
 import { StatusHistory } from '@/components/common/StatusHistory';
+import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { formatDate, formatRelativeDate, truncateId } from '@/utils/format';
@@ -133,17 +134,16 @@ export const QueueDetail = () => {
             <Badge variant="default">{queue.owner_type}</Badge>
           </div>
         </div>
-        {temporal_ui_url && queue.workflow?.id && (
-          <a
-            href={`${temporal_ui_url}/namespaces/${queue.workflow.namespace}/workflows/${queue.workflow.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            View in Temporal
-          </a>
-        )}
       </div>
+
+      {/* Temporal workflow stats */}
+      {temporal_ui_url && queue.workflow?.id && queue.workflow?.namespace && (
+        <TemporalWorkflowCard
+          temporalUIUrl={temporal_ui_url}
+          namespace={queue.workflow.namespace}
+          workflowId={queue.workflow.id}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

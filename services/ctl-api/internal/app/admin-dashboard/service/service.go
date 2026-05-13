@@ -215,6 +215,7 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
 		api.GET("/temporal-workflows/index", s.TemporalWorkflowIndex)
 		api.GET("/temporal-workflows/namespaces", s.TemporalWorkflowNamespaces)
+		api.GET("/temporal-workflows/stats", s.TemporalWorkflowStats)
 
 		// Temporal workers
 		api.GET("/temporal-workers", s.TemporalWorkers)

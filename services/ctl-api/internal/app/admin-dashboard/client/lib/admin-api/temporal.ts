@@ -12,3 +12,6 @@ export const getTemporalWorkflows = (params: { workflow_id?: string; run_id?: st
 
 export const getTemporalWorkflowNamespaces = () =>
   api<{ namespaces: string[]; temporal_ui_url: string }>({ path: 'temporal-workflows/namespaces' })
+
+export const getTemporalWorkflowStats = (params: { namespace: string; workflow_id: string }) =>
+  api<{ history_length: number; history_size_bytes: number; can_count: number; start_time: string; status: string }>({ path: 'temporal-workflows/stats', params })
