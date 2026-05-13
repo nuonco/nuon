@@ -246,7 +246,7 @@ func (g *get) processField(ctx context.Context, inputVal string, subdir string) 
 	}
 
 	if err := client.Get(); err != nil {
-		return "", errors.Wrap(err, "failed to fetch file")
+		return "", errors.Wrap(err, "failed to fetch file "+inputVal)
 	}
 
 	content, err := os.ReadFile(tmpFP)
