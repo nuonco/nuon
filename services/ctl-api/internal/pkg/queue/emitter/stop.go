@@ -10,5 +10,6 @@ type StopResponse struct{}
 
 func (e *emitterWorkflow) stopHandler(ctx workflow.Context, req *StopRequest) (*StopResponse, error) {
 	e.stopped = true
+	e.emitStoppedEvent(ctx, stopReasonStopSignal)
 	return &StopResponse{}, nil
 }

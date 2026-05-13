@@ -39,14 +39,18 @@ func (w *Workflows) Emitter(ctx workflow.Context, req EmitterWorkflowRequest) er
 		queueID:   req.QueueID,
 		state:     req.State,
 	}
+	continuedAsNew := req.State != nil
 	if e.state == nil {
 		e.state = &EmitterState{
 			EmitCount: 0,
 		}
 	}
 
+	e.emitStartedEvent(ctx, continuedAsNew)
+
 	finished, err := e.run(ctx)
 	if err != nil {
+		e.emitStoppedEvent(ctx, stopReasonWorkflowError)
 		return err
 	}
 	if !finished {

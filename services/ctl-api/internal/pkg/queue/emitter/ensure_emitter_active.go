@@ -18,6 +18,7 @@ func (e *emitterWorkflow) ensureEmitterActive(ctx workflow.Context) (*app.QueueE
 		if generics.IsGormErrRecordNotFound(err) {
 			l.Warn("emitter not found, stopping workflow", zap.String("emitter-id", e.emitterID))
 			e.stopped = true
+			e.emitStoppedEvent(ctx, stopReasonEmitterNotFound)
 			return nil, nil
 		}
 		return nil, err

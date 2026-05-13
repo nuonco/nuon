@@ -51,15 +51,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	}
 }
 
-func (e *emitterWorkflow) emitLifecycleMetric(ctx workflow.Context, name string, emitter *app.QueueEmitter) {
-	tags := metrics.ToTags(map[string]string{
-		"signal_type": string(emitter.SignalType),
-		"mode":        string(emitter.Mode),
-		"owner_type":  emitter.Queue.OwnerType,
-	})
-	e.mw.Incr(ctx, name, tags...)
-}
-
 func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
 	tags := metrics.ToTags(map[string]string{
 		"signal_type":  string(emitter.SignalType),

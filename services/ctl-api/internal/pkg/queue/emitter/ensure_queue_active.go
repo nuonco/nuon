@@ -17,6 +17,7 @@ func (e *emitterWorkflow) ensureQueueActive(ctx workflow.Context) error {
 		if generics.IsGormErrRecordNotFound(err) {
 			l.Warn("queue not found, stopping emitter", zap.String("queue-id", e.queueID))
 			e.stopped = true
+			e.emitStoppedEvent(ctx, stopReasonQueueTerminated)
 			return nil
 		}
 		return err

@@ -19,6 +19,7 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 	// Check if already fired
 	if emitter.Fired {
 		l.Info("scheduled emitter already fired, stopping")
+		e.emitStoppedEvent(ctx, stopReasonScheduledAlreadyDone)
 		return true, nil
 	}
 
@@ -95,6 +96,8 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 	l.Info("scheduled emit complete, stopping emitter",
 		zap.Int64("total-emit-count", e.state.EmitCount),
 	)
+
+	e.emitStoppedEvent(ctx, stopReasonScheduledComplete)
 
 	// Return true to indicate workflow is finished (no continue-as-new)
 	return true, nil

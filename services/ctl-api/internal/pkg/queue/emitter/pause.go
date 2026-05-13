@@ -21,6 +21,8 @@ func (e *emitterWorkflow) pauseHandler(ctx workflow.Context, req *PauseRequest) 
 		return nil, err
 	}
 
+	e.emitPausedEvent(ctx)
+
 	return &PauseResponse{Paused: true}, nil
 }
 
@@ -37,6 +39,8 @@ func (e *emitterWorkflow) resumeHandler(ctx workflow.Context, req *ResumeRequest
 	}); err != nil {
 		return nil, err
 	}
+
+	e.emitResumedEvent(ctx)
 
 	return &ResumeResponse{Paused: false}, nil
 }
