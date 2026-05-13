@@ -16,6 +16,7 @@ interface WorkflowEntry {
   start_time: string
   history_length: number
   history_size_bytes: number
+  can_count: number
   memo?: Record<string, string>
   is_queue: boolean
   queue_id?: string
@@ -219,6 +220,7 @@ export const WorkflowIndex = () => {
                   Events{sortIcon('history_length')}
                 </th>
                 <th>Size</th>
+                <th>CAN</th>
                 <th className="cursor-pointer select-none" onClick={() => toggleSort('start_time')}>
                   Age{sortIcon('start_time')}
                 </th>
@@ -254,6 +256,9 @@ export const WorkflowIndex = () => {
                   </td>
                   <td className="font-mono text-xs text-gray-500 dark:text-gray-400">
                     {formatBytes(wf.history_size_bytes)}
+                  </td>
+                  <td className="font-mono text-xs text-gray-500 dark:text-gray-400">
+                    {wf.can_count > 0 ? wf.can_count.toLocaleString() : '-'}
                   </td>
                   <td className="text-xs text-gray-500 dark:text-gray-400" title={wf.start_time}>
                     {age(wf.start_time)}

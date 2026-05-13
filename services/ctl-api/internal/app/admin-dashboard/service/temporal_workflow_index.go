@@ -28,6 +28,7 @@ type WorkflowIndexEntry struct {
 	StartTime        string            `json:"start_time"`
 	HistoryLength    int64             `json:"history_length"`
 	HistorySizeBytes int64             `json:"history_size_bytes"`
+	CANCount         int64             `json:"can_count"`
 	Memo             map[string]string `json:"memo,omitempty"`
 	IsQueue          bool              `json:"is_queue"`
 	QueueID          string            `json:"queue_id,omitempty"`
@@ -160,6 +161,15 @@ func (s *service) describeAndBuildEntry(
 		if desc.WorkflowExecutionInfo.StartTime != nil {
 			entry.StartTime = desc.WorkflowExecutionInfo.StartTime.AsTime().Format(time.RFC3339)
 		}
+	}
+
+	// Count total executions for this workflow ID to derive CAN count.
+	countResp, err := nsClient.CountWorkflow(ctx, &workflowservice.CountWorkflowExecutionsRequest{
+		Namespace: namespace,
+		Query:     fmt.Sprintf("WorkflowId = '%s'", wf.Execution.WorkflowId),
+	})
+	if err == nil && countResp.Count > 1 {
+		entry.CANCount = countResp.Count - 1 // subtract current running execution
 	}
 
 	// Parse memo.
