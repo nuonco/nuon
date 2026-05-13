@@ -21,9 +21,9 @@ export const DeprovisionRunnerButton = ({
       {...props}
       className="!text-red-600 dark:!text-red-400"
     >
-      {props?.isMenuButton ? null : <Icon variant="BoxArrowDown" />}
+      {props?.isMenuButton ? null : <Icon variant="BoxArrowDownIcon" />}
       {buttonText}
-      {props?.isMenuButton ? <Icon variant="BoxArrowDown" /> : null}
+      {props?.isMenuButton ? <Icon variant="BoxArrowDownIcon" /> : null}
     </Button>
   )
 }
@@ -47,7 +47,7 @@ export const DeprovisionRunnerModal = ({
             weight="strong"
             theme="info"
           >
-            <Icon variant="BoxArrowDown" size="24" />
+            <Icon variant="BoxArrowDownIcon" size="24" />
             {headingText}
           </Text>
         </div>

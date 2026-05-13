@@ -64,9 +64,9 @@ export const InviteUserButton = ({
       onClick={() => addModal(modal)}
       {...props}
     >
-      {!props?.isMenuButton ? <Icon variant="UserPlus" /> : null}
+      {!props?.isMenuButton ? <Icon variant="UserPlusIcon" /> : null}
       Invite user
-      {props?.isMenuButton ? <Icon variant="UserPlus" /> : null}
+      {props?.isMenuButton ? <Icon variant="UserPlusIcon" /> : null}
     </Button>
   )
 }

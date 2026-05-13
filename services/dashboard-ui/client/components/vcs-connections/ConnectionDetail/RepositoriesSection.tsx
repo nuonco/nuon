@@ -118,12 +118,12 @@ export const RepositoriesSection = ({
                       <Badge className="!pl-1.5" size="sm" variant="code">
                         {repo.private && (
                           <>
-                            <Icon variant="Lock" size="12" /> private
+                            <Icon variant="LockIcon" size="12" /> private
                           </>
                         )}
                         {repo.fork && (
                           <>
-                            <Icon variant="GitFork" size="12" /> fork
+                            <Icon variant="GitForkIcon" size="12" /> fork
                           </>
                         )}
                       </Badge>

@@ -82,7 +82,7 @@ export const CancelWorkflowButton = ({
       {...props}
     >
       {children ?? 'Cancel workflow'}
-      {props?.isMenuButton ? <Icon variant="StopCircle" /> : null}
+      {props?.isMenuButton ? <Icon variant="StopCircleIcon" /> : null}
     </Button>
   ) : null
 }

@@ -36,7 +36,7 @@ export const ReprovisionSandboxModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="BoxArrowUp" />
+            <Icon variant="BoxArrowUpIcon" />
             Reprovision sandbox
           </span>
         ),

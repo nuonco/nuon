@@ -37,7 +37,7 @@ export const BuildDetailsCard = ({
           <Link
             href={`/${orgId}/apps/${installAppId}/configs/${installAppConfigId}/components/${build?.component_id}/builds/${build?.id}`}
           >
-            View details <Icon variant="CaretRight" />
+            View details <Icon variant="CaretRightIcon" />
           </Link>
         </Text>
       </div>

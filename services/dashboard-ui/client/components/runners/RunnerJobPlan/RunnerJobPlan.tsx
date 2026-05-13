@@ -31,7 +31,7 @@ export const RunnerJobPlanModal = ({
           variant="h3"
           weight="strong"
         >
-          <Icon variant="CodeBlock" size="24" />
+          <Icon variant="CodeBlockIcon" size="24" />
           {headingText}
         </Text>
       }
@@ -90,9 +90,9 @@ export const RunnerJobPlanButton = ({
       onClick={() => onOpenModal()}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="CodeBlock" />}
+      {props?.isMenuButton ? null : <Icon variant="CodeBlockIcon" />}
       {buttonText}
-      {props?.isMenuButton ? <Icon variant="CodeBlock" /> : null}
+      {props?.isMenuButton ? <Icon variant="CodeBlockIcon" /> : null}
     </Button>
   )
 }

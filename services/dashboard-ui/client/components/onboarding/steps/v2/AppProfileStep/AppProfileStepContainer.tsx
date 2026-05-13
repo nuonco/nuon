@@ -225,7 +225,7 @@ const CustomAppTab = ({
                 >
                   {selected && (
                     <Icon
-                      variant="Check"
+                      variant="CheckIcon"
                       size={10}
                       weight="bold"
                       className="text-white"
@@ -522,7 +522,7 @@ export const AppProfileStepContainer = ({
       <div className="flex justify-between">
         {onGoBack ? (
           <Button type="button" variant="secondary" onClick={onGoBack}>
-            <Icon variant="CaretLeft" weight="bold" /> Back
+            <Icon variant="CaretLeftIcon" weight="bold" /> Back
           </Button>
         ) : (
           <div />
@@ -534,7 +534,7 @@ export const AppProfileStepContainer = ({
           onClick={() => submit()}
         >
           {waiting ? 'Setting up app...' : isPending ? 'Saving...' : 'Continue'}{' '}
-          {!isWorking && <Icon variant="CaretRight" weight="bold" />}
+          {!isWorking && <Icon variant="CaretRightIcon" weight="bold" />}
         </Button>
       </div>
     </div>

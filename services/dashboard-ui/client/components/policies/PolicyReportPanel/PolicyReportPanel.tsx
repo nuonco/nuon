@@ -31,7 +31,7 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
   if (policy.status === 'deny') {
     return (
       <Badge theme="error" size="sm">
-        <Icon variant="XCircle" size={10} />
+        <Icon variant="XCircleIcon" size={10} />
         Denied
       </Badge>
     )
@@ -39,14 +39,14 @@ function getPolicyStatusBadge(policy: TPolicyResult) {
   if (policy.status === 'warn') {
     return (
       <Badge theme="warn" size="sm">
-        <Icon variant="Warning" size={10} />
+        <Icon variant="WarningIcon" size={10} />
         Warning
       </Badge>
     )
   }
   return (
     <Badge theme="success" size="sm">
-      <Icon variant="CheckCircle" size={10} />
+      <Icon variant="CheckCircleIcon" size={10} />
       Passed
     </Badge>
   )
@@ -222,7 +222,7 @@ export const PolicyReportPanel = ({
                                 )}
                               >
                                 <Icon
-                                  variant={isDeny ? 'XCircle' : 'Warning'}
+                                  variant={isDeny ? 'XCircleIcon' : 'WarningIcon'}
                                   size={14}
                                   className="mt-0.5 shrink-0"
                                 />
@@ -271,7 +271,7 @@ export const PolicyReportPanel = ({
                     className="flex items-start gap-2 text-red-700 dark:text-red-400"
                   >
                     <Icon
-                      variant="XCircle"
+                      variant="XCircleIcon"
                       size={12}
                       className="mt-1 shrink-0"
                     />
@@ -288,7 +288,7 @@ export const PolicyReportPanel = ({
                     className="flex items-start gap-2 text-orange-700 dark:text-orange-400"
                   >
                     <Icon
-                      variant="Warning"
+                      variant="WarningIcon"
                       size={12}
                       className="mt-1 shrink-0"
                     />
@@ -304,7 +304,7 @@ export const PolicyReportPanel = ({
       ) : (
         <Card>
           <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
-            <Icon variant="CheckCircle" size={16} />
+            <Icon variant="CheckCircleIcon" size={16} />
             <Text variant="body">All policy checks passed successfully.</Text>
           </div>
         </Card>

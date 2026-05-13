@@ -85,9 +85,9 @@ export const DriftScanSandboxButton = ({
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="Scan" />}
+      {props?.isMenuButton ? null : <Icon variant="ScanIcon" />}
       Drift scan sandbox
-      {props?.isMenuButton ? <Icon variant="Scan" /> : null}
+      {props?.isMenuButton ? <Icon variant="ScanIcon" /> : null}
     </Button>
   )
 }

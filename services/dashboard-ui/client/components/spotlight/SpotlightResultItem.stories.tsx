@@ -8,7 +8,7 @@ const mockResult = {
   path: '/org-1/installs/install-1',
   label: 'production',
   subtitle: 'Install',
-  icon: 'Cube' as const,
+  icon: 'CubeIcon' as const,
   tag: 'install' as any,
 }
 

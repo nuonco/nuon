@@ -59,7 +59,7 @@ export const InstallComponentBuildCard = ({
           <Link
             href={`/${orgId}/apps/${installAppId}/configs/${installAppConfigId}/components/${build?.component_id}/builds/${build.id}`}
           >
-            Component build <Icon variant="Question" />
+            Component build <Icon variant="QuestionIcon" />
           </Link>
         </Text>
         <Status status={build?.status_v2?.status} variant="badge" />

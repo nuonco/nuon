@@ -46,7 +46,7 @@ export const ViewStateButton = ({
       {...props}
     >
       View state
-      <Icon variant="CodeBlock" />
+      <Icon variant="CodeBlockIcon" />
     </Button>
   )
 }

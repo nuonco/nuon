@@ -79,7 +79,7 @@ export const DeleteChannelSubscriptionButton = ({
       onClick={() => addModal(modal)}
       {...props}
     >
-      <Icon variant="Trash" />
+      <Icon variant="TrashIcon" />
       Remove
     </Button>
   )

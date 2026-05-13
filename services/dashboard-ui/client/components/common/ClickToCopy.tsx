@@ -85,7 +85,7 @@ export function ClickToCopy({
           }
         }}
       >
-        {isCopied ? <Icon variant="Check" /> : <Icon variant="Copy" />}
+        {isCopied ? <Icon variant="CheckIcon" /> : <Icon variant="CopyIcon" />}
       </span>
     </span>
   )
@@ -125,7 +125,7 @@ export function ClickToCopyButton({
     >
       {isCopied && <CopiedNotice className={noticeClassName} />}
       <span>
-        {isCopied ? <Icon variant="Check" /> : <Icon variant="Copy" />}
+        {isCopied ? <Icon variant="CheckIcon" /> : <Icon variant="CopyIcon" />}
       </span>
     </span>
   )

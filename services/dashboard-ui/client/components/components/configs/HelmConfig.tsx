@@ -24,7 +24,7 @@ export const HelmValuesFilesModal = ({
     <Modal
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
-          <Icon variant="FileCode" size="20" />
+          <Icon variant="FileCodeIcon" size="20" />
           Helm Values Files
         </Text>
       }
@@ -66,7 +66,7 @@ export const HelmValuesModal = ({
     <Modal
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
-          <Icon variant="List" size="20" />
+          <Icon variant="ListIcon" size="20" />
           Helm Values
         </Text>
       }

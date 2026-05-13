@@ -11,9 +11,9 @@ export const BuildComponentButton = ({
 }: { onClick: () => void } & Omit<IButtonAsButton, 'onClick'>) => {
   return (
     <Button onClick={onClick} {...props}>
-      {props?.isMenuButton ? null : <Icon variant="Hammer" />}
+      {props?.isMenuButton ? null : <Icon variant="HammerIcon" />}
       Build component
-      {props?.isMenuButton ? <Icon variant="Hammer" /> : null}
+      {props?.isMenuButton ? <Icon variant="HammerIcon" /> : null}
     </Button>
   )
 }
@@ -42,7 +42,7 @@ export const BuildComponentModal = ({
           weight="strong"
           theme="info"
         >
-          <Icon variant="Hammer" size="24" />
+          <Icon variant="HammerIcon" size="24" />
           Build {component.name} component?
         </Text>
       }

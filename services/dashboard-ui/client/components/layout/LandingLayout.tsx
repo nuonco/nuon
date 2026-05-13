@@ -48,7 +48,7 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                   target="_blank"
                   className="text-lg hover:text-white/75"
                 >
-                  <Icon variant="XLogo" size={20} />
+                  <Icon variant="XLogoIcon" size={20} />
                 </a>
 
                 <a
@@ -56,7 +56,7 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                   target="_blank"
                   className="text-lg hover:text-white/75"
                 >
-                  <Icon variant="LinkedinLogo" size={20} />
+                  <Icon variant="LinkedinLogoIcon" size={20} />
                 </a>
 
                 <a
@@ -64,7 +64,7 @@ export const LandingLayout = ({ children }: { children: ReactNode }) => {
                   target="_blank"
                   className="text-lg hover:text-white/75"
                 >
-                  <Icon variant="GithubLogo" size={20} />
+                  <Icon variant="GithubLogoIcon" size={20} />
                 </a>
               </div>
             </div>

@@ -106,7 +106,7 @@ export const CancelRunnerJobModal = ({
           weight="strong"
           theme="error"
         >
-          <Icon variant="Warning" size="24" />
+          <Icon variant="WarningIcon" size="24" />
           {cancelJobData.confirmHeading}
         </Text>
       }

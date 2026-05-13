@@ -76,7 +76,7 @@ function getTooltip({
       <Text variant="subtext">{description}</Text>
       <Text className="mt-2" variant="subtext">
         <Link className="flex items-center" href={viewHref}>
-          View {viewLabel} <Icon variant="CaretRight" />
+          View {viewLabel} <Icon variant="CaretRightIcon" />
         </Link>
       </Text>
     </div>
@@ -288,7 +288,7 @@ export const InstallStatuses = ({
     >
       {variant === 'icon' ? (
         <Text theme={getStatusTheme(stackStatus)}>
-          <Icon variant="Stack" size={14} className="cursor-default" />
+          <Icon variant="StackIcon" size={14} className="cursor-default" />
         </Text>
       ) : (
         <Status status={stackStatus} variant="badge">
