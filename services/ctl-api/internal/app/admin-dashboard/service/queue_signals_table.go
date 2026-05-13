@@ -15,6 +15,7 @@ const signalsPerPage = 20
 func (s *service) QueueSignalsTable(c *gin.Context) {
 	queueID := c.Param("id")
 	page := getPageFromQuery(c)
+	since := c.DefaultQuery("since", "15m")
 
 	var signals []app.QueueSignal
 	var totalCount int64
@@ -22,6 +23,11 @@ func (s *service) QueueSignalsTable(c *gin.Context) {
 	query := s.readDB().WithContext(c.Request.Context()).
 		Model(&app.QueueSignal{}).
 		Where("queue_id = ?", queueID)
+
+	// Apply time window filter.
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
 
 	if err := query.Count(&totalCount).Error; err != nil {
 		s.l.Error("failed to count signals", zap.Error(err))
