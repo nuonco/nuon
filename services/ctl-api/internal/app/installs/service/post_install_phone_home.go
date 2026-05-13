@@ -110,7 +110,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 			Status: app.NewCompositeStatus(ctx, app.InstallStackVersionStatusActive),
 			Runs: []app.InstallStackVersionRun{
 				{
-					Data: generics.ToHstore(pkggenerics.ToStringMap(data)),
+					Data: generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
 				},
 			},
 		})
@@ -125,7 +125,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		OrgID:                 stackVersion.OrgID,
 		CreatedByID:           stackVersion.CreatedByID,
 		InstallStackVersionID: stackVersion.ID,
-		Data:                  generics.ToHstore(pkggenerics.ToStringMap(data)),
+		Data:                  generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
 	}
 	if res = s.db.WithContext(ctx).
 		Create(&run); res.Error != nil {
