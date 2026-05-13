@@ -50,6 +50,7 @@ type AppSandboxConfig struct {
 
 	TerraformVersion string `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
 	DriftSchedule    string `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
+	MaxAutoRetries   *int   `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -110,6 +111,13 @@ func (c *AppSandboxConfig) AfterQuery(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+func (a *AppSandboxConfig) GetMaxAutoRetries() int {
+	if a.MaxAutoRetries != nil {
+		return *a.MaxAutoRetries
+	}
+	return 0 // default to disabled
 }
 
 func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {
