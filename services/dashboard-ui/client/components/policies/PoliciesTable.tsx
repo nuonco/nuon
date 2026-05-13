@@ -161,6 +161,7 @@ export const PoliciesTable = ({
     <Table<TPolicyRow>
       columns={columns}
       data={data}
+      enableSearch={false}
       emptyStateProps={{
         emptyMessage: 'No policies configured for this app.',
         emptyTitle: 'No policies',
