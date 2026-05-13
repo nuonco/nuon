@@ -11,6 +11,16 @@ import {
 import { DateTime } from 'luxon'
 import { Text } from '@/components/common/Text'
 import type { TPolicyAnalyticsTimeseries } from '@/types'
+import {
+  CHART_SERIES_FAIL,
+  CHART_SERIES_PASS,
+  CHART_SERIES_WARN,
+  chartAxisTickStyle,
+  chartGridStroke,
+  chartTooltipContentStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+} from './chart-theme'
 
 interface IPolicyAnalyticsChart {
   timeseries: TPolicyAnalyticsTimeseries | undefined
@@ -60,36 +70,40 @@ export const PolicyAnalyticsChart = ({ timeseries }: IPolicyAnalyticsChart) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={chartGridStroke}
+          opacity={0.5}
+        />
         <XAxis
           dataKey="time"
           tickFormatter={(v) => formatTick(v, interval)}
-          tick={{ fontSize: 12 }}
+          tick={chartAxisTickStyle}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          tick={{ fontSize: 12 }}
+          tick={chartAxisTickStyle}
           tickLine={false}
           axisLine={false}
           allowDecimals={false}
         />
         <Tooltip
           labelFormatter={formatTooltipLabel}
-          contentStyle={{
-            backgroundColor: 'var(--color-surface, #fff)',
-            border: '1px solid var(--color-border, #e5e7eb)',
-            borderRadius: '8px',
-            fontSize: '13px',
-          }}
+          contentStyle={chartTooltipContentStyle}
+          labelStyle={chartTooltipLabelStyle}
+          itemStyle={chartTooltipItemStyle}
+          cursor={{ stroke: 'var(--foreground)', strokeOpacity: 0.2 }}
+          allowEscapeViewBox={{ x: true, y: true }}
+          wrapperStyle={{ zIndex: 20 }}
         />
         <Area
           type="monotone"
           dataKey="passes"
           name="Passed"
           stackId="1"
-          stroke="#22c55e"
-          fill="#22c55e"
+          stroke={CHART_SERIES_PASS}
+          fill={CHART_SERIES_PASS}
           fillOpacity={0.3}
           strokeWidth={2}
         />
@@ -98,8 +112,8 @@ export const PolicyAnalyticsChart = ({ timeseries }: IPolicyAnalyticsChart) => {
           dataKey="warns"
           name="Warnings"
           stackId="1"
-          stroke="#f97316"
-          fill="#f97316"
+          stroke={CHART_SERIES_WARN}
+          fill={CHART_SERIES_WARN}
           fillOpacity={0.3}
           strokeWidth={2}
         />
@@ -108,8 +122,8 @@ export const PolicyAnalyticsChart = ({ timeseries }: IPolicyAnalyticsChart) => {
           dataKey="denies"
           name="Denied"
           stackId="1"
-          stroke="#ef4444"
-          fill="#ef4444"
+          stroke={CHART_SERIES_FAIL}
+          fill={CHART_SERIES_FAIL}
           fillOpacity={0.3}
           strokeWidth={2}
         />
