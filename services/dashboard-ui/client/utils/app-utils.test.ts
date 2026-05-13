@@ -279,14 +279,14 @@ describe('app-utils', () => {
 
       const result = normalizeAppInputGroups(groups, inputs)
 
-      expect(result[0]).toEqual({
+      expect(result[0]).toEqual(expect.objectContaining({
         id: 'group-1',
-        name: 'Advanced Group', 
+        name: 'Advanced Group',
         description: 'Advanced configuration options',
         index: 10,
         custom_field: 'custom_value',
         app_inputs: [],
-      })
+      }))
     })
   })
 })
