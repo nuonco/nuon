@@ -77,6 +77,10 @@ type QueueEmitter struct {
 	NextEmitAt    *time.Time      `json:"next_emit_at,omitzero" temporaljson:"next_emit_at,omitzero,omitempty"`
 	EmitCount     int64           `json:"emit_count,omitzero" gorm:"default:0" temporaljson:"emit_count,omitzero,omitempty"`
 
+	// Lock held while a signal emitted by this emitter is in flight. TTL'd by
+	// EmitSignal so terminated workflows don't pin it forever.
+	InFlightClaimedAt *time.Time `json:"in_flight_claimed_at,omitzero" temporaljson:"in_flight_claimed_at,omitzero,omitempty"`
+
 	// Workflow reference for the emitter's cron workflow
 	Workflow signaldb.WorkflowRef `json:"workflow" temporaljson:"workflow,omitzero,omitempty"`
 
