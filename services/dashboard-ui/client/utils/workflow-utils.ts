@@ -33,7 +33,8 @@ export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
 
 export function getStepBadge(
   step: TWorkflowStep,
-  isApprovalPrompt?: boolean
+  isApprovalPrompt?: boolean,
+  planOnly?: boolean
 ): TBadgeCfg {
   const metadata = step?.status?.metadata
 
@@ -46,7 +47,7 @@ export function getStepBadge(
   }
 
   if (metadata?.is_retry) {
-    const retryIdx = metadata.retry_idx ?? metadata.group_retry_idx ?? 0
+    const retryIdx = (Number(metadata.retry_idx ?? metadata.group_retry_idx ?? 0)) + 1
     const retryLabel = metadata.retry_type === 'manual' ? 'Manual retry' : metadata.retry_type === 'auto' ? 'Auto retry' : 'Retry'
     return { children: `${retryLabel} #${retryIdx}`, theme: 'info' }
   }
@@ -60,6 +61,9 @@ export function getStepBadge(
 
   if (step?.execution_type === 'approval' && !isApprovalPrompt) {
     if (step?.status?.status === 'approved') {
+      if (planOnly) {
+        return { children: 'Plan created', theme: 'success' }
+      }
       return WORKFLOW_BADGE_MAP['approved']
     } else if (
       step?.status?.status === 'pending' ||
