@@ -21,7 +21,6 @@
         "@tanstack/react-table": "8.21.3",
         "@uiw/react-codemirror": "4.25.9",
         "@xyflow/react": "12.8.2",
-        "classnames": "2.5.1",
         "cronstrue": "2.59.0",
         "html-to-image": "1.11.13",
         "js-confetti": "0.13.1",
