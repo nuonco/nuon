@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon'
 import { useMemo } from 'react'
 import { Text } from '@/components/common/Text'
 import type { TSpan } from '@/types'
@@ -142,8 +143,8 @@ const SpanGanttRow = ({
   onSelect,
 }: ISpanGanttRow) => {
   const { span } = node
-  const start = new Date(span.start_time).getTime() - t0
-  const end = new Date(span.end_time).getTime() - t0
+  const start = DateTime.fromISO(span.start_time).toMillis() - t0
+  const end = DateTime.fromISO(span.end_time).toMillis() - t0
   const leftPct = clampPct((start / totalMs) * 100)
   const widthPct = Math.max(0.5, clampPct(((end - start) / totalMs) * 100))
   const isError = (span.status_code ?? '').toLowerCase() === 'error'
