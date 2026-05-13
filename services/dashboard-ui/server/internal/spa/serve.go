@@ -123,14 +123,19 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	if hasDistDir {
 		distFileServer = http.FileServer(http.FS(distFS))
 		e.GET("/assets/*filepath", func(c *gin.Context) {
-			c.Header("Cache-Control", "public, max-age=31536000, immutable")
 			fp := c.Param("filepath")
+			ct := ""
 			if strings.HasSuffix(fp, ".js") {
-				c.Header("Content-Type", "application/javascript")
+				ct = "application/javascript"
 			} else if strings.HasSuffix(fp, ".css") {
-				c.Header("Content-Type", "text/css")
+				ct = "text/css"
 			}
-			distFileServer.ServeHTTP(c.Writer, c.Request)
+			w := c.Writer
+			if ct != "" {
+				w = &mimeOverrideWriter{ResponseWriter: w, contentType: ct}
+			}
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			distFileServer.ServeHTTP(w, c.Request)
 		})
 	}
 
@@ -178,4 +183,27 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 	})
 
 	return nil
+}
+
+// mimeOverrideWriter forces a Content-Type on the response, preventing
+// http.FileServer from sniffing and setting an incorrect MIME type.
+type mimeOverrideWriter struct {
+	gin.ResponseWriter
+	contentType string
+	wroteHeader bool
+}
+
+func (w *mimeOverrideWriter) WriteHeader(code int) {
+	if !w.wroteHeader {
+		w.Header().Set("Content-Type", w.contentType)
+		w.wroteHeader = true
+	}
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *mimeOverrideWriter) Write(b []byte) (int, error) {
+	if !w.wroteHeader {
+		w.WriteHeader(http.StatusOK)
+	}
+	return w.ResponseWriter.Write(b)
 }
