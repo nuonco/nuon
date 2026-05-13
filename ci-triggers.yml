@@ -26,8 +26,8 @@ services: |
     - pkg/**
     - sdks/**
 
-  stack-manager:
-    - bins/stack-manager/**
+  stack-cli:
+    - bins/stack-cli/**
     - go.mod
     - go.sum
     - pkg/**

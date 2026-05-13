@@ -74,7 +74,7 @@ const (
 	OrgFeatureTraceView               OrgFeature = "trace-view"
 	OrgFeatureStateGenV2              OrgFeature = "state-gen-v2"
 	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
-	OrgFeatureStackManagerCLI         OrgFeature = "stack-manager-cli"
+	OrgFeatureStackCLI                OrgFeature = "stack-cli"
 )
 
 type Org struct {
@@ -193,7 +193,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureAppBranchesUI:           false,
 		OrgFeatureTraceView:               false,
 		OrgFeatureStateGenV2:              false,
-		OrgFeatureStackManagerCLI:         false,
+		OrgFeatureStackCLI:                false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs:      true,
@@ -272,7 +272,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureTraceView,
 		OrgFeatureAutoSkipNoop,
 		OrgFeatureStateGenV2,
-		OrgFeatureStackManagerCLI,
+		OrgFeatureStackCLI,
 	}
 }
 
@@ -311,7 +311,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
 		OrgFeatureStateGenV2:              "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
 		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
-		OrgFeatureStackManagerCLI:         "Enable the stack-manager CLI flow: surface the CLI provisioning tab on install stacks, embed per-run logs, and skip starting a provision workflow on install creation (the stack-manager CLI drives provisioning out-of-band).",
+		OrgFeatureStackCLI:                "Enable the stack-cli CLI flow: surface the CLI provisioning tab on install stacks, embed per-run logs, and skip starting a provision workflow on install creation (the stack-cli CLI drives provisioning out-of-band).",
 	}
 }
 

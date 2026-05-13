@@ -67,7 +67,7 @@ export const AwaitAWSDetails = ({
   const hasTerraform = tfvarsContent.length > 0
 
   const { org } = useOrg()
-  const stackV2 = !!org?.features?.['stack-manager-cli']
+  const stackV2 = !!org?.features?.['stack-cli']
 
   return (
     <div className="flex flex-col gap-4">
@@ -296,14 +296,14 @@ const CLITab = ({ phoneHomeId, runnerAPIURL }: ICLITab) => {
   const createRunURL = `${base}/v1/stack-runs/${phoneHomeId || '<phone-home-id>'}`
 
   const installerBase =
-    config.stackManagerDownloadUrl || 'https://install.nuon.co/stack-manager'
+    config.stackCliDownloadUrl || 'https://install.nuon.co/stack-cli'
   const cmd = `curl -fsSL ${installerBase}/install.sh | sh -s -- provision ${createRunURL}`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
       <Card>
         <span className="flex justify-between items-center">
-          <Text weight="strong">Provision with stack-manager</Text>
+          <Text weight="strong">Provision with stack-cli</Text>
           <ClickToCopyButton textToCopy={cmd} />
         </span>
         <Text variant="subtext" theme="neutral">

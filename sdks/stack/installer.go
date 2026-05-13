@@ -3,7 +3,7 @@
 // Secrets Manager entries, runner EC2 ASG) and reports run status back to
 // ctl-api over the public phone-home endpoint.
 //
-// Customer-facing clients (stack-manager, embedded Go consumers) construct an
+// Customer-facing clients (stack-cli, embedded Go consumers) construct an
 // Installer with FromURL when bootstrapping from a dashboard-rendered URL,
 // or with New for offline state inspection.
 package stack

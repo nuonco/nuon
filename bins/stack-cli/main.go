@@ -1,4 +1,4 @@
-// stack-manager is a thin wrapper around the installer SDK.
+// stack-cli is a thin wrapper around the installer SDK.
 //
 // All inputs come from the create-run URL the dashboard surfaces. The CLI
 // POSTs to it, reads install_id / region / runner details from the response,
@@ -20,19 +20,19 @@ import (
 
 // Version is set at build time via:
 //
-//	go build -ldflags "-X main.Version=v0.1.0" ./bins/stack-manager
+//	go build -ldflags "-X main.Version=v0.1.0" ./bins/stack-cli
 //
 // Local builds and `go run` report "dev".
 var Version = "dev"
 
-const usage = `stack-manager — provision/reprovision/deprovision a Nuon install stack.
+const usage = `stack-cli — provision/reprovision/deprovision a Nuon install stack.
 
 Usage:
-  stack-manager provision    <create-run-url>
-  stack-manager reprovision  <create-run-url>
-  stack-manager deprovision  <create-run-url>
-  stack-manager status       --install-id <id> --region <region>
-  stack-manager version      [--json]
+  stack-cli provision    <create-run-url>
+  stack-cli reprovision  <create-run-url>
+  stack-cli deprovision  <create-run-url>
+  stack-cli status       --install-id <id> --region <region>
+  stack-cli version      [--json]
 
 The <create-run-url> is the POST endpoint the Nuon dashboard renders, e.g.
   https://api.nuon.co/v1/stack-runs/aws…

@@ -36,7 +36,7 @@ export const StackVersionDetails = ({
   installStackOutputs?: TInstallStackOutputs
 }) => {
   const { org } = useOrg()
-  const stackV2 = !!org?.features?.['stack-manager-cli']
+  const stackV2 = !!org?.features?.['stack-cli']
   return (
     <Panel
       size="3/4"
@@ -123,7 +123,7 @@ const StackVersionLinks = ({
   installStackOutputs?: TInstallStackOutputs
 }) => {
   const { org } = useOrg()
-  const stackV2 = !!org?.features?.['stack-manager-cli']
+  const stackV2 = !!org?.features?.['stack-cli']
   const { install } = useInstall()
 
   if (stackV2) {
@@ -182,7 +182,7 @@ const StackVersionLinks = ({
 
 const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
   const { org } = useOrg()
-  const stackV2 = !!org?.features?.['stack-manager-cli']
+  const stackV2 = !!org?.features?.['stack-cli']
   const runs = version?.runs ?? []
   return (
     <div className="flex flex-col gap-4">
