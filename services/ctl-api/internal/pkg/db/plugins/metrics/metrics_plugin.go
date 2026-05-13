@@ -96,6 +96,11 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 	ctx := tx.Statement.Context
 	schema := tx.Statement.Schema
 
+	tableName := "raw_sql"
+	if schema != nil {
+		tableName = schema.Table
+	}
+
 	val := ctx.Value(defaultContextKey)
 	if val == nil {
 		return
@@ -104,14 +109,11 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 	dur := time.Since(startTS)
 	withinTargetLatency := time.Since(startTS) < targetLatency
 
-	tags := []string{}
-	if schema != nil {
-		tags = append(tags,
-			"table:"+schema.Table,
-			"db_type:"+m.dbType,
-			"db_operation_type:"+string(operationType),
-			"within_target_latency:"+strconv.FormatBool(withinTargetLatency),
-		)
+	tags := []string{
+		"table:" + tableName,
+		"db_type:" + m.dbType,
+		"db_operation_type:" + string(operationType),
+		"within_target_latency:" + strconv.FormatBool(withinTargetLatency),
 	}
 
 	metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
@@ -149,7 +151,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 
 	if respSize >= largeResultSetThreshold {
 		m.l.Warn(ctx, "large response_size",
-			"table", schema.Table,
+			"table", tableName,
 			"request_uri", metricCtx.RequestURI,
 			"endpoint", metricCtx.Endpoint,
 			"method", metricCtx.Method,
@@ -168,7 +170,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 	}
 
 	eventText := fmt.Sprintf("Slow query identified for table %s and endpoint %s\n\nPrepared SQL: %s\nVars: %v\n",
-		schema.Table,
+		tableName,
 		metricCtx.Endpoint,
 		tx.Statement.SQL.String(),
 		tx.Statement.Vars,
@@ -185,7 +187,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 
 	// Log slow queries
 	m.l.Error(ctx, "Slow query identified",
-		"table", schema.Table,
+		"table", tableName,
 		"request_uri", metricCtx.RequestURI,
 		"endpoint", metricCtx.Endpoint,
 		"method", metricCtx.Method,
