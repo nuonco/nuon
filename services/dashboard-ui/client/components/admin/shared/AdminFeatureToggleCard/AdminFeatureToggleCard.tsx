@@ -19,7 +19,7 @@ export const AdminFeatureToggleCard = ({ onOpenPanel }: IAdminFeatureToggleCard)
       </div>
 
       <Button onClick={onOpenPanel} variant="secondary">
-        <Icon variant="Sliders" />
+        <Icon variant="SlidersIcon" />
         Manage features
       </Button>
     </div>

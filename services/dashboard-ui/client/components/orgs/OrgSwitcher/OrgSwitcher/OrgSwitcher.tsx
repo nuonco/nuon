@@ -32,7 +32,7 @@ export const OrgSwitcher = ({ org, isSidebarOpen, ...props }: IOrgSwitcher) => {
       buttonText={
         <OrgSummary isButtonSummary isSidebarOpen={isSidebarOpen} org={org} />
       }
-      icon={isSidebarOpen ? <Icon variant="CaretUpDown" /> : null}
+      icon={isSidebarOpen ? <Icon variant="CaretUpDownIcon" /> : null}
       closeOnBlur={false}
       id="org-switcher"
       position="overlay"

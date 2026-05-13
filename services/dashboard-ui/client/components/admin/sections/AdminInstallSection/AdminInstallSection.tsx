@@ -65,7 +65,7 @@ export const AdminInstallSection = ({
       subtitle={`Managing install: ${installId}`}
       metadata={metadata}
     >
-      <AdminActionGroup title="Install infrastructure" icon="HardDrives" variant="warning">
+      <AdminActionGroup title="Install infrastructure" icon="HardDrivesIcon" variant="warning">
         <AdminActionCard
           title="Reprovision install"
           description="Reprovision current install sandbox and runner"
@@ -106,7 +106,7 @@ export const AdminInstallSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Component management" icon="Cube" variant="danger">
+      <AdminActionGroup title="Component management" icon="CubeIcon" variant="danger">
         <AdminActionCard
           title="Teardown components"
           description="Teardown all components on this install"
@@ -126,7 +126,7 @@ export const AdminInstallSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Install runner control" icon="Play">
+      <AdminActionGroup title="Install runner control" icon="PlayIcon">
         <AdminActionCard
           title="Reprovision runner"
           description="Reprovision current install runner"
@@ -161,7 +161,7 @@ export const AdminInstallSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Security" icon="Shield" variant="danger">
+      <AdminActionGroup title="Security" icon="ShieldIcon" variant="danger">
         <AdminActionCard
           title="Invalidate runner token"
           description="Invalidate install runner service account token"

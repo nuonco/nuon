@@ -67,7 +67,7 @@ export const UserDropdown = ({
         {!hideOrgSettings && <InviteUserButton isMenuButton />}
         {!hideOrgSettings && (
           <Link href="/onboarding">
-            Re-open onboarding <Icon variant="Signpost" />
+            Re-open onboarding <Icon variant="SignpostIcon" />
           </Link>
         )}
         {!hideOrgSettings && <hr />}
@@ -81,32 +81,32 @@ export const UserDropdown = ({
             onClick={() => onAddPanel(<AdminPanel />)}
             isMenuButton
           >
-            Admin controls <Icon variant="Sliders" />
+            Admin controls <Icon variant="SlidersIcon" />
           </Button>
         )}
         {!hideOrgSettings && isAdmin && adminDashboardUrl && (
           <Link href={adminDashboardUrl} isExternal>
-            Admin dashboard <Icon variant="ArrowSquareOut" />
+            Admin dashboard <Icon variant="ArrowSquareOutIcon" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/swagger" isExternal>
-            Admin API <Icon variant="ArrowSquareOut" />
+            Admin API <Icon variant="ArrowSquareOutIcon" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/admin/temporal" isExternal>
-            Temporal dashboard <Icon variant="ArrowSquareOut" />
+            Temporal dashboard <Icon variant="ArrowSquareOutIcon" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href="/public/swagger" isExternal>
-            Public API <Icon variant="ArrowSquareOut" />
+            Public API <Icon variant="ArrowSquareOutIcon" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && (
           <Link href={`${apiUrl}/httpbin`} isExternal>
-            HTTPBin <Icon variant="ArrowSquareOut" />
+            HTTPBin <Icon variant="ArrowSquareOutIcon" />
           </Link>
         )}
         {!hideOrgSettings && isAdmin && <hr />}
@@ -124,7 +124,7 @@ export const UserDropdown = ({
               </Toast>
             )
           }}>
-            {muted ? 'Enable' : 'Disable'} notifications <Icon variant={muted ? 'Bell' : 'BellSlash'} />
+            {muted ? 'Enable' : 'Disable'} notifications <Icon variant={muted ? 'BellIcon' : 'BellSlashIcon'} />
           </Button>
         ) : notificationsSupported && notificationPermission !== 'denied' ? (
           <Button onClick={async () => {
@@ -137,7 +137,7 @@ export const UserDropdown = ({
               )
             }
           }}>
-            Enable notifications <Icon variant="Bell" />
+            Enable notifications <Icon variant="BellIcon" />
           </Button>
         ) : null}
         <Link
@@ -147,7 +147,7 @@ export const UserDropdown = ({
           isExternal
           target="_self"
         >
-          Sign out <Icon variant="SignOut" />
+          Sign out <Icon variant="SignOutIcon" />
         </Link>
       </Menu>
     </Dropdown>

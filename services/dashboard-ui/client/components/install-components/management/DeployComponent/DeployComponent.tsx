@@ -66,7 +66,7 @@ export const DeployComponentModal = ({
             weight="strong"
             theme="info"
           >
-            <Icon variant="CloudArrowUp" size="24" />
+            <Icon variant="CloudArrowUpIcon" size="24" />
             Deploy {component.name} component
           </Text>
           <Text
@@ -89,7 +89,7 @@ export const DeployComponentModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="CloudArrowUp" />
+            <Icon variant="CloudArrowUpIcon" />
             Deploy build
           </span>
         ),

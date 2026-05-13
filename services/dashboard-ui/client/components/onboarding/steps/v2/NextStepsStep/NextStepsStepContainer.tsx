@@ -39,25 +39,25 @@ function buildSections(): ISection[] {
       graphicDark: '/onboarding-graphics/connect-app-dark.png',
       steps: [
         {
-          icon: 'SlidersHorizontal',
+          icon: 'SlidersHorizontalIcon',
           title: 'App inputs & config',
           description: 'Define what customers provide at install time',
           href: 'https://docs.nuon.co/guides/configuring-inputs-and-secrets',
         },
         {
-          icon: 'GitBranch',
+          icon: 'GitBranchIcon',
           title: 'Connect CI/CD',
           description: 'Trigger deploys from GitHub Actions, etc.',
           href: 'https://docs.nuon.co/guides/github-actions',
         },
         {
-          icon: 'Package',
+          icon: 'PackageIcon',
           title: 'Component sources',
           description: 'Helm, Terraform, Docker, raw manifests',
           href: 'https://docs.nuon.co/concepts/components',
         },
         {
-          icon: 'TerminalWindow',
+          icon: 'TerminalWindowIcon',
           title: 'nuon apps init',
           description: 'Pull your app config locally with the CLI',
           href: 'https://docs.nuon.co/guides/app-init',
@@ -71,25 +71,25 @@ function buildSections(): ISection[] {
       graphicDark: '/onboarding-graphics/day2-ops-dark.png',
       steps: [
         {
-          icon: 'ArrowsClockwise',
+          icon: 'ArrowsClockwiseIcon',
           title: 'Drift detection',
           description: 'Automatic detection of infrastructure changes with scheduled scans and remediation',
           href: 'https://docs.nuon.co/updates/021-drift-detection',
         },
         {
-          icon: 'ShieldCheck',
+          icon: 'ShieldCheckIcon',
           title: 'Break-glass access',
           description: 'Secure emergency access to customer environments with full audit trails',
           href: 'https://docs.nuon.co/config-ref/break-glass',
         },
         {
-          icon: 'Scales',
+          icon: 'ScalesIcon',
           title: 'Policies',
           description: 'Enforce compliance and security standards across deployments',
           href: 'https://docs.nuon.co/guides/configuring-policies',
         },
         {
-          icon: 'UserCheck',
+          icon: 'UserCheckIcon',
           title: 'Approvals',
           description: 'Let customers review and approve updates on their terms',
           href: 'https://docs.nuon.co/updates/010-approvals',
@@ -103,25 +103,25 @@ function buildSections(): ISection[] {
       graphicDark: '/onboarding-graphics/installer-dark.png',
       steps: [
         {
-          icon: 'Layout',
+          icon: 'LayoutIcon',
           title: 'Installer overview',
           description: 'What the customer-facing portal looks like',
           href: 'https://docs.nuon.co/concepts/customer-portal',
         },
         {
-          icon: 'Palette',
+          icon: 'PaletteIcon',
           title: 'Portal branding',
           description: 'Custom domain, logo, colours, and copy',
           href: 'https://docs.nuon.co/guides/custom-domains',
         },
         {
-          icon: 'TextAa',
+          icon: 'TextAaIcon',
           title: 'Customer inputs',
           description: 'What you ask customers to provide before install',
           href: 'https://docs.nuon.co/concepts/app-inputs',
         },
         {
-          icon: 'CodeBlock',
+          icon: 'CodeBlockIcon',
           title: 'Embed the installer',
           description: 'Drop the portal into your app or docs site',
           href: 'https://docs.nuon.co/guides/control-plane-integration',
@@ -237,7 +237,7 @@ export const NextStepsStepContainer = ({ onAdvance, sharedData }: IWizardStepCom
           variant="primary"
           onClick={handleContinue}
         >
-          View install <Icon variant="CaretRight" weight="bold" />
+          View install <Icon variant="CaretRightIcon" weight="bold" />
         </Button>
       </div>
 

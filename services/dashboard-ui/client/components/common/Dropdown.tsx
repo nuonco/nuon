@@ -46,7 +46,7 @@ export const Dropdown = ({
   closeOnBlur = true,
   dropdownClassName,
   hideIcon = false,
-  icon = <Icon variant="CaretDown" />,
+  icon = <Icon variant="CaretDownIcon" />,
   iconAlignment = 'right',
   id,
   isOpen: initIsOpen = false,

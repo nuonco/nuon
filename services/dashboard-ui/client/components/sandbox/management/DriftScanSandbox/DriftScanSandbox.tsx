@@ -28,7 +28,7 @@ export const DriftScanSandboxModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Scan" />
+            <Icon variant="ScanIcon" />
             Drift scan sandbox
           </span>
         ),

@@ -29,7 +29,7 @@ export const MainSidebarButton = ({
         onClick={toggleSidebar}
         aria-label="Close sidebar"
       >
-        <Icon variant="X" aria-hidden="true" />
+        <Icon variant="XIcon" aria-hidden="true" />
       </Button>
     )
   }
@@ -78,7 +78,7 @@ export const MainSidebarButton = ({
         onClick={toggleSidebar}
         aria-label={ariaLabel}
       >
-        <Icon variant="SidebarSimple" size="20" aria-hidden="true" />
+        <Icon variant="SidebarSimpleIcon" size="20" aria-hidden="true" />
       </Button>
     </Tooltip>
   )

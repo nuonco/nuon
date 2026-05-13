@@ -286,7 +286,7 @@ export const UsageExamples = () => (
       <div className="space-y-3 border rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="CheckCircle" size="16" className="text-green-600" />
+            <Icon variant="CheckCircleIcon" size="16" className="text-green-600" />
             <div>
               <Text weight="strong">Build Completed</Text>
               <Text variant="subtext" theme="neutral">
@@ -298,7 +298,7 @@ export const UsageExamples = () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="CheckCircle" size="16" className="text-green-600" />
+            <Icon variant="CheckCircleIcon" size="16" className="text-green-600" />
             <div>
               <Text weight="strong">Tests Passed</Text>
               <Text variant="subtext" theme="neutral">
@@ -310,7 +310,7 @@ export const UsageExamples = () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Icon variant="CheckCircle" size="16" className="text-green-600" />
+            <Icon variant="CheckCircleIcon" size="16" className="text-green-600" />
             <div>
               <Text weight="strong">Deployment</Text>
               <Text variant="subtext" theme="neutral">

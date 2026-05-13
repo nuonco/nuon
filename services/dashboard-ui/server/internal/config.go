@@ -11,7 +11,6 @@ import (
 func init() {
 	config.RegisterDefault("http_port", "4000")
 	config.RegisterDefault("log_level", "INFO")
-	config.RegisterDefault("dashboard_dev", false)
 	config.RegisterDefault("service_name", "dashboard-ui")
 	config.RegisterDefault("dist_dir", "./dist")
 	config.RegisterDefault("public_dir", "./public")
@@ -27,15 +26,14 @@ func init() {
 }
 
 type Config struct {
-	HTTPPort     string   `config:"http_port" validate:"required"`
-	LogLevel     string   `config:"log_level"`
-	DashboardDev bool     `config:"dashboard_dev"`
-	ServiceName  string   `config:"service_name"`
-	Version      string   `config:"version"`
-	GitRef       string   `config:"git_ref"`
-	Middlewares  []string `config:"middlewares"`
-	DistDir      string   `config:"dist_dir"`
-	PublicDir    string   `config:"public_dir"`
+	HTTPPort    string   `config:"http_port" validate:"required"`
+	LogLevel    string   `config:"log_level"`
+	ServiceName string   `config:"service_name"`
+	Version     string   `config:"version"`
+	GitRef      string   `config:"git_ref"`
+	Middlewares []string `config:"middlewares"`
+	DistDir     string   `config:"dist_dir"`
+	PublicDir   string   `config:"public_dir"`
 
 	APIUrl                string `config:"nuon_api_url"`
 	AdminAPIUrl           string `config:"nuon_admin_api_url"`

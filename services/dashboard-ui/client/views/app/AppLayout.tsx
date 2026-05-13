@@ -40,23 +40,23 @@ const AppTemplate = () => {
   if (!app) return null
 
   const navLinks = [
-    { path: `/`, iconVariant: 'HouseSimple' as const, text: 'Overview' },
+    { path: `/`, iconVariant: 'HouseSimpleIcon' as const, text: 'Overview' },
     hasAppBranchesUI && {
       path: `/sandbox`,
       iconVariant: 'ShippingContainerIcon' as const,
       text: 'Sandbox builds',
     },
-    { path: `/components`, iconVariant: 'Cards' as const, text: 'Components' },
-    { path: `/actions`, iconVariant: 'TerminalWindow' as const, text: 'Actions' },
+    { path: `/components`, iconVariant: 'CardsIcon' as const, text: 'Components' },
+    { path: `/actions`, iconVariant: 'TerminalWindowIcon' as const, text: 'Actions' },
     hasAppBranchesUI && {
       path: `/branches`,
-      iconVariant: 'GitBranch' as const,
+      iconVariant: 'GitBranchIcon' as const,
       text: 'Branches',
     },
-    { path: `/roles`, iconVariant: 'FileLock' as const, text: 'Roles' },
-    { path: `/policies`, iconVariant: 'ShieldCheck' as const, text: 'Policies' },
-    { path: `/installs`, iconVariant: 'Cube' as const, text: 'Installs' },
-    { path: `/readme`, iconVariant: 'BookOpen' as const, text: 'README' },
+    { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
+    { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
+    { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
+    { path: `/readme`, iconVariant: 'BookOpenIcon' as const, text: 'README' },
   ].filter(Boolean) as TNavLink[]
 
   return (

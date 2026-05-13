@@ -28,7 +28,7 @@ export const ShutdownMngRunnerModal = ({
             weight="strong"
             theme="warn"
           >
-            <Icon variant="Power" size="24" />
+            <Icon variant="PowerIcon" size="24" />
             {label}?
           </Text>
         </div>
@@ -41,7 +41,7 @@ export const ShutdownMngRunnerModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Power" />
+            <Icon variant="PowerIcon" />
             {label}
           </span>
         ),

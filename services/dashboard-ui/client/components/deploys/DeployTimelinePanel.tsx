@@ -18,7 +18,7 @@ export const DeployTimelinePanel = ({
       triggerButton={{
         children: (
           <>
-            <Icon variant="ClockCounterClockwise" /> Latest deploys
+            <Icon variant="ClockCounterClockwiseIcon" /> Latest deploys
           </>
         ),
       }}

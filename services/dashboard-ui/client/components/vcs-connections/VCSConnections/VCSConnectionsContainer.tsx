@@ -37,7 +37,7 @@ const VCSConnectionWithStatus = ({
         size="xs"
         className="self-end"
       >
-        <Icon variant="ArrowRight" size={16} />
+        <Icon variant="ArrowRightIcon" size={16} />
       </Button>
     </Text>
   )

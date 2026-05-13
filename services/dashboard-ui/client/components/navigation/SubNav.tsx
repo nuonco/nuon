@@ -154,7 +154,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
               </div>
             }
           >
-            <Icon variant="SplitHorizontal" />
+            <Icon variant="SplitHorizontalIcon" />
           </Tooltip>
         </button>
       </div>

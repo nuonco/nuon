@@ -99,7 +99,7 @@ function OrgCard({ name, orgId, status = 'idle', waitingMessage }: IOrgCardProps
         </div>
         {status === 'waiting' && <OrgSpinner />}
         {status === 'success' && (
-          <Icon variant="CheckCircle" size={20} weight="fill" theme="success" className="shrink-0" />
+          <Icon variant="CheckCircleIcon" size={20} weight="fill" theme="success" className="shrink-0" />
         )}
       </div>
     </Card>
@@ -141,9 +141,9 @@ function ExistingOrgCard({ org, selected, disabled, pending, onSelect }: IExisti
       {pending ? (
         <Icon variant="Loading" size={20} />
       ) : selected ? (
-        <Icon variant="CheckCircle" weight="fill" theme="success" size={20} />
+        <Icon variant="CheckCircleIcon" weight="fill" theme="success" size={20} />
       ) : (
-        <Icon variant="CaretRight" weight="bold" size={20} />
+        <Icon variant="CaretRightIcon" weight="bold" size={20} />
       )}
     </button>
   )
@@ -309,7 +309,7 @@ export const WelcomeNameOrgStep = ({
                   : 'hover:!border-primary-500 hover:bg-primary-500/5 cursor-pointer'
               )}
             >
-              <Icon variant="Plus" weight="bold" size={16} />
+              <Icon variant="PlusIcon" weight="bold" size={16} />
               <Text weight="strong">Create a new organization</Text>
             </button>
           </>
@@ -348,14 +348,14 @@ export const WelcomeNameOrgStep = ({
                 onClick={() => setUserClickedCreate(false)}
                 disabled={isWorking}
               >
-                <Icon variant="CaretLeft" weight="bold" /> Back
+                <Icon variant="CaretLeftIcon" weight="bold" /> Back
               </Button>
             ) : (
               <div />
             )}
             <Button type="submit" variant="primary" disabled={!orgName.trim() || isWorking}>
               {isPending ? 'Creating...' : 'Continue'}{' '}
-              {!isWorking && <Icon variant="CaretRight" weight="bold" />}
+              {!isWorking && <Icon variant="CaretRightIcon" weight="bold" />}
             </Button>
           </div>
         )}

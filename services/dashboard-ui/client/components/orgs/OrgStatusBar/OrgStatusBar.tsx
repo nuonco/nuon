@@ -54,7 +54,7 @@ export const OrgStatusBar = ({
         {org.sandbox_mode && (
           <Tooltip tipContent={<Text variant="subtext" as="span">Sandbox mode</Text>} tipContentClassName="!py-0.5" position="top">
             <Icon
-              variant="TestTube"
+              variant="TestTubeIcon"
               className="!w-[14px] !h-[14px] shrink-0"
               size="14"
             />
@@ -150,7 +150,7 @@ export const OrgStatusBar = ({
               <span className="text-cool-grey-300 dark:text-white/20 text-xs">
                 ›
               </span>
-              <Icon variant="GitBranch" size={12} className="text-cool-grey-500 dark:text-cool-grey-400" />
+              <Icon variant="GitBranchIcon" size={12} className="text-cool-grey-500 dark:text-cool-grey-400" />
               <Text family="mono" variant="subtext">
                 {branch.name}
               </Text>

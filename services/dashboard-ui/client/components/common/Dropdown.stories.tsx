@@ -206,11 +206,11 @@ export const CustomContent = () => (
               Account
             </Text>
             <Button variant="ghost">
-              <Icon variant="User" size="16" />
+              <Icon variant="UserIcon" size="16" />
               Profile Settings
             </Button>
             <Button variant="ghost">
-              <Icon variant="Bell" size="16" />
+              <Icon variant="BellIcon" size="16" />
               Notifications
             </Button>
             <hr />
@@ -232,7 +232,7 @@ export const CustomContent = () => (
               variant="ghost"
               className="!text-red-600 dark:!text-red-400"
             >
-              <Icon variant="SignOut" size="16" />
+              <Icon variant="SignOutIcon" size="16" />
               Sign Out
             </Button>
           </Menu>
@@ -257,7 +257,7 @@ export const CustomContent = () => (
             </div>
             <hr />
             <Link href="#" className="px-3 py-2">
-              <Icon variant="ArrowSquareOut" size="16" />
+              <Icon variant="ArrowSquareOutIcon" size="16" />
               View Full Status Page
             </Link>
           </Menu>
@@ -297,7 +297,7 @@ export const NestedDropdowns = () => (
               buttonText="Preferences"
               position="beside"
               alignment="right"
-              icon={<Icon variant="CaretRight" />}
+              icon={<Icon variant="CaretRightIcon" />}
               variant="ghost"
               className="w-full justify-between"
             >
@@ -311,7 +311,7 @@ export const NestedDropdowns = () => (
                   buttonText="Advanced"
                   position="beside"
                   alignment="right"
-                  icon={<Icon variant="CaretRight" />}
+                  icon={<Icon variant="CaretRightIcon" />}
                   variant="ghost"
                   className="w-full justify-between"
                 >
@@ -340,7 +340,7 @@ export const NestedDropdowns = () => (
               buttonText="Level 2"
               position="beside"
               alignment="right"
-              icon={<Icon variant="CaretRight" />}
+              icon={<Icon variant="CaretRightIcon" />}
               variant="ghost"
               className="w-full justify-between"
             >
@@ -351,7 +351,7 @@ export const NestedDropdowns = () => (
                   buttonText="Level 3"
                   position="beside"
                   alignment="left"
-                  icon={<Icon variant="CaretLeft" />}
+                  icon={<Icon variant="CaretLeftIcon" />}
                   variant="ghost"
                   className="w-full justify-between"
                 >
@@ -362,7 +362,7 @@ export const NestedDropdowns = () => (
                       buttonText="Level 4"
                       position="beside"
                       alignment="right"
-                      icon={<Icon variant="CaretRight" />}
+                      icon={<Icon variant="CaretRightIcon" />}
                       variant="ghost"
                       className="w-full justify-between"
                     >
@@ -373,7 +373,7 @@ export const NestedDropdowns = () => (
                           buttonText="Level 5"
                           position="beside"
                           alignment="left"
-                          icon={<Icon variant="CaretLeft" />}
+                          icon={<Icon variant="CaretLeftIcon" />}
                           variant="ghost"
                           className="w-full justify-between"
                         >
@@ -384,7 +384,7 @@ export const NestedDropdowns = () => (
                               buttonText="Level 6"
                               position="beside"
                               alignment="right"
-                              icon={<Icon variant="CaretRight" />}
+                              icon={<Icon variant="CaretRightIcon" />}
                               variant="ghost"
                               className="w-full justify-between"
                             >
@@ -397,7 +397,7 @@ export const NestedDropdowns = () => (
                                   buttonText="Level 7"
                                   position="beside"
                                   alignment="left"
-                                  icon={<Icon variant="CaretLeft" />}
+                                  icon={<Icon variant="CaretLeftIcon" />}
                                   variant="ghost"
                                   className="w-full justify-between"
                                 >
@@ -410,7 +410,7 @@ export const NestedDropdowns = () => (
                                       buttonText="Level 8"
                                       position="beside"
                                       alignment="right"
-                                      icon={<Icon variant="CaretRight" />}
+                                      icon={<Icon variant="CaretRightIcon" />}
                                       variant="ghost"
                                       className="w-full justify-between"
                                     >
@@ -423,7 +423,7 @@ export const NestedDropdowns = () => (
                                           buttonText="Level 9"
                                           position="beside"
                                           alignment="left"
-                                          icon={<Icon variant="CaretLeft" />}
+                                          icon={<Icon variant="CaretLeftIcon" />}
                                           variant="ghost"
                                           className="w-full justify-between"
                                         >
@@ -437,7 +437,7 @@ export const NestedDropdowns = () => (
                                               position="beside"
                                               alignment="right"
                                               icon={
-                                                <Icon variant="CaretRight" />
+                                                <Icon variant="CaretRightIcon" />
                                               }
                                               variant="ghost"
                                               className="w-full justify-between"
@@ -482,7 +482,7 @@ export const NestedDropdowns = () => (
               buttonText="Open recent"
               position="beside"
               alignment="right"
-              icon={<Icon variant="CaretRight" />}
+              icon={<Icon variant="CaretRightIcon" />}
               variant="ghost"
               className="w-full justify-between"
             >
@@ -494,7 +494,7 @@ export const NestedDropdowns = () => (
                   buttonText="More files"
                   position="beside"
                   alignment="right"
-                  icon={<Icon variant="CaretRight" />}
+                  icon={<Icon variant="CaretRightIcon" />}
                   variant="ghost"
                   className="w-full justify-between"
                 >
@@ -510,7 +510,7 @@ export const NestedDropdowns = () => (
               buttonText="Export as"
               position="beside"
               alignment="right"
-              icon={<Icon variant="CaretRight" />}
+              icon={<Icon variant="CaretRightIcon" />}
               variant="ghost"
               className="w-full justify-between"
             >
@@ -522,7 +522,7 @@ export const NestedDropdowns = () => (
                   buttonText="Image"
                   position="beside"
                   alignment="right"
-                  icon={<Icon variant="CaretRight" />}
+                  icon={<Icon variant="CaretRightIcon" />}
                   variant="ghost"
                   className="w-full justify-between"
                 >
@@ -539,7 +539,7 @@ export const NestedDropdowns = () => (
               buttonText="Share with"
               position="beside"
               alignment="right"
-              icon={<Icon variant="CaretRight" />}
+              icon={<Icon variant="CaretRightIcon" />}
               variant="ghost"
               className="w-full justify-between"
             >
@@ -550,7 +550,7 @@ export const NestedDropdowns = () => (
                   buttonText="Team"
                   position="beside"
                   alignment="right"
-                  icon={<Icon variant="CaretRight" />}
+                  icon={<Icon variant="CaretRightIcon" />}
                   variant="ghost"
                   className="w-full justify-between"
                 >
@@ -562,7 +562,7 @@ export const NestedDropdowns = () => (
                       buttonText="Sub-teams"
                       position="beside"
                       alignment="left"
-                      icon={<Icon variant="CaretLeft" />}
+                      icon={<Icon variant="CaretLeftIcon" />}
                       variant="ghost"
                       className="w-full justify-between"
                     >
@@ -579,7 +579,7 @@ export const NestedDropdowns = () => (
                   buttonText="External"
                   position="beside"
                   alignment="right"
-                  icon={<Icon variant="CaretRight" />}
+                  icon={<Icon variant="CaretRightIcon" />}
                   variant="ghost"
                   className="w-full justify-between"
                 >
