@@ -11,6 +11,8 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/installstackrunfailed"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/installstackrunsucceeded"
 	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -162,7 +164,56 @@ func (s *service) UpdateInstallStackVersionRun(ctx *gin.Context) {
 		}
 	}
 
+	// Fire a notification-only signal reflecting the terminal status so
+	// subscribers (webhooks/Slack) can react. Dispatch failures don't break
+	// the endpoint — the row is already persisted.
+	if err := s.dispatchInstallStackRunTerminal(ctx, &stackVersion, &run, req.Status, req.StatusDescription); err != nil {
+		s.l.Error("dispatch install stack run terminal signal",
+			zap.Error(err),
+			zap.String("install_id", installID),
+			zap.String("run_id", runID),
+			zap.String("status", string(req.Status)))
+	}
+
 	ctx.JSON(http.StatusOK, run)
+}
+
+func (s *service) dispatchInstallStackRunTerminal(ctx *gin.Context, stackVersion *app.InstallStackVersion, run *app.InstallStackVersionRun, status app.Status, statusDescription string) error {
+	reqCtx := cctx.SetOrgIDContext(ctx.Request.Context(), stackVersion.OrgID)
+	reqCtx = cctx.SetAccountIDContext(reqCtx, stackVersion.CreatedByID)
+
+	useQueues, err := s.featuresClient.AllFeaturesEnabled(reqCtx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	if err != nil {
+		return fmt.Errorf("checking features: %w", err)
+	}
+	if !useQueues {
+		return nil
+	}
+	queueID, err := s.getInstallSignalsQueueID(reqCtx, stackVersion.InstallID)
+	if err != nil {
+		return err
+	}
+
+	switch status {
+	case app.InstallStackVersionRunStatusSucceeded:
+		return s.enqueueInstallSignal(reqCtx, queueID, &installstackrunsucceeded.Signal{
+			InstallID:              stackVersion.InstallID,
+			InstallStackID:         stackVersion.InstallStackID,
+			InstallStackVersionID:  stackVersion.ID,
+			InstallStackVersionRun: run.ID,
+			Kind:                   string(run.Kind),
+		}, "", "")
+	case app.InstallStackVersionRunStatusFailed:
+		return s.enqueueInstallSignal(reqCtx, queueID, &installstackrunfailed.Signal{
+			InstallID:              stackVersion.InstallID,
+			InstallStackID:         stackVersion.InstallStackID,
+			InstallStackVersionID:  stackVersion.ID,
+			InstallStackVersionRun: run.ID,
+			Kind:                   string(run.Kind),
+			StatusDescription:      statusDescription,
+		}, "", "")
+	}
+	return nil
 }
 
 // dispatchUpdateInstallStackOutputs fires the same workflow signal the legacy
