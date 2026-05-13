@@ -43,6 +43,10 @@ func (s *syncer) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReq
 		req.DriftSchedule = *s.cfg.Sandbox.DriftSchedule
 	}
 
+	if s.cfg.Sandbox.MaxAutoRetries != nil {
+		req.MaxAutoRetries = int64(*s.cfg.Sandbox.MaxAutoRetries)
+	}
+
 	maps.Copy(req.Variables, s.cfg.Sandbox.VarsMap)
 	maps.Copy(req.EnvVars, s.cfg.Sandbox.EnvVarMap)
 
