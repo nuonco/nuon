@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * Generate TypeScript types from OpenAPI spec.
@@ -47,7 +47,7 @@ const waitForAPI = async (url, { maxWaitMs = 60_000, intervalMs = 2_000 } = {}) 
 };
 
 const generate = (source) => {
-  execSync(`npx openapi-typescript "${source}" -o ${OUTPUT_FILE}`, {
+  execSync(`bunx openapi-typescript "${source}" -o ${OUTPUT_FILE}`, {
     stdio: 'inherit',
     cwd: process.cwd(),
   });
