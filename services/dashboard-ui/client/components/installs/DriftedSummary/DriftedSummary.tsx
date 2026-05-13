@@ -58,10 +58,10 @@ export const DriftedSummary = ({
             weight="strong"
             className="inline-flex items-center gap-1.5"
           >
-            <Icon variant="Warning" weight="bold" size={16} />
+            <Icon variant="WarningIcon" weight="bold" size={16} />
             Drift detected
           </Text>
-          <Icon variant="CaretDown" size={12} />
+          <Icon variant="CaretDownIcon" size={12} />
         </Link>
       </ContextTooltip>
     </div>

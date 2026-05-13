@@ -65,9 +65,9 @@ const LEGEND_ITEMS = [
 ]
 
 interface IYAxisTickProps {
-  x?: number
-  y?: number
-  payload?: { value: string }
+  x?: number | string
+  y?: number | string
+  payload?: { value?: string | number }
 }
 
 /**
@@ -80,8 +80,9 @@ interface IYAxisTickProps {
  * a11y readers.
  */
 const renderYAxisTick = ({ x = 0, y = 0, payload }: IYAxisTickProps) => {
-  const labelX = x - Y_AXIS_WIDTH + Y_AXIS_LABEL_INSET
-  const value = payload?.value ?? ''
+  const numericX = typeof x === 'number' ? x : Number(x) || 0
+  const labelX = numericX - Y_AXIS_WIDTH + Y_AXIS_LABEL_INSET
+  const value = String(payload?.value ?? '')
   return (
     <text
       x={labelX}
