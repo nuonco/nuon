@@ -142,7 +142,15 @@ export const InstallStatuses = ({
           <Icon variant="FileDashedIcon" size={14} className="cursor-default" />
         </Text>
       ) : (
-        <Status status={driftStatus} variant="badge">
+        <Status
+          status={driftStatus}
+          variant="badge"
+          className={
+            install.drifted_objects?.length
+              ? '[&>span:first-child]:animate-pulse'
+              : undefined
+          }
+        >
           {isLabelHidden
             ? 'Drift'
             : install.drifted_objects?.length
