@@ -29,9 +29,11 @@ type Request struct {
 func HintOrGenerate(ctx workflow.Context, req Request) error {
 	if req.StateGenV2 {
 		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   req.InstallID,
-			OwnerType: "installs",
-			QueueName: helpers.InstallStateManagerQueueName,
+			OwnerID:         req.InstallID,
+			OwnerType:       "installs",
+			SignalOwnerID:   req.InstallID,
+			SignalOwnerType: "installs",
+			QueueName:       helpers.InstallStateManagerQueueName,
 			Signal: &statepartialgenerate.Signal{
 				InstallID:       req.InstallID,
 				Targets:         req.Targets,

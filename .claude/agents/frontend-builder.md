@@ -37,7 +37,7 @@ The dashboard-ui is a **Go BFF + React SPA**:
 - **Data Fetching / Mutations**: TanStack Query (`useQuery`, `useMutation`)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Build**: ESBuild + PostCSS
+- **Build**: Bun bundler + PostCSS
 
 ### Code Location (`client/`)
 - Components: `client/components/` (organized by domain; `common/` has core primitives)
@@ -86,6 +86,26 @@ export const createInstallConfig = ({
 Import from `@/lib`:
 ```typescript
 import { getRunner, createInstallConfig } from '@/lib'
+```
+
+## Defensive Data Access (CRITICAL)
+
+**Treat ALL API response data as potentially undefined — regardless of what the OpenAPI spec or TypeScript types say.** The API can return partial objects, null fields, or missing nested properties at any time. A single unguarded property access on undefined data crashes the entire page.
+
+- **Always use optional chaining (`?.`) when accessing nested API data.** Never trust that an object or its children exist just because the type says so: `step?.status?.status`, not `step.status.status`.
+- **Guard before rendering child components that depend on fetched data.** If `useQuery` returns data that children need, check `if (!data) return <Skeleton />` before rendering — don't leave it to children to handle undefined.
+- **Use nullish coalescing (`?? defaultValue`) for values in comparisons or arithmetic:** `(step?.execution_duration ?? 0) > 1000` not `step?.execution_duration > 1000`.
+- **Non-null assertions (`!`) are only acceptable inside `useQuery` `queryFn` callbacks** where the `enabled` guard guarantees the values exist.
+- **Provider hook values (`useOrg()`, `useInstall()`) can be undefined** during initial render. Always `org?.id`, never `org.id`, when passing to children or building URLs.
+
+```tsx
+// ✅ Defensive
+deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name
+if (error || !actionRun) return <ErrorState />
+
+// ❌ Will crash
+deploy.runner_jobs[0].install_role_usage.role_name
+if (error) return <ErrorState />  // actionRun still undefined below
 ```
 
 ## State Management
@@ -344,6 +364,47 @@ Tab keys are run through `toSentenceCase(camelToWords(key))` which lowercases ev
 
 Exceptions: proper nouns (AWS, Nuon, Terraform) and acronyms.
 
+## Toast Patterns
+
+### Mutation toasts (action triggered)
+
+When a mutation kicks off a long-running job (build, deploy, reprovision, etc.), show a **heading-only** toast with `theme="info"`. Use a `Badge variant="code" size="md"` for the entity name when one exists. No body copy.
+
+```tsx
+addToast(
+  <Toast
+    heading={
+      <span className="inline-flex items-center gap-1.5">
+        <Badge variant="code" size="md">{component.name}</Badge> build started
+      </span>
+    }
+    theme="info"
+  />
+)
+```
+
+For actions without a named entity (sandbox operations), use a plain string heading:
+
+```tsx
+addToast(<Toast heading="Sandbox reprovision started" theme="info" />)
+```
+
+For mutation errors use `theme="error"` with the same pattern.
+
+### Completion toasts (status transition)
+
+Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook fires a toast once when the status transitions from non-terminal to terminal (success/error). It does NOT fire if the page loads with an already-terminal status.
+
+```tsx
+useStatusToast({
+  status: build?.status_v2?.status,
+  label: build?.component_name,  // optional — shown in a Badge
+  resourceType: 'build',         // produces "build succeeded" / "build failed"
+})
+```
+
+Already wired into: `build-provider`, `deploy-provider`, `sandbox-build-provider`, `sandbox-run-provider`.
+
 ## Dates, Times & Durations
 
 **Always use [Luxon](https://moment.github.io/luxon/)** — never raw `Date` objects or manual millisecond math.
@@ -364,13 +425,13 @@ const diffMs = Date.now() - new Date(dateStr).getTime()
 ## Key Scripts
 
 ```bash
-npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
-npm run build          # Production build (minified)
-npm run lint           # ESLint for the SPA
-npm run dev:ladle      # Ladle component stories
-npm test               # Vitest tests
-npx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
-npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
+bun run dev            # Development: bun build watch + PostCSS watch + Bun dev server (SSE live reload)
+bun run build          # Production build (minified, content-hashed assets)
+bun run lint           # ESLint for the SPA
+bun run dev:ladle      # Ladle component stories
+bun run test           # bun test (unit tests)
+bunx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
+bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
 ```
 
 **Do NOT run** `build`, `build:js`, or `build:css` unless explicitly asked — a dev process handles builds automatically.

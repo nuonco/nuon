@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import {
   getWorkflowBadge,
   getStepBadge,
@@ -106,6 +106,22 @@ describe('workflow-utils', () => {
       const badge = getStepBadge(step)
       expect(badge).toEqual({
         children: 'Plan approved',
+        theme: 'success',
+      })
+    })
+
+    test('should return "Plan created" badge for approved step when planOnly', () => {
+      const step: TWorkflowStep = {
+        execution_type: 'approval',
+        status: {
+          status: 'approved',
+        },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step, false, true)
+      expect(badge).toEqual({
+        children: 'Plan created',
         theme: 'success',
       })
     })

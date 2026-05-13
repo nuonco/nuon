@@ -5,12 +5,13 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
 
-func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
+func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return false, err
@@ -21,6 +22,16 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
+	// Fetch the emitter from DB and set e.queueID from the authoritative record.
+	emitter, err := e.ensureEmitterActive(ctx)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to check emitter status")
+	}
+	if e.stopped {
+		l.Info("emitter not found, stopping")
+		return true, nil
+	}
+
 	// Check if the queue still exists before proceeding.
 	if err := e.ensureQueueActive(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to check queue status")
@@ -28,14 +39,6 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 	if e.stopped {
 		l.Info("queue terminated, stopping emitter")
 		return true, nil
-	}
-
-	l.Info("fetching emitter configuration")
-	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{
-		EmitterID: e.emitterID,
-	})
-	if err != nil {
-		return false, errors.Wrap(err, "unable to get emitter")
 	}
 
 	switch emitter.Mode {
@@ -48,6 +51,25 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (bool, error) {
 	}
 }
 
+func (e *emitterWorkflow) emitLifecycleMetric(ctx workflow.Context, name string, emitter *app.QueueEmitter) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type": string(emitter.SignalType),
+		"mode":        string(emitter.Mode),
+		"owner_type":  emitter.Queue.OwnerType,
+	})
+	e.mw.Incr(ctx, name, tags...)
+}
+
+func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.QueueEmitter, status string) {
+	tags := metrics.ToTags(map[string]string{
+		"signal_type":  string(emitter.SignalType),
+		"emitter_type": string(emitter.Mode),
+		"owner_type":   emitter.Queue.OwnerType,
+		"status":       status,
+	})
+	e.mw.Incr(ctx, "queue.emitter.signal_emitted", tags...)
+}
+
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
@@ -55,16 +77,20 @@ func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitte
 		QueueID:   emitter.QueueID,
 	})
 	if err != nil {
+		e.emitSignalMetric(ctx, emitter, "error")
 		return errors.Wrap(err, "unable to emit signal")
 	}
 
 	if resp.Skipped {
+		e.emitSignalMetric(ctx, emitter, "skipped")
 		l.Info("signal emission skipped - emitter already has in-flight signal",
 			zap.String("emitter-id", e.emitterID),
 			zap.String("queue-id", emitter.QueueID),
 		)
 		return nil
 	}
+
+	e.emitSignalMetric(ctx, emitter, "ok")
 
 	l.Info("signal emitted, updating relationship",
 		zap.String("queue-signal-id", resp.QueueSignalID),

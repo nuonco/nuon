@@ -12,7 +12,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -70,20 +69,27 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return time.Now().UnixMilli()
 	}).Get(&startMs)
 
-	var installLabels map[string]string
+	var ownerLabels map[string]string
 	var runnerType string
+	var runnerStatus string
+	var runnerVersion string
+	var processType string
+	var orgID string
+	var installID string
 	defer func() {
-		status := "ok"
-		if err != nil {
-			status = "error"
-		}
-		tagMap := make(map[string]string, len(installLabels)+3)
-		for k, v := range installLabels {
+		tagMap := make(map[string]string, len(ownerLabels)+7)
+		for k, v := range ownerLabels {
 			tagMap[k] = v
 		}
-		tagMap["status"] = status
 		tagMap["runner_id"] = s.RunnerID
 		tagMap["runner_type"] = runnerType
+		tagMap["runner_status"] = runnerStatus
+		tagMap["runner_version"] = runnerVersion
+		tagMap["process_type"] = processType
+		tagMap["org_id"] = orgID
+		if installID != "" {
+			tagMap["install_id"] = installID
+		}
 		tags := metrics.ToTags(tagMap)
 
 		var endMs int64
@@ -100,12 +106,18 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get runner")
 	}
 	runnerType = string(runner.RunnerGroup.Type)
-	if runner.RunnerGroup.OwnerType == "installs" {
-		install, err := installactivities.AwaitGetByInstallID(ctx, runner.RunnerGroup.OwnerID)
+	runnerStatus = string(runner.Status)
+	orgID = runner.OrgID
+	switch runner.RunnerGroup.OwnerType {
+	case "installs":
+		installID = runner.RunnerGroup.OwnerID
+		install, err := activities.AwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
 		if err != nil {
 			return errors.Wrap(err, "unable to get install for runner")
 		}
-		installLabels = install.Labels
+		ownerLabels = install.Labels
+	case "orgs":
+		ownerLabels = runner.Org.Labels
 	}
 
 	l, err := log.WorkflowLogger(ctx)
@@ -118,6 +130,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	if err != nil {
 		return dbgenerics.TemporalGormError(err, "runner process not found")
 	}
+	processType = string(process.Type)
 
 	switch process.ProcessStatus() {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
@@ -169,6 +182,9 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return errors.Wrap(err, "unable to get heartbeat")
 	}
+	if heartbeat != nil {
+		runnerVersion = heartbeat.Version
+	}
 
 	now := workflow.Now(ctx)
 	heartbeatAge := s.heartbeatAge(now, heartbeat)
@@ -187,6 +203,26 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		})
 		if err != nil {
 			return errors.Wrap(err, "unable to update process status to inactive")
+		}
+
+		stopTagMap := make(map[string]string, len(ownerLabels)+8)
+		for k, v := range ownerLabels {
+			stopTagMap[k] = v
+		}
+		stopTagMap["runner_id"] = s.RunnerID
+		stopTagMap["runner_type"] = runnerType
+		stopTagMap["runner_status"] = runnerStatus
+		stopTagMap["runner_version"] = runnerVersion
+		stopTagMap["process_id"] = s.ProcessID
+		stopTagMap["process_type"] = string(process.Type)
+		stopTagMap["org_id"] = orgID
+		if installID != "" {
+			stopTagMap["install_id"] = installID
+		}
+		stopTags := metrics.ToTags(stopTagMap)
+		s.mw.Incr("runner.process.stop", stopTags)
+		if process.StartedAt != nil {
+			s.mw.Timing("runner.process.latency", workflow.Now(ctx).Sub(*process.StartedAt), stopTags)
 		}
 
 		// Enqueue on_inactive signal before stopping the queue

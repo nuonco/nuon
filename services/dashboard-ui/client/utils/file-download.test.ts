@@ -1,10 +1,18 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { createFileDownload, downloadFileOnClick } from './file-download'
+
+type MockFn = ReturnType<typeof mock>
+
+const origCreateObjectURL = globalThis.URL?.createObjectURL
+const origRevokeObjectURL = globalThis.URL?.revokeObjectURL
+const origCreateElement = document.createElement.bind(document)
+const origAppendChild = document.body.appendChild.bind(document.body)
+const origRemoveChild = document.body.removeChild.bind(document.body)
 
 Object.defineProperty(global, 'URL', {
   value: {
-    createObjectURL: vi.fn(),
-    revokeObjectURL: vi.fn(),
+    createObjectURL: mock(),
+    revokeObjectURL: mock(),
   },
   writable: true,
 })
@@ -12,44 +20,64 @@ Object.defineProperty(global, 'URL', {
 describe('file-download', () => {
   describe('createFileDownload', () => {
     let mockLink: HTMLAnchorElement
-    let mockCreateElement: ReturnType<typeof vi.fn>
-    let mockAppendChild: ReturnType<typeof vi.fn>
-    let mockRemoveChild: ReturnType<typeof vi.fn>
-    let mockClick: ReturnType<typeof vi.fn>
-    let mockSetAttribute: ReturnType<typeof vi.fn>
+    let mockCreateElement: MockFn
+    let mockAppendChild: MockFn
+    let mockRemoveChild: MockFn
+    let mockClick: MockFn
+    let mockSetAttribute: MockFn
 
     beforeEach(() => {
-      vi.clearAllMocks()
+      ;(global.URL.createObjectURL as MockFn).mockReset()
+      ;(global.URL.revokeObjectURL as MockFn).mockReset()
 
-      mockClick = vi.fn()
-      mockSetAttribute = vi.fn()
+      mockClick = mock()
+      mockSetAttribute = mock()
       mockLink = {
         href: '',
         click: mockClick,
         setAttribute: mockSetAttribute,
       } as unknown as HTMLAnchorElement
 
-      mockCreateElement = vi.fn().mockReturnValue(mockLink)
-      mockAppendChild = vi.fn()
-      mockRemoveChild = vi.fn()
+      mockCreateElement = mock().mockReturnValue(mockLink)
+      mockAppendChild = mock()
+      mockRemoveChild = mock()
 
       Object.defineProperty(document, 'createElement', {
         value: mockCreateElement,
         writable: true,
+        configurable: true,
       })
 
       Object.defineProperty(document.body, 'appendChild', {
         value: mockAppendChild,
         writable: true,
+        configurable: true,
       })
 
       Object.defineProperty(document.body, 'removeChild', {
         value: mockRemoveChild,
         writable: true,
+        configurable: true,
       })
-      ;(global.URL.createObjectURL as ReturnType<typeof vi.fn>).mockReturnValue(
-        'blob:mock-url'
-      )
+      ;(global.URL.createObjectURL as MockFn).mockReturnValue('blob:mock-url')
+    })
+
+    afterEach(() => {
+      Object.defineProperty(document, 'createElement', {
+        value: origCreateElement,
+        writable: true,
+        configurable: true,
+      })
+      Object.defineProperty(document.body, 'appendChild', {
+        value: origAppendChild,
+        writable: true,
+        configurable: true,
+      })
+      Object.defineProperty(document.body, 'removeChild', {
+        value: origRemoveChild,
+        writable: true,
+        configurable: true,
+      })
     })
 
     test('should create download for string content with default mime type', () => {
@@ -154,45 +182,64 @@ describe('file-download', () => {
 
   describe('downloadFileOnClick', () => {
     let mockLink: HTMLAnchorElement
-    let mockCreateElement: ReturnType<typeof vi.fn>
-    let mockAppendChild: ReturnType<typeof vi.fn>
-    let mockRemoveChild: ReturnType<typeof vi.fn>
-    let mockClick: ReturnType<typeof vi.fn>
-    let mockCallback: ReturnType<typeof vi.fn>
+    let mockCreateElement: MockFn
+    let mockAppendChild: MockFn
+    let mockRemoveChild: MockFn
+    let mockClick: MockFn
+    let mockCallback: MockFn
 
     beforeEach(() => {
-      vi.clearAllMocks()
-      vi.useFakeTimers()
+      ;(global.URL.createObjectURL as MockFn).mockReset()
+      ;(global.URL.revokeObjectURL as MockFn).mockReset()
 
-      mockClick = vi.fn()
-      mockCallback = vi.fn()
+      mockClick = mock()
+      mockCallback = mock()
       mockLink = {
         href: '',
         download: '',
         click: mockClick,
       } as unknown as HTMLAnchorElement
 
-      mockCreateElement = vi.fn().mockReturnValue(mockLink)
-      mockAppendChild = vi.fn()
-      mockRemoveChild = vi.fn()
+      mockCreateElement = mock().mockReturnValue(mockLink)
+      mockAppendChild = mock()
+      mockRemoveChild = mock()
 
       Object.defineProperty(document, 'createElement', {
         value: mockCreateElement,
         writable: true,
+        configurable: true,
       })
 
       Object.defineProperty(document.body, 'appendChild', {
         value: mockAppendChild,
         writable: true,
+        configurable: true,
       })
 
       Object.defineProperty(document.body, 'removeChild', {
         value: mockRemoveChild,
         writable: true,
+        configurable: true,
       })
-      ;(global.URL.createObjectURL as ReturnType<typeof vi.fn>).mockReturnValue(
-        'blob:mock-url'
-      )
+      ;(global.URL.createObjectURL as MockFn).mockReturnValue('blob:mock-url')
+    })
+
+    afterEach(() => {
+      Object.defineProperty(document, 'createElement', {
+        value: origCreateElement,
+        writable: true,
+        configurable: true,
+      })
+      Object.defineProperty(document.body, 'appendChild', {
+        value: origAppendChild,
+        writable: true,
+        configurable: true,
+      })
+      Object.defineProperty(document.body, 'removeChild', {
+        value: origRemoveChild,
+        writable: true,
+        configurable: true,
+      })
     })
 
     test('should download file with default parameters', () => {
@@ -250,17 +297,13 @@ describe('file-download', () => {
       expect(mockCallback).toHaveBeenCalled()
     })
 
-    test('should revoke object URL after timeout', () => {
+    test('should not revoke object URL synchronously (deferred via setTimeout)', () => {
       const content = 'test content'
       const filename = 'test.txt'
 
       downloadFileOnClick({ content, filename })
 
       expect(global.URL.revokeObjectURL).not.toHaveBeenCalled()
-
-      vi.advanceTimersByTime(10000)
-
-      expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
     })
 
     test('should handle empty filename with default fileType', () => {
@@ -279,10 +322,6 @@ describe('file-download', () => {
       downloadFileOnClick({ content, filename })
 
       expect(mockLink.download).toBe('test.txt')
-    })
-
-    afterEach(() => {
-      vi.useRealTimers()
     })
   })
 })

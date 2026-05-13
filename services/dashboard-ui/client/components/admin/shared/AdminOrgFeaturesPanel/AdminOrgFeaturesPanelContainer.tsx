@@ -5,7 +5,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import { type IPanel } from '@/components/surfaces/Panel'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/hooks/use-auth'
-import { adminGetOrgFeaturesList, adminUpdateOrgFeatures } from '@/lib'
+import { adminGetOrgFeaturesList, adminUpdateOrgFeatures, type TOrgFeatureInfo } from '@/lib'
 import type { TOrg } from '@/types'
 import { AdminOrgFeaturesPanel } from './AdminOrgFeaturesPanel'
 
@@ -24,7 +24,7 @@ export const AdminOrgFeaturesPanelContainer = ({
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const adminEmail = user?.email ?? ''
-  const [featuresList, setFeaturesList] = useState<string[]>([])
+  const [featuresList, setFeaturesList] = useState<TOrgFeatureInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>()
 
@@ -32,7 +32,7 @@ export const AdminOrgFeaturesPanelContainer = ({
     mutationFn: (formData: FormData) => {
       const features: Record<string, boolean> = {}
       featuresList.forEach((feature) => {
-        features[feature] = formData.get(feature) === 'on'
+        features[feature.name] = formData.get(feature.name) === 'on'
       })
       return adminUpdateOrgFeatures({ orgId, features, adminEmail })
     },
@@ -60,7 +60,10 @@ export const AdminOrgFeaturesPanelContainer = ({
       .then((features) => {
         setIsLoading(false)
         if (Array.isArray(features)) {
-          setFeaturesList(features)
+          const normalized = features.map((f) =>
+            typeof f === 'string' ? { name: f, description: '' } : f
+          )
+          setFeaturesList(normalized)
         } else {
           setError('Invalid features data received')
         }

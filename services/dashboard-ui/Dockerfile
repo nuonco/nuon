@@ -2,24 +2,22 @@ FROM alpine:3.21 AS openapi-spec
 
 COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
-# --- Node deps + SPA source ---
+# --- Bun deps + SPA source ---
 
-FROM node:20-alpine AS deps
+FROM oven/bun:1.3-alpine AS deps
 
 WORKDIR /src
 
-RUN apk add --no-cache build-base make python3 py3-pip
-
 COPY \
     .prettierrc \
-    vitest.config.ts \
-    vitest.setup.ts \
-    package-lock.json \
+    bunfig.toml \
+    bun-test-setup.ts \
+    bun.lock \
     postcss.config.js \
     package.json \
     ./
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm install
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-dashboard-ui bun install --frozen-lockfile
 
 COPY scripts scripts
 COPY public public
@@ -29,24 +27,24 @@ COPY client client
 
 FROM deps AS lint
 
-RUN npm run lint && npx tsc --noEmit --project client/tsconfig.json
+RUN bun run lint && bunx tsc --noEmit --project client/tsconfig.json
 
 FROM deps AS lint-local-spec
 
-RUN npm run lint && npx tsc --noEmit --project client/tsconfig.json
+RUN bun run lint && bunx tsc --noEmit --project client/tsconfig.json
 
 # --- Test targets ---
 
 FROM deps AS test
 
-RUN npm run test
+RUN bun run test
 
 FROM deps AS test-local-spec
 
 COPY --from=openapi-spec /openapi/swagger-v3.json /openapi/swagger-v3.json
 ENV NUON_OPENAPI_SPEC_FILE=/openapi/swagger-v3.json
 
-RUN npm run test
+RUN bun run test
 
 # --- Build SPA static assets ---
 
@@ -54,7 +52,7 @@ FROM deps AS build-spa
 
 ARG NUON_API_URL=https://api.stage.nuon.co
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-dashboard-ui npm run build
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-dashboard-ui bun run build
 
 # --- Build Go server ---
 

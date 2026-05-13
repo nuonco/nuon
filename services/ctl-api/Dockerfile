@@ -5,19 +5,21 @@ ARG RUNTIME_IMAGE=runtimeimage
 
 FROM node:20-alpine AS admin-dashboard-build
 
+RUN npm i -g bun
+
 WORKDIR /src
 
 COPY --link internal/app/admin-dashboard/package.json \
-     internal/app/admin-dashboard/package-lock.json \
+     internal/app/admin-dashboard/bun.lock \
      ./
 
-RUN --mount=type=cache,target=/root/.npm,id=npm-admin-dashboard npm ci
+RUN --mount=type=cache,target=/root/.bun/install/cache,id=bun-admin-dashboard bun install --frozen-lockfile
 
 COPY --link internal/app/admin-dashboard/client ./client
 COPY --link internal/app/admin-dashboard/scripts ./scripts
 COPY --link internal/app/admin-dashboard/postcss.config.js ./
 
-RUN npm run build
+RUN bun run build
 
 # --- Go service build ---
 
@@ -48,8 +50,7 @@ COPY --link main.go admin.go public.go runner.go ./
 FROM code AS generated
 
 # Generate all code artifacts required for compile/test (swagger + temporal + mocks).
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     go generate ./... && \
     cd /src/pkg/temporal/client && go generate ./...
 
@@ -59,8 +60,7 @@ COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     CGO_ENABLED=0 GOOS=linux go build -o /bin/service
 
 FROM code AS unit-test
@@ -69,9 +69,8 @@ COPY --from=generated /src/services/${SERVICE}/internal ./internal/
 COPY --from=generated /src/services/${SERVICE}/docs ./docs/
 COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/client/mock_client.go
 
-RUN --mount=type=cache,target=/go/pkg/mod,id=gomod \
-    --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
-    go test -v ./...
+RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
+    go test ./...
 
 FROM code AS lint
 
@@ -82,7 +81,6 @@ COPY --from=generated /src/pkg/temporal/client/mock_client.go /src/pkg/temporal/
 COPY .golangci.yml .
 
 RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-ctl-api \
-    --mount=type=cache,target=/go/pkg/mod,id=gomod \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml  -v
 
