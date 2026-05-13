@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react'
+import { Fragment, useMemo, useState, type ReactNode } from 'react'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -8,6 +8,10 @@ import { buildSpanForest, formatDurationNs, type TSpanNode } from '@/utils/span-
 
 export interface ISpanTree {
   spans: TSpan[]
+  // When the parent applied a span filter (e.g. the "User actions" toggle in
+  // TraceView), this is the count of spans dropped from `spans`. Surfaced in
+  // the header so users can tell something is being hidden.
+  hiddenCount?: number
   selectedSpanId?: string
   onSelectSpan: (spanId: string) => void
   collapsed: Set<string>
@@ -19,6 +23,7 @@ export interface ISpanTree {
 
 export const SpanTree = ({
   spans,
+  hiddenCount = 0,
   selectedSpanId,
   onSelectSpan,
   collapsed,
@@ -45,6 +50,11 @@ export const SpanTree = ({
       <div className="flex items-center justify-between gap-3 px-2 h-14 border-b border-cool-grey-200 dark:border-dark-grey-600">
         <Text variant="body" theme="neutral">
           {spans.length} span{spans.length === 1 ? '' : 's'}
+          {hiddenCount > 0 ? (
+            <Text variant="subtext" theme="neutral" as="span">
+              {' '}({hiddenCount} hidden)
+            </Text>
+          ) : null}
         </Text>
         <div className="flex items-center gap-2">
           {headerActions}
@@ -99,6 +109,16 @@ const SpanTreeNode = ({
   const isCollapsed = collapsed.has(span.span_id)
   const isSelected = selectedSpanId === span.span_id
   const status = statusFor(node)
+
+  // Per-row toggle for the inline attribute panel. Local state because the
+  // panel is purely a UI affordance — no need to lift to the parent or
+  // mirror onto the URL like span selection does.
+  const [showAttrs, setShowAttrs] = useState(false)
+  const attrEntries = useMemo(
+    () => (span.attributes ? Object.entries(span.attributes).sort() : []),
+    [span.attributes]
+  )
+  const hasAttrs = attrEntries.length > 0
 
   return (
     <>
@@ -165,11 +185,34 @@ const SpanTreeNode = ({
               </Text>
             ) : null}
           </span>
+          {hasAttrs ? (
+            <button
+              type="button"
+              className={cn(
+                'flex items-center justify-center w-4 h-4 shrink-0 rounded',
+                'text-cool-grey-500 dark:text-cool-grey-400',
+                'hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8',
+                'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary-400',
+                showAttrs && 'text-primary-600 dark:text-primary-400'
+              )}
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowAttrs((v) => !v)
+              }}
+              aria-pressed={showAttrs}
+              aria-label={showAttrs ? 'Hide attributes' : 'Show attributes'}
+            >
+              <Icon variant="InfoIcon" size={12} />
+            </button>
+          ) : null}
           <Text variant="subtext" family="mono" theme="neutral" nowrap as="span">
             {formatDurationNs(span.duration_ns)}
           </Text>
         </div>
       </div>
+      {hasAttrs && showAttrs ? (
+        <SpanAttributePanel depth={node.depth} entries={attrEntries} />
+      ) : null}
       {hasChildren && !isCollapsed
         ? node.children.map((child) => (
             <SpanTreeNode
@@ -185,6 +228,43 @@ const SpanTreeNode = ({
     </>
   )
 }
+
+interface ISpanAttributePanel {
+  depth: number
+  entries: [string, string][]
+}
+
+const SpanAttributePanel = ({ depth, entries }: ISpanAttributePanel) => (
+  <div className="flex items-stretch">
+    {Array.from({ length: depth }).map((_, i) => (
+      <span
+        key={i}
+        aria-hidden="true"
+        className="w-4 shrink-0 flex justify-center"
+      >
+        <span className="w-px self-stretch bg-cool-grey-200 dark:bg-dark-grey-700" />
+      </span>
+    ))}
+    <div className="flex-1 min-w-0 px-3 py-2 ml-4 border-l border-cool-grey-200 dark:border-dark-grey-700 bg-cool-grey-50 dark:bg-dark-grey-700/30">
+      <dl className="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-3 gap-y-1">
+        {entries.map(([k, v]) => (
+          <Fragment key={k}>
+            <dt>
+              <Text family="mono" variant="subtext" theme="neutral" as="span" nowrap>
+                {k}
+              </Text>
+            </dt>
+            <dd className="min-w-0">
+              <Text family="mono" variant="subtext" as="span" className="break-all">
+                {v}
+              </Text>
+            </dd>
+          </Fragment>
+        ))}
+      </dl>
+    </div>
+  </div>
+)
 
 type TSpanStatus = 'ok' | 'error' | 'skipped'
 
