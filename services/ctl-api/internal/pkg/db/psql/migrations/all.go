@@ -84,5 +84,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "102-webhooks-match",
 			Fn:   m.Migration102WebhooksMatch,
 		},
+		{
+			Name: "103-queue-signals-inflight-index",
+			Fn:   m.Migration103QueueSignalsInflightIndex,
+		},
 	}
 }
