@@ -14,8 +14,8 @@ RUN apk add --no-cache build-base make python3 py3-pip
 
 COPY \
     .prettierrc \
-    vitest.config.ts \
-    vitest.setup.ts \
+    bunfig.toml \
+    bun-test-setup.ts \
     bun.lock \
     postcss.config.js \
     package.json \

@@ -1,12 +1,12 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, expect, test, beforeEach, afterEach, vi } from 'vitest'
+import { describe, expect, test, beforeEach, afterEach, spyOn } from 'bun:test'
 import { useFormPersistence } from './use-form-persistence'
 import { useRef } from 'react'
 
 describe('useFormPersistence', () => {
   beforeEach(() => {
     localStorage.clear()
-    vi.clearAllMocks()
+    
   })
 
   afterEach(() => {
@@ -132,8 +132,7 @@ describe('useFormPersistence', () => {
   })
 
   test('should handle localStorage unavailable gracefully', () => {
-    const getItemSpy = vi
-      .spyOn(Storage.prototype, 'getItem')
+    const getItemSpy = spyOn(Storage.prototype, 'getItem')
       .mockImplementation(() => {
         throw new Error('localStorage not available')
       })

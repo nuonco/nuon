@@ -1,20 +1,21 @@
 // @ts-nocheck
 
-import { describe, expect, test, beforeAll, afterAll, vi } from 'vitest'
+import { describe, expect, test, beforeAll, afterAll, spyOn } from 'bun:test'
 import { formatToRelativeDay, parseActivityTimeline } from './timeline-utils'
 import { DateTime } from 'luxon'
 
 describe('timeline-utils', () => {
   describe('formatToRelativeDay', () => {
+    let nowSpy: ReturnType<typeof spyOn>
+
     beforeAll(() => {
-      // Mock DateTime.now() to return a fixed time for consistent testing
-      vi.spyOn(DateTime, 'now').mockReturnValue(
+      nowSpy = spyOn(DateTime, 'now').mockReturnValue(
         DateTime.fromISO('2023-01-01T12:00:00.000Z')
       )
     })
 
     afterAll(() => {
-      vi.restoreAllMocks()
+      nowSpy.mockRestore()
     })
 
     test('should return "Today" for current date', () => {
