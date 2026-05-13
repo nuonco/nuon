@@ -256,14 +256,11 @@ export const InstallsTable = ({
   filterActions,
   pagination,
 }: IInstallsTable) => {
-  if (isLoading) {
-    return <InstallsTableSkeleton />
-  }
-
   return (
     <Table<InstallRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       emptyStateProps={{
         emptyMessage:
           'An install is an instance of an application running in a customer cloud account.',

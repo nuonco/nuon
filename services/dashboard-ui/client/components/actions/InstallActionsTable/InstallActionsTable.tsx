@@ -168,14 +168,11 @@ export const InstallActionsTable = ({
   filterActions,
   pagination,
 }: IInstallActionsTable) => {
-  if (isLoading) {
-    return <InstallActionsTableSkeleton />
-  }
-
   return (
     <Table<InstallActionRow>
       columns={columns}
       data={data}
+      isLoading={isLoading}
       filterActions={filterActions}
       emptyStateProps={{
         variant: 'actions',
