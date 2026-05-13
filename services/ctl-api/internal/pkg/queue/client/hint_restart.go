@@ -48,6 +48,33 @@ func (c *Client) HintRestartByOrg(ctx context.Context, orgID string) error {
 	return nil
 }
 
+// HintRestartSingle sets restart_hint on a single queue via status_v2 metadata.
+// The queue's CAN listener will pick this up on its next poll cycle and trigger
+// a graceful continue-as-new.
+// @temporal-gen-v2 activity
+// @start-to-close-timeout 1m
+func (c *Client) HintRestartSingle(ctx context.Context, queueID string) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+	res := c.db.WithContext(ctx).Exec(`
+		UPDATE queues
+		SET status_v2 = jsonb_set(
+			jsonb_set(
+				COALESCE(status_v2::jsonb, '{}'::jsonb),
+				'{metadata}',
+				COALESCE(status_v2::jsonb -> 'metadata', '{}'::jsonb)
+			),
+			'{metadata,restart_hint}',
+			to_jsonb(?::text)
+		)
+		WHERE id = ? AND deleted_at = 0
+	`, now, queueID)
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to set restart hint on queue")
+	}
+
+	return nil
+}
+
 type RequestCANAllRequest struct{}
 
 type RequestCANAllResponse struct {

@@ -47,8 +47,8 @@ func (s *service) RestartInstallQueues(ctx *gin.Context) {
 	}
 
 	for _, queue := range queues {
-		if err := s.queueClient.Restart(ctx, queue.ID); err != nil {
-			ctx.Error(fmt.Errorf("unable to restart queue %s: %w", queue.ID, err))
+		if err := s.queueClient.HintRestartSingle(ctx, queue.ID); err != nil {
+			ctx.Error(fmt.Errorf("unable to hint restart queue %s: %w", queue.ID, err))
 			return
 		}
 	}
