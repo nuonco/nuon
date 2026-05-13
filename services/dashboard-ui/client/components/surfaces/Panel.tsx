@@ -167,6 +167,7 @@ export const PanelBase = ({
 export const Panel = ({ triggerButton, ...props }: IPanel) => {
   const { addPanel } = useSurfaces()
   const [searchParams] = useSearchParams()
+  const openedByTrigger = useRef(false)
   const panel = <PanelBase {...props} />
 
   const handleAddPanel = () => {
@@ -175,6 +176,10 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
 
   const panelParam = searchParams?.get('panel')
   useEffect(() => {
+    if (openedByTrigger.current) {
+      openedByTrigger.current = false
+      return
+    }
     if (
       props.panelKey &&
       props.panelKey === panelParam &&
@@ -186,10 +191,15 @@ export const Panel = ({ triggerButton, ...props }: IPanel) => {
     }
   }, [panelParam])
 
+  const handleTriggerClick = () => {
+    openedByTrigger.current = true
+    handleAddPanel()
+  }
+
   return (
     <>
       {triggerButton ? (
-        <Button onClick={handleAddPanel} {...triggerButton}>
+        <Button onClick={handleTriggerClick} {...triggerButton}>
           {triggerButton.children}
         </Button>
       ) : (
