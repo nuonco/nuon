@@ -8,9 +8,10 @@ import React, {
   type ReactNode,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { v4 as uuid } from 'uuid'
 import { type IPanel } from '@/components/surfaces/Panel'
 import { type IModal } from '@/components/surfaces/Modal'
+
+const uuid = () => crypto.randomUUID()
 
 // Panel types
 type TPanelEl = ReactElement<IPanel & { ref?: React.Ref<HTMLDivElement> }>
