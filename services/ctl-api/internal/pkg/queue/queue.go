@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -40,6 +41,7 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 	q := &queue{
 		cfg:             w.cfg,
 		v:               w.v,
+		mw:              w.mw,
 		queueID:         req.QueueID,
 		state:           req.State,
 		releaseWindow:   req.ReleaseWindow,
@@ -77,18 +79,18 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 type queue struct {
 	cfg *internal.Config
 	v   *validator.Validate
+	mw  tmetrics.Writer
 
 	queueID string
 
 	releaseWindow *ReleaseWindow
 
-	ready          bool
-	stopped        bool
-	restarted      bool
-	forceRestarted bool
-	paused         bool
-	maxDepth       int
-	maxInFlight    int
+	ready       bool
+	stopped     bool
+	restarted   bool
+	paused      bool
+	maxDepth    int
+	maxInFlight int
 
 	// sem limits the number of concurrently processing signals to maxInFlight.
 	sem workflow.Semaphore

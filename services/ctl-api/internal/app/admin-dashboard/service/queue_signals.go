@@ -15,6 +15,13 @@ import (
 
 const queueSignalsPerPage = 100
 
+var allowedSinceValues = map[string]string{
+	"15m": "15 minutes",
+	"1h":  "1 hour",
+	"12h": "12 hours",
+	"24h": "24 hours",
+}
+
 func (s *service) QueueSignals(c *gin.Context) {
 	ctx := c.Request.Context()
 	page := getPageFromQuery(c)
@@ -25,8 +32,9 @@ func (s *service) QueueSignals(c *gin.Context) {
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
 	sortBy := c.Query("sort_by")
+	since := c.DefaultQuery("since", "15m")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, since, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -62,8 +70,9 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
 	sortBy := c.Query("sort_by")
+	since := c.DefaultQuery("since", "15m")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, since, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
@@ -98,11 +107,16 @@ var allowedSortColumns = map[string]string{
 	"execution_count": "execution_count desc",
 }
 
-func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued, sortBy string, page int) ([]app.QueueSignal, int, error) {
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued, sortBy, since string, page int) ([]app.QueueSignal, int, error) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
+
+	// Apply time window filter to avoid scanning millions of rows.
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
 
 	if search != "" {
 		switch {

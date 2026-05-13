@@ -10,7 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
-func (s *service) RestartQueue(c *gin.Context) {
+func (s *service) CheckCANQueue(c *gin.Context) {
 	queueID := c.Param("id")
 
 	var q app.Queue
@@ -29,11 +29,12 @@ func (s *service) RestartQueue(c *gin.Context) {
 		ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
 	}
 
-	if err := s.queueClient.Restart(ctx, q.ID); err != nil {
-		s.l.Error("failed to restart queue", zap.Error(err), zap.String("queue_id", queueID))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to restart queue"})
+	resp, err := s.queueClient.CheckCAN(ctx, q.ID)
+	if err != nil {
+		s.l.Error("failed to check CAN", zap.Error(err), zap.String("queue_id", queueID))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check CAN"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "restarted"})
+	c.JSON(http.StatusOK, resp)
 }

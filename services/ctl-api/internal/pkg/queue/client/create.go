@@ -45,8 +45,8 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	if res := c.db.WithContext(ctx).
 		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
 		First(&existing); res.Error == nil {
-		if err := c.Restart(ctx, existing.ID); err != nil {
-			c.l.Warn("unable to restart existing queue during idempotent create",
+		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
+			c.l.Warn("unable to hint restart existing queue during idempotent create",
 				zap.String("queue-id", existing.ID), zap.Error(err))
 		}
 		return &existing, nil

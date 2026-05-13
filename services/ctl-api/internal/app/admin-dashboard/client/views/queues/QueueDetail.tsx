@@ -5,13 +5,17 @@ import {
   getQueueDetail,
   getQueueEmitters,
   getQueueInFlightSignals,
-  restartQueue,
+  hintRestartQueue,
   forceRestartQueue,
+  checkCANQueue,
   clearQueue,
 } from '@/lib/admin-api';
 import { Badge } from '@/components/common/Badge';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
+import { InfoModal } from '@/components/common/InfoModal';
 import { Pagination } from '@/components/common/Pagination';
 import { StatusHistory } from '@/components/common/StatusHistory';
+import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 import { formatDate, formatRelativeDate, truncateId } from '@/utils/format';
@@ -43,6 +47,8 @@ export const QueueDetail = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [emittersPage, setEmittersPage] = useState(1);
+  const [activeModal, setActiveModal] = useState<'hint' | 'force' | 'clear' | null>(null);
+  const [canResult, setCanResult] = useState<{ workflow_type: string; namespace: string; history_length: number; history_max: number; hint_requested: boolean; restarting: boolean } | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['queue', id],
@@ -64,19 +70,27 @@ export const QueueDetail = () => {
     refetchInterval: 5000,
   });
 
-  const restartMutation = useMutation({
-    mutationFn: () => restartQueue(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
+  const hintRestartMutation = useMutation({
+    mutationFn: () => hintRestartQueue(id!),
+    onSuccess: () => { setActiveModal(null); queryClient.invalidateQueries({ queryKey: ['queue', id] }); },
   });
 
   const forceRestartMutation = useMutation({
     mutationFn: () => forceRestartQueue(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
+    onSuccess: () => { setActiveModal(null); queryClient.invalidateQueries({ queryKey: ['queue', id] }); },
+  });
+
+  const checkCANMutation = useMutation({
+    mutationFn: () => checkCANQueue(id!),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['queue', id] });
+      setCanResult(data);
+    },
   });
 
   const clearMutation = useMutation({
     mutationFn: () => clearQueue(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue', id] }),
+    onSuccess: () => { setActiveModal(null); queryClient.invalidateQueries({ queryKey: ['queue', id] }); },
   });
 
   if (isLoading) return <LoadingSpinner />;
@@ -120,17 +134,16 @@ export const QueueDetail = () => {
             <Badge variant="default">{queue.owner_type}</Badge>
           </div>
         </div>
-        {temporal_ui_url && queue.workflow?.id && (
-          <a
-            href={`${temporal_ui_url}/namespaces/${queue.workflow.namespace}/workflows/${queue.workflow.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-md bg-gray-100 dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
-          >
-            View in Temporal
-          </a>
-        )}
       </div>
+
+      {/* Temporal workflow stats */}
+      {temporal_ui_url && queue.workflow?.id && queue.workflow?.namespace && (
+        <TemporalWorkflowCard
+          temporalUIUrl={temporal_ui_url}
+          namespace={queue.workflow.namespace}
+          workflowId={queue.workflow.id}
+        />
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -182,39 +195,102 @@ export const QueueDetail = () => {
       {/* Actions */}
       <div className="flex gap-2">
         <button
-          onClick={() => restartMutation.mutate()}
-          disabled={restartMutation.isPending}
+          onClick={() => setActiveModal('hint')}
+          disabled={hintRestartMutation.isPending}
           className="rounded-md bg-yellow-600 dark:bg-yellow-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-yellow-700 dark:hover:bg-yellow-600 disabled:opacity-50"
         >
-          {restartMutation.isPending ? 'Restarting...' : 'Restart Queue'}
+          {hintRestartMutation.isPending ? 'Sending hint...' : 'Restart Hint'}
         </button>
         <button
-          onClick={() => {
-            if (
-              confirm(
-                'Are you sure you want to FORCE restart this queue? This skips waiting for active workers to finish.'
-              )
-            ) {
-              forceRestartMutation.mutate();
-            }
-          }}
+          onClick={() => setActiveModal('force')}
           disabled={forceRestartMutation.isPending}
           className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
         >
           {forceRestartMutation.isPending ? 'Force restarting...' : 'Force Restart'}
         </button>
         <button
-          onClick={() => {
-            if (confirm('Are you sure you want to cancel all in-flight signals in this queue?')) {
-              clearMutation.mutate();
-            }
-          }}
+          onClick={() => checkCANMutation.mutate()}
+          disabled={checkCANMutation.isPending}
+          className="rounded-md bg-gray-600 dark:bg-gray-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-50"
+        >
+          {checkCANMutation.isPending ? 'Checking...' : 'Check CAN'}
+        </button>
+        <button
+          onClick={() => setActiveModal('clear')}
           disabled={clearMutation.isPending}
           className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
         >
           {clearMutation.isPending ? 'Clearing...' : 'Clear Queue'}
         </button>
       </div>
+
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        open={activeModal === 'hint'}
+        title="Restart Hint"
+        description="This will send a hint which will be processed up to 3 minutes later. Then, it will ensure all updates have finished."
+        confirmLabel="Send Hint"
+        confirmVariant="warning"
+        onConfirm={() => hintRestartMutation.mutate()}
+        onCancel={() => setActiveModal(null)}
+        isPending={hintRestartMutation.isPending}
+      />
+      <ConfirmModal
+        open={activeModal === 'force'}
+        title="Force Restart"
+        description={'This will terminate the workflow and restart it, abandoning any signals.\n\nIn practice, most long-lived signals are caught awaiting an execute finished or otherwise, so this should be safe if you are having issues with graceful restarts.'}
+        confirmLabel="Force Restart"
+        confirmVariant="danger"
+        onConfirm={() => forceRestartMutation.mutate()}
+        onCancel={() => setActiveModal(null)}
+        isPending={forceRestartMutation.isPending}
+      />
+      <ConfirmModal
+        open={activeModal === 'clear'}
+        title="Clear Queue"
+        description="Are you sure you want to cancel all in-flight signals in this queue?"
+        confirmLabel="Clear Queue"
+        confirmVariant="danger"
+        onConfirm={() => clearMutation.mutate()}
+        onCancel={() => setActiveModal(null)}
+        isPending={clearMutation.isPending}
+      />
+
+      {/* Check CAN Result Modal */}
+      <InfoModal
+        open={canResult !== null}
+        title={canResult?.restarting ? 'CAN Triggered' : 'CAN Check Result'}
+        onClose={() => setCanResult(null)}
+      >
+        {canResult && (
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Workflow type</span>
+              <span className="font-mono text-gray-900 dark:text-gray-100">{canResult.workflow_type}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Namespace</span>
+              <span className="font-mono text-gray-900 dark:text-gray-100">{canResult.namespace}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">History length</span>
+              <span className="font-mono text-gray-900 dark:text-gray-100">{canResult.history_length} / {canResult.history_max}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Hint requested</span>
+              <Badge variant="status" status={canResult.hint_requested ? 'warning' : 'healthy'}>
+                {canResult.hint_requested ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500 dark:text-gray-400">Restarting</span>
+              <Badge variant="status" status={canResult.restarting ? 'error' : 'healthy'}>
+                {canResult.restarting ? 'Yes' : 'No'}
+              </Badge>
+            </div>
+          </div>
+        )}
+      </InfoModal>
 
       {/* Queue Status (StatusV2) */}
       {queue.status_v2?.status && (
