@@ -110,6 +110,22 @@ describe('workflow-utils', () => {
       })
     })
 
+    test('should return "Plan created" badge for approved step when planOnly', () => {
+      const step: TWorkflowStep = {
+        execution_type: 'approval',
+        status: {
+          status: 'approved',
+        },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step, false, true)
+      expect(badge).toEqual({
+        children: 'Plan created',
+        theme: 'success',
+      })
+    })
+
     test('should return correct badge for approval-denied step', () => {
       const step: TWorkflowStep = {
         status: {
