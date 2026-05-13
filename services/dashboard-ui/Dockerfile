@@ -1,10 +1,10 @@
-FROM alpine:3.21 AS openapi-spec
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:3.21 AS openapi-spec
 
 COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
 # --- Bun deps + SPA source ---
 
-FROM oven/bun:1.3-alpine AS deps
+FROM public.ecr.aws/p7e3r5y0/mirror/oven/bun:1.3-alpine AS deps
 
 WORKDIR /src
 
@@ -71,7 +71,7 @@ RUN go build -o /dashboard-server ./services/dashboard-ui/server
 
 # --- Final image ---
 
-FROM alpine:3.21 AS final
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:3.21 AS final
 
 RUN apk add --no-cache ca-certificates
 
