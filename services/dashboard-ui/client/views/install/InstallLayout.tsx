@@ -1,5 +1,4 @@
 import { Outlet, useParams, useMatch } from 'react-router'
-import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -8,6 +7,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
+import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
@@ -177,29 +177,12 @@ const InstallTemplate = () => {
               </div>
             </div>
             {install?.drifted_objects?.length ? (
-              <div className="self-center flex flex-col gap-2">
-                <Text theme="warn">
-                  <span className="flex items-center gap-2">
-                    <Icon variant="WarningIcon" weight="bold" />
-                    Drift detected
-                  </span>
-                </Text>
-                <div className="self-center flex items-center gap-6">
-                  {install?.drifted_objects?.map((drift) => (
-                    <Badge size="sm" theme="warn" key={drift?.target_id}>
-                      Drifted:{' '}
-                      <Link
-                        href={`/${org.id}/installs/${install?.id}/workflows/${drift?.install_workflow_id}`}
-                        className="!leading-none"
-                      >
-                        {drift?.target_type === 'install_deploy'
-                          ? drift?.component_name
-                          : 'Sandbox'}
-                      </Link>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <DriftedSummary
+                className="mt-4"
+                orgId={org.id}
+                installId={install.id}
+                driftedObjects={install.drifted_objects}
+              />
             ) : null}
           </PageHeader>
           <PageContent className="border-t" variant="row">
