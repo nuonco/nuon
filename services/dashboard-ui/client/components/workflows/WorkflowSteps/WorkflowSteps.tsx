@@ -44,7 +44,7 @@ export const WorkflowSteps = ({
       <div className="flex flex-col gap-4">
         {filteredSteps.length ? (
           filteredSteps.map((step) => {
-            const badgeConfig = getStepBadge(step, approvalPrompt)
+            const badgeConfig = getStepBadge(step, approvalPrompt, planOnly)
 
             return (
               <div
