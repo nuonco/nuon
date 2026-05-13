@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
 )
 
 // Sync creates the app sandbox configuration.
@@ -22,6 +23,12 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		return sync.SyncErr{
 			Resource:    "app-sandbox",
 			Description: "sandbox config is required",
+		}
+	}
+
+	if cfg.Sandbox.MaxAutoRetries != nil {
+		if err := validation.ValidateMaxAutoRetries(*cfg.Sandbox.MaxAutoRetries); err != nil {
+			return err
 		}
 	}
 
@@ -108,6 +115,7 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		VariablesFiles:           pq.StringArray(variablesFiles),
 		TerraformVersion:         cfg.Sandbox.TerraformVersion,
 		References:               pq.StringArray(references),
+		MaxAutoRetries:           cfg.Sandbox.MaxAutoRetries,
 	}
 
 	if cfg.Sandbox.DriftSchedule != nil {
