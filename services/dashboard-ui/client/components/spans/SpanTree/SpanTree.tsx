@@ -56,7 +56,7 @@ export const SpanTree = ({
             aria-label={isAllExpanded ? 'Collapse all' : 'Expand all'}
           >
             <Icon
-              variant={isAllExpanded ? 'ArrowsInLineVertical' : 'ArrowsOutLineVertical'}
+              variant={isAllExpanded ? 'ArrowsInLineVerticalIcon' : 'ArrowsOutLineVerticalIcon'}
               size="12"
             />
             <span className="@max-[24rem]:hidden">{isAllExpanded ? 'Collapse' : 'Expand'}</span>
@@ -198,13 +198,13 @@ const statusFor = (node: TSpanNode): TSpanStatus => {
 const STATUS_ICON: Record<
   TSpanStatus,
   {
-    variant: 'CheckCircle' | 'XCircle' | 'MinusCircle'
+    variant: 'CheckCircleIcon' | 'XCircleIcon' | 'MinusCircleIcon'
     theme: 'success' | 'error' | 'neutral'
   }
 > = {
-  ok: { variant: 'CheckCircle', theme: 'success' },
-  error: { variant: 'XCircle', theme: 'error' },
-  skipped: { variant: 'MinusCircle', theme: 'neutral' },
+  ok: { variant: 'CheckCircleIcon', theme: 'success' },
+  error: { variant: 'XCircleIcon', theme: 'error' },
+  skipped: { variant: 'MinusCircleIcon', theme: 'neutral' },
 }
 
 const STATUS_DOT_LABEL: Record<TSpanStatus, string> = {

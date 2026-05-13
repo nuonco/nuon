@@ -64,7 +64,7 @@ export const CreateInstallFromApp = ({
             className="cursor-pointer w-fit text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 focus:text-primary-800 focus:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600 focus-visible:rounded !bg-transparent !border-none !p-0 !h-auto font-medium"
             onClick={() => onSelectApp(undefined)}
           >
-            <Icon variant="CaretLeft" weight="bold" />
+            <Icon variant="CaretLeftIcon" weight="bold" />
             Back
           </Button>
         </div>
@@ -81,7 +81,7 @@ export const CreateInstallFromApp = ({
             className="cursor-pointer w-fit text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 focus:text-primary-800 focus:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600 focus-visible:rounded !bg-transparent !border-none !p-0 !h-auto font-medium"
             onClick={() => onSelectApp(undefined)}
           >
-            <Icon variant="CaretLeft" weight="bold" />
+            <Icon variant="CaretLeftIcon" weight="bold" />
             Back
           </Button>
         </div>
@@ -99,7 +99,7 @@ export const CreateInstallFromApp = ({
           className="cursor-pointer w-fit text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 focus:text-primary-800 focus:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600 focus-visible:rounded !bg-transparent !border-none !p-0 !h-auto font-medium"
           onClick={() => onSelectApp(undefined)}
         >
-          <Icon variant="CaretLeft" weight="bold" />
+          <Icon variant="CaretLeftIcon" weight="bold" />
           Back
         </Button>
       </div>

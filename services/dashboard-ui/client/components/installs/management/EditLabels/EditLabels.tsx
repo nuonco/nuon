@@ -100,7 +100,7 @@ export const EditLabelsModal = ({
                 setRows((r) => [...r, nextId.current++])
               }}
             >
-              <Icon variant="Plus" size="16" />
+              <Icon variant="PlusIcon" size="16" />
               Add label
             </Button>
           </div>
@@ -142,7 +142,7 @@ export const EditLabelsModal = ({
                 }}
                 className="mb-1"
               >
-                <Icon variant="X" size="16" />
+                <Icon variant="XIcon" size="16" />
               </Button>
             </fieldset>
           ))}

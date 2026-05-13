@@ -136,7 +136,7 @@ export const InstallRoleDetail = ({
                 navigate(href)
               }}
             >
-              View workflow <Icon variant="CaretRight" size="16" />
+              View workflow <Icon variant="CaretRightIcon" size="16" />
             </Button>
           )
         },

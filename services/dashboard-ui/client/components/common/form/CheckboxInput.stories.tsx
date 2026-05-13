@@ -254,7 +254,7 @@ export const WithButtons = () => (
           children: (
             <div className="flex items-center justify-between w-full">
               <span>Project Alpha</span>
-              <Icon variant="Gear" size="16" />
+              <Icon variant="GearIcon" size="16" />
             </div>
           )
         }}
@@ -265,7 +265,7 @@ export const WithButtons = () => (
           children: (
             <div className="flex items-center justify-between w-full">
               <span>Project Beta</span>
-              <Icon variant="Gear" size="16" />
+              <Icon variant="GearIcon" size="16" />
             </div>
           )
         }}
@@ -276,7 +276,7 @@ export const WithButtons = () => (
           children: (
             <div className="flex items-center justify-between w-full">
               <span>Project Gamma (Archived)</span>
-              <Icon variant="Archive" size="16" />
+              <Icon variant="ArchiveIcon" size="16" />
             </div>
           ),
           disabled: true

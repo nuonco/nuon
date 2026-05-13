@@ -69,15 +69,15 @@ export const ComplexMenu = () => (
           Quick Actions
         </Text>
         <Button variant="ghost">
-          <Icon variant="PencilSimpleLine" size="16" />
+          <Icon variant="PencilSimpleLineIcon" size="16" />
           Edit Configuration
         </Button>
         <Button variant="ghost">
-          <Icon variant="ListChecks" size="16" />
+          <Icon variant="ListChecksIcon" size="16" />
           Auto Approve Changes
         </Button>
         <Button variant="ghost">
-          <Icon variant="CodeBlock" size="16" />
+          <Icon variant="CodeBlockIcon" size="16" />
           View Current State
         </Button>
         <hr />
@@ -85,15 +85,15 @@ export const ComplexMenu = () => (
           Deployment Controls
         </Text>
         <Button variant="ghost">
-          <Icon variant="ArrowUp" size="16" />
+          <Icon variant="ArrowUpIcon" size="16" />
           Reprovision Install
         </Button>
         <Button variant="ghost">
-          <Icon variant="ArrowDown" size="16" />
+          <Icon variant="ArrowDownIcon" size="16" />
           Deprovision Install
         </Button>
         <Button variant="ghost">
-          <Icon variant="StackMinus" size="16" />
+          <Icon variant="StackMinusIcon" size="16" />
           Remove Stack
         </Button>
         <hr />
@@ -112,11 +112,11 @@ export const ComplexMenu = () => (
           Danger Zone
         </Text>
         <Button variant="ghost">
-          <Icon variant="Key" size="16" />
+          <Icon variant="KeyIcon" size="16" />
           Break Glass Access
         </Button>
         <Button variant="ghost" className="!text-red-600 dark:!text-red-400">
-          <Icon variant="Trash" size="16" />
+          <Icon variant="TrashIcon" size="16" />
           Delete Installation
         </Button>
       </Menu>
@@ -150,15 +150,15 @@ export const MenuSections = () => (
           Account
         </Text>
         <Button variant="ghost">
-          <Icon variant="User" size="16" />
+          <Icon variant="UserIcon" size="16" />
           Profile Settings
         </Button>
         <Button variant="ghost">
-          <Icon variant="Bell" size="16" />
+          <Icon variant="BellIcon" size="16" />
           Notifications
         </Button>
         <Button variant="ghost">
-          <Icon variant="CreditCard" size="16" />
+          <Icon variant="CreditCardIcon" size="16" />
           Billing
         </Button>
         <hr />
@@ -166,11 +166,11 @@ export const MenuSections = () => (
           Organization
         </Text>
         <Button variant="ghost">
-          <Icon variant="Users" size="16" />
+          <Icon variant="UsersIcon" size="16" />
           Team Members
         </Button>
         <Button variant="ghost">
-          <Icon variant="Gear" size="16" />
+          <Icon variant="GearIcon" size="16" />
           Organization Settings
         </Button>
         <hr />
@@ -178,16 +178,16 @@ export const MenuSections = () => (
           Help & Support
         </Text>
         <Link href="#" className="px-3 py-2">
-          <Icon variant="Book" size="16" />
+          <Icon variant="BookIcon" size="16" />
           Documentation
         </Link>
         <Link href="#" className="px-3 py-2">
-          <Icon variant="ChatCircle" size="16" />
+          <Icon variant="ChatCircleIcon" size="16" />
           Contact Support
         </Link>
         <hr />
         <Button variant="ghost" className="!text-red-600 dark:!text-red-400">
-          <Icon variant="SignOut" size="16" />
+          <Icon variant="SignOutIcon" size="16" />
           Sign Out
         </Button>
       </Menu>
@@ -244,11 +244,11 @@ export const MenuWithStatus = () => (
           Quick Actions
         </Text>
         <Button variant="ghost">
-          <Icon variant="ArrowClockwise" size="16" />
+          <Icon variant="ArrowClockwiseIcon" size="16" />
           Refresh Status
         </Button>
         <Link href="#" className="px-3 py-2">
-          <Icon variant="ChartLine" size="16" />
+          <Icon variant="ChartLineIcon" size="16" />
           View Detailed Metrics
         </Link>
         <hr />
@@ -282,15 +282,15 @@ export const CustomStyling = () => (
           </Text>
           <Menu className="w-40">
             <Button variant="ghost" size="sm">
-              <Icon variant="Eye" size="14" />
+              <Icon variant="EyeIcon" size="14" />
               View
             </Button>
             <Button variant="ghost" size="sm">
-              <Icon variant="PencilSimple" size="14" />
+              <Icon variant="PencilSimpleIcon" size="14" />
               Edit
             </Button>
             <Button variant="ghost" size="sm">
-              <Icon variant="Trash" size="14" />
+              <Icon variant="TrashIcon" size="14" />
               Delete
             </Button>
           </Menu>
@@ -317,7 +317,7 @@ export const CustomStyling = () => (
             </Button>
             <hr />
             <Link href="#" className="px-3 py-2">
-              <Icon variant="FolderOpen" size="16" />
+              <Icon variant="FolderOpenIcon" size="16" />
               Browse All Documents
             </Link>
           </Menu>

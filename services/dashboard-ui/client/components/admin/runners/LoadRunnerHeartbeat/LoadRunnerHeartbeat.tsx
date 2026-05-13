@@ -46,13 +46,13 @@ export const LoadRunnerHeartbeat = ({
       <LabeledValue label="Version">{heartbeat.version}</LabeledValue>
       <LabeledValue label="Alive time">
         <div className="flex items-center gap-1">
-          <Icon variant="Timer" />
+          <Icon variant="TimerIcon" />
           <Duration variant="subtext" nanoseconds={heartbeat.alive_time} />
         </div>
       </LabeledValue>
       <LabeledValue label="Last heartbeat seen">
         <span className="flex items-center gap-1">
-          <Icon variant="Heartbeat" />
+          <Icon variant="HeartbeatIcon" />
           <Time
             variant="subtext"
             time={heartbeat.created_at}

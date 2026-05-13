@@ -99,9 +99,9 @@ export const DeprovisionSandboxButton = ({
       {...props}
       variant="danger"
     >
-      {props?.isMenuButton ? null : <Icon variant="BoxArrowDown" />}
+      {props?.isMenuButton ? null : <Icon variant="BoxArrowDownIcon" />}
       Deprovision sandbox
-      {props?.isMenuButton ? <Icon variant="BoxArrowDown" /> : null}
+      {props?.isMenuButton ? <Icon variant="BoxArrowDownIcon" /> : null}
     </Button>
   )
 }

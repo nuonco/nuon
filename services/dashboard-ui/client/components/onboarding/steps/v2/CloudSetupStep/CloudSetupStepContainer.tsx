@@ -319,7 +319,7 @@ export const CloudSetupStepContainer = ({
                 iconSize="36"
               />
             ) : (
-              <Icon variant="CloudArrowUp" size="24" />
+              <Icon variant="CloudArrowUpIcon" size="24" />
             )}
             <Text variant="base" weight="strong" className="flex-1">
               Connect{' '}
@@ -343,7 +343,7 @@ export const CloudSetupStepContainer = ({
           )}
         >
           <div className="flex items-center gap-4">
-            <Icon variant="Flask" size="24" />
+            <Icon variant="FlaskIcon" size="24" />
             <Text variant="base" weight="strong" className="flex-1">
               Use demo mode
             </Text>
@@ -379,7 +379,7 @@ export const CloudSetupStepContainer = ({
       <div className="flex justify-between">
         {onGoBack ? (
           <Button type="button" variant="secondary" onClick={onGoBack}>
-            <Icon variant="CaretLeft" weight="bold" /> Back
+            <Icon variant="CaretLeftIcon" weight="bold" /> Back
           </Button>
         ) : (
           <div />
@@ -391,7 +391,7 @@ export const CloudSetupStepContainer = ({
           onClick={handleAdvance}
         >
           {waiting ? 'Setting up install...' : isPending ? 'Creating...' : 'Continue'}{' '}
-          {!isWorking && <Icon variant="CaretRight" weight="bold" />}
+          {!isWorking && <Icon variant="CaretRightIcon" weight="bold" />}
         </Button>
       </div>
     </div>

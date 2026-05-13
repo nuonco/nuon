@@ -30,7 +30,7 @@ export const ReprovisionModal = ({
           weight="strong"
           theme="info"
         >
-          <Icon variant="ArrowURightUp" size="24" />
+          <Icon variant="ArrowURightUpIcon" size="24" />
           Reprovision install?
         </Text>
       }

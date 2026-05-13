@@ -32,7 +32,7 @@ export const BranchDetailActions = ({
             : 'Trigger a new run with the current configuration'
         }
       >
-        <Icon variant="Play" size={16} />
+        <Icon variant="PlayIcon" size={16} />
         {isTriggerPending ? 'Triggering...' : 'Trigger run'}
       </Button>
     </div>

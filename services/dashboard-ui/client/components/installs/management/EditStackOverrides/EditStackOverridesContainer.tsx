@@ -168,7 +168,7 @@ export const EditStackOverridesButton = ({
       onClick={handleClick}
       {...props}
     >
-      <Icon variant="StackSimple" />
+      <Icon variant="StackSimpleIcon" />
       Edit stack overrides
     </Button>
   )

@@ -66,7 +66,7 @@ export const GenerateInstallConfigButton = ({
       {...props}
     >
       Generate install config
-      <Icon variant="FileCode" />
+      <Icon variant="FileCodeIcon" />
     </Button>
   )
 }

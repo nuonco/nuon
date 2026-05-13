@@ -40,7 +40,7 @@ export const RunnerCard = ({
           </Text>
         </div>
         <Link href={href} className="text-sm flex items-center gap-1">
-          Details <Icon variant="CaretRight" />
+          Details <Icon variant="CaretRightIcon" />
         </Link>
       </div>
 
@@ -87,7 +87,7 @@ export const RunnerCard = ({
             </>
           ) : (
             <>
-              <Icon variant="Key" />
+              <Icon variant="KeyIcon" />
               Invalidate token
             </>
           )}
@@ -105,7 +105,7 @@ export const RunnerCard = ({
             </>
           ) : (
             <>
-              <Icon variant="Power" />
+              <Icon variant="PowerIcon" />
               Graceful shutdown
             </>
           )}
@@ -123,7 +123,7 @@ export const RunnerCard = ({
             </>
           ) : (
             <>
-              <Icon variant="Stop" />
+              <Icon variant="StopIcon" />
               Force shutdown
             </>
           )}

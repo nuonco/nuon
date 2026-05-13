@@ -103,7 +103,7 @@ export const Tooltip = ({
     >
       {showIcon ? (
         <span className="inline-flex items-center gap-1 mr-1">
-          {children} <Icon variant="Question" />
+          {children} <Icon variant="QuestionIcon" />
         </span>
       ) : (
         children

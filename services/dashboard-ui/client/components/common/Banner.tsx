@@ -12,13 +12,13 @@ interface IBanner extends HTMLAttributes<HTMLDivElement> {
 }
 
 const ICONS: Record<TBannerTheme, React.ReactNode> = {
-  warn: <Icon variant="Warning" size="20" />,
-  error: <Icon variant="WarningOctagon" size="20" />,
-  success: <Icon variant="CheckCircle" size="20" />,
-  info: <Icon variant="Info" size="20" />,
-  neutral: <Icon variant="Info" size="20" />,
-  default: <Icon variant="Info" size="20" />,
-  brand: <Icon variant="WarningCircle" size="20" />,
+  warn: <Icon variant="WarningIcon" size="20" />,
+  error: <Icon variant="WarningOctagonIcon" size="20" />,
+  success: <Icon variant="CheckCircleIcon" size="20" />,
+  info: <Icon variant="InfoIcon" size="20" />,
+  neutral: <Icon variant="InfoIcon" size="20" />,
+  default: <Icon variant="InfoIcon" size="20" />,
+  brand: <Icon variant="WarningCircleIcon" size="20" />,
 }
 
 const THEME_CLASSES: Record<TBannerTheme, string> = {
@@ -68,7 +68,7 @@ export const Banner = ({
           className="self-start shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           aria-label="Dismiss"
         >
-          <Icon variant="X" size={16} />
+          <Icon variant="XIcon" size={16} />
         </button>
       )}
     </div>

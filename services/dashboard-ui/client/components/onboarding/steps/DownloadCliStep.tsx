@@ -76,7 +76,7 @@ export const DownloadCliStep = ({
       <div className="flex justify-end">
         <Button variant="primary" disabled={!cliInstalled} onClick={onAdvance}>
           {nextStepTitle ?? 'Continue'}{' '}
-          <Icon variant="CaretRight" weight="bold" />
+          <Icon variant="CaretRightIcon" weight="bold" />
         </Button>
       </div>
     </div>

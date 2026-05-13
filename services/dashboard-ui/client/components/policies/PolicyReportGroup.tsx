@@ -63,7 +63,7 @@ function PolicyRow({
                 )}
               >
                 <Icon
-                  variant={isDeny ? 'XCircle' : 'Warning'}
+                  variant={isDeny ? 'XCircleIcon' : 'WarningIcon'}
                   size={14}
                   className="mt-0.5 shrink-0"
                 />

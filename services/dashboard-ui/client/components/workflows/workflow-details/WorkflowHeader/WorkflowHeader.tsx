@@ -23,7 +23,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
     <div className="flex flex-wrap items-center gap-3 justify-between w-full">
       <div className="flex flex-col gap-4">
         <BackLink>
-          <Icon variant="CaretLeft" weight="bold" /> All workflows
+          <Icon variant="CaretLeftIcon" weight="bold" /> All workflows
         </BackLink>
         <HeadingGroup>
           <Text

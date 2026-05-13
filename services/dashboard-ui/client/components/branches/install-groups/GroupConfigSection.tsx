@@ -22,7 +22,7 @@ export const GroupConfigSection = ({
     return (
       <div className="w-80 flex flex-col border-l dark:border-dark-grey-700 pl-6">
         <div className="text-center py-12">
-          <Icon variant="Gear" size={48} className="mx-auto mb-4 opacity-30" />
+          <Icon variant="GearIcon" size={48} className="mx-auto mb-4 opacity-30" />
           <Text variant="base" theme="neutral">
             Select a group to configure
           </Text>
@@ -100,7 +100,7 @@ export const GroupConfigSection = ({
                 key={install.id}
                 className="flex items-center gap-2 px-3 py-2 dark:bg-dark-grey-800 rounded-md"
               >
-                <Icon variant="Cloud" size={14} />
+                <Icon variant="CloudIcon" size={14} />
                 <Text variant="subtext" className="flex-1 truncate">
                   {install.name}
                 </Text>
@@ -120,7 +120,7 @@ export const GroupConfigSection = ({
           variant="danger"
           className="w-full items-center"
         >
-          <Icon variant="Trash" size={16} />
+          <Icon variant="TrashIcon" size={16} />
           Delete group
         </Button>
       </div>
