@@ -10,7 +10,7 @@ services/dashboard-ui/
 └── server/     ← Go BFF (Gin + Uber fx)
 ```
 
-- **`client/`** — React SPA built with React Router v7, TanStack Query, Tailwind CSS, ESBuild
+- **`client/`** — React SPA built with React Router v7, TanStack Query, Tailwind CSS, Bun bundler
 - **`server/`** — Go BFF that serves the SPA, validates auth cookies, injects runtime config, and provides streaming API handlers
 
 ## Go BFF Server (`server/`)
@@ -719,15 +719,15 @@ Do not add comments unless the logic is genuinely non-obvious. Never write comme
 ## Key Scripts
 
 ```bash
-bun run dev            # Development: esbuild watch + PostCSS + BrowserSync
-bun run build          # Production build (minified)
+bun run dev            # Development: bun build watch + PostCSS watch + Bun dev server (SSE live reload)
+bun run build          # Production build (minified, content-hashed assets)
 bun run build:js       # Build JS only
 bun run build:css      # Build CSS only
 bun run lint           # ESLint for the SPA
 bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types + checks full codebase)
 bunx tsc --noEmit --project client/tsconfig.json  # Use this for type checking — scope to changed files
 bun run dev:ladle      # Ladle component stories
-bun run test           # Vitest tests
+bun run test           # bun test (unit tests)
 bun run test:e2e       # Playwright E2E tests (requires running local stack + env vars)
 bun run test:e2e:ui    # Playwright interactive UI mode
 bun run test:e2e:headed # Playwright with visible browser

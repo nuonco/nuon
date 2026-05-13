@@ -37,7 +37,7 @@ The dashboard-ui is a **Go BFF + React SPA**:
 - **Data Fetching / Mutations**: TanStack Query (`useQuery`, `useMutation`)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Build**: ESBuild + PostCSS
+- **Build**: Bun bundler + PostCSS
 
 ### Code Location (`client/`)
 - Components: `client/components/` (organized by domain; `common/` has core primitives)
@@ -425,13 +425,13 @@ const diffMs = Date.now() - new Date(dateStr).getTime()
 ## Key Scripts
 
 ```bash
-npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
-npm run build          # Production build (minified)
-npm run lint           # ESLint for the SPA
-npm run dev:ladle      # Ladle component stories
-npm test               # Vitest tests
-npx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
-npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
+bun run dev            # Development: bun build watch + PostCSS watch + Bun dev server (SSE live reload)
+bun run build          # Production build (minified, content-hashed assets)
+bun run lint           # ESLint for the SPA
+bun run dev:ladle      # Ladle component stories
+bun run test           # bun test (unit tests)
+bunx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
+bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
 ```
 
 **Do NOT run** `build`, `build:js`, or `build:css` unless explicitly asked — a dev process handles builds automatically.

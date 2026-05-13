@@ -6,7 +6,7 @@ Go BFF (Backend-for-Frontend) + React SPA for the Nuon platform.
 
 ```
 server/     Go BFF (Gin + Uber fx) — serves the SPA, proxies /v1/* to ctl-api, injects runtime config
-client/     React SPA (React Router v7, TanStack Query, Tailwind CSS v4, ESBuild)
+client/     React SPA (React Router v7, TanStack Query, Tailwind CSS v4, Bun bundler)
 public/     Static assets (served by the Go server)
 ```
 
@@ -17,31 +17,31 @@ The Go server validates auth cookies, rewrites them into `Authorization` headers
 The Go server is started separately via `nctl`. Then run the SPA dev server:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
-This watches `client/` for changes, rebuilds JS/CSS into `dist/`, and proxies through BrowserSync.
+This watches `client/` for changes, rebuilds JS (bun build) and CSS (PostCSS/Tailwind) into `dist/`, and proxies through a Bun-based dev server with SSE live reload.
 
 ## Build
 
 ```bash
-npm run build
+bun run build
 ```
 
-Produces minified JS and CSS in `dist/`.
+Produces minified, content-hashed JS and CSS in `dist/assets/`.
 
 ## Other scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev:ladle` | Component stories (Ladle v5) |
-| `npm run lint` | ESLint on `client/` |
-| `npm run tsc` | TypeScript type check |
-| `npm run fmt` | Prettier on `client/` |
-| `npm run test` | Vitest tests |
-| `npm run test:e2e` | Playwright E2E tests |
-| `npm run test:e2e:ui` | Playwright interactive UI mode |
-| `npm run test:e2e:headed` | Playwright with visible browser |
+| `bun run dev:ladle` | Component stories (Ladle v5) |
+| `bun run lint` | ESLint on `client/` |
+| `bun run tsc` | TypeScript type check |
+| `bun run fmt` | Prettier on `client/` |
+| `bun run test` | bun test (unit tests) |
+| `bun run test:e2e` | Playwright E2E tests |
+| `bun run test:e2e:ui` | Playwright interactive UI mode |
+| `bun run test:e2e:headed` | Playwright with visible browser |
 
 ## E2E tests
 
@@ -51,16 +51,16 @@ Playwright smoke tests that run against a live local (or staging) environment. C
 
 - Local dev stack running (dashboard-ui + ctl-api + postgres + temporal)
 - An admin account email with access to the admin API
-- Playwright browsers installed: `npx playwright install chromium`
+- Playwright browsers installed: `bunx playwright install chromium`
 
 ### Running
 
 ```bash
 # Creates a fresh test org, runs tests, deletes org on teardown
-E2E_EMAIL=you@nuon.co npm run test:e2e
+E2E_EMAIL=you@nuon.co bun run test:e2e
 
 # Use an existing org (skips create/teardown)
-E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX npm run test:e2e
+E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX bun run test:e2e
 ```
 
 ### Environment variables
