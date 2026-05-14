@@ -94,81 +94,86 @@ export const SSELogs = ({
           <div className="flex items-center gap-4">
             <LogFilters filters={filters} />
           </div>
-          <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Severity
-            </Text>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Datetime
-            </Text>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Service
-            </Text>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Content
-            </Text>
-          </div>
         </div>
 
-        {!filteredLogs?.length && filters.filterStats.totalCount > 0 ? (
-          <EmptyState
-            variant="search"
-            emptyTitle="Filters are hiding logs"
-            emptyMessage={`${filters.filterStats.totalCount} log(s) are hidden by the current filters.`}
-            action={
-              <Button size="sm" onClick={filters.handleResetAll}>
-                Reset filters
-              </Button>
-            }
-          />
-        ) : null}
+        <div className="overflow-x-auto">
+          <div className="min-w-full w-max">
+            <div className="grid grid-cols-[3rem_15rem_8rem_auto] gap-6 py-2 border-b bg-background">
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Severity
+              </Text>
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Datetime
+              </Text>
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Service
+              </Text>
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Content
+              </Text>
+            </div>
 
-        {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isStreamOpen ? (
-          <EmptyState
-            variant="table"
-            emptyTitle="Waiting for logs"
-            emptyMessage="Logs will appear here once they start coming in."
-          />
-        ) : null}
+            {!filteredLogs?.length && filters.filterStats.totalCount > 0 ? (
+              <EmptyState
+                variant="search"
+                emptyTitle="Filters are hiding logs"
+                emptyMessage={`${filters.filterStats.totalCount} log(s) are hidden by the current filters.`}
+                action={
+                  <Button size="sm" onClick={filters.handleResetAll}>
+                    Reset filters
+                  </Button>
+                }
+              />
+            ) : null}
 
-        {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isStreamOpen ? (
-          <EmptyState
-            variant="table"
-            emptyTitle="No logs available"
-            emptyMessage=""
-          />
-        ) : null}
+            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isStreamOpen ? (
+              <EmptyState
+                variant="table"
+                emptyTitle="Waiting for logs"
+                emptyMessage="Logs will appear here once they start coming in."
+              />
+            ) : null}
 
-        <div className="flex flex-col divide-y">
-          {!filteredLogs?.length && isLoading ? (
-            <LogsSkeleton />
-          ) : null}
+            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isStreamOpen ? (
+              <EmptyState
+                variant="table"
+                emptyTitle="No logs available"
+                emptyMessage=""
+              />
+            ) : null}
 
-          {filteredLogs?.map((logLine) => (
-            <LogLine
-              key={logLine?.id}
-              log={logLine}
-              activeLogId={activeLog?.id}
-              onActivate={handleActiveLog}
-            />
-          ))}
+            <div className="flex flex-col divide-y">
+              {!filteredLogs?.length && isLoading ? (
+                <LogsSkeleton />
+              ) : null}
 
-          {!isStreamOpen && hasMore ? (
-            <Button
-              onClick={loadMore}
-              disabled={isLoading}
-              variant="ghost"
-              className="mx-auto mt-4"
-            >
-              {isLoading ? (
-                <>
-                  <Icon variant="Loading" /> Loading
-                </>
-              ) : (
-                <>Load more</>
-              )}
-            </Button>
-          ) : null}
+              {filteredLogs?.map((logLine) => (
+                <LogLine
+                  key={logLine?.id}
+                  log={logLine}
+                  activeLogId={activeLog?.id}
+                  onActivate={handleActiveLog}
+                />
+              ))}
+
+              {!isStreamOpen && hasMore ? (
+                <Button
+                  onClick={loadMore}
+                  disabled={isLoading}
+                  variant="ghost"
+                  className="mx-auto mt-4"
+                >
+                  {isLoading ? (
+                    <>
+                      <Icon variant="Loading" /> Loading
+                    </>
+                  ) : (
+                    <>Load more</>
+                  )}
+                </Button>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -188,7 +193,7 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
     <div id={`log-${log.id}`} className="border-b">
       <Button
         className={cn(
-          '!grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 !py-1 !px-0 text-left w-full rounded-none h-fit',
+          '!grid grid-cols-[3rem_15rem_8rem_auto] gap-6 !py-1 !px-0 text-left w-full rounded-none h-fit',
           'hover:!bg-black/10 dark:hover:!bg-white/10 focus:!bg-black/10 dark:focus:!bg-white/10',
           {
             '!bg-cool-grey-100 dark:!bg-dark-grey-800':
@@ -224,17 +229,14 @@ const LogLineComponent = ({ log, activeLogId, onActivate }: ILogLine) => {
         >
           {log.service_name?.split('.').pop()}
         </Text>
-        <span className="!inline-block w-full max-w-full overflow-hidden">
-          <Text
-            nowrap
-            as="div"
-            className="truncate"
-            family="mono"
-            variant="subtext"
-          >
-            {log.body}
-          </Text>
-        </span>
+        <Text
+          nowrap
+          as="div"
+          family="mono"
+          variant="subtext"
+        >
+          {log.body}
+        </Text>
       </Button>
     </div>
   )
