@@ -75,9 +75,11 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	var runnerVersion string
 	var processType string
 	var orgID string
+	var orgName string
 	var installID string
+	var installName string
 	defer func() {
-		tagMap := make(map[string]string, len(ownerLabels)+7)
+		tagMap := make(map[string]string, len(ownerLabels)+9)
 		for k, v := range ownerLabels {
 			tagMap[k] = v
 		}
@@ -87,8 +89,12 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		tagMap["runner_version"] = runnerVersion
 		tagMap["process_type"] = processType
 		tagMap["org_id"] = orgID
+		tagMap["org_name"] = orgName
 		if installID != "" {
 			tagMap["install_id"] = installID
+		}
+		if installName != "" {
+			tagMap["install_name"] = installName
 		}
 		tags := metrics.ToTags(tagMap)
 
@@ -108,6 +114,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	runnerType = string(runner.RunnerGroup.Type)
 	runnerStatus = string(runner.Status)
 	orgID = runner.OrgID
+	orgName = runner.Org.Name
 	switch runner.RunnerGroup.OwnerType {
 	case "installs":
 		installID = runner.RunnerGroup.OwnerID
@@ -116,6 +123,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 			return errors.Wrap(err, "unable to get install for runner")
 		}
 		ownerLabels = install.Labels
+		installName = install.Name
 	case "orgs":
 		ownerLabels = runner.Org.Labels
 	}
@@ -205,7 +213,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 			return errors.Wrap(err, "unable to update process status to inactive")
 		}
 
-		stopTagMap := make(map[string]string, len(ownerLabels)+8)
+		stopTagMap := make(map[string]string, len(ownerLabels)+10)
 		for k, v := range ownerLabels {
 			stopTagMap[k] = v
 		}
@@ -216,8 +224,12 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		stopTagMap["process_id"] = s.ProcessID
 		stopTagMap["process_type"] = string(process.Type)
 		stopTagMap["org_id"] = orgID
+		stopTagMap["org_name"] = orgName
 		if installID != "" {
 			stopTagMap["install_id"] = installID
+		}
+		if installName != "" {
+			stopTagMap["install_name"] = installName
 		}
 		stopTags := metrics.ToTags(stopTagMap)
 		s.mw.Incr("runner.process.stop", stopTags)
