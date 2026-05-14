@@ -28,10 +28,11 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
 	// runner auth: must be accessible w/out a token
-	{"POST", "/v1/runner-auth/aws"}:     {},
-	{"POST", "/v1/runner-auth/gcp"}:     {},
-	{"POST", "/v1/runner-auth/azure"}:   {},
-	{"POST", "/v1/runner-auth/aws-iid"}: {},
+	{"POST", "/v1/runner-auth/aws"}:                   {},
+	{"POST", "/v1/runner-auth/gcp"}:                   {},
+	{"POST", "/v1/runner-auth/azure"}:                 {},
+	{"POST", "/v1/runner-auth/aws-iid"}:               {},
+	{"GET", "/v1/runners/:runner_id/public-settings"}: {},
 
 	// runner shutdown polling: must work without auth so broken runners can still be shut down
 	{"GET", "/v1/runners/:runner_id/processes/:process_id/shutdowns"}: {},
