@@ -81,8 +81,19 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 
 	if _, err := workflow.AwaitWithTimeout(ctx, maxAliveTime, func() bool {
 		// Wait until active workers drain before restarting or stopping.
-		return (q.restarted || q.stopped || q.isIdle(ctx)) && q.activeWorkers == 0
+		return (q.restarted || q.stopped || q.isIdle(ctx))
 	}); err != nil {
+		return false, err
+	}
+
+	// This sets a drain timeout on the queue, such that once we've decided it needs to be idle, slept, or restarted
+	// how long we will wait for existing in flight signals to finish.
+	maxDrainTimeout := time.Minute * 1
+	if _, err := workflow.AwaitWithTimeout(ctx, maxDrainTimeout, func() bool {
+		// Wait until active workers drain before restarting or stopping.
+		return q.activeWorkers == 0
+	}); err != nil {
+		l.Info("timeout while waiting on queue to drain")
 		return false, err
 	}
 

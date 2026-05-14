@@ -399,7 +399,7 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 
 	// Build update executions by associating activities with updates based on event ID ranges
 	if len(updates) > 0 {
-		info.UpdateExecutions, info.OrphanActivities = s.buildUpdateExecutions(updates, activities)
+		info.UpdateExecutions, info.OrphanActivities = s.buildUpdateExecutions(updates, activities, info.AwaitedSignals, info.EnqueuedSignals)
 	} else {
 		info.OrphanActivities = activities
 	}
@@ -497,14 +497,15 @@ func extractQueueSignalIDFromResult(result string) string {
 		}
 	}
 
-	// Try as JSON object with an "id" field
+	// Try as JSON object with known ID fields.
+	// Temporal's data converter uses Go field names (e.g. "QueueSignalID"),
+	// while JSON tags produce "queue_signal_id".
 	var obj map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &obj); err == nil {
-		if id, ok := obj["id"].(string); ok && strings.HasPrefix(id, "qsi") {
-			return id
-		}
-		if id, ok := obj["ID"].(string); ok && strings.HasPrefix(id, "qsi") {
-			return id
+		for _, key := range []string{"id", "ID", "queue_signal_id", "QueueSignalID"} {
+			if id, ok := obj[key].(string); ok && strings.HasPrefix(id, "qsi") {
+				return id
+			}
 		}
 	}
 
@@ -512,7 +513,7 @@ func extractQueueSignalIDFromResult(result string) string {
 }
 
 // extractQueueSignalIDFromInput parses the activity input JSON to find a queue signal ID.
-// The input format is a JSON string like "\"qsi...\""
+// Handles both plain string inputs ("qsi...") and struct inputs with known ID fields.
 func extractQueueSignalIDFromInput(input string) string {
 	input = strings.TrimSpace(input)
 	if input == "" {
@@ -527,6 +528,16 @@ func extractQueueSignalIDFromInput(input string) string {
 		}
 	}
 
+	// Try as JSON object with known ID fields
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(input), &obj); err == nil {
+		for _, key := range []string{"queue_signal_id", "QueueSignalID", "id", "ID"} {
+			if id, ok := obj[key].(string); ok && strings.HasPrefix(id, "qsi") {
+				return id
+			}
+		}
+	}
+
 	return ""
 }
 
@@ -534,7 +545,9 @@ func extractQueueSignalIDFromInput(input string) string {
 // Activities whose ScheduledEventID falls after an update's accepted event ID
 // (and before the next update's) belong to that update.
 // Activities before any update are returned as orphans (main workflow body).
-func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activities []views.ActivityInfo) ([]views.UpdateExecution, []views.ActivityInfo) {
+// Awaited and enqueued signals are associated with updates by matching their
+// queue signal IDs against AwaitSignal/EnqueueSignal activities in each update.
+func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activities []views.ActivityInfo, awaitedSignals []views.AwaitedSignalInfo, enqueuedSignals []views.EnqueuedSignalInfo) ([]views.UpdateExecution, []views.ActivityInfo) {
 	// Collect and sort updates by accepted event ID
 	type indexedUpdate struct {
 		acceptedEvtID int64
@@ -577,6 +590,20 @@ func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activiti
 		}
 	}
 
+	// Index awaited/enqueued signals by queue signal ID for fast lookup
+	awaitedByID := make(map[string]views.AwaitedSignalInfo)
+	for _, as := range awaitedSignals {
+		if as.QueueSignalID != "" {
+			awaitedByID[as.QueueSignalID] = as
+		}
+	}
+	enqueuedByID := make(map[string]views.EnqueuedSignalInfo)
+	for _, es := range enqueuedSignals {
+		if es.QueueSignalID != "" {
+			enqueuedByID[es.QueueSignalID] = es
+		}
+	}
+
 	// Build UpdateExecution structs
 	execs := make([]views.UpdateExecution, 0, len(sorted))
 	for _, su := range sorted {
@@ -594,6 +621,26 @@ func (s *service) buildUpdateExecutions(updates map[int64]*updateState, activiti
 			ue.FinishedAt = su.state.finishedAt
 			ue.Duration = su.state.finishedAt.Sub(su.state.startedAt)
 		}
+
+		// Associate awaited/enqueued signals with this update by scanning its activities
+		for _, act := range ue.Activities {
+			if strings.Contains(act.Name, "AwaitSignal") {
+				qsID := extractQueueSignalIDFromInput(act.Input)
+				if as, ok := awaitedByID[qsID]; ok {
+					ue.AwaitedSignals = append(ue.AwaitedSignals, as)
+				}
+			}
+			if strings.Contains(act.Name, "EnqueueSignal") {
+				qsID := extractQueueSignalIDFromResult(act.Result)
+				if qsID == "" {
+					qsID = extractQueueSignalIDFromInput(act.Input)
+				}
+				if es, ok := enqueuedByID[qsID]; ok {
+					ue.EnqueuedSignals = append(ue.EnqueuedSignals, es)
+				}
+			}
+		}
+
 		execs = append(execs, ue)
 	}
 
