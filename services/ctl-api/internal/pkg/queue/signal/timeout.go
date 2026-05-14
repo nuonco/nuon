@@ -3,6 +3,7 @@ package signal
 import (
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -29,4 +30,19 @@ func TimeoutActivityOpts(timeout time.Duration) *workflow.ActivityOptions {
 	return &workflow.ActivityOptions{
 		ScheduleToCloseTimeout: timeout,
 	}
+}
+
+// AwaitActivityOpts returns ActivityOptions with the given timeout and a retry
+// policy that disables exponential backoff (BackoffCoefficient=1.0), so retries
+// happen at a constant interval.
+func AwaitActivityOpts(timeout time.Duration) *workflow.ActivityOptions {
+	opts := &workflow.ActivityOptions{
+		RetryPolicy: &temporal.RetryPolicy{
+			BackoffCoefficient: 1.0,
+		},
+	}
+	if timeout > 0 {
+		opts.ScheduleToCloseTimeout = timeout
+	}
+	return opts
 }
