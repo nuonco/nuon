@@ -1,10 +1,10 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -18,8 +18,6 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 	ctx := c.Request.Context()
 	ctx = cctx.SetOrgIDContext(ctx, orgID)
 
-	fmt.Println("JM-TEST shutdown-runner-processes: starting org_id=" + orgID)
-
 	// Get all active/offline runner processes for the org, most recent first.
 	var processes []app.RunnerProcess
 	if res := s.db.WithContext(ctx).
@@ -27,12 +25,10 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 		Where("composite_status::jsonb ->> 'status' IN ('active', 'offline')").
 		Order("runner_id, type, created_at DESC").
 		Find(&processes); res.Error != nil {
-		fmt.Println("JM-TEST shutdown-runner-processes: query error: " + res.Error.Error())
+		s.l.Error("failed to list runner processes", zap.Error(res.Error), zap.String("org_id", orgID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list runner processes"})
 		return
 	}
-
-	fmt.Printf("JM-TEST shutdown-runner-processes: found %d active/offline processes\n", len(processes))
 
 	// Keep only the most recent process per runner+type.
 	type key struct {
@@ -50,8 +46,6 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 		}
 	}
 
-	fmt.Printf("JM-TEST shutdown-runner-processes: %d latest processes to shut down\n", len(latest))
-
 	// Resolve a real account ID for the created_by_id FK. The admin dashboard
 	// middleware sets "admin-dashboard" which isn't a real account. Fall back
 	// to the process's own created_by_id so we have a valid FK reference,
@@ -63,12 +57,10 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 		}
 	}
 	ctx = cctx.SetAccountIDContext(ctx, createdByID)
-	fmt.Printf("JM-TEST shutdown-runner-processes: using created_by_id=%s\n", createdByID)
 
 	shutdowns := 0
 	var createErrors []string
 	for i := range latest {
-		fmt.Printf("JM-TEST shutdown-runner-processes: creating shutdown for process_id=%s runner_id=%s\n", latest[i].ID, latest[i].RunnerID)
 		shutdown := app.RunnerProcessShutdown{
 			RunnerProcessID: latest[i].ID,
 			OrgID:           orgID,
@@ -77,11 +69,13 @@ func (s *service) ShutdownOrgRunnerProcesses(c *gin.Context) {
 			CompositeStatus: app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessShutdownStatusRequested)),
 		}
 		if res := s.db.WithContext(ctx).Create(&shutdown); res.Error != nil {
-			fmt.Println("JM-TEST shutdown-runner-processes: CREATE ERROR: " + res.Error.Error())
+			s.l.Warn("failed to create shutdown record",
+				zap.String("process_id", latest[i].ID),
+				zap.String("org_id", orgID),
+				zap.Error(res.Error))
 			createErrors = append(createErrors, res.Error.Error())
 			continue
 		}
-		fmt.Printf("JM-TEST shutdown-runner-processes: created shutdown_id=%s\n", shutdown.ID)
 		shutdowns++
 	}
 
