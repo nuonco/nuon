@@ -257,6 +257,34 @@ func (c *Client) ConversationsList(ctx context.Context, botToken string, req Con
 	return &resp, nil
 }
 
+type ConversationsInfoResponse struct {
+	baseResponse
+
+	Channel Conversation `json:"channel"`
+}
+
+// ConversationsInfo fetches metadata for a single channel by ID.
+func (c *Client) ConversationsInfo(ctx context.Context, botToken, channelID string) (*ConversationsInfoResponse, error) {
+	q := url.Values{}
+	q.Set("channel", channelID)
+
+	endpoint := c.baseURL + "/conversations.info?" + q.Encode()
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("slack: build conversations.info: %w", err)
+	}
+	httpReq.Header.Set("Authorization", "Bearer "+botToken)
+
+	var resp ConversationsInfoResponse
+	if err := c.do(httpReq, &resp); err != nil {
+		return nil, err
+	}
+	if !resp.OK {
+		return nil, fmt.Errorf("slack conversations.info: %s", resp.Error)
+	}
+	return &resp, nil
+}
+
 // ViewsOpenRequest opens a modal in response to a trigger_id from an
 // interactive surface (slash command, button click, etc.). View is the
 // Block-Kit modal definition; we accept it as a generic map so callers can

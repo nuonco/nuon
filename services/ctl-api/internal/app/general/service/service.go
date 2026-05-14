@@ -78,6 +78,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.POST("/admin-static-token", s.AdminCreateStaticToken)
 		general.POST("/admin-delete-account", s.AdminDeleteAccount)
 		general.POST("/promotion", s.AdminPromotion)
+		general.POST("/slack-auto-link", s.AdminSlackAutoLink)
 		general.POST("/terminate-event-loops", s.AdminTerminateEventLoops)
 		general.GET("/waitlist", s.AdminGetWaitlist)
 
