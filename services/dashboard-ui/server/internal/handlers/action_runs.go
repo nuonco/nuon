@@ -15,28 +15,28 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
-type SandboxRunsHandler struct {
+type ActionRunsHandler struct {
 	cfg *internal.Config
 	l   *zap.Logger
 }
 
-func NewSandboxRunsHandler(cfg *internal.Config, l *zap.Logger) *SandboxRunsHandler {
-	return &SandboxRunsHandler{cfg: cfg, l: l}
+func NewActionRunsHandler(cfg *internal.Config, l *zap.Logger) *ActionRunsHandler {
+	return &ActionRunsHandler{cfg: cfg, l: l}
 }
 
 const (
-	sandboxRunPollInterval         = 2 * time.Second
-	sandboxRunFinishedPollInterval = 30 * time.Second
-	sandboxRunErrorRetryDelay      = 5 * time.Second
-	sandboxRunFinishedGracePeriod  = 2 * time.Minute
+	actionRunPollInterval         = 2 * time.Second
+	actionRunFinishedPollInterval = 30 * time.Second
+	actionRunErrorRetryDelay      = 5 * time.Second
+	actionRunFinishedGracePeriod  = 2 * time.Minute
 )
 
-func (h *SandboxRunsHandler) RegisterRoutes(e *gin.Engine) error {
-	e.GET("/api/orgs/:orgId/installs/:installId/sandbox-runs/:runId/sse", h.StreamSandboxRun)
+func (h *ActionRunsHandler) RegisterRoutes(e *gin.Engine) error {
+	e.GET("/api/orgs/:orgId/installs/:installId/action-runs/:runId/sse", h.StreamActionRun)
 	return nil
 }
 
-func (h *SandboxRunsHandler) StreamSandboxRun(c *gin.Context) {
+func (h *ActionRunsHandler) StreamActionRun(c *gin.Context) {
 	orgID := c.Param("orgId")
 	installID := c.Param("installId")
 	runID := c.Param("runId")
@@ -66,7 +66,7 @@ func (h *SandboxRunsHandler) StreamSandboxRun(c *gin.Context) {
 	c.Writer.Flush()
 
 	ctx := c.Request.Context()
-	var sandboxRunHash, workflowHash string
+	var actionRunHash, workflowHash string
 	var workflowID string
 	var finishedAt time.Time
 
@@ -91,40 +91,40 @@ func (h *SandboxRunsHandler) StreamSandboxRun(c *gin.Context) {
 		default:
 		}
 
-		sandboxRun, err := client.GetInstallSandboxRun(ctx, installID, runID)
+		actionRun, err := client.GetInstallActionWorkflowRun(ctx, installID, runID)
 		if err != nil {
-			h.l.Error("failed to fetch sandbox run", zap.String("installID", installID), zap.String("runID", runID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch sandbox run"}`)
+			h.l.Error("failed to fetch action run", zap.String("installID", installID), zap.String("runID", runID), zap.Error(err))
+			sendEvent("fetch-error", `{"error":"failed to fetch action run"}`)
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(sandboxRunErrorRetryDelay):
+			case <-time.After(actionRunErrorRetryDelay):
 			}
 			continue
 		}
 
-		runData, rHash, err := hashJSON(sandboxRun)
+		runData, rHash, err := hashJSON(actionRun)
 		if err != nil {
-			h.l.Error("failed to marshal sandbox run", zap.Error(err))
+			h.l.Error("failed to marshal action run", zap.Error(err))
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(sandboxRunErrorRetryDelay):
+			case <-time.After(actionRunErrorRetryDelay):
 			}
 			continue
 		}
 
-		if rHash != sandboxRunHash {
-			sandboxRunHash = rHash
-			sendEvent("sandbox-run", string(runData))
+		if rHash != actionRunHash {
+			actionRunHash = rHash
+			sendEvent("action-run", string(runData))
 
-			if sandboxRun.InstallWorkflowID != "" {
-				workflowID = sandboxRun.InstallWorkflowID
+			if actionRun.InstallWorkflowID != "" {
+				workflowID = actionRun.InstallWorkflowID
 			}
 
 			status := ""
-			if sandboxRun.StatusV2 != nil {
-				status = string(sandboxRun.StatusV2.Status)
+			if actionRun.StatusV2 != nil {
+				status = string(actionRun.StatusV2.Status)
 			}
 			if deployTerminalStatuses[status] {
 				sendEvent("finished", "true")
@@ -147,16 +147,16 @@ func (h *SandboxRunsHandler) StreamSandboxRun(c *gin.Context) {
 			}
 		}
 
-		if !finishedAt.IsZero() && time.Since(finishedAt) > sandboxRunFinishedGracePeriod {
+		if !finishedAt.IsZero() && time.Since(finishedAt) > actionRunFinishedGracePeriod {
 			return
 		}
 
 		fmt.Fprintf(c.Writer, ": keepalive\n\n")
 		c.Writer.Flush()
 
-		interval := sandboxRunPollInterval
+		interval := actionRunPollInterval
 		if !finishedAt.IsZero() {
-			interval = sandboxRunFinishedPollInterval
+			interval = actionRunFinishedPollInterval
 		}
 
 		select {

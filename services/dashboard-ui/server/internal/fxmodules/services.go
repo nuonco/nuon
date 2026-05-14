@@ -32,4 +32,7 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(asService(handlers.NewDDProxyHandler)),
 	fx.Provide(asService(handlers.NewDeploysHandler)),
 	fx.Provide(asService(handlers.NewSandboxRunsHandler)),
+	fx.Provide(asService(handlers.NewActionRunsHandler)),
+	fx.Provide(asService(handlers.NewBuildsHandler)),
+	fx.Provide(asService(handlers.NewSandboxBuildsHandler)),
 )

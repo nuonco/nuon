@@ -172,6 +172,9 @@ func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
 			return
 		}
 
+		fmt.Fprintf(c.Writer, ": keepalive\n\n")
+		c.Writer.Flush()
+
 		interval := deployPollInterval
 		if !finishedAt.IsZero() {
 			interval = deployFinishedPollInterval

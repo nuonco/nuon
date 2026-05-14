@@ -127,6 +127,9 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 			return
 		}
 
+		fmt.Fprintf(c.Writer, ": keepalive\n\n")
+		c.Writer.Flush()
+
 		interval := workflowPollInterval
 		if !finishedAt.IsZero() {
 			interval = workflowFinishedPollInterval
