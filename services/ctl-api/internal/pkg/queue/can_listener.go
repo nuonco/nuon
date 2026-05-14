@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
@@ -87,10 +88,20 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 		QueueID: q.queueID,
 	})
 	if err != nil {
-		if l != nil {
-			l.Warn("unable to check CAN requested", zap.Error(err))
+		if generics.IsGormErrRecordNotFound(err) {
+			if l != nil {
+				l.Warn("queue not found during CAN check, stopping workflow", zap.String("queue-id", q.queueID))
+			}
+			q.stopped = true
+			return false, resp
 		}
-		return false, resp
+
+		// Always restart on error to avoid the workflow getting stuck in a bad state.
+		if l != nil {
+			l.Warn("CAN check failed, restarting workflow to recover", zap.Error(err))
+		}
+		resp.Restarting = true
+		return true, resp
 	}
 
 	resp.HintRequested = requested
@@ -140,6 +151,9 @@ func (q *queue) startCANListener(ctx workflow.Context) {
 			if restarting {
 				q.setStatus(gCtx, l, QueueStatusRestartAccepted)
 				q.restarted = true
+				return
+			}
+			if q.stopped {
 				return
 			}
 		}

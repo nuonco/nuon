@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
@@ -38,6 +39,7 @@ type Params struct {
 	AcctClient     *account.Client
 	AuthzClient    *authz.Client
 	OrgsHelpers    *orgshelpers.Helpers
+	RunnersHelpers *runnershelpers.Helpers
 	TemporalClient temporalclient.Client
 	QueueClient    *queueclient.Client
 	EmitterClient  *emitterclient.Client
@@ -61,6 +63,7 @@ type Service struct {
 	acctClient     *account.Client
 	authzClient    *authz.Client
 	orgsHelpers    *orgshelpers.Helpers
+	runnersHelpers *runnershelpers.Helpers
 	temporalClient temporalclient.Client
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
@@ -148,6 +151,9 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/orgs/:id/migrate-queues", s.ProxyMigrateQueues)
 		api.POST("/orgs/:id/clear-queues", s.ClearOrgQueues)
 		api.POST("/orgs/:id/force-restart-queues", s.ForceRestartOrgQueues)
+		api.POST("/orgs/:id/remove-old-runner-processes", s.RemoveOldRunnerProcesses)
+		api.POST("/orgs/:id/shutdown-runner-processes", s.ShutdownOrgRunnerProcesses)
+		api.POST("/orgs/:id/shutdown-hint-runner-processes", s.ShutdownHintOrgRunnerProcesses)
 		api.GET("/orgs/:id/installs", s.InstallsTable)
 
 		// Accounts
@@ -286,6 +292,7 @@ func New(params Params) (*service, error) {
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
 		orgsHelpers:    params.OrgsHelpers,
+		runnersHelpers: params.RunnersHelpers,
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
