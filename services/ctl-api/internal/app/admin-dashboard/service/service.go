@@ -1,6 +1,11 @@
 package service
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/converter"
@@ -107,32 +112,59 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) setAdminAccountContext() gin.HandlerFunc {
+func (s *service) authURL() string {
+	if s.cfg.RootDomain == "" || s.cfg.RootDomain == "localhost" {
+		return fmt.Sprintf("http://localhost:%s", s.cfg.AuthHTTPPort)
+	}
+	return fmt.Sprintf("https://auth.%s", s.cfg.RootDomain)
+}
+
+func (s *service) adminDashboardURL() string {
+	if s.cfg.RootDomain == "" || s.cfg.RootDomain == "localhost" {
+		return fmt.Sprintf("http://localhost:%s", s.cfg.AdminDashboardHTTPPort)
+	}
+	return fmt.Sprintf("https://admin.%s", s.cfg.RootDomain)
+}
+
+func (s *service) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Try to resolve account from X-Nuon-Auth cookie
+		// Skip auth for health checks and static assets
+		if c.Request.URL.Path == "/api/livez" ||
+			strings.HasPrefix(c.Request.URL.Path, "/assets/") ||
+			c.Request.URL.Path == "/styles.css" {
+			c.Next()
+			return
+		}
+
 		token, _ := c.Cookie("X-Nuon-Auth")
 		if token != "" {
 			var userToken app.Token
 			if res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken); res.Error == nil {
 				if acct, err := s.acctClient.FetchAccount(c, userToken.AccountID); err == nil {
 					cctx.SetAccountGinContext(c, acct)
+					c.Request = c.Request.WithContext(cctx.SetAccountContext(c.Request.Context(), acct))
 					c.Next()
 					return
 				}
 			}
 		}
 
-		// Fallback: set account ID on the request context so GORM BeforeCreate hooks
-		// can read it via createdByIDFromContext(tx.Statement.Context).
-		ctx := cctx.SetAccountIDContext(c.Request.Context(), "admin-dashboard")
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
+		// For API requests, return 401 so the SPA can redirect client-side
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			return
+		}
+
+		// For page requests, redirect to the auth service
+		loginURL := s.authURL() + "/?url=" + url.QueryEscape(s.adminDashboardURL())
+		c.Redirect(http.StatusFound, loginURL)
+		c.Abort()
 	}
 }
 
 func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
-	// Set admin account context from X-Nuon-Auth cookie
-	e.Use(s.setAdminAccountContext())
+	// Require login via the auth service
+	e.Use(s.requireAuth())
 
 	// Health check
 	e.GET("/api/livez", s.Livez)
