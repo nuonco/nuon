@@ -23,3 +23,9 @@ export const addSupportUsers = (id: string) =>
 
 export const migrateOrgQueues = (id: string) =>
   api<{ status: string }>({ path: `orgs/${id}/migrate-queues`, method: 'POST' })
+
+export const clearOrgQueues = (id: string) =>
+  api<{ status: string; queues_cleared: number }>({ path: `orgs/${id}/clear-queues`, method: 'POST' })
+
+export const forceRestartOrgQueues = (id: string) =>
+  api<{ status: string; queues_restarted: number }>({ path: `orgs/${id}/force-restart-queues`, method: 'POST' })
