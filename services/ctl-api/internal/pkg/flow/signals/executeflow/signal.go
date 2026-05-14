@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -60,9 +61,37 @@ type Signal struct {
 
 var (
 	_ qsignal.Signal                     = (*Signal)(nil)
+	_ qsignal.SignalWithCancel           = (*Signal)(nil)
 	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
 )
+
+// Cancel is invoked by the queue handler when the signal is cancelled
+// externally (e.g. via clear-queue). It marks the underlying workflow object as
+// cancelled so the install workflow doesn't stay in a stale in-progress state.
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+
+	s.cancelRequested = true
+
+	// Best-effort cancel the active group signal.
+	if s.activeGroupQueueSignalID != "" {
+		client.AwaitCancelSignal(cancelCtx, s.activeGroupQueueSignalID)
+	}
+
+	// Mark the workflow as finished + cancelled.
+	_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(cancelCtx, s.WorkflowID)
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCancelled,
+			StatusHumanDescription: "workflow cancelled",
+		},
+	})
+
+	return nil
+}
 
 func (s *Signal) Type() qsignal.SignalType  { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }
