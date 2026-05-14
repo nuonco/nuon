@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues, clearOrgQueues, forceRestartOrgQueues } from '@/lib/admin-api'
+import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues, clearOrgQueues, forceRestartOrgQueues, removeOldRunnerProcesses, shutdownOrgRunnerProcesses, shutdownHintOrgRunnerProcesses } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
@@ -61,6 +61,21 @@ export const OrgDetail = () => {
 
   const forceRestartQueuesMutation = useMutation({
     mutationFn: () => forceRestartOrgQueues(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
+  })
+
+  const removeOldProcessesMutation = useMutation({
+    mutationFn: () => removeOldRunnerProcesses(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
+  })
+
+  const shutdownProcessesMutation = useMutation({
+    mutationFn: () => shutdownOrgRunnerProcesses(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
+  })
+
+  const shutdownHintProcessesMutation = useMutation({
+    mutationFn: () => shutdownHintOrgRunnerProcesses(id!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
   })
 
@@ -266,6 +281,46 @@ export const OrgDetail = () => {
             </button>
             {forceRestartQueuesMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Restarted</span>}
             {forceRestartQueuesMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
+          </div>
+          <div>
+            <button
+              onClick={() => removeOldProcessesMutation.mutate()}
+              disabled={removeOldProcessesMutation.isPending}
+              className="rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700 dark:hover:bg-orange-600 disabled:opacity-50"
+            >
+              {removeOldProcessesMutation.isPending ? 'Removing...' : 'Remove old runner processes'}
+            </button>
+            {removeOldProcessesMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Removed</span>}
+            {removeOldProcessesMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
+          </div>
+          <div>
+            <button
+              onClick={() => shutdownProcessesMutation.mutate()}
+              disabled={shutdownProcessesMutation.isPending}
+              className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+            >
+              {shutdownProcessesMutation.isPending ? 'Shutting down...' : 'Shutdown runner processes'}
+            </button>
+            {shutdownProcessesMutation.isSuccess && (
+              <span className="ml-2 text-sm">
+                <span className="text-green-600 dark:text-green-400">Shut down {(shutdownProcessesMutation.data as any)?.processes_shutdown ?? 0} processes</span>
+                {(shutdownProcessesMutation.data as any)?.create_errors?.length > 0 && (
+                  <span className="ml-2 text-red-600 dark:text-red-400">({(shutdownProcessesMutation.data as any).create_errors.length} errors)</span>
+                )}
+              </span>
+            )}
+            {shutdownProcessesMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
+          </div>
+          <div>
+            <button
+              onClick={() => shutdownHintProcessesMutation.mutate()}
+              disabled={shutdownHintProcessesMutation.isPending}
+              className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+            >
+              {shutdownHintProcessesMutation.isPending ? 'Sending...' : 'Send shutdown hint'}
+            </button>
+            {shutdownHintProcessesMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Hint sent</span>}
+            {shutdownHintProcessesMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
           </div>
         </div>
       </div>

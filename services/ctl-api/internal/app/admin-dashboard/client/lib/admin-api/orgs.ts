@@ -29,3 +29,12 @@ export const clearOrgQueues = (id: string) =>
 
 export const forceRestartOrgQueues = (id: string) =>
   api<{ status: string; queues_restarted: number }>({ path: `orgs/${id}/force-restart-queues`, method: 'POST' })
+
+export const removeOldRunnerProcesses = (id: string) =>
+  api<{ status: string; processes_deleted: number }>({ path: `orgs/${id}/remove-old-runner-processes`, method: 'POST' })
+
+export const shutdownOrgRunnerProcesses = (id: string) =>
+  api<{ status: string; processes_shutdown: number; create_errors?: string[] }>({ path: `orgs/${id}/shutdown-runner-processes`, method: 'POST' })
+
+export const shutdownHintOrgRunnerProcesses = (id: string) =>
+  api<{ status: string; processes_shutdown: number }>({ path: `orgs/${id}/shutdown-hint-runner-processes`, method: 'POST' })
