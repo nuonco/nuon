@@ -2,8 +2,8 @@ import { Prism } from 'react-syntax-highlighter'
 import {
   oneDark,
   oneLight,
-} from 'react-syntax-highlighter/dist/cjs/styles/prism'
-import createElement from 'react-syntax-highlighter/dist/cjs/create-element'
+} from 'react-syntax-highlighter/dist/esm/styles/prism'
+import createElement from 'react-syntax-highlighter/dist/esm/create-element'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
 

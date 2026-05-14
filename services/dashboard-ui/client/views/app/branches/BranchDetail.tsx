@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -10,6 +12,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
+import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -34,21 +37,32 @@ const BranchDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
 
+  const currentConfig = useMemo(() => {
+    if (!branch.configs?.length) return undefined
+    return [...branch.configs].sort(
+      (a, b) => (b.config_number || 0) - (a.config_number || 0)
+    )[0]
+  }, [branch.configs])
+
   const { data: appInstallsResult } = useQuery({
     queryKey: ['app-installs', orgId, appId],
     queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
-    enabled: !!orgId && !!appId,
+    enabled: !!orgId && !!appId && !!currentConfig,
   })
 
-  const installsById = (appInstallsResult?.data ?? []).reduce<Record<string, TInstall>>(
-    (acc, install) => {
-      acc[install.id] = install
-      return acc
-    },
-    {}
+  const installsById = useMemo(
+    () =>
+      (appInstallsResult?.data ?? []).reduce<Record<string, TInstall>>(
+        (acc, install) => {
+          acc[install.id] = install
+          return acc
+        },
+        {}
+      ),
+    [appInstallsResult]
   )
 
-  const { data: runs = [] } = useQuery({
+  const { data: runs = [], isLoading: isLoadingRuns } = useQuery({
     queryKey: ['branch-runs', orgId, appId, branchId],
     queryFn: () =>
       getBranchWorkflowRuns({
@@ -61,91 +75,93 @@ const BranchDetailContent = () => {
     refetchInterval: 5000,
   })
 
-  const currentConfig =
-    branch.configs && branch.configs.length > 0
-      ? branch.configs.sort(
-          (a, b) => (b.config_number || 0) - (a.config_number || 0)
-        )[0]
-      : undefined
-
   return (
     <PageSection>
-      <PageTitle title={`${branch?.name ?? 'Branch'} | ${app?.name}`} />
+      <PageTitle title={`${branch.name} | ${app.name}`} />
       <Breadcrumbs
         breadcrumbs={[
-          { path: `/${org?.id}`, text: org?.name },
-          { path: `/${org?.id}/apps`, text: 'Apps' },
-          { path: `/${org?.id}/apps/${app?.id}`, text: app?.name },
-          { path: `/${org?.id}/apps/${app?.id}/branches`, text: 'Branches' },
-          { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}`, text: branch?.name },
+          { path: `/${org.id}`, text: org.name },
+          { path: `/${org.id}/apps`, text: 'Apps' },
+          { path: `/${org.id}/apps/${app.id}`, text: app.name },
+          { path: `/${org.id}/apps/${app.id}/branches`, text: 'Branches' },
+          { path: `/${org.id}/apps/${app.id}/branches/${branchId}`, text: branch.name },
         ]}
       />
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <Text variant="h3" weight="strong">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <HeadingGroup className="gap-1.5">
+          <Text variant="h3" weight="stronger" level={1}>
             {branch.name}
           </Text>
-          <ID>{branch.id}</ID>
-          <Text variant="subtext" theme="neutral">
-            Created <Time time={branch?.created_at} format="relative" />
+          <Text variant="subtext" theme="info">
+            Last updated{' '}
+            <Time
+              variant="subtext"
+              time={branch.updated_at}
+              format="relative"
+            />
           </Text>
         </HeadingGroup>
-
-        <div className="flex items-center gap-4">
-          <BranchDetailActions
-            branch={branch}
-            currentConfig={currentConfig}
-            appId={appId}
-            orgId={orgId}
-          />
-        </div>
+        <BranchDetailActions
+          branch={branch}
+          currentConfig={currentConfig}
+          appId={appId}
+          orgId={orgId}
+        />
       </div>
 
-      <Card className="mb-6">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <Text variant="h3" weight="strong">
-              Install groups
-            </Text>
-            {currentConfig && (
-              <Badge theme="info" size="sm">
-                v{currentConfig.config_number}
-              </Badge>
-            )}
-          </div>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <Text variant="base" weight="strong">
+            Install groups
+          </Text>
+          {currentConfig && (
+            <Badge theme="info" size="sm">
+              v{currentConfig.config_number}
+            </Badge>
+          )}
+        </div>
 
-          {!currentConfig ? (
-            <div className="text-center py-8">
-              <Text variant="body" theme="neutral">
-                No configuration yet. Click "Edit" above to set up install groups.
-              </Text>
-            </div>
-          ) : (
+        {!currentConfig ? (
+          <Card>
+            <EmptyState
+              variant="diagram"
+              emptyTitle="No install groups yet"
+              emptyMessage={`Use "Manage installs" above to group installs for staged deployment.`}
+            />
+          </Card>
+        ) : (
+          <Card>
             <InstallGroupsSection
               config={currentConfig}
               installsById={installsById}
               orgId={orgId}
             />
-          )}
-        </div>
-      </Card>
+          </Card>
+        )}
+      </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <Text variant="h3" weight="strong">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <Text variant="base" weight="strong">
             Workflow runs
           </Text>
-          <Link href={`/${orgId}/apps/${appId}/branches/${branchId}/runs`}>
-            View all <Icon variant="CaretRightIcon" />
-          </Link>
+          {runs.length > 0 && (
+            <Link href={`/${orgId}/apps/${appId}/branches/${branchId}/runs`}>
+              View all <Icon variant="CaretRightIcon" />
+            </Link>
+          )}
         </div>
 
-        {runs.length === 0 ? (
-          <div className="text-center py-8 border border-dashed border-cool-grey-300 dark:border-dark-grey-600 rounded-md">
-            <Text variant="body" theme="neutral">
-              No workflow runs yet. Click "Trigger Run" above to start a deployment.
-            </Text>
-          </div>
+        {isLoadingRuns ? (
+          <TimelineSkeleton eventCount={3} />
+        ) : runs.length === 0 ? (
+          <Card>
+            <EmptyState
+              variant="history"
+              emptyTitle="No workflow runs yet"
+              emptyMessage={`Use "Trigger run" above to start a deployment.`}
+            />
+          </Card>
         ) : (
           <Timeline
             events={runs}
