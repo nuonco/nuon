@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/Badge'
+import { EmptyState } from '@/components/common/EmptyState'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
@@ -20,11 +21,11 @@ export const InstallGroupsSection = ({
 
   if (groups.length === 0) {
     return (
-      <div className="text-center py-8">
-        <Text variant="body" theme="neutral">
-          No install groups configured. Click "Edit" above to add deployment groups.
-        </Text>
-      </div>
+      <EmptyState
+        variant="diagram"
+        emptyTitle="No install groups configured"
+        emptyMessage={`Use "Manage installs" above to add deployment groups.`}
+      />
     )
   }
 

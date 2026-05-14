@@ -16,6 +16,7 @@ import {
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Text } from '@/components/common/Text'
 import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Banner } from '@/components/common/Banner'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -165,7 +166,7 @@ export const EditInstallGroupsModal = ({
           </Text>
         </div>
       }
-      size="full"
+      size="lg"
       primaryActionTrigger={{
         children: isSaving ? 'Saving...' : 'Save changes',
         onClick: () => onSave(groups),
@@ -243,12 +244,11 @@ export const EditInstallGroupsModal = ({
               </SortableContext>
 
               {groups.length === 0 && (
-                <div className="text-center py-12 border-2 border-dashed rounded-lg dark:border-dark-grey-600">
-                  <Text variant="base" theme="neutral">
-                    No install groups yet. Click &quot;Add group&quot; to create
-                    one.
-                  </Text>
-                </div>
+                <EmptyState
+                  variant="diagram"
+                  emptyTitle="No install groups yet"
+                  emptyMessage={`Click "Add group" above to create your first deployment group.`}
+                />
               )}
             </div>
 
