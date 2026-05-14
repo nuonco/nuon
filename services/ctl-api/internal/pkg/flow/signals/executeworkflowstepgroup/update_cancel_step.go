@@ -22,7 +22,6 @@ type CancelStepResponse struct{}
 // waiting for user input after a step failure.
 func (s *Signal) cancelStepHandler(ctx workflow.Context, req CancelStepRequest) (*CancelStepResponse, error) {
 	s.cancelRequested = true
-	s.userActionReceived = true
 
 	l, _ := log.WorkflowLogger(ctx)
 

@@ -149,14 +149,6 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		s.approvePlanHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
-	if err := workflow.SetUpdateHandlerWithOptions(ctx, "step-finished",
-		s.stepFinishedHandler, workflow.UpdateHandlerOptions{}); err != nil {
-		return err
-	}
-	if err := workflow.SetUpdateHandlerWithOptions(ctx, "was-retried",
-		s.wasRetriedHandler, workflow.UpdateHandlerOptions{}); err != nil {
-		return err
-	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-step",
 		s.cancelStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
