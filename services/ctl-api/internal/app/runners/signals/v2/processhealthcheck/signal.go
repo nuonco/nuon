@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -78,7 +79,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	var orgName string
 	var installID string
 	var installName string
-	defer func() {
+	buildTagMap := func() map[string]string {
 		tagMap := make(map[string]string, len(ownerLabels)+9)
 		for k, v := range ownerLabels {
 			tagMap[k] = v
@@ -96,7 +97,10 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		if installName != "" {
 			tagMap["install_name"] = installName
 		}
-		tags := metrics.ToTags(tagMap)
+		return tagMap
+	}
+	defer func() {
+		tags := metrics.ToTags(buildTagMap())
 
 		var endMs int64
 		_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
@@ -347,6 +351,24 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 				configuredVersion = settings.BinaryVersion
 			default:
 				configuredVersion = settings.ContainerImageTag
+			}
+
+			if configuredVersion == "latest" || heartbeat.Version == "latest" {
+				tagMap := buildTagMap()
+				tagMap["configured_version"] = configuredVersion
+				tagMap["heartbeat_version"] = heartbeat.Version
+				s.mw.Event(&statsd.Event{
+					Title: "Runner is using 'latest' version tag",
+					Text: fmt.Sprintf(
+						"Runner %s (org: %s) is using the 'latest' tag. configured_version=%q, reported_version=%q. Pin to a specific version to avoid drift.",
+						s.RunnerID, orgName, configuredVersion, heartbeat.Version,
+					),
+					Tags:           metrics.ToTags(tagMap),
+					SourceTypeName: "nuon-runner",
+					Priority:       statsd.Normal,
+					AlertType:      statsd.Error,
+					AggregationKey: "runner-version-latest",
+				})
 			}
 
 			var metadata map[string]any
