@@ -5819,7 +5819,7 @@ export interface components {
       plan_contents?: string;
       plan_display_contents?: string;
       /** @description needs to be the outputs of `terraform show -json` */
-      state_json?: number[];
+      state_json?: string;
       workspace_id?: string;
     };
     "queue.StatusResponse": {
