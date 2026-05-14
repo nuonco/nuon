@@ -123,8 +123,7 @@ func (s *service) adminDashboardURL() string {
 	if s.cfg.RootDomain == "" || s.cfg.RootDomain == "localhost" {
 		return fmt.Sprintf("http://localhost:%s", s.cfg.AdminDashboardHTTPPort)
 	}
-	domain := strings.TrimPrefix(s.cfg.RootDomain, "app.")
-	return fmt.Sprintf("https://admin.%s", domain)
+	return fmt.Sprintf("https://admin.%s", s.cfg.RootDomain)
 }
 
 func (s *service) requireAuth() gin.HandlerFunc {
