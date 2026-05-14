@@ -88,7 +88,7 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 
 		workflow, err := client.GetWorkflow(ctx, workflowID)
 		if err != nil {
-			sendEvent("error", `{"error":"failed to fetch workflow"}`)
+			sendEvent("fetch-error", `{"error":"failed to fetch workflow"}`)
 			select {
 			case <-ctx.Done():
 				return
@@ -126,6 +126,9 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 		if !finishedAt.IsZero() && time.Since(finishedAt) > workflowFinishedGracePeriod {
 			return
 		}
+
+		fmt.Fprintf(c.Writer, ": keepalive\n\n")
+		c.Writer.Flush()
 
 		interval := workflowPollInterval
 		if !finishedAt.IsZero() {
