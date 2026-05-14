@@ -84,6 +84,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/delete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/deprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/enable_feature_flags"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_restart_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_sandbox_mode"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/invite_accepted"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/invite_created"

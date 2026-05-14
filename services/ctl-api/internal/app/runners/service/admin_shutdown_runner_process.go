@@ -36,28 +36,17 @@ func (s *service) AdminShutdownRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	shutdown, err := s.createRunnerProcessShutdown(ctx, processID, req)
+	process, err := s.getRunnerProcess(ctx, processID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create runner process shutdown: %w", err))
+		s.l.Warn("unable to get runner process", zap.Error(err))
+		ctx.Error(fmt.Errorf("unable to get runner process: %w", err))
 		return
 	}
 
-	// Mark process as pending-shutdown so health checks noop
-	process, err := s.getRunnerProcess(ctx, processID)
+	shutdown, err := s.helpers.ShutdownProcess(ctx, process, req.ShutdownType)
 	if err != nil {
-		s.l.Warn("unable to get runner process for pending-shutdown update", zap.Error(err))
-	} else {
-		if err := s.updateProcessStatusPendingShutdown(ctx, process); err != nil {
-			s.l.Warn("unable to set process pending-shutdown status", zap.Error(err))
-		}
-
-		// Write a red health check to ClickHouse so dashboards reflect the shutdown
-		s.createShutdownHealthCheck(ctx, process.RunnerID, processID)
-
-		// Enqueue the process_shutdown signal to drive the shutdown lifecycle
-		if err := s.helpers.EnqueueProcessShutdown(ctx, process); err != nil {
-			s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
-		}
+		ctx.Error(fmt.Errorf("unable to shutdown runner process: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusCreated, shutdown)
