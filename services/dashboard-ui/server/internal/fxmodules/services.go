@@ -31,4 +31,5 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(asService(handlers.NewRandomNamesHandler)),
 	fx.Provide(asService(handlers.NewDDProxyHandler)),
 	fx.Provide(asService(handlers.NewDeploysHandler)),
+	fx.Provide(asService(handlers.NewSandboxRunsHandler)),
 )

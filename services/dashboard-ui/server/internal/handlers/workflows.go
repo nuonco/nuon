@@ -88,7 +88,7 @@ func (h *WorkflowsHandler) StreamWorkflow(c *gin.Context) {
 
 		workflow, err := client.GetWorkflow(ctx, workflowID)
 		if err != nil {
-			sendEvent("error", `{"error":"failed to fetch workflow"}`)
+			sendEvent("fetch-error", `{"error":"failed to fetch workflow"}`)
 			select {
 			case <-ctx.Done():
 				return

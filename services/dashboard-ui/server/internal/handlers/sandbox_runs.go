@@ -15,39 +15,31 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 )
 
-type DeploysHandler struct {
+type SandboxRunsHandler struct {
 	cfg *internal.Config
 	l   *zap.Logger
 }
 
-func NewDeploysHandler(cfg *internal.Config, l *zap.Logger) *DeploysHandler {
-	return &DeploysHandler{cfg: cfg, l: l}
+func NewSandboxRunsHandler(cfg *internal.Config, l *zap.Logger) *SandboxRunsHandler {
+	return &SandboxRunsHandler{cfg: cfg, l: l}
 }
 
 const (
-	deployPollInterval         = 2 * time.Second
-	deployFinishedPollInterval = 30 * time.Second
-	deployErrorRetryDelay      = 5 * time.Second
-	deployFinishedGracePeriod  = 2 * time.Minute
+	sandboxRunPollInterval         = 2 * time.Second
+	sandboxRunFinishedPollInterval = 30 * time.Second
+	sandboxRunErrorRetryDelay      = 5 * time.Second
+	sandboxRunFinishedGracePeriod  = 2 * time.Minute
 )
 
-var deployTerminalStatuses = map[string]bool{
-	"success":       true,
-	"error":         true,
-	"failed":        true,
-	"cancelled":     true,
-	"not-attempted": true,
-}
-
-func (h *DeploysHandler) RegisterRoutes(e *gin.Engine) error {
-	e.GET("/api/orgs/:orgId/installs/:installId/deploys/:deployId/sse", h.StreamDeploy)
+func (h *SandboxRunsHandler) RegisterRoutes(e *gin.Engine) error {
+	e.GET("/api/orgs/:orgId/installs/:installId/sandbox-runs/:runId/sse", h.StreamSandboxRun)
 	return nil
 }
 
-func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
+func (h *SandboxRunsHandler) StreamSandboxRun(c *gin.Context) {
 	orgID := c.Param("orgId")
 	installID := c.Param("installId")
-	deployID := c.Param("deployId")
+	runID := c.Param("runId")
 
 	token, err := c.Cookie(authCookie)
 	if err != nil || token == "" {
@@ -74,8 +66,8 @@ func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
 	c.Writer.Flush()
 
 	ctx := c.Request.Context()
-	var deployHash, componentHash, workflowHash string
-	var componentID, workflowID string
+	var sandboxRunHash, workflowHash string
+	var workflowID string
 	var finishedAt time.Time
 
 	sendEvent := func(event string, data string) {
@@ -99,42 +91,40 @@ func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
 		default:
 		}
 
-		deploy, err := client.GetInstallDeploy(ctx, installID, deployID)
+		sandboxRun, err := client.GetInstallSandboxRun(ctx, installID, runID)
 		if err != nil {
-			sendEvent("fetch-error", `{"error":"failed to fetch deploy"}`)
+			h.l.Error("failed to fetch sandbox run", zap.String("installID", installID), zap.String("runID", runID), zap.Error(err))
+			sendEvent("fetch-error", `{"error":"failed to fetch sandbox run"}`)
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(deployErrorRetryDelay):
+			case <-time.After(sandboxRunErrorRetryDelay):
 			}
 			continue
 		}
 
-		deployData, dHash, err := hashJSON(deploy)
+		runData, rHash, err := hashJSON(sandboxRun)
 		if err != nil {
-			h.l.Error("failed to marshal deploy", zap.Error(err))
+			h.l.Error("failed to marshal sandbox run", zap.Error(err))
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(deployErrorRetryDelay):
+			case <-time.After(sandboxRunErrorRetryDelay):
 			}
 			continue
 		}
 
-		if dHash != deployHash {
-			deployHash = dHash
-			sendEvent("deploy", string(deployData))
+		if rHash != sandboxRunHash {
+			sandboxRunHash = rHash
+			sendEvent("sandbox-run", string(runData))
 
-			if deploy.ComponentID != "" {
-				componentID = deploy.ComponentID
-			}
-			if deploy.InstallWorkflowID != "" {
-				workflowID = deploy.InstallWorkflowID
+			if sandboxRun.InstallWorkflowID != "" {
+				workflowID = sandboxRun.InstallWorkflowID
 			}
 
 			status := ""
-			if deploy.StatusV2 != nil {
-				status = string(deploy.StatusV2.Status)
+			if sandboxRun.StatusV2 != nil {
+				status = string(sandboxRun.StatusV2.Status)
 			}
 			if deployTerminalStatuses[status] {
 				sendEvent("finished", "true")
@@ -143,17 +133,6 @@ func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
 				}
 			} else if !finishedAt.IsZero() {
 				finishedAt = time.Time{}
-			}
-		}
-
-		if componentID != "" {
-			component, err := client.GetComponent(ctx, componentID)
-			if err == nil {
-				cData, cHash, err := hashJSON(component)
-				if err == nil && cHash != componentHash {
-					componentHash = cHash
-					sendEvent("component", string(cData))
-				}
 			}
 		}
 
@@ -168,13 +147,13 @@ func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
 			}
 		}
 
-		if !finishedAt.IsZero() && time.Since(finishedAt) > deployFinishedGracePeriod {
+		if !finishedAt.IsZero() && time.Since(finishedAt) > sandboxRunFinishedGracePeriod {
 			return
 		}
 
-		interval := deployPollInterval
+		interval := sandboxRunPollInterval
 		if !finishedAt.IsZero() {
-			interval = deployFinishedPollInterval
+			interval = sandboxRunFinishedPollInterval
 		}
 
 		select {

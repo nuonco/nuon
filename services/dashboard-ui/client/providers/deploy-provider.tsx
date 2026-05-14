@@ -118,7 +118,7 @@ export function DeployProvider({
       // deploy is done — server will slow down and eventually close
     })
 
-    eventSource.addEventListener('error', (event: MessageEvent) => {
+    eventSource.addEventListener('fetch-error', (event: MessageEvent) => {
       try {
         const errorData = JSON.parse(event.data)
         addToast(
