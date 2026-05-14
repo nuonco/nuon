@@ -129,7 +129,10 @@ func (s *service) adminDashboardURL() string {
 func (s *service) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Skip auth for health checks and static assets
-		if c.Request.URL.Path == "/api/livez" ||
+		if c.Request.URL.Path == "/livez" ||
+			c.Request.URL.Path == "/readyz" ||
+			c.Request.URL.Path == "/version" ||
+			c.Request.URL.Path == "/api/livez" ||
 			strings.HasPrefix(c.Request.URL.Path, "/assets/") ||
 			c.Request.URL.Path == "/styles.css" {
 			c.Next()
