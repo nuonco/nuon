@@ -146,6 +146,8 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/orgs/:id/labels/remove/:key", s.RemoveOrgLabel)
 		api.POST("/orgs/:id/support-users/add", s.ProxyAddSupportUsers)
 		api.POST("/orgs/:id/migrate-queues", s.ProxyMigrateQueues)
+		api.POST("/orgs/:id/clear-queues", s.ClearOrgQueues)
+		api.POST("/orgs/:id/force-restart-queues", s.ForceRestartOrgQueues)
 		api.GET("/orgs/:id/installs", s.InstallsTable)
 
 		// Accounts

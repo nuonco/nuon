@@ -23,5 +23,5 @@ func AwaitQueueSignal(ctx workflow.Context, queueSignalID string) (*handler.Fini
 		timeout = signal.DeriveTimeout(qs.Signal.Signal)
 	}
 
-	return AwaitAwaitSignal(ctx, queueSignalID, signal.TimeoutActivityOpts(timeout))
+	return AwaitAwaitSignal(ctx, queueSignalID, signal.AwaitActivityOpts(timeout))
 }
