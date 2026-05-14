@@ -9,7 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	orgforcerestartqueues "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_restart_queues"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type ForceRestartOrgQueuesRequest struct{}
@@ -23,7 +26,7 @@ type ForceRestartOrgQueuesRequest struct{}
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
-// @Success				200	{boolean}	true
+// @Success				200	{object}	map[string]string
 // @Router					/v1/orgs/{org_id}/admin-force-restart-queues [POST]
 func (s *service) ForceRestartOrgQueues(ctx *gin.Context) {
 	orgID := ctx.Param("org_id")
@@ -40,18 +43,25 @@ func (s *service) ForceRestartOrgQueues(ctx *gin.Context) {
 		return
 	}
 
-	var queues []app.Queue
-	if res := s.db.WithContext(ctx).Where(app.Queue{OrgID: &org.ID}).Find(&queues); res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to get org queues: %w", res.Error))
+	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
 
-	for _, queue := range queues {
-		if err := s.queueClient.ForceRestart(ctx, queue.ID); err != nil {
-			ctx.Error(fmt.Errorf("unable to force restart queue %s: %w", queue.ID, err))
-			return
-		}
+	resp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   queueID,
+		Signal:    &orgforcerestartqueues.Signal{OrgID: org.ID},
+		OwnerID:   org.ID,
+		OwnerType: plugins.TableName(s.db, app.Org{}),
+	})
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue force restart signal: %w", err))
+		return
 	}
 
-	ctx.JSON(http.StatusOK, true)
+	ctx.JSON(http.StatusOK, gin.H{
+		"queue_signal_id": resp.ID,
+		"queue_id":        queueID,
+	})
 }

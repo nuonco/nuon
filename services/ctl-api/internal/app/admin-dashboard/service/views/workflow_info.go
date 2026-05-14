@@ -27,16 +27,18 @@ type EnqueuedSignalInfo struct {
 
 // UpdateExecution groups activities that ran within a single Temporal update handler call.
 type UpdateExecution struct {
-	Name       string         `json:"name"` // update handler name (e.g. "execute", "retry-step")
-	UpdateID   string         `json:"update_id"`
-	Status     string         `json:"status"` // Accepted, Completed, Failed, Rejected, Running
-	StartedAt  time.Time      `json:"started_at"`
-	FinishedAt time.Time      `json:"finished_at"`
-	Duration   time.Duration  `json:"duration"`
-	Input      string         `json:"input"`  // JSON-formatted update input args
-	Result     string         `json:"result"` // JSON-formatted update result
-	Failure    string         `json:"failure"`
-	Activities []ActivityInfo `json:"activities"`
+	Name            string               `json:"name"` // update handler name (e.g. "execute", "retry-step")
+	UpdateID        string               `json:"update_id"`
+	Status          string               `json:"status"` // Accepted, Completed, Failed, Rejected, Running
+	StartedAt       time.Time            `json:"started_at"`
+	FinishedAt      time.Time            `json:"finished_at"`
+	Duration        time.Duration        `json:"duration"`
+	Input           string               `json:"input"`  // JSON-formatted update input args
+	Result          string               `json:"result"` // JSON-formatted update result
+	Failure         string               `json:"failure"`
+	Activities      []ActivityInfo       `json:"activities"`
+	AwaitedSignals  []AwaitedSignalInfo  `json:"awaited_signals"`
+	EnqueuedSignals []EnqueuedSignalInfo `json:"enqueued_signals"`
 }
 
 // ActivityInfo holds Temporal activity execution info for display.
