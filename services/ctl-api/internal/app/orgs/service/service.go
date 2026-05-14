@@ -154,6 +154,8 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.POST("/admin-force-restart-queues", s.ForceRestartOrgQueues)
 			org.POST("/admin-migrate-queues", s.AdminMigrateOrgQueues)
 			org.POST("/admin-restart-runners", s.AdminRestartRunners)
+			org.POST("/admin-graceful-shutdown-processes", s.AdminGracefulShutdownOrgRunnerProcesses)
+			org.POST("/admin-force-shutdown-processes", s.AdminForceShutdownOrgRunnerProcesses)
 			org.POST("/admin-labels", s.AdminAddOrgLabels)
 			org.DELETE("/admin-labels", s.AdminRemoveOrgLabels)
 			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)

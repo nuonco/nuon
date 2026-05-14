@@ -37,7 +37,7 @@ export const adminRestartOrgQueues = ({ orgId, adminEmail }: { orgId: string } &
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-restart-queues` })
 
 export const adminForceRestartOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
-  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-force-restart-queues` })
+  api<{ queue_signal_id: string; queue_id: string }>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-force-restart-queues` })
 
 export const adminMigrateOrgQueues = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-migrate-queues` })
@@ -101,3 +101,9 @@ export const adminForgetOrgInstalls = ({ orgId, adminEmail }: { orgId: string } 
 
 export const adminForgetOrg = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
   api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-forget` })
+
+export const adminGracefulShutdownOrgProcesses = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-graceful-shutdown-processes` })
+
+export const adminForceShutdownOrgProcesses = ({ orgId, adminEmail }: { orgId: string } & AdminMutation) =>
+  api<void>({ baseUrl: '/admin', method: 'POST', body: {}, headers: adminHeaders(adminEmail), path: `orgs/${orgId}/admin-force-shutdown-processes` })
