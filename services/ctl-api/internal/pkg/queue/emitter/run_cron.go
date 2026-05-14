@@ -79,11 +79,15 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter, childWorkflowID string) error {
 	parentInfo := workflow.GetInfo(ctx)
 
+	// WorkflowIDReusePolicy=ALLOW_DUPLICATE_FAILED_ONLY so we can restart the
+	// cron child after the previous run has been terminated, especially when
+	// Continuing As New. With the default ParentClosePolicy=TERMINATE the
+	// cron child is cleaned up automatically when the parent closes.
 	childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 		WorkflowID:            childWorkflowID,
 		TaskQueue:             parentInfo.TaskQueueName,
 		CronSchedule:          emitter.CronSchedule,
-		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
 		},
@@ -98,7 +102,7 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 
 	var childExec workflow.Execution
 	if err := childFuture.GetChildWorkflowExecution().Get(ctx, &childExec); err != nil {
-		l.Error("cron ticker child workflow already running or failed to start",
+		l.Error("failed to start cron ticker child workflow",
 			zap.String("child-workflow-id", childWorkflowID),
 			zap.Error(err),
 		)
