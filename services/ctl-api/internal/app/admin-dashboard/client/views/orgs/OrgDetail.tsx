@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues } from '@/lib/admin-api'
+import { getOrgDetail, addOrgLabels, removeOrgLabel, addSupportUsers, migrateOrgQueues, clearOrgQueues, forceRestartOrgQueues } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
@@ -51,6 +51,16 @@ export const OrgDetail = () => {
 
   const migrateMutation = useMutation({
     mutationFn: () => migrateOrgQueues(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
+  })
+
+  const clearQueuesMutation = useMutation({
+    mutationFn: () => clearOrgQueues(id!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
+  })
+
+  const forceRestartQueuesMutation = useMutation({
+    mutationFn: () => forceRestartOrgQueues(id!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
   })
 
@@ -234,6 +244,28 @@ export const OrgDetail = () => {
             </button>
             {migrateMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Migration started</span>}
             {migrateMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
+          </div>
+          <div>
+            <button
+              onClick={() => clearQueuesMutation.mutate()}
+              disabled={clearQueuesMutation.isPending}
+              className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+            >
+              {clearQueuesMutation.isPending ? 'Clearing...' : 'Clear org queues'}
+            </button>
+            {clearQueuesMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Cleared</span>}
+            {clearQueuesMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
+          </div>
+          <div>
+            <button
+              onClick={() => forceRestartQueuesMutation.mutate()}
+              disabled={forceRestartQueuesMutation.isPending}
+              className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+            >
+              {forceRestartQueuesMutation.isPending ? 'Restarting...' : 'Force restart org queues'}
+            </button>
+            {forceRestartQueuesMutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Restarted</span>}
+            {forceRestartQueuesMutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
           </div>
         </div>
       </div>
