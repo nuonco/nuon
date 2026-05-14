@@ -14,7 +14,8 @@ import (
 type SignalGraphNode struct {
 	Signal       *app.QueueSignal    `json:"signal"`
 	WorkflowInfo *views.WorkflowInfo `json:"workflow_info,omitempty"`
-	Children     []SignalGraphNode   `json:"children,omitempty"` // awaited signals, recursively resolved
+	Children     []SignalGraphNode   `json:"children,omitempty"`
+	Relationship string              `json:"relationship,omitempty"` // "awaited" or "enqueued"
 }
 
 // SignalGraph returns a recursive graph of a signal and everything it awaits.
@@ -72,6 +73,7 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 				if as.Signal != nil && !seen[as.Signal.ID] {
 					seen[as.Signal.ID] = true
 					child := s.buildSignalGraphNode(c, as.Signal, depth+1, maxDepth)
+					child.Relationship = "awaited"
 					node.Children = append(node.Children, child)
 				} else if as.QueueSignalID != "" && !seen[as.QueueSignalID] {
 					seen[as.QueueSignalID] = true
@@ -80,6 +82,7 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 						Where("id = ?", as.QueueSignalID).
 						First(&childSignal).Error; err == nil {
 						child := s.buildSignalGraphNode(c, &childSignal, depth+1, maxDepth)
+						child.Relationship = "awaited"
 						node.Children = append(node.Children, child)
 					}
 				}
@@ -90,6 +93,7 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 				if es.Signal != nil && !seen[es.Signal.ID] {
 					seen[es.Signal.ID] = true
 					child := s.buildSignalGraphNode(c, es.Signal, depth+1, maxDepth)
+					child.Relationship = "enqueued"
 					node.Children = append(node.Children, child)
 				} else if es.QueueSignalID != "" && !seen[es.QueueSignalID] {
 					seen[es.QueueSignalID] = true
@@ -98,6 +102,7 @@ func (s *service) buildSignalGraphNode(c *gin.Context, signal *app.QueueSignal, 
 						Where("id = ?", es.QueueSignalID).
 						First(&childSignal).Error; err == nil {
 						child := s.buildSignalGraphNode(c, &childSignal, depth+1, maxDepth)
+						child.Relationship = "enqueued"
 						node.Children = append(node.Children, child)
 					}
 				}

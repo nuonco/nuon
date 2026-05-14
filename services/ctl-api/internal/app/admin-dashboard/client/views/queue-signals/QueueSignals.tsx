@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { getQueueSignalsGlobal, getQueueSignalTypeOptions } from '@/lib/admin-api'
+import { getQueueSignalsGlobal } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { SignalLink } from '@/components/common/SignalLink'
 import { Pagination } from '@/components/common/Pagination'
@@ -24,7 +24,9 @@ function enqueueDuration(meta: Record<string, any> | undefined): string {
 export const QueueSignals = () => {
   const [searchParams] = useSearchParams()
   const ownerID = searchParams.get('owner_id') || undefined
+  const initialOrgId = searchParams.get('org_id') || ''
   const [search, setSearch] = useState('')
+  const [orgId, setOrgId] = useState(initialOrgId)
   const [signalType, setSignalType] = useState('')
   const [namespace, setNamespace] = useState('')
   const [enqueued, setEnqueued] = useState('')
@@ -33,16 +35,12 @@ export const QueueSignals = () => {
   const [since, setSince] = useState('15m')
   const [page, setPage] = useState(1)
 
-  const { data: typeOptions } = useQuery({
-    queryKey: ['queue-signal-type-options', namespace],
-    queryFn: () => getQueueSignalTypeOptions(namespace || undefined),
-  })
-
   const { data, isLoading, error } = useQuery({
-    queryKey: ['queue-signals-global', search, signalType, namespace, enqueued, status, sortBy, since, ownerID, page],
+    queryKey: ['queue-signals-global', search, orgId, signalType, namespace, enqueued, status, sortBy, since, ownerID, page],
     queryFn: () => getQueueSignalsGlobal({
       search,
       signal_type: signalType || undefined,
+      org_id: orgId || undefined,
       namespace: namespace || undefined,
       enqueued: enqueued || undefined,
       status: status || undefined,
@@ -59,16 +57,38 @@ export const QueueSignals = () => {
 
   const signals = data?.signals || []
   const totalPages = data?.total_pages || 1
-  const signalTypes = typeOptions?.signal_types || []
+  const signalTypes = data?.signal_types || []
+  const namespaces = data?.namespaces || []
+  const orgOptions = data?.org_options || []
 
   return (
     <div>
       <h1 className="page-heading">Queue signals</h1>
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap">
         <div className="w-full sm:w-64">
           <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by ID, owner, queue..." />
         </div>
+        <select
+          value={orgId}
+          onChange={(e) => { setOrgId(e.target.value); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          <option value="">All orgs</option>
+          {orgOptions.map((org) => (
+            <option key={org.id} value={org.id}>{org.name || org.id}</option>
+          ))}
+        </select>
+        <select
+          value={namespace}
+          onChange={(e) => { setNamespace(e.target.value); setSignalType(''); setPage(1) }}
+          className="rounded-md border-0 py-1.5 px-3 text-sm text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-700"
+        >
+          <option value="">All namespaces</option>
+          {namespaces.map((ns) => (
+            <option key={ns} value={ns}>{ns}</option>
+          ))}
+        </select>
         <select
           value={signalType}
           onChange={(e) => { setSignalType(e.target.value); setPage(1) }}
