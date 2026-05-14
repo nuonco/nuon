@@ -83,7 +83,7 @@ export function DeployProvider({
       if (sseConnected) return false
       if (!shouldPoll) return false
       const status = query.state.data?.status_v2?.status
-      if (status === 'success' || status === 'error' || status === 'failed' || status === 'cancelled' || status === 'not-attempted') {
+      if (status === 'success' || status === 'error' || status === 'cancelled' || status === 'not-attempted') {
         return FINISHED_POLL_MS
       }
       return FALLBACK_POLL_MS
