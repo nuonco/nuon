@@ -24,6 +24,8 @@ import {
   adminDeprovisionOrg,
   adminForgetOrgInstalls,
   adminForgetOrg,
+  adminGracefulShutdownOrgProcesses,
+  adminForceShutdownOrgProcesses,
 } from '@/lib'
 
 interface IAdminOrgSection {
@@ -161,6 +163,23 @@ export const AdminOrgSection = ({
           requiresConfirmation
           requiresInput
           confirmationText="This will forcefully shutdown the org runner and may cause data loss."
+        />
+        <AdminActionCard
+          title="Graceful shutdown all processes"
+          description="Request graceful shutdown of all active runner processes in this org"
+          action={() => adminGracefulShutdownOrgProcesses({ orgId, adminEmail })}
+          variant="warning"
+          requiresConfirmation
+          confirmationText="This will request graceful shutdown of ALL active runner processes for this organization. Each process will complete in-flight work before shutting down."
+        />
+        <AdminActionCard
+          title="Force shutdown all processes"
+          description="Force shutdown all active runner processes in this org"
+          action={() => adminForceShutdownOrgProcesses({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          confirmationText="This will force shutdown ALL active runner processes for this organization. In-flight work may be lost."
         />
       </AdminActionGroup>
 

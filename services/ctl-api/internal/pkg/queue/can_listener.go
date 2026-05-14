@@ -2,11 +2,13 @@ package queue
 
 import (
 	"math/rand"
+	"strconv"
 	"time"
 
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 )
@@ -49,8 +51,13 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 	info := workflow.GetInfo(ctx)
 	historyLen := info.GetCurrentHistoryLength()
 	if q.mw != nil {
+		info := workflow.GetInfo(ctx)
 		q.mw.Gauge(ctx, "workflow.workflow_size", float64(historyLen),
-			"queue_id:"+q.queueID)
+			metrics.ToTags(map[string]string{
+				"namespace":     info.Namespace,
+				"workflow_type": info.WorkflowType.Name,
+				"is_can":        strconv.FormatBool(info.ContinuedExecutionRunID != ""),
+			})...)
 	}
 
 	historyMax := canDefaultHistoryMax
