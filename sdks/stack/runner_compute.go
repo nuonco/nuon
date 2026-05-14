@@ -410,13 +410,21 @@ func ensureASG(ctx context.Context, log *slog.Logger, c *autoscaling.Client, st 
 	}
 	// ASG exists — update LT pointer and trigger an instance refresh so the
 	// running instance picks up the new launch-template default version.
-	if _, err := c.UpdateAutoScalingGroup(ctx, &autoscaling.UpdateAutoScalingGroupInput{
-		AutoScalingGroupName: &name,
-		LaunchTemplate:       ltSpec,
-		MinSize:              aws.Int32(1),
-		MaxSize:              aws.Int32(1),
-		DesiredCapacity:      aws.Int32(1),
-		VPCZoneIdentifier:    aws.String(st.RunnerSubnetID),
+	// Wrap in the same retryOnInvalidInstanceProfile loop used by the create
+	// path: when ensureLaunchTemplate just minted a new LT version pointing at
+	// the (possibly just-created) instance profile, EC2's profile cache can
+	// lag 30–90s and ASG rejects the update with ValidationError until it
+	// catches up.
+	if err := retryOnInvalidInstanceProfile(ctx, log, func() error {
+		_, err := c.UpdateAutoScalingGroup(ctx, &autoscaling.UpdateAutoScalingGroupInput{
+			AutoScalingGroupName: &name,
+			LaunchTemplate:       ltSpec,
+			MinSize:              aws.Int32(1),
+			MaxSize:              aws.Int32(1),
+			DesiredCapacity:      aws.Int32(1),
+			VPCZoneIdentifier:    aws.String(st.RunnerSubnetID),
+		})
+		return err
 	}); err != nil {
 		return fmt.Errorf("update asg: %w", err)
 	}
