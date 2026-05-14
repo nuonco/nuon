@@ -1,6 +1,7 @@
-import { createContext, useEffect, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { createContext, useMemo, useEffect, type ReactNode } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
+import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getComponentBuild } from '@/lib'
@@ -17,12 +18,14 @@ export const BuildContext = createContext<BuildContextValue | undefined>(
   undefined
 )
 
+const FALLBACK_POLL_MS = 4000
+const FINISHED_POLL_MS = 30_000
+
 export function BuildProvider({
   children,
   buildId,
   componentId,
   componentName,
-  pollInterval = 10000,
   shouldPoll = true,
 }: {
   children: ReactNode
@@ -34,11 +37,41 @@ export function BuildProvider({
 }) {
   const { org } = useOrg()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const queryKey = ['build', org?.id, componentId, buildId]
+
+  const sseUrl = org?.id && componentId && buildId
+    ? `/api/orgs/${org.id}/components/${componentId}/builds/${buildId}/sse`
+    : undefined
+
+  const listeners = useMemo(() => ({
+    build: (event: MessageEvent) => {
+      try {
+        const data: TBuild = JSON.parse(event.data)
+        queryClient.setQueryData(queryKey, data)
+      } catch {}
+    },
+  }), [org?.id, componentId, buildId])
+
+  const { connected: sseConnected } = useResourceSSE({
+    url: sseUrl,
+    enabled: shouldPoll,
+    listeners,
+  })
+
   const { data: build, isLoading, error } = useQuery({
-    queryKey: ['build', org.id!, componentId, buildId],
-    queryFn: () => getComponentBuild({ orgId: org.id!, componentId, buildId }),
-    refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org.id && !!componentId && !!buildId,
+    queryKey,
+    queryFn: () => getComponentBuild({ orgId: org!.id, componentId, buildId }),
+    refetchInterval: (query) => {
+      if (sseConnected) return false
+      if (!shouldPoll) return false
+      const status = query.state.data?.status_v2?.status
+      if (status === 'success' || status === 'error' || status === 'cancelled' || status === 'not-attempted') {
+        return FINISHED_POLL_MS
+      }
+      return FALLBACK_POLL_MS
+    },
+    enabled: !!org?.id && !!componentId && !!buildId,
   })
 
   useStatusToast({
@@ -58,7 +91,6 @@ export function BuildProvider({
   }, [error])
 
   if (error && !build) return <ProviderError error={error} />
-
   if (isLoading || !build) return <ProviderLoading />
 
   return (

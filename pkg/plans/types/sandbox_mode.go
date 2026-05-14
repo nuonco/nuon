@@ -6,7 +6,7 @@ type MinSandboxMode struct {
 
 type TerraformSandboxMode struct {
 	// needs to be the outputs of `terraform show -json`
-	StateJSON   []byte `json:"state_json"`
+	StateJSON   []byte `json:"state_json" swaggertype:"primitive,string"`
 	WorkspaceID string `json:"workspace_id"`
 
 	// create the plan output
