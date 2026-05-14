@@ -212,6 +212,12 @@ export const QueueSignalDetail = () => {
             {wfInfo.activities?.length > 0 && (
               <div><span className="text-gray-500 dark:text-gray-400 uppercase w-32 inline-block">Activities</span> <span className="font-mono">{wfInfo.activities.length}</span></div>
             )}
+            {wfInfo.awaited_signals?.length > 0 && (
+              <div><span className="text-gray-500 dark:text-gray-400 uppercase w-32 inline-block">Awaited</span> <span className="font-mono text-orange-500">{wfInfo.awaited_signals.length} signal{wfInfo.awaited_signals.length !== 1 ? 's' : ''}</span></div>
+            )}
+            {wfInfo.enqueued_signals?.length > 0 && (
+              <div><span className="text-gray-500 dark:text-gray-400 uppercase w-32 inline-block">Enqueued</span> <span className="font-mono text-green-500">{wfInfo.enqueued_signals.length} signal{wfInfo.enqueued_signals.length !== 1 ? 's' : ''}</span></div>
+            )}
             {/* Failures */}
             {(wfInfo.status === 'Failed' || wfInfo.status === 'Timed Out') && (
               <>
@@ -232,6 +238,72 @@ export const QueueSignalDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Awaited & enqueued signals */}
+      {wfInfo && (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Signal dependencies
+            <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+              {(wfInfo.awaited_signals?.length || 0) + (wfInfo.enqueued_signals?.length || 0)} total
+            </span>
+          </h2>
+
+          {wfInfo.enqueued_signals?.length > 0 && (
+            <div className="mt-3">
+              <h3 className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase mb-2">
+                ▸ Enqueued signals ({wfInfo.enqueued_signals.length})
+              </h3>
+              <div className="space-y-1">
+                {wfInfo.enqueued_signals.map((es: any, i: number) => {
+                  const sigStatus = es.signal ? getStatus(es.signal.status) : ''
+                  const signalLink = es.signal?.queue_id
+                    ? `/queues/${es.signal.queue_id}/signals/${es.queue_signal_id}`
+                    : `/queue-signals?search=${es.queue_signal_id}`
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-2 border border-green-100 dark:border-green-900 bg-green-50/50 dark:bg-green-900/20 rounded text-xs">
+                      <span className="text-green-500 text-[8px]">▸</span>
+                      <Link to={signalLink} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 truncate">{es.queue_signal_id}</Link>
+                      {es.signal?.type && <Badge>{es.signal.type}</Badge>}
+                      {sigStatus && <Badge variant="status" status={sigStatus}>{sigStatus}</Badge>}
+                      {es.activity_name && <span className="text-gray-400 dark:text-gray-500 font-mono text-[10px] ml-auto">{es.activity_name}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {wfInfo.awaited_signals?.length > 0 && (
+            <div className="mt-3">
+              <h3 className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase mb-2">
+                ◇ Awaited signals ({wfInfo.awaited_signals.length})
+              </h3>
+              <div className="space-y-1">
+                {wfInfo.awaited_signals.map((as: any, i: number) => {
+                  const sigStatus = as.signal ? getStatus(as.signal.status) : as.status
+                  const signalLink = as.signal?.queue_id
+                    ? `/queues/${as.signal.queue_id}/signals/${as.queue_signal_id}`
+                    : `/queue-signals?search=${as.queue_signal_id}`
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-2 border border-orange-100 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-900/20 rounded text-xs">
+                      <span className="text-orange-500 text-[8px]">◇</span>
+                      <Link to={signalLink} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 truncate">{as.queue_signal_id}</Link>
+                      {as.signal?.type && <Badge>{as.signal.type}</Badge>}
+                      <Badge variant="status" status={sigStatus}>{sigStatus}</Badge>
+                      <span className="text-gray-400 dark:text-gray-500 font-mono ml-auto">{formatDuration(as.duration)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {!wfInfo.awaited_signals?.length && !wfInfo.enqueued_signals?.length && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">No signal dependencies</p>
+          )}
+        </div>
+      )}
 
       {/* Signal flow graph */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">

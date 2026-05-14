@@ -115,12 +115,17 @@ export const AdminOrgSection = ({
         />
         <AdminActionCard
           title="Force restart org queues"
-          description="Immediately terminate and restart all queue workflows for this org"
-          action={() => adminForceRestartOrgQueues({ orgId, adminEmail })}
+          description="Immediately terminate and restart all queue workflows for this org via signal"
+          action={async () => {
+            const resp = await adminForceRestartOrgQueues({ orgId, adminEmail })
+            if (resp?.queue_signal_id && resp?.queue_id) {
+              window.open(`/queues/${resp.queue_id}/signals/${resp.queue_signal_id}`, '_blank')
+            }
+          }}
           variant="danger"
           requiresConfirmation
           requiresInput
-          confirmationText="This will immediately terminate and restart ALL queue workflows for this organization. Any in-flight signals will be abandoned. In practice, most long-lived signals are caught awaiting an execute finished, so this should be safe if graceful restarts aren't working."
+          confirmationText="This will enqueue a signal that terminates and restarts ALL queue workflows for this organization. A new tab will open to monitor the signal progress."
         />
         <AdminActionCard
           title="Migrate org queues"

@@ -497,10 +497,12 @@ func extractQueueSignalIDFromResult(result string) string {
 		}
 	}
 
-	// Try as JSON object with an "id" or "queue_signal_id" field
+	// Try as JSON object with known ID fields.
+	// Temporal's data converter uses Go field names (e.g. "QueueSignalID"),
+	// while JSON tags produce "queue_signal_id".
 	var obj map[string]interface{}
 	if err := json.Unmarshal([]byte(result), &obj); err == nil {
-		for _, key := range []string{"id", "ID", "queue_signal_id"} {
+		for _, key := range []string{"id", "ID", "queue_signal_id", "QueueSignalID"} {
 			if id, ok := obj[key].(string); ok && strings.HasPrefix(id, "qsi") {
 				return id
 			}
@@ -526,10 +528,10 @@ func extractQueueSignalIDFromInput(input string) string {
 		}
 	}
 
-	// Try as JSON object with common ID fields
+	// Try as JSON object with known ID fields
 	var obj map[string]interface{}
 	if err := json.Unmarshal([]byte(input), &obj); err == nil {
-		for _, key := range []string{"queue_signal_id", "id", "ID"} {
+		for _, key := range []string{"queue_signal_id", "QueueSignalID", "id", "ID"} {
 			if id, ok := obj[key].(string); ok && strings.HasPrefix(id, "qsi") {
 				return id
 			}
