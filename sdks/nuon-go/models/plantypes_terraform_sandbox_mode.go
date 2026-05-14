@@ -24,7 +24,7 @@ type PlantypesTerraformSandboxMode struct {
 	PlanDisplayContents string `json:"plan_display_contents,omitempty"`
 
 	// needs to be the outputs of `terraform show -json`
-	StateJSON []int64 `json:"state_json"`
+	StateJSON string `json:"state_json,omitempty"`
 
 	// workspace id
 	WorkspaceID string `json:"workspace_id,omitempty"`

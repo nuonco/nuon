@@ -1,7 +1,8 @@
-import { createContext, useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
+import { createContext, useState, useMemo, useEffect, type ReactNode } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
+import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { useToast } from '@/hooks/use-toast'
 import { getWorkflow } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -44,14 +45,25 @@ export const WorkflowProvider = ({
   const { org } = useOrg()
   const queryClient = useQueryClient()
   const { addToast } = useToast()
-
-  const [sseConnected, setSSEConnected] = useState(false)
   const [sseEnabled, setSseEnabled] = useState(shouldPoll)
-  const eventSourceRef = useRef<EventSource | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const reconnectAttemptRef = useRef(0)
-
   const queryKey = ['workflow', org?.id, workflowId]
+
+  const sseUrl = org?.id && workflowId
+    ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
+    : undefined
+
+  const onMessage = useMemo(() => (event: MessageEvent) => {
+    try {
+      const data: TWorkflow = JSON.parse(event.data)
+      queryClient.setQueryData(queryKey, data)
+    } catch {}
+  }, [org?.id, workflowId])
+
+  const { connected: sseConnected, disconnect } = useResourceSSE({
+    url: sseUrl,
+    enabled: sseEnabled,
+    onMessage,
+  })
 
   const { data: workflow, isLoading, error } = useQuery({
     queryKey,
@@ -64,79 +76,6 @@ export const WorkflowProvider = ({
     },
     enabled: !!org?.id && !!workflowId,
   })
-
-  const disconnect = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close()
-      eventSourceRef.current = null
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current)
-      reconnectTimeoutRef.current = null
-    }
-    setSSEConnected(false)
-  }, [])
-
-  const connectSSE = useCallback(() => {
-    if (!org?.id || !workflowId || eventSourceRef.current) return
-
-    const url = `/api/orgs/${org.id}/workflows/${workflowId}/sse`
-    const eventSource = new EventSource(url)
-    eventSourceRef.current = eventSource
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data: TWorkflow = JSON.parse(event.data)
-        queryClient.setQueryData(queryKey, data)
-        setSSEConnected(true)
-        reconnectAttemptRef.current = 0
-      } catch {
-        // ignore parse errors
-      }
-    }
-
-    eventSource.addEventListener('finished', () => {
-      // workflow is done — server will slow down and eventually close
-    })
-
-    eventSource.addEventListener('error', (event: MessageEvent) => {
-      try {
-        const errorData = JSON.parse(event.data)
-        addToast(
-          <Toast heading="Failed to refresh data" theme="warn">
-            {errorData?.error ?? 'Connection issue'}
-          </Toast>
-        )
-      } catch {
-        // non-JSON error event, handled by onerror
-      }
-    })
-
-    eventSource.onerror = () => {
-      eventSource.close()
-      eventSourceRef.current = null
-      setSSEConnected(false)
-
-      const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000)
-      reconnectAttemptRef.current += 1
-
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectSSE()
-      }, backoffDelay)
-    }
-
-    eventSource.onopen = () => {
-      setSSEConnected(true)
-      reconnectAttemptRef.current = 0
-    }
-  }, [org?.id, workflowId])
-
-  useEffect(() => {
-    if (sseEnabled && org?.id && workflowId) {
-      connectSSE()
-    }
-    return () => disconnect()
-  }, [sseEnabled, org?.id, workflowId, connectSSE, disconnect])
 
   const metrics = useWorkflowMetrics(workflow)
 
@@ -151,7 +90,6 @@ export const WorkflowProvider = ({
   }, [error])
 
   if (error && !workflow) return <ProviderError error={error} />
-
   if (isLoading || !workflow) return <ProviderLoading />
 
   const value: WorkflowContextValue = {
