@@ -9,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 // proxyToInternalAPI forwards a request to the internal admin API (port 8082).
@@ -21,18 +23,20 @@ func (s *service) proxyToInternalAPI(c *gin.Context, method, path string, body i
 		return
 	}
 
+	// Get the authenticated account's email from context (set by requireAuth middleware)
+	acct, _ := cctx.AccountFromGinContext(c)
+
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL = target
 			req.Method = method
 			req.Host = target.Host
 
-			// Forward the admin auth cookie/headers
 			if token, _ := c.Cookie("X-Nuon-Auth"); token != "" {
 				req.Header.Set("Authorization", "Bearer "+token)
 			}
-			if email := c.GetHeader("X-Nuon-Admin-Email"); email != "" {
-				req.Header.Set("X-Nuon-Admin-Email", email)
+			if acct != nil && acct.Email != "" {
+				req.Header.Set("X-Nuon-Admin-Email", acct.Email)
 			}
 		},
 	}
