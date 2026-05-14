@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+# Ensure bun and go are on PATH when launched from a non-interactive shell (e.g. nctl).
+export BUN_INSTALL="${BUN_INSTALL:-$HOME/.bun}"
+export PATH="$BUN_INSTALL/bin:/opt/homebrew/bin:/usr/local/go/bin:$HOME/go/bin:$PATH"
+
 echo "Building dashboard server..."
 go build -C "$NUON_ROOT/nuon" -o /tmp/dashboard-server ./services/dashboard-ui/server
 
