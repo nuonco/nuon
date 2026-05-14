@@ -32,15 +32,15 @@ Produces minified, content-hashed JS and CSS in `dist/assets/`.
 
 ## Other scripts
 
-| Script | Description |
-|--------|-------------|
-| `bun run dev:ladle` | Component stories (Ladle v5) |
-| `bun run lint` | ESLint on `client/` |
-| `bun run tsc` | TypeScript type check |
-| `bun run fmt` | Prettier on `client/` |
-| `bun run test` | bun test (unit tests) |
-| `bun run test:e2e` | Playwright E2E tests |
-| `bun run test:e2e:ui` | Playwright interactive UI mode |
+| Script                    | Description                     |
+| ------------------------- | ------------------------------- |
+| `bun run dev:ladle`       | Component stories (Ladle v5)    |
+| `bun run lint`            | ESLint on `client/`             |
+| `bun run tsc`             | TypeScript type check           |
+| `bun run fmt`             | Prettier on `client/`           |
+| `bun run test`            | bun test (unit tests)           |
+| `bun run test:e2e`        | Playwright E2E tests            |
+| `bun run test:e2e:ui`     | Playwright interactive UI mode  |
 | `bun run test:e2e:headed` | Playwright with visible browser |
 
 ## E2E tests
@@ -65,13 +65,13 @@ E2E_EMAIL=you@nuon.co E2E_ORG_ID=orgXXX bun run test:e2e
 
 ### Environment variables
 
-| Variable | Default | Required | Purpose |
-|----------|---------|----------|---------|
-| `E2E_BASE_URL` | `http://127.0.0.1:4000` | no | Dashboard URL |
-| `E2E_ADMIN_API_URL` | `http://127.0.0.1:8082` | no | Admin API for token generation |
-| `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | no | Public API for org creation |
-| `E2E_EMAIL` | — | yes | Admin email (used to auth and generate token) |
-| `E2E_ORG_ID` | — | no | Existing org ID (if omitted, a fresh org is created and deleted after tests) |
+| Variable             | Default                 | Required | Purpose                                                                      |
+| -------------------- | ----------------------- | -------- | ---------------------------------------------------------------------------- |
+| `E2E_BASE_URL`       | `http://127.0.0.1:4000` | no       | Dashboard URL                                                                |
+| `E2E_ADMIN_API_URL`  | `http://127.0.0.1:8082` | no       | Admin API for token generation                                               |
+| `E2E_PUBLIC_API_URL` | `http://127.0.0.1:8081` | no       | Public API for org creation                                                  |
+| `E2E_EMAIL`          | —                       | yes      | Admin email (used to auth and generate token)                                |
+| `E2E_ORG_ID`         | —                       | no       | Existing org ID (if omitted, a fresh org is created and deleted after tests) |
 
 ### How it works
 
