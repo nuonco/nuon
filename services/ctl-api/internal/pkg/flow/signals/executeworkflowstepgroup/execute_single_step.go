@@ -71,12 +71,11 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.WorkflowID,
 			Status: app.CompositeStatus{
-				Status:                 app.StatusError,
+				Status:                 app.StatusFailedPendingRetry,
 				StatusHumanDescription: "step failed, awaiting retry or skip",
 				Metadata: map[string]any{
-					"error_message":  err.Error(),
-					"awaiting_retry": true,
-					"step_id":        step.ID,
+					"error_message": err.Error(),
+					"step_id":       step.ID,
 				},
 			},
 		})
@@ -113,12 +112,11 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: s.WorkflowID,
 				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
+					Status:                 app.StatusFailedPendingRetry,
 					StatusHumanDescription: "step failed, awaiting retry or skip",
 					Metadata: map[string]any{
-						"error_message":  "step failed after auto-retries exhausted",
-						"awaiting_retry": true,
-						"step_id":        step.ID,
+						"error_message": "step failed after auto-retries exhausted",
+						"step_id":       step.ID,
 					},
 				},
 			})

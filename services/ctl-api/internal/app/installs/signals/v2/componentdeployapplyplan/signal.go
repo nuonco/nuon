@@ -84,7 +84,7 @@ func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 	return 0
 }
 
-func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
 	return []signal.CloneStepDef{
 		{
 			Signal: &componentdeploysyncandplan.Signal{
@@ -106,7 +106,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 			Name:          originalStepName,
 			ExecutionType: "system",
 		},
-	}
+	}, nil
 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {

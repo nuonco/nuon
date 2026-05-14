@@ -31,11 +31,10 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 		return fmt.Errorf("step %s has exceeded maximum retry count of %d", step.ID, maxRetries)
 	}
 
-	// If the signal defines clone steps (e.g. apply signals that need a plan step first),
-	// create those instead of a simple copy.
+	// If the signal implements Clone(), use it for retry step creation.
 	if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
-		if cs, ok := step.QueueSignal.Signal.(signal.SignalWithCloneSteps); ok {
-			return s.createCloneSteps(ctx, step, flw, cs, newRetryIndex)
+		if cl, ok := step.QueueSignal.Signal.(signal.SignalWithClone); ok {
+			return s.createCloneSteps(ctx, step, flw, cl, newRetryIndex)
 		}
 	}
 
@@ -72,9 +71,12 @@ func (s *Signal) cloneWorkflowStep(ctx workflow.Context, step *app.WorkflowStep,
 	return err
 }
 
-// createCloneSteps builds multiple steps from a SignalWithCloneSteps implementation.
-func (s *Signal) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, cs signal.SignalWithCloneSteps, retryIndex int) error {
-	defs := cs.CloneSteps(removeRetryFromStepName(step.Name))
+// createCloneSteps builds steps from a SignalWithClone implementation.
+func (s *Signal) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, cl signal.SignalWithClone, retryIndex int) error {
+	defs, err := cl.Clone(ctx, removeRetryFromStepName(step.Name))
+	if err != nil {
+		return fmt.Errorf("unable to clone signal for retry: %w", err)
+	}
 	steps := make([]activities.CreateFlowStep, 0, len(defs))
 	for i, def := range defs {
 		steps = append(steps, activities.CreateFlowStep{
@@ -102,8 +104,8 @@ func (s *Signal) createCloneSteps(ctx workflow.Context, step *app.WorkflowStep, 
 			TargetQueueID:       step.TargetQueueID,
 		})
 	}
-	_, err := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{Steps: steps})
-	return err
+	_, createErr := activities.AwaitPkgWorkflowsFlowCreateFlowSteps(ctx, activities.CreateFlowStepsRequest{Steps: steps})
+	return createErr
 }
 
 func getCloneStepName(name string) string {

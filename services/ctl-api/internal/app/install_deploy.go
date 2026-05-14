@@ -41,6 +41,7 @@ const (
 	InstallDeployStatusAutoSkipped     InstallDeployStatus = "auto-skipped"
 	InstallDeployStatusNoDrift         InstallDeployStatus = "no-drift"
 	InstallDeployApprovalDenied        InstallDeployStatus = "approval-denied"
+	InstallDeployStatusRetried         InstallDeployStatus = "retried"
 )
 
 type InstallDeploy struct {

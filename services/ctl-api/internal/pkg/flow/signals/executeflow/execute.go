@@ -356,7 +356,15 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		case "retry-group":
 			// Clone the group and re-dispatch the same group position.
 			if err := s.cloneGroupForRetry(ctx, group.GroupIdx); err != nil {
-				return errors.Wrap(err, "unable to clone group for retry")
+				// Retry limit exceeded: treat as a stop directive.
+				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+				s.markRemainingStepsNotAttempted(ctx, l)
+				if finErr := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); finErr != nil {
+					l.Error("unable to update finished at", zap.Error(finErr))
+				}
+				stoppedErr := flow.NewFlowStoppedErr("", err.Error())
+				stoppedErr.RetriesExhausted = true
+				return stoppedErr
 			}
 			// Re-fetch groups
 			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)

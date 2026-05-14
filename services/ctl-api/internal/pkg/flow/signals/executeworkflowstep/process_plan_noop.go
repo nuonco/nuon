@@ -7,6 +7,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -22,6 +23,15 @@ func (s *Signal) runNoopCheck(ctx workflow.Context, l *zap.Logger, step *app.Wor
 		return false, errors.Wrap(err, "failed to check for noop plan")
 	}
 	if *noopPlan {
+		// Check if the signal allows noop auto-skip. When SkipNoops returns
+		// false, noop plans proceed through the normal approval flow.
+		sig := stepSignal(step)
+		if sn, ok := sig.(signal.SignalWithSkipNoops); ok && !sn.SkipNoops(ctx) {
+			l.Debug("noop plan detected but skip_noops disabled, proceeding to approval",
+				zap.String("step_id", step.ID))
+			return false, nil
+		}
+
 		l.Debug("approval plan contents empty",
 			zap.String("step_id", step.ID),
 			zap.String("workflow_id", flw.ID))
