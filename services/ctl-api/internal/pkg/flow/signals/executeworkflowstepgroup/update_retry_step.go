@@ -36,19 +36,12 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 
 	switch resp.Directive {
 	case DirectiveRetryGroup:
-		if err := s.writeWorkflowDirective(ctx, DirectiveRetryGroup); err != nil {
-			return nil, fmt.Errorf("unable to write retry-group directive: %w", err)
-		}
 		s.retryGroupRequested = true
-
-	default:
-		// Clone the step. The sequential loop (in awaitUserAction) will
-		// pick up the clone on its next iteration.
-		if err := cloneStepForRetry(ctx, req.StepID, s.WorkflowID); err != nil {
-			return nil, fmt.Errorf("unable to clone step for retry: %w", err)
-		}
 	}
 
+	// Wake awaitUserAction. The sequential loop handles cloning based on
+	// the step's directive from AwaitForwardStepFinished — we don't clone
+	// here to avoid double-cloning.
 	s.userActionReceived = true
 
 	return &RetryStepResponse{

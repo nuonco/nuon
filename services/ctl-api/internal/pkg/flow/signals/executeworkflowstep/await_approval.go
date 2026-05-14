@@ -45,6 +45,12 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 		return err
 	}
 
+	// If the step was retried or cancelled while awaiting approval,
+	// exit cleanly — the retry/cancel handler already updated DB state.
+	if s.retried || s.canceled {
+		return nil
+	}
+
 	switch resp.Type {
 	case app.WorkflowStepApprovalResponseTypeApprove:
 		return s.handleApproveResponse(ctx, l, step, flw)
@@ -60,9 +66,10 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 // waitForApprovalResponse waits for an approval response reactively using the
 // "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
-	// Wait for approve-plan update handler to set s.approved (30-day deadline)
+	// Wait for approve-plan update handler to set s.approved, or for
+	// retry/cancel handlers to set their respective flags (30-day deadline).
 	ok, err := workflow.AwaitWithTimeout(ctx, 30*24*time.Hour, func() bool {
-		return s.approved
+		return s.approved || s.retried || s.canceled
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error waiting for approval for step %s: %w", step.ID, err)
@@ -75,6 +82,12 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 			}),
 		})
 		return nil, fmt.Errorf("approval timed out for step %s", step.ID)
+	}
+
+	// If the step was retried or cancelled while awaiting approval, return
+	// nil — the caller checks s.retried/s.canceled and exits cleanly.
+	if s.retried || s.canceled {
+		return nil, nil
 	}
 
 	// Fetch the step from DB to get the approval response.

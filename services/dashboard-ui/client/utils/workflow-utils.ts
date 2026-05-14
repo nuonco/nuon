@@ -47,7 +47,7 @@ export function getStepBadge(
   }
 
   if (metadata?.is_retry) {
-    const retryIdx = (Number(metadata.retry_idx ?? metadata.group_retry_idx ?? 0)) + 1
+    const retryIdx = Number(metadata.retry_idx ?? metadata.group_retry_idx ?? 0)
     const retryLabel = metadata.retry_type === 'manual' ? 'Manual retry' : metadata.retry_type === 'auto' ? 'Auto retry' : 'Retry'
     return { children: `${retryLabel} #${retryIdx}`, theme: 'info' }
   }
@@ -117,7 +117,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
       }
     }
     if (metadata?.auto_retried) {
-      const attempt = typeof metadata.retry_idx === 'number' ? metadata.retry_idx + 1 : '?'
+      const attempt = typeof metadata.retry_idx === 'number' ? metadata.retry_idx : '?'
       return {
         copy: `Step encountered an error and was automatically retried (attempt ${attempt} of ${metadata.max_retries ?? '?'}).`,
         theme: 'warn',

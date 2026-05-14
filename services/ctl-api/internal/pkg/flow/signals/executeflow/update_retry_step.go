@@ -23,15 +23,47 @@ type RetryStepResponse struct {
 	Retryable  bool   `json:"retryable"`
 }
 
-// retryStepHandler owns the full retry lifecycle. It:
-//  1. Tells the step signal it was retried (marks discarded, gets directive)
-//  2. Clones the step
-//  3. Re-dispatches the group signal so the clone gets executed
+// retryStepHandler forwards the retry request to the group signal so the group
+// can wake from awaitUserAction, clone the step (or group), and continue
+// execution. If the group is dead, it falls back to flow-level handling.
 //
-// This works regardless of whether the group signal is alive or dead.
+// Flow: API → flow (here) → group → step
 func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*RetryStepResponse, error) {
 	l, _ := log.WorkflowLogger(ctx)
 
+	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
+	}
+
+	// Forward retry to the group. The group handler will:
+	// 1. Forward to the step signal (marks discarded, gets directive)
+	// 2. Clone the step or group depending on the directive
+	// 3. Set userActionReceived to wake awaitUserAction
+	if step.WorkflowStepGroupID != "" {
+		_, fwdErr := workflowactivities.AwaitForwardRetryStepToGroup(ctx, workflowactivities.ForwardRetryStepToGroupRequest{
+			StepID:      req.StepID,
+			StepGroupID: step.WorkflowStepGroupID,
+		})
+		if fwdErr != nil {
+			l.Warn("unable to forward retry to group, falling back to flow-level handling",
+				zap.String("step_id", req.StepID),
+				zap.String("step_group_id", step.WorkflowStepGroupID),
+				zap.Error(fwdErr))
+			// Fall through to flow-level handling below.
+			return s.retryStepFlowLevel(ctx, l, req, step)
+		}
+
+		return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
+	}
+
+	// No group ID — handle at flow level.
+	return s.retryStepFlowLevel(ctx, l, req, step)
+}
+
+// retryStepFlowLevel handles retry when the group is dead or has no group ID.
+// It tells the step it was retried, clones it, and re-dispatches the group.
+func (s *Signal) retryStepFlowLevel(ctx workflow.Context, l *zap.Logger, req RetryStepRequest, step *app.WorkflowStep) (*RetryStepResponse, error) {
 	// 1. Tell the step it was retried.
 	retryResp, err := workflowactivities.AwaitForwardCreateStepRetry(ctx, workflowactivities.ForwardCreateStepRetryRequest{
 		StepID: req.StepID,
@@ -40,8 +72,13 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return nil, fmt.Errorf("unable to forward retry to step %s: %w", req.StepID, err)
 	}
 
-	// 2. If retry-group, set the resume state so the flow re-dispatches the group.
+	// 2. If retry-group, clone the entire group and resume.
 	if retryResp.Directive == "retry-group" {
+		groupIdx := step.GroupIdx
+		if err := s.cloneGroupForRetry(ctx, groupIdx); err != nil {
+			return nil, fmt.Errorf("unable to clone group for retry: %w", err)
+		}
+
 		s.resumeRequested = true
 		s.resumeRunType = app.WorkflowRunTypeRetry
 		s.resumeStepID = req.StepID
@@ -49,12 +86,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
 	}
 
-	// 3. Clone the step.
-	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
-	}
-
+	// 3. Single step retry — clone and re-dispatch group.
 	flw, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get workflow: %w", err)
@@ -107,8 +139,7 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return nil, fmt.Errorf("unable to re-dispatch group: %w", err)
 	}
 
-	// If the group stopped (e.g. retries exhausted), update the workflow status
-	// and mark all remaining steps as not-attempted.
+	// If the group stopped (e.g. retries exhausted), update the workflow status.
 	if directive == "stop" {
 		retriesExhausted := s.checkGroupRetriesExhausted(ctx, group)
 
@@ -128,7 +159,6 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 			},
 		})
 
-		// Mark remaining non-terminal steps as not-attempted.
 		s.markRemainingStepsNotAttempted(ctx, l)
 
 		return &RetryStepResponse{

@@ -2145,6 +2145,13 @@ export interface paths {
      */
     get: operations["AwaitQueueSignal"];
   };
+  "/v1/queues/{queue_id}/signals/{signal_id}/graph": {
+    /**
+     * Get signal execution graph
+     * @description Returns a recursive tree of a signal and all its awaited/enqueued child signals.
+     */
+    get: operations["GetQueueSignalGraph"];
+  };
   "/v1/queues/{queue_id}/status": {
     /**
      * Get live queue status
@@ -3421,6 +3428,7 @@ export interface components {
       pulumi?: components["schemas"]["app.PulumiComponentConfig"];
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      skip_noops?: boolean;
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
       type?: components["schemas"]["app.ComponentType"];
       updated_at?: string;
@@ -4801,7 +4809,7 @@ export interface components {
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -22259,6 +22267,40 @@ export interface operations {
       };
       /** @description Request Timeout */
       408: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get signal execution graph
+   * @description Returns a recursive tree of a signal and all its awaited/enqueued child signals.
+   */
+  GetQueueSignalGraph: {
+    parameters: {
+      query?: {
+        /** @description Max recursion depth (default 1, max 10) */
+        depth?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

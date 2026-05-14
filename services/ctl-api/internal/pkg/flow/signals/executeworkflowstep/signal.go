@@ -164,7 +164,7 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) SleepAfter() time.Duration { return 500 * time.Millisecond }
+func (s *Signal) SleepAfter() time.Duration { return 5 * time.Second }
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
