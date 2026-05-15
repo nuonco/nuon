@@ -222,6 +222,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	apps := api.Group("/v1/apps")
 	{
 		apps.GET("", s.GetAllApps)
+		apps.GET("/details", s.AdminListAppsDetails)
 
 		// app admin routes
 		app := apps.Group("/:app_id")
