@@ -23,6 +23,9 @@ type ServiceCreateAppSandboxConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// connected github vcs config
 	ConnectedGithubVcsConfig *HelpersConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
@@ -44,6 +47,9 @@ type ServiceCreateAppSandboxConfigRequest struct {
 
 	// references
 	References []string `json:"references"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// terraform version
 	// Required: true

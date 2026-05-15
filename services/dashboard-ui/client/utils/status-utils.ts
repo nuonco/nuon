@@ -30,6 +30,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'not-connected': 'error',
   suspended: 'error',
   policy_failed: 'error',
+  'failed-pending-retry': 'error',
 
   // Warn
   'approval-denied': 'warn',
@@ -100,6 +101,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   'not connected': 'XCircleIcon',
   'not-connected': 'XCircleIcon',
   policy_failed: 'XCircleIcon',
+  'failed-pending-retry': 'XCircleIcon',
 
   // Warn
   'approval-denied': 'WarningIcon',

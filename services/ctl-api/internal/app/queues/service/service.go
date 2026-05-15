@@ -12,6 +12,7 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/queues/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -34,6 +35,7 @@ type service struct {
 	l              *zap.Logger
 	temporalClient temporalclient.Client
 	queueClient    *queueclient.Client
+	queueHelpers   *helpers.Helpers
 }
 
 var _ api.Service = (*service)(nil)
@@ -46,6 +48,7 @@ func New(params Params) *service {
 		l:              params.Logger,
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
+		queueHelpers:   helpers.New(params.DB, params.TemporalClient, params.Logger),
 	}
 }
 
@@ -63,6 +66,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 		queueDetail.GET("/status", s.GetQueueStatus)
 		queueDetail.GET("/signals", s.GetQueueSignals)
 		queueDetail.GET("/signals/:signal_id", s.GetQueueSignal)
+		queueDetail.GET("/signals/:signal_id/graph", s.GetQueueSignalGraph)
 		queueDetail.GET("/signals/:signal_id/await", s.AwaitQueueSignal)
 	}
 

@@ -26,6 +26,9 @@ type AppComponentConfigConnection struct {
 	// app config version
 	AppConfigVersion int64 `json:"app_config_version,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// Duration string for build operations (e.g., "30m", "1h"). Max 1h.
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
@@ -85,6 +88,9 @@ type AppComponentConfigConnection struct {
 
 	// refs
 	Refs []*RefsRef `json:"refs"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// terraform module
 	TerraformModule *AppTerraformModuleComponentConfig `json:"terraform_module,omitempty"`

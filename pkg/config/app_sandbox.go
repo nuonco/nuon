@@ -24,7 +24,9 @@ type AppSandboxConfig struct {
 	VariablesFiles []TerraformVariablesFile `mapstructure:"var_file,omitempty" toml:"var_file,omitempty"`
 	OperationRoles []EntityOperationRole    `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
 
-	MaxAutoRetries *int `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	MaxAutoRetries               *int  `mapstructure:"max_auto_retries,omitempty" toml:"max_auto_retries,omitempty" nuonhash:"omitempty"`
+	SkipNoops                    *bool `mapstructure:"skip_noops,omitempty" toml:"skip_noops,omitempty" nuonhash:"omitempty"`
+	AutoApproveOnPoliciesPassing *bool `mapstructure:"auto_approve_on_policies_passing,omitempty" toml:"auto_approve_on_policies_passing,omitempty" nuonhash:"omitempty"`
 
 	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 }

@@ -48,9 +48,11 @@ type AppSandboxConfig struct {
 	References pq.StringArray `json:"references" temporaljson:"references" swaggertype:"array,string" gorm:"type:text[]"`
 	Refs       []refs.Ref     `gorm:"-"`
 
-	TerraformVersion string `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
-	DriftSchedule    string `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
-	MaxAutoRetries   *int   `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
+	TerraformVersion             string `json:"terraform_version,omitzero" gorm:"notnull" temporaljson:"terraform_version,omitzero,omitempty"`
+	DriftSchedule                string `json:"drift_schedule,omitzero" gorm:"default null" temporaljson:"drift_schedule,omitzero,omitempty"`
+	MaxAutoRetries               *int   `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
+	SkipNoops                    *bool  `json:"skip_noops,omitempty" gorm:"default:null" temporaljson:"skip_noops,omitzero,omitempty"`
+	AutoApproveOnPoliciesPassing *bool  `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -118,6 +120,20 @@ func (a *AppSandboxConfig) GetMaxAutoRetries() int {
 		return *a.MaxAutoRetries
 	}
 	return 0 // default to disabled
+}
+
+func (a *AppSandboxConfig) GetSkipNoops() bool {
+	if a.SkipNoops != nil {
+		return *a.SkipNoops
+	}
+	return false
+}
+
+func (a *AppSandboxConfig) GetAutoApproveOnPoliciesPassing() bool {
+	if a.AutoApproveOnPoliciesPassing != nil {
+		return *a.AutoApproveOnPoliciesPassing
+	}
+	return false
 }
 
 func (a *AppSandboxConfig) BeforeCreate(tx *gorm.DB) error {

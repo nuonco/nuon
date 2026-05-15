@@ -46,8 +46,25 @@ func walkFields(obj any, data map[string]any) error {
 			if field.IsNil() {
 				continue
 			}
-			if err := walkFields(field.Interface(), data); err != nil {
-				return err
+			// Only recurse into pointer-to-struct/map; skip primitive pointers (*bool, *int, *string, etc.)
+			elem := field.Elem()
+			switch elem.Kind() {
+			case reflect.Struct, reflect.Map:
+				if err := walkFields(field.Interface(), data); err != nil {
+					return err
+				}
+			case reflect.String:
+				if !enabled {
+					continue
+				}
+				val, err := renderStrField(elem.String(), data)
+				if err != nil {
+					return errors.Wrap(err, "unable to render pointer string field")
+				}
+				elem.SetString(val)
+			default:
+				// *bool, *int, etc. — nothing to render
+				continue
 			}
 		case reflect.Struct:
 			if err := walkFields(field.Addr().Interface(), data); err != nil {

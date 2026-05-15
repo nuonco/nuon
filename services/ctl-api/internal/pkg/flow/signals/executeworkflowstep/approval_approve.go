@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // handleApproveResponse processes an "approve" response.
@@ -19,6 +20,15 @@ func (s *Signal) handleApproveResponse(ctx workflow.Context, l *zap.Logger, step
 			l.Warn("OnApprove hook failed", zap.Error(err))
 		}
 	}
+
+	// Workflow resumes from approval-awaiting.
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flw.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: "approved " + step.Name + ", continuing",
+		},
+	})
 
 	return writeDirective(ctx, step.ID, DirectiveContinue, map[string]any{
 		"step_idx": step.Idx,

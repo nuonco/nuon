@@ -31,6 +31,12 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 	if obj.MaxAutoRetries != nil {
 		configRequest.MaxAutoRetries = int64(*obj.MaxAutoRetries)
 	}
+	if obj.SkipNoops != nil {
+		configRequest.SkipNoops = *obj.SkipNoops
+	}
+	if obj.AutoApproveOnPoliciesPassing != nil {
+		configRequest.AutoApproveOnPoliciesPassing = *obj.AutoApproveOnPoliciesPassing
+	}
 	if obj.DriftSchedule != nil {
 		configRequest.DriftSchedule = *obj.DriftSchedule
 	}

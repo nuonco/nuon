@@ -73,6 +73,7 @@ const (
 	OrgFeatureAppBranchesUI           OrgFeature = "app-branches-ui"
 	OrgFeatureTraceView               OrgFeature = "trace-view"
 	OrgFeatureStateGenV2              OrgFeature = "state-gen-v2"
+	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
 )
 
 type Org struct {
@@ -267,6 +268,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureStateGenV2,
 		OrgFeatureAppBranchesUI,
 		OrgFeatureTraceView,
+		OrgFeatureAutoSkipNoop,
 	}
 }
 
@@ -304,6 +306,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAppBranchesUI:           "Enable the app branches UI in the dashboard for managing and switching between app branches",
 		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
 		OrgFeatureStateGenV2:              "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
+		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
 	}
 }
 

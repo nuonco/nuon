@@ -1,4 +1,4 @@
-package executeworkflowstep
+package policy
 
 import (
 	"fmt"
@@ -11,26 +11,48 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// runPolicyCheck evaluates policies and processes results.
-// Always returns done=false (policy checks never short-circuit the plan flow).
-func (s *Signal) runPolicyCheck(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
+const (
+	DenyViolationsKey  = "deny_violations"
+	WarnViolationsKey  = "warn_violations"
+	PassedPolicyIDsKey = "passed_policy_ids"
+)
+
+// Check implements directive.ApprovalCreateCheck for policy evaluation.
+type Check struct {
+	sig signal.Signal
+}
+
+func New(sig signal.Signal) directive.ApprovalCreateCheck {
+	return &Check{sig: sig}
+}
+
+func (c *Check) Name() string { return "policy" }
+
+func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
+	pe, ok := c.sig.(signal.SignalWithPolicyEvaluation)
+	return ok && pe.RequiresPolicyEvaluation()
+}
+
+func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
+	l, _ := log.WorkflowLogger(ctx)
+
 	l.Debug("starting policy check",
 		zap.String("step_id", step.ID),
 		zap.String("step_target_id", step.StepTargetID),
 		zap.String("step_target_type", step.StepTargetType),
 		zap.String("workflow_id", flw.ID))
 
-	violations, policyContext, policyErr := s.checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
+	violations, policyContext, policyErr := checkPolicies(ctx, step.StepTargetID, step.StepTargetType)
 	if policyErr != nil {
 		l.Warn("failed to check policies",
 			zap.String("step_id", step.ID),
-			zap.String("step_target_id", step.StepTargetID),
-			zap.String("step_target_type", step.StepTargetType),
-			zap.String("workflow_id", flw.ID),
 			zap.Error(policyErr))
 	}
 
@@ -69,22 +91,38 @@ func (s *Signal) runPolicyCheck(ctx workflow.Context, l *zap.Logger, step *app.W
 		if reportResult != nil {
 			passedPolicyIDs = reportResult.PassedPolicyIDs
 		}
-		if err := s.processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
-			return false, errors.Wrap(err, "unable to process check for policy violation")
+		if err := processPolicyViolations(ctx, l, step, flw, violations, passedPolicyIDs); err != nil {
+			return directive.Pass(), errors.Wrap(err, "unable to process check for policy violation")
 		}
 	}
 
 	l.Debug("policy check completed successfully",
 		zap.String("step_id", step.ID),
-		zap.String("step_target_id", step.StepTargetID),
-		zap.String("step_target_type", step.StepTargetType),
 		zap.String("workflow_id", flw.ID))
 
-	return false, nil
+	// If the signal opts into auto-approve on policies passing and there are
+	// no deny violations, short-circuit the pipeline with a continue directive.
+	if aa, ok := c.sig.(signal.SignalWithAutoApproveOnPoliciesPassing); ok && aa.AutoApproveOnPoliciesPassing(ctx) {
+		l.Debug("auto-approving after policies passed",
+			zap.String("step_id", step.ID))
+		return directive.CheckResult{
+			Directive: directive.StepContinue,
+			Status:    app.WorkflowStepApprovalStatusApproved,
+			Reason: directive.CheckReason{
+				Check:   "policy-auto-approve",
+				Summary: "Auto-approved: all policies passed",
+				Labels: map[string]string{
+					"auto_approved":   "true",
+					"approval_reason": "policies_passed",
+				},
+			},
+		}, nil
+	}
+
+	return directive.Pass(), nil
 }
 
-// checkPolicies evaluates all applicable policies for the step target.
-func (s *Signal) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyhelpers.PolicyEvaluationContext, error) {
+func checkPolicies(ctx workflow.Context, stepTargetID, stepTargetType string) ([]activities.PolicyViolation, *policyhelpers.PolicyEvaluationContext, error) {
 	prepResult, err := activities.AwaitPrepPolicyEvaluation(ctx, &activities.PrepPolicyEvaluationRequest{
 		StepTargetID:   stepTargetID,
 		StepTargetType: stepTargetType,
@@ -105,14 +143,14 @@ func (s *Signal) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetTyp
 	policyCtx := workflow.WithActivityOptions(ctx, ao)
 
 	var futures []workflow.Future
-	for _, policy := range prepResult.Policies {
+	for _, p := range prepResult.Policies {
 		fut := workflow.ExecuteActivity(policyCtx, (&activities.Activities{}).EvaluateSinglePolicy, &activities.EvaluateSinglePolicyRequest{
-			PolicyID:      policy.PolicyID,
-			PolicyName:    policy.PolicyName,
-			Contents:      policy.Contents,
-			InputJSON:     policy.InputJSON,
-			InputIndex:    policy.InputIndex,
-			InputIdentity: policy.InputIdentity,
+			PolicyID:      p.PolicyID,
+			PolicyName:    p.PolicyName,
+			Contents:      p.Contents,
+			InputJSON:     p.InputJSON,
+			InputIndex:    p.InputIndex,
+			InputIdentity: p.InputIdentity,
 		})
 		futures = append(futures, fut)
 	}
@@ -142,8 +180,7 @@ func (s *Signal) checkPolicies(ctx workflow.Context, stepTargetID, stepTargetTyp
 	}, nil
 }
 
-// processPolicyViolations handles policy evaluation results.
-func (s *Signal) processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, violations []activities.PolicyViolation, passedPolicyIDs []string) error {
+func processPolicyViolations(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, violations []activities.PolicyViolation, passedPolicyIDs []string) error {
 	var denyViolations, warnViolations []activities.PolicyViolation
 	for _, v := range violations {
 		if v.Severity == "deny" {
@@ -155,9 +192,6 @@ func (s *Signal) processPolicyViolations(ctx workflow.Context, l *zap.Logger, st
 
 	l.Info("policy evaluation complete",
 		zap.String("step_id", step.ID),
-		zap.String("step_target_id", step.StepTargetID),
-		zap.String("step_target_type", step.StepTargetType),
-		zap.String("workflow_id", flw.ID),
 		zap.Int("deny_count", len(denyViolations)),
 		zap.Int("warn_count", len(warnViolations)),
 		zap.Int("passed_count", len(passedPolicyIDs)))

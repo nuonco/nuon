@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
+	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -333,14 +334,14 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		l.Debug("group completed", zap.Int("group_idx", group.GroupIdx), zap.String("directive", directive))
 
-		switch directive {
-		case "continue", "":
+		switch flowdirective.Group(directive) {
+		case flowdirective.GroupContinue, "":
 			// Check if pause was requested
 			if s.pauseRequested {
 				return &flow.ApprovalPauseErr{StepID: "paused"}
 			}
 
-		case "stop":
+		case flowdirective.GroupStop:
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
 			s.markRemainingStepsNotAttempted(ctx, l)
 			if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); err != nil {
@@ -350,13 +351,21 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			stoppedErr.RetriesExhausted = s.checkGroupRetriesExhausted(ctx, group)
 			return stoppedErr
 
-		case "await-approval":
+		case flowdirective.GroupAwaitApproval:
 			return flow.NewApprovalPauseErr("")
 
-		case "retry-group":
+		case flowdirective.GroupRetryGroup:
 			// Clone the group and re-dispatch the same group position.
 			if err := s.cloneGroupForRetry(ctx, group.GroupIdx); err != nil {
-				return errors.Wrap(err, "unable to clone group for retry")
+				// Retry limit exceeded: treat as a stop directive.
+				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+				s.markRemainingStepsNotAttempted(ctx, l)
+				if finErr := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID); finErr != nil {
+					l.Error("unable to update finished at", zap.Error(finErr))
+				}
+				stoppedErr := flow.NewFlowStoppedErr("", err.Error())
+				stoppedErr.RetriesExhausted = true
+				return stoppedErr
 			}
 			// Re-fetch groups
 			stepGroups, _ = workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
@@ -379,7 +388,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			gi-- // Retry the same group position
 			continue
 
-		case "skip-group":
+		case flowdirective.GroupSkipGroup:
 			continue
 		}
 
@@ -552,13 +561,13 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
-				Status: app.StatusDiscarded,
+				Status: app.StatusNotAttempted,
 				Metadata: map[string]any{
-					"reason": "discarded: workflow stopped before group was reached",
+					"reason": "workflow stopped before group was reached",
 				},
 			},
 		}); err != nil {
-			l.Warn("failed to mark step as discarded", zap.String("step_id", step.ID), zap.Error(err))
+			l.Warn("failed to mark step as not-attempted", zap.String("step_id", step.ID), zap.Error(err))
 		}
 	}
 }

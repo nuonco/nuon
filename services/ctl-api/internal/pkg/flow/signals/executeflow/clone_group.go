@@ -7,6 +7,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -97,12 +99,33 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		primarySteps = append(primarySteps, step)
 	}
 
+	// Enforce group retry limit, matching the guard in retryGroup().
+	groupMaxRetries := executeworkflowstepgroup.GroupMaxRetriesForSteps(primarySteps)
+	if newGroupRetryIdx > groupMaxRetries {
+		return fmt.Errorf("group retry %d exceeds max retries %d", newGroupRetryIdx, groupMaxRetries)
+	}
+
 	// Clone each primary step
 	cloneSteps := make([]workflowactivities.CreateFlowStep, 0, len(primarySteps))
 	for i, step := range primarySteps {
+		// If the signal implements Clone(), use it to produce a clean copy.
 		var qs *signaldb.SignalData
 		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
-			qs = &signaldb.SignalData{Signal: step.QueueSignal.Signal}
+			if cl, ok := step.QueueSignal.Signal.(signal.SignalWithClone); ok {
+				defs, cloneErr := cl.Clone(ctx, step.Name)
+				if cloneErr != nil {
+					return fmt.Errorf("unable to clone signal for retry on step %s: %w", step.Name, cloneErr)
+				}
+				if len(defs) > 0 {
+					// Use the last def: for group retry each step already exists
+					// separately, so we want the self-copy (last), not multi-step
+					// expansion. Plan Clone() returns [plan] → last=plan. Apply
+					// Clone() returns [plan, apply] → last=apply.
+					qs = &signaldb.SignalData{Signal: defs[len(defs)-1].Signal}
+				}
+			} else {
+				qs = &signaldb.SignalData{Signal: step.QueueSignal.Signal}
+			}
 		}
 
 		cloneSteps = append(cloneSteps, workflowactivities.CreateFlowStep{
@@ -114,7 +137,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 			QueueSignal: qs,
 			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
 				"is_retry":        true,
-				"retry_idx":       0,
+				"retry_idx":       newGroupRetryIdx,
 				"group_retry_idx": newGroupRetryIdx,
 			}),
 			Idx:                 maxIdx + 100 + i,
