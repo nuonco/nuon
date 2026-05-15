@@ -52,24 +52,18 @@ const (
 
 // @ID			AdminListRunnersDetails
 // @BasePath	/v1/runners
-// @Summary	Return all runners with runner group settings, owner labels, latest heartbeat/health check, and recent processes
-// @Description	Admin list of runners enriched with their runner group settings,
-// @Description	the labels of the runner group owner (org labels for org-type
-// @Description	runners, install labels for install-type runners), the latest
-// @Description	heartbeat and health check, and the last 5 runner processes.
-// @Description	The optional `status` query parameter filters by
-// @Description	`status_v2->>'status'` and may be repeated to match any of
-// @Description	several statuses (e.g. `?status=error&status=offline`).
-// @Param			offset	query	int			false	"offset of results to return"	Default(0)
-// @Param			limit	query	int			false	"limit of results to return"	Default(10)
-// @Param			page	query	int			false	"page number of results to return"	Default(0)
-// @Param			status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
-// @Tags			runners/admin
-// @Security		AdminEmail
-// @Accept			json
+// @Summary		Admin list of runners with group settings, owner labels, latest heartbeat/health check, and recent processes
+// @Description	Admin list of runners enriched with their runner group settings, the labels of the runner group owner (org labels for org-type runners, install labels for install-type runners), the latest heartbeat and health check, and the last 5 runner processes. The optional `status` query parameter filters by `status_v2->>'status'` and may be repeated to match any of several statuses (e.g. `?status=error&status=offline`).
+// @Tags		runners/admin
+// @Security	AdminEmail
+// @Accept		json
 // @Produce		json
+// @Param		offset	query	int			false	"offset of results to return"				Default(0)
+// @Param		limit	query	int			false	"limit of results to return"				Default(10)
+// @Param		page	query	int			false	"page number of results to return"			Default(0)
+// @Param		status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
 // @Success		200	{array}	AdminRunnerDetails
-// @Router			/v1/runners/details [GET]
+// @Router		/v1/runners/details [GET]
 func (s *service) AdminListRunnersDetails(ctx *gin.Context) {
 	statuses := ctx.QueryArray("status")
 
