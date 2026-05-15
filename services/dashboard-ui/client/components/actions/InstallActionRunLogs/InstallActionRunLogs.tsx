@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { LogSeverity } from '@/components/log-stream/LogSeverity'
@@ -13,6 +15,7 @@ import { cn } from '@/utils/classnames'
 interface IInstallActionRunLogs {
   actionConfig: TActionConfig
   layout?: 'vertical' | 'horizontal'
+  allLogs?: TOTELLog[]
   filteredLogs: TOTELLog[]
   loadMore: () => void
   hasMore: boolean
@@ -22,11 +25,13 @@ interface IInstallActionRunLogs {
   handleActiveLog: (id: string) => void
   filters: TLogFiltersProps
   searchParamPanel?: string | null
+  stepStatuses?: Record<string, string>
 }
 
 export const InstallActionRunLogs = ({
   actionConfig,
   layout = 'vertical',
+  allLogs,
   filteredLogs,
   loadMore,
   hasMore,
@@ -36,8 +41,20 @@ export const InstallActionRunLogs = ({
   handleActiveLog,
   filters,
   searchParamPanel,
+  stepStatuses,
 }: IInstallActionRunLogs) => {
   const steps = actionConfig?.steps || []
+
+  const allLogStepCounts = useMemo(() => {
+    const source = allLogs ?? filteredLogs
+    if (!source) return {}
+    const counts: Record<string, number> = {}
+    for (const log of source) {
+      const stepName = log.log_attributes?.workflow_step_name
+      if (stepName) counts[stepName] = (counts[stepName] ?? 0) + 1
+    }
+    return counts
+  }, [allLogs, filteredLogs])
 
   const logSteps = useMemo(() => {
     if (!filteredLogs) return {}
@@ -65,15 +82,7 @@ export const InstallActionRunLogs = ({
 
   useEffect(() => {
     if (showAllLogs) return
-    if (!stepKeys.length) {
-      setActiveStep(undefined)
-      return
-    }
-    if (!activeStep) {
-      setActiveStep(stepKeys[0])
-      return
-    }
-    if (!stepKeys.includes(activeStep)) {
+    if (!activeStep && stepKeys.length) {
       setActiveStep(stepKeys[0])
     }
   }, [stepKeys, activeStep, showAllLogs])
@@ -101,7 +110,15 @@ export const InstallActionRunLogs = ({
             setActiveStep(step?.name)
           }}
         >
-          <span className="truncate">{step?.name}</span>
+          <span className="flex items-center gap-2">
+            {stepStatuses?.[step?.name] && (
+              <Status status={stepStatuses[step.name]} isWithoutText />
+            )}
+            <span className="truncate">{step?.name}</span>
+            {allLogStepCounts[step?.name] > 0 && (
+              <Badge size="sm">{allLogStepCounts[step.name]}</Badge>
+            )}
+          </span>
         </Button>
       ))}
       <Button
@@ -122,6 +139,7 @@ export const InstallActionRunLogs = ({
     activeStep,
     showAllLogs,
     logSteps,
+    allLogStepCounts,
     loadMore,
     hasMore,
     isLoading,
@@ -168,6 +186,7 @@ const StepAwareLogViewer = ({
   activeStep,
   showAllLogs,
   logSteps,
+  allLogStepCounts,
   loadMore,
   hasMore,
   isLoading,
@@ -181,6 +200,7 @@ const StepAwareLogViewer = ({
   activeStep?: string
   showAllLogs: boolean
   logSteps: Record<string, TOTELLog[]>
+  allLogStepCounts: Record<string, number>
   loadMore: () => void
   hasMore: boolean
   isLoading: boolean
@@ -200,11 +220,21 @@ const StepAwareLogViewer = ({
     return []
   }, [showAllLogs, activeStep, logSteps, filteredLogs])
 
+  const scopedFilters = useMemo(() => {
+    if (showAllLogs) return filters
+    const selectedCount = displayLogs?.length ?? 0
+    const totalCount = activeStep ? allLogStepCounts[activeStep] ?? selectedCount : selectedCount
+    return {
+      ...filters,
+      filterStats: { selectedCount, totalCount },
+    }
+  }, [filters, displayLogs?.length, showAllLogs, activeStep, allLogStepCounts])
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col flex-auto">
         <div className="sticky bg-background border-b z-10 -top-6">
-          <LogFilters filters={filters} />
+          <LogFilters filters={scopedFilters} />
           <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
             <Text variant="subtext" weight="strong" theme="neutral">
               Severity
