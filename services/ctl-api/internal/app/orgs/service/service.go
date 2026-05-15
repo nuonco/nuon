@@ -118,6 +118,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	{
 		// global org operations
 		orgs.GET("", s.GetAllOrgs)
+		orgs.GET("/details", s.AdminListOrgsDetails)
 		orgs.GET("/admin-get", s.AdminGetOrg)
 		orgs.POST("/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
 		orgs.POST("/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)

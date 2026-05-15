@@ -271,6 +271,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	installs := api.Group("/v1/installs")
 	{
 		installs.GET("", s.GetAllInstalls)
+		installs.GET("/details", s.AdminListInstallsDetails)
 		installs.POST("/admin-forget-account-installs", s.ForgetAccountInstalls)
 
 		// install-specific admin routes
