@@ -17,6 +17,21 @@ import (
 type AdminRunnerDetails struct {
 	*app.Runner
 
+	// Type is the runner group's owner type: "install" or "org".
+	Type app.RunnerGroupType `json:"type,omitempty"`
+	// OwnerID is the runner group's owner id (install id for install runners,
+	// org id for org runners).
+	OwnerID string `json:"owner_id,omitempty"`
+	// Platform is the runner's cloud platform (aws/gcp/azure) derived from
+	// the runner group's settings.
+	Platform app.CloudPlatform `json:"platform,omitempty"`
+	// Image is the runner container image URL from runner group settings.
+	Image string `json:"image,omitempty"`
+	// Tag is the runner container image tag from runner group settings.
+	Tag string `json:"tag,omitempty"`
+	// Uptime is the time since the latest active runner process started.
+	Uptime time.Duration `json:"uptime,omitempty" swaggertype:"primitive,integer"`
+
 	OrgName   string        `json:"org_name"`
 	OrgLabels labels.Labels `json:"org_labels,omitempty"`
 
@@ -44,8 +59,12 @@ const (
 // @Description	runners, install labels for install-type runners), the latest
 // @Description	heartbeat and health check, and the last 5 runner processes.
 // @Description	Pagination is uncapped on this admin endpoint — pass any `limit`.
-// @Param			offset	query	int	false	"offset of results to return"	Default(0)
-// @Param			limit	query	int	false	"limit of results to return (no upper cap)"	Default(25)
+// @Description	The optional `status` query parameter filters by
+// @Description	`status_v2->>'status'` and may be repeated to match any of
+// @Description	several statuses (e.g. `?status=error&status=offline`).
+// @Param			offset	query	int		false	"offset of results to return"	Default(0)
+// @Param			limit	query	int		false	"limit of results to return (no upper cap)"	Default(25)
+// @Param			status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
 // @Tags			runners/admin
 // @Security		AdminEmail
 // @Accept			json
@@ -54,8 +73,9 @@ const (
 // @Router			/v1/runners/details [GET]
 func (s *service) AdminListRunnersDetails(ctx *gin.Context) {
 	limit, offset := parseAdminRunnerDetailsPagination(ctx)
+	statuses := ctx.QueryArray("status")
 
-	runners, err := s.listRunnersDetails(ctx, limit, offset)
+	runners, err := s.listRunnersDetails(ctx, limit, offset, statuses)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -75,15 +95,18 @@ func parseAdminRunnerDetailsPagination(ctx *gin.Context) (limit, offset int) {
 	return limit, offset
 }
 
-func (s *service) listRunnersDetails(ctx *gin.Context, limit, offset int) ([]*AdminRunnerDetails, error) {
+func (s *service) listRunnersDetails(ctx *gin.Context, limit, offset int, statuses []string) ([]*AdminRunnerDetails, error) {
 	var runners []*app.Runner
-	res := s.db.WithContext(ctx).
+	tx := s.db.WithContext(ctx).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
 		Order("created_at desc").
 		Limit(limit).
-		Offset(offset).
-		Find(&runners)
+		Offset(offset)
+	if len(statuses) > 0 {
+		tx = tx.Where("status_v2->>'status' IN ?", statuses)
+	}
+	res := tx.Find(&runners)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to list runner details: %w", res.Error)
 	}
@@ -128,6 +151,12 @@ func (s *service) listRunnersDetails(ctx *gin.Context, limit, offset int) ([]*Ad
 	for _, r := range runners {
 		item := &AdminRunnerDetails{
 			Runner:            r,
+			Type:              r.RunnerGroup.Type,
+			OwnerID:           r.RunnerGroup.OwnerID,
+			Platform:          r.RunnerGroup.Settings.Platform,
+			Image:             r.RunnerGroup.Settings.ContainerImageURL,
+			Tag:               r.RunnerGroup.Settings.ContainerImageTag,
+			Uptime:            latestProcessUptime(processesByRunner[r.ID]),
 			LatestHeartBeat:   heartBeatsByRunner[r.ID],
 			LatestHealthCheck: healthChecksByRunner[r.ID],
 			RecentProcesses:   processesByRunner[r.ID],
@@ -150,6 +179,19 @@ func (s *service) listRunnersDetails(ctx *gin.Context, limit, offset int) ([]*Ad
 	}
 
 	return items, nil
+}
+
+// latestProcessUptime returns the uptime of the most recently started process
+// in the list, or 0 if none are available. Processes are passed in
+// created_at-desc order, but each process's own Uptime is populated by GORM's
+// AfterQuery hook.
+func latestProcessUptime(processes []app.RunnerProcess) time.Duration {
+	for i := range processes {
+		if processes[i].Uptime > 0 {
+			return processes[i].Uptime
+		}
+	}
+	return 0
 }
 
 func (s *service) fetchOrgsByID(ctx context.Context, orgIDs []string) (map[string]*app.Org, error) {
