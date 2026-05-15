@@ -88,9 +88,13 @@ func (s *service) listRunnersDetails(ctx *gin.Context, statuses []string) ([]*Ad
 		Scopes(scopes.WithOffsetPagination).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
-		Order("created_at desc")
+		Joins("JOIN orgs ON orgs.id = runners.org_id AND orgs.deleted_at = 0").
+		Joins("JOIN runner_groups rg ON rg.id = runners.runner_group_id").
+		Joins("LEFT JOIN installs ON rg.type = ? AND installs.id = rg.owner_id AND installs.deleted_at = 0", app.RunnerGroupTypeInstall).
+		Where("rg.type != ? OR installs.id IS NOT NULL", app.RunnerGroupTypeInstall).
+		Order("runners.created_at desc")
 	if len(statuses) > 0 {
-		tx = tx.Where("status_v2->>'status' IN ?", statuses)
+		tx = tx.Where("runners.status_v2->>'status' IN ?", statuses)
 	}
 	if err := tx.Find(&runners).Error; err != nil {
 		return nil, fmt.Errorf("unable to list runner details: %w", err)
