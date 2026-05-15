@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -60,6 +61,8 @@ type ComponentConfigConnection struct {
 	BuildTimeout                      string                             `json:"build_timeout,omitempty" gorm:"default:null" temporaljson:"build_timeout,omitzero,omitempty"`   // Duration string for build operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout                     string                             `json:"deploy_timeout,omitempty" gorm:"default:null" temporaljson:"deploy_timeout,omitzero,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	MaxAutoRetries                    *int                               `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
+	SkipNoops                         *bool                              `json:"skip_noops,omitempty" gorm:"default:null" temporaljson:"skip_noops,omitzero,omitempty"`
+	AutoApproveOnPoliciesPassing      *bool                              `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -194,6 +197,9 @@ func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {
 	c.ID = domains.NewComponentID()
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
+	if c.SkipNoops == nil {
+		c.SkipNoops = generics.ToPtr(true)
+	}
 	return nil
 }
 
@@ -224,4 +230,18 @@ func (c *ComponentConfigConnection) GetMaxAutoRetries() int {
 		return *c.MaxAutoRetries
 	}
 	return 0 // default to disabled
+}
+
+func (c *ComponentConfigConnection) GetSkipNoops() bool {
+	if c.SkipNoops != nil {
+		return *c.SkipNoops
+	}
+	return false // default to not skipping noops — opt-in
+}
+
+func (c *ComponentConfigConnection) GetAutoApproveOnPoliciesPassing() bool {
+	if c.AutoApproveOnPoliciesPassing != nil {
+		return *c.AutoApproveOnPoliciesPassing
+	}
+	return false // default to not auto-approving — opt-in
 }

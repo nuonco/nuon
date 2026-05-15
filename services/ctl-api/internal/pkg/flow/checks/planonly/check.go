@@ -1,4 +1,4 @@
-package executeworkflowstep
+package planonly
 
 import (
 	"github.com/pkg/errors"
@@ -6,21 +6,60 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftdetected"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// runPlanOnlyCheck auto-approves steps in plan-only mode.
-// Always returns done=true (plan-only mode terminates the plan check flow).
-func (s *Signal) runPlanOnlyCheck(ctx workflow.Context, step *app.WorkflowStep, noopPlan bool) (bool, error) {
-	if err := s.handlePlanOnlyApproval(ctx, step, noopPlan); err != nil {
-		return false, errors.Wrap(err, "failed to handle plan-only auto-approval")
-	}
-	return true, nil
+// Check implements directive.ApprovalCreateCheck for plan-only mode.
+type Check struct {
+	OwnerID  string
+	checkCtx *directive.CheckContext
 }
 
-// handlePlanOnlyApproval auto-approves steps in plan-only mode.
-func (s *Signal) handlePlanOnlyApproval(ctx workflow.Context, step *app.WorkflowStep, noopPlan bool) error {
+func New(ownerID string, checkCtx *directive.CheckContext) directive.ApprovalCreateCheck {
+	return &Check{OwnerID: ownerID, checkCtx: checkCtx}
+}
+
+func (c *Check) Name() string { return "plan-only" }
+
+func (c *Check) ShouldRun(step *app.WorkflowStep, flw *app.Workflow) bool {
+	return flw.PlanOnly
+}
+
+func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (directive.CheckResult, error) {
+	noopPlan := c.checkCtx.NoopPlan
+
+	if err := handlePlanOnlyApproval(ctx, c.OwnerID, step, noopPlan); err != nil {
+		return directive.Pass(), errors.Wrap(err, "failed to handle plan-only auto-approval")
+	}
+
+	summary := "Drift detected"
+	if noopPlan {
+		summary = "No drift detected"
+	}
+
+	return directive.CheckResult{
+		Directive: directive.StepContinue,
+		Reason: directive.CheckReason{
+			Check:   "plan-only",
+			Summary: summary,
+			Labels: map[string]string{
+				"plan_only": "true",
+				"noop":      boolStr(noopPlan),
+			},
+		},
+	}, nil
+}
+
+func boolStr(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
+func handlePlanOnlyApproval(ctx workflow.Context, ownerID string, step *app.WorkflowStep, noopPlan bool) error {
 	statusDescription := "Auto-approved in plan-only mode."
 	targetStatus := app.WorkflowStepApprovalStatusApproved
 
@@ -56,13 +95,9 @@ func (s *Signal) handlePlanOnlyApproval(ctx workflow.Context, step *app.Workflow
 		return errors.Wrap(err, "unable to update step target status")
 	}
 
-	// Drift detected → emit a notification-only signal so subscribers that
-	// opted into per-resource `drift_detected: true` are notified ONLY when
-	// drift is actually found (not for clean drift scans). Failure here is
-	// non-fatal: notification is a side-effect, not core flow.
 	if !noopPlan {
 		if err := driftdetected.Dispatch(ctx, &driftdetected.Signal{
-			InstallID:         s.OwnerID,
+			InstallID:         ownerID,
 			InstallWorkflowID: step.InstallWorkflowID,
 			WorkflowStepID:    step.ID,
 			OwnerID:           step.StepTargetID,

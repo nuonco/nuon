@@ -20,13 +20,15 @@ import (
 type CreatePulumiComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Runtime        string             `json:"runtime" validate:"required"`
-	Version        string             `json:"version"`
-	Config         map[string]*string `json:"config" validate:"required"`
-	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
-	BuildTimeout   string             `json:"build_timeout,omitempty"`
-	DeployTimeout  string             `json:"deploy_timeout,omitempty"`
-	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
+	Runtime                      string             `json:"runtime" validate:"required"`
+	Version                      string             `json:"version"`
+	Config                       map[string]*string `json:"config" validate:"required"`
+	EnvVars                      map[string]*string `json:"env_vars" validate:"required"`
+	BuildTimeout                 string             `json:"build_timeout,omitempty"`
+	DeployTimeout                string             `json:"deploy_timeout,omitempty"`
+	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
+	SkipNoops                    *bool              `json:"skip_noops,omitempty"`
+	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -192,16 +194,18 @@ func (s *service) createPulumiComponentConfig(ctx context.Context, cmpID string,
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
-		PulumiComponentConfig:  &cfg,
-		ComponentID:            parentCmp.ID,
-		AppConfigID:            req.AppConfigID,
-		ComponentDependencyIDs: pq.StringArray(depIDs),
-		References:             pq.StringArray(req.References),
-		Checksum:               req.Checksum,
-		BuildTimeout:           req.BuildTimeout,
-		DeployTimeout:          req.DeployTimeout,
-		MaxAutoRetries:         req.MaxAutoRetries,
-		OperationRoles:         operationRoles,
+		PulumiComponentConfig:        &cfg,
+		ComponentID:                  parentCmp.ID,
+		AppConfigID:                  req.AppConfigID,
+		ComponentDependencyIDs:       pq.StringArray(depIDs),
+		References:                   pq.StringArray(req.References),
+		Checksum:                     req.Checksum,
+		BuildTimeout:                 req.BuildTimeout,
+		DeployTimeout:                req.DeployTimeout,
+		MaxAutoRetries:               req.MaxAutoRetries,
+		SkipNoops:                    req.SkipNoops,
+		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
+		OperationRoles:               operationRoles,
 	}
 	if req.DriftSchedule != nil {
 		_, err := cron.ParseStandard(*req.DriftSchedule)

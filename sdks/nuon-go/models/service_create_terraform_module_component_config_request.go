@@ -23,6 +23,9 @@ type ServiceCreateTerraformModuleComponentConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// Duration string for build operations (e.g., "30m", "1h")
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
@@ -56,6 +59,9 @@ type ServiceCreateTerraformModuleComponentConfigRequest struct {
 
 	// references
 	References []string `json:"references"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// variables
 	// Required: true

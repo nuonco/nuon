@@ -133,6 +133,9 @@ func init() {
 	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
+
+	// Flow check thresholds
+	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
 }
 
 type Config struct {
@@ -381,6 +384,9 @@ type Config struct {
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+
+	// Flow check thresholds
+	StalePlanThreshold string `config:"stale_plan_threshold"`
 }
 
 func (c *Config) IsAWS() bool {
