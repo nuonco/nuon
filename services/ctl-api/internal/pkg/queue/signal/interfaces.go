@@ -173,6 +173,16 @@ type SignalWithTimeout interface {
 	Timeout() time.Duration
 }
 
+// SignalWithMaxInFlightAge is implemented by signals that should not be deduped
+// indefinitely. When EmitSignal finds an in-flight signal (queued or in-progress)
+// for the same emitter older than this age, the stale signal is marked failed
+// and a fresh one is emitted. Without this interface, in-flight signals dedup
+// forever — fine for user-awaited signals (recoverable via AwaitSignal fallback),
+// but a permanent block for fire-and-forget emitter signals like health checks.
+type SignalWithMaxInFlightAge interface {
+	MaxInFlightAge() time.Duration
+}
+
 // ---------------------------------------------------------------------------
 // Queue & Scheduling
 // ---------------------------------------------------------------------------
