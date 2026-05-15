@@ -115,6 +115,14 @@ func init() {
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
 
+	// Slack auto-link: empty TeamID or empty OrgLabelKey disables the feature.
+	config.RegisterDefault("slack_auto_link_team_id", "")
+	config.RegisterDefault("slack_auto_link_channel_id", "")
+	config.RegisterDefault("slack_auto_link_org_label_key", "")
+	config.RegisterDefault("slack_auto_link_org_label_value", "")
+
+	config.RegisterDefault("internal_email_domains", []string{})
+
 	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
 	config.RegisterDefault("nuon_auth_allow_all_users", false)
@@ -358,6 +366,17 @@ type Config struct {
 
 	EventLoopGeneralPurgeStaleDataCron        string        `config:"event_loop_general_purge_stale_data_cron"`
 	EventLoopGeneralPurgeStaleDataDurationAgo time.Duration `config:"event_loop_general_purge_stale_data_duration_ago" validate:"required"`
+
+	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
+	// ChannelID is optional and seeds a default org-wide subscription per link.
+	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`
+	SlackAutoLinkChannelID     string `config:"slack_auto_link_channel_id"`
+	SlackAutoLinkOrgLabelKey   string `config:"slack_auto_link_org_label_key"`
+	SlackAutoLinkOrgLabelValue string `config:"slack_auto_link_org_label_value"`
+
+	// InternalEmailDomains: creator emails matching these skip the default
+	// slack-auto-link label seeding in CreateOrg.
+	InternalEmailDomains []string `config:"internal_email_domains"`
 
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
