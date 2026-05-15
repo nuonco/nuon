@@ -22,9 +22,11 @@ import (
 type CreateAppSandboxConfigRequest struct {
 	vcshelpers.VCSConfigRequest
 
-	TerraformVersion string  `json:"terraform_version" validate:"required"`
-	DriftSchedule    *string `json:"drift_schedule,omitempty"`
-	MaxAutoRetries   *int    `json:"max_auto_retries,omitempty"`
+	TerraformVersion             string  `json:"terraform_version" validate:"required"`
+	DriftSchedule                *string `json:"drift_schedule,omitempty"`
+	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
+	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
+	AutoApproveOnPoliciesPassing *bool   `json:"auto_approve_on_policies_passing,omitempty"`
 
 	VariablesFiles []string           `json:"variables_files,omitempty"`
 	Variables      map[string]*string `json:"variables" validate:"required"`
@@ -176,17 +178,19 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 	}
 
 	appSandboxConfig := app.AppSandboxConfig{
-		AppID:                    appID,
-		AppConfigID:              req.AppConfigID,
-		PublicGitVCSConfig:       publicGitConfig,
-		ConnectedGithubVCSConfig: githubVCSConfig,
-		Variables:                pgtype.Hstore(req.Variables),
-		EnvVars:                  pgtype.Hstore(req.EnvVars),
-		VariablesFiles:           pq.StringArray(req.VariablesFiles),
-		TerraformVersion:         req.TerraformVersion,
-		References:               pq.StringArray(req.References),
-		OperationRoles:           operationRoles,
-		MaxAutoRetries:           req.MaxAutoRetries,
+		AppID:                        appID,
+		AppConfigID:                  req.AppConfigID,
+		PublicGitVCSConfig:           publicGitConfig,
+		ConnectedGithubVCSConfig:     githubVCSConfig,
+		Variables:                    pgtype.Hstore(req.Variables),
+		EnvVars:                      pgtype.Hstore(req.EnvVars),
+		VariablesFiles:               pq.StringArray(req.VariablesFiles),
+		TerraformVersion:             req.TerraformVersion,
+		References:                   pq.StringArray(req.References),
+		OperationRoles:               operationRoles,
+		MaxAutoRetries:               req.MaxAutoRetries,
+		SkipNoops:                    req.SkipNoops,
+		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
 	}
 
 	if req.DriftSchedule != nil {

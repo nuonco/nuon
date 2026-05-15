@@ -3216,6 +3216,7 @@ export interface components {
     "app.AppSandboxConfig": {
       app_config_id?: string;
       app_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description cloud specific fields */
       aws_region_type?: string;
       /** @description fields set via after query */
@@ -3237,6 +3238,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      skip_noops?: boolean;
       terraform_version?: string;
       updated_at?: string;
       variables?: {
@@ -3403,6 +3405,7 @@ export interface components {
     "app.ComponentConfigConnection": {
       app_config_id?: string;
       app_config_version?: number;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h"). Max 1h. */
       build_timeout?: string;
       checksum?: string;
@@ -6144,6 +6147,7 @@ export interface components {
     };
     "service.CreateAppSandboxConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       drift_schedule?: string;
       env_vars: {
@@ -6155,6 +6159,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       terraform_version: string;
       variables: {
         [key: string]: string;
@@ -6212,6 +6217,7 @@ export interface components {
     };
     "service.CreateDockerBuildComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       build_args?: string[];
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
@@ -6230,10 +6236,12 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       target?: string;
     };
     "service.CreateExternalImageComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
       azure_acr_image_config?: components["schemas"]["service.azureACRImageConfigRequest"];
       /** @description Duration string for build operations (e.g., "30m", "1h") */
@@ -6249,10 +6257,12 @@ export interface components {
         [key: string]: string;
       };
       references?: string[];
+      skip_noops?: boolean;
       tag: string;
     };
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       chart_name: string;
@@ -6270,6 +6280,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
       values: {
@@ -6364,6 +6375,7 @@ export interface components {
     "service.CreateJobComponentConfigRequest": {
       app_config_id?: string;
       args?: string[];
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -6379,10 +6391,12 @@ export interface components {
         [key: string]: string;
       };
       references?: string[];
+      skip_noops?: boolean;
       tag: string;
     };
     "service.CreateKubernetesManifestComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -6402,6 +6416,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
     };
     "service.CreateOrgInviteRequest": {
       email: string;
@@ -6420,6 +6435,7 @@ export interface components {
     };
     "service.CreatePulumiComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       build_timeout?: string;
       checksum?: string;
       config: {
@@ -6439,6 +6455,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       runtime: string;
+      skip_noops?: boolean;
       version?: string;
     };
     "service.CreateRunnerBootstrapTokenResponse": {
@@ -6447,6 +6464,7 @@ export interface components {
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -6464,6 +6482,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       variables: {
         [key: string]: string;
       };
