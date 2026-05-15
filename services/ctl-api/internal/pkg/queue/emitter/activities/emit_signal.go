@@ -72,7 +72,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 					           || jsonb_build_object('metadata', jsonb_build_object('stale_drop', 'exceeded max_in_flight_age')),
 					    deleted_at = extract(epoch from now())::bigint,
 					    updated_at = now()
-					WHERE id = ANY (?)`, staleIDs); res.Error != nil {
+					WHERE id IN (?)`, staleIDs); res.Error != nil {
 					return nil, errors.Wrap(res.Error, "unable to mark stale in-flight signals as failed")
 				}
 				a.l.Warn("dropped stale in-flight signals exceeding max-in-flight age",
