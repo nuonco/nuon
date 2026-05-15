@@ -38,3 +38,35 @@ export const shutdownOrgRunnerProcesses = (id: string) =>
 
 export const shutdownHintOrgRunnerProcesses = (id: string) =>
   api<{ status: string; processes_shutdown: number }>({ path: `orgs/${id}/shutdown-hint-runner-processes`, method: 'POST' })
+
+// Org cleanup
+export const deprovisionOrg = (id: string) =>
+  api<{ status: string }>({ path: `orgs/${id}/deprovision`, method: 'POST' })
+
+export const forgetOrg = (id: string) =>
+  api<{ status: string }>({ path: `orgs/${id}/forget`, method: 'POST' })
+
+export const forgetOrgInstalls = (id: string) =>
+  api<{ status: string }>({ path: `orgs/${id}/forget-installs`, method: 'POST' })
+
+export const deprovisionOrgApps = (id: string) =>
+  api<{ status: string; apps_updated: number; apps_total: number; errors: string[] }>({ path: `orgs/${id}/deprovision-apps`, method: 'POST' })
+
+export const getOrgWorkflows = (id: string) =>
+  api<{ workflows: any[] }>({ path: `orgs/${id}/workflows` })
+
+export const terminateOrgWorkflows = (id: string) =>
+  api<{ status: string; signal_id: string; message: string }>({ path: `orgs/${id}/terminate-workflows`, method: 'POST' })
+
+export const getOrgQueueSignals = (id: string) =>
+  api<{ signals: any[] }>({ path: `orgs/${id}/queue-signals` })
+
+export const deleteOrgQueueSignals = (id: string) =>
+  api<{ status: string; signals_deleted: number }>({ path: `orgs/${id}/delete-queue-signals`, method: 'POST' })
+
+// Install cleanup
+export const forgetInstall = (id: string) =>
+  api<{ status: string }>({ path: `installs/${id}/forget`, method: 'POST' })
+
+export const deprovisionInstall = (id: string) =>
+  api<{ status: string }>({ path: `installs/${id}/deprovision`, method: 'POST' })

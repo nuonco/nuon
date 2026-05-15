@@ -95,6 +95,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_runners"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/terminate_workflows"
 
 	// runners signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/created"
