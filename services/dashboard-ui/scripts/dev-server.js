@@ -65,3 +65,24 @@ Bun.serve({
 console.log(
   `Dev proxy on http://localhost:${DEV_PORT} → http://localhost:${BFF_PORT}`,
 );
+
+const BFF_CHECK_INTERVAL = 5000;
+let failCount = 0;
+const MAX_FAILURES = 12;
+
+setInterval(async () => {
+  try {
+    await fetch(BFF_ORIGIN, { signal: AbortSignal.timeout(2000) });
+    if (failCount > 0) {
+      console.log(`BFF is back after ${failCount} failed checks`);
+      failCount = 0;
+    }
+  } catch {
+    failCount++;
+    console.log(`BFF unreachable (${failCount}/${MAX_FAILURES})`);
+    if (failCount >= MAX_FAILURES) {
+      console.log("BFF unreachable for 1 minute, shutting down dev server");
+      process.exit(0);
+    }
+  }
+}, BFF_CHECK_INTERVAL);
