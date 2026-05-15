@@ -82,7 +82,7 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 	// WorkflowIDReusePolicy=TERMINATE_IF_RUNNING so a stale cron child from a
 	// previous parent run (e.g. abandoned across continue-as-new) is
 	// terminated and replaced by this run's child. Fire-and-forget — we do
-	// not block on the child start; Temporal will reconcile the lifecycle.
+	// not block on the child start.
 	childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 		WorkflowID:            childWorkflowID,
 		TaskQueue:             parentInfo.TaskQueueName,
