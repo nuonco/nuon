@@ -399,6 +399,8 @@ export type TInstallActionWorkflow =
 export type TAction = components['schemas']['app.ActionWorkflow']
 export type TInstallActionRun =
   components['schemas']['app.InstallActionWorkflowRun']
+export type TInstallActionRunStep =
+  components['schemas']['app.InstallActionWorkflowRunStep']
 export type TInstallAction = components['schemas']['app.InstallActionWorkflow']
 
 // App / Install Readme
