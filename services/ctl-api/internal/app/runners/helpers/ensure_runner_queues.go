@@ -73,7 +73,7 @@ func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Ru
 		Description:    "Periodic runner health check",
 		Mode:           app.QueueEmitterModeCron,
 		CronSchedule:   "* * * * *",
-		JitterWindow:   time.Minute,
+		JitterWindow:   time.Second * 30,
 		SignalType:     healthcheckSignalType,
 		SignalTemplate: &healthcheckSignalTemplate{RunnerID: runner.ID},
 	}); err != nil {
