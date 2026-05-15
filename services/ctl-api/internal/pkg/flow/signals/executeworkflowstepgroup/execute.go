@@ -151,10 +151,10 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		if result.Error != nil && firstErr == nil {
 			firstErr = result.Error
 		}
-		if result.Directive == directive.StepStop {
+		if result.Result.Directive == directive.StepStop {
 			hasStop = true
 		}
-		if result.Directive == directive.StepRetryGroup {
+		if result.Result.Directive == directive.StepRetryGroup {
 			hasRetryGroup = true
 		}
 	}

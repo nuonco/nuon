@@ -31,14 +31,26 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 			Status:                 app.AwaitingApproval,
 			StatusHumanDescription: "awaiting approval for " + step.Name,
 			Metadata: map[string]any{
-				"step_idx":   step.Idx,
-				"status":     "ok",
-				DirectiveKey: DirectiveAwaitApproval,
+				"step_idx":           step.Idx,
+				"status":             "ok",
+				string(DirectiveKey): string(DirectiveAwaitApproval),
 			},
 		},
 	}); err != nil {
 		return errors.Wrap(err, "unable to update step to awaiting approval status")
 	}
+
+	// Update workflow status so the UI shows the workflow is awaiting approval.
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flw.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.AwaitingApproval,
+			StatusHumanDescription: "awaiting approval for " + step.Name,
+			Metadata: map[string]any{
+				"step_id": step.ID,
+			},
+		},
+	})
 
 	resp, err := s.waitForApprovalResponse(ctx, flw, step)
 	if err != nil {

@@ -235,5 +235,5 @@ func (c *ComponentConfigConnection) GetSkipNoops() bool {
 	if c.SkipNoops != nil {
 		return *c.SkipNoops
 	}
-	return true // default to skipping noops
+	return false // default to not skipping noops — opt-in
 }

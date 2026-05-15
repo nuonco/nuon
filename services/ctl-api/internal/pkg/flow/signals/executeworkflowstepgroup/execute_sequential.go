@@ -27,7 +27,8 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			return result.Error
 		}
 
-		switch result.Directive {
+		r := result.Result
+		switch r.Directive {
 		case directive.StepContinue:
 			continue
 
@@ -41,14 +42,22 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			continue
 
 		case directive.StepStop:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
+			siblingStatus := r.SiblingStatus
+			if siblingStatus == "" {
+				siblingStatus = app.StatusDiscarded
+			}
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus)
 			return s.writeStepGroupDirective(ctx, directive.GroupStop)
 
 		case directive.StepRetryGroup:
 			return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 
 		case directive.StepSkipGroup:
-			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
+			siblingStatus := r.SiblingStatus
+			if siblingStatus == "" {
+				siblingStatus = app.StatusDiscarded
+			}
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, siblingStatus)
 			return s.writeStepGroupDirective(ctx, directive.GroupSkipGroup)
 
 		case directive.StepAwaitApproval:

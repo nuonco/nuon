@@ -10,6 +10,8 @@
 // The group's sequential loop reads step directives to decide group-level behavior.
 package directive
 
+import "github.com/nuonco/nuon/services/ctl-api/internal/app"
+
 // Step is the typed directive written by step Execute() into the step's ResultDirective.
 // The group reads this after the step's queue signal completes.
 type Step string
@@ -51,6 +53,36 @@ func (d Step) IsTerminal() bool {
 		return true
 	default:
 		return false
+	}
+}
+
+// StepResult carries the directive along with metadata that controls how the
+// group and flow set statuses on remaining steps. This allows the step to
+// communicate context (e.g., "denied" vs "error") to the group/flow.
+type StepResult struct {
+	// Directive is the typed step directive.
+	Directive Step
+
+	// Reason is a human-readable description of why this directive was issued.
+	// Written to the step's status and propagated to remaining step metadata.
+	// Examples: "approval denied", "max retries exhausted", "noop plan".
+	Reason string
+
+	// SiblingStatus is the status to apply to remaining steps in the SAME group
+	// when the directive is StepStop or StepSkipGroup. Defaults to StatusDiscarded.
+	SiblingStatus app.Status
+
+	// FutureStatus is the status to apply to steps in FUTURE groups when the
+	// directive is StepStop. If empty, defaults to StatusNotAttempted.
+	FutureStatus app.Status
+}
+
+// NewStepResult creates a StepResult with sensible defaults.
+func NewStepResult(d Step) StepResult {
+	return StepResult{
+		Directive:     d,
+		SiblingStatus: app.StatusDiscarded,
+		FutureStatus:  app.StatusNotAttempted,
 	}
 }
 

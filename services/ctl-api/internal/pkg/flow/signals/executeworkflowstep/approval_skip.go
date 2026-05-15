@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // handleSkipResponse processes a "skip current" response.
@@ -28,6 +29,15 @@ func (s *Signal) handleSkipResponse(ctx workflow.Context, l *zap.Logger, step *a
 	if err := s.markWorkflowApprovalPlanDenied(ctx, flw, step); err != nil {
 		l.Error("failed to deny plan and update step status", zap.Error(err))
 	}
+
+	// Workflow resumes from approval-awaiting.
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flw.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: "skipped " + step.Name + ", continuing",
+		},
+	})
 
 	skipGroup := false
 	if sg, ok := sig.(signal.SignalWithSkipGroup); ok {

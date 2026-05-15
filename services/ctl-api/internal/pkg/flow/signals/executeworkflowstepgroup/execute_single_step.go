@@ -12,8 +12,8 @@ import (
 
 // StepResult describes the outcome of executing a single step.
 type StepResult struct {
-	// Directive is the step's ResultDirective after execution.
-	Directive directive.Step
+	// Result carries the directive and status metadata from the step.
+	Result directive.StepResult
 
 	// Error is set when the step failed unexpectedly (not handled by the
 	// directive system). The caller should propagate this as a group error.
@@ -48,10 +48,13 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 	_, qsErr := client.AwaitQueueSignal(ctx, qsID)
 	if ctx.Err() != nil {
 		s.handleCancellation(ctx, l, step)
-		return StepResult{Directive: directive.StepStop, Error: ctx.Err()}
+		return StepResult{
+			Result: directive.NewStepResult(directive.StepStop),
+			Error:  ctx.Err(),
+		}
 	}
 
-	// Read the step's final directive from DB.
+	// Read the step's final state from DB.
 	updatedStep, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 	if err != nil {
 		return StepResult{Error: err}
@@ -71,5 +74,20 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		d = directive.StepContinue
 	}
 
-	return StepResult{Directive: d}
+	// Build the result with the step's status metadata for reason/status info.
+	result := directive.NewStepResult(d)
+	if updatedStep.Status.StatusHumanDescription != "" {
+		result.Reason = updatedStep.Status.StatusHumanDescription
+	}
+	// Read optional status overrides from step metadata.
+	if meta := updatedStep.Status.Metadata; meta != nil {
+		if v, ok := meta["sibling_status"].(string); ok && v != "" {
+			result.SiblingStatus = app.Status(v)
+		}
+		if v, ok := meta["future_step_status"].(string); ok && v != "" {
+			result.FutureStatus = app.Status(v)
+		}
+	}
+
+	return StepResult{Result: result}
 }

@@ -103,7 +103,11 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 					return errors.Wrapf(cloneErr, "unable to clone signal for retry on step %s", step.Name)
 				}
 				if len(defs) > 0 {
-					cloneQueueSignal = &signaldb.SignalData{Signal: defs[0].Signal}
+					// Use the last def: for group retry each step already exists
+					// separately, so we want the self-copy (last), not multi-step
+					// expansion. Plan Clone() returns [plan] → last=plan. Apply
+					// Clone() returns [plan, apply] → last=apply.
+					cloneQueueSignal = &signaldb.SignalData{Signal: defs[len(defs)-1].Signal}
 				}
 			}
 		}

@@ -561,13 +561,13 @@ func (s *Signal) markRemainingGroupStepsDiscarded(ctx workflow.Context, l *zap.L
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: step.ID,
 			Status: app.CompositeStatus{
-				Status: app.StatusDiscarded,
+				Status: app.StatusNotAttempted,
 				Metadata: map[string]any{
-					"reason": "discarded: workflow stopped before group was reached",
+					"reason": "workflow stopped before group was reached",
 				},
 			},
 		}); err != nil {
-			l.Warn("failed to mark step as discarded", zap.String("step_id", step.ID), zap.Error(err))
+			l.Warn("failed to mark step as not-attempted", zap.String("step_id", step.ID), zap.Error(err))
 		}
 	}
 }
