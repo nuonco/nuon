@@ -62,6 +62,7 @@ type ComponentConfigConnection struct {
 	DeployTimeout                     string                             `json:"deploy_timeout,omitempty" gorm:"default:null" temporaljson:"deploy_timeout,omitzero,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	MaxAutoRetries                    *int                               `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
 	SkipNoops                         *bool                              `json:"skip_noops,omitempty" gorm:"default:null" temporaljson:"skip_noops,omitzero,omitempty"`
+	AutoApproveOnPoliciesPassing      *bool                              `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
@@ -236,4 +237,11 @@ func (c *ComponentConfigConnection) GetSkipNoops() bool {
 		return *c.SkipNoops
 	}
 	return false // default to not skipping noops — opt-in
+}
+
+func (c *ComponentConfigConnection) GetAutoApproveOnPoliciesPassing() bool {
+	if c.AutoApproveOnPoliciesPassing != nil {
+		return *c.AutoApproveOnPoliciesPassing
+	}
+	return false // default to not auto-approving — opt-in
 }

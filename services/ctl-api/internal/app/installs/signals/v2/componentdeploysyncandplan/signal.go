@@ -53,16 +53,17 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var (
-	_ signal.SignalWithStepContext      = (*Signal)(nil)
-	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
-	_ signal.SignalWithNoOpCheck        = (*Signal)(nil)
-	_ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
-	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
-	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
-	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
-	_ signal.SignalWithCancel           = (*Signal)(nil)
-	_ signal.SignalWithClone            = (*Signal)(nil)
-	_ signal.SignalWithSkipNoops        = (*Signal)(nil)
+	_ signal.SignalWithStepContext                  = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext             = (*Signal)(nil)
+	_ signal.SignalWithNoOpCheck                    = (*Signal)(nil)
+	_ signal.SignalWithPolicyEvaluation             = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry                    = (*Signal)(nil)
+	_ signal.SignalWithMaxRetries                   = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries               = (*Signal)(nil)
+	_ signal.SignalWithCancel                       = (*Signal)(nil)
+	_ signal.SignalWithClone                        = (*Signal)(nil)
+	_ signal.SignalWithSkipNoops                    = (*Signal)(nil)
+	_ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 )
 
 func (s *Signal) IsNoOpCheckable() bool          { return true }
@@ -120,6 +121,25 @@ func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 		}
 	}
 	return true
+}
+
+func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
+	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	if err != nil {
+		return false
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return false
+	}
+
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			return ccc.GetAutoApproveOnPoliciesPassing()
+		}
+	}
+	return false
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {

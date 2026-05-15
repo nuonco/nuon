@@ -49,6 +49,7 @@ var (
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
 	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithSkipNoops        = (*Signal)(nil)
 )
 
 func (s *Signal) IsNoOpCheckable() bool                 { return true }
@@ -56,6 +57,10 @@ func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
 func (s *Signal) AutoRetry() bool                       { return true }
 func (s *Signal) MaxRetries() int                       { return 5 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+
+// SkipNoops returns false — sandbox plan noop skip is controlled by the org
+// auto-skip-noop feature flag, not by a component config.
+func (s *Signal) SkipNoops(_ workflow.Context) bool { return false }
 
 func (s *Signal) OnSkipped(ctx workflow.Context) error {
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)

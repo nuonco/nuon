@@ -61,6 +61,7 @@ var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithSkipNoops = (*Signal)(nil)
+var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 
 func (s *Signal) IsNoOpCheckable() bool                 { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
@@ -94,6 +95,25 @@ func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 		}
 	}
 	return true
+}
+
+func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
+	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	if err != nil {
+		return false
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return false
+	}
+
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			return ccc.GetAutoApproveOnPoliciesPassing()
+		}
+	}
+	return false
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {

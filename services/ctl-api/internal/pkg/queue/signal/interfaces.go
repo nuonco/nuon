@@ -123,6 +123,14 @@ type SignalWithSkipNoops interface {
 	SkipNoops(ctx workflow.Context) bool
 }
 
+// SignalWithAutoApproveOnPoliciesPassing is implemented by plan signals that
+// should be auto-approved when all policies pass (no deny violations). The
+// policy check calls this after evaluation — if it returns true and there are
+// no deny violations, the step is auto-approved without waiting for user input.
+type SignalWithAutoApproveOnPoliciesPassing interface {
+	AutoApproveOnPoliciesPassing(ctx workflow.Context) bool
+}
+
 // ---------------------------------------------------------------------------
 // Step Lifecycle
 // ---------------------------------------------------------------------------
