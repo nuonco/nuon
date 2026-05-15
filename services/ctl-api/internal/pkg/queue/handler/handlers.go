@@ -13,59 +13,36 @@ const (
 )
 
 type workflowHandler struct {
+	name             string
 	typ              handlerType
 	handler          any
 	handlerValidator any
 }
 
 func (h *handler) registerHandlers(ctx workflow.Context) error {
-	handlers := map[string]workflowHandler{
-		StatusQueryName: {
-			handlerTypeQuery,
-			h.statusHandler,
-			nil,
-		},
-		ReadyHandlerName: {
-			handlerTypeUpdate,
-			h.readyHandler,
-			nil,
-		},
-		ValidateUpdateName: {
-			handlerTypeUpdate,
-			h.validateHandler,
-			nil,
-		},
-		ExecuteUpdateName: {
-			handlerTypeUpdate,
-			h.executeHandler,
-			nil,
-		},
-		CancelUpdateName: {
-			handlerTypeUpdate,
-			h.cancelHandler,
-			nil,
-		},
-		FinishedHandlerName: {
-			handlerTypeUpdate,
-			h.finishedHandler,
-			nil,
-		},
+	handlers := []workflowHandler{
+		{StatusQueryName, handlerTypeQuery, h.statusHandler, nil},
+		{ReadyHandlerName, handlerTypeUpdate, h.readyHandler, nil},
+		{ValidateUpdateName, handlerTypeUpdate, h.validateHandler, nil},
+		{ExecuteUpdateName, handlerTypeUpdate, h.executeHandler, nil},
+		{CancelUpdateName, handlerTypeUpdate, h.cancelHandler, nil},
+		{FinishedHandlerName, handlerTypeUpdate, h.finishedHandler, nil},
 	}
 
-	for name, handler := range handlers {
-		switch handler.typ {
+	for _, wh := range handlers {
+		switch wh.typ {
 		// register query handler
 		case handlerTypeQuery:
-			if err := workflow.SetQueryHandler(ctx, string(name), handler.handler); err != nil {
-				return errors.Wrapf(err, "unable to create query handler %s", name)
+			if err := workflow.SetQueryHandler(ctx, wh.name, wh.handler); err != nil {
+				return errors.Wrapf(err, "unable to create query handler %s", wh.name)
 			}
 			// register update handler
 		case handlerTypeUpdate:
 			opts := workflow.UpdateHandlerOptions{
-				Validator: handler.handlerValidator,
+				Validator: wh.handlerValidator,
 			}
-			if err := workflow.SetUpdateHandlerWithOptions(ctx, name, handler.handler, opts); err != nil {
-				return errors.Wrapf(err, "unable to create update handler %s", name)
+			if err := workflow.SetUpdateHandlerWithOptions(ctx, wh.name, wh.handler, opts); err != nil {
+				return errors.Wrapf(err, "unable to create update handler %s", wh.name)
 			}
 		}
 	}
