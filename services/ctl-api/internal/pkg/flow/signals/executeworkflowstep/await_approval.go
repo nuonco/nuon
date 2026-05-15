@@ -17,10 +17,7 @@ import (
 // response, and returns it. The caller is responsible for dispatching the response
 // to the appropriate handler.
 func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (*app.WorkflowStepApprovalResponse, error) {
-	if err := writeDirective(ctx, step.ID, DirectiveAwaitApproval, map[string]any{
-		"step_idx": step.Idx,
-		"status":   "awaiting-approval",
-	}); err != nil {
+	if err := setResultDirective(ctx, step.ID, DirectiveAwaitApproval); err != nil {
 		return nil, errors.Wrap(err, "unable to write await-approval directive")
 	}
 

@@ -78,7 +78,7 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 				zap.String("check", check.Name()),
 				zap.String("directive", string(result.Directive)),
 				zap.String("summary", result.Reason.Summary))
-			return nil
+			return s.applyCheckResult(ctx, step, flw, result)
 		}
 	}
 
