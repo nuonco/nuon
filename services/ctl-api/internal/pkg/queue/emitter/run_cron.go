@@ -79,11 +79,15 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter, childWorkflowID string) error {
 	parentInfo := workflow.GetInfo(ctx)
 
+	// WorkflowIDReusePolicy=TERMINATE_IF_RUNNING so a stale cron child from a
+	// previous parent run (e.g. abandoned across continue-as-new) is
+	// terminated and replaced by this run's child. Fire-and-forget — we do
+	// not block on the child start; Temporal will reconcile the lifecycle.
 	childCtx := workflow.WithChildOptions(ctx, workflow.ChildWorkflowOptions{
 		WorkflowID:            childWorkflowID,
 		TaskQueue:             parentInfo.TaskQueueName,
 		CronSchedule:          emitter.CronSchedule,
-		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
 		},
@@ -94,22 +98,6 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 		EmitterID: e.emitterID,
 	}
 
-	childFuture := workflow.ExecuteChildWorkflow(childCtx, "CronTicker", req)
-
-	var childExec workflow.Execution
-	if err := childFuture.GetChildWorkflowExecution().Get(ctx, &childExec); err != nil {
-		l.Error("cron ticker child workflow already running or failed to start",
-			zap.String("child-workflow-id", childWorkflowID),
-			zap.Error(err),
-		)
-		return errors.Wrap(err, "failed to start cron ticker child workflow")
-	}
-
-	l.Info("cron ticker child workflow running",
-		zap.String("child-workflow-id", childExec.ID),
-		zap.String("child-run-id", childExec.RunID),
-		zap.String("cron-schedule", emitter.CronSchedule),
-	)
-
+	workflow.ExecuteChildWorkflow(childCtx, "CronTicker", req)
 	return nil
 }
