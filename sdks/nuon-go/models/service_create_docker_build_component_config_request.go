@@ -23,6 +23,9 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// build args
 	BuildArgs []string `json:"build_args"`
 
@@ -59,6 +62,9 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 
 	// references
 	References []string `json:"references"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// target
 	Target string `json:"target,omitempty"`

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -18,14 +19,14 @@ import (
 
 const SignalType signal.SignalType = "execute-workflow-step-group"
 
-// Directive constants — duplicated to avoid import cycle with the flow package.
+// Directive aliases for backward compatibility.
 const (
-	DirectiveContinue      = "continue"
-	DirectiveStop          = "stop"
-	DirectiveRetry         = "retry"
-	DirectiveRetryGroup    = "retry-group"
-	DirectiveSkipGroup     = "skip-group"
-	DirectiveAwaitApproval = "await-approval"
+	DirectiveContinue      = directive.StepContinue
+	DirectiveStop          = directive.StepStop
+	DirectiveRetry         = directive.StepRetry
+	DirectiveRetryGroup    = directive.StepRetryGroup
+	DirectiveSkipGroup     = directive.StepSkipGroup
+	DirectiveAwaitApproval = directive.StepAwaitApproval
 )
 
 // Signal encapsulates the lifecycle of executing all steps within a single
@@ -64,19 +65,6 @@ type Signal struct {
 
 	// cancelRequested is set by the cancel-group update handler.
 	cancelRequested bool
-
-	// awaitingUserAction is true when the group is blocked waiting for a
-	// retry-step, skip-step, or cancel after a step failure.
-	awaitingUserAction bool
-
-	// userActionReceived is set by retry-step or skip-step update handlers
-	// to wake the awaitUserAction loop.
-	userActionReceived bool
-
-	// retryGroupRequested is set by the retry-step handler when the step's signal
-	// declares RetryGroup. The sequential loop exits and the directive is propagated
-	// to the flow for group-level retry.
-	retryGroupRequested bool
 
 	// DerivedTimeout is set at dispatch time from the group's TimeoutSeconds.
 	// When non-zero, Timeout() returns this instead of the hardcoded fallback.
@@ -236,23 +224,23 @@ func (s *Signal) getGroupSteps(ctx workflow.Context) ([]app.WorkflowStep, error)
 // writeStepGroupDirective writes the group's result directive to the step group's
 // own ResultDirective field when a StepGroupID is set. Falls back to writing to
 // the workflow's ResultDirective for backward compatibility with synthetic groups.
-func (s *Signal) writeStepGroupDirective(ctx workflow.Context, directive string) error {
-	s.lastDirective = directive
+func (s *Signal) writeStepGroupDirective(ctx workflow.Context, d directive.Group) error {
+	s.lastDirective = string(d)
 	if s.StepGroupID != "" {
 		return activities.AwaitPkgWorkflowsFlowUpdateFlowStepGroupResultDirective(ctx, activities.UpdateFlowStepGroupResultDirectiveRequest{
 			StepGroupID: s.StepGroupID,
-			Directive:   directive,
+			Directive:   string(d),
 		})
 	}
-	return s.writeWorkflowDirective(ctx, directive)
+	return s.writeWorkflowDirective(ctx, string(d))
 }
 
 // writeWorkflowDirective writes the group's result directive to the workflow's
 // ResultDirective field so the flow signal can read it.
-func (s *Signal) writeWorkflowDirective(ctx workflow.Context, directive string) error {
+func (s *Signal) writeWorkflowDirective(ctx workflow.Context, d string) error {
 	return activities.AwaitPkgWorkflowsFlowUpdateFlowResultDirective(ctx, activities.UpdateFlowResultDirectiveRequest{
 		FlowID:    s.WorkflowID,
-		Directive: directive,
+		Directive: d,
 	})
 }
 

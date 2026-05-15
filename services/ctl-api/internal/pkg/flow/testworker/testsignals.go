@@ -211,7 +211,7 @@ func (s *PlanApplyFailSignal) RetryGroup() bool          { return true }
 func (s *PlanApplyFailSignal) MaxRetries() int           { return 2 }
 func (s *PlanApplyFailSignal) SleepAfter() time.Duration { return time.Second }
 
-func (s *PlanApplyFailSignal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+func (s *PlanApplyFailSignal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
 	return []signal.CloneStepDef{
 		{
 			Name:          originalStepName + "-plan",
@@ -223,7 +223,7 @@ func (s *PlanApplyFailSignal) CloneSteps(originalStepName string) []signal.Clone
 			Signal:        &PlanApplyFailSignal{},
 			ExecutionType: "system",
 		},
-	}
+	}, nil
 }
 
 var _ signal.SignalWithAutoRetry = (*PlanApplyFailSignal)(nil)

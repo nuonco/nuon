@@ -105,7 +105,7 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithCloneSteps = (*Signal)(nil)
 
-func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
 	return []signal.CloneStepDef{
 		{
 			Signal: &provisionsandboxplan.Signal{
@@ -125,7 +125,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 			Name:          originalStepName,
 			ExecutionType: "system",
 		},
-	}
+	}, nil
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

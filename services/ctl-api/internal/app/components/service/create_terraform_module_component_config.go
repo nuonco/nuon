@@ -22,13 +22,15 @@ import (
 type CreateTerraformModuleComponentConfigRequest struct {
 	basicVCSConfigRequest
 
-	Version        string             `json:"version"`
-	Variables      map[string]*string `json:"variables" validate:"required"`
-	VariablesFiles []string           `json:"variables_files,omitempty"`
-	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
-	BuildTimeout   string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
-	DeployTimeout  string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
-	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
+	Version                      string             `json:"version"`
+	Variables                    map[string]*string `json:"variables" validate:"required"`
+	VariablesFiles               []string           `json:"variables_files,omitempty"`
+	EnvVars                      map[string]*string `json:"env_vars" validate:"required"`
+	BuildTimeout                 string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout                string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
+	SkipNoops                    *bool              `json:"skip_noops,omitempty"`
+	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
@@ -240,6 +242,8 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		BuildTimeout:                   req.BuildTimeout,
 		DeployTimeout:                  req.DeployTimeout,
 		MaxAutoRetries:                 req.MaxAutoRetries,
+		SkipNoops:                      req.SkipNoops,
+		AutoApproveOnPoliciesPassing:   req.AutoApproveOnPoliciesPassing,
 		OperationRoles:                 operationRoles,
 	}
 	if req.DriftSchedule != nil {

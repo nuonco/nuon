@@ -17,14 +17,16 @@ import (
 )
 
 type CreateJobComponentConfigRequest struct {
-	ImageURL       string             `json:"image_url" validate:"required"`
-	Tag            string             `json:"tag" validate:"required"`
-	Cmd            []string           `json:"cmd"`
-	EnvVars        map[string]*string `json:"env_vars"`
-	Args           []string           `json:"args"`
-	BuildTimeout   string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
-	DeployTimeout  string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
-	MaxAutoRetries *int               `json:"max_auto_retries,omitempty"`
+	ImageURL                     string             `json:"image_url" validate:"required"`
+	Tag                          string             `json:"tag" validate:"required"`
+	Cmd                          []string           `json:"cmd"`
+	EnvVars                      map[string]*string `json:"env_vars"`
+	Args                         []string           `json:"args"`
+	BuildTimeout                 string             `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout                string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
+	SkipNoops                    *bool              `json:"skip_noops,omitempty"`
+	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
 
 	AppConfigID    string                        `json:"app_config_id"`
 	References     []string                      `json:"references"`
@@ -160,15 +162,17 @@ func (s *service) createJobComponentConfig(ctx context.Context, cmpID string, re
 	}
 
 	componentConfigConnection := app.ComponentConfigConnection{
-		JobComponentConfig: &cfg,
-		ComponentID:        parentCmp.ID,
-		AppConfigID:        req.AppConfigID,
-		References:         pq.StringArray(req.References),
-		Checksum:           req.Checksum,
-		BuildTimeout:       req.BuildTimeout,
-		DeployTimeout:      req.DeployTimeout,
-		MaxAutoRetries:     req.MaxAutoRetries,
-		OperationRoles:     operationRoles,
+		JobComponentConfig:           &cfg,
+		ComponentID:                  parentCmp.ID,
+		AppConfigID:                  req.AppConfigID,
+		References:                   pq.StringArray(req.References),
+		Checksum:                     req.Checksum,
+		BuildTimeout:                 req.BuildTimeout,
+		DeployTimeout:                req.DeployTimeout,
+		MaxAutoRetries:               req.MaxAutoRetries,
+		SkipNoops:                    req.SkipNoops,
+		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
+		OperationRoles:               operationRoles,
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job component config connection: %w", res.Error)

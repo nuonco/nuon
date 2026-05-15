@@ -27,6 +27,12 @@ func (s *syncer) createDockerBuildComponentConfig(ctx context.Context, resource,
 	if obj.MaxAutoRetries != nil {
 		configRequest.MaxAutoRetries = int64(*obj.MaxAutoRetries)
 	}
+	if obj.SkipNoops != nil {
+		configRequest.SkipNoops = *obj.SkipNoops
+	}
+	if obj.AutoApproveOnPoliciesPassing != nil {
+		configRequest.AutoApproveOnPoliciesPassing = *obj.AutoApproveOnPoliciesPassing
+	}
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}

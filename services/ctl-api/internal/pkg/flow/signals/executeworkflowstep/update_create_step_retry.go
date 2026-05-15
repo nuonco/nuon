@@ -83,5 +83,5 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 	// Unblock waitForApprovalResponse if the step is waiting for approval.
 	s.retried = true
 
-	return &CreateStepRetryResponse{Directive: directive}, nil
+	return &CreateStepRetryResponse{Directive: string(directive)}, nil
 }

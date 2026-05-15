@@ -2,40 +2,33 @@ package executeworkflowstep
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/autoapproval"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/noop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/planonly"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/policy"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/staleplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// planCheck represents a single plan evaluation step that may short-circuit
-// the approval flow by returning done=true.
-type planCheck struct {
-	name      string
-	shouldRun func() bool
-	run       func() (done bool, err error)
-}
-
 // processPlan runs all plan-related checks for an approval step.
-// It is called from Execute() after the inner signal completes successfully
-// and the step is an approval type. If all checks pass without short-circuiting,
-// it proceeds to await user approval.
 //
-// Each check is implemented in its own file:
-//   - process_plan_noop.go    — noop plan detection and auto-skip
-//   - process_plan_policy.go  — policy evaluation and violation handling
-//   - process_plan_only.go    — plan-only mode auto-approval
+// The pipeline has three phases:
+//  1. Pre-approval checks (ApprovalCreateCheck) — can short-circuit before user sees the approval
+//  2. Await user approval response
+//  3. Post-approval checks (ApprovalResponseCheck) — can override the response (e.g. stale plan auto-retry)
 func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
 	l, _ := log.WorkflowLogger(ctx)
-
-	l.Debug("looking up approval contents",
-		zap.String("step_id", step.ID),
-		zap.String("workflow_id", flw.ID))
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
@@ -51,31 +44,26 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	}
 
 	sig := stepSignal(step)
-	var noopPlan bool
+	checkCtx := &directive.CheckContext{}
 
-	checks := []planCheck{
-		s.noopCheck(ctx, l, step, flw, sig, &noopPlan),
-		s.policyCheck(ctx, l, step, flw, sig),
-		s.autoApprovalCheck(ctx, step, flw),
-		s.planOnlyCheck(ctx, step, flw, &noopPlan),
-	}
-
-	for _, check := range checks {
+	// Phase 1: Pre-approval checks
+	createChecks := s.approvalCreateChecks(ctx, sig, checkCtx)
+	for _, check := range createChecks {
 		if s.canceled {
 			return nil
 		}
-
-		if !check.shouldRun() {
+		if !check.ShouldRun(step, flw) {
 			continue
 		}
-		done, err := check.run()
+
+		result, err := check.Run(ctx, step, flw)
 		if err != nil {
 			if statusErr := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: step.ID,
 				Status: app.CompositeStatus{
 					Status: app.StatusError,
 					Metadata: map[string]any{
-						"reason": fmt.Sprintf("Step failed during %s.", check.name),
+						"reason": fmt.Sprintf("Step failed during %s.", check.Name()),
 					},
 					StatusHumanDescription: "Step failed",
 				},
@@ -84,52 +72,109 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 			}
 			return err
 		}
-		if done {
-			return nil
+
+		if result.Directive != directive.StepUnknown {
+			l.Debug("pre-approval check short-circuited",
+				zap.String("check", check.Name()),
+				zap.String("directive", string(result.Directive)),
+				zap.String("summary", result.Reason.Summary))
+			return s.applyCheckResult(ctx, step, flw, result)
 		}
 	}
 
-	// All checks passed: proceed to await user approval
-	return s.awaitAndHandleApproval(ctx, step, flw)
+	// Phase 2: Await user approval response
+	resp, err := s.awaitApprovalResponse(ctx, step, flw)
+	if err != nil {
+		return err
+	}
+	if s.retried || s.canceled || s.skipped {
+		return nil
+	}
+
+	// Phase 3: Post-approval checks (can override the response)
+	responseChecks := s.approvalResponseChecks(ctx)
+	for _, check := range responseChecks {
+		if !check.ShouldRun(step, flw, resp) {
+			continue
+		}
+
+		result, err := check.Run(ctx, step, flw, resp)
+		if err != nil {
+			return err
+		}
+
+		if result.Directive != directive.StepUnknown {
+			l.Debug("post-approval check overrode response",
+				zap.String("check", check.Name()),
+				zap.String("directive", string(result.Directive)),
+				zap.String("summary", result.Reason.Summary))
+			return s.applyCheckResult(ctx, step, flw, result)
+		}
+	}
+
+	// Phase 4: Normal response handling
+	return s.dispatchApprovalResponse(ctx, step, flw, resp)
 }
 
-// noopCheck builds the noop plan detection check.
-func (s *Signal) noopCheck(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, sig signal.Signal, noopPlan *bool) planCheck {
-	return planCheck{
-		name: "noop-check",
-		shouldRun: func() bool {
-			nc, ok := sig.(signal.SignalWithNoOpCheck)
-			return ok && nc.IsNoOpCheckable()
-		},
-		run: func() (bool, error) {
-			return s.runNoopCheck(ctx, l, step, flw, noopPlan)
-		},
+// approvalCreateChecks returns the ordered list of pre-approval checks.
+func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, checkCtx *directive.CheckContext) []directive.ApprovalCreateCheck {
+	// Load org feature flags needed by checks. Best-effort: default false on error.
+	orgAutoSkipNoop, _ := activities.AwaitCheckOrgFeatureByFeature(ctx, string(app.OrgFeatureAutoSkipNoop))
+	return []directive.ApprovalCreateCheck{
+		noop.New(sig, checkCtx, orgAutoSkipNoop, setResultDirective),
+		policy.New(sig),
+		autoapproval.New(stepSignal, setResultDirective),
+		planonly.New(s.OwnerID, checkCtx),
 	}
 }
 
-// policyCheck builds the policy evaluation check.
-func (s *Signal) policyCheck(ctx workflow.Context, l *zap.Logger, step *app.WorkflowStep, flw *app.Workflow, sig signal.Signal) planCheck {
-	return planCheck{
-		name: "policy-evaluation",
-		shouldRun: func() bool {
-			pe, ok := sig.(signal.SignalWithPolicyEvaluation)
-			return ok && pe.RequiresPolicyEvaluation()
-		},
-		run: func() (bool, error) {
-			return s.runPolicyCheck(ctx, l, step, flw)
-		},
+// approvalResponseChecks returns the ordered list of post-approval checks.
+func (s *Signal) approvalResponseChecks(ctx workflow.Context) []directive.ApprovalResponseCheck {
+	// Load configurable stale plan threshold. Best-effort: empty string = use default.
+	thresholdStr, _ := activities.AwaitGetStalePlanThreshold(ctx, activities.GetStalePlanThresholdRequest{})
+	var threshold time.Duration
+	if thresholdStr != "" {
+		threshold, _ = time.ParseDuration(thresholdStr)
+	}
+	return []directive.ApprovalResponseCheck{
+		staleplan.New(threshold, setResultDirective),
 	}
 }
 
-// planOnlyCheck builds the plan-only auto-approval check.
-func (s *Signal) planOnlyCheck(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, noopPlan *bool) planCheck {
-	return planCheck{
-		name: "plan-only-auto-approval",
-		shouldRun: func() bool {
-			return flw.PlanOnly
-		},
-		run: func() (bool, error) {
-			return s.runPlanOnlyCheck(ctx, step, *noopPlan)
-		},
+// applyCheckResult writes the directive and reason metadata from a check result.
+func (s *Signal) applyCheckResult(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, result directive.CheckResult) error {
+	meta := result.Reason.Metadata()
+	meta[string(directive.MetadataKey)] = string(result.Directive)
+
+	if err := setResultDirective(ctx, step.ID, result.Directive); err != nil {
+		return errors.Wrap(err, "unable to set result directive from check")
 	}
+
+	stepStatus := result.Status
+	if stepStatus == "" {
+		stepStatus = app.StatusError
+	}
+
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: step.ID,
+		Status: app.CompositeStatus{
+			Status:                 stepStatus,
+			StatusHumanDescription: result.Reason.Summary,
+			Metadata:               meta,
+		},
+	})
+
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flw.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: result.Reason.Summary,
+			Metadata: map[string]any{
+				"step_id": step.ID,
+				"check":   result.Reason.Check,
+			},
+		},
+	})
+
+	return nil
 }
