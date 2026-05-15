@@ -2,7 +2,6 @@ package executeworkflowstepgroup
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -22,32 +21,17 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
 
-	var startMs int64
-	_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-		return time.Now().UnixMilli()
-	}).Get(&startMs)
-
+	start := workflow.Now(ctx)
 	defer func() {
 		if s.mw == nil {
 			return
 		}
-		status := "ok"
-		if err != nil {
-			status = "error"
-		}
 		tags := metrics.ToTags(map[string]string{
-			"status":        status,
 			"workflow_type": s.WorkflowType,
 			"owner_type":    s.OwnerType,
 		})
 
-		var endMs int64
-		_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-			return time.Now().UnixMilli()
-		}).Get(&endMs)
-		latency := time.Duration(endMs-startMs) * time.Millisecond
-
-		s.mw.Timing("workflow_step_group.latency", latency, tags)
+		s.mw.Timing("workflow_step_group.latency", workflow.Now(ctx).Sub(start), tags)
 		s.mw.Incr("workflow_step_group.executed", tags)
 	}()
 
