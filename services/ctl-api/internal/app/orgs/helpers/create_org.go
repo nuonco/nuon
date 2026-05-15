@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -97,6 +99,13 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org-signals queue: %w", err)
+	}
+
+	// Best-effort: failures are picked up by the periodic reconciler.
+	if h.slackAutoLinkHelper != nil {
+		if _, err := h.slackAutoLinkHelper.EnsureForOrg(ctx, org.ID); err != nil && h.logger != nil {
+			h.logger.Warn("slack auto-link on org create failed", zap.String("org_id", org.ID), zap.Error(err))
+		}
 	}
 
 	return &org, nil
