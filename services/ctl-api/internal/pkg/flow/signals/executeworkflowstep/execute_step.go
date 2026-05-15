@@ -1,8 +1,6 @@
 package executeworkflowstep
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -23,36 +21,20 @@ import (
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	defer func() { s.finished = true }()
 
-	var startMs int64
-	_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-		return time.Now().UnixMilli()
-	}).Get(&startMs)
-
+	start := workflow.Now(ctx)
 	var stepName, executionType string
 	defer func() {
 		if s.mw == nil {
 			return
 		}
-		status := "ok"
-		if err != nil {
-			status = "error"
-		}
-		tagMap := map[string]string{
-			"status":         status,
+		tags := metrics.ToTags(map[string]string{
 			"workflow_type":  s.WorkflowType,
 			"owner_type":     s.OwnerType,
 			"step_name":      stepName,
 			"execution_type": executionType,
-		}
-		tags := metrics.ToTags(tagMap)
+		})
 
-		var endMs int64
-		_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-			return time.Now().UnixMilli()
-		}).Get(&endMs)
-		latency := time.Duration(endMs-startMs) * time.Millisecond
-
-		s.mw.Timing("workflow_step.latency", latency, tags)
+		s.mw.Timing("workflow_step.latency", workflow.Now(ctx).Sub(start), tags)
 		s.mw.Incr("workflow_step.executed", tags)
 	}()
 
