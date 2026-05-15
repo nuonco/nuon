@@ -28,6 +28,7 @@ export const StepBanner = ({
   )
   const isTerminal =
     stepStatus === 'error' ||
+    stepStatus === 'failed-pending-retry' ||
     stepStatus === 'cancelled' ||
     stepStatus === 'discarded'
   const { hasViolations: hasPolicyViolations, hasPolicyData, passedCount } =
@@ -45,7 +46,7 @@ export const StepBanner = ({
               <Text variant="subtext" theme="neutral">
                 {bannerCfg.copy}
               </Text>
-              {stepStatus === 'error' && statusDescription ? (
+              {(stepStatus === 'error' || stepStatus === 'failed-pending-retry') && statusDescription ? (
                 <Text variant="subtext" theme="error">
                   {statusDescription}
                 </Text>
