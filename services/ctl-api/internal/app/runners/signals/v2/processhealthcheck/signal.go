@@ -53,6 +53,10 @@ func (s *Signal) Type() signal.SignalType {
 	return SignalType
 }
 
+func (s *Signal) MaxInFlightAge() time.Duration {
+	return 2 * time.Minute
+}
+
 func (s *Signal) Validate(ctx workflow.Context) error {
 	if s.RunnerID == "" {
 		return errors.New("runner_id is required")

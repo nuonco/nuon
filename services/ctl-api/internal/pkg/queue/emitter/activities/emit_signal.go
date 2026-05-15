@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -9,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 type EmitSignalRequest struct {
@@ -52,13 +54,46 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	}
 
 	if len(existingSignals) > 0 {
-		a.l.Info("skipping signal emission - emitter already has in-flight signal",
-			zap.String("emitter-id", req.EmitterID),
-			zap.String("queue-id", req.QueueID),
-			zap.Int("existing-signal-count", len(existingSignals)),
-			zap.String("existing-signal-id", existingSignals[0].ID),
-		)
-		return &EmitSignalResponse{Skipped: true}, nil
+		if maxAge := signal.DeriveMaxInFlightAge(emitter.SignalTemplate.Signal); maxAge > 0 {
+			staleIDs := make([]string, 0, len(existingSignals))
+			live := existingSignals[:0]
+			now := time.Now()
+			for _, s := range existingSignals {
+				if now.Sub(s.CreatedAt) > maxAge {
+					staleIDs = append(staleIDs, s.ID)
+				} else {
+					live = append(live, s)
+				}
+			}
+			if len(staleIDs) > 0 {
+				if res := a.db.WithContext(ctx).Exec(`
+					UPDATE queue_signals
+					SET status = jsonb_set(status, '{status}', '"error"'::jsonb)
+					           || jsonb_build_object('metadata', jsonb_build_object('stale_drop', 'exceeded max_in_flight_age')),
+					    deleted_at = extract(epoch from now())::bigint,
+					    updated_at = now()
+					WHERE id = ANY (?)`, staleIDs); res.Error != nil {
+					return nil, errors.Wrap(res.Error, "unable to mark stale in-flight signals as failed")
+				}
+				a.l.Warn("dropped stale in-flight signals exceeding max-in-flight age",
+					zap.String("emitter-id", req.EmitterID),
+					zap.String("queue-id", req.QueueID),
+					zap.Int("stale-count", len(staleIDs)),
+					zap.Duration("max-in-flight-age", maxAge),
+				)
+			}
+			existingSignals = live
+		}
+
+		if len(existingSignals) > 0 {
+			a.l.Info("skipping signal emission - emitter already has in-flight signal",
+				zap.String("emitter-id", req.EmitterID),
+				zap.String("queue-id", req.QueueID),
+				zap.Int("existing-signal-count", len(existingSignals)),
+				zap.String("existing-signal-id", existingSignals[0].ID),
+			)
+			return &EmitSignalResponse{Skipped: true}, nil
+		}
 	}
 
 	// Look up the queue so we can propagate its owner to the signal.
