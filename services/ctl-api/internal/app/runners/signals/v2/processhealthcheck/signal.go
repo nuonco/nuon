@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
@@ -33,6 +35,7 @@ type Signal struct {
 	ProcessID string `json:"process_id"`
 
 	mw metrics.Writer
+	v  *validator.Validate
 }
 
 var (
@@ -43,6 +46,7 @@ var (
 
 func (s *Signal) WithParams(params *signal.Params) {
 	s.mw = params.MW
+	s.v = params.V
 }
 
 func (s *Signal) SleepAfter() time.Duration {
@@ -69,126 +73,71 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) (err error) {
-	var startMs int64
-	_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-		return time.Now().UnixMilli()
-	}).Get(&startMs)
-
-	var ownerLabels map[string]string
-	var runnerType string
-	var runnerStatus string
-	var runnerVersion string
-	var processType string
-	var orgID string
-	var orgName string
-	var installID string
-	var installName string
-	buildTagMap := func() map[string]string {
-		tagMap := make(map[string]string, len(ownerLabels)+9)
-		for k, v := range ownerLabels {
-			tagMap[k] = v
-		}
-		tagMap["runner_id"] = s.RunnerID
-		tagMap["runner_type"] = runnerType
-		tagMap["runner_status"] = runnerStatus
-		tagMap["runner_version"] = runnerVersion
-		tagMap["process_type"] = processType
-		tagMap["org_id"] = orgID
-		tagMap["org_name"] = orgName
-		if installID != "" {
-			tagMap["install_id"] = installID
-		}
-		if installName != "" {
-			tagMap["install_name"] = installName
-		}
-		return tagMap
-	}
-	defer func() {
-		tags := metrics.ToTags(buildTagMap())
-
-		var endMs int64
-		_ = workflow.SideEffect(ctx, func(workflow.Context) interface{} {
-			return time.Now().UnixMilli()
-		}).Get(&endMs)
-		latency := time.Duration(endMs-startMs) * time.Millisecond
-
-		s.mw.Timing("runner.health_check.latency", latency, tags)
-	}()
-
-	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
+	tmw, err := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
 	if err != nil {
-		return errors.Wrap(err, "unable to get runner")
+		return errors.Wrap(err, "unable to create temporal metrics writer")
 	}
-	runnerType = string(runner.RunnerGroup.Type)
-	runnerStatus = string(runner.Status)
-	orgID = runner.OrgID
-	orgName = runner.Org.Name
-	switch runner.RunnerGroup.OwnerType {
-	case "installs":
-		installID = runner.RunnerGroup.OwnerID
-		install, err := activities.AwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
-		if err != nil {
-			return errors.Wrap(err, "unable to get install for runner")
+
+	// tags is the running set of dimensions emitted on every metric in this
+	// signal. Mutate it as runner / install / process facts resolve; the
+	// deferred latency emit captures the final state. Owner labels are added
+	// with collision guards so standard tags always win.
+	tags := map[string]string{
+		"runner_id": s.RunnerID,
+	}
+	addLabels := func(labels map[string]string) {
+		for k, v := range labels {
+			if _, ok := tags[k]; !ok {
+				tags[k] = v
+			}
 		}
-		ownerLabels = install.Labels
-		installName = install.Name
-	case "orgs":
-		ownerLabels = runner.Org.Labels
 	}
+	start := workflow.Now(ctx)
+	defer func() {
+		tmw.Timing(ctx, "runner.health_check.latency", workflow.Now(ctx).Sub(start), metrics.ToTags(tags)...)
+	}()
 
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to get logger")
 	}
 
-	// Only run health checks for active or offline processes; noop for any other status
+	runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
+	if err != nil {
+		return errors.Wrap(err, "unable to get runner")
+	}
+	tags["runner_type"] = string(runner.RunnerGroup.Type)
+	tags["runner_status"] = string(runner.Status)
+	tags["org_id"] = runner.OrgID
+	tags["org_name"] = runner.Org.Name
+	switch runner.RunnerGroup.OwnerType {
+	case "installs":
+		tags["install_id"] = runner.RunnerGroup.OwnerID
+		install, err := activities.AwaitGetRunnerInstallByInstallID(ctx, runner.RunnerGroup.OwnerID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install for runner")
+		}
+		tags["install_name"] = install.Name
+		addLabels(install.Labels)
+	case "orgs":
+		addLabels(runner.Org.Labels)
+	}
+
 	process, err := activities.AwaitGetRunnerProcessByProcessID(ctx, s.ProcessID)
 	if err != nil {
 		return dbgenerics.TemporalGormError(err, "runner process not found")
 	}
-	processType = string(process.Type)
+	tags["process_type"] = string(process.Type)
 
+	// Only run health checks for active or offline processes; noop for any other status
 	switch process.ProcessStatus() {
 	case app.RunnerProcessStatusActive, app.RunnerProcessStatusOffline:
-		// continue with health check
 	default:
 		return nil
 	}
 
-	// If a promotion requested shutdown, create the shutdown record and clear
-	// the flag. The runner's shutdown poller will pick it up. Because health
-	// check emitters run per-process on a 1-minute cron, shutdowns are
-	// staggered naturally across all runners.
-	if val, ok := process.CompositeStatus.Metadata["shutdown_requested"]; ok && val != nil {
-		l.Info("shutdown requested via metadata, creating shutdown record",
-			zap.String("runner_id", s.RunnerID),
-			zap.String("process_id", s.ProcessID),
-		)
-
-		_, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
-			RunnerProcessID: s.ProcessID,
-			Type:            app.RunnerProcessShutdownTypeGraceful,
-			CompositeStatus: app.CompositeStatus{
-				Status:                 app.Status(app.RunnerProcessShutdownStatusRequested),
-				StatusHumanDescription: "shutdown requested via promotion",
-				CreatedAtTS:            workflow.Now(ctx).Unix(),
-			},
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to create shutdown for process")
-		}
-
-		// Clear the flag so we don't create duplicate shutdowns on the next health check.
-		if clearErr := activities.AwaitClearProcessShutdownRequested(ctx, activities.ClearProcessShutdownRequestedRequest{
-			ProcessID: s.ProcessID,
-		}); clearErr != nil {
-			l.Warn("unable to clear shutdown_requested metadata",
-				zap.String("process_id", s.ProcessID),
-				zap.Error(clearErr),
-			)
-		}
-
-		return nil
+	if handled, err := s.handleShutdownRequested(ctx, l, process); handled || err != nil {
+		return err
 	}
 
 	heartbeat, err := activities.AwaitGetMostRecentHeartBeatByProcess(ctx, activities.GetMostRecentHeartBeatByProcessRequest{
@@ -199,209 +148,241 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 		return errors.Wrap(err, "unable to get heartbeat")
 	}
 	if heartbeat != nil {
-		runnerVersion = heartbeat.Version
+		tags["runner_version"] = heartbeat.Version
 	}
 
-	now := workflow.Now(ctx)
-	heartbeatAge := s.heartbeatAge(now, heartbeat)
+	switch heartbeatAge := s.heartbeatAge(workflow.Now(ctx), heartbeat); {
+	case heartbeatAge >= inactiveTimeout:
+		return s.handleInactive(ctx, tmw, l, tags, process)
+	case heartbeatAge >= offlineTimeout:
+		return s.handleOffline(ctx, l, process)
+	}
 
-	// Tier 1: no heartbeat for 5 minutes → mark inactive and stop the queue
-	if heartbeatAge >= inactiveTimeout {
-		l.Warn("process inactive - no heartbeat for 5 minutes, stopping queue",
+	// Heartbeat is fresh — ensure process is active, record a green health
+	// check, then run the version-mismatch check.
+	if err := s.handleActive(ctx, l, process); err != nil {
+		return err
+	}
+	return s.checkVersionMismatch(ctx, l, runner, process, heartbeat, tags)
+}
+
+// handleShutdownRequested checks for the shutdown_requested metadata flag
+// (set by a promotion) and creates a graceful shutdown record if present.
+// The runner's shutdown poller will pick it up. Health check emitters run
+// per-process on a 1-minute cron, so shutdowns are staggered naturally.
+//
+// Returns handled=true when a shutdown was triggered; the caller should
+// stop processing. Failure to clear the flag is logged but not propagated
+// because the next tick will retry.
+func (s *Signal) handleShutdownRequested(ctx workflow.Context, l *zap.Logger, process *app.RunnerProcess) (bool, error) {
+	val, ok := process.CompositeStatus.Metadata["shutdown_requested"]
+	if !ok || val == nil {
+		return false, nil
+	}
+
+	l.Info("shutdown requested via metadata, creating shutdown record",
+		zap.String("runner_id", s.RunnerID),
+		zap.String("process_id", s.ProcessID),
+	)
+
+	if _, err := activities.AwaitCreateRunnerProcessShutdown(ctx, activities.CreateRunnerProcessShutdownRequest{
+		RunnerProcessID: s.ProcessID,
+		Type:            app.RunnerProcessShutdownTypeGraceful,
+		CompositeStatus: app.CompositeStatus{
+			Status:                 app.Status(app.RunnerProcessShutdownStatusRequested),
+			StatusHumanDescription: "shutdown requested via promotion",
+			CreatedAtTS:            workflow.Now(ctx).Unix(),
+		},
+	}); err != nil {
+		return true, errors.Wrap(err, "unable to create shutdown for process")
+	}
+
+	if err := activities.AwaitClearProcessShutdownRequested(ctx, activities.ClearProcessShutdownRequestedRequest{
+		ProcessID: s.ProcessID,
+	}); err != nil {
+		l.Warn("unable to clear shutdown_requested metadata",
+			zap.String("process_id", s.ProcessID),
+			zap.Error(err),
+		)
+	}
+
+	return true, nil
+}
+
+// handleInactive runs the Tier 1 transition when no heartbeat has arrived
+// for inactiveTimeout: marks the process inactive, emits stop metrics,
+// enqueues the on_inactive signal, and stops the per-process queue (which
+// terminates the cron emitter). Sub-errors after the status update are
+// logged but not propagated.
+func (s *Signal) handleInactive(ctx workflow.Context, tmw tmetrics.Writer, l *zap.Logger, tags map[string]string, process *app.RunnerProcess) error {
+	l.Warn("process inactive - no heartbeat for 5 minutes, stopping queue",
+		zap.String("runner_id", s.RunnerID),
+		zap.String("process_id", s.ProcessID),
+	)
+
+	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		ProcessID:         s.ProcessID,
+		Status:            app.RunnerProcessStatusInactive,
+		StatusDescription: "no heartbeat received for 5 minutes",
+	}); err != nil {
+		return errors.Wrap(err, "unable to update process status to inactive")
+	}
+
+	stopTags := metrics.ToTags(tags)
+	tmw.Incr(ctx, "runner.process.stop", stopTags...)
+	if process.StartedAt != nil {
+		tmw.Timing(ctx, "runner.process.latency", workflow.Now(ctx).Sub(*process.StartedAt), stopTags...)
+	}
+
+	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   s.RunnerID,
+		OwnerType: "runners",
+		QueueName: fmt.Sprintf("runner-process-%s", s.ProcessID),
+		Signal: &oninactive.Signal{
+			RunnerID:  s.RunnerID,
+			ProcessID: s.ProcessID,
+			Reason:    "offline",
+		},
+	}); err != nil {
+		l.Warn("unable to enqueue on_inactive signal",
+			zap.String("process_id", s.ProcessID),
+			zap.Error(err),
+		)
+	}
+
+	if err := activities.AwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
+		RunnerID:  s.RunnerID,
+		ProcessID: s.ProcessID,
+	}); err != nil {
+		l.Warn("unable to stop process queue",
+			zap.String("process_id", s.ProcessID),
+			zap.Error(err),
+		)
+	}
+
+	return nil
+}
+
+// handleOffline runs the Tier 2 transition when no heartbeat has arrived
+// for offlineTimeout: marks the process offline (if not already) and
+// records a red health check. Failure to record the health check is
+// logged but not propagated — the next tick will retry.
+func (s *Signal) handleOffline(ctx workflow.Context, l *zap.Logger, process *app.RunnerProcess) error {
+	if process.ProcessStatus() != app.RunnerProcessStatusOffline {
+		l.Warn("process offline - no heartbeat for 1 minute",
 			zap.String("runner_id", s.RunnerID),
 			zap.String("process_id", s.ProcessID),
 		)
 
-		_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 			ProcessID:         s.ProcessID,
-			Status:            app.RunnerProcessStatusInactive,
-			StatusDescription: "no heartbeat received for 5 minutes",
-		})
-		if err != nil {
-			return errors.Wrap(err, "unable to update process status to inactive")
+			Status:            app.RunnerProcessStatusOffline,
+			StatusDescription: "Runner is offline and will be marked inactive in 5 minutes",
+		}); err != nil {
+			return errors.Wrap(err, "unable to update process status to offline")
 		}
-
-		stopTagMap := make(map[string]string, len(ownerLabels)+10)
-		for k, v := range ownerLabels {
-			stopTagMap[k] = v
-		}
-		stopTagMap["runner_id"] = s.RunnerID
-		stopTagMap["runner_type"] = runnerType
-		stopTagMap["runner_status"] = runnerStatus
-		stopTagMap["runner_version"] = runnerVersion
-		stopTagMap["process_id"] = s.ProcessID
-		stopTagMap["process_type"] = string(process.Type)
-		stopTagMap["org_id"] = orgID
-		stopTagMap["org_name"] = orgName
-		if installID != "" {
-			stopTagMap["install_id"] = installID
-		}
-		if installName != "" {
-			stopTagMap["install_name"] = installName
-		}
-		stopTags := metrics.ToTags(stopTagMap)
-		s.mw.Incr("runner.process.stop", stopTags)
-		if process.StartedAt != nil {
-			s.mw.Timing("runner.process.latency", workflow.Now(ctx).Sub(*process.StartedAt), stopTags)
-		}
-
-		// Enqueue on_inactive signal before stopping the queue
-		_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   s.RunnerID,
-			OwnerType: "runners",
-			QueueName: fmt.Sprintf("runner-process-%s", s.ProcessID),
-			Signal: &oninactive.Signal{
-				RunnerID:  s.RunnerID,
-				ProcessID: s.ProcessID,
-				Reason:    "offline",
-			},
-		})
-		if err != nil {
-			l.Warn("unable to enqueue on_inactive signal",
-				zap.String("process_id", s.ProcessID),
-				zap.Error(err),
-			)
-		}
-
-		// Stop the process queue (terminates the cron emitter)
-		err = activities.AwaitStopProcessQueue(ctx, activities.StopProcessQueueRequest{
-			RunnerID:  s.RunnerID,
-			ProcessID: s.ProcessID,
-		})
-		if err != nil {
-			l.Warn("unable to stop process queue",
-				zap.String("process_id", s.ProcessID),
-				zap.Error(err),
-			)
-		}
-
-		return nil
 	}
 
-	// Tier 2: no heartbeat for 1 minute → mark offline
-	if heartbeatAge >= offlineTimeout {
-		if process.ProcessStatus() != app.RunnerProcessStatusOffline {
-			l.Warn("process offline - no heartbeat for 1 minute",
-				zap.String("runner_id", s.RunnerID),
-				zap.String("process_id", s.ProcessID),
-			)
-
-			_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
-				ProcessID:         s.ProcessID,
-				Status:            app.RunnerProcessStatusOffline,
-				StatusDescription: "Runner is offline and will be marked inactive in 5 minutes",
-			})
-			if err != nil {
-				return errors.Wrap(err, "unable to update process status to offline")
-			}
-		}
-
-		// Create red health check while offline
-		_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
-			RunnerID:  s.RunnerID,
-			ProcessID: s.ProcessID,
-			Status:    app.RunnerStatusError,
-		})
-		if err != nil {
-			l.Warn("unable to create offline health check",
-				zap.String("process_id", s.ProcessID),
-				zap.Error(err),
-			)
-		}
-
-		return nil
+	if _, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+		RunnerID:  s.RunnerID,
+		ProcessID: s.ProcessID,
+		Status:    app.RunnerStatusError,
+	}); err != nil {
+		l.Warn("unable to create offline health check",
+			zap.String("process_id", s.ProcessID),
+			zap.Error(err),
+		)
 	}
 
-	// Heartbeat is fresh — ensure process is active
+	return nil
+}
+
+// handleActive runs the happy-path transition when the heartbeat is
+// fresh: flips a previously-offline process back to active and records a
+// green health check.
+func (s *Signal) handleActive(ctx workflow.Context, l *zap.Logger, process *app.RunnerProcess) error {
 	if process.ProcessStatus() == app.RunnerProcessStatusOffline {
 		l.Info("process back online",
 			zap.String("runner_id", s.RunnerID),
 			zap.String("process_id", s.ProcessID),
 		)
-
-		_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
 			ProcessID:         s.ProcessID,
 			Status:            app.RunnerProcessStatusActive,
 			StatusDescription: "heartbeat received",
-		})
-		if err != nil {
+		}); err != nil {
 			return errors.Wrap(err, "unable to update process status to active")
 		}
 	}
 
-	// Create health check record
-	_, err = activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
+	if _, err := activities.AwaitCreateHealthCheck(ctx, activities.CreateHealthCheckRequest{
 		RunnerID:  s.RunnerID,
 		ProcessID: s.ProcessID,
 		Status:    app.RunnerStatusActive,
-	})
-	if err != nil {
+	}); err != nil {
 		return errors.Wrap(err, "unable to create process health check")
 	}
 
-	// Version mismatch check: compare configured version to runner's reported version
-	if heartbeat != nil && heartbeat.Version != "" {
-		runner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
-		if err != nil {
-			l.Warn("unable to get runner for version comparison",
-				zap.String("runner_id", s.RunnerID),
-				zap.Error(err),
-			)
-		} else {
-			settings := runner.RunnerGroup.Settings
-			var configuredVersion string
-			switch process.Type {
-			case app.RunnerProcessTypeMng:
-				configuredVersion = settings.BinaryVersion
-			default:
-				configuredVersion = settings.ContainerImageTag
-			}
+	return nil
+}
 
-			if configuredVersion == "latest" || heartbeat.Version == "latest" {
-				tagMap := buildTagMap()
-				tagMap["configured_version"] = configuredVersion
-				tagMap["heartbeat_version"] = heartbeat.Version
-				s.mw.Event(&statsd.Event{
-					Title: "Runner is using 'latest' version tag",
-					Text: fmt.Sprintf(
-						"Runner %s (org: %s) is using the 'latest' tag. configured_version=%q, reported_version=%q. Pin to a specific version to avoid drift.",
-						s.RunnerID, orgName, configuredVersion, heartbeat.Version,
-					),
-					Tags:           metrics.ToTags(tagMap),
-					SourceTypeName: "nuon-runner",
-					Priority:       statsd.Normal,
-					AlertType:      statsd.Error,
-					AggregationKey: "runner-version-latest",
-				})
-			}
+// checkVersionMismatch compares the configured runner version to the
+// heartbeat-reported version, emits a Datadog event when 'latest' is in
+// use, and writes the corresponding version_warning into process metadata
+// (empty string when versions agree).
+func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runner *app.Runner, process *app.RunnerProcess, heartbeat *app.RunnerHeartBeat, tags map[string]string) error {
+	if heartbeat == nil || heartbeat.Version == "" {
+		return nil
+	}
 
-			var metadata map[string]any
-			if configuredVersion != "" && configuredVersion != heartbeat.Version {
-				metadata = map[string]any{
-					"version_warning": fmt.Sprintf(
-						"Reported runner version (%s) does not match configured version (%s). Please update the runner to the correct version.",
-						heartbeat.Version, configuredVersion,
-					),
-				}
-			} else {
-				metadata = map[string]any{
-					"version_warning": "",
-				}
-			}
+	settings := runner.RunnerGroup.Settings
+	var configuredVersion string
+	switch process.Type {
+	case app.RunnerProcessTypeMng:
+		configuredVersion = settings.BinaryVersion
+	default:
+		configuredVersion = settings.ContainerImageTag
+	}
 
-			_, err = activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
-				ProcessID:         s.ProcessID,
-				Status:            app.RunnerProcessStatusActive,
-				StatusDescription: "",
-				Metadata:          metadata,
-			})
-			if err != nil {
-				l.Warn("unable to update version warning metadata",
-					zap.String("process_id", s.ProcessID),
-					zap.Error(err),
-				)
-			}
-		}
+	if configuredVersion == "latest" || heartbeat.Version == "latest" {
+		eventTags := metrics.ToTags(tags,
+			metrics.ToTag("configured_version", configuredVersion),
+			metrics.ToTag("heartbeat_version", heartbeat.Version),
+		)
+		s.mw.Event(&statsd.Event{
+			Title: "Runner is using 'latest' version tag",
+			Text: fmt.Sprintf(
+				"Runner %s (org: %s) is using the 'latest' tag. configured_version=%q, reported_version=%q. Pin to a specific version to avoid drift.",
+				s.RunnerID, runner.Org.Name, configuredVersion, heartbeat.Version,
+			),
+			Tags:           eventTags,
+			SourceTypeName: "nuon-runner",
+			Priority:       statsd.Normal,
+			AlertType:      statsd.Error,
+			AggregationKey: "runner-version-latest",
+		})
+	}
+
+	var versionWarning string
+	if configuredVersion != "" && configuredVersion != heartbeat.Version {
+		versionWarning = fmt.Sprintf(
+			"Reported runner version (%s) does not match configured version (%s). Please update the runner to the correct version.",
+			heartbeat.Version, configuredVersion,
+		)
+	}
+
+	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
+		ProcessID:         s.ProcessID,
+		Status:            app.RunnerProcessStatusActive,
+		StatusDescription: "",
+		Metadata: map[string]any{
+			"version_warning": versionWarning,
+		},
+	}); err != nil {
+		l.Warn("unable to update version warning metadata",
+			zap.String("process_id", s.ProcessID),
+			zap.Error(err),
+		)
 	}
 
 	return nil
