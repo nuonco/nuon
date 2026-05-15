@@ -17,20 +17,18 @@ type AdminOrgDetails struct {
 
 // @ID			AdminListOrgsDetails
 // @BasePath	/v1/orgs
-// @Summary	Return a compact admin list of orgs with their status
-// @Description	Admin list of orgs intended for status / README rollups.
-// @Description	The optional `status` query parameter filters by
-// @Description	`status_v2->>'status'` and may be repeated.
-// @Param			offset	query	int			false	"offset of results to return"	Default(0)
-// @Param			limit	query	int			false	"limit of results to return"	Default(10)
-// @Param			page	query	int			false	"page number of results to return"	Default(0)
-// @Param			status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
-// @Tags			orgs/admin
-// @Security		AdminEmail
-// @Accept			json
+// @Summary		Compact admin list of orgs with status
+// @Description	Admin list of orgs intended for status / README rollups. The optional `status` query parameter filters by `status_v2->>'status'` and may be repeated.
+// @Tags		orgs/admin
+// @Security	AdminEmail
+// @Accept		json
 // @Produce		json
+// @Param		offset	query	int			false	"offset of results to return"				Default(0)
+// @Param		limit	query	int			false	"limit of results to return"				Default(10)
+// @Param		page	query	int			false	"page number of results to return"			Default(0)
+// @Param		status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
 // @Success		200	{array}	AdminOrgDetails
-// @Router			/v1/orgs/details [GET]
+// @Router		/v1/orgs/details [GET]
 func (s *service) AdminListOrgsDetails(ctx *gin.Context) {
 	statuses := ctx.QueryArray("status")
 
