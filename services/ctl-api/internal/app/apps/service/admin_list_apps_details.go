@@ -56,9 +56,10 @@ func (s *service) listAppsDetails(ctx *gin.Context, statuses []string) ([]*Admin
 	var apps []*app.App
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
-		Order("created_at desc")
+		Joins("JOIN orgs ON orgs.id = apps.org_id AND orgs.deleted_at = 0").
+		Order("apps.created_at desc")
 	if len(statuses) > 0 {
-		tx = tx.Where("status_v2->>'status' IN ?", statuses)
+		tx = tx.Where("apps.status_v2->>'status' IN ?", statuses)
 	}
 	if err := tx.Find(&apps).Error; err != nil {
 		return nil, fmt.Errorf("unable to list app details: %w", err)
