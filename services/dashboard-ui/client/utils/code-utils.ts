@@ -115,5 +115,5 @@ export function diffLines(
   }
 
   const result = lines.join('\n')
-  return result.trim() === '' ? 'No diff to show' : result
+  return result.trim() === '' ? 'Diff not available from planner' : result
 }
