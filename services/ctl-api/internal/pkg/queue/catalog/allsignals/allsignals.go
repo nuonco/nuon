@@ -21,6 +21,7 @@ import (
 
 	// general signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/promotion"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/slack_auto_link"
 
 	// components signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
