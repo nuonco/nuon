@@ -21,51 +21,28 @@ const (
 )
 
 type handler struct {
+	name             string
 	typ              handlerType
 	handler          any
 	handlerValidator any
 }
 
 func (e *emitterWorkflow) registerHandlers(ctx workflow.Context) error {
-	updateHandlers := map[string]handler{
-		StopUpdateName: {
-			handlerTypeUpdate,
-			e.stopHandler,
-			nil,
-		},
-		RestartUpdateName: {
-			handlerTypeUpdate,
-			e.restartHandler,
-			nil,
-		},
-		StatusUpdateName: {
-			handlerTypeUpdate,
-			e.statusHandler,
-			nil,
-		},
-		EnsureRunningUpdateName: {
-			handlerTypeUpdate,
-			e.ensureRunningHandler,
-			nil,
-		},
-		PauseUpdateName: {
-			handlerTypeUpdate,
-			e.pauseHandler,
-			nil,
-		},
-		ResumeUpdateName: {
-			handlerTypeUpdate,
-			e.resumeHandler,
-			nil,
-		},
+	updateHandlers := []handler{
+		{StopUpdateName, handlerTypeUpdate, e.stopHandler, nil},
+		{RestartUpdateName, handlerTypeUpdate, e.restartHandler, nil},
+		{StatusUpdateName, handlerTypeUpdate, e.statusHandler, nil},
+		{EnsureRunningUpdateName, handlerTypeUpdate, e.ensureRunningHandler, nil},
+		{PauseUpdateName, handlerTypeUpdate, e.pauseHandler, nil},
+		{ResumeUpdateName, handlerTypeUpdate, e.resumeHandler, nil},
 	}
 
-	for name, h := range updateHandlers {
+	for _, h := range updateHandlers {
 		opts := workflow.UpdateHandlerOptions{
 			Validator: h.handlerValidator,
 		}
-		if err := workflow.SetUpdateHandlerWithOptions(ctx, name, h.handler, opts); err != nil {
-			return errors.Wrapf(err, "unable to create update handler %s", name)
+		if err := workflow.SetUpdateHandlerWithOptions(ctx, h.name, h.handler, opts); err != nil {
+			return errors.Wrapf(err, "unable to create update handler %s", h.name)
 		}
 	}
 
