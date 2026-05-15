@@ -51,5 +51,12 @@ func (s *Signal) isRetryableHandler(ctx workflow.Context) (*IsRetryableResponse,
 		}
 	}
 
+	// For retry-group signals, the retry budget is tracked via GroupRetryIdx
+	// rather than RetryIndex. Return the correct index so the UI displays
+	// the right retry count.
+	if resp.RetryGroup {
+		resp.RetryIndex = step.GroupRetryIdx
+	}
+
 	return resp, nil
 }

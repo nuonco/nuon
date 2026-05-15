@@ -51,7 +51,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	if nextRetryIndex > maxRetries {
 		l.Warn("max retries exhausted",
 			zap.String("step_id", step.ID),
-			zap.String("directive", directive),
+			zap.String("directive", string(directive)),
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
 
@@ -109,17 +109,43 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			return nil
 		}
 
-		return s.markStepFailed(ctx, step, stepErr, map[string]any{
+		// Mark step as errored and write the await-retry directive.
+		// Execute() blocks here until the user retries or cancels.
+		_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
 			"auto_retries_exhausted": true,
 			"max_auto_retries":       maxAutoRetries,
 			"max_retries":            maxRetries,
 			"retry_index":            retryIndex,
 		})
+		if err := setResultDirective(ctx, step.ID, DirectiveAwaitRetry); err != nil {
+			return errors.Wrap(err, "unable to set await-retry directive")
+		}
+
+		// Update workflow status so the UI shows "failed pending retry".
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: flw.ID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusFailedPendingRetry,
+				StatusHumanDescription: "step failed, awaiting retry or skip",
+				Metadata: map[string]any{
+					"step_id": step.ID,
+				},
+			},
+		})
+
+		// Block until user retries or cancels. The group's AwaitQueueSignal
+		// stays blocked naturally. When the retry update arrives (flow → group → step),
+		// s.retried is set and we unblock. The createStepRetryHandler writes the
+		// terminal directive (retry or retry-group) before setting s.retried.
+		if err := workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped }); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	l.Debug("auto-retry: writing directive",
 		zap.String("step_id", step.ID),
-		zap.String("directive", directive),
+		zap.String("directive", string(directive)),
 		zap.Int("retry_index", nextRetryIndex),
 		zap.Int("max_retries", maxRetries))
 

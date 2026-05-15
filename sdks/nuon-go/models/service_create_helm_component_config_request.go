@@ -23,6 +23,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// Duration string for build operations (e.g., "30m", "1h")
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
@@ -64,6 +67,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 
 	// references
 	References []string `json:"references"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// storage driver
 	StorageDriver string `json:"storage_driver,omitempty"`

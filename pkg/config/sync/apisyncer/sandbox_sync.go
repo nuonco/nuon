@@ -46,7 +46,12 @@ func (s *syncer) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReq
 	if s.cfg.Sandbox.MaxAutoRetries != nil {
 		req.MaxAutoRetries = int64(*s.cfg.Sandbox.MaxAutoRetries)
 	}
-
+	if s.cfg.Sandbox.SkipNoops != nil {
+		req.SkipNoops = *s.cfg.Sandbox.SkipNoops
+	}
+	if s.cfg.Sandbox.AutoApproveOnPoliciesPassing != nil {
+		req.AutoApproveOnPoliciesPassing = *s.cfg.Sandbox.AutoApproveOnPoliciesPassing
+	}
 	maps.Copy(req.Variables, s.cfg.Sandbox.VarsMap)
 	maps.Copy(req.EnvVars, s.cfg.Sandbox.EnvVarMap)
 

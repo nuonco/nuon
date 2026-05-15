@@ -23,6 +23,9 @@ type ServiceCreatePulumiComponentConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// build timeout
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
@@ -64,6 +67,9 @@ type ServiceCreatePulumiComponentConfigRequest struct {
 	// runtime
 	// Required: true
 	Runtime *string `json:"runtime"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// version
 	Version string `json:"version,omitempty"`

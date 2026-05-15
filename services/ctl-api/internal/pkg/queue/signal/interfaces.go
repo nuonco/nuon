@@ -32,12 +32,28 @@ type SignalWithRetryCount interface {
 	SetRetryCount(retryIndex, groupRetryIndex int)
 }
 
-// SignalWithCloneSteps is implemented by signals whose steps require prerequisite
-// steps when retried. For example, an apply signal may return a plan step + apply step
-// so that retrying an apply re-runs the plan first.
-type SignalWithCloneSteps interface {
-	CloneSteps(originalStepName string) []CloneStepDef
+// SignalWithClone is the unified clone interface for retry. When a step is
+// cloned for retry (either individual retry or group retry), the clone
+// machinery calls Clone() if implemented. The signal returns one or more
+// CloneStepDef entries:
+//
+//   - Plan signals return a single entry with a clean copy (e.g., DeployID reset)
+//   - Apply signals return multiple entries (plan + apply) so retrying an apply
+//     re-runs the plan first
+//
+// Clone() is also responsible for cleaning up old targets (e.g., marking the
+// old deploy as retried). Signals that don't implement this interface are
+// copied verbatim as a single step.
+//
+// The stepName parameter is the original step name (with retry suffixes stripped),
+// used by multi-step clones to derive human-readable names.
+type SignalWithClone interface {
+	Clone(ctx workflow.Context, stepName string) ([]CloneStepDef, error)
 }
+
+// SignalWithCloneSteps is the old name for SignalWithClone. Keeping as an alias
+// so grep for the old name still finds the right type.
+type SignalWithCloneSteps = SignalWithClone
 
 // SignalWithMaxRetries is implemented by signals that declare a custom maximum retry count.
 // If not implemented, the default max retry count (DefaultMaxRetries) is used.
@@ -97,6 +113,22 @@ type SignalWithNoOpCheck interface {
 // checks only when this interface is present and returns true.
 type SignalWithPolicyEvaluation interface {
 	RequiresPolicyEvaluation() bool
+}
+
+// SignalWithSkipNoops is implemented by plan signals that can control whether
+// noop plans are auto-skipped. When SkipNoops returns false, noop plans proceed
+// through the normal approval flow instead of being auto-skipped.
+// If not implemented, noops are always auto-skipped (backward compatible).
+type SignalWithSkipNoops interface {
+	SkipNoops(ctx workflow.Context) bool
+}
+
+// SignalWithAutoApproveOnPoliciesPassing is implemented by plan signals that
+// should be auto-approved when all policies pass (no deny violations). The
+// policy check calls this after evaluation — if it returns true and there are
+// no deny violations, the step is auto-approved without waiting for user input.
+type SignalWithAutoApproveOnPoliciesPassing interface {
+	AutoApproveOnPoliciesPassing(ctx workflow.Context) bool
 }
 
 // ---------------------------------------------------------------------------

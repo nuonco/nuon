@@ -26,12 +26,14 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	Dependencies []string `json:"dependencies"`
 
 	// Inline manifest (mutually exclusive with Kustomize)
-	Manifest       string  `json:"manifest,omitempty"`
-	Namespace      string  `json:"namespace"`
-	BuildTimeout   string  `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
-	DeployTimeout  string  `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
-	MaxAutoRetries *int    `json:"max_auto_retries,omitempty"`
-	DriftSchedule  *string `json:"drift_schedule,omitempty"`
+	Manifest                     string  `json:"manifest,omitempty"`
+	Namespace                    string  `json:"namespace"`
+	BuildTimeout                 string  `json:"build_timeout,omitempty"`  // Duration string for build operations (e.g., "30m", "1h")
+	DeployTimeout                string  `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
+	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
+	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
+	AutoApproveOnPoliciesPassing *bool   `json:"auto_approve_on_policies_passing,omitempty"`
+	DriftSchedule                *string `json:"drift_schedule,omitempty"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
@@ -250,6 +252,8 @@ func (s *service) createKubernetesManifestComponentConfig(
 		BuildTimeout:                      req.BuildTimeout,
 		DeployTimeout:                     req.DeployTimeout,
 		MaxAutoRetries:                    req.MaxAutoRetries,
+		SkipNoops:                         req.SkipNoops,
+		AutoApproveOnPoliciesPassing:      req.AutoApproveOnPoliciesPassing,
 		OperationRoles:                    operationRoles,
 	}
 

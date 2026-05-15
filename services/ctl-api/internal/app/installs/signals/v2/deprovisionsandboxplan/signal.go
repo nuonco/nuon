@@ -48,12 +48,42 @@ var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithSkipNoops = (*Signal)(nil)
+var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 
 func (s *Signal) IsNoOpCheckable() bool                 { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
 func (s *Signal) AutoRetry() bool                       { return true }
 func (s *Signal) MaxRetries() int                       { return 5 }
 func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
+
+func (s *Signal) SkipNoops(ctx workflow.Context) bool {
+	cfg := s.getSandboxConfig(ctx)
+	if cfg == nil {
+		return false
+	}
+	return cfg.GetSkipNoops()
+}
+
+func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
+	cfg := s.getSandboxConfig(ctx)
+	if cfg == nil {
+		return false
+	}
+	return cfg.GetAutoApproveOnPoliciesPassing()
+}
+
+func (s *Signal) getSandboxConfig(ctx workflow.Context) *app.AppSandboxConfig {
+	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
+	if err != nil {
+		return nil
+	}
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil
+	}
+	return &appCfg.SandboxConfig
+}
 
 func (s *Signal) OnSkipped(ctx workflow.Context) error {
 	steps, err := activities.AwaitGetInstallWorkflowsStepsByInstallWorkflowID(ctx, s.FlowID)

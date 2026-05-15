@@ -53,14 +53,17 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 }
 
 var (
-	_ signal.SignalWithStepContext      = (*Signal)(nil)
-	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
-	_ signal.SignalWithNoOpCheck        = (*Signal)(nil)
-	_ signal.SignalWithPolicyEvaluation = (*Signal)(nil)
-	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
-	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
-	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
-	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithStepContext                  = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext             = (*Signal)(nil)
+	_ signal.SignalWithNoOpCheck                    = (*Signal)(nil)
+	_ signal.SignalWithPolicyEvaluation             = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry                    = (*Signal)(nil)
+	_ signal.SignalWithMaxRetries                   = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries               = (*Signal)(nil)
+	_ signal.SignalWithCancel                       = (*Signal)(nil)
+	_ signal.SignalWithClone                        = (*Signal)(nil)
+	_ signal.SignalWithSkipNoops                    = (*Signal)(nil)
+	_ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
 )
 
 func (s *Signal) IsNoOpCheckable() bool          { return true }
@@ -77,6 +80,66 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
 	}
 	return nil
+}
+
+func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneStepDef, error) {
+	// Mark the old deploy as retried so the UI shows it was superseded.
+	if s.DeployID != "" {
+		s.updateDeployStatusWithoutStatusSync(ctx, s.DeployID, app.InstallDeployStatusRetried, "deploy retried")
+	}
+
+	// Return a clean signal — Execute() will create a fresh deploy.
+	return []signal.CloneStepDef{
+		{
+			Signal: &Signal{
+				InstallComponentID: s.InstallComponentID,
+				InstallID:          s.InstallID,
+				ComponentID:        s.ComponentID,
+				SandboxMode:        s.SandboxMode,
+				Role:               s.Role,
+			},
+			Name:          stepName,
+			ExecutionType: "approval",
+		},
+	}, nil
+}
+
+func (s *Signal) SkipNoops(ctx workflow.Context) bool {
+	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	if err != nil {
+		return true // default to skipping on error
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return true
+	}
+
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			return ccc.GetSkipNoops()
+		}
+	}
+	return true
+}
+
+func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
+	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
+	if err != nil {
+		return false
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return false
+	}
+
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == s.ComponentID {
+			return ccc.GetAutoApproveOnPoliciesPassing()
+		}
+	}
+	return false
 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
