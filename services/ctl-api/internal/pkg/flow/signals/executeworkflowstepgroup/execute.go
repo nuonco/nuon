@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -84,7 +85,7 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 				},
 			})
 		}
-	} else if s.lastDirective == DirectiveStop {
+	} else if s.lastDirective == string(directive.GroupStop) {
 		s.updateGroupStatus(ctx, app.CompositeStatus{
 			Status:                 app.StatusError,
 			StatusHumanDescription: "group stopped",
@@ -123,7 +124,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 	}
 
 	if len(steps) == 0 {
-		return s.writeStepGroupDirective(ctx, DirectiveContinue)
+		return s.writeStepGroupDirective(ctx, directive.GroupContinue)
 	}
 
 	l.Debug("dispatching steps in parallel",
@@ -150,30 +151,30 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 		if result.Error != nil && firstErr == nil {
 			firstErr = result.Error
 		}
-		if result.Directive == DirectiveStop {
+		if result.Result.Directive == directive.StepStop {
 			hasStop = true
 		}
-		if result.Directive == DirectiveRetryGroup {
+		if result.Result.Directive == directive.StepRetryGroup {
 			hasRetryGroup = true
 		}
 	}
 
 	if firstErr != nil {
 		if ctx.Err() != nil {
-			return s.writeStepGroupDirective(ctx, DirectiveStop)
+			return s.writeStepGroupDirective(ctx, directive.GroupStop)
 		}
 		return firstErr
 	}
 
 	if hasStop {
-		return s.writeStepGroupDirective(ctx, DirectiveStop)
+		return s.writeStepGroupDirective(ctx, directive.GroupStop)
 	}
 
 	if hasRetryGroup {
-		return s.writeStepGroupDirective(ctx, DirectiveRetryGroup)
+		return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 	}
 
-	return s.writeWorkflowDirective(ctx, DirectiveContinue)
+	return s.writeStepGroupDirective(ctx, directive.GroupContinue)
 }
 
 // dispatchStep enqueues an execute-workflow-step signal and returns the queue signal ID.
@@ -281,6 +282,6 @@ func (s *Signal) handleCancellation(ctx workflow.Context, l *zap.Logger, step *a
 		client.AwaitCancelSignal(cancelCtx, qsID)
 	}
 
-	s.writeStepGroupDirective(cancelCtx, DirectiveStop)
+	s.writeStepGroupDirective(cancelCtx, directive.GroupStop)
 	return errors.New("group cancelled")
 }

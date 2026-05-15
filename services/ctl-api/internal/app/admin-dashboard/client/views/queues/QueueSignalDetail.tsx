@@ -6,6 +6,7 @@ import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
 import { StatusHistory } from '@/components/common/StatusHistory'
 import { SignalFlowGraph } from '@/components/common/SignalFlowGraph'
+import { SignalTreeView } from '@/components/common/SignalTreeView'
 import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
@@ -44,6 +45,7 @@ export const QueueSignalDetail = () => {
   const [hideReady, setHideReady] = useState(true)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [showGraph, setShowGraph] = useState(false)
+  const [graphViewMode, setGraphViewMode] = useState<'tree' | 'graph'>('tree')
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['queue-signal', queueId, signalId],
@@ -305,20 +307,42 @@ export const QueueSignalDetail = () => {
         </div>
       )}
 
-      {/* Signal flow graph */}
+      {/* Signal tree / graph */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal flow graph</h2>
-          <button
-            onClick={() => setShowGraph(!showGraph)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${showGraph ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            {showGraph ? 'Hide graph' : 'Load graph'}
-          </button>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal tree</h2>
+          <div className="flex items-center gap-2">
+            {showGraph && (
+              <div className="flex rounded-md border border-gray-300 dark:border-gray-700 text-xs overflow-hidden">
+                <button
+                  onClick={() => setGraphViewMode('tree')}
+                  className={`px-2.5 py-1 font-medium ${graphViewMode === 'tree' ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                >
+                  Tree
+                </button>
+                <button
+                  onClick={() => setGraphViewMode('graph')}
+                  className={`px-2.5 py-1 font-medium ${graphViewMode === 'graph' ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                >
+                  Graph
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowGraph(!showGraph)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${showGraph ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+            >
+              {showGraph ? 'Hide' : 'Load tree'}
+            </button>
+          </div>
         </div>
         {showGraph && graphData?.graph && (
           <div className="mt-3">
-            <SignalFlowGraph graphData={graphData.graph} height="32rem" />
+            {graphViewMode === 'tree' ? (
+              <SignalTreeView graphData={graphData.graph} temporalUIUrl={temporalUIUrl} height="32rem" />
+            ) : (
+              <SignalFlowGraph graphData={graphData.graph} height="32rem" />
+            )}
           </div>
         )}
         {showGraph && !graphData?.graph && (

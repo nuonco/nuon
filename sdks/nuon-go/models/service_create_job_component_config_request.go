@@ -25,6 +25,9 @@ type ServiceCreateJobComponentConfigRequest struct {
 	// args
 	Args []string `json:"args"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// Duration string for build operations (e.g., "30m", "1h")
 	BuildTimeout string `json:"build_timeout,omitempty"`
 
@@ -52,6 +55,9 @@ type ServiceCreateJobComponentConfigRequest struct {
 
 	// references
 	References []string `json:"references"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// tag
 	// Required: true

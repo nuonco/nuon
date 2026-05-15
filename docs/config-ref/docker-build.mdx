@@ -25,6 +25,8 @@ title: 'Docker Build'
 | **`build_timeout`**<br/>string | build operation timeout Duration string for Docker build operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | `"30m"`, `"1h"` |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
 | **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
+| **`skip_noops`**<br/>boolean | - | **Optional** | - |
+| **`auto_approve_on_policies_passing`**<br/>boolean | - | **Optional** | - |
 
 ### `operation_roles`
 
@@ -47,6 +49,8 @@ title: 'Docker Build'
 | **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | - |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | - |
 | **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
+| **`skip_noops`**<br/>boolean | - | **Optional** | - |
+| **`auto_approve_on_policies_passing`**<br/>boolean | - | **Optional** | - |
 
 ### `public_repo`
 

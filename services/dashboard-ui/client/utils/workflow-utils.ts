@@ -20,6 +20,7 @@ const WORKFLOW_BADGE_MAP: Record<
   'approval-denied': { children: 'Plan denied', theme: 'warn' },
   'approval-retry': { children: 'Plan retried', theme: 'info' },
   error: { children: 'Failed', theme: 'error' },
+  'failed-pending-retry': { children: 'Failed — awaiting retry', theme: 'error' },
   'not-attempted': { children: 'Not attempted' },
   noop: { children: 'NOOP' },
   cancelled: { children: 'Cancelled', theme: 'warn' },
@@ -47,7 +48,7 @@ export function getStepBadge(
   }
 
   if (metadata?.is_retry) {
-    const retryIdx = (Number(metadata.retry_idx ?? metadata.group_retry_idx ?? 0)) + 1
+    const retryIdx = Number(metadata.retry_idx ?? metadata.group_retry_idx ?? 0)
     const retryLabel = metadata.retry_type === 'manual' ? 'Manual retry' : metadata.retry_type === 'auto' ? 'Auto retry' : 'Retry'
     return { children: `${retryLabel} #${retryIdx}`, theme: 'info' }
   }
@@ -78,6 +79,16 @@ export function getStepBadge(
     }
   }
   const status = step?.status?.status
+
+  // Show retryable/skippable hints for failed steps awaiting user action.
+  if (status === 'failed-pending-retry' || (status === 'error' && step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted)) {
+    const hints: string[] = []
+    if (step?.retryable) hints.push('retryable')
+    if (step?.skippable) hints.push('skippable')
+    const suffix = hints.length > 0 ? ` (${hints.join(' / ')})` : ''
+    return { children: `Failed${suffix}`, theme: 'error' as TBadgeTheme }
+  }
+
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 export type TStepButtonsCfg = {
@@ -88,8 +99,10 @@ export type TStepButtonsCfg = {
 
 export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
   const status = step?.status?.status
+  const isFailedAwaitingRetry = status === 'failed-pending-retry'
+  const isRetryableError = status === 'error' && !!step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted && step?.status?.metadata?.retry_type !== 'auto'
   return {
-    retry: status === 'error' && !!step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted && step?.status?.metadata?.retry_type !== 'auto',
+    retry: isFailedAwaitingRetry || isRetryableError,
     cancel: status === 'in-progress' || status === 'approval-awaiting',
     approval: status === 'approval-awaiting',
   }
@@ -107,6 +120,18 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
   const { status, status_human_description } = step.status
   const email = step?.created_by?.email
 
+  if (status === 'failed-pending-retry') {
+    const hints: string[] = []
+    if (step?.retryable) hints.push('retry')
+    if (step?.skippable) hints.push('skip')
+    const actions = hints.length > 0 ? ` You can ${hints.join(' or ')} this step.` : ''
+    return {
+      copy: `Step failed and is awaiting action.${actions}`,
+      theme: 'error',
+      title: `Step ${step?.name} failed — awaiting retry`,
+    }
+  }
+
   if (status === 'error') {
     const metadata = step?.status?.metadata
     if (metadata?.retries_exhausted) {
@@ -117,7 +142,7 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
       }
     }
     if (metadata?.auto_retried) {
-      const attempt = typeof metadata.retry_idx === 'number' ? metadata.retry_idx + 1 : '?'
+      const attempt = typeof metadata.retry_idx === 'number' ? metadata.retry_idx : '?'
       return {
         copy: `Step encountered an error and was automatically retried (attempt ${attempt} of ${metadata.max_retries ?? '?'}).`,
         theme: 'warn',

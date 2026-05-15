@@ -2145,6 +2145,13 @@ export interface paths {
      */
     get: operations["AwaitQueueSignal"];
   };
+  "/v1/queues/{queue_id}/signals/{signal_id}/graph": {
+    /**
+     * Get signal execution graph
+     * @description Returns a recursive tree of a signal and all its awaited/enqueued child signals.
+     */
+    get: operations["GetQueueSignalGraph"];
+  };
   "/v1/queues/{queue_id}/status": {
     /**
      * Get live queue status
@@ -3209,6 +3216,7 @@ export interface components {
     "app.AppSandboxConfig": {
       app_config_id?: string;
       app_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description cloud specific fields */
       aws_region_type?: string;
       /** @description fields set via after query */
@@ -3230,6 +3238,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      skip_noops?: boolean;
       terraform_version?: string;
       updated_at?: string;
       variables?: {
@@ -3396,6 +3405,7 @@ export interface components {
     "app.ComponentConfigConnection": {
       app_config_id?: string;
       app_config_version?: number;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h"). Max 1h. */
       build_timeout?: string;
       checksum?: string;
@@ -3421,6 +3431,7 @@ export interface components {
       pulumi?: components["schemas"]["app.PulumiComponentConfig"];
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      skip_noops?: boolean;
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
       type?: components["schemas"]["app.ComponentType"];
       updated_at?: string;
@@ -4801,7 +4812,7 @@ export interface components {
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -6136,6 +6147,7 @@ export interface components {
     };
     "service.CreateAppSandboxConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       connected_github_vcs_config?: components["schemas"]["helpers.ConnectedGithubVCSConfigRequest"];
       drift_schedule?: string;
       env_vars: {
@@ -6147,6 +6159,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       terraform_version: string;
       variables: {
         [key: string]: string;
@@ -6204,6 +6217,7 @@ export interface components {
     };
     "service.CreateDockerBuildComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       build_args?: string[];
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
@@ -6222,10 +6236,12 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       target?: string;
     };
     "service.CreateExternalImageComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       aws_ecr_image_config?: components["schemas"]["service.awsECRImageConfigRequest"];
       azure_acr_image_config?: components["schemas"]["service.azureACRImageConfigRequest"];
       /** @description Duration string for build operations (e.g., "30m", "1h") */
@@ -6241,10 +6257,12 @@ export interface components {
         [key: string]: string;
       };
       references?: string[];
+      skip_noops?: boolean;
       tag: string;
     };
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       chart_name: string;
@@ -6262,6 +6280,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
       values: {
@@ -6356,6 +6375,7 @@ export interface components {
     "service.CreateJobComponentConfigRequest": {
       app_config_id?: string;
       args?: string[];
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -6371,10 +6391,12 @@ export interface components {
         [key: string]: string;
       };
       references?: string[];
+      skip_noops?: boolean;
       tag: string;
     };
     "service.CreateKubernetesManifestComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -6394,6 +6416,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
     };
     "service.CreateOrgInviteRequest": {
       email: string;
@@ -6412,6 +6435,7 @@ export interface components {
     };
     "service.CreatePulumiComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       build_timeout?: string;
       checksum?: string;
       config: {
@@ -6431,6 +6455,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       runtime: string;
+      skip_noops?: boolean;
       version?: string;
     };
     "service.CreateRunnerBootstrapTokenResponse": {
@@ -6439,6 +6464,7 @@ export interface components {
     };
     "service.CreateTerraformModuleComponentConfigRequest": {
       app_config_id?: string;
+      auto_approve_on_policies_passing?: boolean;
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
@@ -6456,6 +6482,7 @@ export interface components {
       };
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
+      skip_noops?: boolean;
       variables: {
         [key: string]: string;
       };
@@ -22259,6 +22286,40 @@ export interface operations {
       };
       /** @description Request Timeout */
       408: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Get signal execution graph
+   * @description Returns a recursive tree of a signal and all its awaited/enqueued child signals.
+   */
+  GetQueueSignalGraph: {
+    parameters: {
+      query?: {
+        /** @description Max recursion depth (default 1, max 10) */
+        depth?: number;
+      };
+      path: {
+        /** @description Queue ID */
+        queue_id: string;
+        /** @description Signal ID */
+        signal_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": {
+            [key: string]: unknown;
+          };
+        };
+      };
+      /** @description Not Found */
+      404: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
