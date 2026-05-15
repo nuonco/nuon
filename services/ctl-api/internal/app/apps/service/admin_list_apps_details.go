@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -23,18 +23,16 @@ type AdminAppComponentDetails struct {
 	*app.Component
 }
 
-const adminAppDetailsDefaultLimit = 25
-
 // @ID			AdminListAppsDetails
 // @BasePath	/v1/apps
 // @Summary	Return a compact admin list of apps with their components and latest build status
 // @Description	Admin list of apps intended for status / README rollups.
 // @Description	Each app includes its components and each component's most recent build status.
-// @Description	Pagination is uncapped on this admin endpoint — pass any `limit`.
 // @Description	The optional `status` query parameter filters by
 // @Description	`status_v2->>'status'` and may be repeated.
 // @Param			offset	query	int			false	"offset of results to return"	Default(0)
-// @Param			limit	query	int			false	"limit of results to return (no upper cap)"	Default(25)
+// @Param			limit	query	int			false	"limit of results to return"	Default(10)
+// @Param			page	query	int			false	"page number of results to return"	Default(0)
 // @Param			status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
 // @Tags			apps/admin
 // @Security		AdminEmail
@@ -43,10 +41,9 @@ const adminAppDetailsDefaultLimit = 25
 // @Success		200	{array}	AdminAppDetails
 // @Router			/v1/apps/details [GET]
 func (s *service) AdminListAppsDetails(ctx *gin.Context) {
-	limit, offset := parseAdminAppDetailsPagination(ctx)
 	statuses := ctx.QueryArray("status")
 
-	items, err := s.listAppsDetails(ctx, limit, offset, statuses)
+	items, err := s.listAppsDetails(ctx, statuses)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -55,28 +52,21 @@ func (s *service) AdminListAppsDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, items)
 }
 
-func parseAdminAppDetailsPagination(ctx *gin.Context) (limit, offset int) {
-	limit = adminAppDetailsDefaultLimit
-	if v, err := strconv.Atoi(ctx.Query("limit")); err == nil && v > 0 {
-		limit = v
-	}
-	if v, err := strconv.Atoi(ctx.Query("offset")); err == nil && v >= 0 {
-		offset = v
-	}
-	return limit, offset
-}
-
-func (s *service) listAppsDetails(ctx *gin.Context, limit, offset int, statuses []string) ([]*AdminAppDetails, error) {
+func (s *service) listAppsDetails(ctx *gin.Context, statuses []string) ([]*AdminAppDetails, error) {
 	var apps []*app.App
 	tx := s.db.WithContext(ctx).
-		Order("created_at desc").
-		Limit(limit).
-		Offset(offset)
+		Scopes(scopes.WithOffsetPagination).
+		Order("created_at desc")
 	if len(statuses) > 0 {
 		tx = tx.Where("status_v2->>'status' IN ?", statuses)
 	}
 	if err := tx.Find(&apps).Error; err != nil {
 		return nil, fmt.Errorf("unable to list app details: %w", err)
+	}
+
+	apps, err := db.HandlePaginatedResponse(ctx, apps)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	if len(apps) == 0 {
