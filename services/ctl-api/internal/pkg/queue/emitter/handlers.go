@@ -28,6 +28,7 @@ type handler struct {
 }
 
 func (e *emitterWorkflow) registerHandlers(ctx workflow.Context) error {
+	// Using a slice for temporal determinism.
 	updateHandlers := []handler{
 		{StopUpdateName, handlerTypeUpdate, e.stopHandler, nil},
 		{RestartUpdateName, handlerTypeUpdate, e.restartHandler, nil},
