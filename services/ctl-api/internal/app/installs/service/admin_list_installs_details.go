@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type AdminInstallDetails struct {
@@ -25,8 +26,6 @@ type AdminInstallComponentDetails struct {
 	LatestDeploy *app.InstallDeploy `json:"latest_deploy,omitempty"`
 }
 
-const adminInstallDetailsDefaultLimit = 25
-
 // @ID			AdminListInstallsDetails
 // @BasePath	/v1/installs
 // @Summary	Return a compact admin list of installs with their components and latest deploy status
@@ -34,12 +33,12 @@ const adminInstallDetailsDefaultLimit = 25
 // @Description	Each install includes its components and each component's most
 // @Description	recent deploy, whose `status_description` surfaces actionable
 // @Description	error messages on failure.
-// @Description	Pagination is uncapped on this admin endpoint — pass any `limit`.
 // @Description	The optional `status` query parameter filters installs that have at
 // @Description	least one component whose `status_v2->>'status'` matches. The
 // @Description	parameter may be repeated (e.g. `?status=error&status=pending`).
 // @Param			offset	query	int			false	"offset of results to return"	Default(0)
-// @Param			limit	query	int			false	"limit of results to return (no upper cap)"	Default(25)
+// @Param			limit	query	int			false	"limit of results to return"	Default(10)
+// @Param			page	query	int			false	"page number of results to return"	Default(0)
 // @Param			status	query	[]string	false	"filter installs by component composite status (repeatable)"	collectionFormat(multi)
 // @Tags			installs/admin
 // @Security		AdminEmail
@@ -48,10 +47,9 @@ const adminInstallDetailsDefaultLimit = 25
 // @Success		200	{array}	AdminInstallDetails
 // @Router			/v1/installs/details [GET]
 func (s *service) AdminListInstallsDetails(ctx *gin.Context) {
-	limit, offset := parseAdminInstallDetailsPagination(ctx)
 	statuses := ctx.QueryArray("status")
 
-	items, err := s.listInstallsDetails(ctx, limit, offset, statuses)
+	items, err := s.listInstallsDetails(ctx, statuses)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -60,24 +58,12 @@ func (s *service) AdminListInstallsDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, items)
 }
 
-func parseAdminInstallDetailsPagination(ctx *gin.Context) (limit, offset int) {
-	limit = adminInstallDetailsDefaultLimit
-	if v, err := strconv.Atoi(ctx.Query("limit")); err == nil && v > 0 {
-		limit = v
-	}
-	if v, err := strconv.Atoi(ctx.Query("offset")); err == nil && v >= 0 {
-		offset = v
-	}
-	return limit, offset
-}
-
-func (s *service) listInstallsDetails(ctx *gin.Context, limit, offset int, statuses []string) ([]*AdminInstallDetails, error) {
+func (s *service) listInstallsDetails(ctx *gin.Context, statuses []string) ([]*AdminInstallDetails, error) {
 	var installs []*app.Install
 	tx := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Preload("AppRunnerConfig").
-		Order(views.TableOrViewName(s.db, &app.Install{}, ".created_at DESC")).
-		Limit(limit).
-		Offset(offset)
+		Order(views.TableOrViewName(s.db, &app.Install{}, ".created_at DESC"))
 	if len(statuses) > 0 {
 		installView := views.TableOrViewName(s.db, &app.Install{}, "")
 		tx = tx.Where(
@@ -88,6 +74,11 @@ func (s *service) listInstallsDetails(ctx *gin.Context, limit, offset int, statu
 	}
 	if err := tx.Find(&installs).Error; err != nil {
 		return nil, fmt.Errorf("unable to list install details: %w", err)
+	}
+
+	installs, err := db.HandlePaginatedResponse(ctx, installs)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	if len(installs) == 0 {
