@@ -4,6 +4,7 @@ import (
 	"go.uber.org/fx"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/statejwt"
 )
@@ -24,4 +25,5 @@ var SlackLibsModule = fx.Module("slack-libs",
 	fx.Provide(func(cfg *internal.Config) (*statejwt.Encoder, error) {
 		return statejwt.New(cfg.SlackStateJWTSecret)
 	}),
+	fx.Provide(autolink.New),
 )

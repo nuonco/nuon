@@ -13,19 +13,21 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 )
 
 type Activities struct {
-	cfg         *internal.Config
-	db          *gorm.DB
-	chDB        *gorm.DB
-	appsHelpers *appshelpers.Helpers
-	evClient    eventloop.Client
-	mw          metrics.Writer
-	logger      *temporalzap.Logger
-	tClient     temporalclient.Client
-	slackClient *slackclient.Client
+	cfg            *internal.Config
+	db             *gorm.DB
+	chDB           *gorm.DB
+	appsHelpers    *appshelpers.Helpers
+	evClient       eventloop.Client
+	mw             metrics.Writer
+	logger         *temporalzap.Logger
+	tClient        temporalclient.Client
+	slackClient    *slackclient.Client
+	autoLinkHelper *autolink.Helper
 }
 
 type Params struct {
@@ -39,6 +41,7 @@ type Params struct {
 	MW             metrics.Writer
 	TemporalClient temporalclient.Client
 	SlackClient    *slackclient.Client
+	AutoLinkHelper *autolink.Helper
 }
 
 func New(params Params) (*Activities, error) {
@@ -48,14 +51,15 @@ func New(params Params) (*Activities, error) {
 		return nil, fmt.Errorf("unable to create temporal logger: %w", err)
 	}
 	return &Activities{
-		cfg:         params.Cfg,
-		db:          params.DB,
-		chDB:        params.CHDB,
-		appsHelpers: params.AppsHelpers,
-		evClient:    params.EvClient,
-		mw:          params.MW,
-		logger:      tlogger,
-		tClient:     params.TemporalClient,
-		slackClient: params.SlackClient,
+		cfg:            params.Cfg,
+		db:             params.DB,
+		chDB:           params.CHDB,
+		appsHelpers:    params.AppsHelpers,
+		evClient:       params.EvClient,
+		mw:             params.MW,
+		logger:         tlogger,
+		tClient:        params.TemporalClient,
+		slackClient:    params.SlackClient,
+		autoLinkHelper: params.AutoLinkHelper,
 	}, nil
 }
