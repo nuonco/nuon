@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -48,7 +48,6 @@ const (
 	adminRunnerDetailsHeartBeatLookback   = 6 * time.Hour
 	adminRunnerDetailsHealthCheckLookback = 6 * time.Hour
 	adminRunnerDetailsRecentProcessLimit  = 5
-	adminRunnerDetailsDefaultLimit        = 25
 )
 
 // @ID			AdminListRunnersDetails
@@ -58,12 +57,12 @@ const (
 // @Description	the labels of the runner group owner (org labels for org-type
 // @Description	runners, install labels for install-type runners), the latest
 // @Description	heartbeat and health check, and the last 5 runner processes.
-// @Description	Pagination is uncapped on this admin endpoint — pass any `limit`.
 // @Description	The optional `status` query parameter filters by
 // @Description	`status_v2->>'status'` and may be repeated to match any of
 // @Description	several statuses (e.g. `?status=error&status=offline`).
-// @Param			offset	query	int		false	"offset of results to return"	Default(0)
-// @Param			limit	query	int		false	"limit of results to return (no upper cap)"	Default(25)
+// @Param			offset	query	int			false	"offset of results to return"	Default(0)
+// @Param			limit	query	int			false	"limit of results to return"	Default(10)
+// @Param			page	query	int			false	"page number of results to return"	Default(0)
 // @Param			status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
 // @Tags			runners/admin
 // @Security		AdminEmail
@@ -72,10 +71,9 @@ const (
 // @Success		200	{array}	AdminRunnerDetails
 // @Router			/v1/runners/details [GET]
 func (s *service) AdminListRunnersDetails(ctx *gin.Context) {
-	limit, offset := parseAdminRunnerDetailsPagination(ctx)
 	statuses := ctx.QueryArray("status")
 
-	runners, err := s.listRunnersDetails(ctx, limit, offset, statuses)
+	runners, err := s.listRunnersDetails(ctx, statuses)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -84,31 +82,23 @@ func (s *service) AdminListRunnersDetails(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runners)
 }
 
-func parseAdminRunnerDetailsPagination(ctx *gin.Context) (limit, offset int) {
-	limit = adminRunnerDetailsDefaultLimit
-	if v, err := strconv.Atoi(ctx.Query("limit")); err == nil && v > 0 {
-		limit = v
-	}
-	if v, err := strconv.Atoi(ctx.Query("offset")); err == nil && v >= 0 {
-		offset = v
-	}
-	return limit, offset
-}
-
-func (s *service) listRunnersDetails(ctx *gin.Context, limit, offset int, statuses []string) ([]*AdminRunnerDetails, error) {
+func (s *service) listRunnersDetails(ctx *gin.Context, statuses []string) ([]*AdminRunnerDetails, error) {
 	var runners []*app.Runner
 	tx := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Settings").
-		Order("created_at desc").
-		Limit(limit).
-		Offset(offset)
+		Order("created_at desc")
 	if len(statuses) > 0 {
 		tx = tx.Where("status_v2->>'status' IN ?", statuses)
 	}
-	res := tx.Find(&runners)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to list runner details: %w", res.Error)
+	if err := tx.Find(&runners).Error; err != nil {
+		return nil, fmt.Errorf("unable to list runner details: %w", err)
+	}
+
+	runners, err := db.HandlePaginatedResponse(ctx, runners)
+	if err != nil {
+		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
 	}
 
 	runnerIDs := make([]string, 0, len(runners))
