@@ -1,4 +1,5 @@
 import { useWorkflow } from '@/hooks/use-workflow'
+import { getStatusTheme } from '@/utils/status-utils'
 import { WorkflowSteps, WorkflowStepsSkeleton } from './WorkflowSteps'
 
 export { WorkflowStepsSkeleton }
@@ -15,8 +16,11 @@ export const WorkflowStepsContainer = ({
   const { workflow, workflowSteps } = useWorkflow()
 
   const metadata = workflow?.status?.metadata
+  const workflowStatus = workflow?.status?.status ?? ''
+  const workflowTheme = getStatusTheme(workflowStatus)
+  const isTerminal = workflowTheme === 'error' || workflowTheme === 'success' || workflowTheme === 'warn'
   const eagerStepsLoaded = !!metadata?.eager_steps_loaded
-  const allStepsLoaded = !!metadata?.all_steps_loaded
+  const allStepsLoaded = !!metadata?.all_steps_loaded || isTerminal
 
   return (
     <WorkflowSteps
