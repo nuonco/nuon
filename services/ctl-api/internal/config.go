@@ -135,7 +135,7 @@ func init() {
 	config.RegisterDefault("blob_storage_region", "us-west-2")
 
 	// Flow check thresholds
-	config.RegisterDefault("stale_plan_threshold", "1m") // 1m for local dev, override to 72h in production
+	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
 }
 
 type Config struct {

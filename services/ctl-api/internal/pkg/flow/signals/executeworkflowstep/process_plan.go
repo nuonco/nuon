@@ -87,7 +87,7 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	if err != nil {
 		return err
 	}
-	if s.retried || s.canceled {
+	if s.retried || s.canceled || s.skipped {
 		return nil
 	}
 
@@ -150,10 +150,15 @@ func (s *Signal) applyCheckResult(ctx workflow.Context, step *app.WorkflowStep, 
 		return errors.Wrap(err, "unable to set result directive from check")
 	}
 
+	stepStatus := result.Status
+	if stepStatus == "" {
+		stepStatus = app.StatusError
+	}
+
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.CompositeStatus{
-			Status:                 app.StatusError,
+			Status:                 stepStatus,
 			StatusHumanDescription: result.Reason.Summary,
 			Metadata:               meta,
 		},

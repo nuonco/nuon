@@ -15,6 +15,10 @@ const StepUnknown Step = ""
 type CheckResult struct {
 	Directive Step
 	Reason    CheckReason
+
+	// Status overrides the step status written by applyCheckResult.
+	// When empty, defaults to StatusError for backward compatibility.
+	Status app.Status
 }
 
 // Pass returns a result with no opinion.
@@ -46,6 +50,10 @@ func (r CheckReason) Metadata() map[string]any {
 	}
 	for k, v := range r.Labels {
 		m["check_label_"+k] = v
+		// Promote auto_approved to top level for UI badge detection.
+		if k == "auto_approved" {
+			m["auto_approved"] = v == "true"
+		}
 	}
 	return m
 }

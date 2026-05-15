@@ -102,11 +102,14 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	return directive.CheckResult{
 		Directive: directive.StepContinue,
+		Status:    app.WorkflowStepApprovalStatusApproved,
 		Reason: directive.CheckReason{
 			Check:   "auto-approval",
 			Summary: "Auto-approved (approve-all enabled)",
 			Labels: map[string]string{
-				"approval_type": approvalType,
+				"auto_approved":   "true",
+				"approval_type":   approvalType,
+				"approval_reason": "approve_all",
 			},
 		},
 	}, nil

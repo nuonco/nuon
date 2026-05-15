@@ -137,7 +137,7 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		// stays blocked naturally. When the retry update arrives (flow → group → step),
 		// s.retried is set and we unblock. The createStepRetryHandler writes the
 		// terminal directive (retry or retry-group) before setting s.retried.
-		if err := workflow.Await(ctx, func() bool { return s.retried || s.canceled }); err != nil {
+		if err := workflow.Await(ctx, func() bool { return s.retried || s.canceled || s.skipped }); err != nil {
 			return err
 		}
 		return nil

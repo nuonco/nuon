@@ -107,9 +107,14 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 			zap.String("step_id", step.ID))
 		return directive.CheckResult{
 			Directive: directive.StepContinue,
+			Status:    app.WorkflowStepApprovalStatusApproved,
 			Reason: directive.CheckReason{
 				Check:   "policy-auto-approve",
 				Summary: "Auto-approved: all policies passed",
+				Labels: map[string]string{
+					"auto_approved":   "true",
+					"approval_reason": "policies_passed",
+				},
 			},
 		}, nil
 	}

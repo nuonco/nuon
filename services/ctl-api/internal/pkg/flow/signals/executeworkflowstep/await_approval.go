@@ -74,7 +74,7 @@ func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.Workfl
 // "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
 	ok, err := workflow.AwaitWithTimeout(ctx, 30*24*time.Hour, func() bool {
-		return s.approved || s.retried || s.canceled
+		return s.approved || s.retried || s.canceled || s.skipped
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error waiting for approval for step %s: %w", step.ID, err)
@@ -89,7 +89,7 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 		return nil, fmt.Errorf("approval timed out for step %s", step.ID)
 	}
 
-	if s.retried || s.canceled {
+	if s.retried || s.canceled || s.skipped {
 		return nil, nil
 	}
 

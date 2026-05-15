@@ -90,6 +90,10 @@ type Signal struct {
 
 	canceled bool
 
+	// skipped is set by the "skip-step" update handler when the user skips
+	// a failed step. It unblocks the await in handleStepError.
+	skipped bool
+
 	// approvalResponseID and approvalResponseType are set by the "approve-plan"
 	// update handler to pass the response through without re-fetching from DB.
 	approvalResponseID   string
@@ -151,6 +155,10 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	}
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "cancel-step",
 		s.cancelStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "skip-step",
+		s.skipStepHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
 	return nil
