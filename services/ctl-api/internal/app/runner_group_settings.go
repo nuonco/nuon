@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"strconv"
 	"time"
 
@@ -157,10 +158,17 @@ func (r *RunnerGroupSettings) AfterQuery(tx *gorm.DB) error {
 	if r.OrgAzureClientID != "" {
 		r.Platform = CloudPlatformAzure
 	}
+	// NOTE: this case is difficult to reach because the value is set on creation
+	// however, if it were reached, we'd want to use the container image tag
+	// from the peer column or from the env
 	if r.BinaryVersion == "" {
 		r.BinaryVersion = r.ContainerImageTag
 		if r.BinaryVersion == "" {
-			r.BinaryVersion = "latest"
+			if tag, ok := os.LookupEnv("RUNNER_CONTAINER_IMAGE_TAG"); ok && tag != "" {
+				r.BinaryVersion = tag
+			} else {
+				r.BinaryVersion = ""
+			}
 		}
 	}
 	return nil
