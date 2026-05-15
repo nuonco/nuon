@@ -75,7 +75,7 @@ func (h *Helpers) CreateRunnerQueues(ctx context.Context, runner *app.Runner, se
 		Description:    "Periodic runner health check",
 		Mode:           app.QueueEmitterModeCron,
 		CronSchedule:   "* * * * *",
-		JitterWindow:   time.Minute,
+		JitterWindow:   time.Second * 30,
 		SignalType:     healthcheckSignalType,
 		SignalTemplate: &healthcheckSignalTemplate{RunnerID: runner.ID},
 	}); err != nil {
