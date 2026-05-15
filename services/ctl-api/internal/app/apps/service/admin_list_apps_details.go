@@ -25,21 +25,18 @@ type AdminAppComponentDetails struct {
 
 // @ID			AdminListAppsDetails
 // @BasePath	/v1/apps
-// @Summary	Return a compact admin list of apps with their components and latest build status
-// @Description	Admin list of apps intended for status / README rollups.
-// @Description	Each app includes its components and each component's most recent build status.
-// @Description	The optional `status` query parameter filters by
-// @Description	`status_v2->>'status'` and may be repeated.
-// @Param			offset	query	int			false	"offset of results to return"	Default(0)
-// @Param			limit	query	int			false	"limit of results to return"	Default(10)
-// @Param			page	query	int			false	"page number of results to return"	Default(0)
-// @Param			status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
-// @Tags			apps/admin
-// @Security		AdminEmail
-// @Accept			json
+// @Summary		Compact admin list of apps with components and latest build status
+// @Description	Admin list of apps intended for status / README rollups. Each app includes its components and each component's latest build. The optional `status` query parameter filters by `status_v2->>'status'` and may be repeated.
+// @Tags		apps/admin
+// @Security	AdminEmail
+// @Accept		json
 // @Produce		json
+// @Param		offset	query	int			false	"offset of results to return"				Default(0)
+// @Param		limit	query	int			false	"limit of results to return"				Default(10)
+// @Param		page	query	int			false	"page number of results to return"			Default(0)
+// @Param		status	query	[]string	false	"filter by composite status (repeatable)"	collectionFormat(multi)
 // @Success		200	{array}	AdminAppDetails
-// @Router			/v1/apps/details [GET]
+// @Router		/v1/apps/details [GET]
 func (s *service) AdminListAppsDetails(ctx *gin.Context) {
 	statuses := ctx.QueryArray("status")
 

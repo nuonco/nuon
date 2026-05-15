@@ -28,24 +28,18 @@ type AdminInstallComponentDetails struct {
 
 // @ID			AdminListInstallsDetails
 // @BasePath	/v1/installs
-// @Summary	Return a compact admin list of installs with their components and latest deploy status
-// @Description	Admin list of installs intended for status / README rollups.
-// @Description	Each install includes its components and each component's most
-// @Description	recent deploy, whose `status_description` surfaces actionable
-// @Description	error messages on failure.
-// @Description	The optional `status` query parameter filters installs that have at
-// @Description	least one component whose `status_v2->>'status'` matches. The
-// @Description	parameter may be repeated (e.g. `?status=error&status=pending`).
-// @Param			offset	query	int			false	"offset of results to return"	Default(0)
-// @Param			limit	query	int			false	"limit of results to return"	Default(10)
-// @Param			page	query	int			false	"page number of results to return"	Default(0)
-// @Param			status	query	[]string	false	"filter installs by component composite status (repeatable)"	collectionFormat(multi)
-// @Tags			installs/admin
-// @Security		AdminEmail
-// @Accept			json
+// @Summary		Compact admin list of installs with components and latest deploy status
+// @Description	Admin list of installs intended for status / README rollups. Each install includes its components and each component's latest deploy, whose `status_description` surfaces actionable error messages on failure. The optional `status` query parameter filters installs that have at least one component whose `status_v2->>'status'` matches, and may be repeated (e.g. `?status=error&status=pending`).
+// @Tags		installs/admin
+// @Security	AdminEmail
+// @Accept		json
 // @Produce		json
+// @Param		offset	query	int			false	"offset of results to return"									Default(0)
+// @Param		limit	query	int			false	"limit of results to return"									Default(10)
+// @Param		page	query	int			false	"page number of results to return"								Default(0)
+// @Param		status	query	[]string	false	"filter installs by component composite status (repeatable)"	collectionFormat(multi)
 // @Success		200	{array}	AdminInstallDetails
-// @Router			/v1/installs/details [GET]
+// @Router		/v1/installs/details [GET]
 func (s *service) AdminListInstallsDetails(ctx *gin.Context) {
 	statuses := ctx.QueryArray("status")
 
