@@ -26,6 +26,9 @@ type AppAppSandboxConfig struct {
 	// app id
 	AppID string `json:"app_id,omitempty"`
 
+	// auto approve on policies passing
+	AutoApproveOnPoliciesPassing bool `json:"auto_approve_on_policies_passing,omitempty"`
+
 	// cloud specific fields
 	AwsRegionType string `json:"aws_region_type,omitempty"`
 
@@ -67,6 +70,9 @@ type AppAppSandboxConfig struct {
 
 	// refs
 	Refs []*RefsRef `json:"refs"`
+
+	// skip noops
+	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// terraform version
 	TerraformVersion string `json:"terraform_version,omitempty"`

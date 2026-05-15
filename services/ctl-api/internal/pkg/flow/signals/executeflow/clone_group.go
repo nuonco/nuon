@@ -137,7 +137,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 			QueueSignal: qs,
 			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
 				"is_retry":        true,
-				"retry_idx":       0,
+				"retry_idx":       newGroupRetryIdx,
 				"group_retry_idx": newGroupRetryIdx,
 			}),
 			Idx:                 maxIdx + 100 + i,

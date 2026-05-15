@@ -2,6 +2,7 @@ package executeworkflowstep
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -91,7 +92,7 @@ func (s *Signal) processPlan(ctx workflow.Context, step *app.WorkflowStep, flw *
 	}
 
 	// Phase 3: Post-approval checks (can override the response)
-	responseChecks := s.approvalResponseChecks()
+	responseChecks := s.approvalResponseChecks(ctx)
 	for _, check := range responseChecks {
 		if !check.ShouldRun(step, flw, resp) {
 			continue
@@ -128,9 +129,15 @@ func (s *Signal) approvalCreateChecks(ctx workflow.Context, sig qsignal.Signal, 
 }
 
 // approvalResponseChecks returns the ordered list of post-approval checks.
-func (s *Signal) approvalResponseChecks() []directive.ApprovalResponseCheck {
+func (s *Signal) approvalResponseChecks(ctx workflow.Context) []directive.ApprovalResponseCheck {
+	// Load configurable stale plan threshold. Best-effort: empty string = use default.
+	thresholdStr, _ := activities.AwaitGetStalePlanThreshold(ctx, activities.GetStalePlanThresholdRequest{})
+	var threshold time.Duration
+	if thresholdStr != "" {
+		threshold, _ = time.ParseDuration(thresholdStr)
+	}
 	return []directive.ApprovalResponseCheck{
-		staleplan.New(setResultDirective),
+		staleplan.New(threshold, setResultDirective),
 	}
 }
 

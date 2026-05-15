@@ -121,7 +121,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 			QueueSignal: cloneQueueSignal,
 			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
 				"is_retry":        true,
-				"retry_idx":       0,
+				"retry_idx":       newGroupRetryIdx,
 				"group_retry_idx": newGroupRetryIdx,
 				"retry_type":      "auto",
 			}),
