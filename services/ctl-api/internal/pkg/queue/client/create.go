@@ -79,7 +79,7 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	opts := tclient.StartWorkflowOptions{
 		ID:                    q.Workflow.ID,
 		TaskQueue:             workflows.APITaskQueue,
-		Memo:                  queueMemo(q),
+		Memo:                  queueMemo(&q),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,

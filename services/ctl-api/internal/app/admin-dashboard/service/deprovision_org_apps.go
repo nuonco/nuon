@@ -26,7 +26,7 @@ func (s *service) DeprovisionOrgApps(c *gin.Context) {
 	updated := 0
 	var errs []string
 	for _, a := range apps {
-		if a.Status == app.AppStatusDeleteQueued || a.Status == app.AppStatusDeleted {
+		if a.Status == app.AppStatusDeleteQueued || a.Status == app.AppStatusDeleteQueued {
 			continue
 		}
 
