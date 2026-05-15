@@ -60,12 +60,14 @@ func (s *service) AdminListInstallsDetails(ctx *gin.Context) {
 
 func (s *service) listInstallsDetails(ctx *gin.Context, statuses []string) ([]*AdminInstallDetails, error) {
 	var installs []*app.Install
+	installView := views.TableOrViewName(s.db, &app.Install{}, "")
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("AppRunnerConfig").
+		Joins("JOIN apps ON apps.id = " + installView + ".app_id AND apps.deleted_at = 0").
+		Joins("JOIN orgs ON orgs.id = apps.org_id AND orgs.deleted_at = 0").
 		Order(views.TableOrViewName(s.db, &app.Install{}, ".created_at DESC"))
 	if len(statuses) > 0 {
-		installView := views.TableOrViewName(s.db, &app.Install{}, "")
 		tx = tx.Where(
 			"EXISTS (SELECT 1 FROM install_components ic WHERE ic.install_id = "+installView+
 				".id AND ic.deleted_at = 0 AND ic.status_v2->>'status' IN ?)",
