@@ -64,7 +64,32 @@ var (
 	_ signal.SignalWithClone                        = (*Signal)(nil)
 	_ signal.SignalWithSkipNoops                    = (*Signal)(nil)
 	_ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
+	_ signal.SignalWithOnRetry                      = (*Signal)(nil)
+	_ signal.SignalWithApprovalValidation           = (*Signal)(nil)
 )
+
+func (s *Signal) ValidateApproval(ctx workflow.Context) error {
+	if s.DeployID == "" {
+		return nil
+	}
+	superseded, err := activities.AwaitCheckDeploySuperseded(ctx, activities.CheckDeploySupersededRequest{
+		DeployID: s.DeployID,
+	})
+	if err != nil {
+		return nil
+	}
+	if superseded {
+		return fmt.Errorf("a newer deploy for this component has completed since this plan was created")
+	}
+	return nil
+}
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	if s.DeployID != "" {
+		s.updateDeployStatusWithoutStatusSync(ctx, s.DeployID, app.InstallDeployStatusRetried, "deploy retried")
+	}
+	return nil
+}
 
 func (s *Signal) IsNoOpCheckable() bool          { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool { return true }
@@ -83,12 +108,8 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 }
 
 func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneStepDef, error) {
-	// Mark the old deploy as retried so the UI shows it was superseded.
-	if s.DeployID != "" {
-		s.updateDeployStatusWithoutStatusSync(ctx, s.DeployID, app.InstallDeployStatusRetried, "deploy retried")
-	}
-
 	// Return a clean signal — Execute() will create a fresh deploy.
+	// OnRetry() handles marking the old deploy as retried.
 	return []signal.CloneStepDef{
 		{
 			Signal: &Signal{
@@ -107,12 +128,12 @@ func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneSte
 func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
-		return true // default to skipping on error
+		return false
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return true
+		return false
 	}
 
 	for _, ccc := range appCfg.ComponentConfigConnections {
@@ -120,7 +141,7 @@ func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 			return ccc.GetSkipNoops()
 		}
 	}
-	return true
+	return false
 }
 
 func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
@@ -258,6 +279,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
+
+	_ = activities.AwaitSetDeployPlannedAt(ctx, activities.SetDeployPlannedAtRequest{
+		DeployID: installDeploy.ID,
+	})
 
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPendingApproval, "pending-approval")
 	return nil

@@ -32,6 +32,10 @@ const (
 	// InstallStateManagerQueueName is the queue that handles state manager operations
 	// (force-regenerate, regenerate, hint) for an install.
 	InstallStateManagerQueueName = "state-manager"
+
+	// InstallGenerateStepsQueueName is the queue that handles generate-steps signals.
+	// Throttled at the same concurrency as workflows to prevent overload.
+	InstallGenerateStepsQueueName = "install-generate-steps"
 )
 
 type Params struct {
