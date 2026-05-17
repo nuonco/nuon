@@ -86,6 +86,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	return directive.CheckResult{
 		Directive: directive.StepSkipGroup,
+		Status:    app.StatusAutoSkipped,
 		Reason: directive.CheckReason{
 			Check:   "noop",
 			Summary: "Noop plan, automatically skipped",

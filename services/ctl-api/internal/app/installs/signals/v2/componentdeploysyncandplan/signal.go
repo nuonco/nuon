@@ -141,7 +141,7 @@ func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 			return ccc.GetSkipNoops()
 		}
 	}
-	return true
+	return false
 }
 
 func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
