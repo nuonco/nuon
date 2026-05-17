@@ -125,5 +125,22 @@ func (s *syncer) syncSteps() ([]syncStep, error) {
 		})
 	}
 
+	for _, runbook := range s.cfg.Runbooks {
+		obj := runbook
+
+		resourceName := fmt.Sprintf("runbook-%s", obj.Name)
+		steps = append(steps, syncStep{
+			Resource: resourceName,
+			Method: func(ctx context.Context) error {
+				_, _, err := s.syncRunbook(ctx, resourceName, obj)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			},
+		})
+	}
+
 	return steps, nil
 }

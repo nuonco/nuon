@@ -107,6 +107,18 @@ func (s *syncer) GetActionStateIds() []string {
 	return ids
 }
 
+// GetRunbookStateIds implements sync.Syncer
+func (s *syncer) GetRunbookStateIds() []string {
+	ids := make([]string, 0)
+	if s.state == nil || s.state.Runbooks == nil {
+		return ids
+	}
+	for _, runbook := range s.state.Runbooks {
+		ids = append(ids, runbook.ID)
+	}
+	return ids
+}
+
 // GetComponentsScheduled implements sync.Syncer
 func (s *syncer) GetComponentsScheduled() []sync.ComponentState {
 	states := make([]sync.ComponentState, 0)

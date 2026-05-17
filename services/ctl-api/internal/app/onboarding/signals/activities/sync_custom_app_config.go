@@ -64,7 +64,7 @@ func (a *Activities) syncCustomAppConfig(ctx context.Context, onboardingID strin
 	})
 
 	// Run the DB syncer to create components, sandbox, runner, etc.
-	s := syncer.NewDBSyncer(a.db, a.componentHelpers, a.actionsHelpers, appID, cfg, appConfig.ID)
+	s := syncer.NewDBSyncer(a.db, a.componentHelpers, a.actionsHelpers, a.runbooksHelpers, appID, cfg, appConfig.ID)
 	if err := s.Sync(ctx); err != nil {
 		humanErr := signal.HumanError(err)
 		a.db.WithContext(ctx).Model(appConfig).Updates(map[string]interface{}{

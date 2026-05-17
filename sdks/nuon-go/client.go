@@ -258,6 +258,11 @@ type Client interface {
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
 	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)
+
+	// runbooks
+	GetInstallRunbooks(ctx context.Context, installID string) ([]*InstallRunbook, error)
+	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*InstallRunbook, error)
+	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*InstallRunbookRun, error)
 }
 
 var _ Client = (*client)(nil)

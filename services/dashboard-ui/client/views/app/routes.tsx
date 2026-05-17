@@ -7,6 +7,8 @@ import { ComponentDetail } from './ComponentDetail'
 import { BuildDetail } from './BuildDetail'
 import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
+import { Runbooks } from './Runbooks'
+import { RunbookDetail } from './RunbookDetail'
 import { Roles } from './Roles'
 import { PoliciesLayout } from './PoliciesLayout'
 import { Policies } from './Policies'
@@ -49,6 +51,11 @@ export const appRoutes: RouteObject[] = [
       {
         path: ':orgId/apps/:appId/actions/:actionId',
         element: <ActionDetail />,
+      },
+      { path: ':orgId/apps/:appId/runbooks', element: <Runbooks /> },
+      {
+        path: ':orgId/apps/:appId/runbooks/:runbookId',
+        element: <RunbookDetail />,
       },
       { path: ':orgId/apps/:appId/roles', element: <Roles /> },
       {

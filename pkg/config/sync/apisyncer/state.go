@@ -50,6 +50,21 @@ func (s *syncer) OrphanedComponents() map[string]string {
 	return components
 }
 
+// OrphanedRunbooks implements sync.Syncer
+func (s *syncer) OrphanedRunbooks() map[string]string {
+	runbooks := map[string]string{}
+	currentStateNames := make([]string, 0)
+	for _, runbookState := range s.state.Runbooks {
+		currentStateNames = append(currentStateNames, runbookState.Name)
+	}
+	for _, prevRunbookState := range s.prevState.Runbooks {
+		if !slices.Contains(currentStateNames, prevRunbookState.Name) {
+			runbooks[prevRunbookState.Name] = prevRunbookState.ID
+		}
+	}
+	return runbooks
+}
+
 func (s *syncer) fetchState(ctx context.Context) error {
 	cfg, err := s.apiClient.GetAppLatestConfig(ctx, s.appID)
 	if err != nil {
