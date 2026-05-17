@@ -100,6 +100,7 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 		app.StatusPending,
 		app.AwaitingApproval,
 		app.Status("awaiting-approval"),
+		app.StatusFailedPendingRetry,
 	}) {
 		return fmt.Errorf("workflow is not cancelable (status: %s)", wf.Status.Status)
 	}
@@ -157,7 +158,7 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
 	for i := range wf.Steps {
 		switch wf.Steps[i].Status.Status {
-		case app.StatusInProgress, app.AwaitingApproval, app.Status("awaiting-approval"):
+		case app.StatusInProgress, app.AwaitingApproval, app.Status("awaiting-approval"), app.StatusFailedPendingRetry:
 			return &wf.Steps[i]
 		}
 	}

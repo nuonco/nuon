@@ -88,5 +88,13 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "103-queue-signals-inflight-index",
 			Fn:   m.Migration103QueueSignalsInflightIndex,
 		},
+		{
+			Name: "104-fix-stuck-generate-workflow-steps-signals",
+			SQL: `UPDATE queue_signals
+				SET status = jsonb_set(status, '{status}', '"success"')
+				WHERE type = 'generate-workflow-steps'
+				AND (status->>'status') NOT IN ('success', 'error', 'cancelled')
+				AND created_at < NOW() - INTERVAL '1 hour';`,
+		},
 	}
 }

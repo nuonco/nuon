@@ -118,12 +118,12 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
-		return true
+		return false
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return true
+		return false
 	}
 
 	for _, ccc := range appCfg.ComponentConfigConnections {

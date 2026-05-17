@@ -128,12 +128,12 @@ func (s *Signal) Clone(ctx workflow.Context, stepName string) ([]signal.CloneSte
 func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
-		return true // default to skipping on error
+		return false
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return true
+		return false
 	}
 
 	for _, ccc := range appCfg.ComponentConfigConnections {
