@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/planonly"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/policy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/staleplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/checks/superseded"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -138,6 +139,7 @@ func (s *Signal) approvalResponseChecks(ctx workflow.Context) []directive.Approv
 	}
 	return []directive.ApprovalResponseCheck{
 		staleplan.New(threshold, setResultDirective),
+		superseded.New(stepSignal, setResultDirective),
 	}
 }
 

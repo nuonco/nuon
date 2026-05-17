@@ -15,11 +15,12 @@ import (
 // workflow steps. Used by both the execute-flow signal (directly) and the
 // WorkflowConductor (for backward compatibility).
 type StepConfig struct {
-	GroupQueueName  string
-	QueueName       string
-	TargetQueueName string
-	OwnerID         string
-	OwnerType       string
+	GroupQueueName         string
+	QueueName              string
+	TargetQueueName        string
+	GenerateStepsQueueName string
+	OwnerID                string
+	OwnerType              string
 }
 
 // DispatchStepSignal enqueues the execute-workflow-step signal to the step queue.

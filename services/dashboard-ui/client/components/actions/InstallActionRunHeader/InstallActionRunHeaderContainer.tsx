@@ -1,5 +1,6 @@
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
+import { CancelRunnerJobButton } from '@/components/runners/CancelRunnerJob'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
 import { useOrg } from '@/hooks/use-org'
@@ -29,6 +30,13 @@ export const InstallActionRunHeaderContainer = ({
   })
   const basePath = `/${org?.id}/installs/${install?.id}`
 
+  const hasWorkflow = !!installActionRun?.install_workflow_id
+  const cancelButton = hasWorkflow ? (
+    <CancelWorkflowButton workflow={workflow} />
+  ) : installActionRun?.runner_job ? (
+    <CancelRunnerJobButton runnerJob={installActionRun.runner_job} jobType="actions" />
+  ) : null
+
   return (
     <InstallActionRunHeader
       actionId={actionId}
@@ -38,7 +46,7 @@ export const InstallActionRunHeaderContainer = ({
       basePath={basePath}
       isAdmin={isAdmin}
       step={step}
-      cancelWorkflowButton={<CancelWorkflowButton workflow={workflow} />}
+      cancelWorkflowButton={cancelButton}
       runnerJobPlanButton={
         installActionRun?.runner_job?.id ? (
           <RunnerJobPlanButton

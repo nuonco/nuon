@@ -288,6 +288,12 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	l.Debug("executing groups for workflow", zap.Int("group_count", len(groups)))
 
 	for gi := startFromGroupIdx; gi < len(groups); gi++ {
+		if s.cancelRequested {
+			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi-1)
+			s.markRemainingStepsNotAttempted(ctx, l)
+			return nil
+		}
+
 		group := &groups[gi]
 
 		l.Debug("dispatching group", zap.Int("group_idx", group.GroupIdx), zap.Int("group_position", gi), zap.String("step_group_id", group.ID), zap.Bool("parallel", group.Parallel))
@@ -336,6 +342,11 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 
 		switch flowdirective.Group(directive) {
 		case flowdirective.GroupContinue, "":
+			if s.cancelRequested {
+				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+				s.markRemainingStepsNotAttempted(ctx, l)
+				return nil
+			}
 			// Check if pause was requested
 			if s.pauseRequested {
 				return &flow.ApprovalPauseErr{StepID: "paused"}
@@ -618,11 +629,12 @@ func isStepTerminal(status app.Status) bool {
 // stepConfig returns the StepConfig for this signal.
 func (s *Signal) stepConfig() flow.StepConfig {
 	return flow.StepConfig{
-		GroupQueueName:  s.StepGroupQueueName,
-		QueueName:       s.StepQueueName,
-		TargetQueueName: s.StepTargetQueueName,
-		OwnerID:         s.OwnerID,
-		OwnerType:       s.OwnerType,
+		GroupQueueName:         s.StepGroupQueueName,
+		QueueName:              s.StepQueueName,
+		TargetQueueName:        s.StepTargetQueueName,
+		GenerateStepsQueueName: s.GenerateStepsQueueName,
+		OwnerID:                s.OwnerID,
+		OwnerType:              s.OwnerType,
 	}
 }
 

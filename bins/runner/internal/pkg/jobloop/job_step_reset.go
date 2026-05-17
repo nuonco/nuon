@@ -3,21 +3,12 @@ package jobloop
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 )
 
 func (j *jobLoop) executeResetJobStep(ctx context.Context, handler jobs.JobHandler, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
-	// Skip workspace cleanup in sandbox mode — no real workspaces to clean
-	if !j.isSandbox(job) {
-		if err := workspace.CleanupAll(ctx); err != nil {
-			return errors.Wrap(err, "unable to cleanup old workspaces")
-		}
-	}
-
 	statefulHandler, ok := handler.(jobs.StatefulJobHandler)
 	if !ok {
 		return nil

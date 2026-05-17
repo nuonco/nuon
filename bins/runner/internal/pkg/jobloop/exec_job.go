@@ -136,11 +136,6 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		}
 
 		handler = sandboxhandler.New(sandboxCfg, j.apiClient, j.cfg, j.shutdowner, job, execution)
-	} else {
-		l.Info("sandbox mode NOT active, using real handler",
-			zap.String("job_type", string(job.Type)),
-			zap.Bool("sandbox_mode_setting", j.settings.SandboxMode),
-		)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

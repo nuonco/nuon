@@ -43,6 +43,7 @@ const (
 	SandboxRunDriftDetected        SandboxRunStatus = "drift-detected"
 	SandboxRunNoDrift              SandboxRunStatus = "no-drift"
 	SandboxRunAutoSkipped          SandboxRunStatus = "auto-skipped"
+	SandboxRunStatusRetried        SandboxRunStatus = "retried"
 )
 
 type InstallSandboxRun struct {
@@ -75,6 +76,12 @@ type InstallSandboxRun struct {
 
 	// Role to be used when planning and applying sandbox runs
 	Role string `json:"role,omitempty" gorm:"column:role"`
+
+	// PlannedAt is set when the plan runner job completes successfully.
+	PlannedAt *time.Time `json:"planned_at,omitzero" gorm:"default null" temporaljson:"planned_at,omitzero,omitempty"`
+
+	// AppliedAt is set when the apply runner job completes successfully.
+	AppliedAt *time.Time `json:"applied_at,omitzero" gorm:"default null" temporaljson:"applied_at,omitzero,omitempty"`
 
 	RunType           SandboxRunType   `json:"run_type,omitzero" temporaljson:"run_type,omitzero,omitempty"`
 	Status            SandboxRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`

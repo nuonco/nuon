@@ -93,8 +93,8 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		// Wait until active workers drain before restarting or stopping.
 		return q.activeWorkers == 0
 	}); err != nil {
-		l.Info("timeout while waiting on queue to drain")
-		return false, err
+		l.Info("drain timeout exceeded, proceeding with restart",
+			zap.Int("active_workers", q.activeWorkers))
 	}
 
 	if q.restarted {

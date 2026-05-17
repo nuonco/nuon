@@ -255,6 +255,19 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to create install-workflow-steps queue: %w", err)
 	}
 
+	// Create the install-generate-steps queue (handles generate-steps signals, throttled like workflows)
+	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+		OwnerID:     install.ID,
+		OwnerType:   plugins.TableName(s.db, app.Install{}),
+		Namespace:   "installs",
+		Name:        InstallGenerateStepsQueueName,
+		MaxInFlight: 10,
+		MaxDepth:    50,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create install-generate-steps queue: %w", err)
+	}
+
 	// Create the state-manager queue (handles state regeneration operations)
 	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     install.ID,
