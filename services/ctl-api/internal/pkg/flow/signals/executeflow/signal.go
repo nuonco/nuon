@@ -28,11 +28,12 @@ type Signal struct {
 	OrgName      string `json:"org_name,omitempty"`
 
 	// Conductor configuration — set by the creator when enqueuing.
-	StepGroupQueueName  string `json:"step_group_queue_name"`
-	StepQueueName       string `json:"step_queue_name"`
-	StepTargetQueueName string `json:"step_target_queue_name"`
-	OwnerID             string `json:"owner_id"`
-	OwnerType           string `json:"owner_type"`
+	StepGroupQueueName     string `json:"step_group_queue_name"`
+	StepQueueName          string `json:"step_queue_name"`
+	StepTargetQueueName    string `json:"step_target_queue_name"`
+	GenerateStepsQueueName string `json:"generate_steps_queue_name"`
+	OwnerID                string `json:"owner_id"`
+	OwnerType              string `json:"owner_type"`
 	// OwnerName is the human-readable owner label resolved during Validate()
 	// (e.g. install/app/app_branch name). Stamped onto SignalLifecycleContext
 	// so workflow lifecycle webhook payloads carry owner_name without a
@@ -147,7 +148,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 
 	// Resolve queue names from owner type if not explicitly set.
-	if s.StepGroupQueueName == "" || s.StepQueueName == "" || s.StepTargetQueueName == "" {
+	if s.StepGroupQueueName == "" || s.StepQueueName == "" || s.StepTargetQueueName == "" || s.GenerateStepsQueueName == "" {
 		switch s.OwnerType {
 		case "installs":
 			if s.StepGroupQueueName == "" {
@@ -159,6 +160,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "install-signals"
 			}
+			if s.GenerateStepsQueueName == "" {
+				s.GenerateStepsQueueName = "install-generate-steps"
+			}
 		case "apps":
 			if s.StepGroupQueueName == "" {
 				s.StepGroupQueueName = "app-workflow-step-groups"
@@ -169,6 +173,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "app-signals"
 			}
+			if s.GenerateStepsQueueName == "" {
+				s.GenerateStepsQueueName = "app-generate-steps"
+			}
 		case "app_branches":
 			if s.StepGroupQueueName == "" {
 				s.StepGroupQueueName = "app-branch-workflow-step-groups"
@@ -178,6 +185,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			}
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "app-branch-signals"
+			}
+			if s.GenerateStepsQueueName == "" {
+				s.GenerateStepsQueueName = "app-branch-generate-steps"
 			}
 		default:
 			return s.failWorkflow(ctx, errors.Errorf("unable to resolve queue names for owner type %s", s.OwnerType))

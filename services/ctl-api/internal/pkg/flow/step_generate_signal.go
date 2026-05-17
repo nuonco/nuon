@@ -154,10 +154,17 @@ func enqueueGenerateStepsSignal(ctx workflow.Context, cfg StepConfig, flw *app.W
 		setter.SetWorkflowID(flw.ID)
 	}
 
+	// Use the dedicated generate-steps queue if configured, otherwise fall back
+	// to the target queue for backward compatibility with existing installs.
+	queueName := cfg.GenerateStepsQueueName
+	if queueName == "" {
+		queueName = cfg.TargetQueueName
+	}
+
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
-		QueueName:       cfg.TargetQueueName,
+		QueueName:       queueName,
 		Signal:          flw.GenerateStepsSignal.Signal,
 		SignalOwnerID:   flw.ID,
 		SignalOwnerType: "install_workflows",

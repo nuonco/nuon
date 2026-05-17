@@ -51,6 +51,14 @@ func (s *Signal) SetStepContext(stepID, flowID string) {
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithOnRetry = (*Signal)(nil)
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	if s.DeployID != "" {
+		s.updateDeployStatusWithoutStatusSync(ctx, s.DeployID, app.InstallDeployStatusRetried, "deploy retried")
+	}
+	return nil
+}
 
 func (s *Signal) AutoRetry() bool { return true }
 
