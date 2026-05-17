@@ -53,6 +53,14 @@ func (s *Signal) createStepRetryHandler(ctx workflow.Context) (*CreateStepRetryR
 		directive = DirectiveRetryGroup
 	}
 
+	// Call OnRetry so the signal can update its target object's status
+	// (e.g. mark a deploy or sandbox run as "retried").
+	if or, ok := sig.(signal.SignalWithOnRetry); ok {
+		if err := or.OnRetry(ctx); err != nil {
+			return nil, errors.Wrap(err, "OnRetry hook failed")
+		}
+	}
+
 	// Mark original step as retried.
 	if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStepRetried(ctx, activities.UpdateFlowStepRetriedRequest{
 		StepID: step.ID,

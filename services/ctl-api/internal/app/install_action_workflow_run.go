@@ -27,6 +27,7 @@ const (
 	InstallActionRunStatusTimedOut   InstallActionWorkflowRunStatus = "timed-out"
 	InstallActionRunStatusCancelled  InstallActionWorkflowRunStatus = "cancelled"
 	InstallActionRunStatusUnknown    InstallActionWorkflowRunStatus = "unknown"
+	InstallActionRunStatusRetried    InstallActionWorkflowRunStatus = "retried"
 )
 
 type InstallActionWorkflowRun struct {

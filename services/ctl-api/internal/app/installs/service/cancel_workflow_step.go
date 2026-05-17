@@ -65,6 +65,7 @@ func (s *service) CancelWorkflowStep(ctx *gin.Context) {
 		app.StatusPending,
 		app.AwaitingApproval,
 		app.Status("awaiting-approval"),
+		app.StatusFailedPendingRetry,
 	}
 	cancelable := false
 	for _, status := range cancelableStatuses {

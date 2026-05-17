@@ -62,6 +62,43 @@ var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithSkipNoops = (*Signal)(nil)
 var _ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
+var _ signal.SignalWithOnRetry = (*Signal)(nil)
+var _ signal.SignalWithApprovalValidation = (*Signal)(nil)
+
+func (s *Signal) ValidateApproval(ctx workflow.Context) error {
+	if s.ComponentID == "" || s.FlowID == "" {
+		return nil
+	}
+	deploy, err := activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		ComponentID:       s.ComponentID,
+	})
+	if err != nil {
+		return nil
+	}
+	superseded, err := activities.AwaitCheckDeploySuperseded(ctx, activities.CheckDeploySupersededRequest{
+		DeployID: deploy.ID,
+	})
+	if err != nil {
+		return nil
+	}
+	if superseded {
+		return fmt.Errorf("a newer deploy for this component has completed since this plan was created")
+	}
+	return nil
+}
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	deploy, err := activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		ComponentID:       s.ComponentID,
+	})
+	if err != nil {
+		return nil
+	}
+	s.updateDeployStatusWithoutStatusSync(ctx, deploy.ID, app.InstallDeployStatusRetried, "deploy retried")
+	return nil
+}
 
 func (s *Signal) IsNoOpCheckable() bool                 { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
@@ -81,12 +118,12 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 	install, err := activities.AwaitGetInstallForInstallComponentByInstallComponentID(ctx, s.InstallComponentID)
 	if err != nil {
-		return true
+		return false
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
 	if err != nil {
-		return true
+		return false
 	}
 
 	for _, ccc := range appCfg.ComponentConfigConnections {
@@ -94,7 +131,7 @@ func (s *Signal) SkipNoops(ctx workflow.Context) bool {
 			return ccc.GetSkipNoops()
 		}
 	}
-	return true
+	return false
 }
 
 func (s *Signal) AutoApproveOnPoliciesPassing(ctx workflow.Context) bool {
@@ -258,6 +295,10 @@ func (s *Signal) doTeardown(ctx workflow.Context, install *app.Install, installD
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "error deploying")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
+
+	_ = activities.AwaitSetDeployPlannedAt(ctx, activities.SetDeployPlannedAtRequest{
+		DeployID: installDeploy.ID,
+	})
 
 	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusPendingApproval, "pending-approval")
 	return nil

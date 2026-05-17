@@ -46,6 +46,22 @@ var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
 var _ signal.SignalWithRetryGroup = (*Signal)(nil)
+var _ signal.SignalWithOnRetry = (*Signal)(nil)
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	if s.InstallID == "" || s.FlowID == "" {
+		return nil
+	}
+	run, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		InstallID:         s.InstallID,
+	})
+	if err != nil {
+		return nil
+	}
+	s.updateRunStatus(ctx, run.ID, app.SandboxRunStatusRetried, "retrying")
+	return nil
+}
 
 func (s *Signal) AutoRetry() bool  { return true }
 func (s *Signal) MaxRetries() int  { return 5 }
@@ -173,6 +189,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job did not succeed")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
+	_ = activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
+		SandboxRunID: installRun.ID,
+	})
+
 	s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusDeprovisioned, "successfully deprovisioned")
 
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))

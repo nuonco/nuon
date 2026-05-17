@@ -49,6 +49,7 @@ var _ signal.SignalWithCancel = (*Signal)(nil)
 var _ signal.SignalWithAutoRetry = (*Signal)(nil)
 var _ signal.SignalWithMaxRetries = (*Signal)(nil)
 var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+var _ signal.SignalWithOnRetry = (*Signal)(nil)
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -56,6 +57,16 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	if s.runnerJobID != "" {
 		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
 	}
+	return nil
+}
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	// For adhoc runs, mark the existing run as retried.
+	if s.AdhocActionRunID != "" {
+		s.updateActionRunStatus(ctx, s.AdhocActionRunID, app.InstallActionRunStatusRetried, "retrying")
+	}
+	// Regular runs create the run during Execute — the old run was already
+	// marked as error and a new run will be created on the retry clone.
 	return nil
 }
 
