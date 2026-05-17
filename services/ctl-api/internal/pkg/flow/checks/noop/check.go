@@ -65,6 +65,20 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 	if !shouldSkip {
 		l.Debug("noop plan detected but skip_noops not enabled, proceeding to approval",
 			zap.String("step_id", step.ID))
+
+		// Decorate the step with a noop label so the approval UI can display it,
+		// then pass through to let the approval pipeline handle it normally.
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusCheckPlan,
+				StatusHumanDescription: "noop plan detected, awaiting approval",
+				Metadata: map[string]any{
+					"noop": true,
+				},
+			},
+		})
+
 		return directive.Pass(), nil
 	}
 
