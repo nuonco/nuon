@@ -53,20 +53,38 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 		return directive.Pass(), nil
 	}
 
-	// Check org-level auto-skip-noop feature flag first.
-	if c.OrgAutoSkipNoop {
-		l.Debug("noop plan detected and org auto-skip-noop enabled",
-			zap.String("step_id", step.ID))
-		// Fall through to skip handling below.
-	} else {
-		// Check signal-level SkipNoops. When it returns false, noop plans
-		// proceed through the normal approval flow.
-		if sn, ok := c.sig.(signal.SignalWithSkipNoops); ok && !sn.SkipNoops(ctx) {
-			l.Debug("noop plan detected but skip_noops disabled, proceeding to approval",
-				zap.String("step_id", step.ID))
-			return directive.Pass(), nil
+	// Determine whether noop plans should be auto-skipped. Only skip when
+	// explicitly enabled at the org level OR the component level.
+	shouldSkip := c.OrgAutoSkipNoop
+	if !shouldSkip {
+		if sn, ok := c.sig.(signal.SignalWithSkipNoops); ok {
+			shouldSkip = sn.SkipNoops(ctx)
 		}
 	}
+
+	if !shouldSkip {
+		l.Debug("noop plan detected but skip_noops not enabled, proceeding to approval",
+			zap.String("step_id", step.ID))
+
+		// Decorate the step with a noop label so the approval UI can display it,
+		// then pass through to let the approval pipeline handle it normally.
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: step.ID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusCheckPlan,
+				StatusHumanDescription: "noop plan detected, awaiting approval",
+				Metadata: map[string]any{
+					"noop": true,
+				},
+			},
+		})
+
+		return directive.Pass(), nil
+	}
+
+	l.Debug("noop plan detected and skip_noops enabled",
+		zap.String("step_id", step.ID),
+		zap.Bool("org_auto_skip", c.OrgAutoSkipNoop))
 
 	l.Debug("approval plan contents empty",
 		zap.String("step_id", step.ID),
@@ -86,6 +104,7 @@ func (c *Check) Run(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workf
 
 	return directive.CheckResult{
 		Directive: directive.StepSkipGroup,
+		Status:    app.StatusAutoSkipped,
 		Reason: directive.CheckReason{
 			Check:   "noop",
 			Summary: "Noop plan, automatically skipped",

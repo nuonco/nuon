@@ -35,6 +35,11 @@ type Signal struct {
 	// remaining groups are still generating. Set before done to allow early consumption.
 	eagerStepGroups      *app.GenerateStepsResult
 	eagerStepGroupsReady bool
+
+	// fetched tracks whether each update handler has been called, so Execute
+	// can block until all consumers have retrieved results before completing.
+	fetchStepsCalled      bool
+	eagerStepGroupsCalled bool
 }
 
 var (
@@ -131,14 +136,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.result = result
 	s.done = true
 
-	// Wait for the FetchSteps update to be called so the conductor can
+	// Wait for both update handlers to be called so the conductor can
 	// retrieve the generated steps before this signal completes.
-	return workflow.Await(ctx, func() bool { return false })
+	return workflow.Await(ctx, func() bool {
+		return s.fetchStepsCalled && s.eagerStepGroupsCalled
+	})
 }
 
 func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 	if err := workflow.SetUpdateHandlerWithOptions(ctx, "eager-step-groups",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
+			defer func() { s.eagerStepGroupsCalled = true }()
 			// Block until eager step groups are ready.
 			if err := workflow.Await(ctx, func() bool { return s.eagerStepGroupsReady }); err != nil {
 				return nil, err
@@ -155,6 +163,7 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 
 	return workflow.SetUpdateHandlerWithOptions(ctx, "FetchSteps",
 		func(ctx workflow.Context) (*app.GenerateStepsResult, error) {
+			defer func() { s.fetchStepsCalled = true }()
 			// Block until Execute has finished generating steps.
 			if err := workflow.Await(ctx, func() bool { return s.done }); err != nil {
 				return nil, err

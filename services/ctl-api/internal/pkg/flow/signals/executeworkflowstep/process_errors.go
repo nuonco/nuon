@@ -149,6 +149,14 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		zap.Int("retry_index", nextRetryIndex),
 		zap.Int("max_retries", maxRetries))
 
+	// Call OnRetry so the signal can update its target object's status
+	// (e.g. mark a deploy or sandbox run as "retried").
+	if or, ok := sig.(signal.SignalWithOnRetry); ok {
+		if err := or.OnRetry(ctx); err != nil {
+			l.Warn("OnRetry hook failed", zap.String("step_id", step.ID), zap.Error(err))
+		}
+	}
+
 	// Record auto-retry metadata on the error status. We intentionally do NOT
 	// set retried=true here — the dashboard uses that flag to hide the error,
 	// and we want the error to remain visible. The auto_retried metadata field

@@ -7,6 +7,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 func (h *Helpers) GetInstallComponent(ctx context.Context, installID, componentID string) (*app.InstallComponent, error) {
@@ -14,7 +16,7 @@ func (h *Helpers) GetInstallComponent(ctx context.Context, installID, componentI
 	res := h.db.WithContext(ctx).
 		Preload("InstallDeploys", func(db *gorm.DB) *gorm.DB {
 			return db.
-				Order("install_deploys.created_at DESC").Limit(1)
+				Scopes(scopes.WithOverrideTable(views.CustomViewName(db, &app.InstallDeploy{}, "state_view_v1")))
 		}).
 		Preload("TerraformWorkspace").
 		Where(&app.InstallComponent{
