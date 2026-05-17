@@ -198,7 +198,7 @@ func (c *ComponentConfigConnection) BeforeCreate(tx *gorm.DB) error {
 	c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	c.OrgID = orgIDFromContext(tx.Statement.Context)
 	if c.SkipNoops == nil {
-		c.SkipNoops = generics.ToPtr(true)
+		c.SkipNoops = generics.ToPtr(false)
 	}
 	return nil
 }

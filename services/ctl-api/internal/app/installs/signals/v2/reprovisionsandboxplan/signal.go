@@ -51,7 +51,47 @@ var (
 	_ signal.SignalWithCancel                       = (*Signal)(nil)
 	_ signal.SignalWithSkipNoops                    = (*Signal)(nil)
 	_ signal.SignalWithAutoApproveOnPoliciesPassing = (*Signal)(nil)
+	_ signal.SignalWithOnRetry                      = (*Signal)(nil)
+	_ signal.SignalWithApprovalValidation           = (*Signal)(nil)
 )
+
+func (s *Signal) ValidateApproval(ctx workflow.Context) error {
+	if s.InstallID == "" || s.FlowID == "" {
+		return nil
+	}
+	run, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		InstallID:         s.InstallID,
+	})
+	if err != nil {
+		return nil
+	}
+	superseded, err := activities.AwaitCheckSandboxRunSuperseded(ctx, activities.CheckSandboxRunSupersededRequest{
+		SandboxRunID: run.ID,
+	})
+	if err != nil {
+		return nil
+	}
+	if superseded {
+		return fmt.Errorf("a newer sandbox run has completed since this plan was created")
+	}
+	return nil
+}
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	if s.InstallID == "" || s.FlowID == "" {
+		return nil
+	}
+	run, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		InstallID:         s.InstallID,
+	})
+	if err != nil {
+		return nil // best-effort: run may not exist yet
+	}
+	s.updateRunStatusWithoutStatusSync(ctx, run.ID, app.SandboxRunStatusRetried, "retrying")
+	return nil
+}
 
 func (s *Signal) IsNoOpCheckable() bool                 { return true }
 func (s *Signal) RequiresPolicyEvaluation() bool        { return true }
@@ -237,6 +277,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
+	_ = activities.AwaitSetSandboxRunPlannedAt(ctx, activities.SetSandboxRunPlannedAtRequest{
+		SandboxRunID: installRun.ID,
+	})
+
 	s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunPendingApproval, "pending approval")
 	l.Info("reprovision plan was successful")
 	return nil
@@ -357,6 +401,7 @@ func (s *Signal) updateRunStatusWithoutStatusSync(ctx workflow.Context, runID st
 		RunID:             runID,
 		Status:            status,
 		StatusDescription: statusDescription,
+		SkipStatusSync:    true,
 	}); err != nil {
 		l.Error("unable to update run status v2", zap.String("run-id", runID), zap.Error(err))
 	}

@@ -46,6 +46,9 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
+			Metadata: map[string]any{
+				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
 		})
 		h.setFinished(app.StatusError, blockedErr.Error())
 		return nil, blockedErr

@@ -23,6 +23,11 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 	// If a previous handler crashed mid-validate or mid-execute, the started_at timestamp
 	// will exist but the finished_at timestamp will not.
 	if meta := queueSignal.Status.Metadata; meta != nil {
+		// If init previously failed, the signal is already in a terminal error state.
+		if _, initFailed := meta["init_failed_at"]; initFailed {
+			return nil
+		}
+
 		_, valStarted := meta["validate_started_at"]
 		_, valFinished := meta["validate_finished_at"]
 		if valStarted && !valFinished {
@@ -81,6 +86,9 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: initErr.Error(),
+			Metadata: map[string]any{
+				"init_failed_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
 		})
 		return initErr
 	}

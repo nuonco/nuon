@@ -153,8 +153,9 @@ type SignalWithOnApprove interface {
 	OnApprove(ctx workflow.Context) error
 }
 
-// SignalWithOnRetry is called when an approval step receives a "retry plan" response.
-// Signals can implement this to perform cleanup or preparation before the retry clone is created.
+// SignalWithOnRetry is called on any retry (auto or manual) before the step is
+// cloned. Signals implement this to update the target object's status (e.g. mark
+// the deploy or sandbox run as "retried") so the UI reflects the retry immediately.
 type SignalWithOnRetry interface {
 	OnRetry(ctx workflow.Context) error
 }
@@ -171,6 +172,21 @@ type SignalWithOnSkip interface {
 // Signals can implement this to perform cleanup when approval is denied.
 type SignalWithOnDeny interface {
 	OnDeny(ctx workflow.Context) error
+}
+
+// ---------------------------------------------------------------------------
+// Approval Validation
+// ---------------------------------------------------------------------------
+
+// SignalWithApprovalValidation is implemented by plan signals that can check
+// whether their plan has been superseded by a newer deploy or sandbox run.
+// Called as a post-approval response check — if the plan is superseded, the
+// step is auto-retried so a fresh plan is generated.
+//
+// The signal looks up its own run/deploy record and checks whether anything
+// newer exists for the same target from a different workflow.
+type SignalWithApprovalValidation interface {
+	ValidateApproval(ctx workflow.Context) error
 }
 
 // SignalWithSkipGroup is implemented by signals that want a "skip" approval

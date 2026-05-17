@@ -88,5 +88,13 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "103-queue-signals-inflight-index",
 			Fn:   m.Migration103QueueSignalsInflightIndex,
 		},
+		{
+			Name: "104-fix-stuck-generate-workflow-steps-signals",
+			Fn:   m.Migration104FixStuckGenerateWorkflowStepsSignals,
+		},
+		{
+			Name: "105-fix-skip-noops-default",
+			Fn:   m.Migration105FixSkipNoopsDefault,
+		},
 	}
 }
