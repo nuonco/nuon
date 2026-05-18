@@ -1,7 +1,6 @@
 import { useEffect, useRef, memo } from 'react'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState'
-import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TOTELLog } from '@/types'
@@ -51,10 +50,8 @@ interface ISSELogs {
   filters: TLogFiltersProps
   activeLog: TOTELLog | undefined
   handleActiveLog: (logId: string) => void
-  loadMore: () => void
-  hasMore: boolean
   isLoading: boolean
-  isStreamOpen: boolean
+  isConnected: boolean
   deepLinkLogId?: string | null
 }
 
@@ -64,10 +61,8 @@ export const SSELogs = ({
   filters,
   activeLog,
   handleActiveLog,
-  loadMore,
-  hasMore,
   isLoading,
-  isStreamOpen,
+  isConnected,
   deepLinkLogId,
 }: ISSELogs) => {
   const deepLinkHandledRef = useRef(false)
@@ -126,7 +121,7 @@ export const SSELogs = ({
               />
             ) : null}
 
-            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isStreamOpen ? (
+            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isConnected ? (
               <EmptyState
                 variant="table"
                 emptyTitle="Waiting for logs"
@@ -134,7 +129,7 @@ export const SSELogs = ({
               />
             ) : null}
 
-            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isStreamOpen ? (
+            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isConnected ? (
               <EmptyState
                 variant="table"
                 emptyTitle="No logs available"
@@ -156,22 +151,6 @@ export const SSELogs = ({
                 />
               ))}
 
-              {!isStreamOpen && hasMore ? (
-                <Button
-                  onClick={loadMore}
-                  disabled={isLoading}
-                  variant="ghost"
-                  className="mx-auto mt-4"
-                >
-                  {isLoading ? (
-                    <>
-                      <Icon variant="Loading" /> Loading
-                    </>
-                  ) : (
-                    <>Load more</>
-                  )}
-                </Button>
-              ) : null}
             </div>
           </div>
         </div>

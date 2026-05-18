@@ -24,9 +24,7 @@ const PARAM_BODY = 'q'
 const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
 // Span / trace cross-link from the trace tab. SSE delivers every log on the
-// stream regardless of server filter, so we always have to apply these
-// client-side for the cross-link to feel snappy. The static-fetch path
-// (useLogServerFilters) also forwards these to ctl-api.
+// stream, so we apply these filters client-side.
 const PARAM_SPAN_ID = 'span_id'
 const PARAM_TRACE_ID = 'trace_id'
 

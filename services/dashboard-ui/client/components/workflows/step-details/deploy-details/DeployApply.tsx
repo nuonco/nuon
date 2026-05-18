@@ -8,7 +8,6 @@ import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TInstallDeploy } from '@/types'
 
@@ -47,22 +46,20 @@ export const DeployApply = ({
           </div>
 
           {deploy?.log_stream ? (
-            <LogStreamProvider shouldPoll logStreamId={deploy?.log_stream?.id}>
-              <UnifiedLogsProvider>
-                <LogViewerProvider>
-                  <Tabs
-                    tabs={{
-                      logs: <SSELogs />,
-                      trace: (
-                        <TraceView
-                          logStreamId={deploy.log_stream.id}
-                          shouldPoll={deploy.log_stream.open}
-                        />
-                      ),
-                    }}
-                  />
-                </LogViewerProvider>
-              </UnifiedLogsProvider>
+            <LogStreamProvider logStreamId={deploy?.log_stream?.id}>
+              <LogViewerProvider>
+                <Tabs
+                  tabs={{
+                    logs: <SSELogs />,
+                    trace: (
+                      <TraceView
+                        logStreamId={deploy.log_stream.id}
+                        shouldPoll={deploy.log_stream.open}
+                      />
+                    ),
+                  }}
+                />
+              </LogViewerProvider>
             </LogStreamProvider>
           ) : null}
         </div>

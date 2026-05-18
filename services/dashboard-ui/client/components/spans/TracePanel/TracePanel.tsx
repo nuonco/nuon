@@ -7,7 +7,6 @@ import { useOrg } from '@/hooks/use-org'
 import { getLogStreamSpans } from '@/lib'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TLogStream } from '@/types'
 
 export interface ITracePanel {
@@ -57,17 +56,15 @@ const TracePanelContent = ({ logStream }: { logStream: TLogStream }) => {
 
   return (
     <div className="flex flex-col gap-6 flex-auto min-h-0">
-      <LogStreamProvider logStreamId={logStream.id} shouldPoll={shouldPoll}>
-        <UnifiedLogsProvider>
-          <LogViewerProvider spans={spans}>
-            <TraceView
-              logStreamId={logStream.id}
-              shouldPoll={shouldPoll}
-              spans={spans}
-              spansLoading={isLoading}
-            />
-          </LogViewerProvider>
-        </UnifiedLogsProvider>
+      <LogStreamProvider logStreamId={logStream.id}>
+        <LogViewerProvider spans={spans}>
+          <TraceView
+            logStreamId={logStream.id}
+            shouldPoll={shouldPoll}
+            spans={spans}
+            spansLoading={isLoading}
+          />
+        </LogViewerProvider>
       </LogStreamProvider>
     </div>
   )

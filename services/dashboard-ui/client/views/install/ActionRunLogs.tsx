@@ -6,7 +6,6 @@ import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 
 export const ActionRunLogsPage = () => {
@@ -18,12 +17,10 @@ export const ActionRunLogsPage = () => {
     <div className="flex flex-col gap-6">
       <PageTitle title={`Logs | ${install?.name}`} />
       {logStream ? (
-        <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
-          <UnifiedLogsProvider>
-            <LogViewerProvider>
-              <InstallActionRunLogs actionConfig={installActionRun?.config} />
-            </LogViewerProvider>
-          </UnifiedLogsProvider>
+        <LogStreamProvider logStreamId={logStream.id}>
+          <LogViewerProvider>
+            <InstallActionRunLogs actionConfig={installActionRun?.config} />
+          </LogViewerProvider>
         </LogStreamProvider>
       ) : (
         <div className="flex flex-col items-center gap-4 p-12">
