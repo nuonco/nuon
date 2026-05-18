@@ -61,12 +61,5 @@ func (h *Workflows) getInstallComponentState(ctx workflow.Context, instCompID st
 	st.BuildID = string(installDeploys[0].ComponentBuildID)
 	st.Outputs = installDeploys[0].Outputs
 
-	l.Info("legacy state: component outputs",
-		zap.String("component_name", st.Name),
-		zap.String("install_component_id", instCompID),
-		zap.Int("output_count", len(st.Outputs)),
-		zap.Bool("has_outputs", len(st.Outputs) > 0),
-	)
-
 	return st, nil
 }
