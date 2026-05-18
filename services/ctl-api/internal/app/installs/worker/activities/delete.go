@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"gorm.io/gorm/clause"
 )
 
@@ -21,7 +21,7 @@ func (a *Activities) Delete(ctx context.Context, req DeleteRequest) error {
 			ID: req.InstallID,
 		})
 	if res.Error != nil {
-		return fmt.Errorf("unable to delete install: %w", res.Error)
+		return dbgenerics.TemporalGormError(res.Error, "unable to delete install: %w")
 	}
 
 	return nil
