@@ -2,7 +2,6 @@ import { Text } from '@/components/common/Text'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TWorkflowStep } from '@/types'
 
 export interface ISyncSecretsStepDetails {
@@ -19,12 +18,10 @@ export const SyncSecretsStepDetails = ({ step }: ISyncSecretsStepDetails) => {
       </Text>
 
       {logStreamId ? (
-        <LogStreamProvider shouldPoll logStreamId={logStreamId}>
-          <UnifiedLogsProvider>
-            <LogViewerProvider>
-              <SSELogs />
-            </LogViewerProvider>
-          </UnifiedLogsProvider>
+        <LogStreamProvider logStreamId={logStreamId}>
+          <LogViewerProvider>
+            <SSELogs />
+          </LogViewerProvider>
         </LogStreamProvider>
       ) : (
         <div className="flex flex-col divide-y">
