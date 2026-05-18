@@ -105,7 +105,7 @@ func (i *Install) UseView() bool {
 }
 
 func (i *Install) ViewVersion() string {
-	return "v7"
+	return "v8"
 }
 
 func (i *Install) Views(db *gorm.DB) []migrations.View {
@@ -113,6 +113,11 @@ func (i *Install) Views(db *gorm.DB) []migrations.View {
 		{
 			Name:          views.DefaultViewName(db, &Install{}, 7),
 			SQL:           viewsql.InstallsViewV7,
+			AlwaysReapply: true,
+		},
+		{
+			Name:          views.DefaultViewName(db, &Install{}, 8),
+			SQL:           viewsql.InstallsViewV8,
 			AlwaysReapply: true,
 		},
 		{
@@ -128,6 +133,13 @@ func (i *Install) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &Install{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &Install{}, "app_id"),
+			Columns: []string{
+				"app_id",
+				"deleted_at",
 			},
 		},
 	}

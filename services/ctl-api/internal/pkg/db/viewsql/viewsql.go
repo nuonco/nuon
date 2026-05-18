@@ -22,6 +22,9 @@ var InstallsViewV6 string
 //go:embed installs_view_v7.sql
 var InstallsViewV7 string
 
+//go:embed installs_view_v8.sql
+var InstallsViewV8 string
+
 //go:embed install_states_view_v1.sql
 var InstallStatesViewV1 string
 
