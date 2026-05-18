@@ -80,6 +80,12 @@ func (i *InstallActionWorkflowRunStep) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallActionWorkflowRunStep{}, "run_id"),
+			Columns: []string{
+				"install_action_workflow_run_id",
+			},
+		},
 	}
 }
 
