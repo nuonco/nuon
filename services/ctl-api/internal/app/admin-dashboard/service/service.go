@@ -199,6 +199,7 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/orgs/:id/workflows", s.OrgWorkflows)
 		api.POST("/orgs/:id/terminate-workflows", s.TerminateOrgWorkflows)
 		api.GET("/orgs/:id/queue-signals", s.OrgQueueSignals)
+		api.GET("/orgs/:id/queue-signal-stats", s.OrgQueueSignalStats)
 		api.POST("/orgs/:id/delete-queue-signals", s.DeleteOrgQueueSignals)
 
 		// Accounts

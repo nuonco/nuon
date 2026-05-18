@@ -81,6 +81,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
 
 	// orgs signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/clear_org_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/delete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/deprovision"

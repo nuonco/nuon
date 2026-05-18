@@ -25,7 +25,7 @@ export const migrateOrgQueues = (id: string) =>
   api<{ status: string }>({ path: `orgs/${id}/migrate-queues`, method: 'POST' })
 
 export const clearOrgQueues = (id: string) =>
-  api<{ status: string; queues_cleared: number }>({ path: `orgs/${id}/clear-queues`, method: 'POST' })
+  api<{ status: string; signal_id: string; queue_id: string; message: string }>({ path: `orgs/${id}/clear-queues`, method: 'POST' })
 
 export const forceRestartOrgQueues = (id: string) =>
   api<{ status: string; queues_restarted: number }>({ path: `orgs/${id}/force-restart-queues`, method: 'POST' })
@@ -60,6 +60,9 @@ export const terminateOrgWorkflows = (id: string) =>
 
 export const getOrgQueueSignals = (id: string) =>
   api<{ signals: any[] }>({ path: `orgs/${id}/queue-signals` })
+
+export const getOrgQueueSignalStats = (id: string) =>
+  api<{ stats: { type: string; status: string; count: number }[]; total: number }>({ path: `orgs/${id}/queue-signal-stats` })
 
 export const deleteOrgQueueSignals = (id: string) =>
   api<{ status: string; signals_deleted: number }>({ path: `orgs/${id}/delete-queue-signals`, method: 'POST' })

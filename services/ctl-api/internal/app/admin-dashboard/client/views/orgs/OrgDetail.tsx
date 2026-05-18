@@ -8,7 +8,7 @@ import {
   deprovisionOrg, forgetOrg, forgetOrgInstalls, deprovisionOrgApps,
   forgetInstall, deprovisionInstall,
   getOrgWorkflows, terminateOrgWorkflows,
-  getOrgQueueSignals, deleteOrgQueueSignals,
+  getOrgQueueSignals, getOrgQueueSignalStats, deleteOrgQueueSignals,
 } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { Pagination } from '@/components/common/Pagination'
@@ -24,7 +24,7 @@ function getStatus(s: any): string {
   return String(s)
 }
 
-type Tab = 'overview' | 'cleanup'
+type Tab = 'overview' | 'queues' | 'cleanup'
 
 export const OrgDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -63,21 +63,6 @@ export const OrgDetail = () => {
 
   const supportMutation = useMutation({
     mutationFn: () => addSupportUsers(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
-  })
-
-  const migrateMutation = useMutation({
-    mutationFn: () => migrateOrgQueues(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
-  })
-
-  const clearQueuesMutation = useMutation({
-    mutationFn: () => clearOrgQueues(id!),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
-  })
-
-  const forceRestartQueuesMutation = useMutation({
-    mutationFn: () => forceRestartOrgQueues(id!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', id] }),
   })
 
@@ -150,7 +135,7 @@ export const OrgDetail = () => {
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-800">
         <nav className="flex gap-4">
-          {(['overview', 'cleanup'] as Tab[]).map((tab) => (
+          {(['overview', 'queues', 'cleanup'] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setTab(tab)}
@@ -167,7 +152,7 @@ export const OrgDetail = () => {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'overview' ? (
+      {activeTab === 'overview' && (
         <OverviewTab
           org={org}
           orgLabels={orgLabels}
@@ -185,16 +170,13 @@ export const OrgDetail = () => {
           addLabelMutation={addLabelMutation}
           removeLabelMutation={removeLabelMutation}
           supportMutation={supportMutation}
-          migrateMutation={migrateMutation}
-          clearQueuesMutation={clearQueuesMutation}
-          forceRestartQueuesMutation={forceRestartQueuesMutation}
           removeOldProcessesMutation={removeOldProcessesMutation}
           shutdownProcessesMutation={shutdownProcessesMutation}
           shutdownHintProcessesMutation={shutdownHintProcessesMutation}
         />
-      ) : (
-        <CleanupTab orgId={id!} installs={installs} />
       )}
+      {activeTab === 'queues' && <QueuesTab orgId={id!} />}
+      {activeTab === 'cleanup' && <CleanupTab orgId={id!} installs={installs} />}
     </div>
   )
 }
@@ -204,9 +186,8 @@ function OverviewTab({
   org, orgLabels, installs, installsPage, setInstallsPage, installs_total_pages,
   recent_app, graph_dot,
   labelKey, setLabelKey, labelValue, setLabelValue, handleAddLabel,
-  addLabelMutation, removeLabelMutation, supportMutation, migrateMutation,
-  clearQueuesMutation, forceRestartQueuesMutation, removeOldProcessesMutation,
-  shutdownProcessesMutation, shutdownHintProcessesMutation,
+  addLabelMutation, removeLabelMutation, supportMutation,
+  removeOldProcessesMutation, shutdownProcessesMutation, shutdownHintProcessesMutation,
 }: any) {
   return (
     <>
@@ -319,9 +300,6 @@ function OverviewTab({
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Actions</h2>
         <div className="mt-2 flex gap-3">
           <ActionButton mutation={supportMutation} label="Add support users" pendingLabel="Adding..." />
-          <ActionButton mutation={migrateMutation} label="Migrate queues" pendingLabel="Migrating..." color="orange" />
-          <ActionButton mutation={clearQueuesMutation} label="Clear org queues" pendingLabel="Clearing..." color="red" />
-          <ActionButton mutation={forceRestartQueuesMutation} label="Force restart org queues" pendingLabel="Restarting..." color="red" />
           <ActionButton mutation={removeOldProcessesMutation} label="Remove old runner processes" pendingLabel="Removing..." color="orange" />
           <ActionButton mutation={shutdownProcessesMutation} label="Shutdown runner processes" pendingLabel="Shutting down..." color="red" />
           <ActionButton mutation={shutdownHintProcessesMutation} label="Send shutdown hint" pendingLabel="Sending..." color="red" />
@@ -395,11 +373,159 @@ function OverviewTab({
   )
 }
 
+// ---------- Queues Tab ----------
+function QueuesTab({ orgId }: { orgId: string }) {
+  const queryClient = useQueryClient()
+
+  const migrateMutation = useMutation({
+    mutationFn: () => migrateOrgQueues(orgId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org-queue-signal-stats', orgId] }),
+  })
+
+  const clearQueuesMutation = useMutation({
+    mutationFn: () => clearOrgQueues(orgId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-queue-signal-stats', orgId] })
+      queryClient.invalidateQueries({ queryKey: ['org-queue-signals', orgId] })
+    },
+  })
+
+  const forceRestartQueuesMutation = useMutation({
+    mutationFn: () => forceRestartOrgQueues(orgId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-queue-signal-stats', orgId] })
+      queryClient.invalidateQueries({ queryKey: ['org-queue-signals', orgId] })
+    },
+  })
+
+  const signalStatsQuery = useQuery({
+    queryKey: ['org-queue-signal-stats', orgId],
+    queryFn: () => getOrgQueueSignalStats(orgId),
+    refetchInterval: 10000,
+  })
+
+  const queueSignalsQuery = useQuery({
+    queryKey: ['org-queue-signals', orgId],
+    queryFn: () => getOrgQueueSignals(orgId),
+    refetchInterval: 10000,
+  })
+
+  const deleteSignalsMutation = useMutation({
+    mutationFn: () => deleteOrgQueueSignals(orgId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['org-queue-signals', orgId] })
+      queryClient.invalidateQueries({ queryKey: ['org-queue-signal-stats', orgId] })
+    },
+  })
+
+  const signals = queueSignalsQuery.data?.signals ?? []
+
+  return (
+    <div className="space-y-6">
+      {/* Queue Actions */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Queue Actions</h2>
+        <div className="mt-2 flex flex-wrap gap-3">
+          <ActionButton mutation={migrateMutation} label="Migrate queues" pendingLabel="Migrating..." color="orange" />
+          <SignalActionButton mutation={clearQueuesMutation} label="Clear org queues" pendingLabel="Enqueueing..." color="red" />
+          <ActionButton mutation={forceRestartQueuesMutation} label="Force restart org queues" pendingLabel="Restarting..." color="red" />
+        </div>
+      </div>
+
+      {/* Queue Signal Stats */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          Queue Signal Stats
+          {signalStatsQuery.data && <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({signalStatsQuery.data.total} total)</span>}
+        </h2>
+        {signalStatsQuery.isLoading ? (
+          <div className="mt-2"><LoadingSpinner /></div>
+        ) : signalStatsQuery.data && signalStatsQuery.data.stats.length > 0 ? (
+          <QueueSignalStatsTable stats={signalStatsQuery.data.stats} />
+        ) : (
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">No queue signals</p>
+        )}
+      </div>
+
+      {/* Queue Signals List */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Recent Signals
+            {signals.length > 0 && <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({signals.length})</span>}
+          </h2>
+          {signals.length > 0 && (
+            <ConfirmButton
+              mutation={deleteSignalsMutation}
+              label="Delete All"
+              pendingLabel="Deleting..."
+              confirmMessage={`Delete all queue signals for this org?`}
+            />
+          )}
+        </div>
+        {queueSignalsQuery.isLoading ? (
+          <div className="mt-2"><LoadingSpinner /></div>
+        ) : (
+          <div className="mt-2 table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Queue</th>
+                  <th>Status</th>
+                  <th>Enqueued</th>
+                  <th>Executions</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                {signals.map((sig: any) => (
+                  <tr key={sig.id}>
+                    <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(sig.id)}</td>
+                    <td><Badge>{sig.type || '-'}</Badge></td>
+                    <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">
+                      {sig.queue_id ? (
+                        <Link to={`/queues/${sig.queue_id}`} className="text-primary-600 dark:text-primary-400 hover:underline">
+                          {truncateId(sig.queue_id)}
+                        </Link>
+                      ) : '-'}
+                    </td>
+                    <td>
+                      {getStatus(sig.status) && (
+                        <Badge variant="status" status={getStatus(sig.status)}>{getStatus(sig.status)}</Badge>
+                      )}
+                    </td>
+                    <td>
+                      {sig.enqueued
+                        ? <Badge variant="status" status="yes">Yes</Badge>
+                        : <Badge variant="status" status="no">No</Badge>}
+                    </td>
+                    <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{sig.execution_count ?? 0}</td>
+                    <td className="text-gray-500 dark:text-gray-400 text-xs">{formatDate(sig.created_at)}</td>
+                  </tr>
+                ))}
+                {signals.length === 0 && (
+                  <tr><td colSpan={7} className="text-center text-gray-500 dark:text-gray-400 py-6">No queue signals found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {deleteSignalsMutation.isSuccess && (
+          <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+            Deleted {(deleteSignalsMutation.data as any)?.signals_deleted ?? 0} signal(s)
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ---------- Cleanup Tab ----------
 function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
   const queryClient = useQueryClient()
 
-  // Cleanup action mutations
   const markDeletedMutation = useMutation({
     mutationFn: () => addOrgLabels(orgId, { delete: 'true' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org', orgId] }),
@@ -437,18 +563,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org-workflows', orgId] }),
   })
 
-  // Queue signals
-  const queueSignalsQuery = useQuery({
-    queryKey: ['org-queue-signals', orgId],
-    queryFn: () => getOrgQueueSignals(orgId),
-    refetchInterval: 10000,
-  })
-
-  const deleteSignalsMutation = useMutation({
-    mutationFn: () => deleteOrgQueueSignals(orgId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['org-queue-signals', orgId] }),
-  })
-
   // Per-install mutations
   const forgetInstallMutation = useMutation({
     mutationFn: (installId: string) => forgetInstall(installId),
@@ -461,7 +575,6 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
   })
 
   const workflows = workflowsQuery.data?.workflows ?? []
-  const signals = queueSignalsQuery.data?.signals ?? []
 
   return (
     <div className="space-y-6">
@@ -608,76 +721,71 @@ function CleanupTab({ orgId, installs }: { orgId: string; installs: any[] }) {
           </p>
         )}
       </div>
+    </div>
+  )
+}
 
-      {/* Org Queue Signals */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Queue Signals
-            {signals.length > 0 && <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">({signals.length})</span>}
-          </h2>
-          {signals.length > 0 && (
-            <ConfirmButton
-              mutation={deleteSignalsMutation}
-              label="Delete All"
-              pendingLabel="Deleting..."
-              confirmMessage={`Delete all ${signals.length} queue signal(s)?`}
-            />
-          )}
-        </div>
-        {queueSignalsQuery.isLoading ? (
-          <div className="mt-2"><LoadingSpinner /></div>
-        ) : (
-          <div className="mt-2 table-card">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Signal Type</th>
-                  <th>Queue ID</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {signals.map((sig: any) => (
-                  <tr key={sig.id}>
-                    <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">{truncateId(sig.id)}</td>
-                    <td className="text-gray-700 dark:text-gray-300 text-xs">{sig.signal_type || '-'}</td>
-                    <td className="text-gray-500 dark:text-gray-400 font-mono text-xs">
-                      {sig.queue_id ? (
-                        <Link to={`/queues/${sig.queue_id}`} className="text-primary-600 dark:text-primary-400 hover:underline">
-                          {truncateId(sig.queue_id)}
-                        </Link>
-                      ) : '-'}
-                    </td>
-                    <td>
-                      {getStatus(sig.status) && (
-                        <Badge variant="status" status={getStatus(sig.status)}>{getStatus(sig.status)}</Badge>
-                      )}
-                    </td>
-                    <td className="text-gray-500 dark:text-gray-400 text-xs">{formatDate(sig.created_at)}</td>
-                  </tr>
-                ))}
-                {signals.length === 0 && (
-                  <tr><td colSpan={5} className="text-center text-gray-500 dark:text-gray-400 py-6">No queue signals found</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {deleteSignalsMutation.isSuccess && (
-          <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-            Deleted {(deleteSignalsMutation.data as any)?.signals_deleted ?? 0} signal(s)
-          </p>
-        )}
-      </div>
+// ---------- Queue Signal Stats ----------
+function QueueSignalStatsTable({ stats }: { stats: { type: string; status: string; count: number }[] }) {
+  // Pivot: rows = signal types, columns = statuses
+  const statuses = [...new Set(stats.map((s) => s.status))].sort()
+  const typeMap = new Map<string, Map<string, number>>()
+  const typeTotals = new Map<string, number>()
+
+  for (const row of stats) {
+    if (!typeMap.has(row.type)) typeMap.set(row.type, new Map())
+    typeMap.get(row.type)!.set(row.status, row.count)
+    typeTotals.set(row.type, (typeTotals.get(row.type) || 0) + row.count)
+  }
+
+  // Sort types by total count descending
+  const types = [...typeMap.keys()].sort((a, b) => (typeTotals.get(b) || 0) - (typeTotals.get(a) || 0))
+
+  return (
+    <div className="mt-2 table-card overflow-x-auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Signal Type</th>
+            {statuses.map((s) => (
+              <th key={s} className="text-right">{s}</th>
+            ))}
+            <th className="text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+          {types.map((type) => (
+            <tr key={type}>
+              <td className="text-gray-700 dark:text-gray-300 text-xs font-mono">{type}</td>
+              {statuses.map((status) => {
+                const count = typeMap.get(type)?.get(status) || 0
+                return (
+                  <td key={status} className="text-right text-xs tabular-nums">
+                    {count > 0 ? (
+                      <span className={
+                        status === 'error' ? 'text-red-600 dark:text-red-400 font-medium' :
+                        status === 'in-progress' ? 'text-blue-600 dark:text-blue-400' :
+                        status === 'queued' ? 'text-yellow-600 dark:text-yellow-400' :
+                        status === 'success' ? 'text-green-600 dark:text-green-400' :
+                        'text-gray-700 dark:text-gray-300'
+                      }>{count}</span>
+                    ) : (
+                      <span className="text-gray-300 dark:text-gray-700">-</span>
+                    )}
+                  </td>
+                )
+              })}
+              <td className="text-right text-xs font-medium tabular-nums text-gray-900 dark:text-gray-100">{typeTotals.get(type) || 0}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
 
 // ---------- Shared Components ----------
-function ActionButton({ mutation, label, pendingLabel, color = 'primary' }: {
+function SignalActionButton({ mutation, label, pendingLabel, color = 'red' }: {
   mutation: any
   label: string
   pendingLabel: string
@@ -698,7 +806,42 @@ function ActionButton({ mutation, label, pendingLabel, color = 'primary' }: {
       >
         {mutation.isPending ? pendingLabel : label}
       </button>
-      {mutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">Done</span>}
+      {mutation.isSuccess && mutation.data?.signal_id && (
+        <Link
+          to={`/queues/${mutation.data.queue_id}/signals/${mutation.data.signal_id}`}
+          className="ml-2 text-sm text-primary-600 dark:text-primary-400 hover:underline"
+        >
+          View signal
+        </Link>
+      )}
+      {mutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
+    </div>
+  )
+}
+
+function ActionButton({ mutation, label, pendingLabel, color = 'primary', successMessage }: {
+  mutation: any
+  label: string
+  pendingLabel: string
+  color?: 'primary' | 'red' | 'orange'
+  successMessage?: string
+}) {
+  const colorClasses = {
+    primary: 'bg-primary-600 dark:bg-primary-500 hover:bg-primary-700 dark:hover:bg-primary-600',
+    red: 'bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600',
+    orange: 'bg-orange-600 hover:bg-orange-700 dark:hover:bg-orange-600',
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => mutation.mutate()}
+        disabled={mutation.isPending}
+        className={`rounded-md px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${colorClasses[color]}`}
+      >
+        {mutation.isPending ? pendingLabel : label}
+      </button>
+      {mutation.isSuccess && <span className="ml-2 text-sm text-green-600 dark:text-green-400">{successMessage || 'Done'}</span>}
       {mutation.isError && <span className="ml-2 text-sm text-red-600 dark:text-red-400">Failed</span>}
     </div>
   )

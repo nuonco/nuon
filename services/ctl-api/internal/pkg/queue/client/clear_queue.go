@@ -13,14 +13,15 @@ import (
 // ClearQueue cancels all in-flight (non-terminal) signals in the given queue.
 // Every affected signal is set to StatusCancelled with a "cancelled by
 // clear-queue" description.
-func (c *Client) ClearQueue(ctx context.Context, queueID string) error {
+func (c *Client) ClearQueue(ctx context.Context, queueID string) (int, error) {
 	var signals []app.QueueSignal
 	if res := c.db.WithContext(ctx).
 		Where(app.QueueSignal{QueueID: queueID}).
 		Find(&signals); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to list queue signals")
+		return 0, errors.Wrap(res.Error, "unable to list queue signals")
 	}
 
+	cancelled := 0
 	for _, qs := range signals {
 		if isTerminalStatus(qs.Status.Status) {
 			continue
@@ -50,7 +51,9 @@ func (c *Client) ClearQueue(ctx context.Context, queueID string) error {
 				zap.String("queue_signal_id", qs.ID),
 				zap.Error(res.Error))
 		}
+
+		cancelled++
 	}
 
-	return nil
+	return cancelled, nil
 }
