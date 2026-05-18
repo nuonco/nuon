@@ -21,17 +21,23 @@ import type { TComponentType } from '@/types'
 const NODE_WIDTH = 200
 const NODE_HEIGHT = 44
 
-interface ComponentInfo {
+export interface GraphNode {
   id: string
   name: string
   type?: TComponentType
+  role: 'current' | 'dependency' | 'dependent'
+}
+
+export interface GraphEdge {
+  sourceId: string
+  targetId: string
 }
 
 export interface IComponentDependencyGraph {
-  current: ComponentInfo
-  dependencies: ComponentInfo[]
-  dependents: ComponentInfo[]
+  nodes: GraphNode[]
+  edges: GraphEdge[]
   basePath: string
+  currentId: string
   onNavigate?: () => void
 }
 
@@ -96,52 +102,41 @@ DependencyNode.displayName = 'DependencyNode'
 
 const nodeTypes = { dependency: DependencyNode }
 
-function buildGraph(
-  current: ComponentInfo,
-  dependencies: ComponentInfo[],
-  dependents: ComponentInfo[],
+function layoutGraph(
+  graphNodes: GraphNode[],
+  graphEdges: GraphEdge[],
+  currentId: string,
   basePath: string,
 ) {
-  const nodes: Node[] = []
-  const edges: Edge[] = []
-
-  const makeNode = (info: ComponentInfo, role: NodeRole): Node => ({
-    id: info.id,
+  const nodes: Node[] = graphNodes.map((n) => ({
+    id: n.id,
     type: 'dependency',
     data: {
-      label: info.name,
-      componentType: info.type || '',
-      role,
-      href: role !== 'current' ? `${basePath}/${info.id}` : undefined,
+      label: n.name,
+      componentType: n.type || '',
+      role: n.role,
+      href: n.id !== currentId ? `${basePath}/${n.id}` : undefined,
     },
     position: { x: 0, y: 0 },
-  })
+  }))
 
-  dependencies.forEach((dep) => nodes.push(makeNode(dep, 'dependency')))
-  nodes.push(makeNode(current, 'current'))
-  dependents.forEach((dep) => nodes.push(makeNode(dep, 'dependent')))
+  const nodeIds = new Set(graphNodes.map((n) => n.id))
+  const roleById = new Map(graphNodes.map((n) => [n.id, n.role]))
 
-  dependencies.forEach((dep) => {
-    edges.push({
-      id: `${dep.id}->${current.id}`,
-      source: dep.id,
-      target: current.id,
-      type: 'smoothstep',
-      style: { stroke: EDGE_COLORS.dependency, strokeWidth: 1.5 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: EDGE_COLORS.dependency },
+  const edges: Edge[] = graphEdges
+    .filter((e) => nodeIds.has(e.sourceId) && nodeIds.has(e.targetId))
+    .map((e) => {
+      const targetRole = roleById.get(e.targetId)
+      const color = targetRole === 'dependent' ? EDGE_COLORS.dependent : EDGE_COLORS.dependency
+      return {
+        id: `${e.sourceId}->${e.targetId}`,
+        source: e.sourceId,
+        target: e.targetId,
+        type: 'smoothstep',
+        style: { stroke: color, strokeWidth: 1.5 },
+        markerEnd: { type: MarkerType.ArrowClosed, color },
+      }
     })
-  })
-
-  dependents.forEach((dep) => {
-    edges.push({
-      id: `${current.id}->${dep.id}`,
-      source: current.id,
-      target: dep.id,
-      type: 'smoothstep',
-      style: { stroke: EDGE_COLORS.dependent, strokeWidth: 1.5 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: EDGE_COLORS.dependent },
-    })
-  })
 
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
@@ -171,18 +166,18 @@ function buildGraph(
 }
 
 export const ComponentDependencyGraph = ({
-  current,
-  dependencies,
-  dependents,
+  nodes: graphNodes,
+  edges: graphEdges,
   basePath,
+  currentId,
   onNavigate,
 }: IComponentDependencyGraph) => {
   const theme = useSystemTheme()
   const navigate = useNavigate()
 
   const { nodes, edges } = useMemo(
-    () => buildGraph(current, dependencies, dependents, basePath),
-    [current, dependencies, dependents, basePath],
+    () => layoutGraph(graphNodes, graphEdges, currentId, basePath),
+    [graphNodes, graphEdges, currentId, basePath],
   )
 
   const memoizedNodeTypes = useMemo(() => nodeTypes, [])

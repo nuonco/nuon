@@ -36,7 +36,7 @@ const webAppConfig = makeConfig([
 ])
 
 export const WebAppFromApiServer = () => (
-  <ModalStory label="API server graph">
+  <ModalStory label="API server (transitive deps + dependents)">
     <ComponentDependencyGraphModal
       componentId="api"
       componentName="api_server"
@@ -48,7 +48,7 @@ export const WebAppFromApiServer = () => (
 )
 
 export const WebAppFromVpc = () => (
-  <ModalStory label="VPC graph (root dependency)">
+  <ModalStory label="VPC (root — all downstream)">
     <ComponentDependencyGraphModal
       componentId="vpc"
       componentName="vpc"
@@ -60,7 +60,7 @@ export const WebAppFromVpc = () => (
 )
 
 export const WebAppFromFrontend = () => (
-  <ModalStory label="Frontend graph (leaf dependent)">
+  <ModalStory label="Frontend (leaf — all upstream)">
     <ComponentDependencyGraphModal
       componentId="frontend"
       componentName="frontend"
@@ -72,7 +72,7 @@ export const WebAppFromFrontend = () => (
 )
 
 export const WebAppFromEksCluster = () => (
-  <ModalStory label="EKS cluster graph (many dependents)">
+  <ModalStory label="EKS cluster (mid-graph, both directions)">
     <ComponentDependencyGraphModal
       componentId="eks"
       componentName="eks_cluster"
@@ -83,73 +83,62 @@ export const WebAppFromEksCluster = () => (
   </ModalStory>
 )
 
-// Infrastructure-heavy app: networking → compute → services
-const infraConfig = makeConfig([
-  { id: 'network', name: 'network', type: 'terraform_module' },
-  { id: 'dns', name: 'dns_zone', type: 'terraform_module', depIds: ['network'] },
-  { id: 'cert', name: 'certificate', type: 'terraform_module', depIds: ['dns'] },
-  { id: 'alb', name: 'load_balancer', type: 'terraform_module', depIds: ['network', 'cert'] },
-  { id: 'cluster', name: 'eks_cluster', type: 'terraform_module', depIds: ['network'] },
-  { id: 'ingress', name: 'ingress_controller', type: 'helm_chart', depIds: ['cluster', 'alb'] },
-  { id: 'app', name: 'application', type: 'helm_chart', depIds: ['cluster', 'ingress'] },
-  { id: 'jobs', name: 'cron_jobs', type: 'kubernetes_manifest', depIds: ['cluster'] },
+// Cross-dependent edges: ALB → kubelogstream, coder → kubelogstream
+const crossDepConfig = makeConfig([
+  { id: 'cert', name: 'certificate', type: 'terraform_module' },
+  { id: 'rds', name: 'rds_cluster_coder', type: 'terraform_module' },
+  { id: 'coder', name: 'coder', type: 'helm_chart', depIds: ['cert', 'rds'] },
+  { id: 'obs', name: 'observability', type: 'helm_chart', depIds: ['coder'] },
+  { id: 'alb', name: 'application_load_balancer', type: 'helm_chart', depIds: ['coder'] },
+  { id: 'kls', name: 'kubelogstream', type: 'helm_chart', depIds: ['coder', 'alb'] },
 ])
 
-export const InfraFromLoadBalancer = () => (
-  <ModalStory label="Load balancer graph">
+export const CrossDependentEdges = () => (
+  <ModalStory label="Coder (dependents with cross-edges)">
     <ComponentDependencyGraphModal
-      componentId="alb"
-      componentName="load_balancer"
-      componentType="terraform_module"
-      appConfig={infraConfig}
-      basePath={basePath}
-    />
-  </ModalStory>
-)
-
-export const InfraFromIngressController = () => (
-  <ModalStory label="Ingress controller graph">
-    <ComponentDependencyGraphModal
-      componentId="ingress"
-      componentName="ingress_controller"
+      componentId="coder"
+      componentName="coder"
       componentType="helm_chart"
-      appConfig={infraConfig}
+      appConfig={crossDepConfig}
       basePath={basePath}
     />
   </ModalStory>
 )
 
-// Simple app: single dependency
+// Deep chain: A → B → C → D → E
+const deepChainConfig = makeConfig([
+  { id: 'a', name: 'network', type: 'terraform_module' },
+  { id: 'b', name: 'dns_zone', type: 'terraform_module', depIds: ['a'] },
+  { id: 'c', name: 'certificate', type: 'terraform_module', depIds: ['b'] },
+  { id: 'd', name: 'load_balancer', type: 'terraform_module', depIds: ['c'] },
+  { id: 'e', name: 'ingress', type: 'helm_chart', depIds: ['d'] },
+])
+
+export const DeepChainFromMiddle = () => (
+  <ModalStory label="Certificate (deep chain, middle node)">
+    <ComponentDependencyGraphModal
+      componentId="c"
+      componentName="certificate"
+      componentType="terraform_module"
+      appConfig={deepChainConfig}
+      basePath={basePath}
+    />
+  </ModalStory>
+)
+
+// Simple: single dependency
 const simpleConfig = makeConfig([
   { id: 'infra', name: 'base_infrastructure', type: 'terraform_module' },
   { id: 'svc', name: 'service', type: 'helm_chart', depIds: ['infra'] },
 ])
 
 export const SimpleOneDependency = () => (
-  <ModalStory label="Simple one-dependency graph">
+  <ModalStory label="Simple one-dependency">
     <ComponentDependencyGraphModal
       componentId="svc"
       componentName="service"
       componentType="helm_chart"
       appConfig={simpleConfig}
-      basePath={basePath}
-    />
-  </ModalStory>
-)
-
-// Component with no deps or dependents (shouldn't normally open, but useful for edge case)
-const isolatedConfig = makeConfig([
-  { id: 'standalone', name: 'standalone_job', type: 'job' },
-  { id: 'other', name: 'other_service', type: 'helm_chart' },
-])
-
-export const IsolatedComponent = () => (
-  <ModalStory label="Isolated component (no connections)">
-    <ComponentDependencyGraphModal
-      componentId="standalone"
-      componentName="standalone_job"
-      componentType="job"
-      appConfig={isolatedConfig}
       basePath={basePath}
     />
   </ModalStory>
