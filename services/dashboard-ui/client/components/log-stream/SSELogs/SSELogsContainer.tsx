@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router'
-import { useLogViewer, useUnifiedLogData } from '@/hooks/use-logs'
+import { useLogStreamData, useLogViewer } from '@/hooks/use-logs'
 import { SSELogs } from './SSELogs'
 
 export const SSELogsContainer = ({
@@ -7,7 +7,7 @@ export const SSELogsContainer = ({
 }: {
   filterClassName?: string
 }) => {
-  const { loadMore, hasMore, isLoading, isStreamOpen } = useUnifiedLogData()
+  const { isLoading, connectionState } = useLogStreamData()
   const { filteredLogs, filters, activeLog, handleActiveLog } = useLogViewer()
   const [searchParams] = useSearchParams()
   const deepLinkLogId = searchParams?.get('log')
@@ -19,10 +19,8 @@ export const SSELogsContainer = ({
       filters={filters}
       activeLog={activeLog}
       handleActiveLog={handleActiveLog}
-      loadMore={loadMore}
-      hasMore={hasMore}
       isLoading={isLoading}
-      isStreamOpen={isStreamOpen}
+      isConnected={connectionState === 'connected'}
       deepLinkLogId={deepLinkLogId}
     />
   )

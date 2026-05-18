@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -17,10 +16,7 @@ interface IInstallActionRunLogs {
   layout?: 'vertical' | 'horizontal'
   allLogs?: TOTELLog[]
   filteredLogs: TOTELLog[]
-  loadMore: () => void
-  hasMore: boolean
   isLoading: boolean
-  isStreamOpen: boolean
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
   filters: TLogFiltersProps
@@ -33,10 +29,7 @@ export const InstallActionRunLogs = ({
   layout = 'vertical',
   allLogs,
   filteredLogs,
-  loadMore,
-  hasMore,
   isLoading,
-  isStreamOpen,
   activeLog,
   handleActiveLog,
   filters,
@@ -140,10 +133,7 @@ export const InstallActionRunLogs = ({
     showAllLogs,
     logSteps,
     allLogStepCounts,
-    loadMore,
-    hasMore,
     isLoading,
-    isStreamOpen,
     filteredLogs,
     activeLog,
     handleActiveLog,
@@ -187,10 +177,7 @@ const StepAwareLogViewer = ({
   showAllLogs,
   logSteps,
   allLogStepCounts,
-  loadMore,
-  hasMore,
   isLoading,
-  isStreamOpen,
   filteredLogs,
   activeLog,
   handleActiveLog,
@@ -201,10 +188,7 @@ const StepAwareLogViewer = ({
   showAllLogs: boolean
   logSteps: Record<string, TOTELLog[]>
   allLogStepCounts: Record<string, number>
-  loadMore: () => void
-  hasMore: boolean
   isLoading: boolean
-  isStreamOpen: boolean
   filteredLogs: TOTELLog[]
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
@@ -252,7 +236,7 @@ const StepAwareLogViewer = ({
         </div>
 
         <div className="flex flex-col divide-y">
-          {!isStreamOpen && !displayLogs?.length && isLoading ? (
+          {!displayLogs?.length && isLoading ? (
             <LogsSkeleton />
           ) : null}
 
@@ -266,22 +250,6 @@ const StepAwareLogViewer = ({
             />
           ))}
 
-          {!isStreamOpen && hasMore ? (
-            <Button
-              onClick={loadMore}
-              disabled={isLoading}
-              variant="ghost"
-              className="mx-auto mt-4"
-            >
-              {isLoading ? (
-                <>
-                  <Icon variant="Loading" /> Loading
-                </>
-              ) : (
-                <>Load more</>
-              )}
-            </Button>
-          ) : null}
         </div>
       </div>
     </div>
