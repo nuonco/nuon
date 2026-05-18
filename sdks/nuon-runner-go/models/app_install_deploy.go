@@ -23,6 +23,9 @@ type AppInstallDeploy struct {
 	// action workflow runs
 	ActionWorkflowRuns []*AppInstallActionWorkflowRun `json:"action_workflow_runs"`
 
+	// AppliedAt is set when the apply runner job completes successfully.
+	AppliedAt string `json:"applied_at,omitempty"`
+
 	// build id
 	BuildID string `json:"build_id,omitempty"`
 
@@ -73,6 +76,9 @@ type AppInstallDeploy struct {
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// PlannedAt is set when the plan runner job completes successfully.
+	PlannedAt string `json:"planned_at,omitempty"`
 
 	// policy reports
 	PolicyReports []*AppPolicyReport `json:"policy_reports"`
