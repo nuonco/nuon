@@ -189,6 +189,13 @@ type Client interface {
 	RunnerMngShutDown(ctx context.Context, runnerID string) error
 	RunnerMngVMShutDown(ctx context.Context, runnerID string) error
 
+	// runner queries
+	GetRunnerCardDetails(ctx context.Context, runnerID string) (*models.ServiceRunnerCardDetailsResponse, error)
+	GetRunnerJobs(ctx context.Context, runnerID string, groups string, limit int64) ([]*models.AppRunnerJob, error)
+	ListRunnerProcesses(ctx context.Context, runnerID string, status string, limit int64) ([]*models.AppRunnerProcess, error)
+	GetLatestRunnerHeartBeats(ctx context.Context, runnerID string) (models.ServiceLatestRunnerHeartBeats, error)
+	GetRunnerRecentHealthChecks(ctx context.Context, runnerID string, processID string) ([]*models.AppRunnerHealthCheck, error)
+
 	// runner job plan
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
 
