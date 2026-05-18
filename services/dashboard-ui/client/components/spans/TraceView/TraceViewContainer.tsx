@@ -20,13 +20,11 @@ export interface ITraceViewContainer {
   spansLoading?: boolean
 }
 
-// Container — orchestrates Phase 4 spans fetch + URL-driven span selection.
-// Selecting a span pushes ?span_id=... onto the URL; the unified-logs
-// provider's useLogServerFilters reads that param and re-fetches the right
-// pane filtered to that span (Phase 2). Cross-link in the other direction
-// (log → span) happens via the same query param: clicking a log row
-// elsewhere in the app and landing on the trace tab with ?span_id=... will
-// preselect the matching span node.
+// Container — orchestrates spans fetch + URL-driven span selection.
+// Selecting a span pushes ?span_id=... onto the URL; the log viewer's
+// client-side filters pick up that param and filter to that span.
+// Cross-link in the other direction (log → span) works the same way:
+// landing on the trace tab with ?span_id=... preselects the matching span.
 export const TraceViewContainer = ({
   logStreamId,
   shouldPoll,

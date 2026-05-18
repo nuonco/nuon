@@ -7,7 +7,6 @@ import { SSELogs } from '@/components/log-stream/SSELogs'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { IActionRunLogs } from './types'
 
@@ -18,12 +17,8 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <LogStreamProvider
-        shouldPoll={actionRun.log_stream.open}
-        logStreamId={actionRun.log_stream.id}
-      >
-        <UnifiedLogsProvider>
-          <LogViewerProvider>
+      <LogStreamProvider logStreamId={actionRun.log_stream.id}>
+        <LogViewerProvider>
             {isAdhoc ? (
               <>
                 <Text weight="strong">Action logs</Text>
@@ -61,8 +56,7 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
                 }}
               />
             )}
-          </LogViewerProvider>
-        </UnifiedLogsProvider>
+        </LogViewerProvider>
       </LogStreamProvider>
     </div>
   )

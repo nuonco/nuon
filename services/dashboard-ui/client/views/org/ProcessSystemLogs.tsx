@@ -11,7 +11,6 @@ import { PageSection } from '@/components/layout/PageSection'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import { RunnerProvider } from '@/providers/runner-provider'
 import { useOrg } from '@/hooks/use-org'
@@ -92,12 +91,10 @@ export const ProcessSystemLogs = () => {
           </Text>
         </PageHeader>
         <PageSection>
-          <LogStreamProvider logStreamId={process.log_stream_id} shouldPoll>
-            <UnifiedLogsProvider>
-              <LogViewerProvider>
-                <SSELogs />
-              </LogViewerProvider>
-            </UnifiedLogsProvider>
+          <LogStreamProvider logStreamId={process.log_stream_id}>
+            <LogViewerProvider>
+              <SSELogs />
+            </LogViewerProvider>
           </LogStreamProvider>
         </PageSection>
       </PageLayout>
