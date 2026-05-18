@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -14,6 +13,7 @@ import {
   ComponentConfigCardSkeleton,
 } from '@/components/components/ComponentConfigCard'
 import { ComponentDependencies } from '@/components/components/ComponentDependencies'
+import { ComponentDependencyGraphButton } from '@/components/components/ComponentDependencyGraph'
 import { ComponentType } from '@/components/components/ComponentType'
 import { BuildComponentButton } from '@/components/components/management/BuildComponent'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -61,6 +61,11 @@ export const ComponentDetail = () => {
   const config = appConfig?.component_config_connections?.find(
     (c) => c.component_id === componentId
   )
+
+  const dependentIds = appConfig?.component_config_connections
+    ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
+    .map((c) => c.component_id!)
+    .filter(Boolean) ?? []
 
   return (
     <PageSection>
@@ -138,20 +143,49 @@ export const ComponentDetail = () => {
 
         <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
           <div className="@5xl:col-span-8 flex flex-col gap-6">
-            {config?.component_dependency_ids?.length ? (
-              <Card>
-                <Text weight="strong">Dependencies</Text>
-                <ComponentDependencies
-                  deps={config.component_dependency_ids}
-                  variant="inline"
-                />
-              </Card>
-            ) : null}
-
             {isLoadingConfig ? (
               <ComponentConfigCardSkeleton />
             ) : config ? (
-              <ComponentConfigCard config={config} />
+              <ComponentConfigCard
+                config={config}
+                headerActions={
+                  appConfig && componentId && component?.name ? (
+                    <ComponentDependencyGraphButton
+                      componentId={componentId}
+                      componentName={component.name}
+                      componentType={component.type}
+                      appConfig={appConfig}
+                      basePath={`/${org?.id}/apps/${app?.id}/components`}
+                      size="sm"
+                    />
+                  ) : null
+                }
+                footer={
+                  (config.component_dependency_ids?.length || dependentIds.length > 0) ? (
+                    <>
+                      {config.component_dependency_ids?.length ? (
+                        <div className="flex flex-col gap-2">
+                          <Text variant="body" weight="strong" level={5}>Dependencies</Text>
+                          <ComponentDependencies
+                            deps={config.component_dependency_ids}
+                            variant="inline"
+                          />
+                        </div>
+                      ) : null}
+                      {dependentIds.length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                          <Text variant="body" weight="strong" level={5}>Dependents</Text>
+                          <ComponentDependencies
+                            deps={dependentIds}
+                            variant="inline"
+                            tooltipTitle="More dependents"
+                          />
+                        </div>
+                      ) : null}
+                    </>
+                  ) : undefined
+                }
+              />
             ) : (
               <EmptyState
                 variant="table"
