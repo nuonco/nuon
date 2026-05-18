@@ -1,0 +1,504 @@
+---
+title: "Create An AWS EC2 App"
+description: "Learn how to package and install a Cloud Development Environment (CDE) on AWS EC2."
+---
+
+<Note>
+	This [app](/concepts/apps) can be found in the [cde directory](https://github.com/nuonco/example-app-configs/tree/main/cde) of the example-app-configs repository.
+</Note>
+
+The CDE app is a straightforward EC2 VM, but it is a good example of how much Nuon can do beyond
+basic provisioning. It ships with optional Claude Code support —
+customers can bring their own Anthropic API key and get a fully configured AI coding environment
+in their own AWS account, with the key stored as an encrypted SSM SecureString that never leaves
+their cloud. It also demonstrates several platform features working together:
+
+- **Actions** — eleven actions handle everything from post-provision setup (installing Docker, VS Code Web,
+  Claude Code) to day-2 ops (start/stop VM, add SSH keys) to automated healthchecks that run every 5 minutes
+- **Conditional inputs** — inputs like `install_vscode_web` and `install_claude_code` gate what gets installed;
+  if VS Code Web is disabled, the ALB and ACM certificate are never created; if Claude Code is enabled,
+  the Anthropic API key is injected into the customer's shell environment on first boot
+- **Policies** — four OPA policies enforce guardrails on the Terraform plan, including blocking independent
+  Elastic IP deletion and warning on oversized instance types
+- **README templating** — the install page renders a live status view using Go templates that read action
+  outputs, showing VM state, SSH reachability, and active connections without any external monitoring
+- **Cost controls** — auto-stop cron jobs are installed on the VM at provision time, controlled entirely
+  by install inputs
+
+## Prerequisites
+
+- [Signup for the self-service free trial](https://app.nuon.co). You will need a login and an org in Nuon's cloud.
+- [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html).
+  This is the account you will install the app in, as if you were a customer of the software vendor.
+
+## What You Will Create
+
+This tutorial will walk you through creating the following:
+
+- An [app](/concepts/apps)
+- A Terraform [component](/concepts/components) to provision the EC2 instance, Elastic IP, DNS record, and security group
+- [Actions](/concepts/actions) for post-provision setup and day-2 operations (start/stop VM, healthchecks)
+- An [install](/concepts/installs), using our
+  [AWS minimal sandbox](/concepts/sandboxes#nuon-managed-sandboxes)
+
+<Note>
+	We recommend you clone the [`example-app-configs`
+	repository](https://github.com/nuonco/example-app-configs) which includes the
+	`cde` app versus creating each config file manually. This guide is
+	meant to explain the concepts behind the config files, so you can
+	create your own apps in the future.
+</Note>
+
+## Configure App
+
+To configure the app, you will create several TOML config files. In each section
+below we will provide you with configuration snippets for the app itself as well
+as its components.
+
+### Create App
+
+Clone the `example-app-configs` repository, cd into the `cde` directory,
+and create the app in Nuon. This will create the app in `app.nuon.co`.
+
+```sh
+git clone https://github.com/nuonco/example-app-configs
+cd example-app-configs/cde
+nuon auth login
+nuon orgs select
+nuon apps create -n cde
+```
+
+![App List](/images/get-started/cde/app-config-list.png)
+
+### Inputs
+
+Inputs are values passed into the install at creation time. There are two kinds:
+
+- **Vendor inputs** — set by the software vendor in the Nuon dashboard or CLI. These configure
+  app-level defaults like OS choice, instance type, and which optional tools to install.
+- **Customer inputs** (`user_configurable = true`) — surfaced to the end customer when they
+  apply the install stack. These are entered in the CloudFormation Quick-Create form or the
+  customer portal. Examples include the SSH public key, git identity, and any secrets like
+  the VS Code Web password or Anthropic API key.
+
+In the app root directory, notice the file named `inputs.toml`:
+
+```toml inputs.toml
+[[group]]
+name         = "developer"
+display_name = "Developer Configuration"
+description  = "SSH access and instance sizing for your development environment"
+
+[[input]]
+name              = "ssh_public_key"
+display_name      = "SSH Public Key"
+description       = "Paste the contents of your public key file (e.g. cat ~/.ssh/id_rsa.pub)"
+user_configurable = true
+group             = "developer"
+
+[[input]]
+name         = "os"
+display_name = "Operating System"
+description  = "VM operating system. ubuntu-24.04 (Ubuntu 24.04 LTS, recommended for development, uses apt) or al2023 (Amazon Linux 2023, uses dnf)"
+default      = "ubuntu-24.04"
+group        = "developer"
+
+[[input]]
+name         = "instance_type"
+display_name = "Instance Type"
+description  = "EC2 instance type. t3a.medium (2vCPU/4GB), t3a.large (2vCPU/8GB), t3a.xlarge (4vCPU/16GB), t3a.2xlarge (8vCPU/32GB), m7i.large (2vCPU/8GB consistent), m7i.xlarge (4vCPU/16GB consistent)"
+default      = "t3a.xlarge"
+group        = "developer"
+
+[[input]]
+name              = "git_user_name"
+display_name      = "Git User Name"
+description       = "Your full name for git commits (e.g. Jane Smith). Sets git config user.name globally."
+default           = ""
+user_configurable = true
+group             = "developer"
+
+[[input]]
+name              = "git_user_email"
+display_name      = "Git Email"
+description       = "Email address for git commits. Sets git config user.email globally."
+default           = ""
+user_configurable = true
+group             = "developer"
+
+[[group]]
+name         = "optional_tools"
+display_name = "Optional Tools"
+description  = "Tools installed via the post-provision action. Each can be re-run or updated independently."
+
+[[input]]
+name              = "dotfiles_repo"
+display_name      = "Dotfiles Repo URL"
+description       = "HTTPS URL of your dotfiles git repository (e.g. https://github.com/you/dotfiles). If set, the repo is cloned to ~/.dotfiles and install.sh is run after provisioning."
+default           = ""
+user_configurable = true
+group             = "optional_tools"
+
+[[input]]
+name         = "install_docker"
+display_name = "Install Docker"
+description  = "Install Docker and enable it as a system service (true/false)"
+default      = "false"
+group        = "optional_tools"
+
+[[input]]
+name         = "install_vscode_web"
+display_name = "Install VS Code Web"
+description  = "Install code-server (VS Code in the browser) over HTTPS via ALB and ACM cert (true/false)"
+default      = "false"
+group        = "optional_tools"
+
+[[input]]
+name              = "vscode_password"
+display_name      = "VS Code Web Password"
+description       = "Password to access VS Code Web. Set this now so it is ready if you enable VS Code Web later. Not used if Install VS Code Web is false."
+sensitive         = true
+user_configurable = true
+group             = "optional_tools"
+
+[[input]]
+name         = "install_claude_code"
+display_name = "Install Claude Code"
+description  = "Install the Claude Code CLI (true/false)"
+default      = "false"
+group        = "optional_tools"
+
+[[input]]
+name              = "anthropic_api_key"
+display_name      = "Anthropic API Key"
+description       = "Your Anthropic API key for Claude Code (from console.anthropic.com). Only required if Install Claude Code is true."
+default           = ""
+sensitive         = true
+user_configurable = true
+group             = "optional_tools"
+
+[[group]]
+name         = "cost_controls"
+display_name = "Cost Controls"
+description  = "Automatic shutdown options to prevent idle instances from accumulating charges"
+
+[[input]]
+name         = "auto_stop_inactive_hours"
+display_name = "Inactive Auto-Stop (hours)"
+description  = "Shut down the VM after this many hours with no active SSH or VS Code connections. Leave blank to disable."
+default      = "2"
+group        = "cost_controls"
+
+[[input]]
+name         = "auto_stop_max_hours"
+display_name = "Force Auto-Stop (hours)"
+description  = "Shut down the VM after this many hours of uptime since last start, regardless of activity. Leave blank to disable."
+default      = "4"
+group        = "cost_controls"
+```
+
+Two customer inputs have no default and must be provided: `ssh_public_key` (the public key used
+to access the instance) and `vscode_password` (set it now so it is ready if VS Code Web is enabled
+later). All other inputs have sensible defaults the customer can accept or override. Cost controls
+default to shutting the VM down after 2 hours of inactivity and 4 hours of total uptime, keeping
+idle cloud spend in check.
+
+![App Inputs](/images/get-started/cde/inputs.png)
+
+### Sandbox
+
+Nuon provides a set of
+[Nuon Managed Sandboxes](/concepts/sandboxes#nuon-managed-sandboxes) that can be
+used to provision the infrastructure needed for your app. The `aws-min-sandbox`
+is a lightweight sandbox for workloads that don't require Kubernetes. It provisions
+only the minimum shared infrastructure: an ECR repository for container images and
+Route53 hosted zones for DNS. The VPC, subnets, and NAT gateway are already provided
+by the install stack — the sandbox and your components build on top of them.
+
+In the app root directory, notice the file named `sandbox.toml`:
+
+```toml sandbox.toml
+# sandbox
+terraform_version = "1.11.4"
+
+[public_repo]
+directory = "."
+repo      = "nuonco/aws-min-sandbox"
+branch    = "main"
+
+[vars]
+enable_nuon_dns      = "true"
+public_root_domain   = "{{ .nuon.install.id }}.nuon.run"
+internal_root_domain = "internal.{{ .nuon.install.id }}.nuon.run"
+```
+
+With `enable_nuon_dns` set to `true`, the sandbox creates a Route53 DNS zone for the install.
+The install id is used as the subdomain, giving each install its own unique `nuon.run` domain.
+Unlike some other example apps, this sandbox does not require any domain-related inputs — the
+domain is derived entirely from the install id.
+
+### Components
+
+Components are the building blocks of your app. This app has a single component: a Terraform
+module that provisions the EC2 instance along with its Elastic IP, Route53 A record, and security
+group. If VS Code Web is enabled, the component also creates an ALB and ACM certificate.
+
+In the app root directory, navigate to the `components` directory. Notice the single file `1-ec2.toml`:
+
+```toml 1-ec2.toml
+# terraform
+name              = "ec2"
+type              = "terraform_module"
+terraform_version = "1.11.4"
+max_auto_retries  = 5
+
+[public_repo]
+repo      = "nuonco/example-app-configs"
+directory = "cde/src/components/ec2"
+branch    = "main"
+
+[vars]
+install_id         = "{{.nuon.install.id}}"
+region             = "{{.nuon.sandbox.outputs.account.region}}"
+subnet_id_0        = "{{index .nuon.sandbox.outputs.vpc.public_subnet_ids 0}}"
+subnet_id_1        = "{{index .nuon.sandbox.outputs.vpc.public_subnet_ids 1}}"
+vpc_id             = "{{.nuon.sandbox.outputs.vpc.id}}"
+dns_zone_id        = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.zone_id}}"
+dns_zone_name      = "{{.nuon.install.sandbox.outputs.nuon_dns.public_domain.name}}"
+os                 = "{{.nuon.install.inputs.os}}"
+instance_type      = "{{.nuon.install.inputs.instance_type}}"
+ssh_public_key     = "{{.nuon.install.inputs.ssh_public_key}}"
+install_vscode_web = "{{.nuon.install.inputs.install_vscode_web}}"
+anthropic_api_key  = "{{.nuon.install.inputs.anthropic_api_key}}"
+```
+
+Notice how the component vars pull from two sources: sandbox outputs (VPC IDs, subnet IDs,
+DNS zone) and install inputs (OS, instance type, SSH key). This interpolation pattern is how
+Nuon passes context from the sandbox and the customer's choices into your Terraform modules.
+
+![Terraform Component](/images/get-started/cde/tf-component.png)
+
+### Actions
+
+[Actions](/concepts/actions) are scripts that the runner executes on demand or on a schedule.
+They are how you handle day-2 operations — setup, maintenance, and monitoring — without requiring
+the customer to SSH into the instance themselves.
+
+This app includes the following actions:
+
+- `post_provision_setup` — runs automatically after provisioning and is also re-runnable manually.
+  Installs Docker, VS Code Web, and Claude Code based on the install inputs, configures git user
+  name and email, and sets up the auto-stop cron jobs on the VM.
+- `install_dotfiles` — clones the customer's dotfiles repo to `~/.dotfiles` and runs `install.sh`.
+  Triggered automatically after provision and re-runnable at any time from the portal.
+- `add_ssh_key` — appends an additional SSH public key to `~/.ssh/authorized_keys`. Manual only.
+- `start_dev_env` / `stop_dev_env` — start or stop the VM to control costs. Manual.
+- `healthcheck_ec2`, `healthcheck_ssh`, `healthcheck_code_server`, `healthcheck_alb`,
+  `connections_status` — run on a 5-minute cron and report their results in the install README.
+
+![Actions](/images/get-started/cde/actions.png)
+
+### Policies
+
+[Policies](/concepts/policies) let the vendor enforce guardrails on Terraform plans before they are applied to the customer's account. This app ships four OPA policies scoped to the `ec2` component: two warnings and two hard denies.
+
+- `warn-large-instance-type` — warns if the instance type is larger than `medium`, prompting the vendor to confirm the cost is intentional.
+- `warn-ssh-open-to-world` — warns if the SSH security group rule is open to `0.0.0.0/0`, flagging a potential overly permissive configuration.
+- `deny-eip-deletion` — blocks deletion of the Elastic IP unless the EC2 instance is also being destroyed in the same plan, preserving DNS stability.
+- `deny-instance-type-change` — blocks in-place instance type changes, which would require a stop/start and could cause unexpected downtime.
+
+![policies](/images/get-started/cde/policies.png)
+
+### Security
+
+The CDE app is designed so that the customer's data never leaves their AWS account and the
+vendor has no network access to the instance. A few specifics worth understanding:
+
+- **SSH key auth only.** Password authentication is disabled at provision time. The public key
+  the customer provides at install time is the only authorized key.
+- **Minimal inbound surface.** The security group allows only TCP:22. If VS Code Web is enabled,
+  HTTPS:443 is also opened via an ALB — but the security group only allows ALB traffic to reach
+  port 8080 on the instance, not direct inbound access. Post-provision setup (Docker, VS Code Web,
+  Claude Code) is delivered by the runner via AWS SSM Run Command, an outbound-only control
+  channel, so no additional ports need to be opened for provisioning.
+- **VS Code Web is TLS-only and password-protected.** If enabled, code-server runs on port 8080
+  inside the VPC. The ALB terminates HTTPS with an ACM-managed certificate, and only ALB traffic
+  is allowed to reach the port — direct inbound access is blocked.
+- **Anthropic API key is stored as an SSM SecureString.** The key is encrypted at rest with AWS
+  KMS in the customer's account. The EC2 instance profile is granted least-privilege access to
+  read only its own parameter path. The vendor never sees the key.
+- **Runner permissions are bounded.** The runner's IAM role has a permissions boundary scoped to
+  only the AWS services this app requires: `ec2`, `iam`, `ssm`, `elasticloadbalancing`, `acm`,
+  and `route53`. It cannot access other resources in the customer's account.
+
+### Sync App to Nuon
+
+You now have a complete Nuon app.
+
+This is a good place to stop and sync it to Nuon.
+
+Make sure you are in the root directory of your app, then run:
+
+```sh
+nuon apps sync
+```
+
+Select the app in the dashboard, and you should now see the updated inputs,
+sandbox, components, and actions.
+
+![App](/images/get-started/cde/app.png)
+
+## Create an Install
+
+Click the Create Install button in the top right corner of the app page in the
+Dashboard. Give your install a name and choose an AWS Region.
+
+Notice the inputs you defined in the `inputs.toml` file are displayed here. Two fields
+require values from the customer: `ssh_public_key` (paste the output of `cat ~/.ssh/id_rsa.pub`)
+and `vscode_password` (set it now so it is ready if you enable VS Code Web later). You can
+accept the defaults for all other inputs.
+
+Click the Create Install button at the bottom of the page to start the workflow.
+The provision workflow generates two [install stack](/concepts/stacks) formats — a CloudFormation
+Quick-Create / CLI snippet, and a Terraform `install.tfvars` for the
+[`install-stacks/aws`](https://github.com/nuonco/install-stacks) module — so the
+customer can apply whichever fits their tooling.
+
+![Create Install](/images/get-started/cde/inputs.png)
+
+### Monitoring Installs
+
+As soon as you kick off the install provisioning, you should see the new
+install's workflow in the dashboard.
+
+![Install workflow](/images/get-started/cde/workflow.png)
+
+### Apply the Install Stack in AWS
+
+In this step, you are switching personas, from the software vendor to the end
+customer, authorizing the install of the app in your cloud account. Apply the
+install stack using whichever format fits your workflow. Either way, the
+resulting resources are the same: a VPC, the IAM policies Nuon expects, an
+Autoscaling Group, and a VM running the Nuon Build Runner that will provision
+the install of your app.
+
+#### Option A: CloudFormation
+
+Click or copy the CloudFormation Quick-Create link to open it in your AWS
+account and log in. The form will include the customer inputs defined in
+`inputs.toml` — required fields like `ssh_public_key` and `vscode_password`
+are marked as required and must be filled in before the stack can be created.
+Scroll to the bottom, accept the IAM acknowledgement, and click **Create Stack**.
+
+#### Option B: Terraform
+
+Download the generated `install.tfvars` from the dashboard, set up a `backend.tf`
+(snippet provided in the dashboard), and run:
+
+```sh
+terraform init
+terraform apply -var-file=install.tfvars
+```
+
+against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module.
+
+### Monitor the Install Stack creation in AWS
+
+Monitor the stack creation in the AWS console (CloudFormation) or the Terraform
+output. This will take a few minutes to complete. You can also pull up the AWS
+EC2 console and see the EC2 VM appear at some point with the install id in its
+name. The Nuon Dashboard will not provide feedback until the runner is up and
+connected to Nuon.
+
+### Monitor the Remainder of the Install Workflow
+
+If plan steps require approvals, you will need to approve them in the dashboard.
+You can also monitor the progress of the install in the dashboard.
+
+![Workflow](/images/get-started/cde/workflow.png)
+
+### Connect to Your Development Environment
+
+When the install has provisioned and the deploys have completed, open the install
+page in the dashboard. The README tab shows the connection strings for your instance,
+populated with the actual hostname and SSH user once provisioning is complete.
+
+**SSH:**
+
+```sh
+ssh <user>@<hostname>
+```
+
+![SSH](/images/get-started/cde/ssh.png)
+
+**VS Code (Remote - SSH extension):**
+
+Open the [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)
+extension, then `Cmd+Shift+P` → `Remote-SSH: Connect to Host` → enter the same `<user>@<hostname>`.
+
+![VS Code](/images/get-started/cde/vs-code.png)
+
+**Zed:**
+
+```sh
+zed ssh://<user>@<hostname>
+```
+
+![Zed](/images/get-started/cde/zed.png)
+
+**VS Code Web** (if you enabled it):
+
+![VS Code Web](/images/get-started/cde/vscode-web.png)
+
+The README will include a direct HTTPS link to the ALB. Open it in a browser and
+enter the password you set in the `vscode_password` input.
+
+![README](/images/get-started/cde/readme.png)
+
+## Observability
+
+The install page displays a live README rendered from `README.md` in the app root. It uses Go templating to read action outputs and display the current state of the VM and its services. The five healthcheck actions — `healthcheck_ec2`, `healthcheck_ssh`, `healthcheck_code_server`, `healthcheck_alb`, and `connections_status` — run on a 5-minute cron via the runner and write their results to action outputs. The README template reads those outputs via `{{.nuon.actions.workflows.*}}` interpolations to show a per-service status summary, active SSH session count, and connected client IPs. No additional monitoring infrastructure is needed — the runner handles execution via SSM and the results surface directly on the install page.
+
+## Cost Controls
+
+Two automatic shutdown mechanisms are installed as cron jobs by `post_provision_setup`, controlled by install inputs:
+
+- **Inactive auto-stop** (`auto_stop_inactive_hours`, default 2h) — monitors active SSH and VS Code Web connections every 10 minutes and shuts down the VM after N consecutive hours with no active sessions.
+- **Force auto-stop** (`auto_stop_max_hours`, default 4h) — shuts down the VM after N hours of total uptime since last start, regardless of activity.
+
+Both can be disabled by leaving the input blank. The `stop_dev_env` and `start_dev_env` actions provide manual control. The Elastic IP and Route53 DNS record persist through stop/start cycles, so the SSH hostname never changes.
+
+## Deprovision the Install
+
+Nuon is mindful of your public cloud spend, so provide the following
+deprovisioning steps. Deprovisioning the install is a two-step process. First,
+deprovision the install in the Nuon dashboard, which will tear down the EC2
+instance and all associated resources. Once that is completed successfully,
+tear down the install stack — delete the CloudFormation stack in the AWS
+console, or run `terraform destroy` against the install module — to remove the
+runner by destroying the EC2 VM, ASG, and VPC.
+
+<Note>
+	Be sure to back up any data you want to keep before deprovisioning the
+	install, as this will delete all resources created by the install.
+</Note>
+
+## Manually Deprovision the Install
+
+If deprovisioning the install in the dashboard fails, tearing down the install
+stack — deleting the CloudFormation stack in AWS, or running `terraform destroy`
+against the install module — will delete all of the component resources and the
+VPC.
+
+## Wrapping Up and Next Steps
+
+Congratulations, you just deployed a Cloud Development Environment to AWS!
+
+A few suggestions for where to go next:
+
+- Review other example apps in the
+  [example-app-configs repository](https://github.com/nuonco/example-app-configs)
+  to see how to deploy a more complex app.
+
+- Dig into our [app](/concepts/apps) guide to learn how to configure more
+  complex apps.
