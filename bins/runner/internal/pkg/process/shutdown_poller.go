@@ -5,12 +5,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	pkgshutdown "github.com/nuonco/nuon/bins/runner/internal/pkg/shutdown"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
@@ -29,11 +31,13 @@ type ShutdownPollerParams struct {
 	Registrar  *Registrar
 	Settings   *settings.Settings
 	Shutdowner fx.Shutdowner
+	V          *validator.Validate
 }
 
 type ShutdownPoller struct {
 	apiClient  nuonrunner.Client
 	l          *zap.Logger
+	v          *validator.Validate
 	registrar  *Registrar
 	shutdowner fx.Shutdowner
 
@@ -50,6 +54,7 @@ func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 	sp := &ShutdownPoller{
 		apiClient:   params.APIClient,
 		l:           params.L,
+		v:           params.V,
 		registrar:   params.Registrar,
 		shutdowner:  params.Shutdowner,
 		podShutdown: newPodShutdown(params.Cfg, params.Settings, params.L),
@@ -124,6 +129,13 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			if sp.podShutdown != nil {
 				if err := sp.podShutdown.execute(ctx); err != nil {
 					sp.l.Warn("pod shutdown failed", zap.Error(err))
+				}
+			}
+
+			if sp.registrar.ProcessType() == "mng" {
+				sp.l.Info("mng process shutdown: powering off VM")
+				if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
+					sp.l.Warn("VM shutdown failed", zap.Error(err))
 				}
 			}
 
