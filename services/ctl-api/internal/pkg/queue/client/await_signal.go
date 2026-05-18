@@ -23,7 +23,7 @@ import (
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	q, err := c.getQueueSignal(ctx, queueSignalID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get queue")
+		return nil, dbgenerics.TemporalGormError(err, "unable to get queue signal")
 	}
 
 	// If the DB status already indicates completion, return immediately.

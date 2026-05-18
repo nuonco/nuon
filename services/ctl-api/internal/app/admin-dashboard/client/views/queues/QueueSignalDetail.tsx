@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { useState } from 'react'
-import { getQueueSignalDetail, getSignalGraph, directExecuteSignal } from '@/lib/admin-api'
+import { getQueueSignalDetail, getSignalGraph, directExecuteSignal, reEnqueueSignal } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
 import { StatusHistory } from '@/components/common/StatusHistory'
@@ -64,6 +64,11 @@ export const QueueSignalDetail = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue-signal', queueId, signalId] }),
   })
 
+  const reEnqueueMutation = useMutation({
+    mutationFn: () => reEnqueueSignal(queueId!, signalId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue-signal', queueId, signalId] }),
+  })
+
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load signal'} />
   if (!data) return null
@@ -101,17 +106,35 @@ export const QueueSignalDetail = () => {
             View as graph
           </Link>
           <Link to="/signal-catalog" className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">View catalog &rarr;</Link>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to directly execute this signal?')) {
-                directExecuteMutation.mutate()
-              }
-            }}
-            disabled={directExecuteMutation.isPending}
-            className="ml-auto rounded-md bg-red-600 dark:bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
-          >
-            {directExecuteMutation.isPending ? 'Executing...' : 'Direct Execute'}
-          </button>
+          {signal?.enqueued === false && (
+            <Badge variant="status" status="failed">NOT ENQUEUED</Badge>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {signal?.enqueued === false && (
+              <button
+                onClick={() => {
+                  if (confirm('Re-enqueue this signal? This will send it to the enqueuer for processing.')) {
+                    reEnqueueMutation.mutate()
+                  }
+                }}
+                disabled={reEnqueueMutation.isPending}
+                className="rounded-md bg-orange-600 dark:bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-700 dark:hover:bg-orange-600 disabled:opacity-50"
+              >
+                {reEnqueueMutation.isPending ? 'Re-enqueueing...' : 'Re-enqueue'}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to directly execute this signal?')) {
+                  directExecuteMutation.mutate()
+                }
+              }}
+              disabled={directExecuteMutation.isPending}
+              className="rounded-md bg-red-600 dark:bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+            >
+              {directExecuteMutation.isPending ? 'Executing...' : 'Direct Execute'}
+            </button>
+          </div>
         </div>
         <div className="space-y-1 text-xs">
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Signal ID:</span> <span className="font-mono">{signal?.id}</span></div>
@@ -241,13 +264,13 @@ export const QueueSignalDetail = () => {
         )}
       </div>
 
-      {/* Awaited & enqueued signals */}
+      {/* Dependencies: awaited signals, enqueued signals, child workflows */}
       {wfInfo && (
         <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Signal dependencies
+            Dependencies
             <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
-              {(wfInfo.awaited_signals?.length || 0) + (wfInfo.enqueued_signals?.length || 0)} total
+              {(wfInfo.awaited_signals?.length || 0) + (wfInfo.enqueued_signals?.length || 0) + (wfInfo.child_workflows?.length || 0)} total
             </span>
           </h2>
 
@@ -301,8 +324,43 @@ export const QueueSignalDetail = () => {
             </div>
           )}
 
-          {!wfInfo.awaited_signals?.length && !wfInfo.enqueued_signals?.length && (
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">No signal dependencies</p>
+          {wfInfo.child_workflows?.length > 0 && (
+            <div className="mt-3">
+              <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase mb-2">
+                ⑂ Child workflows ({wfInfo.child_workflows.length})
+              </h3>
+              <div className="space-y-1">
+                {wfInfo.child_workflows.map((cw: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3 p-2 border border-blue-100 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-900/20 rounded text-xs">
+                    <span className="text-blue-500 text-[8px]">⑂</span>
+                    <Link
+                      to={`/temporal-workflows?namespace=${cw.namespace}&workflow_id=${cw.workflow_id}`}
+                      className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 truncate"
+                    >
+                      {cw.workflow_type || cw.workflow_id}
+                    </Link>
+                    <Badge variant="status" status={cw.status}>{cw.status}</Badge>
+                    {cw.namespace && <span className="text-gray-400 dark:text-gray-500 font-mono text-[10px]">{cw.namespace}</span>}
+                    <span className="text-gray-400 dark:text-gray-500 font-mono ml-auto">{formatDuration(cw.duration)}</span>
+                    {temporalUIUrl && cw.workflow_id && cw.namespace && (
+                      <a
+                        href={`${temporalUIUrl}/namespaces/${cw.namespace}/workflows/${cw.workflow_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 whitespace-nowrap"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Temporal &rarr;
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!wfInfo.awaited_signals?.length && !wfInfo.enqueued_signals?.length && !wfInfo.child_workflows?.length && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">No dependencies</p>
           )}
         </div>
       )}
