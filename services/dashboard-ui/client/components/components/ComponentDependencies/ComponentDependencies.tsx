@@ -17,6 +17,7 @@ interface IComponentDependencies {
   isLoading: boolean
   basePath: string
   pathname: string
+  tooltipTitle?: string
 }
 
 export const ComponentDependencies = ({
@@ -26,6 +27,7 @@ export const ComponentDependencies = ({
   isLoading,
   basePath,
   pathname,
+  tooltipTitle,
 }: IComponentDependencies) => {
   if (variant === 'inline') {
     if (isLoading) {
@@ -50,7 +52,7 @@ export const ComponentDependencies = ({
         ))}
         {overflow.length > 0 && (
           <ComponentsTooltip
-            title="More dependencies"
+            title={tooltipTitle ?? "More dependencies"}
             componentSummaries={overflowItems}
           >
             <Badge variant="code">+{overflow.length}</Badge>
@@ -71,7 +73,7 @@ export const ComponentDependencies = ({
     <Icon variant="MinusIcon" />
   ) : (
     <ComponentsTooltip
-      title="Total dependencies"
+      title={tooltipTitle ?? "Total dependencies"}
       componentSummaries={depSummaries}
     >
       <Badge variant="code">{depSummaries?.length}</Badge>
