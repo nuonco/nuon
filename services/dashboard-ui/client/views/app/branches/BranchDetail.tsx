@@ -122,21 +122,19 @@ const BranchDetailContent = () => {
         </div>
 
         {!currentConfig ? (
-          <Card>
+          <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-lg p-6">
             <EmptyState
               variant="diagram"
               emptyTitle="No install groups yet"
-              emptyMessage={`Use "Manage installs" above to group installs for staged deployment.`}
+              emptyMessage={`Use "Deployment plan" above to group installs for staged deployment.`}
             />
-          </Card>
+          </div>
         ) : (
-          <Card>
-            <InstallGroupsSection
-              config={currentConfig}
-              installsById={installsById}
-              orgId={orgId}
-            />
-          </Card>
+          <InstallGroupsSection
+            config={currentConfig}
+            installsById={installsById}
+            orgId={orgId}
+          />
         )}
       </div>
 

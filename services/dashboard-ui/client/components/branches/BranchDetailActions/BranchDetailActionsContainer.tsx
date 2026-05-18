@@ -6,7 +6,7 @@ import { useBranch } from '@/hooks/use-branch'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { triggerBranchRun } from '@/lib'
 import { EditBranchButton } from '@/components/branches/EditBranchNameModal'
-import { EditInstallGroupsButton } from '@/components/branches/EditInstallGroupsModal'
+import { EditDeploymentPlanButton } from '@/components/branches/DeploymentPlanEditor'
 import { BranchDetailActions } from './BranchDetailActions'
 
 interface IBranchDetailActionsContainer {
@@ -73,7 +73,11 @@ export const BranchDetailActionsContainer = ({
         <EditBranchButton branch={branch} currentConfig={currentConfig} onSuccess={refresh} />
       }
       manageInstallsButton={
-        <EditInstallGroupsButton branch={branch} currentConfig={currentConfig} onSuccess={refresh} />
+        <EditDeploymentPlanButton
+          branch={branch}
+          currentConfig={currentConfig}
+          onSuccess={refresh}
+        />
       }
       hasConfig={!!currentConfig}
       isTriggerPending={triggerRunMutation.isPending}
