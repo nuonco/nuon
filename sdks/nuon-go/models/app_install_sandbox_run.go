@@ -26,6 +26,9 @@ type AppInstallSandboxRun struct {
 	// app sandbox config
 	AppSandboxConfig *AppAppSandboxConfig `json:"app_sandbox_config,omitempty"`
 
+	// AppliedAt is set when the apply runner job completes successfully.
+	AppliedAt string `json:"applied_at,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -52,6 +55,9 @@ type AppInstallSandboxRun struct {
 
 	// outputs
 	Outputs map[string]any `json:"outputs,omitempty"`
+
+	// PlannedAt is set when the plan runner job completes successfully.
+	PlannedAt string `json:"planned_at,omitempty"`
 
 	// policy reports
 	PolicyReports []*AppPolicyReport `json:"policy_reports"`
