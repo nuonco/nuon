@@ -39,6 +39,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to list old runner processes: %w", err)
 	}
 
+	// passing caller specific opts as some tcclient operations take take longer than other, this allows configuring
+	// retry and timeouts better
 	termOpts := &workflow.ActivityOptions{
 		StartToCloseTimeout: 5 * time.Minute,
 		RetryPolicy: &temporal.RetryPolicy{
