@@ -3755,7 +3755,7 @@ export interface components {
       workflow_id?: string;
     };
     /** @enum {string} */
-    "app.InstallActionWorkflowRunStatus": "finished" | "queued" | "in-progress" | "error" | "timed-out" | "cancelled" | "unknown";
+    "app.InstallActionWorkflowRunStatus": "finished" | "queued" | "in-progress" | "error" | "timed-out" | "cancelled" | "unknown" | "retried";
     "app.InstallActionWorkflowRunStep": {
       adhoc_config?: components["schemas"]["app.AdHocStepConfig"];
       created_at?: string;
@@ -3813,6 +3813,8 @@ export interface components {
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
+      /** @description AppliedAt is set when the apply runner job completes successfully. */
+      applied_at?: string;
       build_id?: string;
       component_build?: components["schemas"]["app.ComponentBuild"];
       component_config_version?: number;
@@ -3834,6 +3836,8 @@ export interface components {
         [key: string]: unknown;
       };
       plan_only?: boolean;
+      /** @description PlannedAt is set when the plan runner job completes successfully. */
+      planned_at?: string;
       policy_reports?: components["schemas"]["app.PolicyReport"][];
       queue_signals?: components["schemas"]["app.QueueSignal"][];
       release_id?: string;
@@ -3933,6 +3937,8 @@ export interface components {
     "app.InstallSandboxRun": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
+      /** @description AppliedAt is set when the apply runner job completes successfully. */
+      applied_at?: string;
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -3945,6 +3951,8 @@ export interface components {
       outputs?: {
         [key: string]: unknown;
       };
+      /** @description PlannedAt is set when the plan runner job completes successfully. */
+      planned_at?: string;
       policy_reports?: components["schemas"]["app.PolicyReport"][];
       /** @description Role to be used when planning and applying sandbox runs */
       role?: string;

@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetRunnerInstallRequest struct {
@@ -17,7 +17,7 @@ func (a *Activities) GetRunnerInstall(ctx context.Context, req GetRunnerInstallR
 	install := app.Install{}
 	res := a.db.WithContext(ctx).First(&install, "id = ?", req.InstallID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install for runner: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get install for runnner")
 	}
 
 	return &install, nil
