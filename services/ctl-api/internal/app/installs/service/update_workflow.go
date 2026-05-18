@@ -1,16 +1,17 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
-	"gorm.io/gorm"
 )
 
 type UpdateWorkflowRequest struct {
@@ -104,7 +105,7 @@ func (s *service) UpdateInstallWorkflow(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installWorkflow)
 }
 
-func (s *service) updateWorkflow(ctx context.Context, installWorkflowID string, req *UpdateWorkflowRequest) (*app.Workflow, error) {
+func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req *UpdateWorkflowRequest) (*app.Workflow, error) {
 	currentWorkflow := app.Workflow{
 		ID: installWorkflowID,
 	}
@@ -129,7 +130,56 @@ func (s *service) updateWorkflow(ctx context.Context, installWorkflowID string, 
 			`UPDATE install_workflows SET status = jsonb_set(COALESCE(status::jsonb, '{}'::jsonb), '{metadata,approval_type}', '"approve-workflow"'::jsonb) WHERE id = ?`,
 			installWorkflowID,
 		)
+
+		// Approve any steps currently stuck in awaiting-approval status.
+		s.approveStuckSteps(ctx, installWorkflowID)
 	}
 
 	return &currentWorkflow, nil
+}
+
+// approveStuckSteps finds workflow steps in awaiting-approval status that have
+// an approval without a response, and auto-approves them so the workflow can
+// proceed immediately when approve-all is set.
+func (s *service) approveStuckSteps(ctx *gin.Context, workflowID string) {
+	var steps []app.WorkflowStep
+	res := s.db.WithContext(ctx).
+		Where("install_workflow_id = ?", workflowID).
+		Where("status->>'status' IN ?", []string{string(app.AwaitingApproval), "awaiting-approval"}).
+		Preload("Approval", func(db *gorm.DB) *gorm.DB {
+			return db.Omit("contents")
+		}).
+		Preload("Approval.Response").
+		Find(&steps)
+	if res.Error != nil {
+		s.l.Warn("failed to query stuck steps for approve-all", zap.Error(res.Error))
+		return
+	}
+
+	useQueues, _ := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+
+	for _, step := range steps {
+		if step.Approval == nil || step.Approval.Response != nil {
+			continue
+		}
+
+		resp, err := s.createWorkflowStepApprovalResponse(ctx, step.Approval.ID, &CreateWorkflowStepApprovalResponseRequest{
+			ResponseType: app.WorkflowStepApprovalResponseTypeApprove,
+			Note:         "auto-approved (approve-all)",
+		})
+		if err != nil {
+			s.l.Warn("failed to create approval response for stuck step",
+				zap.String("step_id", step.ID),
+				zap.Error(err))
+			continue
+		}
+
+		if useQueues {
+			if err := s.dispatchApprovalResponseSignal(ctx, workflowID, step.ID, step.Approval.ID, resp.ID, app.WorkflowStepApprovalResponseTypeApprove); err != nil {
+				s.l.Warn("failed to dispatch approval response signal for stuck step",
+					zap.String("step_id", step.ID),
+					zap.Error(err))
+			}
+		}
+	}
 }
