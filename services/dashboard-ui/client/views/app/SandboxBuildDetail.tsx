@@ -21,7 +21,6 @@ import { useSandboxBuild } from '@/hooks/use-sandbox-build'
 import { SandboxBuildProvider } from '@/providers/sandbox-build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 
 const SandboxBuildDetailInner = () => {
   const { build } = useSandboxBuild()
@@ -80,25 +79,20 @@ const SandboxBuildDetailInner = () => {
 
       <PageSection>
         {build?.log_stream ? (
-          <LogStreamProvider
-            logStreamId={build.log_stream.id}
-            shouldPoll={build.log_stream.open}
-          >
-            <UnifiedLogsProvider>
-              <LogViewerProvider>
-                <Tabs
-                  tabs={{
-                    logs: <SSELogs />,
-                    trace: (
-                      <TraceView
-                        logStreamId={build.log_stream.id}
-                        shouldPoll={build.log_stream.open}
-                      />
-                    ),
-                  }}
-                />
-              </LogViewerProvider>
-            </UnifiedLogsProvider>
+          <LogStreamProvider logStreamId={build.log_stream.id}>
+            <LogViewerProvider>
+              <Tabs
+                tabs={{
+                  logs: <SSELogs />,
+                  trace: (
+                    <TraceView
+                      logStreamId={build.log_stream.id}
+                      shouldPoll={build.log_stream.open}
+                    />
+                  ),
+                }}
+              />
+            </LogViewerProvider>
           </LogStreamProvider>
         ) : (
           <div className="flex flex-col items-center gap-4 p-12">

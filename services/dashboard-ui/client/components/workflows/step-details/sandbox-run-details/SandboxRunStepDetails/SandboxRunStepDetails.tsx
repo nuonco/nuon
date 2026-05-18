@@ -9,7 +9,6 @@ import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 import {
   SandboxRunApply,
@@ -75,30 +74,25 @@ export const SandboxRunStepDetails = ({
 
       {step?.execution_type === 'approval' ? (
         sandboxRun?.log_stream ? (
-          <LogStreamProvider
-            shouldPoll
-            logStreamId={sandboxRun.log_stream.id}
-          >
-            <UnifiedLogsProvider>
-              <LogViewerProvider>
-                <Tabs
-                  tabs={{
-                    plan: (
-                      <div className="mt-4">
-                        <Plan step={step} />
-                      </div>
-                    ),
-                    logs: <SSELogs />,
-                    trace: (
-                      <TraceView
-                        logStreamId={sandboxRun.log_stream.id}
-                        shouldPoll={sandboxRun.log_stream.open}
-                      />
-                    ),
-                  }}
-                />
-              </LogViewerProvider>
-            </UnifiedLogsProvider>
+          <LogStreamProvider logStreamId={sandboxRun.log_stream.id}>
+            <LogViewerProvider>
+              <Tabs
+                tabs={{
+                  plan: (
+                    <div className="mt-4">
+                      <Plan step={step} />
+                    </div>
+                  ),
+                  logs: <SSELogs />,
+                  trace: (
+                    <TraceView
+                      logStreamId={sandboxRun.log_stream.id}
+                      shouldPoll={sandboxRun.log_stream.open}
+                    />
+                  ),
+                }}
+              />
+            </LogViewerProvider>
           </LogStreamProvider>
         ) : (
           <Tabs

@@ -2,9 +2,8 @@ export default {
   title: 'Actions/InstallActionRunLogs',
 }
 
-import type { TActionConfig, TLogStream } from '@/types'
+import type { TActionConfig } from '@/types'
 import { useLogFilters } from '@/hooks/use-log-filters'
-import { UnifiedLogsContext } from '@/providers/unified-logs-provider'
 import { LogStreamContext } from '@/providers/log-stream-provider'
 import { InstallActionRunLogs } from './InstallActionRunLogs'
 
@@ -29,27 +28,17 @@ const mockLogs = Array.from({ length: 5 }, (_, i) => ({
   log_attributes: { workflow_step_name: 'build' },
 })) as any
 
-const mockLogStream: TLogStream = {
-  id: 'log-stream-1',
-  org_id: 'org-mock-001',
-  open: false,
-} as TLogStream
-
-const mockUnifiedContext = {
+const mockLogStreamContext = {
   logs: mockLogs,
+  logStreamId: 'log-stream-1',
   isLoading: false,
   error: null,
   connectionState: 'disconnected' as const,
-  loadMore: noop,
-  hasMore: false,
-  isStreamOpen: false,
 }
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
-  <LogStreamContext.Provider value={{ logStream: mockLogStream, refresh: noop }}>
-    <UnifiedLogsContext.Provider value={mockUnifiedContext}>
-      {children}
-    </UnifiedLogsContext.Provider>
+  <LogStreamContext.Provider value={mockLogStreamContext}>
+    {children}
   </LogStreamContext.Provider>
 )
 
@@ -62,10 +51,7 @@ const VerticalStory = () => {
         layout="vertical"
         allLogs={mockLogs}
         filteredLogs={filters.filteredLogs ?? []}
-        loadMore={noop}
-        hasMore={false}
         isLoading={false}
-        isStreamOpen={false}
         activeLog={undefined}
         handleActiveLog={noop}
         filters={filters}
@@ -84,10 +70,7 @@ const HorizontalStory = () => {
         layout="horizontal"
         allLogs={mockLogs}
         filteredLogs={filters.filteredLogs ?? []}
-        loadMore={noop}
-        hasMore={true}
         isLoading={false}
-        isStreamOpen={false}
         activeLog={undefined}
         handleActiveLog={noop}
         filters={filters}
@@ -164,16 +147,9 @@ const failedStepStatuses: Record<string, string> = {
   deploy: 'error',
 }
 
-const FailedUnifiedContext = {
-  ...mockUnifiedContext,
-  logs: failedStepLogs,
-}
-
 const FailedProviders = ({ children }: { children: React.ReactNode }) => (
-  <LogStreamContext.Provider value={{ logStream: mockLogStream, refresh: noop }}>
-    <UnifiedLogsContext.Provider value={FailedUnifiedContext}>
-      {children}
-    </UnifiedLogsContext.Provider>
+  <LogStreamContext.Provider value={{ ...mockLogStreamContext, logs: failedStepLogs }}>
+    {children}
   </LogStreamContext.Provider>
 )
 
@@ -186,10 +162,7 @@ const FailedStepStory = () => {
         layout="vertical"
         allLogs={failedStepLogs}
         filteredLogs={filters.filteredLogs ?? []}
-        loadMore={noop}
-        hasMore={false}
         isLoading={false}
-        isStreamOpen={false}
         activeLog={undefined}
         handleActiveLog={noop}
         filters={filters}
@@ -209,10 +182,7 @@ const FailedStepHorizontalStory = () => {
         layout="horizontal"
         allLogs={failedStepLogs}
         filteredLogs={filters.filteredLogs ?? []}
-        loadMore={noop}
-        hasMore={false}
         isLoading={false}
-        isStreamOpen={false}
         activeLog={undefined}
         handleActiveLog={noop}
         filters={filters}
@@ -231,10 +201,7 @@ const LoadingStory = () => {
         actionConfig={mockConfig}
         layout="vertical"
         filteredLogs={[]}
-        loadMore={noop}
-        hasMore={false}
         isLoading={true}
-        isStreamOpen={false}
         activeLog={undefined}
         handleActiveLog={noop}
         filters={filters}
