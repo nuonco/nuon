@@ -7,53 +7,44 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	removeoldrunnerprocesses "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/remove_old_runner_processes"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-// RemoveOldRunnerProcesses deletes all but the most recent runner process per
-// runner + process_type combination for the given org.
+// RemoveOldRunnerProcesses enqueues a signal on the org's signals queue to
+// terminate per-process queues (stopping their healthcheck cron emitters) and
+// hard-delete all but the most recent runner process per (runner_id, type) for
+// the given org. The work runs durably in Temporal so the request returns
+// immediately; per-process termination is a retryable activity that survives
+// transient Temporal/DB failures.
 func (s *service) RemoveOldRunnerProcesses(c *gin.Context) {
 	orgID := c.Param("id")
+	ctx := c.Request.Context()
 
-	// Get all runner processes for the org, ordered so most recent comes first.
-	var processes []app.RunnerProcess
-	if res := s.db.WithContext(c.Request.Context()).
-		Where("org_id = ?", orgID).
-		Order("runner_id, type, created_at DESC").
-		Find(&processes); res.Error != nil {
-		s.l.Error("failed to list runner processes", zap.Error(res.Error), zap.String("org_id", orgID))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to list runner processes"})
+	var queue app.Queue
+	if res := s.db.WithContext(ctx).
+		Where(app.Queue{OwnerID: orgID, Name: orgshelpers.OrgSignalsQueueName}).
+		First(&queue); res.Error != nil {
+		s.l.Error("unable to find org signals queue", zap.String("org_id", orgID), zap.Error(res.Error))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to find org signals queue"})
 		return
 	}
 
-	// For each runner+type combo, keep the most recent and collect the rest for deletion.
-	type key struct {
-		RunnerID string
-		Type     app.RunnerProcessType
-	}
-	seen := make(map[key]bool)
-	var toDelete []string
-
-	for _, p := range processes {
-		k := key{RunnerID: p.RunnerID, Type: p.Type}
-		if seen[k] {
-			toDelete = append(toDelete, p.ID)
-		} else {
-			seen[k] = true
-		}
+	resp, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: queue.ID,
+		Signal:  &removeoldrunnerprocesses.Signal{OrgID: orgID},
+	})
+	if err != nil {
+		s.l.Error("unable to enqueue remove-old-runner-processes signal", zap.String("org_id", orgID), zap.Error(err))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to enqueue remove-old-runner-processes signal: " + err.Error()})
+		return
 	}
 
-	deleted := 0
-	for _, id := range toDelete {
-		if res := s.db.WithContext(c.Request.Context()).
-			Delete(&app.RunnerProcess{}, "id = ?", id); res.Error != nil {
-			s.l.Warn("failed to delete old runner process",
-				zap.String("process_id", id),
-				zap.String("org_id", orgID),
-				zap.Error(res.Error))
-			continue
-		}
-		deleted++
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status": "ok", "processes_deleted": deleted})
+	c.JSON(http.StatusOK, gin.H{
+		"status":    "enqueued",
+		"signal_id": resp.ID,
+		"queue_id":  queue.ID,
+		"message":   "Old runner processes will be cleaned up in the background.",
+	})
 }

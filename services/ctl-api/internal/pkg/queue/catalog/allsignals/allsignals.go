@@ -92,6 +92,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/invite_created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/queue_migration"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/remove_old_runner_processes"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_queues"
