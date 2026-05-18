@@ -259,7 +259,13 @@ type Client interface {
 	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)
 
-	// runbooks
+	// runbooks - app level
+	GetAppRunbook(ctx context.Context, appID, nameOrID string) (*Runbook, error)
+	CreateRunbook(ctx context.Context, appID string, req *CreateRunbookRequest) (*Runbook, error)
+	UpdateRunbook(ctx context.Context, runbookID string, req *UpdateRunbookRequest) (*Runbook, error)
+	CreateRunbookConfig(ctx context.Context, runbookID string, req *CreateRunbookConfigRequest) (*RunbookConfig, error)
+
+	// runbooks - install level
 	GetInstallRunbooks(ctx context.Context, installID string) ([]*InstallRunbook, error)
 	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*InstallRunbook, error)
 	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*InstallRunbookRun, error)
