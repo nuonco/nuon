@@ -4,8 +4,10 @@ import { buildQueryParams } from '@/utils/build-query-params'
 
 type TJobGroup = TRunnerJob['group']
 type TJobStatus = TRunnerJob['status']
+type TJobExecutor = 'org-runner' | 'control-plane'
 
 export const getRunnerJobs = ({
+  executor,
   group,
   groups,
   limit = 10,
@@ -19,11 +21,12 @@ export const getRunnerJobs = ({
   orgId: string
   group?: TJobGroup
   groups?: TJobGroup[]
+  executor?: TJobExecutor
   status?: TJobStatus
   statuses?: TJobStatus[]
 } & TPaginationParams) =>
   api<TRunnerJob[]>({
-    path: `runners/${runnerId}/jobs${buildQueryParams({ limit, offset, group, groups, status, statuses })}`,
+    path: `runners/${runnerId}/jobs${buildQueryParams({ limit, offset, executor, group, groups, status, statuses })}`,
     orgId,
     paginated: true,
   })

@@ -9,11 +9,11 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/pkg/runner/workspace"
 )
 
 type InputConfig configs.App[configs.Build[configs.NoopBuild, configs.NoopRegistry], configs.NoopDeploy]
@@ -28,7 +28,7 @@ type handler struct {
 	v           *validator.Validate
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
-	cfg         *internal.Config
+	cfg         *runnerconfig.Config
 }
 
 var _ jobs.JobHandler = (*handler)(nil)
@@ -38,7 +38,7 @@ type HandlerParams struct {
 
 	V         *validator.Validate
 	APIClient nuonrunner.Client
-	Config    *internal.Config
+	Config    *runnerconfig.Config
 }
 
 func New(params HandlerParams) (*handler, error) {

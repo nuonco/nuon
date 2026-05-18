@@ -131,7 +131,9 @@ func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {
 }
 
 func (c *ComponentBuild) BeforeCreate(tx *gorm.DB) error {
-	c.ID = domains.NewBuildID()
+	if c.ID == "" {
+		c.ID = domains.NewBuildID()
+	}
 	if c.CreatedByID == "" {
 		c.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}

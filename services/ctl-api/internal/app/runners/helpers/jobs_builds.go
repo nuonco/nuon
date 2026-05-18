@@ -12,6 +12,7 @@ import (
 
 func (h *Helpers) CreateBuildJob(ctx context.Context,
 	runnerID string,
+	executor app.RunnerJobExecutor,
 	ownerType string,
 	ownerID string,
 	typ app.RunnerJobType,
@@ -33,6 +34,7 @@ func (h *Helpers) CreateBuildJob(ctx context.Context,
 
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
+		Executor:          executor,
 		OwnerType:         ownerType,
 		OwnerID:           ownerID,
 		QueueTimeout:      DefaultQueueTimeout,
@@ -48,7 +50,11 @@ func (h *Helpers) CreateBuildJob(ctx context.Context,
 		Metadata:          generics.ToHstore(metadata),
 	}
 
-	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
+	db := h.db.WithContext(ctx)
+	if executor == app.RunnerJobExecutorControlPlane {
+		db = db.Omit("RunnerID")
+	}
+	if res := db.Create(&job); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job: %w", res.Error)
 	}
 

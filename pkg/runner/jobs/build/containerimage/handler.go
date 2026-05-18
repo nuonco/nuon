@@ -1,0 +1,60 @@
+package containerimage
+
+import (
+	"context"
+
+	"github.com/go-playground/validator/v10"
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+	"go.uber.org/fx"
+	"go.uber.org/zap"
+
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
+	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
+)
+
+type handler struct {
+	v           *validator.Validate
+	apiClient   nuonrunner.Client
+	errRecorder *errs.Recorder
+	cfg         *runnerconfig.Config
+	ociCopy     ocicopy.Copier
+	ociResolve  ociresolve.Resolver
+
+	// state is reused between function calls, but can _not_ be reused with different jobs.
+	//
+	// the job loop ensures that no handler ever has more than one job at a time, but this guarantee should be made
+	// stronger in the future.
+	state *handlerState
+}
+
+var _ jobs.JobHandler = (*handler)(nil)
+
+type HandlerParams struct {
+	fx.In
+
+	V           *validator.Validate
+	APIClient   nuonrunner.Client
+	ErrRecorder *errs.Recorder
+	Config      *runnerconfig.Config
+	OCICopy     ocicopy.Copier
+	OCIResolve  ociresolve.Resolver
+}
+
+func New(params HandlerParams) (*handler, error) {
+	return &handler{
+		v:           params.V,
+		apiClient:   params.APIClient,
+		cfg:         params.Config,
+		ociCopy:     params.OCICopy,
+		ociResolve:  params.OCIResolve,
+		errRecorder: params.ErrRecorder,
+	}, nil
+}
+
+func (h *handler) GracefulShutdown(ctx context.Context, job *models.AppRunnerJob, l *zap.Logger) error {
+	return nil
+}

@@ -1,8 +1,8 @@
 package operations
 
 import (
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"go.uber.org/fx"
 
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/operations/noop"

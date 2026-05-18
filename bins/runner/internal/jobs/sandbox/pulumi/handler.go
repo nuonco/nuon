@@ -6,16 +6,16 @@ import (
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 )
 
 type handler struct {
 	v           *validator.Validate
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
-	cfg         *internal.Config
+	cfg         *runnerconfig.Config
 
 	state *handlerState
 }
@@ -27,7 +27,7 @@ type HandlerParams struct {
 
 	V           *validator.Validate
 	APIClient   nuonrunner.Client
-	Config      *internal.Config
+	Config      *runnerconfig.Config
 	ErrRecorder *errs.Recorder
 }
 

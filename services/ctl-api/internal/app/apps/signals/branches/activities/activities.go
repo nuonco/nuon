@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
@@ -42,6 +43,7 @@ type Params struct {
 	QueueClient      *queueclient.Client
 	FlowsClient      *flowclient.Client
 	TfClient         terraform.Client
+	Features         *features.Features
 }
 
 type Activities struct {
@@ -62,6 +64,7 @@ type Activities struct {
 	queueClient      *queueclient.Client
 	flowsClient      *flowclient.Client
 	tfClient         terraform.Client
+	features         *features.Features
 }
 
 func New(params Params) (*Activities, error) {
@@ -83,5 +86,6 @@ func New(params Params) (*Activities, error) {
 		queueClient:      params.QueueClient,
 		flowsClient:      params.FlowsClient,
 		tfClient:         params.TfClient,
+		features:         params.Features,
 	}, nil
 }

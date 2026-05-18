@@ -9,17 +9,17 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
-	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
 )
 
 type handler struct {
 	v           *validator.Validate
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
-	cfg         *internal.Config
+	cfg         *runnerconfig.Config
 	ociCopy     ocicopy.Copier
 
 	// state is reused between function calls, but can _not_ be reused with different jobs.
@@ -37,7 +37,7 @@ type HandlerParams struct {
 	V           *validator.Validate
 	APIClient   nuonrunner.Client
 	ErrRecorder *errs.Recorder
-	Config      *internal.Config
+	Config      *runnerconfig.Config
 	OCICopy     ocicopy.Copier
 }
 

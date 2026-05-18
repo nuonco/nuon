@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"

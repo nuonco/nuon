@@ -9,6 +9,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -36,12 +37,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		l.Info("no sandbox config found for app, skipping sandbox build", "app_id", appConfig.AppID)
 		return nil
-	}
-
-	// Get the org runner
-	runner, err := activities.AwaitGetOrgRunner(ctx, activities.GetOrgRunnerRequest{OrgID: run.OrgID})
-	if err != nil {
-		return fmt.Errorf("unable to get org runner: %w", err)
 	}
 
 	// Resolve git source for the sandbox build
@@ -107,7 +102,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Create the runner job
 	runnerJob, err := activities.AwaitCreateSandboxBuildJob(ctx, activities.CreateSandboxBuildJobRequest{
 		BuildID:     build.ID,
-		RunnerID:    runner.ID,
 		LogStreamID: logStreamID,
 	})
 	if err != nil {
@@ -115,16 +109,40 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to create sandbox build job: %w", err)
 	}
 
+	dstCfg, err := activities.AwaitGetSandboxBuildOCIRegistry(ctx, activities.GetSandboxBuildOCIRegistryRequest{
+		AppID: appConfig.AppID,
+	})
+	if err != nil {
+		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to get OCI registry")
+		return fmt.Errorf("unable to get OCI registry for sandbox build: %w", err)
+	}
+
+	tfPlan := &plantypes.TerraformBuildPlan{
+		Labels: map[string]string{
+			"app_id":               appConfig.AppID,
+			"app_sandbox_build_id": build.ID,
+		},
+	}
+	mirrorEnabled, err := activities.AwaitOrgHasFeature(ctx, activities.OrgHasFeatureRequest{
+		OrgID:   run.OrgID,
+		Feature: string(app.OrgFeatureTerraformProviderMirror),
+	})
+	if err != nil {
+		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "unable to check terraform provider mirror feature flag")
+		return fmt.Errorf("unable to check terraform provider mirror feature flag: %w", err)
+	}
+	if mirrorEnabled {
+		tfPlan.VendorProviders = true
+		tfPlan.TerraformVersion = sandboxConfig.TerraformVersion
+	}
+
 	// Build the composite plan
 	compositePlan := plantypes.CompositePlan{
 		BuildPlan: &plantypes.BuildPlan{
-			Src: gitSource,
-			TerraformBuildPlan: &plantypes.TerraformBuildPlan{
-				Labels: map[string]string{
-					"app_id":               appConfig.AppID,
-					"app_sandbox_build_id": build.ID,
-				},
-			},
+			Src:                gitSource,
+			Dst:                dstCfg,
+			DstTag:             build.ID,
+			TerraformBuildPlan: tfPlan,
 		},
 	}
 	planJSON, err := json.Marshal(compositePlan)
@@ -145,11 +163,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusPlanning, "planning sandbox build")
 
 	// Execute the runner job
-	_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
-		RunnerID:   runner.ID,
-		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
-	})
+	s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusBuilding, "building sandbox")
+	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
+		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),
+		})
+	} else {
+		_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
+			RunnerID:   runnerJob.RunnerID,
+			JobID:      runnerJob.ID,
+			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
+		})
+	}
 	if err != nil {
 		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "sandbox build job failed")
 		return fmt.Errorf("sandbox build job failed: %w", err)

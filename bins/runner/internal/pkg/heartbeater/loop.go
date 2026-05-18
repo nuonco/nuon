@@ -8,9 +8,9 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal/version"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/runner/version"
 )
 
 const (

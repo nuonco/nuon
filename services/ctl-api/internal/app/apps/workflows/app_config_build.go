@@ -1,6 +1,8 @@
 package workflows
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -15,7 +17,7 @@ import (
 )
 
 // AppConfigBuild builds the workflow steps for an app config build.
-// This workflow creates one step-group per component, each containing a build signal.
+// This workflow creates a single parallel step group with one build signal per component.
 func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	appConfigID := generics.FromPtrStr(flw.Metadata["app_config_id"])
 	if appConfigID == "" {
@@ -53,37 +55,40 @@ func AppConfigBuild(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSteps
 
 	steps := make([]*app.WorkflowStep, 0, len(appConfig.ComponentIDs))
 	sg := newStepGroup()
+	sg.nextParallelGroup("build components")
 
-	// Batch components into parallel groups of 5.
-	const batchSize = 5
-	for batchStart := 0; batchStart < len(appConfig.ComponentIDs); batchStart += batchSize {
-		batchEnd := batchStart + batchSize
-		if batchEnd > len(appConfig.ComponentIDs) {
-			batchEnd = len(appConfig.ComponentIDs)
+	for _, componentID := range appConfig.ComponentIDs {
+		build, err := activities.AwaitCreateComponentBuild(ctx, activities.CreateComponentBuildRequest{
+			BuildID:     appConfigBuildComponentBuildID(flw.ID, componentID),
+			ComponentID: componentID,
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create build record for component %s", componentID)
 		}
-		batch := appConfig.ComponentIDs[batchStart:batchEnd]
 
-		sg.nextParallelGroup(fmt.Sprintf("build components %d-%d", batchStart+1, batchEnd))
-
-		for _, componentID := range batch {
-			name := fmt.Sprintf("build component %s", componentID)
-			if n, ok := componentNames[componentID]; ok {
-				name = fmt.Sprintf("build %s", n)
-			}
-
-			queues := componentQueues[componentID]
-			step, err := sg.signalStep(ctx, componentID, "components", name, pgtype.Hstore{}, &inlinebuild.Signal{
-				ComponentID: componentID,
-			},
-				WithStepQueueID(queues.WorkflowStepsQueueID),
-				WithTargetQueueID(queues.DefaultQueueID),
-			)
-			if err != nil {
-				return nil, errors.Wrapf(err, "unable to create build step for component %s", componentID)
-			}
-			steps = append(steps, step)
+		name := fmt.Sprintf("build component %s", componentID)
+		if n, ok := componentNames[componentID]; ok {
+			name = fmt.Sprintf("build %s", n)
 		}
+
+		queues := componentQueues[componentID]
+		step, err := sg.signalStep(ctx, componentID, "components", name, pgtype.Hstore{}, &inlinebuild.Signal{
+			ComponentID: componentID,
+			BuildID:     build.ID,
+		},
+			WithStepQueueID(queues.WorkflowStepsQueueID),
+			WithTargetQueueID(queues.DefaultQueueID),
+		)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create build step for component %s", componentID)
+		}
+		steps = append(steps, step)
 	}
 
 	return sg.Result(steps), nil
+}
+
+func appConfigBuildComponentBuildID(workflowID, componentID string) string {
+	sum := sha256.Sum256([]byte(workflowID + ":" + componentID))
+	return "bld" + hex.EncodeToString(sum[:])[:23]
 }

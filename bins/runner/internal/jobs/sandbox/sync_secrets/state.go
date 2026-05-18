@@ -3,8 +3,8 @@ package terraform
 import (
 	"time"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/runner/workspace"
 	"github.com/nuonco/nuon/pkg/types/outputs"
 )
 

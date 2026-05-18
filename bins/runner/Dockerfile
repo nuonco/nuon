@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     CGO_ENABLED=0 \
     GOOS=linux \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /bin/runner
 
 FROM code AS test
@@ -133,7 +133,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=darwin \
     GOARCH=arm64 \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_darwin_arm64 .
 
 FROM code AS build-darwin-amd64
@@ -144,7 +144,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=darwin \
     GOARCH=amd64 \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_darwin_amd64 .
 
 FROM code AS build-linux-arm
@@ -155,7 +155,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=arm \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm .
 
 FROM code AS build-linux-arm64
@@ -166,7 +166,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=arm64 \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_arm64 .
 
 FROM code AS build-linux-386
@@ -177,7 +177,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=386 \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_386 .
 
 FROM code AS build-linux-amd64
@@ -188,7 +188,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     GOOS=linux \
     GOARCH=amd64 \
     go build \
-    -ldflags="-X '${PKG_ROOT}/internal/version.Version=${tag}'" \
+    -ldflags="-X 'github.com/nuonco/nuon/pkg/runner/version.Version=${tag}'" \
     -o /out/${BIN_NAME}_linux_amd64 .
 
 # END

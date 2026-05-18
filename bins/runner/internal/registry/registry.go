@@ -8,18 +8,18 @@ import (
 	"github.com/sourcegraph/conc"
 	"go.uber.org/fx"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 )
 
 type Params struct {
 	fx.In
 
 	LC  fx.Lifecycle
-	Cfg *internal.Config
+	Cfg *runnerconfig.Config
 }
 
 type Registry struct {
-	cfg *internal.Config
+	cfg *runnerconfig.Config
 	*ociregistry.Registry
 
 	ctx      context.Context

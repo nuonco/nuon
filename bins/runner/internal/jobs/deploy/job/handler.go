@@ -9,9 +9,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 )
 
 const (
@@ -32,7 +32,7 @@ type HandlerParams struct {
 
 	V         *validator.Validate
 	APIClient nuonrunner.Client
-	Config    *internal.Config
+	Config    *runnerconfig.Config
 }
 
 func New(params HandlerParams) (*handler, error) {

@@ -10,18 +10,18 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/k8s"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 type podShutdown struct {
-	cfg      *internal.Config
+	cfg      *runnerconfig.Config
 	settings *settings.Settings
 	l        *zap.Logger
 }
 
-func newPodShutdown(cfg *internal.Config, settings *settings.Settings, l *zap.Logger) *podShutdown {
+func newPodShutdown(cfg *runnerconfig.Config, settings *settings.Settings, l *zap.Logger) *podShutdown {
 	if !cfg.DeletePodOnShutdown || cfg.PodName == "" || cfg.PodNamespace == "" {
 		return nil
 	}

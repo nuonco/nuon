@@ -9,9 +9,9 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/git"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/command"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"

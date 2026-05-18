@@ -11,13 +11,13 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/pkg/metrics"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 type JobLoop interface {
@@ -43,7 +43,7 @@ type jobLoop struct {
 
 	pool     *pool.Pool
 	settings *settings.Settings
-	cfg      *internal.Config
+	cfg      *runnerconfig.Config
 
 	pollCtx    context.Context
 	pollCancel func()
