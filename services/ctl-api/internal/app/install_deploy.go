@@ -114,6 +114,12 @@ func (c *InstallDeploy) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallDeploy{}, "install_component_id"),
+			Columns: []string{
+				"install_component_id",
+			},
+		},
 	}
 }
 
