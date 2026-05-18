@@ -21,6 +21,8 @@ const (
 	streamingDelay     = 200 * time.Millisecond
 	pollInterval       = 1 * time.Second
 	errorRetryDelay    = 5 * time.Second
+	// How often to re-check whether an open stream has closed.
+	streamStatusCheck = 10 * time.Second
 )
 
 type LogStreamsHandler struct {
@@ -59,6 +61,15 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
+
+	logStream, err := client.GetLogStream(ctx, logStreamID)
+	if err != nil {
+		h.l.Error("failed to get log stream", zap.Error(err), zap.String("logStreamID", logStreamID))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get log stream"})
+		return
+	}
+
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -66,10 +77,11 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 	c.Writer.Flush()
 
-	ctx := c.Request.Context()
 	var currentOffset string
 	isCatchingUp := false
 	hasSeenFirstBatch := false
+	isOpen := logStream.Open
+	lastStatusCheck := time.Now()
 
 	sendEvent := func(logs []*models.AppOtelLogRecord) {
 		b, _ := json.Marshal(logs)
@@ -138,6 +150,25 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 					}
 					sendEvent([]*models.AppOtelLogRecord{log})
 				}
+			}
+		}
+
+		// If the stream is closed and we've exhausted all pages, tell the
+		// client and wait for it to close the connection. Returning here would
+		// close the HTTP response, which causes EventSource to auto-reconnect
+		// before the browser processes the "complete" event.
+		if !isOpen && nextOffset == "" {
+			sendStatus("complete")
+			<-ctx.Done()
+			return
+		}
+
+		// Periodically re-check whether an open stream has closed.
+		if isOpen && time.Since(lastStatusCheck) >= streamStatusCheck {
+			lastStatusCheck = time.Now()
+			ls, err := client.GetLogStream(ctx, logStreamID)
+			if err == nil && !ls.Open {
+				isOpen = false
 			}
 		}
 

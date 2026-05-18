@@ -27,6 +27,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 )
 
 type Params struct {
@@ -48,6 +49,7 @@ type Params struct {
 	TemporalClient temporalclient.Client
 	QueueClient    *queueclient.Client
 	EmitterClient  *emitterclient.Client
+	Enqueuer       *enqueuer.Enqueuer
 
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
@@ -72,6 +74,7 @@ type Service struct {
 	temporalClient temporalclient.Client
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
+	enqueuer       *enqueuer.Enqueuer
 	codecs         []converter.PayloadCodec
 	queryCollector *querycollector.Collector
 }
@@ -268,6 +271,7 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/queues/:id/check-can", s.CheckCANQueue)
 		api.POST("/queues/:id/clear", s.ClearQueue)
 		api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
+		api.POST("/queues/:id/signals/:signal_id/re-enqueue", s.ReEnqueueSignal)
 
 		// Temporal workflow viewer
 		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
@@ -346,6 +350,7 @@ func New(params Params) (*service, error) {
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
+		enqueuer:       params.Enqueuer,
 		queryCollector: params.QueryCollector,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,

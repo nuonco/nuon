@@ -59,3 +59,9 @@ export const directExecuteSignal = (queueId: string, signalId: string) =>
     path: `queues/${queueId}/signals/${signalId}/direct-execute`,
     method: 'POST',
   })
+
+export const reEnqueueSignal = (queueId: string, signalId: string) =>
+  api<{ status: string; queue_signal_id: string }>({
+    path: `queues/${queueId}/signals/${signalId}/re-enqueue`,
+    method: 'POST',
+  })

@@ -5,5 +5,5 @@ export default {
 import { RunnerJobLogs } from './RunnerJobLogs'
 
 export const NoLogStream = () => (
-  <RunnerJobLogs jobStatus="queued" />
+  <RunnerJobLogs />
 )

@@ -18,7 +18,6 @@ import { getComponent } from '@/lib'
 import { BuildProvider } from '@/providers/build-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TComponent } from '@/types'
 
 const BuildDetailInner = ({ component }: { component: TComponent | undefined }) => {
@@ -45,25 +44,20 @@ const BuildDetailInner = ({ component }: { component: TComponent | undefined }) 
       ) : null}
       <PageSection>
         {build?.log_stream ? (
-          <LogStreamProvider
-            logStreamId={build.log_stream.id}
-            shouldPoll={build.log_stream.open}
-          >
-            <UnifiedLogsProvider>
-              <LogViewerProvider>
-                <Tabs
-                  tabs={{
-                    logs: <SSELogs />,
-                    trace: (
-                      <TraceView
-                        logStreamId={build.log_stream.id}
-                        shouldPoll={build.log_stream.open}
-                      />
-                    ),
-                  }}
-                />
-              </LogViewerProvider>
-            </UnifiedLogsProvider>
+          <LogStreamProvider logStreamId={build.log_stream.id}>
+            <LogViewerProvider>
+              <Tabs
+                tabs={{
+                  logs: <SSELogs />,
+                  trace: (
+                    <TraceView
+                      logStreamId={build.log_stream.id}
+                      shouldPoll={build.log_stream.open}
+                    />
+                  ),
+                }}
+              />
+            </LogViewerProvider>
           </LogStreamProvider>
         ) : (
           <div className="flex flex-col items-center gap-4 p-12">

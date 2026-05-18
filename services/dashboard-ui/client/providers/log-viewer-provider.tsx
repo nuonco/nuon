@@ -4,7 +4,7 @@ import { LogPanel } from '@/components/log-stream/LogPanel'
 import { useArrowKeys } from '@/hooks/use-arrow-keys'
 import { useLogFilters, type TLogFiltersProps } from '@/hooks/use-log-filters'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { UnifiedLogsContext } from '@/providers/unified-logs-provider'
+import { LogStreamContext } from '@/providers/log-stream-provider'
 import type { TOTELLog, TSpan } from '@/types'
 
 type LogViewerContextValue = {
@@ -27,12 +27,12 @@ interface LogViewerProviderProps {
 }
 
 export function LogViewerProvider({ children, spans }: LogViewerProviderProps) {
-  const unifiedLogsContext = useContext(UnifiedLogsContext)
-  if (!unifiedLogsContext) {
-    throw new Error('LogViewerProvider must be used within a UnifiedLogsProvider')
+  const logStreamContext = useContext(LogStreamContext)
+  if (!logStreamContext) {
+    throw new Error('LogViewerProvider must be used within a LogStreamProvider')
   }
 
-  const { logs } = unifiedLogsContext
+  const { logs } = logStreamContext
   const [activeLog, setActiveLog] = useState<TOTELLog | undefined>()
   const cycleDirectionRef = useRef<'up' | 'down' | undefined>()
   const filters = useLogFilters(logs || [], spans)

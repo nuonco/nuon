@@ -2,11 +2,9 @@ export default {
   title: 'LogStream/LogFilters',
 }
 
-import { UnifiedLogsContext } from '@/providers/unified-logs-provider'
 import { LogStreamContext } from '@/providers/log-stream-provider'
 import { LogFilters } from './LogFilters'
 import type { TLogFiltersProps } from '@/hooks/use-log-filters'
-import type { TLogStream } from '@/types'
 
 const noop = () => {}
 
@@ -49,52 +47,28 @@ const mockFilters: TLogFiltersProps = {
   serverFilters: {},
 }
 
-const mockContextLive = {
+const mockLogStreamContext = {
   logs: [],
+  logStreamId: 'log-stream-1',
   isLoading: false,
   error: null,
   connectionState: 'connected' as const,
-  loadMore: noop,
-  hasMore: false,
-  isStreamOpen: true,
-}
-
-const mockLogStream: TLogStream = {
-  id: 'log-stream-1',
-  org_id: 'org-mock-001',
-  open: false,
-} as TLogStream
-
-const mockLogStreamContext = {
-  logStream: mockLogStream,
-  refresh: () => {},
-}
-
-const mockContextStatic = {
-  ...mockContextLive,
-  connectionState: 'disconnected' as const,
-  isStreamOpen: false,
-  hasMore: true,
 }
 
 export const LiveStream = () => (
-  <UnifiedLogsContext.Provider value={mockContextLive}>
+  <LogStreamContext.Provider value={mockLogStreamContext}>
     <LogFilters filters={mockFilters} />
-  </UnifiedLogsContext.Provider>
+  </LogStreamContext.Provider>
 )
 
 export const StaticLogs = () => (
-  <LogStreamContext.Provider value={mockLogStreamContext}>
-    <UnifiedLogsContext.Provider value={mockContextStatic}>
-      <LogFilters filters={mockFilters} />
-    </UnifiedLogsContext.Provider>
+  <LogStreamContext.Provider value={{ ...mockLogStreamContext, connectionState: 'disconnected' }}>
+    <LogFilters filters={mockFilters} />
   </LogStreamContext.Provider>
 )
 
 export const WithSystemLogs = () => (
-  <LogStreamContext.Provider value={mockLogStreamContext}>
-    <UnifiedLogsContext.Provider value={mockContextStatic}>
-      <LogFilters filters={{ ...mockFilters, includeSystemLogs: true }} />
-    </UnifiedLogsContext.Provider>
+  <LogStreamContext.Provider value={{ ...mockLogStreamContext, connectionState: 'disconnected' }}>
+    <LogFilters filters={{ ...mockFilters, includeSystemLogs: true }} />
   </LogStreamContext.Provider>
 )

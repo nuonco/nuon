@@ -8,11 +8,13 @@ import { ComponentDependencies } from './ComponentDependencies'
 interface IComponentDependenciesContainer {
   deps: string[]
   variant?: 'count' | 'inline'
+  tooltipTitle?: string
 }
 
 export const ComponentDependenciesContainer = ({
   deps,
   variant = 'count',
+  tooltipTitle,
 }: IComponentDependenciesContainer) => {
   const { pathname } = useLocation()
   const { org } = useOrg()
@@ -37,6 +39,7 @@ export const ComponentDependenciesContainer = ({
       isLoading={isLoading}
       basePath={`/${org.id}/apps/${app.id}/components`}
       pathname={pathname}
+      tooltipTitle={tooltipTitle}
     />
   )
 }
