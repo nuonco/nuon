@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import type { IButtonAsButton } from '@/components/common/Button'
 import type { IModal } from '@/components/surfaces/Modal'
-import { useLogStream } from '@/hooks/use-log-stream'
+import { useLogStreamData } from '@/hooks/use-logs'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { createFileDownload } from '@/utils/file-download'
@@ -54,12 +54,12 @@ export const DownloadLogsButtonContainer = ({
   ...props
 }: { includeSystemLogs?: boolean } & IButtonAsButton) => {
   const { org } = useOrg()
-  const { logStream } = useLogStream()
+  const { logStreamId } = useLogStreamData()
   const { addModal } = useSurfaces()
   const modal = (
     <DownloadLogsModalContainer
       orgId={org.id}
-      logStreamId={logStream.id}
+      logStreamId={logStreamId}
       includeSystemLogs={includeSystemLogs}
     />
   )

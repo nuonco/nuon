@@ -1,6 +1,6 @@
 import { useContext, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useUnifiedLogData, useLogViewer } from '@/hooks/use-logs'
+import { useLogStreamData, useLogViewer } from '@/hooks/use-logs'
 import { InstallActionRunContext } from '@/providers/install-action-run-provider'
 import type { TActionConfig, TInstallActionRunStep } from '@/types'
 import { InstallActionRunLogs } from './InstallActionRunLogs'
@@ -15,7 +15,7 @@ export const InstallActionRunLogsContainer = ({
   runSteps?: TInstallActionRunStep[]
 }) => {
   const [searchParams] = useSearchParams()
-  const { logs: allLogs, loadMore, hasMore, isLoading, isStreamOpen } = useUnifiedLogData()
+  const { logs: allLogs, isLoading } = useLogStreamData()
   const { filteredLogs, activeLog, handleActiveLog, filters } = useLogViewer()
   const actionRunCtx = useContext(InstallActionRunContext)
   const runSteps = actionRunCtx?.installActionRun?.steps ?? runStepsProp
@@ -40,10 +40,7 @@ export const InstallActionRunLogsContainer = ({
       layout={layout}
       allLogs={allLogs}
       filteredLogs={filteredLogs}
-      loadMore={loadMore}
-      hasMore={hasMore}
       isLoading={isLoading}
-      isStreamOpen={isStreamOpen}
       activeLog={activeLog}
       handleActiveLog={handleActiveLog}
       filters={filters}

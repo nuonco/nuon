@@ -8,7 +8,6 @@ import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TWorkflowStep, TSandboxRun } from '@/types'
 
@@ -49,22 +48,20 @@ export const SandboxRunApply = ({
           </div>
 
           {sandboxRun?.log_stream ? (
-            <LogStreamProvider shouldPoll logStreamId={sandboxRun?.log_stream?.id}>
-              <UnifiedLogsProvider>
-                <LogViewerProvider>
-                  <Tabs
-                    tabs={{
-                      logs: <SSELogs />,
-                      trace: (
-                        <TraceView
-                          logStreamId={sandboxRun.log_stream.id}
-                          shouldPoll={sandboxRun.log_stream.open}
-                        />
-                      ),
-                    }}
-                  />
-                </LogViewerProvider>
-              </UnifiedLogsProvider>
+            <LogStreamProvider logStreamId={sandboxRun?.log_stream?.id}>
+              <LogViewerProvider>
+                <Tabs
+                  tabs={{
+                    logs: <SSELogs />,
+                    trace: (
+                      <TraceView
+                        logStreamId={sandboxRun.log_stream.id}
+                        shouldPoll={sandboxRun.log_stream.open}
+                      />
+                    ),
+                  }}
+                />
+              </LogViewerProvider>
             </LogStreamProvider>
           ) : null}
         </div>
