@@ -8,25 +8,18 @@
 // the call stack like any other error.
 //
 // Composite errors are persisted by attaching a CompositeErrorData JSONB
-// column to owner rows (component builds, sandbox runs, deploys, action runs,
-// …). A producer constructs a typed CompositeError inline at the failure
-// site, hands it to New(), and assigns the resulting *CompositeErrorData to
-// the owner. The headline message and Sections are frozen at write time —
-// the read path is a plain JSONB unmarshal with no registry lookup.
+// column to owner rows (component builds, sandbox runs, deploys, action runs, ..)
 //
 // New typed errors are added by writing a struct that implements
 // CompositeError in its own subpackage (e.g. compositeerrors/terraform/,
-// compositeerrors/validation/). There is no central registration step.
+// compositeerrors/validation/).
 package compositeerrors
 
 // Type is the discriminator string for a CompositeError implementation
-// (e.g. "terraform.error", "validation"). Stored on the persisted
-// CompositeErrorData record.
+// (e.g. "terraform.error", "validation").
 type Type string
 
-// Severity controls how the dashboard presents an error. Producers set it on
-// the CompositeError; the value is copied onto the CompositeErrorData record
-// at construction time so reads never need to invoke the typed implementation.
+// Severity controls how the dashboard presents an error.
 type Severity string
 
 const (
@@ -39,11 +32,6 @@ const (
 // CompositeError is a typed, structured error. Implementations satisfy the
 // standard error interface (Error() returns the headline message), plus
 // metadata used to persist and present the error in the dashboard.
-//
-// A CompositeError MUST be JSON round-trippable: marshalling and unmarshalling
-// the implementing struct must yield an equivalent value. The
-// CompositeErrorData's Data column holds exactly the JSON representation of
-// the implementing struct.
 type CompositeError interface {
 	error // headline — the one-line message users see
 
@@ -55,7 +43,7 @@ type CompositeError interface {
 	Sections() []Section
 }
 
-// Section is a heading + markdown body attached to a CompositeError.
+// Section is a heading + body attached to a CompositeError.
 type Section struct {
 	Heading string `json:"heading"`
 	Body    string `json:"body"`

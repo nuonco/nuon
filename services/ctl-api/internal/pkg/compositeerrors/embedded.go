@@ -10,11 +10,7 @@ import (
 // captures a typed CompositeError's payload along with its headline message
 // and structured sections, all frozen at write time.
 //
-// Construct with New() at the producer site; assign the result to the owner's
-// field; persist with a normal Save(). Read paths just unmarshal the JSONB —
-// no registry, no init-time registration.
-//
-// Owners opt in by adding:
+// To use, add this to a GORM model struct:
 //
 //	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb"`
 type CompositeErrorData struct {
@@ -27,7 +23,7 @@ type CompositeErrorData struct {
 
 // New constructs a CompositeErrorData from a typed CompositeError. The
 // implementation's data, headline message, and sections are captured at this
-// point — all are frozen on the resulting record.
+// point, all are frozen on the resulting record.
 func New(e CompositeError) *CompositeErrorData {
 	data, _ := json.Marshal(e)
 	return &CompositeErrorData{
