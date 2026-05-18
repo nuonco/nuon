@@ -118,6 +118,10 @@ func (r *Registrar) ProcessID() string {
 	return r.processID
 }
 
+func (r *Registrar) ProcessType() string {
+	return r.processType
+}
+
 func (r *Registrar) LogStreamID() string {
 	return r.logStreamID
 }
