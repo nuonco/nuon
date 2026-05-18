@@ -41,6 +41,13 @@ func (c *PublicGitVCSConfig) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &PublicGitVCSConfig{}, "component_config"),
+			Columns: []string{
+				"component_config_type",
+				"component_config_id",
+			},
+		},
 	}
 }
 
