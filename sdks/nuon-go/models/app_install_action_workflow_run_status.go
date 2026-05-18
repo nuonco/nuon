@@ -50,6 +50,9 @@ const (
 
 	// AppInstallActionWorkflowRunStatusUnknown captures enum value "unknown"
 	AppInstallActionWorkflowRunStatusUnknown AppInstallActionWorkflowRunStatus = "unknown"
+
+	// AppInstallActionWorkflowRunStatusRetried captures enum value "retried"
+	AppInstallActionWorkflowRunStatusRetried AppInstallActionWorkflowRunStatus = "retried"
 )
 
 // for schema
@@ -57,7 +60,7 @@ var appInstallActionWorkflowRunStatusEnum []any
 
 func init() {
 	var res []AppInstallActionWorkflowRunStatus
-	if err := json.Unmarshal([]byte(`["finished","queued","in-progress","error","timed-out","cancelled","unknown"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["finished","queued","in-progress","error","timed-out","cancelled","unknown","retried"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

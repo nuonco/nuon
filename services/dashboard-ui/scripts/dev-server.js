@@ -72,7 +72,7 @@ const MAX_FAILURES = 12;
 
 setInterval(async () => {
   try {
-    await fetch(BFF_ORIGIN, { signal: AbortSignal.timeout(2000) });
+    await fetch(BFF_ORIGIN, { signal: AbortSignal.timeout(2000), redirect: "manual" });
     if (failCount > 0) {
       console.log(`BFF is back after ${failCount} failed checks`);
       failCount = 0;
