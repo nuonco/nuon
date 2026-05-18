@@ -22,7 +22,7 @@ func (s *service) InFlightSignals(c *gin.Context) {
 		return
 	}
 
-	namespaces, err := s.getDistinctNamespaces(ctx)
+	namespaces, err := s.getDistinctNamespaces(ctx, "24h")
 	if err != nil {
 		s.l.Error("failed to get namespaces", zap.Error(err))
 	}

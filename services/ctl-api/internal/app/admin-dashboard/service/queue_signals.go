@@ -42,12 +42,12 @@ func (s *service) QueueSignals(c *gin.Context) {
 		return
 	}
 
-	namespaces, err := s.getDistinctNamespaces(ctx)
+	namespaces, err := s.getDistinctNamespaces(ctx, since)
 	if err != nil {
 		s.l.Error("failed to get namespaces", zap.Error(err))
 	}
 
-	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace, since)
 	if err != nil {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
@@ -81,12 +81,12 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 		return
 	}
 
-	namespaces, err := s.getDistinctNamespaces(ctx)
+	namespaces, err := s.getDistinctNamespaces(ctx, since)
 	if err != nil {
 		s.l.Warn("failed to get namespaces", zap.Error(err))
 	}
 
-	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace, since)
 	if err != nil {
 		s.l.Warn("failed to get signal types", zap.Error(err))
 	}
@@ -107,8 +107,9 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Query("namespace")
+	since := c.DefaultQuery("since", "24h")
 
-	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace, since)
 	if err != nil {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
@@ -195,13 +196,16 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, orgID, s
 	return signals, totalPages, nil
 }
 
-func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
+func (s *service) getDistinctNamespaces(ctx context.Context, since string) ([]string, error) {
 	var namespaces []string
-	res := s.readDB().WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.QueueSignal{}).
 		Select("DISTINCT workflow->>'namespace'").
-		Where("workflow->>'namespace' != ''").
-		Pluck("workflow->>'namespace'", &namespaces)
+		Where("workflow->>'namespace' != ''")
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
+	res := query.Pluck("workflow->>'namespace'", &namespaces)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get distinct namespaces: %w", res.Error)
 	}
@@ -209,9 +213,12 @@ func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
 	return namespaces, nil
 }
 
-func (s *service) getDistinctSignalTypes(ctx context.Context, namespace string) ([]string, error) {
+func (s *service) getDistinctSignalTypes(ctx context.Context, namespace string, since string) ([]string, error) {
 	var types []string
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
 	if namespace != "" {
 		query = query.Where("workflow->>'namespace' = ?", namespace)
 	}
