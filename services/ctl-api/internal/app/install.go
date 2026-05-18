@@ -105,14 +105,14 @@ func (i *Install) UseView() bool {
 }
 
 func (i *Install) ViewVersion() string {
-	return "v7"
+	return "v8"
 }
 
 func (i *Install) Views(db *gorm.DB) []migrations.View {
 	return []migrations.View{
 		{
-			Name:          views.DefaultViewName(db, &Install{}, 7),
-			SQL:           viewsql.InstallsViewV7,
+			Name:          views.DefaultViewName(db, &Install{}, 8),
+			SQL:           viewsql.InstallsViewV8,
 			AlwaysReapply: true,
 		},
 		{
