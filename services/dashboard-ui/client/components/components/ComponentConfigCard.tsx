@@ -27,10 +27,14 @@ import { getComponentConfigDisplayData } from '@/utils/component-config-display'
 
 interface IComponentConfigCard extends Omit<ICard, 'children'> {
   config: TComponentConfig
+  footer?: React.ReactNode
+  headerActions?: React.ReactNode
 }
 
 export const ComponentConfigCard = ({
   config,
+  footer,
+  headerActions,
   ...props
 }: IComponentConfigCard) => {
   const { commonFields, typeSpecificFields, vcsInfo, operationRoles } =
@@ -173,8 +177,9 @@ export const ComponentConfigCard = ({
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <Text weight="strong">Configuration</Text>
-          {configButtons.length > 0 && (
+          {(configButtons.length > 0 || headerActions) && (
             <div className="flex gap-2">
+              {headerActions}
               {configButtons.map((button) => (
                 <Button
                   key={button.label}
@@ -241,6 +246,12 @@ export const ComponentConfigCard = ({
             <div className="w-fit">
               <GitRepo vcsConfig={vcsInfo.vcsConfig} isAutoGrid />
             </div>
+          </div>
+        )}
+
+        {footer && (
+          <div className="pt-6 border-t flex flex-col gap-6">
+            {footer}
           </div>
         )}
       </div>
