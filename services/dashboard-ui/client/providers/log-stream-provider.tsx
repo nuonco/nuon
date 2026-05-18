@@ -33,6 +33,7 @@ export function LogStreamProvider({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isCatchingUpRef = useRef(false)
   const catchUpBufferRef = useRef<TOTELLog[]>([])
+  const isCompleteRef = useRef(false)
 
   const connectSSE = () => {
     if (!logStreamId || !org?.id || eventSourceRef.current) return
@@ -86,6 +87,11 @@ export function LogStreamProvider({
             return Array.from(logMap.values())
           })
         }
+      } else if (event.data === 'complete') {
+        isCompleteRef.current = true
+        eventSource.close()
+        eventSourceRef.current = null
+        setConnectionState('disconnected')
       }
     })
 
@@ -110,6 +116,8 @@ export function LogStreamProvider({
     eventSource.onerror = () => {
       eventSource.close()
       eventSourceRef.current = null
+
+      if (isCompleteRef.current) return
 
       setConnectionState('reconnecting')
       const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000)
@@ -140,6 +148,7 @@ export function LogStreamProvider({
   }
 
   useEffect(() => {
+    isCompleteRef.current = false
     if (logStreamId && org?.id) {
       connectSSE()
     }
