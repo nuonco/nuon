@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // @temporal-gen-v2 activity
@@ -17,7 +18,7 @@ func (a *Activities) getOrgByID(ctx context.Context, orgID string) (*app.Org, er
 	if res := a.db.WithContext(ctx).
 		Where(app.Org{ID: orgID}).
 		First(&org); res.Error != nil {
-		return nil, res.Error
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get org")
 	}
 	return &org, nil
 }
