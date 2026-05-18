@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -49,6 +50,11 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	switch req.Mode {
 	case app.QueueEmitterModeCron:
 		if req.CronSchedule == "" {
+			err := fmt.Errorf("cron_schedule is needed for cron mode")
+			return nil, temporal.NewNonRetryableApplicationError("validation failure",
+				fmt.Sprintf("%T", err),
+				err,
+			)
 			return nil, errors.New("cron_schedule is required for cron mode")
 		}
 	case app.QueueEmitterModeScheduled, app.QueueEmitterModeFireOnce:

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -31,6 +32,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	// Validate install exists
 	_, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
+		if dbgenerics.IsGormErrRecordNotFound(err) {
+			return nil
+		}
 		return errors.Wrap(err, "install not found")
 	}
 
