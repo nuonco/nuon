@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
@@ -34,18 +33,9 @@ func (c *Client) ForceRestart(ctx context.Context, queueID string) error {
 		Version: c.cfg.Version,
 	}
 	opts := tclient.StartWorkflowOptions{
-		ID:        q.Workflow.ID,
-		TaskQueue: workflows.APITaskQueue,
-		Memo: map[string]any{
-			"type":          "queue",
-			"id":            q.ID,
-			"name":          q.Name,
-			"owner-id":      q.OwnerID,
-			"owner-type":    q.OwnerType,
-			"max-in-flight": q.MaxInFlight,
-			"max-depth":     q.MaxDepth,
-			"idle-timeout":  time.Duration(q.IdleTimeout).String(),
-		},
+		ID:                    q.Workflow.ID,
+		TaskQueue:             workflows.APITaskQueue,
+		Memo:                  queueMemo(q),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,

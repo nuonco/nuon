@@ -191,6 +191,17 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/orgs/:id/shutdown-hint-runner-processes", s.ShutdownHintOrgRunnerProcesses)
 		api.GET("/orgs/:id/installs", s.InstallsTable)
 
+		// Org cleanup
+		api.POST("/orgs/:id/deprovision", s.ProxyDeprovisionOrg)
+		api.POST("/orgs/:id/forget", s.ProxyForgetOrg)
+		api.POST("/orgs/:id/forget-installs", s.ProxyForgetOrgInstalls)
+		api.POST("/orgs/:id/deprovision-apps", s.DeprovisionOrgApps)
+		api.GET("/orgs/:id/workflows", s.OrgWorkflows)
+		api.POST("/orgs/:id/terminate-workflows", s.TerminateOrgWorkflows)
+		api.GET("/orgs/:id/queue-signals", s.OrgQueueSignals)
+		api.GET("/orgs/:id/queue-signal-stats", s.OrgQueueSignalStats)
+		api.POST("/orgs/:id/delete-queue-signals", s.DeleteOrgQueueSignals)
+
 		// Accounts
 		api.GET("/accounts", s.Accounts)
 		api.GET("/accounts/table", s.AccountsTable)
@@ -227,6 +238,10 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/installs/:id/workflows", s.InstallWorkflowsTable)
 		api.POST("/installs/:id/labels", s.AddInstallLabel)
 		api.POST("/installs/:id/labels/remove/:key", s.RemoveInstallLabel)
+
+		// Install cleanup
+		api.POST("/installs/:id/forget", s.ProxyForgetInstall)
+		api.POST("/installs/:id/deprovision", s.ProxyDeprovisionInstall)
 
 		// Workflows
 		api.GET("/workflows", s.Workflows)

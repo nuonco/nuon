@@ -97,6 +97,29 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			Option: "WHERE deleted_at = 0 AND (status->>'status') IN ('queued','in_progress')",
 		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "org_id_type_deleted_at"),
+			Columns: []string{
+				"org_id",
+				"type",
+				"deleted_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "org_id_status_deleted_at"),
+			Columns: []string{
+				"org_id",
+				"(status->>'status')",
+				"deleted_at",
+			},
+		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "created_at_deleted_at"),
+			Columns: []string{
+				"created_at DESC",
+				"deleted_at",
+			},
+		},
 	}
 }
 

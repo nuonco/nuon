@@ -50,6 +50,24 @@ func New(params Params) *Client {
 	}
 }
 
+// queueMemo returns the standard memo map for a queue workflow.
+func queueMemo(q *app.Queue) map[string]any {
+	m := map[string]any{
+		"type":          "queue",
+		"id":            q.ID,
+		"name":          q.Name,
+		"owner-id":      q.OwnerID,
+		"owner-type":    q.OwnerType,
+		"max-in-flight": q.MaxInFlight,
+		"max-depth":     q.MaxDepth,
+		"idle-timeout":  time.Duration(q.IdleTimeout).String(),
+	}
+	if q.OrgID != nil {
+		m["org-id"] = *q.OrgID
+	}
+	return m
+}
+
 // queueStartOperation builds a WithStartWorkflowOperation for a queue workflow.
 // This is used by update-with-start calls to ensure the queue workflow is running.
 func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOperation {
@@ -58,14 +76,9 @@ func (c *Client) queueStartOperation(q *app.Queue) tclient.WithStartWorkflowOper
 		Version: c.cfg.Version,
 	}
 	startOpts := tclient.StartWorkflowOptions{
-		ID:        q.Workflow.ID,
-		TaskQueue: workflows.APITaskQueue,
-		Memo: map[string]any{
-			"id":           q.ID,
-			"owner-id":     q.OwnerID,
-			"owner-type":   q.OwnerType,
-			"idle-timeout": time.Duration(q.IdleTimeout).String(),
-		},
+		ID:                       q.Workflow.ID,
+		TaskQueue:                workflows.APITaskQueue,
+		Memo:                     queueMemo(q),
 		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
