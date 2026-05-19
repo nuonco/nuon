@@ -55,17 +55,21 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 
 	if len(existingSignals) > 0 {
 		if maxAge := signal.DeriveMaxInFlightAge(emitter.SignalTemplate.Signal); maxAge > 0 {
-			staleIDs := make([]string, 0, len(existingSignals))
+			stale := make([]*app.QueueSignal, 0, len(existingSignals))
 			live := existingSignals[:0]
 			now := time.Now()
 			for _, s := range existingSignals {
 				if now.Sub(s.CreatedAt) > maxAge {
-					staleIDs = append(staleIDs, s.ID)
+					stale = append(stale, s)
 				} else {
 					live = append(live, s)
 				}
 			}
-			if len(staleIDs) > 0 {
+			if len(stale) > 0 {
+				staleIDs := make([]string, 0, len(stale))
+				for _, s := range stale {
+					staleIDs = append(staleIDs, s.ID)
+				}
 				if res := a.db.WithContext(ctx).Exec(`
 					UPDATE queue_signals
 					SET status = jsonb_set(status, '{status}', '"error"'::jsonb)
@@ -78,9 +82,20 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 				a.l.Warn("dropped stale in-flight signals exceeding max-in-flight age",
 					zap.String("emitter-id", req.EmitterID),
 					zap.String("queue-id", req.QueueID),
-					zap.Int("stale-count", len(staleIDs)),
+					zap.Int("stale-count", len(stale)),
 					zap.Duration("max-in-flight-age", maxAge),
 				)
+				// Cancel each stale signal's handler workflow so it stops
+				// trying to update the now-soft-deleted row.
+				for _, s := range stale {
+					if err := a.queueClient.CancelHandlerWorkflow(ctx, s.Workflow.Namespace, s.Workflow.ID); err != nil {
+						a.l.Warn("unable to cancel handler workflow for stale signal",
+							zap.String("queue-signal-id", s.ID),
+							zap.String("workflow-id", s.Workflow.ID),
+							zap.Error(err),
+						)
+					}
+				}
 			}
 			existingSignals = live
 		}
