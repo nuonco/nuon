@@ -10,11 +10,6 @@ The extension system allows third-party and first-party commands to be installed
 subcommands. It is inspired by the
 [GitHub CLI extension model](https://docs.github.com/en/github-cli/github-cli/creating-github-cli-extensions).
 
-The feature is gated behind `NUON_PREVIEW=true`. When preview mode is off:
-
-- The `nuon ext` command group is hidden and errors on use.
-- No extension proxy commands are registered on the root command.
-
 Debug logging is available via `NUON_DEBUG=true`.
 
 ## Package Layout
@@ -175,8 +170,8 @@ Extensions get stdin/stdout/stderr passthrough and the CLI exits with the extens
 
 ## Proxy Commands
 
-When `NUON_PREVIEW=true`, `root.go` registers each installed extension as a top-level cobra command via
-`extensionProxyCmd`. This makes `nuon api` equivalent to `nuon ext exec api`.
+`root.go` registers each installed extension as a top-level cobra command via `extensionProxyCmd`. This makes `nuon api`
+equivalent to `nuon ext exec api`.
 
 If an extension name collides with a built-in command (e.g. `auth`, `config`), the built-in always wins. The
 `reservedCommandNames` map in `extensions.go` tracks these names, and a warning is printed at install time. The user can
@@ -238,21 +233,21 @@ API endpoints used:
 cd bins/cli
 go build -o nuon-dev .
 
-# Test with preview mode and debug logging
-NUON_PREVIEW=true NUON_DEBUG=true ./nuon-dev ext install nuonco/nuon-ext-api
-NUON_PREVIEW=true NUON_DEBUG=true ./nuon-dev ext install nuonco/nuon-ext-api@v0.19.798
+# Test with debug logging
+NUON_DEBUG=true ./nuon-dev ext install nuonco/nuon-ext-api
+NUON_DEBUG=true ./nuon-dev ext install nuonco/nuon-ext-api@v0.19.798
 
 # Clean up between test runs
 rm -rf ~/.config/nuon/extensions/nuon-ext-api
 
 # List installed extensions
-NUON_PREVIEW=true ./nuon-dev ext list
+./nuon-dev ext list
 
 # Test execution
-NUON_PREVIEW=true ./nuon-dev ext exec api --help
+./nuon-dev ext exec api --help
 
 # Test upgrade
-NUON_PREVIEW=true NUON_DEBUG=true ./nuon-dev ext upgrade api
+NUON_DEBUG=true ./nuon-dev ext upgrade api
 ```
 
 ### Building an extension locally
@@ -265,7 +260,7 @@ cd ~/nuon/nuon-ext-my-tool
 go build -o nuon-ext-my-tool .
 
 # Install from local directory (creates symlink)
-NUON_PREVIEW=true nuon ext install ./nuon-ext-my-tool
+nuon ext install ./nuon-ext-my-tool
 
 # The symlink means rebuilds take effect immediately
 go build -o nuon-ext-my-tool .
