@@ -35,4 +35,5 @@ var ServicesModule = fx.Module("services",
 	fx.Provide(asService(handlers.NewActionRunsHandler)),
 	fx.Provide(asService(handlers.NewBuildsHandler)),
 	fx.Provide(asService(handlers.NewSandboxBuildsHandler)),
+	fx.Provide(asService(handlers.NewOrgStatusHandler)),
 )
