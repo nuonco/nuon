@@ -210,3 +210,57 @@ const LoadingStory = () => {
   )
 }
 export { LoadingStory as Loading }
+
+const longNameConfig: TActionConfig = {
+  steps: [
+    { id: 'step-1', name: 'alb-healthcheck-ctl-api-public', idx: 0 },
+    { id: 'step-2', name: 'alb-healthcheck-ctl-api-runner-internal', idx: 1 },
+    { id: 'step-3', name: 'short-step', idx: 2 },
+  ],
+} as TActionConfig
+
+const longNameLogs = [
+  ...Array.from({ length: 3 }, (_, i) => ({
+    id: `long-1-${i}`,
+    body: `Checking endpoint health ${i + 1}...`,
+    timestamp: new Date(Date.now() - (10 - i) * 60000).toISOString(),
+    severity_number: 9,
+    severity_text: 'Info',
+    service_name: 'action',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'alb-healthcheck-ctl-api-public' },
+  })),
+  ...Array.from({ length: 2 }, (_, i) => ({
+    id: `long-2-${i}`,
+    body: `Runner internal check ${i + 1}...`,
+    timestamp: new Date(Date.now() - (5 - i) * 60000).toISOString(),
+    severity_number: 9,
+    severity_text: 'Info',
+    service_name: 'action',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'alb-healthcheck-ctl-api-runner-internal' },
+  })),
+] as any
+
+const LongStepNamesStory = () => {
+  const filters = useLogFilters(longNameLogs)
+  return (
+    <LogStreamContext.Provider value={{ ...mockLogStreamContext, logs: longNameLogs }}>
+      <InstallActionRunLogs
+        actionConfig={longNameConfig}
+        layout="vertical"
+        allLogs={longNameLogs}
+        filteredLogs={filters.filteredLogs ?? []}
+        isLoading={false}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+        stepStatuses={{
+          'alb-healthcheck-ctl-api-public': 'success',
+          'alb-healthcheck-ctl-api-runner-internal': 'in-progress',
+        }}
+      />
+    </LogStreamContext.Provider>
+  )
+}
+export { LongStepNamesStory as LongStepNames }
