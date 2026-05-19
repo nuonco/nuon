@@ -21,7 +21,6 @@ import type {
 import { useOrg } from '@/hooks/use-org'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type {
   TInstallStack,
   TInstallStackOutputs,
@@ -327,11 +326,9 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                   </div>
                 {stackV2 && logStreamID ? (
                   <LogStreamProvider shouldPoll logStreamId={logStreamID}>
-                    <UnifiedLogsProvider>
-                      <LogViewerProvider>
-                        <SSELogs />
-                      </LogViewerProvider>
-                    </UnifiedLogsProvider>
+                    <LogViewerProvider>
+                      <SSELogs />
+                    </LogViewerProvider>
                   </LogStreamProvider>
                 ) : null}
                 <ClickToCopyButton
