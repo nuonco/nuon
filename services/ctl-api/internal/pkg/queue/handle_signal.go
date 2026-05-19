@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -30,6 +31,19 @@ var longRunningActivityOptions = &workflow.ActivityOptions{
 	StartToCloseTimeout:    5 * time.Minute,
 	ScheduleToCloseTimeout: 2 * time.Hour,
 	HeartbeatTimeout:       60 * time.Second,
+}
+
+// bestEffortStatusUpdateOptions bounds the in-progress / post-error status
+// updates so they can't block the dispatcher goroutine indefinitely. The row
+// may be missing (e.g. emitter stale-dropped it), and getStatus treats
+// ErrRecordNotFound as retryable — without a bound the activity would retry
+// forever and hold the queue's MaxInFlight slot.
+var bestEffortStatusUpdateOptions = &workflow.ActivityOptions{
+	StartToCloseTimeout:    30 * time.Second,
+	ScheduleToCloseTimeout: 2 * time.Minute,
+	RetryPolicy: &temporal.RetryPolicy{
+		MaximumAttempts: 3,
+	},
 }
 
 func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error {
@@ -66,7 +80,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		Metadata: map[string]any{
 			"dequeued_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 		},
-	})
+	}, bestEffortStatusUpdateOptions)
 
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
@@ -74,7 +88,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,
 			Status:        app.StatusError,
-		}); statusErr != nil {
+		}, bestEffortStatusUpdateOptions); statusErr != nil {
 			l.Warn("failed to update queue signal status after error",
 				zap.String("queue-signal-id", queueSignal.ID),
 				zap.Error(statusErr))
