@@ -217,42 +217,6 @@
             ]
           },
           {
-            "group": "Config Reference",
-            "root": "config-ref/index",
-            "boost": 0.25,
-            "expanded": true,
-            "pages": [
-              "configuration-files",
-              {
-                "group": "Component Types",
-                "pages": [
-                  "config-ref/container-image",
-                  "config-ref/docker-build",
-                  "config-ref/helm",
-                  "config-ref/kubernetes-manifest",
-                  "config-ref/terraform"
-                ]
-              },
-              {
-                "group": "Configuration Types",
-                "pages": [
-                  "config-ref/action",
-                  "config-ref/break-glass",
-                  "config-ref/inputs",
-                  "config-ref/install",
-                  "config-ref/installer",
-                  "config-ref/metadata",
-                  "config-ref/permissions",
-                  "config-ref/policies",
-                  "config-ref/runner",
-                  "config-ref/sandbox",
-                  "config-ref/secrets",
-                  "config-ref/stack"
-                ]
-              }
-            ]
-          },
-          {
             "group": "Architecture Reference",
             "boost": 1.5,
             "pages": [
@@ -260,6 +224,80 @@
               "architecture/app-deployment",
               "architecture/runner-auth",
               "security"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Config Reference",
+        "icon": "file-code",
+        "versions": [
+          {
+            "version": "Latest",
+            "default": true,
+            "tag": "Latest",
+            "pages": [
+              "configuration-files",
+              {
+                "group": "Component Types",
+                "pages": [
+                  "config-ref/latest/container-image",
+                  "config-ref/latest/docker-build",
+                  "config-ref/latest/helm",
+                  "config-ref/latest/kubernetes-manifest",
+                  "config-ref/latest/terraform"
+                ]
+              },
+              {
+                "group": "Configuration Types",
+                "pages": [
+                  "config-ref/latest/action",
+                  "config-ref/latest/break-glass",
+                  "config-ref/latest/inputs",
+                  "config-ref/latest/install",
+                  "config-ref/latest/installer",
+                  "config-ref/latest/metadata",
+                  "config-ref/latest/permissions",
+                  "config-ref/latest/policies",
+                  "config-ref/latest/runner",
+                  "config-ref/latest/sandbox",
+                  "config-ref/latest/secrets",
+                  "config-ref/latest/stack"
+                ]
+              }
+            ]
+          },
+          {
+            "version": "v0.19.955",
+            "pages": [
+              "configuration-files",
+              {
+                "group": "Component Types",
+                "pages": [
+                  "config-ref/v0.19.955/container-image",
+                  "config-ref/v0.19.955/docker-build",
+                  "config-ref/v0.19.955/helm",
+                  "config-ref/v0.19.955/kubernetes-manifest",
+                  "config-ref/v0.19.955/terraform"
+                ]
+              },
+              {
+                "group": "Configuration Types",
+                "pages": [
+                  "config-ref/v0.19.955/action",
+                  "config-ref/v0.19.955/break-glass",
+                  "config-ref/v0.19.955/inputs",
+                  "config-ref/v0.19.955/install",
+                  "config-ref/v0.19.955/installer",
+                  "config-ref/v0.19.955/metadata",
+                  "config-ref/v0.19.955/permissions",
+                  "config-ref/v0.19.955/policies",
+                  "config-ref/v0.19.955/runner",
+                  "config-ref/v0.19.955/sandbox",
+                  "config-ref/v0.19.955/secrets",
+                  "config-ref/v0.19.955/stack"
+                ]
+              }
             ]
           }
         ]
