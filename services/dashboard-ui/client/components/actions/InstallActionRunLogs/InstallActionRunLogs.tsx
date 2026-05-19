@@ -103,13 +103,13 @@ export const InstallActionRunLogs = ({
             setActiveStep(step?.name)
           }}
         >
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 min-w-0 w-full">
             {stepStatuses?.[step?.name] && (
-              <Status status={stepStatuses[step.name]} isWithoutText />
+              <Status status={stepStatuses[step.name]} isWithoutText className="shrink-0" />
             )}
             <span className="truncate">{step?.name}</span>
             {allLogStepCounts[step?.name] > 0 && (
-              <Badge size="sm">{allLogStepCounts[step.name]}</Badge>
+              <Badge size="sm" className="shrink-0">{allLogStepCounts[step.name]}</Badge>
             )}
           </span>
         </Button>
@@ -156,7 +156,7 @@ export const InstallActionRunLogs = ({
 
   return (
     <div className="flex items-start flex-auto">
-      <div className="flex flex-col gap-2 w-fit md:min-w-64 pr-2 h-full">
+      <div className="flex flex-col gap-2 min-w-48 max-w-64 pr-2 h-full shrink-0">
         {stepButtons}
       </div>
       <div className="pl-2 w-full border-l">
