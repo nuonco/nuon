@@ -58,7 +58,7 @@ func (s *Signal) Type() signal.SignalType {
 }
 
 func (s *Signal) MaxInFlightAge() time.Duration {
-	return 2 * time.Minute
+	return 15 * time.Minute
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
