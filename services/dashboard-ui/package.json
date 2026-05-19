@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bun scripts/clean-dist.js && bun run --parallel dev:css dev:server generate-api-types",
+    "dev": "bun scripts/clean-dist.js && bun run --parallel dev:css dev:ts dev:server generate-api-types",
+    "dev:ts": "bun build client/index.tsx --outdir=dist/assets --entry-naming='app.[ext]' --sourcemap --define 'process.env.NODE_ENV=\"development\"' --watch",
     "dev:ladle": "ladle dev",
     "dev:css": "bun scripts/build-css.js --watch",
     "dev:server": "bun scripts/dev-server.js",
