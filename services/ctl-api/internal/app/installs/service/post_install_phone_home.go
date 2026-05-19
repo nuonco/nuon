@@ -126,6 +126,7 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		CreatedByID:           stackVersion.CreatedByID,
 		InstallStackVersionID: stackVersion.ID,
 		Data:                  generics.ToHstore(pkggenerics.ToStringMap(pkggenerics.EncodeNestedForHstore(data))),
+		Status:                app.NewCompositeStatus(ctx, app.InstallStackVersionRunStatusSucceeded),
 	}
 	if res = s.db.WithContext(ctx).
 		Create(&run); res.Error != nil {
