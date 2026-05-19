@@ -31,9 +31,14 @@ export const InstallActionRunHeaderContainer = ({
   const basePath = `/${org?.id}/installs/${install?.id}`
 
   const hasWorkflow = !!installActionRun?.install_workflow_id
+  const runnerJobStatus = installActionRun?.runner_job?.status
+  const isRunnerJobActive =
+    runnerJobStatus === 'queued' ||
+    runnerJobStatus === 'in-progress' ||
+    runnerJobStatus === 'available'
   const cancelButton = hasWorkflow ? (
     <CancelWorkflowButton workflow={workflow} />
-  ) : installActionRun?.runner_job ? (
+  ) : installActionRun?.runner_job && isRunnerJobActive ? (
     <CancelRunnerJobButton runnerJob={installActionRun.runner_job} jobType="actions" />
   ) : null
 
