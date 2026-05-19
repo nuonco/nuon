@@ -1,5 +1,6 @@
 import { ToastProvider } from '@/providers/toast-provider'
 import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
 import { Toast } from './Toast'
@@ -248,5 +249,53 @@ export const ToastUsageExamples = () => (
         </ul>
       </div>
     </div>
+  </ToastProvider>
+)
+
+const DeployAllToastTrigger = () => {
+  const { addToast } = useToast()
+  return (
+    <div className="flex gap-3">
+      <Button
+        onClick={() => {
+          addToast(
+            <Toast
+              timeout={999999}
+              heading={
+                <span className="inline-flex items-center gap-1.5">
+                  <Badge variant="code" size="md">my-cool-install</Badge> deploy started
+                </span>
+              }
+              theme="info"
+            />
+          )
+        }}
+      >
+        Success toast
+      </Button>
+      <Button
+        onClick={() => {
+          addToast(
+            <Toast
+              timeout={999999}
+              heading={
+                <span className="inline-flex items-center gap-1.5">
+                  <Badge variant="code" size="md">my-cool-install</Badge> deploy failed
+                </span>
+              }
+              theme="error"
+            />
+          )
+        }}
+      >
+        Error toast
+      </Button>
+    </div>
+  )
+}
+
+export const DeployAllComponentsToasts = () => (
+  <ToastProvider>
+    <DeployAllToastTrigger />
   </ToastProvider>
 )
