@@ -39,6 +39,7 @@ const (
 	stepTargetInstallActionRuns        = "install_action_workflow_runs"
 	stepTargetInstallRunnerUpdate      = "install_runner_update"
 	stepTargetInstallCloudFormation    = "install_cloudformation_stack"
+	stepTargetInstallStackVersions     = "install_stack_versions"
 	stepTargetRunners                  = "runners"
 )
 
@@ -322,6 +323,13 @@ func stepResolution(stepTargetType, parentWorkflowType string) (ResourceKind, st
 
 	case stepTargetInstallActionWorkflowRun, stepTargetInstallActionRuns:
 		return ResourceActions, "run", true
+
+	case stepTargetInstallStackVersions:
+		// The await-install-stack-version-run step succeeds when the install
+		// stack version flips to active — surface that as (stacks, version_active)
+		// rather than falling through to the parent provision/reprovision
+		// workflow's sandbox-provision classification.
+		return ResourceStacks, "version_active", true
 
 	case stepTargetInstallRunnerUpdate, stepTargetInstallCloudFormation, stepTargetRunners:
 		switch parentWorkflowType {
