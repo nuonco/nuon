@@ -16,7 +16,7 @@ if [ -f dist/.port ]; then
 fi
 
 echo "Building dashboard server..."
-go build -C "$NUON_ROOT/nuon" -o /tmp/dashboard-server ./services/dashboard-ui/server
+go build -C "${NUON_DIR:-$NUON_ROOT/nuon}" -o /tmp/dashboard-server ./services/dashboard-ui/server
 
 rm -f dist/.port
 /tmp/dashboard-server serve &
