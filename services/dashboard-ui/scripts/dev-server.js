@@ -156,13 +156,23 @@ console.log(
   `Dev server on http://localhost:${DEV_PORT} (HMR) → BFF http://localhost:${BFF_PORT}`,
 );
 
-// --- BFF health check ---
+// --- Self-terminate when parent dies or BFF disappears ---
+
+const PARENT_PID = process.ppid;
 
 const BFF_CHECK_INTERVAL = 5000;
 let failCount = 0;
-const MAX_FAILURES = 12;
+const MAX_FAILURES = 6; // 30s instead of 60s
 
 setInterval(async () => {
+  // Exit immediately if parent process is gone (orphaned)
+  try {
+    process.kill(PARENT_PID, 0);
+  } catch {
+    console.log("Parent process gone, shutting down dev server");
+    process.exit(0);
+  }
+
   try {
     await fetch(BFF_ORIGIN, {
       signal: AbortSignal.timeout(2000),
@@ -176,7 +186,7 @@ setInterval(async () => {
     failCount++;
     console.log(`BFF unreachable (${failCount}/${MAX_FAILURES})`);
     if (failCount >= MAX_FAILURES) {
-      console.log("BFF unreachable for 1 minute, shutting down dev server");
+      console.log("BFF unreachable for 30s, shutting down dev server");
       process.exit(0);
     }
   }

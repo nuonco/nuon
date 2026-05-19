@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -e
 
+cleanup() {
+    kill $(jobs -p) 2>/dev/null
+    wait 2>/dev/null
+}
+trap cleanup EXIT INT TERM
+
+# Kill any leftover processes on our ports from previous runs
+if [ -f dist/.port ]; then
+    OLD_PORT=$(cat dist/.port)
+    lsof -ti :"$OLD_PORT" 2>/dev/null | xargs kill 2>/dev/null || true
+    DEV_PORT=$((OLD_PORT + 1))
+    lsof -ti :"$DEV_PORT" 2>/dev/null | xargs kill 2>/dev/null || true
+fi
+
 echo "Building dashboard server..."
 go build -C "$NUON_ROOT/nuon" -o /tmp/dashboard-server ./services/dashboard-ui/server
 
