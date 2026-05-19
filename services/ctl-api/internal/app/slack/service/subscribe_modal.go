@@ -673,6 +673,8 @@ func resourceKindLabel(k interests.ResourceKind) string {
 	switch k {
 	case interests.ResourceInstalls:
 		return "Installs"
+	case interests.ResourceStacks:
+		return "Stacks"
 	case interests.ResourceComponents:
 		return "Components"
 	case interests.ResourceSandboxes:
@@ -710,6 +712,8 @@ func subOpLabel(op string) string {
 		return "Inactive"
 	case "run":
 		return "Run"
+	case "version_active":
+		return "Version active"
 	default:
 		return op
 	}
