@@ -59,7 +59,9 @@ func New(params Params) *service {
 	}
 }
 
-func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
+func (s *service) RegisterAuthRoutes(api *gin.Engine) error { return nil }
+
+func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	apps := api.Group("/v1/apps/:app_id")
 	{
 		runbooks := apps.Group("/runbooks")
@@ -67,6 +69,7 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 			runbooks.POST("", s.CreateRunbook)
 			runbooks.GET("", s.GetRunbooks)
 			runbooks.GET("/:runbook_id", s.GetRunbook)
+			runbooks.PATCH("/:runbook_id", s.UpdateRunbook)
 			runbooks.DELETE("/:runbook_id", s.DeleteRunbook)
 			runbooks.POST("/:runbook_id/configs", s.CreateRunbookConfig)
 			runbooks.GET("/:runbook_id/configs", s.GetRunbookConfigs)
@@ -91,8 +94,6 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 
 	return nil
 }
-
-func (s *service) RegisterPublicRoutes(api *gin.Engine) error         { return nil }
 func (s *service) RegisterInternalRoutes(api *gin.Engine) error       { return nil }
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error         { return nil }
 func (s *service) RegisterAdminDashboardRoutes(api *gin.Engine) error { return nil }

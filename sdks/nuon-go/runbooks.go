@@ -29,10 +29,12 @@ type InstallRunbook struct {
 
 // Runbook represents a runbook definition.
 type Runbook struct {
-	ID     string `json:"id"`
-	Name   string `json:"name,omitempty"`
-	AppID  string `json:"app_id,omitempty"`
-	Status string `json:"status,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name,omitempty"`
+	Description string            `json:"description,omitempty"`
+	AppID       string            `json:"app_id,omitempty"`
+	Status      string            `json:"status,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
 
 	Configs     []RunbookConfig `json:"configs,omitempty"`
 	ConfigCount int             `json:"config_count,omitempty"`
@@ -96,14 +98,16 @@ type InstallRunbookRun struct {
 
 // CreateRunbookRequest is the request body for creating a runbook.
 type CreateRunbookRequest struct {
-	Name   string            `json:"name"`
-	Labels map[string]string `json:"labels,omitempty"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
 }
 
 // UpdateRunbookRequest is the request body for updating a runbook.
 type UpdateRunbookRequest struct {
-	Name   string            `json:"name,omitempty"`
-	Labels map[string]string `json:"labels,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Description string            `json:"description,omitempty"`
+	Labels      map[string]string `json:"labels,omitempty"`
 }
 
 // CreateRunbookConfigRequest is the request body for creating a runbook config.
@@ -153,7 +157,7 @@ func (c *client) GetAppRunbook(ctx context.Context, appID, nameOrID string) (*Ru
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		return nil, newHTTPAPIError(resp.StatusCode, string(body))
 	}
 
 	var runbook Runbook
@@ -188,7 +192,7 @@ func (c *client) CreateRunbook(ctx context.Context, appID string, createReq *Cre
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(respBody))
+		return nil, newHTTPAPIError(resp.StatusCode, string(respBody))
 	}
 
 	var runbook Runbook
@@ -223,7 +227,7 @@ func (c *client) UpdateRunbook(ctx context.Context, runbookID string, updateReq 
 
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(respBody))
+		return nil, newHTTPAPIError(resp.StatusCode, string(respBody))
 	}
 
 	var runbook Runbook
@@ -258,7 +262,7 @@ func (c *client) CreateRunbookConfig(ctx context.Context, runbookID string, crea
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(respBody))
+		return nil, newHTTPAPIError(resp.StatusCode, string(respBody))
 	}
 
 	var cfg RunbookConfig
@@ -287,7 +291,7 @@ func (c *client) GetInstallRunbooks(ctx context.Context, installID string) ([]*I
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		return nil, newHTTPAPIError(resp.StatusCode, string(body))
 	}
 
 	var runbooks []*InstallRunbook
@@ -316,7 +320,7 @@ func (c *client) GetInstallRunbook(ctx context.Context, installID, runbookID str
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		return nil, newHTTPAPIError(resp.StatusCode, string(body))
 	}
 
 	var runbook InstallRunbook
@@ -345,7 +349,7 @@ func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbook
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+		return nil, newHTTPAPIError(resp.StatusCode, string(body))
 	}
 
 	var run InstallRunbookRun

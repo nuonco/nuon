@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
@@ -12,7 +13,7 @@ export type TRunbookRow = {
   runbookId: string
   runbookName: string
   description: ReactNode
-  stepCount: ReactNode
+  labels: ReactNode
   href: string
 }
 
@@ -33,11 +34,20 @@ export function parseRunbooksToTableData(
       ) : (
         <Icon variant="MinusIcon" />
       ),
-      stepCount: (
-        <Text variant="subtext">
-          {runbook.steps?.length ?? 0} step{(runbook.steps?.length ?? 0) === 1 ? '' : 's'}
-        </Text>
-      ),
+      labels:
+        runbook.labels && Object.keys(runbook.labels).length > 0 ? (
+          <span className="flex flex-wrap gap-1">
+            {Object.keys(runbook.labels)
+              .sort()
+              .map((k) => (
+                <Badge key={k} variant="code" size="sm" theme="neutral">
+                  {k}: {runbook.labels[k]}
+                </Badge>
+              ))}
+          </span>
+        ) : (
+          <Icon variant="MinusIcon" />
+        ),
       href: `${basePath}/runbooks/${runbook.id}`,
     }
   })
@@ -64,8 +74,8 @@ const columns: ColumnDef<TRunbookRow>[] = [
     enableSorting: false,
   },
   {
-    accessorKey: 'stepCount',
-    header: 'Steps',
+    accessorKey: 'labels',
+    header: 'Labels',
     cell: (info) => info.getValue() as ReactNode,
     enableSorting: false,
   },

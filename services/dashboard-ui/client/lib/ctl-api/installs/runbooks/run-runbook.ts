@@ -1,5 +1,5 @@
 import { api } from '@/lib/api'
-import type { TWorkflowResponse } from '@/types'
+import type { TInstallRunbookRun } from './get-install-runbooks'
 
 export async function runRunbook({
   installId,
@@ -10,7 +10,7 @@ export async function runRunbook({
   runbookId: string
   orgId: string
 }) {
-  return api<TWorkflowResponse>({
+  return api<TInstallRunbookRun>({
     method: 'POST',
     orgId,
     path: `installs/${installId}/runbooks/${runbookId}/runs`,

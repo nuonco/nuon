@@ -1,10 +1,13 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
+import { Badge } from '@/components/common/Badge'
+import { CodeBlock } from '@/components/common/CodeBlock'
+import { Expand } from '@/components/common/Expand'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Markdown } from '@/components/common/Markdown'
-import { StatusWithDescription } from '@/components/common/StatusWithDescription'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RunRunbookButton } from '@/components/runbooks/RunRunbook/RunRunbook'
@@ -13,14 +16,14 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallRunbook, getInstallRunbookRuns } from '@/lib'
+import { getInstallRunbook } from '@/lib'
 
 export const RunbookDetail = () => {
   const { runbookId } = useParams()
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const { data: runbook } = useQuery({
+  const { data: installRunbook } = useQuery({
     queryKey: ['install-runbook', org?.id, install?.id, runbookId],
     queryFn: () =>
       getInstallRunbook({
@@ -29,23 +32,13 @@ export const RunbookDetail = () => {
         runbookId: runbookId!,
       }),
     enabled: !!org?.id && !!install?.id && !!runbookId,
-  })
-
-  const { data: runsResult } = useQuery({
-    queryKey: ['install-runbook-runs', org?.id, install?.id, runbookId],
-    queryFn: () =>
-      getInstallRunbookRuns({
-        orgId: org!.id,
-        installId: install!.id,
-        limit: 10,
-        offset: 0,
-      }),
-    enabled: !!org?.id && !!install?.id,
     refetchInterval: 20000,
   })
 
-  const steps = runbook?.steps ?? []
-  const runs = (runsResult?.data ?? []).filter((r) => r.runbook_id === runbookId)
+  const runbook = installRunbook?.runbook
+  const latestConfig = runbook?.configs?.[0]
+  const steps = latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ?? []
+  const runs = installRunbook?.runs ?? []
 
   return (
     <PageSection flush className="flex-1">
@@ -66,83 +59,144 @@ export const RunbookDetail = () => {
         ]}
       />
 
-      <div className="@container flex flex-col flex-1">
-        <header className="p-6 border-b flex flex-wrap items-start gap-4 justify-between w-full">
-          <HeadingGroup>
-            <BackLink className="mb-4" />
-            <Text variant="h3" weight="strong">
-              {runbook?.name}
-            </Text>
-            {runbookId ? <ID>{runbookId}</ID> : null}
-            {runbook?.description ? (
-              <Text variant="subtext" theme="neutral">
-                {runbook.description}
-              </Text>
-            ) : null}
-          </HeadingGroup>
-
-          {runbook ? (
-            <RunRunbookButton runbook={runbook} variant="primary" />
+      <div className="p-6 border-b flex flex-wrap items-start gap-4 justify-between w-full">
+        <HeadingGroup>
+          <BackLink className="mb-4" />
+          <Text variant="base" weight="strong">
+            {runbook?.name}
+          </Text>
+          {runbookId ? <ID>{runbookId}</ID> : null}
+          {runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
+            <span className="flex flex-wrap gap-1 mt-1">
+              {Object.keys(runbook.labels)
+                .sort()
+                .map((k) => (
+                  <Badge key={k} variant="code" size="sm" theme="neutral">
+                    {k}: {runbook.labels[k]}
+                  </Badge>
+                ))}
+            </span>
           ) : null}
-        </header>
+          {runbook?.description ? (
+            <Text variant="subtext" theme="neutral">
+              {runbook.description}
+            </Text>
+          ) : null}
+        </HeadingGroup>
 
-        <div className="grid grid-cols-1 @5xl:grid-cols-12 flex-1">
-          <div className="@5xl:col-span-8 flex flex-col gap-6">
-            {runbook?.readme ? (
-              <PageSection>
-                <Markdown content={runbook.readme} mode="app" />
-              </PageSection>
-            ) : null}
+        <div className="flex flex-row gap-6 items-start">
+          <LabeledValue label="Steps">
+            <Text variant="subtext">{steps.length}</Text>
+          </LabeledValue>
+          {installRunbook ? (
+            <RunRunbookButton installRunbook={installRunbook} variant="primary" />
+          ) : null}
+        </div>
+      </div>
 
-            <PageSection className="flex flex-col gap-4">
-              <Text variant="base" weight="strong">
-                Steps
-              </Text>
-              {steps.length ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {steps.map((step, i) => (
-                    <div
-                      key={step.id ?? i}
-                      className="border rounded-lg p-4 flex flex-col gap-1"
-                    >
-                      <Text variant="body" weight="strong">
+      <div className="@container grid grid-cols-1 @5xl:grid-cols-12 flex-1">
+        <div className="@5xl:col-span-8 flex flex-col gap-6">
+          {latestConfig?.readme ? (
+            <PageSection>
+              <Expand
+                heading={<Text variant="base" weight="strong">README</Text>}
+                id="runbook-readme"
+                className="border rounded-md"
+              >
+                <div className="p-4 border-t">
+                  <Markdown content={latestConfig.readme} mode="app" />
+                </div>
+              </Expand>
+            </PageSection>
+          ) : null}
+
+          <PageSection>
+            <Text variant="base" weight="strong">
+              Steps
+            </Text>
+            {steps.length ? (
+              <div className="grid grid-cols-1 gap-4">
+                {steps.map((step, i) => (
+                  <Expand
+                    key={step.id ?? i}
+                    className="border rounded-md"
+                    heading={
+                      <Text weight="strong">
                         {i + 1}. {step.name}
                       </Text>
-                      {step.description ? (
-                        <Text variant="subtext" theme="neutral">
-                          {step.description}
-                        </Text>
+                    }
+                    id={`step-${i}`}
+                    isOpen
+                  >
+                    <div className="flex flex-col gap-4 p-4 border-t">
+                      <div className="flex gap-4">
+                        <LabeledValue label="Type">
+                          <Badge variant="code" size="sm" theme="neutral">
+                            {step.type}
+                          </Badge>
+                        </LabeledValue>
+                        {step.component_name ? (
+                          <LabeledValue label="Component">
+                            <Text variant="subtext">{step.component_name}</Text>
+                          </LabeledValue>
+                        ) : null}
+                        {step.type === 'deploy' ? (
+                          <LabeledValue label="Deploy dependencies">
+                            <Badge variant="code" size="sm" theme={step.deploy_dependencies ? 'info' : 'neutral'}>
+                              {step.deploy_dependencies ? 'Yes' : 'No'}
+                            </Badge>
+                          </LabeledValue>
+                        ) : null}
+                        {step.role ? (
+                          <LabeledValue label="Role">
+                            <Text variant="subtext">{step.role}</Text>
+                          </LabeledValue>
+                        ) : null}
+                      </div>
+                      {step.command ? (
+                        <div className="flex flex-col gap-2">
+                          <Text weight="strong">Command</Text>
+                          <CodeBlock language="bash">{step.command}</CodeBlock>
+                        </div>
                       ) : null}
-                      {step.type ? (
-                        <Text variant="subtext" theme="neutral">
-                          Type: {step.type}
-                        </Text>
+                      {step.inline_contents ? (
+                        <div className="flex flex-col gap-2">
+                          <Text weight="strong">Inline contents</Text>
+                          <CodeBlock language="bash">{step.inline_contents}</CodeBlock>
+                        </div>
                       ) : null}
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <Text theme="neutral">No steps configured.</Text>
-              )}
-            </PageSection>
-          </div>
+                  </Expand>
+                ))}
+              </div>
+            ) : (
+              <Text theme="neutral">No steps configured.</Text>
+            )}
+          </PageSection>
+        </div>
 
-          <PageSection className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4">
-            <Text variant="base" weight="strong">
-              Run history
-            </Text>
-            {runs.length ? (
-              <div className="flex flex-col gap-3">
-                {runs.map((run) => (
+        <PageSection className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4">
+          <Text variant="base" weight="strong">
+            Run history
+          </Text>
+          {runs.length ? (
+            <div className="flex flex-col gap-3">
+              {runs.map((run) => {
+                const wfStatus = typeof run.install_workflow?.status === 'object'
+                  ? (run.install_workflow.status as { status?: string })?.status
+                  : run.install_workflow?.status
+                const status = wfStatus ?? run.status ?? 'unknown'
+                return (
                   <div key={run.id} className="border rounded-lg p-3 flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
-                      <StatusWithDescription
-                        statusProps={{ status: run.status_v2?.status }}
-                        tooltipProps={{
-                          position: 'top',
-                          tipContent: run.status_v2?.status_human_description,
-                        }}
-                      />
+                      <Badge variant="code" size="sm" theme={
+                        status === 'completed' ? 'success' :
+                        status === 'error' ? 'error' :
+                        status === 'in-progress' ? 'info' :
+                        'neutral'
+                      }>
+                        {status}
+                      </Badge>
                       <Time
                         variant="subtext"
                         time={run.created_at}
@@ -152,15 +206,15 @@ export const RunbookDetail = () => {
                     </div>
                     <ID>{run.id}</ID>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <Text variant="subtext" theme="neutral">
-                No runs yet.
-              </Text>
-            )}
-          </PageSection>
-        </div>
+                )
+              })}
+            </div>
+          ) : (
+            <Text variant="subtext" theme="neutral">
+              No runs yet.
+            </Text>
+          )}
+        </PageSection>
       </div>
     </PageSection>
   )

@@ -44,16 +44,20 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
+	// Find the install to get its app config version
+	var install app.Install
+	res := s.db.WithContext(ctx).
+		Where("id = ? AND org_id = ?", installID, org.ID).
+		First(&install)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to get install: %w", res.Error))
+		return
+	}
+
 	// Find the install runbook
 	var installRunbook app.InstallRunbook
-	res := s.db.WithContext(ctx).
+	res = s.db.WithContext(ctx).
 		Preload("Runbook").
-		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("created_at DESC").Limit(1)
-		}).
-		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("idx ASC")
-		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
 		First(&installRunbook, "runbook_id = ?", runbookID)
 	if res.Error != nil {
@@ -61,19 +65,43 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		return
 	}
 
-	if len(installRunbook.Runbook.Configs) == 0 {
-		ctx.Error(fmt.Errorf("runbook has no configurations"))
-		return
-	}
+	// Find the runbook config matching the install's app config version.
+	// Fall back to the latest config if no version-specific config exists.
+	var runbookConfig app.RunbookConfig
+	configQuery := s.db.WithContext(ctx).
+		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
+		Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: org.ID})
 
-	latestConfig := installRunbook.Runbook.Configs[0]
+	if install.AppConfigID != "" {
+		// Try the install's pinned app config first
+		if err := configQuery.Where(app.RunbookConfig{AppConfigID: install.AppConfigID}).First(&runbookConfig).Error; err != nil {
+			// Fall back to latest config
+			if err := s.db.WithContext(ctx).
+				Preload("Steps", func(tx *gorm.DB) *gorm.DB {
+					return tx.Order("idx ASC")
+				}).
+				Where(app.RunbookConfig{RunbookID: installRunbook.RunbookID, OrgID: org.ID}).
+				Order("created_at DESC").
+				First(&runbookConfig).Error; err != nil {
+				ctx.Error(fmt.Errorf("runbook has no configurations"))
+				return
+			}
+		}
+	} else {
+		if err := configQuery.Order("created_at DESC").First(&runbookConfig).Error; err != nil {
+			ctx.Error(fmt.Errorf("runbook has no configurations"))
+			return
+		}
+	}
 
 	// Create the run record
 	run := app.InstallRunbookRun{
 		OrgID:            org.ID,
 		InstallID:        installID,
 		InstallRunbookID: installRunbook.ID,
-		RunbookConfigID:  latestConfig.ID,
+		RunbookConfigID:  runbookConfig.ID,
 		Status:           app.InstallRunbookRunStatusQueued,
 		TriggeredByID:    account.ID,
 	}
@@ -89,7 +117,7 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		"install_runbook_id":     installRunbook.ID,
 		"install_runbook_run_id": run.ID,
 		"runbook_name":           installRunbook.Runbook.Name,
-		"runbook_config_id":      latestConfig.ID,
+		"runbook_config_id":      runbookConfig.ID,
 	}
 
 	workflow, err := s.installHelpers.CreateWorkflow(ctx, installID, app.WorkflowTypeRunbookRun, metadata, false)

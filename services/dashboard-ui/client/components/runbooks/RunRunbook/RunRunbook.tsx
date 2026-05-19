@@ -10,22 +10,25 @@ import { runRunbook } from '@/lib'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
 
 export const RunRunbookButton = ({
-  runbook,
+  installRunbook,
   children = 'Run runbook',
   ...props
 }: {
-  runbook: TInstallRunbook
+  installRunbook: TInstallRunbook
 } & IButtonAsButton) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
   const { addToast } = useToast()
 
+  const runbookName = installRunbook.runbook?.name ?? 'runbook'
+  const runbookId = installRunbook.runbook_id ?? installRunbook.id
+
   const { mutate, isPending } = useMutation({
     mutationFn: () =>
       runRunbook({
         installId: install!.id,
-        runbookId: runbook.id,
+        runbookId,
         orgId: org!.id,
       }),
     onSuccess: (result) => {
@@ -33,25 +36,25 @@ export const RunRunbookButton = ({
         <Toast
           heading={
             <span className="inline-flex items-center gap-1.5">
-              <Badge variant="code" size="md">{runbook.name}</Badge> run started
+              <Badge variant="code" size="md">{runbookName}</Badge> run started
             </span>
           }
           theme="info"
         />
       )
-      const workflowId = result?.workflow_id
+      const workflowId = result?.install_workflow_id
       if (workflowId) {
         navigate(`/${org!.id}/installs/${install!.id}/workflows/${workflowId}`)
       } else {
-        navigate(`/${org!.id}/installs/${install!.id}/runbooks/${runbook.id}`)
+        navigate(`/${org!.id}/installs/${install!.id}/runbooks/${runbookId}`)
       }
     },
-    onError: (err: any) => {
+    onError: () => {
       addToast(
         <Toast
           heading={
             <span className="inline-flex items-center gap-1.5">
-              Failed to run <Badge variant="code" size="md">{runbook.name}</Badge>
+              Failed to run <Badge variant="code" size="md">{runbookName}</Badge>
             </span>
           }
           theme="error"

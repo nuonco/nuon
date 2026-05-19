@@ -29,7 +29,8 @@ func (s *service) GetRunbook(ctx *gin.Context) {
 		return
 	}
 
-	runbookID := ctx.Param("runbook_id")
+	runbookIDOrName := ctx.Param("runbook_id")
+	appID := ctx.Param("app_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -44,8 +45,9 @@ func (s *service) GetRunbook(ctx *gin.Context) {
 		Preload("Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
-		Where(app.Runbook{OrgID: org.ID}).
-		First(&runbook, "id = ?", runbookID)
+		Where(app.Runbook{OrgID: org.ID, AppID: appID}).
+		Where("id = ? OR name = ?", runbookIDOrName, runbookIDOrName).
+		First(&runbook)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get runbook: %w", res.Error))
 		return

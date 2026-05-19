@@ -42,7 +42,8 @@ type Runbook struct {
 	Configs     []RunbookConfig `json:"configs" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"configs,omitzero,omitempty"`
 	ConfigCount int             `json:"config_count" gorm:"->;-:migration" temporaljson:"config_count,omitzero,omitempty"`
 
-	Name string `json:"name,omitzero" gorm:"index:idx_runbook_app_id_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Name        string `json:"name,omitzero" gorm:"index:idx_runbook_app_id_name,unique" temporaljson:"name,omitzero,omitempty"`
+	Description string `json:"description,omitzero" temporaljson:"description,omitzero,omitempty"`
 	labels.Labeled
 }
 

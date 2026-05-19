@@ -19,9 +19,11 @@ const (
 )
 
 type RunbookConfig struct {
-	Name   string               `mapstructure:"name" toml:"name" jsonschema:"required"`
-	Readme string               `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
-	Steps  []*RunbookStepConfig `mapstructure:"steps" toml:"steps" jsonschema:"required"`
+	Name        string               `mapstructure:"name" toml:"name" jsonschema:"required"`
+	Description string               `mapstructure:"description,omitempty" toml:"description,omitempty"`
+	Readme      string               `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
+	Labels      map[string]string    `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
+	Steps       []*RunbookStepConfig `mapstructure:"steps" toml:"steps" jsonschema:"required"`
 
 	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
 	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`

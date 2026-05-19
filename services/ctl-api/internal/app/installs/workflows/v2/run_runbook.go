@@ -34,7 +34,9 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		return nil, errors.New("runbook_config_id is not set on the workflow metadata")
 	}
 
-	rbConfig, err := activities.AwaitGetRunbookConfigByID(ctx, generics.FromPtrStr(runbookConfigID))
+	rbConfig, err := activities.AwaitGetRunbookConfigByID(ctx, activities.GetRunbookConfigByIDRequest{
+		RunbookConfigID: generics.FromPtrStr(runbookConfigID),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get runbook config")
 	}
@@ -81,39 +83,81 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		}
 	}
 
-	return sg.Result(steps)
+	return sg.Result(steps), nil
 }
 
 func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow) ([]*app.WorkflowStep, error) {
-	// Find the component by name
-	component, err := activities.AwaitGetComponentByName(ctx, installID, stepCfg.ComponentName)
+	// Find the primary component by name
+	component, err := activities.AwaitGetComponentByName(ctx, activities.GetComponentByNameRequest{
+		InstallID:     installID,
+		ComponentName: stepCfg.ComponentName,
+	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "unable to find component %s", stepCfg.ComponentName)
 	}
 
-	// Find the install component
+	result := make([]*app.WorkflowStep, 0)
+
+	if stepCfg.DeployDependencies {
+		// Get the ordered dependency graph for this component
+		componentIDs, err := activities.AwaitGetAppComponentGraph(ctx, activities.GetAppComponentGraphRequest{
+			InstallID:   installID,
+			ComponentID: component.ID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get component dependency graph")
+		}
+
+		// Deploy each dependency in order (the graph includes the component itself)
+		for _, compID := range componentIDs {
+			depSteps, err := runbookDeploySingleComponent(ctx, installID, compID, stepCfg.Name, sg, flw)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to deploy dependency %s", compID)
+			}
+			result = append(result, depSteps...)
+		}
+	} else {
+		steps, err := runbookDeploySingleComponent(ctx, installID, component.ID, stepCfg.Name, sg, flw)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, steps...)
+	}
+
+	return result, nil
+}
+
+func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
-		ComponentID: component.ID,
+		ComponentID: componentID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	// Create deploy record
-	deploy, err := activities.AwaitCreateDeployForRunbook(ctx, installID, component.ID)
+	deploy, err := activities.AwaitCreateDeployForRunbook(ctx, activities.CreateDeployForRunbookRequest{
+		InstallID:   installID,
+		ComponentID: componentID,
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create deploy")
 	}
 
+	component, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component")
+	}
+
+	name := fmt.Sprintf("%s/%s", stepName, component.Name)
 	result := make([]*app.WorkflowStep, 0)
 
 	if component.Type.IsImage() {
-		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", stepCfg.Name))
-		syncStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync %s", stepCfg.Name), pgtype.Hstore{}, &componentsyncimage.Signal{
+		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", name))
+		syncStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync %s", name), pgtype.Hstore{}, &componentsyncimage.Signal{
 			InstallComponentID: installComp.ID,
 			DeployID:           deploy.ID,
-			ComponentID:        component.ID,
+			ComponentID:        componentID,
 			Role:               flw.Role,
 		}, flw.PlanOnly)
 		if err != nil {
@@ -121,12 +165,12 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 		}
 		result = append(result, syncStep)
 	} else {
-		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (plan)", stepCfg.Name))
-		planStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("plan %s", stepCfg.Name), pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
+		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (plan)", name))
+		planStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("plan %s", name), pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 			InstallComponentID: installComp.ID,
 			InstallID:          installID,
 			DeployID:           deploy.ID,
-			ComponentID:        component.ID,
+			ComponentID:        componentID,
 			Role:               flw.Role,
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
@@ -135,11 +179,11 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 		result = append(result, planStep)
 
 		if !flw.PlanOnly {
-			sg.nextGroupNamed(fmt.Sprintf("deploy: %s (apply)", stepCfg.Name))
-			applyStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("apply %s", stepCfg.Name), pgtype.Hstore{}, &componentdeployapplyplan.Signal{
+			sg.nextGroupNamed(fmt.Sprintf("deploy: %s (apply)", name))
+			applyStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("apply %s", name), pgtype.Hstore{}, &componentdeployapplyplan.Signal{
 				InstallComponentID: installComp.ID,
 				InstallID:          installID,
-				ComponentID:        component.ID,
+				ComponentID:        componentID,
 			}, flw.PlanOnly)
 			if err != nil {
 				return nil, err
@@ -178,16 +222,29 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 		return sg.installSignalStep(ctx, installID, fmt.Sprintf("action: %s", stepCfg.Name), pgtype.Hstore{}, sig, false)
 	}
 
-	// Inline ad-hoc action
+	// Inline ad-hoc action: create the run record first, then reference by ID
+	adHocRun, err := activities.AwaitCreateAdHocActionRunForRunbook(ctx, activities.CreateAdHocActionRunForRunbookRequest{
+		InstallID:       installID,
+		Command:         stepCfg.Command,
+		InlineContents:  stepCfg.InlineContents,
+		EnvVars:         stepCfg.EnvVars,
+		Timeout:         stepCfg.Timeout,
+		Role:            stepCfg.Role,
+		TriggeredByID:   triggeredByID,
+		TriggeredByType: "runbook",
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create ad-hoc action run for runbook")
+	}
+
 	sig := &executeactionworkflow.Signal{
 		Signal: &actionworkflowrun.Signal{
-			InstallID:       installID,
-			TriggerType:     app.ActionWorkflowTriggerTypeAdHoc,
-			TriggeredByID:   triggeredByID,
-			TriggeredByType: "runbook",
-			Command:         stepCfg.Command,
-			InlineContents:  stepCfg.InlineContents,
-			Role:            stepCfg.Role,
+			InstallID:        installID,
+			AdhocActionRunID: adHocRun.ID,
+			TriggerType:      app.ActionWorkflowTriggerTypeAdHoc,
+			TriggeredByID:    triggeredByID,
+			TriggeredByType:  "runbook",
+			Role:             stepCfg.Role,
 		},
 	}
 

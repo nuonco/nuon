@@ -21,7 +21,9 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 
 		isNew = true
 		savedRunbook, err = s.apiClient.CreateRunbook(ctx, s.appID, &nuon.CreateRunbookRequest{
-			Name: runbook.Name,
+			Name:        runbook.Name,
+			Description: runbook.Description,
+			Labels:      runbook.Labels,
 		})
 		if err != nil {
 			return "", "", sync.SyncAPIErr{
@@ -33,7 +35,9 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 
 	if !isNew {
 		_, err = s.apiClient.UpdateRunbook(ctx, savedRunbook.ID, &nuon.UpdateRunbookRequest{
-			Name: runbook.Name,
+			Name:        runbook.Name,
+			Description: runbook.Description,
+			Labels:      runbook.Labels,
 		})
 		if err != nil {
 			return "", "", sync.SyncAPIErr{

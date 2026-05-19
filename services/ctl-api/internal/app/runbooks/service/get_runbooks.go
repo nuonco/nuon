@@ -42,7 +42,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 	}
 
 	q := ctx.Query("q")
-	lbls := labels.FromQueryParam(ctx.Query("labels"))
+	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
 	runbooks := []*app.Runbook{}
 	tx := s.db.WithContext(ctx).
@@ -50,6 +50,9 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("created_at DESC").Limit(1)
+		}).
+		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
+			return tx2.Order("idx ASC")
 		}).
 		Where(app.Runbook{OrgID: org.ID, AppID: appID})
 

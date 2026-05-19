@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -52,10 +53,19 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	}
 
 	runbookID := ctx.Param("runbook_id")
-	appID := ctx.Param("app_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
+		return
+	}
+
+	// Look up the runbook to get the real app ID (SDK may pass "_" as app_id).
+	var runbook app.Runbook
+	if res := s.db.WithContext(ctx).
+		Where(app.Runbook{OrgID: org.ID}).
+		Where("id = ?", runbookID).
+		First(&runbook); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to get runbook: %w", res.Error))
 		return
 	}
 
@@ -71,14 +81,14 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	}
 
 	steps := make([]app.RunbookStepConfig, 0, len(req.Steps))
-	for _, stepReq := range req.Steps {
+	for idx, stepReq := range req.Steps {
 		envVars := pgtype.Hstore{}
 		for k, v := range stepReq.EnvVars {
 			envVars[k] = &v
 		}
 
-		steps = append(steps, app.RunbookStepConfig{
-			Idx:                int(stepReq.Idx),
+		stepCfg := app.RunbookStepConfig{
+			Idx:                idx,
 			Name:               stepReq.Name,
 			Type:               app.RunbookStepType(stepReq.Type),
 			ComponentName:      stepReq.ComponentName,
@@ -88,14 +98,28 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			EnvVars:            envVars,
 			Timeout:            time.Duration(stepReq.Timeout),
 			Role:               stepReq.Role,
-		})
+		}
+
+		// Resolve action_name to ActionWorkflowID
+		if stepReq.ActionName != "" {
+			var aw app.ActionWorkflow
+			if err := s.db.WithContext(ctx).
+				Where(app.ActionWorkflow{AppID: runbook.AppID, Name: stepReq.ActionName}).
+				First(&aw).Error; err != nil {
+				ctx.Error(fmt.Errorf("unable to find action %q for step %s: %w", stepReq.ActionName, stepReq.Name, err))
+				return
+			}
+			stepCfg.ActionWorkflowID = generics.NewNullString(aw.ID)
+		}
+
+		steps = append(steps, stepCfg)
 	}
 
 	rbcfg := app.RunbookConfig{
 		OrgID:       org.ID,
-		AppID:       appID,
+		AppID:       runbook.AppID,
 		AppConfigID: appConfigID,
-		RunbookID:   runbookID,
+		RunbookID:   runbook.ID,
 		Readme:      req.Readme,
 		Steps:       steps,
 	}

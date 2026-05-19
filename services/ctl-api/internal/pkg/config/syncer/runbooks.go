@@ -10,6 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -29,8 +31,12 @@ func (s *syncer) ensureRunbook(ctx context.Context, runbook *config.RunbookConfi
 	}
 
 	rbk := app.Runbook{
-		AppID: s.appID,
-		Name:  runbook.Name,
+		AppID:       s.appID,
+		Name:        runbook.Name,
+		Description: runbook.Description,
+	}
+	if len(runbook.Labels) > 0 {
+		rbk.Labels = labels.Labels(runbook.Labels)
 	}
 	res := s.db.WithContext(ctx).Create(&rbk)
 	if res.Error != nil {
@@ -80,7 +86,7 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 			envVars[k] = &v
 		}
 
-		steps = append(steps, app.RunbookStepConfig{
+		stepCfg := app.RunbookStepConfig{
 			Idx:                idx,
 			Name:               step.Name,
 			Type:               app.RunbookStepType(step.Type),
@@ -91,7 +97,23 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 			EnvVars:            envVars,
 			Timeout:            timeout,
 			Role:               step.Role,
-		})
+		}
+
+		// Resolve action_name to ActionWorkflowID
+		if step.ActionName != "" {
+			var aw app.ActionWorkflow
+			if err := s.db.WithContext(ctx).
+				Where(app.ActionWorkflow{AppID: s.appID, Name: step.ActionName}).
+				First(&aw).Error; err != nil {
+				return sync.SyncErr{
+					Resource:    fmt.Sprintf("runbook-%s", runbook.Name),
+					Description: fmt.Sprintf("unable to find action %q for step %s", step.ActionName, step.Name),
+				}
+			}
+			stepCfg.ActionWorkflowID = generics.NewNullString(aw.ID)
+		}
+
+		steps = append(steps, stepCfg)
 	}
 
 	rbc := app.RunbookConfig{
