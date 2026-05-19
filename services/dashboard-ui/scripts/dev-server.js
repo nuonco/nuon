@@ -45,6 +45,7 @@ Bun.serve({
       method: req.method,
       headers: req.headers,
       body: req.body,
+      redirect: "manual",
     });
 
     if ((res.headers.get("content-type") || "").includes("text/html")) {

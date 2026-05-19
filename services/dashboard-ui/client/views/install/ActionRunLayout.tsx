@@ -18,14 +18,14 @@ const ActionRunLayoutInner = () => {
 
   const basePath = `/${org?.id}/installs/${install?.id}/actions/${actionId}/runs/${actionRunId}`
   const { data: action } = useQuery({
-    queryKey: ['action', org?.id, installActionRun?.install_action_workflow_id],
+    queryKey: ['action', org?.id, actionId],
     queryFn: () =>
       getInstallAction({
-        orgId: org.id,
-        installId: install?.id,
-        actionId: actionId,
+        orgId: org!.id,
+        installId: install!.id,
+        actionId: actionId!,
       }),
-    enabled: !!org?.id && !!installActionRun?.install_workflow_id,
+    enabled: !!org?.id && !!install?.id && !!actionId,
   })
 
   const { data: workflow } = useQuery({
