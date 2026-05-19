@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getPendingApprovals } from '@/lib'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgStatusSSE } from '@/hooks/use-org-status-sse'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useToast } from '@/hooks/use-toast'
 import { Icon } from '@/components/common/Icon'
@@ -30,6 +31,7 @@ export function WorkflowApprovalsProvider({
 }) {
   const { org } = useOrg()
   const { activeWorkflows } = useActiveWorkflows()
+  const { sseConnected } = useOrgStatusSSE()
   const { addToast } = useToast()
   const { emitNotification } = useNotifications()
   const navigate = useNavigate()
@@ -43,7 +45,7 @@ export function WorkflowApprovalsProvider({
   } = useQuery({
     queryKey: ['workflow-approvals', org.id],
     queryFn: () => getPendingApprovals({ orgId: org.id }),
-    refetchInterval: 20_000,
+    refetchInterval: sseConnected ? false : 20_000,
   })
 
   useEffect(() => {

@@ -181,6 +181,10 @@ type Client interface {
 	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
 	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
 
+	// org-level workflow queries
+	GetOrgWorkflows(ctx context.Context, query *GetOrgWorkflowsQuery) ([]*models.AppWorkflow, error)
+	GetOrgPendingApprovals(ctx context.Context) ([]*models.AppWorkflowStepApproval, error)
+
 	// install runner
 	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
 

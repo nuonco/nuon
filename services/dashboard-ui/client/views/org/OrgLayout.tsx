@@ -9,6 +9,7 @@ import { BreadcrumbProvider } from '@/providers/breadcrumb-provider'
 import { PageTitleProvider } from '@/providers/page-title-provider'
 import { NotificationProvider } from '@/providers/notification-provider'
 import { OrgProvider } from '@/providers/org-provider'
+import { OrgStatusSSEProvider } from '@/providers/org-status-sse-provider'
 import { ActiveWorkflowsProvider } from '@/providers/active-workflows-provider'
 import { WorkflowApprovalsProvider } from '@/providers/workflow-approvals-provider'
 import { SidebarProvider } from '@/providers/sidebar-provider'
@@ -40,6 +41,7 @@ export const OrgLayout = () => {
             <PageTitleProvider>
               <SidebarProvider initIsSidebarOpen={getSidebarOpen()}>
                 <ToastProvider>
+                  <OrgStatusSSEProvider>
                   <ActiveWorkflowsProvider>
                     <WorkflowApprovalsProvider>
                       <SurfacesProvider>
@@ -62,6 +64,7 @@ export const OrgLayout = () => {
                       </SurfacesProvider>
                     </WorkflowApprovalsProvider>
                   </ActiveWorkflowsProvider>
+                  </OrgStatusSSEProvider>
                 </ToastProvider>
               </SidebarProvider>
             </PageTitleProvider>
