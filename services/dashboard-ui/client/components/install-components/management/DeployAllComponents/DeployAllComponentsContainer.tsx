@@ -45,7 +45,7 @@ export const DeployAllComponentsModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{install.name}</Badge> deployments started</span>} theme="info" />
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{install.name}</Badge> deploy started</span>} theme="info" />
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -69,7 +69,7 @@ export const DeployAllComponentsModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{install.name}</Badge> deployments failed</span>} theme="error" />
+        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{install.name}</Badge> deploy failed</span>} theme="error" />
       )
     },
   })
