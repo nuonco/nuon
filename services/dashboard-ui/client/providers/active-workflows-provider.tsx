@@ -2,6 +2,7 @@ import { createContext, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getOrgWorkflows } from '@/lib'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgStatusSSE } from '@/hooks/use-org-status-sse'
 import type { TWorkflow } from '@/types'
 
 type ActiveWorkflowsContextValue = {
@@ -20,6 +21,7 @@ export function ActiveWorkflowsProvider({
   children: ReactNode
 }) {
   const { org } = useOrg()
+  const { sseConnected } = useOrgStatusSSE()
 
   const {
     data,
@@ -35,7 +37,7 @@ export function ActiveWorkflowsProvider({
         offset: 0,
         planonly: false,
       }),
-    refetchInterval: 20_000,
+    refetchInterval: sseConnected ? false : 20_000,
   })
 
   const activeWorkflows = (data?.data ?? []).filter(
