@@ -83,7 +83,8 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	// deferred latency emit captures the final state. Owner labels are added
 	// with collision guards so standard tags always win.
 	tags := map[string]string{
-		"runner_id": s.RunnerID,
+		"runner_id":    s.RunnerID,
+		"process_type": "unknown",
 	}
 	addLabels := func(labels map[string]string) {
 		for k, v := range labels {
