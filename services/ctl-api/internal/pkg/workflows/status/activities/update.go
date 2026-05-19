@@ -719,7 +719,7 @@ func (a *Activities) UpdateQueueSignalStatusV2(ctx context.Context, req UpdateQu
 		status.Metadata[k] = v
 	}
 	if err := a.updateStatus(ctx, &obj, status, getter); err != nil {
-		return err
+		return generics.TemporalGormError(err)
 	}
 
 	if isTerminalStatus(req.Status) {
