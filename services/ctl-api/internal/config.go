@@ -196,12 +196,12 @@ type Config struct {
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
 	// temporal configuration
-	TemporalHost                          string `config:"temporal_host"  validate:"required"`
-	TemporalStickyWorkflowCacheSize       int    `config:"temporal_sticky_workflow_cache_size"`
-	TemporalDataConverterLargePayloadSize int    `config:"temporal_dataconverter_large_payload_size"`
-	TemporalWorkflowFailurePanic            bool          `config:"temporal_workflow_failure_panic"`
-	TemporalDisableRegistrationAliasing     bool          `config:"temporal_disable_registration_aliasing"`
-	TemporalStickyScheduleToStartTimeout   time.Duration `config:"temporal_sticky_schedule_to_start_timeout"`
+	TemporalHost                          string        `config:"temporal_host"  validate:"required"`
+	TemporalStickyWorkflowCacheSize       int           `config:"temporal_sticky_workflow_cache_size"`
+	TemporalDataConverterLargePayloadSize int           `config:"temporal_dataconverter_large_payload_size"`
+	TemporalWorkflowFailurePanic          bool          `config:"temporal_workflow_failure_panic"`
+	TemporalDisableRegistrationAliasing   bool          `config:"temporal_disable_registration_aliasing"`
+	TemporalStickyScheduleToStartTimeout  time.Duration `config:"temporal_sticky_schedule_to_start_timeout"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`
