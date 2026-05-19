@@ -24,10 +24,14 @@ var ErrSignalNoop = errors.New("queue signal already in terminal state")
 // (validate, execute) which block until the signal finishes. These can run for
 // extended periods. Heartbeating ensures Temporal can detect dead workers and retry.
 // Idempotent update IDs ensure retried update calls are deduplicated by Temporal.
+//
+// HeartbeatTimeout is 60s to give the 30s heartbeat ticker (see heartbeat.WithHeartbeat
+// usage in handler/activities and client/) headroom for one missed beat without
+// the server tripping a HeartbeatTimeout.
 var longRunningActivityOptions = &workflow.ActivityOptions{
 	StartToCloseTimeout:    5 * time.Minute,
 	ScheduleToCloseTimeout: 2 * time.Hour,
-	HeartbeatTimeout:       10 * time.Second,
+	HeartbeatTimeout:       60 * time.Second,
 }
 
 func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error {
