@@ -4,6 +4,7 @@ import { type TContextTooltipItem } from '@/components/common/ContextTooltip'
 import { Status } from '@/components/common/Status'
 import { useActiveWorkflows } from '@/hooks/use-active-workflows'
 import { useOrg } from '@/hooks/use-org'
+import { useOrgStatusSSE } from '@/hooks/use-org-status-sse'
 import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import {
   getApp,
@@ -21,6 +22,7 @@ export const OrgStatusBarContainer = () => {
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
   const { activeWorkflows } = useActiveWorkflows()
+  const { sseConnected } = useOrgStatusSSE()
   const { appId, branchId, installId } = useParams()
 
   const { data: app } = useQuery({
@@ -61,7 +63,7 @@ export const OrgStatusBarContainer = () => {
     queryKey: ['runner-heartbeat', org.id, runner?.id],
     queryFn: () =>
       getRunnerLatestHeartbeat({ runnerId: runner!.id!, orgId: org.id }),
-    refetchInterval: 10_000,
+    refetchInterval: sseConnected ? false : 10_000,
     enabled: !!runner?.id,
   })
   const runnerHeartbeat =
