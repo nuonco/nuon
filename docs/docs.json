@@ -233,7 +233,7 @@
         "icon": "file-code",
         "versions": [
           {
-            "version": "Latest",
+            "version": "v0.19.955",
             "default": true,
             "tag": "Latest",
             "pages": [
@@ -268,34 +268,34 @@
             ]
           },
           {
-            "version": "v0.19.955",
+            "version": "v0.19.944",
             "pages": [
               "configuration-files",
               {
                 "group": "Component Types",
                 "pages": [
-                  "config-ref/v0.19.955/container-image",
-                  "config-ref/v0.19.955/docker-build",
-                  "config-ref/v0.19.955/helm",
-                  "config-ref/v0.19.955/kubernetes-manifest",
-                  "config-ref/v0.19.955/terraform"
+                  "config-ref/v0.19.944/container-image",
+                  "config-ref/v0.19.944/docker-build",
+                  "config-ref/v0.19.944/helm",
+                  "config-ref/v0.19.944/kubernetes-manifest",
+                  "config-ref/v0.19.944/terraform"
                 ]
               },
               {
                 "group": "Configuration Types",
                 "pages": [
-                  "config-ref/v0.19.955/action",
-                  "config-ref/v0.19.955/break-glass",
-                  "config-ref/v0.19.955/inputs",
-                  "config-ref/v0.19.955/install",
-                  "config-ref/v0.19.955/installer",
-                  "config-ref/v0.19.955/metadata",
-                  "config-ref/v0.19.955/permissions",
-                  "config-ref/v0.19.955/policies",
-                  "config-ref/v0.19.955/runner",
-                  "config-ref/v0.19.955/sandbox",
-                  "config-ref/v0.19.955/secrets",
-                  "config-ref/v0.19.955/stack"
+                  "config-ref/v0.19.944/action",
+                  "config-ref/v0.19.944/break-glass",
+                  "config-ref/v0.19.944/inputs",
+                  "config-ref/v0.19.944/install",
+                  "config-ref/v0.19.944/installer",
+                  "config-ref/v0.19.944/metadata",
+                  "config-ref/v0.19.944/permissions",
+                  "config-ref/v0.19.944/policies",
+                  "config-ref/v0.19.944/runner",
+                  "config-ref/v0.19.944/sandbox",
+                  "config-ref/v0.19.944/secrets",
+                  "config-ref/v0.19.944/stack"
                 ]
               }
             ]
