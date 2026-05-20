@@ -7,6 +7,52 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
+type GetInstallWorkflowsQuery struct {
+	Finished *bool
+	Planonly *bool
+	Type     string
+	Limit    int
+	Offset   int
+}
+
+func (c *client) GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error) {
+	params := &operations.GetWorkflowsParams{
+		InstallID: installID,
+		Context:   ctx,
+	}
+
+	var limit, offset int
+	if query != nil {
+		params.Finished = query.Finished
+		params.Planonly = query.Planonly
+		if query.Type != "" {
+			params.Type = &query.Type
+		}
+		limit = query.Limit
+		offset = query.Offset
+	}
+	if limit == 0 {
+		limit = 10
+	}
+	l := int64(limit + 1)
+	o := int64(offset)
+	params.Limit = &l
+	params.Offset = &o
+
+	resp, err := c.genClient.Operations.GetWorkflows(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, false, err
+	}
+
+	hasMore := false
+	items := resp.Payload
+	if len(items) > limit {
+		items = items[:limit]
+		hasMore = true
+	}
+	return items, hasMore, nil
+}
+
 func (c *client) GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error) {
 	params := &operations.GetWorkflowsParams{
 		InstallID: installID,

@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { getInstallWorkflows } from '@/lib'
 import { WorkflowTimeline, WorkflowTimelineSkeleton } from './WorkflowTimeline'
 
@@ -26,11 +28,51 @@ export const WorkflowTimelineContainer = ({
 }: IWorkflowTimelineContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
+  const queryKey = useMemo(
+    () => ['install-workflows', org?.id, installId, offset, planonly, type],
+    [org?.id, installId, offset, planonly, type]
+  )
+
+  const sseUrl =
+    org?.id && installId
+      ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}`
+      : undefined
+
+  const activeWorkflowsQueryKey = useMemo(
+    () => ['install-active-workflows', org?.id, install?.id],
+    [org?.id, install?.id]
+  )
+
+  const listeners = useMemo(
+    () => ({
+      workflows: (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data)
+          queryClient.setQueryData(queryKey, data)
+        } catch {}
+      },
+      'active-workflows': (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data)
+          queryClient.setQueryData(activeWorkflowsQueryKey, { data })
+        } catch {}
+      },
+    }),
+    [queryKey, activeWorkflowsQueryKey, queryClient]
+  )
+
+  const { connected: sseConnected } = useResourceSSE({
+    url: sseUrl,
+    enabled: shouldPoll,
+    listeners,
+  })
+
   const { data: result } = useQuery({
-    queryKey: ['install-workflows', org?.id, installId, offset, planonly, type],
+    queryKey,
     queryFn: () =>
       getInstallWorkflows({
         orgId: org.id,
@@ -41,7 +83,7 @@ export const WorkflowTimelineContainer = ({
         type,
       }),
     refetchOnMount: 'always',
-    refetchInterval: shouldPoll ? pollInterval : false,
+    refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,
     enabled: !!org?.id && !!installId,
   })
 
