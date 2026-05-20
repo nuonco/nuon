@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
@@ -29,6 +30,7 @@ type Enqueuer struct {
 	cfg     *internal.Config
 	tClient temporalclient.Client
 	l       *zap.Logger
+	mw      metrics.Writer
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -45,6 +47,7 @@ type Params struct {
 	Cfg     *internal.Config
 	TClient temporalclient.Client
 	L       *zap.Logger
+	MW      metrics.Writer
 	LC      fx.Lifecycle
 }
 
@@ -56,6 +59,7 @@ func New(params Params) *Enqueuer {
 		cfg:     params.Cfg,
 		tClient: params.TClient,
 		l:       params.L.Named("queue-enqueuer"),
+		mw:      params.MW,
 		ctx:     ctx,
 		cancel:  cancel,
 		ch:      make(chan string, enqueueChannelSize),
@@ -108,11 +112,15 @@ func (e *Enqueuer) run() {
 	}
 }
 
-// startSweepWorkflow starts the EnqueuerSweep workflow if not already running.
+// startSweepWorkflow starts the EnqueuerSweep workflow as a cron-scheduled
+// workflow. Each run executes the sweep activity once and exits; Temporal
+// handles re-scheduling. This avoids history bloat from long-lived loops
+// and ensures the next run starts immediately after the previous one finishes.
 func (e *Enqueuer) startSweepWorkflow(ctx context.Context) {
 	opts := tclient.StartWorkflowOptions{
 		ID:                       "enqueuer-sweep",
 		TaskQueue:                workflows.APITaskQueue,
+		CronSchedule:             "* * * * *",
 		WorkflowIDConflictPolicy: enumsv1.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
