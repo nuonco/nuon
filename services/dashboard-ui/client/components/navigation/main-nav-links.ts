@@ -42,6 +42,13 @@ export const SETTINGS_LINKS: TNavLink[] = [
   },
 ]
 
+export const SLACK_LINK: TNavLink = {
+  iconVariant: 'SlackLogoIcon',
+  path: `/slack`,
+  text: 'Slack',
+  shortcut: 'g s',
+}
+
 export const SUPPORT_LINKS: TNavLink[] = [
   {
     iconVariant: 'BookOpenTextIcon',
