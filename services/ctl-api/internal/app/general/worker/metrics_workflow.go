@@ -242,9 +242,17 @@ func (w *Workflows) writeQueueSignalNotEnqueuedMetrics(ctx workflow.Context) err
 	}
 
 	for _, t := range m.NotEnqueuedByType {
+		// Override the writer's default `namespace` tag (which always points
+		// at the collector's worker namespace, e.g. "general") with the
+		// signal's own temporal namespace — that is the value users actually
+		// expect when filtering this metric.
 		w.mw.Gauge(ctx, "queue_signals.not_enqueued",
 			float64(t.Count),
-			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type})...)
+			metrics.ToTags(map[string]string{
+				"general":     "true",
+				"signal_type": t.Type,
+				"namespace":   t.Namespace,
+			})...)
 	}
 
 	return nil
