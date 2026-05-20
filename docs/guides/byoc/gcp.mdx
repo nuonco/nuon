@@ -86,6 +86,7 @@ Nuon will provision the following subdomains under the domain you configure. Onl
 | api       | The control plane API, used by the Vendor Dashboard and the CLI | |
 | admin     | The admin API. Exposes functionality for administration of the control plane | |
 | runner    | The API used by runners to communicate with the control plane | true |
+| slack     | The Slack integration listener (OAuth callback, slash commands, events, interactions). Only provisioned if the Slack integration is enabled. | true |
 
 <Warning>
 The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
@@ -126,6 +127,57 @@ Create a GitHub App so Nuon can clone code for components from private repos. Yo
 6. After creation, scroll to the bottom and click **Generate a private key**. Save the PEM file — you'll provide it as a secret later.
 
 7. Note the **App ID** and **Client ID** from the app settings page — share these along with the app name and PEM file with Nuon.
+
+### Slack App (Optional)
+
+Create a Slack app so Nuon can post deploy, action, workflow, and approval events into Slack channels, and accept approval responses from Slack. Skip this section if you don't plan to use the Slack integration — the feature is gated by the `slack` org feature flag and can be enabled later.
+
+1. Go to [Slack API: Your Apps](https://api.slack.com/apps) and click **Create New App → From scratch**.
+
+2. Name the app (e.g., "Nuon BYOC") and select the workspace you want to develop it in. Apps can be distributed to other workspaces later.
+
+3. Under **OAuth & Permissions**, add the following Bot Token scopes:
+
+| Scope                | Why                                             |
+| -------------------- | ----------------------------------------------- |
+| `commands`           | Register the `/nuon` slash command.             |
+| `chat:write`         | Post messages into subscribed channels.         |
+| `chat:write.public`  | Post into channels the bot isn't a member of.   |
+| `channels:read`      | List public channels in the subscribe dialog.   |
+| `groups:read`        | List private channels the bot is invited to.    |
+| `users:read`         | Resolve approver identities for audit trail.    |
+| `users:read.email`   | Match Slack users to Nuon accounts by email.    |
+
+4. Under **OAuth & Permissions → Redirect URLs**, add:
+
+   ```
+   https://slack.<your-root-domain>/slack/oauth/callback
+   ```
+
+5. Under **Slash Commands**, create a new command:
+
+| Setting           | Value                                                |
+| ----------------- | ---------------------------------------------------- |
+| Command           | `/nuon`                                              |
+| Request URL       | `https://slack.<your-root-domain>/slack/commands/nuon` |
+| Short Description | `Subscribe this channel to Nuon events`              |
+| Usage Hint        | `subscribe \| unsubscribe \| status \| help`         |
+
+6. Under **Interactivity & Shortcuts**, enable interactivity and set:
+
+   ```
+   Request URL: https://slack.<your-root-domain>/slack/interactions
+   ```
+
+7. Under **Event Subscriptions**, enable events and set:
+
+   ```
+   Request URL: https://slack.<your-root-domain>/slack/events
+   ```
+
+   Subscribe to bot events: `app_uninstalled`, `tokens_revoked`.
+
+8. Under **Basic Information**, note your **Client ID**, **Client Secret**, and **Signing Secret** — share these with Nuon as inputs and secrets.
 
 ### Google OAuth
 
@@ -228,6 +280,15 @@ Once the install stack is applied, share these values with Nuon — Nuon configu
 | GitHub App ID (`github_app_id`) | App ID from the app settings page. |
 | GitHub App Client ID (`github_app_client_id`) | Client ID from the app settings page. |
 
+### Slack Configuration (Optional)
+
+Provide these only if you created a Slack app in the [Slack App](#slack-app-optional) section. Leave blank to disable the Slack integration.
+
+| Input | Value |
+| ----- | ----- |
+| Slack Client ID (`slack_client_id`) | Client ID from your Slack app's Basic Information page. |
+| Slack OAuth Redirect URL (`slack_oauth_redirect_url`) | `https://slack.<your-root-domain>/slack/oauth/callback` |
+
 ### OIDC Authentication
 
 | Input | Value |
@@ -276,6 +337,9 @@ When provisioning the install stack, provide these secrets:
 | ------ | ----- |
 | `github_app_key` | Your GitHub App PEM key (paste directly — Terraform preserves newlines). |
 | `auth_client_secret` | Client secret from your Google OAuth credentials. |
+| `slack_client_secret` | Client Secret from your Slack app (optional — required only if using Slack). |
+| `slack_signing_secret` | Signing Secret from your Slack app (optional — required only if using Slack). |
+| `slack_state_jwt_secret` | A random high-entropy string (e.g. `openssl rand -hex 32`); signs the OAuth state JWT during Slack installation. Optional — required only if using Slack. |
 
 ## Reprovision the install
 
