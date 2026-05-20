@@ -84,14 +84,19 @@ func (h *DeployTimelineHandler) StreamDeployTimeline(c *gin.Context) {
 
 		deploys, hasMore, err := client.GetInstallComponentDeploys(ctx, installID, componentID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
 		if err != nil {
-			h.l.Error("failed to fetch deploys", zap.String("installID", installID), zap.String("componentID", componentID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch deploys"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(deployTimelineErrorRetryDelay):
+			if isNotFoundErr(err) {
+				deploys = nil
+				hasMore = false
+			} else {
+				h.l.Error("failed to fetch deploys", zap.String("installID", installID), zap.String("componentID", componentID), zap.Error(err))
+				sendEvent("fetch-error", `{"error":"failed to fetch deploys"}`)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(deployTimelineErrorRetryDelay):
+				}
+				continue
 			}
-			continue
 		}
 
 		payload := timelinePayload{Data: deploys, Pagination: paginationInfo{HasNext: hasMore}}

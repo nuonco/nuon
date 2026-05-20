@@ -84,14 +84,19 @@ func (h *ActionRunTimelineHandler) StreamActionRunTimeline(c *gin.Context) {
 
 		action, hasMore, err := client.GetInstallActionWorkflowRecentRuns(ctx, installID, actionID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
 		if err != nil {
-			h.l.Error("failed to fetch action runs", zap.String("installID", installID), zap.String("actionID", actionID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch action runs"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(actionRunTimelineErrorRetryDelay):
+			if isNotFoundErr(err) {
+				action = nil
+				hasMore = false
+			} else {
+				h.l.Error("failed to fetch action runs", zap.String("installID", installID), zap.String("actionID", actionID), zap.Error(err))
+				sendEvent("fetch-error", `{"error":"failed to fetch action runs"}`)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(actionRunTimelineErrorRetryDelay):
+				}
+				continue
 			}
-			continue
 		}
 
 		payload := actionRunTimelinePayload{Data: action, Pagination: paginationInfo{HasNext: hasMore}}

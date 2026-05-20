@@ -83,14 +83,19 @@ func (h *SandboxBuildTimelineHandler) StreamSandboxBuildTimeline(c *gin.Context)
 
 		builds, hasMore, err := client.GetAppSandboxBuilds(ctx, appID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
 		if err != nil {
-			h.l.Error("failed to fetch sandbox builds", zap.String("appID", appID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch sandbox builds"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(sandboxBuildTimelineErrorRetryDelay):
+			if isNotFoundErr(err) {
+				builds = nil
+				hasMore = false
+			} else {
+				h.l.Error("failed to fetch sandbox builds", zap.String("appID", appID), zap.Error(err))
+				sendEvent("fetch-error", `{"error":"failed to fetch sandbox builds"}`)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(sandboxBuildTimelineErrorRetryDelay):
+				}
+				continue
 			}
-			continue
 		}
 
 		payload := timelinePayload{Data: builds, Pagination: paginationInfo{HasNext: hasMore}}

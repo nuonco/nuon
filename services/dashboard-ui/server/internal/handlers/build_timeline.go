@@ -84,14 +84,19 @@ func (h *BuildTimelineHandler) StreamBuildTimeline(c *gin.Context) {
 
 		builds, hasMore, err := client.GetComponentBuilds(ctx, componentID, appID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
 		if err != nil {
-			h.l.Error("failed to fetch builds", zap.String("componentID", componentID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch builds"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(buildTimelineErrorRetryDelay):
+			if isNotFoundErr(err) {
+				builds = nil
+				hasMore = false
+			} else {
+				h.l.Error("failed to fetch builds", zap.String("componentID", componentID), zap.Error(err))
+				sendEvent("fetch-error", `{"error":"failed to fetch builds"}`)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(buildTimelineErrorRetryDelay):
+				}
+				continue
 			}
-			continue
 		}
 
 		payload := timelinePayload{Data: builds, Pagination: paginationInfo{HasNext: hasMore}}

@@ -83,14 +83,19 @@ func (h *SandboxRunTimelineHandler) StreamSandboxRunTimeline(c *gin.Context) {
 
 		runs, hasMore, err := client.GetInstallSandboxRuns(ctx, installID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
 		if err != nil {
-			h.l.Error("failed to fetch sandbox runs", zap.String("installID", installID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch sandbox runs"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(sandboxRunTimelineErrorRetryDelay):
+			if isNotFoundErr(err) {
+				runs = nil
+				hasMore = false
+			} else {
+				h.l.Error("failed to fetch sandbox runs", zap.String("installID", installID), zap.Error(err))
+				sendEvent("fetch-error", `{"error":"failed to fetch sandbox runs"}`)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(sandboxRunTimelineErrorRetryDelay):
+				}
+				continue
 			}
-			continue
 		}
 
 		payload := timelinePayload{Data: runs, Pagination: paginationInfo{HasNext: hasMore}}

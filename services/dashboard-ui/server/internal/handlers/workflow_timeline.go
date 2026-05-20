@@ -114,14 +114,19 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 			Offset:   offset,
 		})
 		if err != nil {
-			h.l.Error("failed to fetch workflow history", zap.String("installID", installID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch workflows"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(workflowTimelineErrorRetryDelay):
+			if isNotFoundErr(err) {
+				historyWorkflows = nil
+				hasMore = false
+			} else {
+				h.l.Error("failed to fetch workflow history", zap.String("installID", installID), zap.Error(err))
+				sendEvent("fetch-error", `{"error":"failed to fetch workflows"}`)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(workflowTimelineErrorRetryDelay):
+				}
+				continue
 			}
-			continue
 		}
 
 		payload := timelinePayload{Data: historyWorkflows, Pagination: paginationInfo{HasNext: hasMore}}
