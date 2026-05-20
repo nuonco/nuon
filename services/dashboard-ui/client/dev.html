@@ -13,9 +13,14 @@
       x.send()
       if (x.status === 200) new Function(x.responseText)()
 
-      // No auth cookie → bounce to BFF port which handles login redirect
-      if (window.__NUON_CONFIG__?.authServiceUrl && !document.cookie.includes('X-Nuon-Auth=')) {
-        window.location.href = window.location.href.replace(':' + window.location.port, ':' + (parseInt(window.location.port) - 1))
+      // Check auth via dev server's own proxy (cookie is httpOnly so JS can't read it)
+      if (window.__NUON_CONFIG__?.authServiceUrl) {
+        var authCheck = new XMLHttpRequest()
+        authCheck.open('GET', '/v1/auth/validate', false)
+        authCheck.send()
+        if (authCheck.status === 401) {
+          window.location.href = window.__NUON_CONFIG__.authServiceUrl + '/?url=' + encodeURIComponent(window.location.href)
+        }
       }
 
       // Inject CSS stylesheet
