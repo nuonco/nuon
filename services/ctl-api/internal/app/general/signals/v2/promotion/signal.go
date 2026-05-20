@@ -3,6 +3,8 @@ package promotion
 import (
 	"fmt"
 
+	enumsv1 "go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -62,5 +64,42 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		)
 	}
 
+	// Start (or replace) the enqueuer sweep cron workflow.
+	startSweepWorkflow(ctx)
+
+	// Start (or replace) the general metrics cron workflow.
+	startMetricsWorkflow(ctx)
+
 	return nil
+}
+
+func startSweepWorkflow(ctx workflow.Context) {
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:            "enqueuer-sweep",
+		CronSchedule:          "* * * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	type sweepReq struct{}
+	workflow.ExecuteChildWorkflow(ctx, "EnqueuerSweep", sweepReq{})
+}
+
+func startMetricsWorkflow(ctx workflow.Context) {
+	cwo := workflow.ChildWorkflowOptions{
+		WorkflowID:            "general-metrics-cron",
+		CronSchedule:          "*/1 * * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		ParentClosePolicy:     enumsv1.PARENT_CLOSE_POLICY_ABANDON,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	ctx = workflow.WithChildOptions(ctx, cwo)
+
+	workflow.ExecuteChildWorkflow(ctx, "Metrics")
 }
