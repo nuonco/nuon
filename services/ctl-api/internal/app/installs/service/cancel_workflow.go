@@ -105,11 +105,12 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 		return fmt.Errorf("workflow is not cancelable (status: %s)", wf.Status.Status)
 	}
 
-	if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
-		return fmt.Errorf("unable to cancel workflow: %w", err)
-	}
-
+	// If the workflow hasn't started yet, cancel it directly in the DB —
+	// there is no signal to cancel.
 	if wf.Status.Status == app.StatusPending {
+		if err := s.cancelWorkflow(ctx, wf.ID); err != nil {
+			return fmt.Errorf("unable to cancel workflow: %w", err)
+		}
 		return nil
 	}
 
@@ -119,17 +120,12 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	}
 
 	if useQueues {
-		step := s.findCancelableStep(wf)
-		if step != nil {
-			if _, err := s.flowsClient.CancelStep(ctx, &flowclient.CancelStepRequest{
-				InstallWorkflowID: wf.ID,
-				StepID:            step.ID,
-			}); err != nil {
-				s.l.Warn("failed to cancel step via queues, workflow already marked cancelled",
-					zap.String("workflow_id", wf.ID),
-					zap.String("step_id", step.ID),
-					zap.Error(err))
-			}
+		if _, err := s.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
+			InstallWorkflowID: wf.ID,
+		}); err != nil {
+			s.l.Warn("failed to cancel workflow via queues",
+				zap.String("workflow_id", wf.ID),
+				zap.Error(err))
 		}
 	} else {
 		id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
