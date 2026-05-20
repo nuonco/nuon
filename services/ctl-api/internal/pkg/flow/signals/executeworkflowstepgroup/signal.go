@@ -244,6 +244,25 @@ func (s *Signal) writeWorkflowDirective(ctx workflow.Context, d string) error {
 	})
 }
 
+// isWorkflowCancelled checks the workflow's persisted status for cancellation.
+// This is a durable check that works even if the in-memory cancelRequested flag
+// hasn't been set (e.g., cancel propagation is still in flight).
+func (s *Signal) isWorkflowCancelled(ctx workflow.Context) bool {
+	flw, err := activities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, s.WorkflowID)
+	if err != nil {
+		return false
+	}
+	if flw.Status.Status == app.StatusCancelled {
+		return true
+	}
+	if flw.Status.Metadata != nil {
+		if _, ok := flw.Status.Metadata["cancel_requested_at"]; ok {
+			return true
+		}
+	}
+	return false
+}
+
 func isTerminalStatus(status app.Status) bool {
 	switch status {
 	case app.StatusSuccess, app.StatusAutoSkipped, app.StatusUserSkipped,

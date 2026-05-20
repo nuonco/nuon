@@ -81,13 +81,16 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 		client.AwaitCancelSignal(cancelCtx, s.activeGroupQueueSignalID)
 	}
 
-	// Mark the workflow as finished + cancelled.
+	// Mark the workflow as finished + cancelled with durable metadata.
 	_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(cancelCtx, s.WorkflowID)
 	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
 		ID: s.WorkflowID,
 		Status: app.CompositeStatus{
 			Status:                 app.StatusCancelled,
 			StatusHumanDescription: "workflow cancelled",
+			Metadata: map[string]any{
+				"cancel_requested_at": workflow.Now(cancelCtx).Unix(),
+			},
 		},
 	})
 
