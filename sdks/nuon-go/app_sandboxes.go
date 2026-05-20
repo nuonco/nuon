@@ -60,3 +60,32 @@ func (c *client) GetAppSandboxConfigs(ctx context.Context, appID string, query *
 
 	return resp.Payload, false, nil
 }
+
+func (c *client) GetAppSandboxBuilds(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxBuild, bool, error) {
+	params := &operations.GetAppSandboxBuildsParams{
+		AppID:   appID,
+		Context: ctx,
+	}
+
+	query = handlePaginationQuery(query)
+
+	if query != nil {
+		offset := int64(query.Offset)
+		limit := int64(query.Limit)
+
+		params.Offset = &offset
+		params.Limit = &limit
+	}
+
+	resp, err := c.genClient.Operations.GetAppSandboxBuilds(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, false, err
+	}
+
+	if query != nil {
+		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
+		return items, hasMore, nil
+	}
+
+	return resp.Payload, false, nil
+}

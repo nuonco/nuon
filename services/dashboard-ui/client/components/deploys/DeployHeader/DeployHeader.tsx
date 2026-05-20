@@ -60,7 +60,7 @@ export const DeployHeader = ({
               Build:
               <ID>
                 <Link
-                  href={`/${deploy?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
+                  href={`/${install?.org_id}/apps/${install?.app_id}/components/${deploy?.component_id}/builds/${deploy?.build_id}`}
                 >
                   {deploy?.build_id}
                 </Link>
@@ -114,7 +114,7 @@ export const DeployHeader = ({
           </LabeledValue>
           <LabeledValue label="Install">
             <Text variant="subtext">
-              <Link href={`/${deploy?.org_id}/installs/${deploy?.install_id}`}>
+              <Link href={`/${install?.org_id}/installs/${install?.id}`}>
                 {install?.name}
               </Link>
             </Text>
@@ -127,7 +127,7 @@ export const DeployHeader = ({
             >
               <Text variant="subtext">
                 <Link
-                  href={`/${deploy.org_id}/installs/${install.id}/components/${component?.id}`}
+                  href={`/${install?.org_id}/installs/${install?.id}/components/${component?.id}`}
                 >
                   {component?.name}
                 </Link>
@@ -158,7 +158,7 @@ export const DeployHeader = ({
           {deploy?.runner_jobs?.at(0)?.install_role_usage?.role_name ? (
             <LabeledValue label="Execution role">
               <Text variant="subtext" family="mono" className="text-xs">
-                <Link href={`/${deploy?.org_id}/installs/${deploy?.install_id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`}>
+                <Link href={`/${install?.org_id}/installs/${install?.id}/roles?panel=${deploy.runner_jobs.at(0).install_role_usage.install_role_id}`}>
                   {deploy.runner_jobs.at(0).install_role_usage.role_name}
                 </Link>
               </Text>
@@ -169,7 +169,7 @@ export const DeployHeader = ({
 
       {deploy?.install_workflow_id ? (
         <Button
-          href={`/${deploy?.org_id}/installs/${deploy?.install_id}/workflows/${workflow?.id}?panel=${stepId}`}
+          href={`/${install?.org_id}/installs/${install?.id}/workflows/${workflow?.id}?panel=${stepId}`}
         >
           View workflow
           <Icon variant="CaretRightIcon" />
