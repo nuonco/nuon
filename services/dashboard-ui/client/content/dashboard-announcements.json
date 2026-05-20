@@ -1,6 +1,15 @@
 {
   "announcements": [
     {
+      "id": "aws-terraform-stacks-webhooks-034",
+      "title": "Terraform Stacks for AWS and Webhooks",
+      "date": "May 4, 2026",
+      "description": "Provision AWS install stacks with Terraform, and subscribe your own services to workflow lifecycle events via org-scoped webhooks.",
+      "ctaText": "Learn more",
+      "ctaUrl": "https://docs.nuon.co/updates/034-aws-terraform-install-stack",
+      "dismissible": false
+    },
+    {
       "id": "nuon-tuis-extensions-032",
       "title": "Nuon TUIs, Extensions, and Role Management",
       "date": "Mar 25, 2026",
