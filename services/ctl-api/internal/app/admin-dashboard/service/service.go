@@ -321,6 +321,10 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/query-catalog/:query_id/run", s.QueryCatalogRun)
 		api.POST("/query-collector/toggle", s.QueryCollectorToggle)
 
+		// Enqueuer actions
+		api.POST("/enqueuer/full-sweep", s.FullSweep)
+		api.POST("/enqueuer/flush-lost-signals", s.FlushLostSignals)
+
 		// General actions
 		api.POST("/promote", s.Promote)
 		api.POST("/seed", s.ProxySeed)

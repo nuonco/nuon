@@ -65,3 +65,15 @@ export const reEnqueueSignal = (queueId: string, signalId: string) =>
     path: `queues/${queueId}/signals/${signalId}/re-enqueue`,
     method: 'POST',
   })
+
+export const fullSweep = () =>
+  api<{ enqueued: number; errors: number; duration_ms: number }>({
+    path: 'enqueuer/full-sweep',
+    method: 'POST',
+  })
+
+export const flushLostSignals = () =>
+  api<{ status: string; flushed: number }>({
+    path: 'enqueuer/flush-lost-signals',
+    method: 'POST',
+  })
