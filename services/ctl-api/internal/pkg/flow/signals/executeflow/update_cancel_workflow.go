@@ -20,21 +20,28 @@ type CancelWorkflowResponse struct {
 func (s *Signal) cancelWorkflowHandler(ctx workflow.Context) (*CancelWorkflowResponse, error) {
 	s.cancelRequested = true
 
+	// Persist cancel_requested_at in metadata so downstream signals (groups,
+	// steps) can detect cancellation even if the in-memory flag hasn't
+	// propagated yet. This survives ContinueAsNew and is the durable
+	// source of truth for cancellation.
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCancelled,
+			StatusHumanDescription: "workflow cancelled",
+			Metadata: map[string]any{
+				"cancel_requested_at": workflow.Now(ctx).Unix(),
+			},
+		},
+	})
+
 	// Cancel the active group signal. This triggers the group's Cancel()
 	// method which propagates to step signals and their inner signals.
 	if s.activeGroupQueueSignalID != "" {
 		client.AwaitCancelSignal(ctx, s.activeGroupQueueSignalID)
 	}
 
-	// Mark the workflow as cancelled.
 	_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(ctx, s.WorkflowID)
-	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-		ID: s.WorkflowID,
-		Status: app.CompositeStatus{
-			Status:                 app.StatusCancelled,
-			StatusHumanDescription: "workflow cancelled",
-		},
-	})
 
 	return &CancelWorkflowResponse{WorkflowID: s.WorkflowID}, nil
 }

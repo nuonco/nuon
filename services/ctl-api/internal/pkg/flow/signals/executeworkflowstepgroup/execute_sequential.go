@@ -12,6 +12,15 @@ import (
 // here — the single authoritative place for clone decisions.
 func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 	for {
+		// Check if cancellation was requested before dispatching the next
+		// step. This closes the race window where the cancel signal is
+		// still propagating through the queue infrastructure but the
+		// in-memory flag or the DB metadata already reflect it.
+		if s.cancelRequested || s.isWorkflowCancelled(ctx) {
+			s.cancelRequested = true
+			return s.writeStepGroupDirective(ctx, directive.GroupStop)
+		}
+
 		steps, err := s.getGroupSteps(ctx)
 		if err != nil {
 			return err
@@ -50,6 +59,7 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 			return s.writeStepGroupDirective(ctx, directive.GroupStop)
 
 		case directive.StepRetryGroup:
+			s.cancelRemainingSteps(ctx, l, steps, step.ID, app.StatusDiscarded)
 			return s.writeStepGroupDirective(ctx, directive.GroupRetryGroup)
 
 		case directive.StepSkipGroup:

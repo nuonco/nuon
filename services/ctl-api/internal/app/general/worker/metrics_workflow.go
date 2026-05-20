@@ -62,26 +62,30 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 		"clickhouse_parts_active_stats": func(ctx workflow.Context) error {
 			return w.writeCHPartStats(ctx)
 		},
-		"temporal_orgs": func(ctx workflow.Context) error {
-			return w.temporalNamespaceMetrics(ctx, "orgs")
-		},
-		"temporal_apps": func(ctx workflow.Context) error {
-			return w.temporalNamespaceMetrics(ctx, "apps")
-		},
-		"temporal_components": func(ctx workflow.Context) error {
-			return w.temporalNamespaceMetrics(ctx, "components")
-		},
-		"temporal_installs": func(ctx workflow.Context) error {
-			return w.temporalNamespaceMetrics(ctx, "installs")
-		},
-		"temporal_releases": func(ctx workflow.Context) error {
-			return w.temporalNamespaceMetrics(ctx, "releases")
-		},
-		"temporal_runners": func(ctx workflow.Context) error {
-			return w.temporalNamespaceMetrics(ctx, "runners")
-		},
+		// TODO: temporarily disabled — GetNamespaceMetrics is timing out
+		// "temporal_orgs": func(ctx workflow.Context) error {
+		// 	return w.temporalNamespaceMetrics(ctx, "orgs")
+		// },
+		// "temporal_apps": func(ctx workflow.Context) error {
+		// 	return w.temporalNamespaceMetrics(ctx, "apps")
+		// },
+		// "temporal_components": func(ctx workflow.Context) error {
+		// 	return w.temporalNamespaceMetrics(ctx, "components")
+		// },
+		// "temporal_installs": func(ctx workflow.Context) error {
+		// 	return w.temporalNamespaceMetrics(ctx, "installs")
+		// },
+		// "temporal_releases": func(ctx workflow.Context) error {
+		// 	return w.temporalNamespaceMetrics(ctx, "releases")
+		// },
+		// "temporal_runners": func(ctx workflow.Context) error {
+		// 	return w.temporalNamespaceMetrics(ctx, "runners")
+		// },
 		"queue_signal_enqueue": func(ctx workflow.Context) error {
 			return w.writeQueueSignalEnqueueMetrics(ctx)
+		},
+		"queue_signal_not_enqueued": func(ctx workflow.Context) error {
+			return w.writeQueueSignalNotEnqueuedMetrics(ctx)
 		},
 	}
 
@@ -224,6 +228,21 @@ func (w *Workflows) writeQueueSignalEnqueueMetrics(ctx workflow.Context) error {
 
 	for _, t := range m.UnenqueuedByType {
 		w.mw.Gauge(ctx, "queue_signals.unenqueued",
+			float64(t.Count),
+			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type})...)
+	}
+
+	return nil
+}
+
+func (w *Workflows) writeQueueSignalNotEnqueuedMetrics(ctx workflow.Context) error {
+	m, err := activities.AwaitGetQueueSignalNotEnqueuedMetrics(ctx, activities.GetQueueSignalNotEnqueuedMetricsRequest{})
+	if err != nil {
+		return errors.Wrap(err, "unable to get queue signal not enqueued metrics")
+	}
+
+	for _, t := range m.NotEnqueuedByType {
+		w.mw.Gauge(ctx, "queue_signals.not_enqueued",
 			float64(t.Count),
 			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type})...)
 	}
