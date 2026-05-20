@@ -8,6 +8,7 @@ import (
 	tclient "go.temporal.io/sdk/client"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
@@ -87,8 +88,17 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 	}
 
 	if err != nil {
+		e.mw.Incr("queue_signals.enqueue", metrics.ToTags(map[string]string{
+			"source":  source,
+			"success": "false",
+		}))
 		return errors.Wrap(err, "enqueue UpdateWithStart failed")
 	}
+
+	e.mw.Incr("queue_signals.enqueue", metrics.ToTags(map[string]string{
+		"source":  source,
+		"success": "true",
+	}))
 
 	return nil
 }

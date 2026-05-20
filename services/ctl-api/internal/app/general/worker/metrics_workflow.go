@@ -222,6 +222,12 @@ func (w *Workflows) writeQueueSignalEnqueueMetrics(ctx workflow.Context) error {
 		float64(m.MissingEnqueueFinish),
 		metrics.ToTags(defaultTags)...)
 
+	for _, t := range m.UnenqueuedByType {
+		w.mw.Gauge(ctx, "queue_signals.unenqueued",
+			float64(t.Count),
+			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type})...)
+	}
+
 	return nil
 }
 

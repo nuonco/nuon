@@ -1,11 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { getQueues } from '@/lib/admin-api'
+import { getQueues, fullSweep, flushLostSignals } from '@/lib/admin-api'
 import { Pagination } from '@/components/common/Pagination'
 import { SearchInput } from '@/components/common/SearchInput'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
+import { ConfirmModal } from '@/components/common/ConfirmModal'
 import { formatDate, truncateId } from '@/utils/format'
 
 export const QueuesList = () => {
@@ -16,6 +17,9 @@ export const QueuesList = () => {
   const [name, setName] = useState('')
   const [namespace, setNamespace] = useState('')
   const [page, setPage] = useState(1)
+  const [activeModal, setActiveModal] = useState<'flush' | null>(null)
+  const [sweepResult, setSweepResult] = useState<{ enqueued: number; errors: number; duration_ms: number } | null>(null)
+  const [flushResult, setFlushResult] = useState<{ flushed: number } | null>(null)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['queues', search, name, namespace, ownerID, ownerType, page],
@@ -30,6 +34,16 @@ export const QueuesList = () => {
     refetchInterval: 20000,
   })
 
+  const fullSweepMutation = useMutation({
+    mutationFn: () => fullSweep(),
+    onSuccess: (data) => { setSweepResult(data); setTimeout(() => setSweepResult(null), 10000) },
+  })
+
+  const flushMutation = useMutation({
+    mutationFn: () => flushLostSignals(),
+    onSuccess: (data) => { setActiveModal(null); setFlushResult(data); setTimeout(() => setFlushResult(null), 10000) },
+  })
+
   if (isLoading) return <LoadingSpinner />
   if (error) return <ErrorMessage message={(error as Error).message || 'Failed to load queues'} />
 
@@ -37,7 +51,52 @@ export const QueuesList = () => {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Queues</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Queues</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fullSweepMutation.mutate()}
+            disabled={fullSweepMutation.isPending}
+            className="rounded-md bg-primary-600 dark:bg-primary-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-700 dark:hover:bg-primary-600 disabled:opacity-50"
+          >
+            {fullSweepMutation.isPending ? 'Sweeping...' : 'Full Sweep'}
+          </button>
+          <button
+            onClick={() => setActiveModal('flush')}
+            disabled={flushMutation.isPending}
+            className="rounded-md bg-red-600 dark:bg-red-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+          >
+            {flushMutation.isPending ? 'Flushing...' : 'Flush Lost Signals'}
+          </button>
+        </div>
+      </div>
+
+      {sweepResult && (
+        <div className="mt-2 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+          Full sweep complete: {sweepResult.enqueued} enqueued, {sweepResult.errors} errors, {sweepResult.duration_ms}ms
+        </div>
+      )}
+      {flushResult && (
+        <div className="mt-2 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 text-sm text-yellow-800 dark:text-yellow-200">
+          Flushed {flushResult.flushed} lost signal(s)
+        </div>
+      )}
+      {fullSweepMutation.isError && (
+        <div className="mt-2 rounded-md bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-sm text-red-800 dark:text-red-200">
+          Full sweep failed: {(fullSweepMutation.error as Error).message}
+        </div>
+      )}
+
+      <ConfirmModal
+        open={activeModal === 'flush'}
+        title="Flush Lost Signals"
+        description={'This will mark all unenqueued signals older than 1 hour as lost (error status) and soft-delete them.\n\nThese signals will no longer be retried by the sweep. This action cannot be undone.'}
+        confirmLabel="Flush Lost Signals"
+        confirmVariant="danger"
+        onConfirm={() => flushMutation.mutate()}
+        onCancel={() => setActiveModal(null)}
+        isPending={flushMutation.isPending}
+      />
 
       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="w-full sm:w-64">

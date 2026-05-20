@@ -7,9 +7,15 @@ import (
 	"gorm.io/gorm"
 )
 
+type UnenqueuedByType struct {
+	Type  string `gorm:"column:type"`
+	Count int64  `gorm:"column:count"`
+}
+
 type QueueSignalEnqueueMetrics struct {
 	TotalQueued          int64
 	MissingEnqueueFinish int64
+	UnenqueuedByType     []UnenqueuedByType
 }
 
 type GetQueueSignalEnqueueMetricsRequest struct{}
@@ -34,6 +40,13 @@ func (a *Activities) getQueueSignalEnqueueMetrics(ctx context.Context, db *gorm.
 		Raw(`SELECT count(*) FROM queue_signals WHERE deleted_at = 0 AND enqueued = false`).
 		Scan(&m.MissingEnqueueFinish); res.Error != nil {
 		return nil, fmt.Errorf("unable to count signals not yet enqueued: %w", res.Error)
+	}
+
+	// Break down unenqueued signals by type for per-signal-type gauges.
+	if res := db.WithContext(ctx).
+		Raw(`SELECT type, count(*) as count FROM queue_signals WHERE deleted_at = 0 AND enqueued = false GROUP BY type`).
+		Scan(&m.UnenqueuedByType); res.Error != nil {
+		return nil, fmt.Errorf("unable to count unenqueued signals by type: %w", res.Error)
 	}
 
 	return &m, nil
