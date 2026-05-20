@@ -48,6 +48,7 @@ type Client interface {
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxLatestConfig(ctx context.Context, appID string) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxConfig, bool, error)
+	GetAppSandboxBuilds(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxBuild, bool, error)
 
 	// app runner config methods
 	CreateAppRunnerConfig(ctx context.Context, appID string, req *models.ServiceCreateAppRunnerConfigRequest) (*models.AppAppRunnerConfig, error)
@@ -172,6 +173,7 @@ type Client interface {
 
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
+	GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error)
 	GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error)
 	GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error)
 	GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error)
