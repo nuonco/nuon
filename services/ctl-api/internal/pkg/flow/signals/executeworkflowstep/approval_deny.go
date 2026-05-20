@@ -23,7 +23,7 @@ func (s *Signal) handleDenyResponse(ctx workflow.Context, l *zap.Logger, step *a
 		}
 	}
 
-	// Write the stop directive so it bubbles up through step-finished → group → flow.
+	// Write the stop directive. The group reads the step's status to get the reason.
 	if err := setResultDirective(ctx, step.ID, DirectiveStop); err != nil {
 		return errors.Wrap(err, "unable to set result directive for denied step")
 	}
@@ -31,8 +31,10 @@ func (s *Signal) handleDenyResponse(ctx workflow.Context, l *zap.Logger, step *a
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 		ID: step.ID,
 		Status: app.NewCompositeTemporalStatus(ctx, app.WorkflowStepApprovalStatusApprovalDenied, map[string]any{
-			"reason":     "approval denied",
-			DirectiveKey: DirectiveStop,
+			"reason":             "approval denied",
+			string(DirectiveKey): string(DirectiveStop),
+			"sibling_status":     string(app.StatusDiscarded),
+			"future_step_status": string(app.StatusNotAttempted),
 		}),
 	}); err != nil {
 		return errors.Wrap(err, "unable to update")

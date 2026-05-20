@@ -95,16 +95,19 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
   })
 
   if (parentId) {
+    const isEnqueued = label === 'enqueued'
+    const edgeColor = isEnqueued ? '#22C55E' : '#8040BF'
+    const labelColor = isEnqueued ? '#86EFAC' : '#C494F4'
     edges.push({
       id: `${parentId}->${id}`,
       source: parentId,
       target: id,
       type: 'smoothstep',
       animated: !status.toLowerCase().includes('completed') && !status.toLowerCase().includes('failed'),
-      style: { stroke: '#8040BF', strokeWidth: 2 },
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#8040BF' },
+      style: { stroke: edgeColor, strokeWidth: 2 },
+      markerEnd: { type: MarkerType.ArrowClosed, color: edgeColor },
       label: label || undefined,
-      labelStyle: { fontSize: 9, fill: '#C494F4' },
+      labelStyle: { fontSize: 9, fill: labelColor },
       labelBgStyle: { fill: '#1B242C', fillOpacity: 0.8 },
     })
   }
@@ -145,7 +148,8 @@ function buildGraph(graphNode: any, parentId: string | null, label: string | nul
   if (graphNode.children) {
     for (const child of graphNode.children) {
       const lastUpdate = updates.length > 0 ? `${id}__ue__${updates.length - 1}` : id
-      const sub = buildGraph(child, lastUpdate, child.signal?.type, expandedSet, seen)
+      const edgeLabel = child.relationship || child.signal?.type
+      const sub = buildGraph(child, lastUpdate, edgeLabel, expandedSet, seen)
       nodes.push(...sub.nodes)
       edges.push(...sub.edges)
     }

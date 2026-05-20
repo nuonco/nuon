@@ -125,6 +125,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	runners := api.Group("/v1/runners")
 	{
 		runners.GET("", s.AdminGetAllRunners)
+		runners.GET("/details", s.AdminListRunnersDetails)
 		runners.POST("/restart", s.AdminRestartRunners)
 		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 

@@ -95,6 +95,14 @@ func (l *local) Init(_ context.Context) error {
 	return nil
 }
 
+// Source returns the binary source label used by tracing in
+// pkg/terraform/workspace.LoadBinary. "local" means the binary was
+// shipped inside the OCI install artifact; the actual byte transfer is
+// attributed to the oci.unpack span hierarchy, not to this binary.
+func (l *local) Source() string {
+	return "local"
+}
+
 // Uninstall is a no-op. The bundled binary lives inside the unpacked OCI
 // archive whose cleanup is owned elsewhere — removing it here would
 // corrupt that archive for any later workspace built against the same

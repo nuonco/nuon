@@ -48,5 +48,32 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		l.Info("requested CAN on queues", zap.Int64("rows_affected", queueResp.RowsAffected))
 	}
 
+	// Idempotent + additive — chained off promote so new label-tagged
+	// orgs land without a separate POST.
+	autoLinkResp, err := generalactivities.AwaitEnsureSlackAutoLinks(ctx, generalactivities.EnsureSlackAutoLinksRequest{})
+	if err != nil {
+		return fmt.Errorf("ensure slack auto links: %w", err)
+	}
+	if l != nil {
+		l.Info("reconciled slack auto-links",
+			zap.Int("orgs_considered", autoLinkResp.OrgsConsidered),
+			zap.Int("links_created", autoLinkResp.LinksCreated),
+			zap.Int("subs_seeded", autoLinkResp.SubsSeeded),
+		)
+	}
+
+	// Start (or replace) the enqueuer sweep and metrics cron workflows
+	// as top-level Temporal cron workflows via the client.
+	cronResp, err := generalactivities.AwaitEnsureCronWorkflows(ctx, generalactivities.EnsureCronWorkflowsRequest{})
+	if err != nil {
+		return fmt.Errorf("ensure cron workflows: %w", err)
+	}
+	if l != nil {
+		l.Info("ensured cron workflows",
+			zap.Bool("sweep_started", cronResp.SweepStarted),
+			zap.Bool("metrics_started", cronResp.MetricsStarted),
+		)
+	}
+
 	return nil
 }

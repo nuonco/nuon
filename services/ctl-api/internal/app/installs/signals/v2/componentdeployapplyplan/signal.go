@@ -59,7 +59,20 @@ var (
 	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
 	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
 	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
+	_ signal.SignalWithOnRetry          = (*Signal)(nil)
 )
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	deploy, err := activities.AwaitGetInstallDeployForApplyStep(ctx, activities.GetInstallDeployForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		ComponentID:       s.ComponentID,
+	})
+	if err != nil {
+		return nil
+	}
+	s.updateDeployStatus(ctx, deploy.ID, app.InstallDeployStatusRetried, "deploy retried")
+	return nil
+}
 
 func (s *Signal) AutoRetry() bool  { return true }
 func (s *Signal) MaxRetries() int  { return 15 }
@@ -84,7 +97,7 @@ func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 	return 0
 }
 
-func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
 	return []signal.CloneStepDef{
 		{
 			Signal: &componentdeploysyncandplan.Signal{
@@ -106,7 +119,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 			Name:          originalStepName,
 			ExecutionType: "system",
 		},
-	}
+	}, nil
 }
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
@@ -181,6 +194,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to deploy")
 		return errors.Wrap(err, "unable to execute deploy")
 	}
+
+	_ = activities.AwaitSetDeployAppliedAt(ctx, activities.SetDeployAppliedAtRequest{
+		DeployID: installDeploy.ID,
+	})
 
 	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusActive, "finished")
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))

@@ -1,7 +1,8 @@
-import { createContext, useState, useRef, useEffect, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { createContext, useState, useMemo, useEffect, type ReactNode } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
+import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { useToast } from '@/hooks/use-toast'
 import { getWorkflow } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -29,50 +30,51 @@ interface WorkflowContextValue {
 
 export const WorkflowContext = createContext<WorkflowContextValue | undefined>(undefined)
 
-const FAST_POLL_MS = 250
-const SLOW_POLL_MS = 4000
+const FALLBACK_POLL_MS = 4000
 const FINISHED_POLL_MS = 30_000
-const FAST_POLL_DURATION_MS = 60_000
 
 export const WorkflowProvider = ({
   children,
   workflowId,
-  pollInterval = SLOW_POLL_MS,
   shouldPoll = false,
 }: {
   children: ReactNode
   workflowId: string
-  pollInterval?: number
   shouldPoll?: boolean
 }) => {
   const { org } = useOrg()
-  const [pollingEnabled, setPollingEnabled] = useState(shouldPoll)
-  const [fastPoll, setFastPoll] = useState(shouldPoll)
-  const mountTime = useRef(Date.now())
-
-  useEffect(() => {
-    if (!shouldPoll) return
-    const remaining = FAST_POLL_DURATION_MS - (Date.now() - mountTime.current)
-    if (remaining <= 0) {
-      setFastPoll(false)
-      return
-    }
-    const timer = setTimeout(() => setFastPoll(false), remaining)
-    return () => clearTimeout(timer)
-  }, [shouldPoll])
-
+  const queryClient = useQueryClient()
   const { addToast } = useToast()
+  const [sseEnabled, setSseEnabled] = useState(shouldPoll)
+  const queryKey = ['workflow', org?.id, workflowId]
+
+  const sseUrl = org?.id && workflowId
+    ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
+    : undefined
+
+  const onMessage = useMemo(() => (event: MessageEvent) => {
+    try {
+      const data: TWorkflow = JSON.parse(event.data)
+      queryClient.setQueryData(queryKey, data)
+    } catch {}
+  }, [org?.id, workflowId])
+
+  const { connected: sseConnected, disconnect } = useResourceSSE({
+    url: sseUrl,
+    enabled: sseEnabled,
+    onMessage,
+  })
 
   const { data: workflow, isLoading, error } = useQuery({
-    queryKey: ['workflow', org.id!, workflowId],
-    queryFn: () => getWorkflow({ orgId: org.id!, workflowId }),
+    queryKey,
+    queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
     refetchInterval: (query) => {
-      if (!pollingEnabled) return false
+      if (sseConnected) return false
+      if (!shouldPoll) return false
       if (query.state.data?.finished) return FINISHED_POLL_MS
-      if (fastPoll) return FAST_POLL_MS
-      return pollInterval
+      return FALLBACK_POLL_MS
     },
-    enabled: !!org.id && !!workflowId,
+    enabled: !!org?.id && !!workflowId,
   })
 
   const metrics = useWorkflowMetrics(workflow)
@@ -88,12 +90,14 @@ export const WorkflowProvider = ({
   }, [error])
 
   if (error && !workflow) return <ProviderError error={error} />
-
   if (isLoading || !workflow) return <ProviderLoading />
 
   const value: WorkflowContextValue = {
     workflow,
-    stopPolling: () => setPollingEnabled(false),
+    stopPolling: () => {
+      setSseEnabled(false)
+      disconnect()
+    },
     ...metrics,
   }
 

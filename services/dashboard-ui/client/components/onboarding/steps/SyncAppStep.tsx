@@ -31,7 +31,7 @@ export const SyncAppStep = ({ onAdvance, nextStepTitle }: IWizardStepComponentPr
 
       <div className="flex justify-end">
         <Button variant="primary" disabled={!appSynced} onClick={onAdvance}>
-          {nextStepTitle ?? 'Continue'} <Icon variant="CaretRight" weight="bold" />
+          {nextStepTitle ?? 'Continue'} <Icon variant="CaretRightIcon" weight="bold" />
         </Button>
       </div>
     </div>

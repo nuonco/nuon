@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router'
 import { useState } from 'react'
-import { getQueueSignalDetail, getSignalGraph, directExecuteSignal } from '@/lib/admin-api'
+import { getQueueSignalDetail, getSignalGraph, directExecuteSignal, reEnqueueSignal } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { JsonViewer } from '@/components/common/JsonViewer'
 import { StatusHistory } from '@/components/common/StatusHistory'
 import { SignalFlowGraph } from '@/components/common/SignalFlowGraph'
+import { SignalTreeView } from '@/components/common/SignalTreeView'
+import { TemporalWorkflowCard } from '@/components/common/TemporalWorkflowCard'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { ErrorMessage } from '@/components/common/ErrorMessage'
 import { formatDate, truncateId, formatDuration } from '@/utils/format'
@@ -43,6 +45,7 @@ export const QueueSignalDetail = () => {
   const [hideReady, setHideReady] = useState(true)
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [showGraph, setShowGraph] = useState(false)
+  const [graphViewMode, setGraphViewMode] = useState<'tree' | 'graph'>('tree')
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['queue-signal', queueId, signalId],
@@ -58,6 +61,11 @@ export const QueueSignalDetail = () => {
 
   const directExecuteMutation = useMutation({
     mutationFn: () => directExecuteSignal(queueId!, signalId!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue-signal', queueId, signalId] }),
+  })
+
+  const reEnqueueMutation = useMutation({
+    mutationFn: () => reEnqueueSignal(queueId!, signalId!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue-signal', queueId, signalId] }),
   })
 
@@ -94,32 +102,54 @@ export const QueueSignalDetail = () => {
           <h1 className="text-lg font-semibold">Signal</h1>
           <Badge>{signal?.type}</Badge>
           <Badge variant="status" status={status}>{status}</Badge>
-          {temporalUIUrl && signal?.workflow?.id && signal?.workflow?.namespace && (
-            <a href={`${temporalUIUrl}/namespaces/${signal.workflow.namespace}/workflows/${signal.workflow.id}`} target="_blank" rel="noopener noreferrer" className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
-              View in Temporal &rarr;
-            </a>
-          )}
           <Link to={`/queues/${queueId}/signals/${signalId}/graph`} className="inline-flex items-center rounded-md bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 px-2 py-1 text-xs font-medium text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900">
             View as graph
           </Link>
           <Link to="/signal-catalog" className="text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">View catalog &rarr;</Link>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to directly execute this signal?')) {
-                directExecuteMutation.mutate()
-              }
-            }}
-            disabled={directExecuteMutation.isPending}
-            className="ml-auto rounded-md bg-red-600 dark:bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
-          >
-            {directExecuteMutation.isPending ? 'Executing...' : 'Direct Execute'}
-          </button>
+          {signal?.enqueued === false && (
+            <Badge variant="status" status="failed">NOT ENQUEUED</Badge>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {signal?.enqueued === false && (
+              <button
+                onClick={() => {
+                  if (confirm('Re-enqueue this signal? This will send it to the enqueuer for processing.')) {
+                    reEnqueueMutation.mutate()
+                  }
+                }}
+                disabled={reEnqueueMutation.isPending}
+                className="rounded-md bg-orange-600 dark:bg-orange-500 px-2 py-1 text-xs font-medium text-white hover:bg-orange-700 dark:hover:bg-orange-600 disabled:opacity-50"
+              >
+                {reEnqueueMutation.isPending ? 'Re-enqueueing...' : 'Re-enqueue'}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to directly execute this signal?')) {
+                  directExecuteMutation.mutate()
+                }
+              }}
+              disabled={directExecuteMutation.isPending}
+              className="rounded-md bg-red-600 dark:bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 dark:hover:bg-red-600 disabled:opacity-50"
+            >
+              {directExecuteMutation.isPending ? 'Executing...' : 'Direct Execute'}
+            </button>
+          </div>
         </div>
         <div className="space-y-1 text-xs">
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Signal ID:</span> <span className="font-mono">{signal?.id}</span></div>
           <div><span className="text-gray-500 dark:text-gray-400 uppercase">Queue ID:</span> <Link to={`/queues/${signal?.queue_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">{signal?.queue_id}</Link></div>
         </div>
       </div>
+
+      {/* Temporal workflow stats */}
+      {temporalUIUrl && signal?.workflow?.id && signal?.workflow?.namespace && (
+        <TemporalWorkflowCard
+          temporalUIUrl={temporalUIUrl}
+          namespace={signal.workflow.namespace}
+          workflowId={signal.workflow.id}
+        />
+      )}
 
       {/* Signal attributes */}
       {attrs && (
@@ -207,6 +237,12 @@ export const QueueSignalDetail = () => {
             {wfInfo.activities?.length > 0 && (
               <div><span className="text-gray-500 dark:text-gray-400 uppercase w-32 inline-block">Activities</span> <span className="font-mono">{wfInfo.activities.length}</span></div>
             )}
+            {wfInfo.awaited_signals?.length > 0 && (
+              <div><span className="text-gray-500 dark:text-gray-400 uppercase w-32 inline-block">Awaited</span> <span className="font-mono text-orange-500">{wfInfo.awaited_signals.length} signal{wfInfo.awaited_signals.length !== 1 ? 's' : ''}</span></div>
+            )}
+            {wfInfo.enqueued_signals?.length > 0 && (
+              <div><span className="text-gray-500 dark:text-gray-400 uppercase w-32 inline-block">Enqueued</span> <span className="font-mono text-green-500">{wfInfo.enqueued_signals.length} signal{wfInfo.enqueued_signals.length !== 1 ? 's' : ''}</span></div>
+            )}
             {/* Failures */}
             {(wfInfo.status === 'Failed' || wfInfo.status === 'Timed Out') && (
               <>
@@ -228,20 +264,143 @@ export const QueueSignalDetail = () => {
         )}
       </div>
 
-      {/* Signal flow graph */}
+      {/* Dependencies: awaited signals, enqueued signals, child workflows */}
+      {wfInfo && (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Dependencies
+            <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">
+              {(wfInfo.awaited_signals?.length || 0) + (wfInfo.enqueued_signals?.length || 0) + (wfInfo.child_workflows?.length || 0)} total
+            </span>
+          </h2>
+
+          {wfInfo.enqueued_signals?.length > 0 && (
+            <div className="mt-3">
+              <h3 className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase mb-2">
+                ▸ Enqueued signals ({wfInfo.enqueued_signals.length})
+              </h3>
+              <div className="space-y-1">
+                {wfInfo.enqueued_signals.map((es: any, i: number) => {
+                  const sigStatus = es.signal ? getStatus(es.signal.status) : ''
+                  const signalLink = es.signal?.queue_id
+                    ? `/queues/${es.signal.queue_id}/signals/${es.queue_signal_id}`
+                    : `/queue-signals?search=${es.queue_signal_id}`
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-2 border border-green-100 dark:border-green-900 bg-green-50/50 dark:bg-green-900/20 rounded text-xs">
+                      <span className="text-green-500 text-[8px]">▸</span>
+                      <Link to={signalLink} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 truncate">{es.queue_signal_id}</Link>
+                      {es.signal?.type && <Badge>{es.signal.type}</Badge>}
+                      {sigStatus && <Badge variant="status" status={sigStatus}>{sigStatus}</Badge>}
+                      {es.activity_name && <span className="text-gray-400 dark:text-gray-500 font-mono text-[10px] ml-auto">{es.activity_name}</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {wfInfo.awaited_signals?.length > 0 && (
+            <div className="mt-3">
+              <h3 className="text-xs font-semibold text-orange-700 dark:text-orange-300 uppercase mb-2">
+                ◇ Awaited signals ({wfInfo.awaited_signals.length})
+              </h3>
+              <div className="space-y-1">
+                {wfInfo.awaited_signals.map((as: any, i: number) => {
+                  const sigStatus = as.signal ? getStatus(as.signal.status) : as.status
+                  const signalLink = as.signal?.queue_id
+                    ? `/queues/${as.signal.queue_id}/signals/${as.queue_signal_id}`
+                    : `/queue-signals?search=${as.queue_signal_id}`
+                  return (
+                    <div key={i} className="flex items-center gap-3 p-2 border border-orange-100 dark:border-orange-900 bg-orange-50/50 dark:bg-orange-900/20 rounded text-xs">
+                      <span className="text-orange-500 text-[8px]">◇</span>
+                      <Link to={signalLink} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 truncate">{as.queue_signal_id}</Link>
+                      {as.signal?.type && <Badge>{as.signal.type}</Badge>}
+                      <Badge variant="status" status={sigStatus}>{sigStatus}</Badge>
+                      <span className="text-gray-400 dark:text-gray-500 font-mono ml-auto">{formatDuration(as.duration)}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {wfInfo.child_workflows?.length > 0 && (
+            <div className="mt-3">
+              <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase mb-2">
+                ⑂ Child workflows ({wfInfo.child_workflows.length})
+              </h3>
+              <div className="space-y-1">
+                {wfInfo.child_workflows.map((cw: any, i: number) => (
+                  <div key={i} className="flex items-center gap-3 p-2 border border-blue-100 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-900/20 rounded text-xs">
+                    <span className="text-blue-500 text-[8px]">⑂</span>
+                    <Link
+                      to={`/temporal-workflows?namespace=${cw.namespace}&workflow_id=${cw.workflow_id}`}
+                      className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 truncate"
+                    >
+                      {cw.workflow_type || cw.workflow_id}
+                    </Link>
+                    <Badge variant="status" status={cw.status}>{cw.status}</Badge>
+                    {cw.namespace && <span className="text-gray-400 dark:text-gray-500 font-mono text-[10px]">{cw.namespace}</span>}
+                    <span className="text-gray-400 dark:text-gray-500 font-mono ml-auto">{formatDuration(cw.duration)}</span>
+                    {temporalUIUrl && cw.workflow_id && cw.namespace && (
+                      <a
+                        href={`${temporalUIUrl}/namespaces/${cw.namespace}/workflows/${cw.workflow_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 whitespace-nowrap"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Temporal &rarr;
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!wfInfo.awaited_signals?.length && !wfInfo.enqueued_signals?.length && !wfInfo.child_workflows?.length && (
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">No dependencies</p>
+          )}
+        </div>
+      )}
+
+      {/* Signal tree / graph */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal flow graph</h2>
-          <button
-            onClick={() => setShowGraph(!showGraph)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium ${showGraph ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
-          >
-            {showGraph ? 'Hide graph' : 'Load graph'}
-          </button>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Signal tree</h2>
+          <div className="flex items-center gap-2">
+            {showGraph && (
+              <div className="flex rounded-md border border-gray-300 dark:border-gray-700 text-xs overflow-hidden">
+                <button
+                  onClick={() => setGraphViewMode('tree')}
+                  className={`px-2.5 py-1 font-medium ${graphViewMode === 'tree' ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                >
+                  Tree
+                </button>
+                <button
+                  onClick={() => setGraphViewMode('graph')}
+                  className={`px-2.5 py-1 font-medium ${graphViewMode === 'graph' ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                >
+                  Graph
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowGraph(!showGraph)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium ${showGraph ? 'bg-primary-600 dark:bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+            >
+              {showGraph ? 'Hide' : 'Load tree'}
+            </button>
+          </div>
         </div>
         {showGraph && graphData?.graph && (
           <div className="mt-3">
-            <SignalFlowGraph graphData={graphData.graph} height="32rem" />
+            {graphViewMode === 'tree' ? (
+              <SignalTreeView graphData={graphData.graph} temporalUIUrl={temporalUIUrl} height="32rem" />
+            ) : (
+              <SignalFlowGraph graphData={graphData.graph} height="32rem" />
+            )}
           </div>
         )}
         {showGraph && !graphData?.graph && (
@@ -440,6 +599,7 @@ function ExecutionWaterfall({ wfInfo, temporalUIUrl, hideReady, setHideReady, so
   const orphans = wfInfo.orphan_activities || []
   const childWfs = wfInfo.child_workflows || []
   const awaited = wfInfo.awaited_signals || []
+  const enqueued = wfInfo.enqueued_signals || []
 
   // Filter
   const HIDE_NAMES = new Set(['ready', 'Ready'])
@@ -452,7 +612,7 @@ function ExecutionWaterfall({ wfInfo, temporalUIUrl, hideReady, setHideReady, so
     return sortOrder === 'newest' ? tb - ta : ta - tb
   })
 
-  const totalItems = allUpdates.length + (orphans.length > 0 ? 1 : 0) + childWfs.length + awaited.length
+  const totalItems = allUpdates.length + (orphans.length > 0 ? 1 : 0) + childWfs.length + awaited.length + enqueued.length
   if (totalItems === 0) return null
 
   return (
@@ -461,7 +621,7 @@ function ExecutionWaterfall({ wfInfo, temporalUIUrl, hideReady, setHideReady, so
         <div>
           <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Execution waterfall</h2>
           <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-            {updates.length}/{allUpdates.length} update{allUpdates.length !== 1 ? 's' : ''}, {childWfs.length} child workflow{childWfs.length !== 1 ? 's' : ''}, {awaited.length} awaited signal{awaited.length !== 1 ? 's' : ''}
+            {updates.length}/{allUpdates.length} update{allUpdates.length !== 1 ? 's' : ''}, {childWfs.length} child wf{childWfs.length !== 1 ? 's' : ''}, {awaited.length} awaited, {enqueued.length} enqueued
           </p>
         </div>
         <div className="flex items-center gap-2 text-xs">
@@ -512,6 +672,15 @@ function ExecutionWaterfall({ wfInfo, temporalUIUrl, hideReady, setHideReady, so
               ))}
             </WaterfallSection>
           )}
+
+          {/* Standalone enqueued signals (not nested under an update) */}
+          {enqueued.length > 0 && updates.length === 0 && (
+            <WaterfallSection icon="▸" label={`${enqueued.length} enqueued signal${enqueued.length !== 1 ? 's' : ''}`} status="">
+              {enqueued.map((es: any, i: number) => (
+                <WaterfallEnqueuedSignal key={i} es={es} />
+              ))}
+            </WaterfallSection>
+          )}
         </div>
       </div>
     </div>
@@ -522,13 +691,18 @@ function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any
   const [expanded, setExpanded] = useState(true)
   const activities = ue.activities || []
 
-  // Find awaited signals that overlap with this update's time range
+  // Use update-level signals if available, otherwise fall back to time-range overlap
+  const relatedAwaited = ue.awaited_signals?.length > 0
+    ? ue.awaited_signals
+    : awaited.filter((as: any) => {
+        const ueStart = new Date(ue.started_at).getTime()
+        const ueEnd = ue.finished_at ? new Date(ue.finished_at).getTime() : Date.now()
+        const asStart = new Date(as.started_at).getTime()
+        return asStart >= ueStart && asStart <= ueEnd
+      })
+  const relatedEnqueued: any[] = ue.enqueued_signals || []
   const ueStart = new Date(ue.started_at).getTime()
   const ueEnd = ue.finished_at ? new Date(ue.finished_at).getTime() : Date.now()
-  const relatedAwaited = awaited.filter((as: any) => {
-    const asStart = new Date(as.started_at).getTime()
-    return asStart >= ueStart && asStart <= ueEnd
-  })
   const relatedChildWfs = childWfs.filter((cw: any) => {
     const cwStart = new Date(cw.started_at).getTime()
     return cwStart >= ueStart && cwStart <= ueEnd
@@ -552,6 +726,7 @@ function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any
             <span className="text-gray-400 dark:text-gray-500">{formatDuration(ue.duration)}</span>
             <span className="text-gray-400 dark:text-gray-500">{activities.length} activit{activities.length !== 1 ? 'ies' : 'y'}</span>
             {relatedAwaited.length > 0 && <span className="text-orange-500">{relatedAwaited.length} awaited</span>}
+            {relatedEnqueued.length > 0 && <span className="text-green-500">{relatedEnqueued.length} enqueued</span>}
             {relatedChildWfs.length > 0 && <span className="text-blue-500">{relatedChildWfs.length} child wf</span>}
             <span className="text-gray-300 dark:text-gray-400 font-mono ml-auto">{ue.started_at ? formatDate(ue.started_at) : ''}</span>
           </div>
@@ -589,6 +764,9 @@ function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any
               {relatedAwaited.map((as: any, i: number) => (
                 <WaterfallAwaitedSignal key={`as-${i}`} as={as} />
               ))}
+              {relatedEnqueued.map((es: any, i: number) => (
+                <WaterfallEnqueuedSignal key={`es-${i}`} es={es} />
+              ))}
               {relatedChildWfs.map((cw: any, i: number) => (
                 <WaterfallChildWorkflow key={`cw-${i}`} cw={cw} temporalUIUrl={temporalUIUrl} />
               ))}
@@ -600,15 +778,47 @@ function WaterfallUpdateNode({ ue, awaited, childWfs, temporalUIUrl }: { ue: any
   )
 }
 
+function extractSignalIdFromActivity(act: any): string | null {
+  const name = act.name || ''
+  if (name.includes('AwaitSignal')) {
+    return extractQsiFromJson(act.input)
+  }
+  if (name.includes('EnqueueSignal')) {
+    return extractQsiFromJson(act.result) || extractQsiFromJson(act.input)
+  }
+  return null
+}
+
+function extractQsiFromJson(raw: string | undefined): string | null {
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(raw)
+    if (typeof parsed === 'string' && parsed.startsWith('qsi')) return parsed
+    if (typeof parsed === 'object' && parsed !== null) {
+      for (const key of ['id', 'ID', 'queue_signal_id']) {
+        if (typeof parsed[key] === 'string' && parsed[key].startsWith('qsi')) return parsed[key]
+      }
+    }
+  } catch { /* ignore */ }
+  return null
+}
+
 function WaterfallActivityRow({ act }: { act: any }) {
   const [showDetail, setShowDetail] = useState(false)
   const dot = act.status === 'Completed' ? 'text-green-500' : act.status === 'Failed' ? 'text-red-500' : act.status === 'Running' ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'
+  const signalId = extractSignalIdFromActivity(act)
+  const isSignalActivity = !!signalId
 
   return (
     <>
       <div className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onClick={() => setShowDetail(!showDetail)}>
         <span className={`${dot} text-[8px]`}>●</span>
         <span className="font-mono text-gray-900 dark:text-gray-100 flex-1 truncate">{act.name}</span>
+        {isSignalActivity && (
+          <Link to={`/queue-signals?search=${signalId}`} className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-mono text-[10px]" onClick={(e) => e.stopPropagation()}>
+            {truncateId(signalId!)} →
+          </Link>
+        )}
         <Badge variant="status" status={act.status}>{act.status}</Badge>
         <span className="text-gray-400 dark:text-gray-500 font-mono w-16 text-right">{formatDuration(act.duration)}</span>
         {act.attempt > 1 && <span className="text-orange-500">×{act.attempt}</span>}
@@ -650,6 +860,37 @@ function WaterfallAwaitedSignal({ as: asig }: { as: any }) {
             <div><span className="text-gray-500 dark:text-gray-400">Owner:</span> <span className="font-mono">{truncateId(asig.signal.owner_id)}</span></div>
           </div>
           {asig.failure && <pre className="font-mono text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 rounded p-1.5 whitespace-pre-wrap">{asig.failure}</pre>}
+        </div>
+      )}
+    </>
+  )
+}
+
+function WaterfallEnqueuedSignal({ es }: { es: any }) {
+  const [showDetail, setShowDetail] = useState(false)
+  const signalStatus = es.signal ? getStatus(es.signal.status) : ''
+
+  return (
+    <>
+      <div className="flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-green-50 dark:hover:bg-green-900/30 cursor-pointer" onClick={() => setShowDetail(!showDetail)}>
+        <span className="text-green-500 text-[8px]">▸</span>
+        <span className="text-green-700 dark:text-green-300 font-medium">enqueue signal</span>
+        {es.queue_signal_id && (
+          <Link to={`/queue-signals?search=${es.queue_signal_id}`} className="font-mono text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300" onClick={(e) => e.stopPropagation()}>
+            {truncateId(es.queue_signal_id)}
+          </Link>
+        )}
+        {es.activity_name && <span className="text-gray-400 dark:text-gray-500 font-mono">{es.activity_name}</span>}
+        {signalStatus && <Badge variant="status" status={signalStatus}>{signalStatus}</Badge>}
+      </div>
+      {showDetail && es.signal && (
+        <div className="px-3 py-2 bg-green-50/50 dark:bg-green-900/30 text-[10px] space-y-1 border-t border-green-100 dark:border-green-900">
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+            <div><span className="text-gray-500 dark:text-gray-400">Type:</span> <span className="font-mono">{es.signal.type}</span></div>
+            <div><span className="text-gray-500 dark:text-gray-400">Signal status:</span> <Badge variant="status" status={signalStatus}>{signalStatus}</Badge></div>
+            <div><span className="text-gray-500 dark:text-gray-400">Queue:</span> <Link to={`/queues/${es.signal.queue_id}`} className="font-mono text-primary-600 dark:text-primary-400">{truncateId(es.signal.queue_id)}</Link></div>
+            <div><span className="text-gray-500 dark:text-gray-400">Owner:</span> <span className="font-mono">{truncateId(es.signal.owner_id)}</span></div>
+          </div>
         </div>
       )}
     </>

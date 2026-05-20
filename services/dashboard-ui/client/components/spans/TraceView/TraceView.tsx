@@ -7,8 +7,10 @@ import { SpanTree, collectSpanIds } from '@/components/spans/SpanTree/SpanTree'
 import { TimelineBars } from '@/components/spans/TimelineBars'
 import type { TSpan } from '@/types'
 import { cn } from '@/utils/classnames'
+import { filterRunnerInternal } from '@/utils/span-tree'
 
 export type TTraceRightPaneVariant = 'logs' | 'timeline'
+export type TTraceScopeVariant = 'user' | 'all'
 
 export interface ITraceView {
   spans: TSpan[]
@@ -26,9 +28,16 @@ export const TraceView = ({
   rightPane,
 }: ITraceView) => {
   const [variant, setVariant] = useState<TTraceRightPaneVariant>('logs')
+  const [scope, setScope] = useState<TTraceScopeVariant>('user')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
-  const allIds = useMemo(() => collectSpanIds(spans), [spans])
+  const visibleSpans = useMemo(
+    () => (scope === 'user' ? filterRunnerInternal(spans) : spans),
+    [spans, scope]
+  )
+  const hiddenCount = spans.length - visibleSpans.length
+
+  const allIds = useMemo(() => collectSpanIds(visibleSpans), [visibleSpans])
 
   const handleToggleCollapsed = (id: string) => {
     setCollapsed((prev) => {
@@ -48,33 +57,64 @@ export const TraceView = ({
   const showUpgradeBanner = !isLoading && spans.length === 0
   const isLogs = variant === 'logs'
 
-  const toggle = (
-    <ToggleButton<TTraceRightPaneVariant>
-      value={variant}
-      onChange={setVariant}
-      options={[
-        {
-          value: 'logs',
-          label: (
-            <>
-              <Icon variant="ListIcon" size="12" />
-              <span className="@max-[24rem]:hidden">Logs</span>
-            </>
-          ),
-          ariaLabel: 'Show logs',
-        },
-        {
-          value: 'timeline',
-          label: (
-            <>
-              <Icon variant="TimerIcon" size="12" />
-              <span className="@max-[24rem]:hidden">Timeline</span>
-            </>
-          ),
-          ariaLabel: 'Show timeline',
-        },
-      ]}
-    />
+  const headerActions = (
+    <>
+      <ToggleButton<TTraceScopeVariant>
+        value={scope}
+        onChange={setScope}
+        options={[
+          {
+            value: 'user',
+            label: (
+              <>
+                <Icon variant="UserIcon" size="12" />
+                <span className="@max-[26rem]:hidden">User</span>
+              </>
+            ),
+            ariaLabel:
+              hiddenCount > 0
+                ? `Show user actions only (${hiddenCount} runner spans hidden)`
+                : 'Show user actions only',
+          },
+          {
+            value: 'all',
+            label: (
+              <>
+                <Icon variant="StackIcon" size="12" />
+                <span className="@max-[26rem]:hidden">All</span>
+              </>
+            ),
+            ariaLabel: 'Show all spans including runner internals',
+          },
+        ]}
+      />
+      <ToggleButton<TTraceRightPaneVariant>
+        value={variant}
+        onChange={setVariant}
+        options={[
+          {
+            value: 'logs',
+            label: (
+              <>
+                <Icon variant="ListIcon" size="12" />
+                <span className="@max-[24rem]:hidden">Logs</span>
+              </>
+            ),
+            ariaLabel: 'Show logs',
+          },
+          {
+            value: 'timeline',
+            label: (
+              <>
+                <Icon variant="TimerIcon" size="12" />
+                <span className="@max-[24rem]:hidden">Timeline</span>
+              </>
+            ),
+            ariaLabel: 'Show timeline',
+          },
+        ]}
+      />
+    </>
   )
 
   return (
@@ -98,14 +138,15 @@ export const TraceView = ({
             </div>
           ) : (
             <SpanTree
-              spans={spans}
+              spans={visibleSpans}
+              hiddenCount={scope === 'user' ? hiddenCount : 0}
               selectedSpanId={selectedSpanId}
               onSelectSpan={handleSelect}
               collapsed={collapsed}
               onToggleCollapsed={handleToggleCollapsed}
               onExpandAll={handleExpandAll}
               onCollapseAll={handleCollapseAll}
-              headerActions={toggle}
+              headerActions={headerActions}
             />
           )}
         </div>
@@ -119,7 +160,7 @@ export const TraceView = ({
             rightPane
           ) : (
             <TimelineBars
-              spans={spans}
+              spans={visibleSpans}
               selectedSpanId={selectedSpanId}
               onSelectSpan={handleSelect}
               collapsed={collapsed}

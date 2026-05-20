@@ -10,7 +10,6 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { DeployProvider } from '@/providers/deploy-provider'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { useDeploy } from '@/hooks/use-deploy'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -96,12 +95,10 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
       ) : null}
 
       {logStream ? (
-        <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
-          <UnifiedLogsProvider>
-            <LogViewerProvider>
-              <SSELogs />
-            </LogViewerProvider>
-          </UnifiedLogsProvider>
+        <LogStreamProvider logStreamId={logStream.id}>
+          <LogViewerProvider>
+            <SSELogs />
+          </LogViewerProvider>
         </LogStreamProvider>
       ) : (
         <LogsSkeleton />

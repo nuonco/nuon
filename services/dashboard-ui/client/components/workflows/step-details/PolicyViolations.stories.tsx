@@ -78,7 +78,7 @@ const Frame = ({
     <Card className="!p-0 overflow-hidden">
       <div className="flex flex-col">
         <div className="flex items-center gap-2 p-3 border-b border-cool-grey-200 dark:border-dark-grey-600 text-orange-600 dark:text-orange-500">
-          <Icon variant="Warning" size={14} />
+          <Icon variant="WarningIcon" size={14} />
           <Text variant="subtext" weight="strong">
             Policy Warnings
           </Text>
@@ -121,7 +121,7 @@ export const Variant2_CodeChip = () => (
         return (
           <li key={i} className="flex items-start gap-2">
             <Icon
-              variant="CaretRight"
+              variant="CaretRightIcon"
               size={12}
               className="mt-1 shrink-0"
             />
@@ -192,7 +192,7 @@ export const Variant4_RowCards = () => (
             )}
           >
             <Icon
-              variant="Warning"
+              variant="WarningIcon"
               size={14}
               className="mt-1 shrink-0 text-orange-600 dark:text-orange-500"
             />

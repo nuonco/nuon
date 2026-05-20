@@ -2,11 +2,11 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { InstallActionRunLogs } from '@/components/actions/InstallActionRunLogs'
+import { InstallActionRunOutputsComponent } from '@/components/actions/InstallActionRunOutputs'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { IActionRunLogs } from './types'
 
@@ -17,33 +17,46 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <Text weight="strong">Action logs</Text>
-      <LogStreamProvider
-        shouldPoll={actionRun.log_stream.open}
-        logStreamId={actionRun.log_stream.id}
-      >
-        <UnifiedLogsProvider>
-          <LogViewerProvider>
+      <LogStreamProvider logStreamId={actionRun.log_stream.id}>
+        <LogViewerProvider>
             {isAdhoc ? (
+              <>
+                <Text weight="strong">Action logs</Text>
+                <Tabs
+                  tabs={{
+                    logs: <SSELogs />,
+                    trace: (
+                      <TraceView
+                        logStreamId={actionRun.log_stream.id}
+                        shouldPoll={actionRun.log_stream.open}
+                      />
+                    ),
+                  }}
+                />
+              </>
+            ) : (
               <Tabs
                 tabs={{
-                  logs: <SSELogs />,
-                  trace: (
-                    <TraceView
-                      logStreamId={actionRun.log_stream.id}
-                      shouldPoll={actionRun.log_stream.open}
-                    />
+                  logs: (
+                    <div className="pt-4">
+                      <InstallActionRunLogs
+                        actionConfig={actionRun?.config}
+                        layout="horizontal"
+                        runSteps={actionRun?.steps}
+                      />
+                    </div>
+                  ),
+                  outputs: (
+                    <div className="pt-4">
+                      <InstallActionRunOutputsComponent
+                        installActionRun={actionRun}
+                      />
+                    </div>
                   ),
                 }}
               />
-            ) : (
-              <InstallActionRunLogs
-                actionConfig={actionRun?.config}
-                layout="horizontal"
-              />
             )}
-          </LogViewerProvider>
-        </UnifiedLogsProvider>
+        </LogViewerProvider>
       </LogStreamProvider>
     </div>
   )

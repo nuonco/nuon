@@ -76,7 +76,7 @@ function getTooltip({
       <Text variant="subtext">{description}</Text>
       <Text className="mt-2" variant="subtext">
         <Link className="flex items-center" href={viewHref}>
-          View {viewLabel} <Icon variant="CaretRight" />
+          View {viewLabel} <Icon variant="CaretRightIcon" />
         </Link>
       </Text>
     </div>
@@ -142,7 +142,15 @@ export const InstallStatuses = ({
           <Icon variant="FileDashedIcon" size={14} className="cursor-default" />
         </Text>
       ) : (
-        <Status status={driftStatus} variant="badge">
+        <Status
+          status={driftStatus}
+          variant="badge"
+          className={
+            install.drifted_objects?.length
+              ? '[&>span:first-child]:animate-pulse'
+              : undefined
+          }
+        >
           {isLabelHidden
             ? 'Drift'
             : install.drifted_objects?.length
@@ -288,7 +296,7 @@ export const InstallStatuses = ({
     >
       {variant === 'icon' ? (
         <Text theme={getStatusTheme(stackStatus)}>
-          <Icon variant="Stack" size={14} className="cursor-default" />
+          <Icon variant="StackIcon" size={14} className="cursor-default" />
         </Text>
       ) : (
         <Status status={stackStatus} variant="badge">

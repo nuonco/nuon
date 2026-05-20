@@ -95,9 +95,9 @@ const ArchitectureDiagramContainer = () => {
 type TabId = 'architecture' | 'details' | 'auditLogs'
 
 const TAB_CONFIG: { id: TabId; label: string; icon: TIconVariant }[] = [
-  { id: 'architecture', label: 'Architecture', icon: 'TreeStructure' },
-  { id: 'details', label: 'Install details', icon: 'Info' },
-  { id: 'auditLogs', label: 'Audit logs', icon: 'ClockClockwise' },
+  { id: 'architecture', label: 'Architecture', icon: 'TreeStructureIcon' },
+  { id: 'details', label: 'Install details', icon: 'InfoIcon' },
+  { id: 'auditLogs', label: 'Audit logs', icon: 'ClockClockwiseIcon' },
 ]
 
 const InstallDetailsTab = () => {
@@ -298,7 +298,7 @@ const AuditLogsTab = () => {
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="DownloadSimple" size="18" /> Download CSV
+            <Icon variant="DownloadSimpleIcon" size="18" /> Download CSV
           </span>
         )}
       </Button>
@@ -313,7 +313,7 @@ const InstallDetailsModal = ({ ...props }: IModal) => {
     <Modal
       heading={
         <Text className="inline-flex gap-2 items-center" variant="h3" weight="strong">
-          <Icon variant="Info" size="20" />
+          <Icon variant="InfoIcon" size="20" />
           Install details
         </Text>
       }
@@ -365,7 +365,7 @@ export const InstallDetailsButton = ({
       }}
       {...props}
     >
-      <Icon variant="Info" />
+      <Icon variant="InfoIcon" />
       Install details
     </Button>
   )

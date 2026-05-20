@@ -10,7 +10,6 @@ import { SSELogs } from '@/components/log-stream/SSELogs'
 import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import type { TDeploy, TWorkflowStep } from '@/types'
 import { DeployApply, DeployLogsSkeleton } from '../DeployApply'
 
@@ -47,7 +46,7 @@ export const DeployStepDetails = ({
               <Link
                 href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}`}
               >
-                View component <Icon variant="CaretRight" />
+                View component <Icon variant="CaretRightIcon" />
               </Link>
             </Text>
 
@@ -55,7 +54,7 @@ export const DeployStepDetails = ({
               <Link
                 href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
               >
-                View deploy logs <Icon variant="CaretRight" />
+                View deploy logs <Icon variant="CaretRightIcon" />
               </Link>
             </Text>
 
@@ -84,27 +83,25 @@ export const DeployStepDetails = ({
       </div>
       {step?.execution_type === 'approval' ? (
         deploy?.log_stream ? (
-          <LogStreamProvider shouldPoll logStreamId={deploy.log_stream.id}>
-            <UnifiedLogsProvider>
-              <LogViewerProvider>
-                <Tabs
-                  tabs={{
-                    plan: (
-                      <div className="mt-4">
-                        <Plan step={step} />
-                      </div>
-                    ),
-                    logs: <SSELogs />,
-                    trace: (
-                      <TraceView
-                        logStreamId={deploy.log_stream.id}
-                        shouldPoll={deploy.log_stream.open}
-                      />
-                    ),
-                  }}
-                />
-              </LogViewerProvider>
-            </UnifiedLogsProvider>
+          <LogStreamProvider logStreamId={deploy.log_stream.id}>
+            <LogViewerProvider>
+              <Tabs
+                tabs={{
+                  plan: (
+                    <div className="mt-4">
+                      <Plan step={step} />
+                    </div>
+                  ),
+                  logs: <SSELogs />,
+                  trace: (
+                    <TraceView
+                      logStreamId={deploy.log_stream.id}
+                      shouldPoll={deploy.log_stream.open}
+                    />
+                  ),
+                }}
+              />
+            </LogViewerProvider>
           </LogStreamProvider>
         ) : (
           <Tabs

@@ -56,7 +56,7 @@ export const SandboxRunConfigCard = ({
       <Card className="!p-2 !flex-row">
         <Text weight="strong">
           <Link href={configHref}>
-            Sanbox configuration <Icon variant="Question" />
+            Sanbox configuration <Icon variant="QuestionIcon" />
           </Link>
         </Text>
       </Card>

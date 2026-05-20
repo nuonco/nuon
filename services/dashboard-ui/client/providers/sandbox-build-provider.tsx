@@ -1,7 +1,9 @@
-import { createContext, useEffect, type ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { createContext, useMemo, useEffect, type ReactNode } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
+import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getSandboxBuild } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
@@ -17,10 +19,12 @@ export const SandboxBuildContext = createContext<
   SandboxBuildContextValue | undefined
 >(undefined)
 
+const FALLBACK_POLL_MS = 4000
+const FINISHED_POLL_MS = 30_000
+
 export function SandboxBuildProvider({
   children,
   buildId,
-  pollInterval = 10000,
   shouldPoll = true,
 }: {
   children: ReactNode
@@ -31,16 +35,46 @@ export function SandboxBuildProvider({
   const { org } = useOrg()
   const { app } = useApp()
   const { addToast } = useToast()
+  const queryClient = useQueryClient()
+  const queryKey = ['sandbox-build', org?.id, app?.id, buildId]
 
-  const {
-    data: build,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['sandbox-build', org.id, app.id, buildId],
-    queryFn: () => getSandboxBuild({ orgId: org.id, appId: app.id, buildId }),
-    refetchInterval: shouldPoll ? pollInterval : false,
-    enabled: !!org.id && !!app.id && !!buildId,
+  const sseUrl = org?.id && app?.id && buildId
+    ? `/api/orgs/${org.id}/apps/${app.id}/sandbox-builds/${buildId}/sse`
+    : undefined
+
+  const listeners = useMemo(() => ({
+    'sandbox-build': (event: MessageEvent) => {
+      try {
+        const data: TAppSandboxBuild = JSON.parse(event.data)
+        queryClient.setQueryData(queryKey, data)
+      } catch {}
+    },
+  }), [org?.id, app?.id, buildId])
+
+  const { connected: sseConnected } = useResourceSSE({
+    url: sseUrl,
+    enabled: shouldPoll,
+    listeners,
+  })
+
+  const { data: build, isLoading, error } = useQuery({
+    queryKey,
+    queryFn: () => getSandboxBuild({ orgId: org!.id, appId: app!.id, buildId }),
+    refetchInterval: (query) => {
+      if (sseConnected) return false
+      if (!shouldPoll) return false
+      const status = query.state.data?.status_v2?.status
+      if (status === 'success' || status === 'error' || status === 'cancelled' || status === 'not-attempted') {
+        return FINISHED_POLL_MS
+      }
+      return FALLBACK_POLL_MS
+    },
+    enabled: !!org?.id && !!app?.id && !!buildId,
+  })
+
+  useStatusToast({
+    status: build?.status_v2?.status,
+    resourceType: 'sandbox build',
   })
 
   useEffect(() => {
@@ -54,7 +88,6 @@ export function SandboxBuildProvider({
   }, [error])
 
   if (error && !build) return <ProviderError error={error} />
-
   if (isLoading || !build) return <ProviderLoading />
 
   return (

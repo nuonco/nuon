@@ -15,21 +15,22 @@ type Status string
 
 // define standard statuses
 const (
-	StatusError        Status = "error"
-	StatusPending      Status = "pending"
-	StatusInProgress   Status = "in-progress"
-	StatusCheckPlan    Status = "checking-plan"
-	StatusSuccess      Status = "success"
-	StatusNotAttempted Status = "not-attempted"
-	StatusCancelled    Status = "cancelled"
-	StatusRetrying     Status = "retrying"
-	StatusDiscarded    Status = "discarded"
-	StatusUserSkipped  Status = "user-skipped"
-	StatusAutoSkipped  Status = "auto-skipped"
-	StatusPlanning     Status = "planning"
-	StatusApplying     Status = "applying"
-	StatusQueued       Status = "queued"
-	StatusWarning      Status = "warning"
+	StatusError              Status = "error"
+	StatusPending            Status = "pending"
+	StatusInProgress         Status = "in-progress"
+	StatusCheckPlan          Status = "checking-plan"
+	StatusSuccess            Status = "success"
+	StatusNotAttempted       Status = "not-attempted"
+	StatusCancelled          Status = "cancelled"
+	StatusRetrying           Status = "retrying"
+	StatusDiscarded          Status = "discarded"
+	StatusUserSkipped        Status = "user-skipped"
+	StatusAutoSkipped        Status = "auto-skipped"
+	StatusPlanning           Status = "planning"
+	StatusApplying           Status = "applying"
+	StatusQueued             Status = "queued"
+	StatusWarning            Status = "warning"
+	StatusFailedPendingRetry Status = "failed-pending-retry"
 )
 
 // type specific statuses

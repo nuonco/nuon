@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
@@ -45,8 +44,8 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 	if res := c.db.WithContext(ctx).
 		Where(app.Queue{OwnerID: req.OwnerID, Name: req.Name}).
 		First(&existing); res.Error == nil {
-		if err := c.Restart(ctx, existing.ID); err != nil {
-			c.l.Warn("unable to restart existing queue during idempotent create",
+		if err := c.HintRestartSingle(ctx, existing.ID); err != nil {
+			c.l.Warn("unable to hint restart existing queue during idempotent create",
 				zap.String("queue-id", existing.ID), zap.Error(err))
 		}
 		return &existing, nil
@@ -78,18 +77,9 @@ func (c *Client) Create(ctx context.Context, req *CreateQueueRequest) (*app.Queu
 		Version: c.cfg.Version,
 	}
 	opts := tclient.StartWorkflowOptions{
-		ID:        q.Workflow.ID,
-		TaskQueue: workflows.APITaskQueue,
-		Memo: map[string]any{
-			"type":          "queue",
-			"id":            q.ID,
-			"name":          q.Name,
-			"owner-id":      q.OwnerID,
-			"owner-type":    q.OwnerType,
-			"max-in-flight": q.MaxInFlight,
-			"max-depth":     q.MaxDepth,
-			"idle-timeout":  time.Duration(q.IdleTimeout).String(),
-		},
+		ID:                    q.Workflow.ID,
+		TaskQueue:             workflows.APITaskQueue,
+		Memo:                  queueMemo(&q),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,

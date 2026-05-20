@@ -1,21 +1,17 @@
-FROM alpine:3.21 AS openapi-spec
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:3.21 AS openapi-spec
 
 COPY ctl-api/docs/public/swagger-v3.json /openapi/swagger-v3.json
 
-# --- Node deps + SPA source ---
+# --- Bun deps + SPA source ---
 
-FROM node:20-alpine AS deps
-
-RUN npm i -g bun
+FROM public.ecr.aws/p7e3r5y0/mirror/oven/bun:1.3-alpine AS deps
 
 WORKDIR /src
 
-RUN apk add --no-cache build-base make python3 py3-pip
-
 COPY \
     .prettierrc \
-    vitest.config.ts \
-    vitest.setup.ts \
+    bunfig.toml \
+    bun-test-setup.ts \
     bun.lock \
     postcss.config.js \
     package.json \
@@ -75,7 +71,7 @@ RUN go build -o /dashboard-server ./services/dashboard-ui/server
 
 # --- Final image ---
 
-FROM alpine:3.21 AS final
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:3.21 AS final
 
 RUN apk add --no-cache ca-certificates
 

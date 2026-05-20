@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 )
 
@@ -15,6 +16,7 @@ type Params struct {
 	CHDB        *gorm.DB `name:"ch"`
 	AppsHelpers *appshelpers.Helpers
 	TClient     temporalclient.Client
+	Cfg         *internal.Config
 }
 
 type Activities struct {
@@ -22,6 +24,7 @@ type Activities struct {
 	chDB        *gorm.DB
 	appsHelpers *appshelpers.Helpers
 	tClient     temporalclient.Client
+	cfg         *internal.Config
 }
 
 func New(params Params) *Activities {
@@ -30,5 +33,6 @@ func New(params Params) *Activities {
 		chDB:        params.CHDB,
 		appsHelpers: params.AppsHelpers,
 		tClient:     params.TClient,
+		cfg:         params.Cfg,
 	}
 }

@@ -136,12 +136,14 @@ export const Toast = forwardRef<HTMLDivElement, IToast>(
             aria-label="Close notification"
             title="Close notification"
           >
-            <Icon variant="X" aria-hidden="true" />
+            <Icon variant="XIcon" aria-hidden="true" />
           </Button>
         </div>
-        <Text className="flex flex-col gap-4" variant="subtext">
-          {children}
-        </Text>
+        {children && (
+          <Text className="flex flex-col gap-4" variant="subtext">
+            {children}
+          </Text>
+        )}
       </div>
     )
   }

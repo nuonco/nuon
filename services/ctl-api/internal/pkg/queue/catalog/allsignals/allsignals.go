@@ -21,6 +21,7 @@ import (
 
 	// general signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/promotion"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/slack_auto_link"
 
 	// components signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
@@ -80,19 +81,23 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
 
 	// orgs signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/clear_org_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/delete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/deprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/enable_feature_flags"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_restart_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_sandbox_mode"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/invite_accepted"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/invite_created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/queue_migration"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/remove_old_runner_processes"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_queues"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart_runners"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/terminate_workflows"
 
 	// runners signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/created"

@@ -1,7 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useApp } from '@/hooks/use-app'
@@ -21,17 +20,13 @@ export const BuildSandboxModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'
     mutationFn: () => createSandboxBuild({ appId: app.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
-        <Toast heading="Sandbox build started" theme="success">
-          <Text>Sandbox build for {app.name} was started.</Text>
-        </Toast>
+        <Toast heading="Sandbox build started" theme="info" />
       )
       removeModal(props.modalId)
     },
     onError: () => {
       addToast(
-        <Toast heading="Sandbox build failed" theme="error">
-          <Text>Unable to start sandbox build for {app.name}.</Text>
-        </Toast>
+        <Toast heading="Sandbox build failed" theme="error" />
       )
     },
   })
@@ -57,9 +52,9 @@ export const BuildSandboxButton = ({ ...props }: IButtonAsButton) => {
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="Hammer" />}
+      {props?.isMenuButton ? null : <Icon variant="HammerIcon" />}
       Build sandbox
-      {props?.isMenuButton ? <Icon variant="Hammer" /> : null}
+      {props?.isMenuButton ? <Icon variant="HammerIcon" /> : null}
     </Button>
   )
 }

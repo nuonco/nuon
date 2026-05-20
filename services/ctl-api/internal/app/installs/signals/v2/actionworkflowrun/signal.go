@@ -46,6 +46,10 @@ var _ signal.Signal = &Signal{}
 var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
 var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithMaxRetries = (*Signal)(nil)
+var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+var _ signal.SignalWithOnRetry = (*Signal)(nil)
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -55,6 +59,27 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	}
 	return nil
 }
+
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	// For adhoc runs, mark the existing run as retried.
+	if s.AdhocActionRunID != "" {
+		s.updateActionRunStatus(ctx, s.AdhocActionRunID, app.InstallActionRunStatusRetried, "retrying")
+	}
+	// Regular runs create the run during Execute — the old run was already
+	// marked as error and a new run will be created on the retry clone.
+	return nil
+}
+
+// AutoRetry enables the retry path in handleStepError so that failed action
+// steps land at StepAwaitRetry instead of StepStop.
+func (s *Signal) AutoRetry() bool { return true }
+
+// MaxRetries is the total retry budget (auto + manual).
+func (s *Signal) MaxRetries() int { return 3 }
+
+// MaxAutoRetries returns 0 so auto-retries are immediately exhausted and the
+// step goes straight to "awaiting retry or skip" for user action.
+func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 0 }
 
 func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 	return signal.SignalLifecycleContext{

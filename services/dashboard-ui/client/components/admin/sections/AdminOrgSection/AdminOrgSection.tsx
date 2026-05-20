@@ -14,6 +14,7 @@ import {
   adminRestartOrg,
   adminRestartOrgRunners,
   adminRestartOrgQueues,
+  adminForceRestartOrgQueues,
   adminMigrateOrgQueues,
   adminRestartRunner,
   adminGracefulRunnerShutdown,
@@ -23,6 +24,8 @@ import {
   adminDeprovisionOrg,
   adminForgetOrgInstalls,
   adminForgetOrg,
+  adminGracefulShutdownOrgProcesses,
+  adminForceShutdownOrgProcesses,
 } from '@/lib'
 
 interface IAdminOrgSection {
@@ -71,7 +74,7 @@ export const AdminOrgSection = ({
       }
       metadata={metadata}
     >
-      <AdminActionGroup title="Org settings" icon="Users">
+      <AdminActionGroup title="Org settings" icon="UsersIcon">
         <AdminActionCard
           title="Add support users"
           description="Add all Nuon support users to current org"
@@ -85,7 +88,7 @@ export const AdminOrgSection = ({
         <AdminFeatureToggleCard org={org} orgId={orgId} />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Infrastructure" icon="HardDrives" variant="warning">
+      <AdminActionGroup title="Infrastructure" icon="HardDrivesIcon" variant="warning">
         <AdminActionCard
           title="Reprovision org"
           description="Reprovision current org infrastructure"
@@ -104,11 +107,25 @@ export const AdminOrgSection = ({
         />
         <AdminActionCard
           title="Restart org queues"
-          description="Restart all queue workflows for this org"
+          description="Send a restart hint to all queue workflows for this org"
           action={() => adminRestartOrgQueues({ orgId, adminEmail })}
           variant="warning"
           requiresConfirmation
-          confirmationText="This will restart all queue workflows for this organization. Continue?"
+          confirmationText="This will send a restart hint to all queue workflows. Each queue will restart on its next poll cycle (~1-3 min)."
+        />
+        <AdminActionCard
+          title="Force restart org queues"
+          description="Immediately terminate and restart all queue workflows for this org via signal"
+          action={async () => {
+            const resp = await adminForceRestartOrgQueues({ orgId, adminEmail })
+            if (resp?.queue_signal_id && resp?.queue_id) {
+              window.open(`/queues/${resp.queue_id}/signals/${resp.queue_signal_id}`, '_blank')
+            }
+          }}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          confirmationText="This will enqueue a signal that terminates and restarts ALL queue workflows for this organization. A new tab will open to monitor the signal progress."
         />
         <AdminActionCard
           title="Migrate org queues"
@@ -120,7 +137,7 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Runner control" icon="Play">
+      <AdminActionGroup title="Runner control" icon="PlayIcon">
         <AdminActionCard
           title="Restart all runners"
           description="Restart all of current org runners"
@@ -152,9 +169,26 @@ export const AdminOrgSection = ({
           requiresInput
           confirmationText="This will forcefully shutdown the org runner and may cause data loss."
         />
+        <AdminActionCard
+          title="Graceful shutdown all processes"
+          description="Request graceful shutdown of all active runner processes in this org"
+          action={() => adminGracefulShutdownOrgProcesses({ orgId, adminEmail })}
+          variant="warning"
+          requiresConfirmation
+          confirmationText="This will request graceful shutdown of ALL active runner processes for this organization. Each process will complete in-flight work before shutting down."
+        />
+        <AdminActionCard
+          title="Force shutdown all processes"
+          description="Force shutdown all active runner processes in this org"
+          action={() => adminForceShutdownOrgProcesses({ orgId, adminEmail })}
+          variant="danger"
+          requiresConfirmation
+          requiresInput
+          confirmationText="This will force shutdown ALL active runner processes for this organization. In-flight work may be lost."
+        />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Teardown & cleanup" icon="Trash" variant="danger">
+      <AdminActionGroup title="Teardown & cleanup" icon="TrashIcon" variant="danger">
         <AdminActionCard
           title="Deprovision org"
           description="Deprovision all org infrastructure. Keeps database records but tears down cloud resources."
@@ -187,7 +221,7 @@ export const AdminOrgSection = ({
         />
       </AdminActionGroup>
 
-      <AdminActionGroup title="Security & debug" icon="Shield" variant="danger">
+      <AdminActionGroup title="Security & debug" icon="ShieldIcon" variant="danger">
         <AdminActionCard
           title="Invalidate runner token"
           description="Invalidate runner service account token"

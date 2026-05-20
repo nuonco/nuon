@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -78,7 +79,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 	// is bounded by the minimum MaxRetries across all signals in the group
 	// (including signals produced by CloneSteps). For example, if plan has
 	// MaxRetries=3 and apply has MaxRetries=5, the group stops after 3.
-	groupMaxRetries := groupMaxRetriesForSteps(stepsToClone)
+	groupMaxRetries := GroupMaxRetriesForSteps(stepsToClone)
 	if newGroupRetryIdx > groupMaxRetries {
 		l.Warn("group retry exceeds per-step max retries",
 			zap.Int("new_group_retry_idx", newGroupRetryIdx),
@@ -91,16 +92,36 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 	// already represent the full set (e.g. plan + apply as separate steps).
 	cloneSteps := make([]activities.CreateFlowStep, 0, len(stepsToClone))
 	for i, step := range stepsToClone {
+		// If the signal implements Clone(), use it to produce clean copies.
+		// For group retry we always produce a single step per original (not
+		// multi-step expansion) because the group already has the full set.
+		cloneQueueSignal := step.QueueSignal
+		if step.QueueSignal != nil && step.QueueSignal.Signal != nil {
+			if cl, ok := step.QueueSignal.Signal.(signal.SignalWithClone); ok {
+				defs, cloneErr := cl.Clone(ctx, step.Name)
+				if cloneErr != nil {
+					return errors.Wrapf(cloneErr, "unable to clone signal for retry on step %s", step.Name)
+				}
+				if len(defs) > 0 {
+					// Use the last def: for group retry each step already exists
+					// separately, so we want the self-copy (last), not multi-step
+					// expansion. Plan Clone() returns [plan] → last=plan. Apply
+					// Clone() returns [plan, apply] → last=apply.
+					cloneQueueSignal = &signaldb.SignalData{Signal: defs[len(defs)-1].Signal}
+				}
+			}
+		}
+
 		cloneSteps = append(cloneSteps, activities.CreateFlowStep{
 			FlowID:      s.WorkflowID,
 			OwnerID:     step.OwnerID,
 			OwnerType:   step.OwnerType,
 			Name:        step.Name,
 			Signal:      step.Signal,
-			QueueSignal: step.QueueSignal,
+			QueueSignal: cloneQueueSignal,
 			Status: app.NewCompositeTemporalStatus(ctx, app.StatusPending, map[string]any{
 				"is_retry":        true,
-				"retry_idx":       0,
+				"retry_idx":       newGroupRetryIdx,
 				"group_retry_idx": newGroupRetryIdx,
 				"retry_type":      "auto",
 			}),
@@ -128,10 +149,10 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 	return nil
 }
 
-// groupMaxRetriesForSteps returns the minimum MaxRetries across all signals
-// in the given steps, including signals produced by CloneSteps. Falls back to
+// GroupMaxRetriesForSteps returns the minimum MaxRetries across all signals
+// in the given steps, including signals produced by Clone(). Falls back to
 // signal.DefaultMaxRetries for signals that don't implement SignalWithMaxRetries.
-func groupMaxRetriesForSteps(steps []app.WorkflowStep) int {
+func GroupMaxRetriesForSteps(steps []app.WorkflowStep) int {
 	minRetries := signal.DefaultMaxRetries
 
 	for _, step := range steps {
@@ -142,15 +163,6 @@ func groupMaxRetriesForSteps(steps []app.WorkflowStep) int {
 
 		// Check the step's own signal.
 		checkMax(sig, &minRetries)
-
-		// If the signal produces clone steps, check those signals too.
-		if cs, ok := sig.(signal.SignalWithCloneSteps); ok {
-			for _, def := range cs.CloneSteps(step.Name) {
-				if def.Signal != nil {
-					checkMax(def.Signal, &minRetries)
-				}
-			}
-		}
 	}
 
 	return minRetries

@@ -9,7 +9,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
-import { UnifiedLogsProvider } from '@/providers/unified-logs-provider'
 import { SandboxRunProvider } from '@/providers/sandbox-run-provider'
 import { useSandboxRun } from '@/hooks/use-sandbox-run'
 import { useInstall } from '@/hooks/use-install'
@@ -88,12 +87,10 @@ const SandboxRunDetailContent = () => {
           ) : null}
 
           {logStream ? (
-            <LogStreamProvider logStreamId={logStream.id} shouldPoll={logStream.open}>
-              <UnifiedLogsProvider>
-                <LogViewerProvider>
-                  <SSELogs />
-                </LogViewerProvider>
-              </UnifiedLogsProvider>
+            <LogStreamProvider logStreamId={logStream.id}>
+              <LogViewerProvider>
+                <SSELogs />
+              </LogViewerProvider>
             </LogStreamProvider>
           ) : (
             <LogsSkeleton />

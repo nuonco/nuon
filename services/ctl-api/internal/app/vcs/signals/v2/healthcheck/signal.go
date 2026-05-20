@@ -2,6 +2,7 @@ package healthcheck
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
@@ -21,6 +22,10 @@ var _ signal.Signal = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) MaxInFlightAge() time.Duration {
+	return 15 * time.Minute
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {

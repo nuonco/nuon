@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
-import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -40,9 +39,7 @@ export const DeprovisionSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id },
       })
       addToast(
-        <Toast heading="Deprovision initiated" theme="success">
-          <Text>Sandbox deprovision workflow has been started successfully.</Text>
-        </Toast>
+        <Toast heading="Sandbox deprovision started" theme="info" />
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -62,9 +59,7 @@ export const DeprovisionSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id, err: err?.error },
       })
       addToast(
-        <Toast heading="Sandbox deprovision failed" theme="error">
-          <Text>Failed to start sandbox deprovision. Please try again.</Text>
-        </Toast>
+        <Toast heading="Sandbox deprovision failed" theme="error" />
       )
     },
   })
@@ -104,9 +99,9 @@ export const DeprovisionSandboxButton = ({
       {...props}
       variant="danger"
     >
-      {props?.isMenuButton ? null : <Icon variant="BoxArrowDown" />}
+      {props?.isMenuButton ? null : <Icon variant="BoxArrowDownIcon" />}
       Deprovision sandbox
-      {props?.isMenuButton ? <Icon variant="BoxArrowDown" /> : null}
+      {props?.isMenuButton ? <Icon variant="BoxArrowDownIcon" /> : null}
     </Button>
   )
 }

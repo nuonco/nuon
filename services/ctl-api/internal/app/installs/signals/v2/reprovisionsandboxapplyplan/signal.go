@@ -47,12 +47,35 @@ var (
 	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
 	_ signal.SignalWithRetryGroup       = (*Signal)(nil)
 	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithOnRetry          = (*Signal)(nil)
 )
 
-func (s *Signal) MaxRetries() int                       { return 5 }
-func (s *Signal) MaxAutoRetries(_ workflow.Context) int { return 3 }
-func (s *Signal) AutoRetry() bool                       { return true }
-func (s *Signal) RetryGroup() bool                      { return true }
+func (s *Signal) OnRetry(ctx workflow.Context) error {
+	if s.InstallID == "" || s.FlowID == "" {
+		return nil
+	}
+	run, err := activities.AwaitGetInstallSandboxRunForApplyStep(ctx, activities.GetInstallSandboxRunForApplyStep{
+		InstallWorkflowID: s.FlowID,
+		InstallID:         s.InstallID,
+	})
+	if err != nil {
+		return nil
+	}
+	s.updateRunStatus(ctx, run.ID, app.SandboxRunStatusRetried, "retrying")
+	return nil
+}
+
+func (s *Signal) MaxRetries() int  { return 5 }
+func (s *Signal) AutoRetry() bool  { return true }
+func (s *Signal) RetryGroup() bool { return true }
+
+func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
+	install, err := activities.AwaitGetInstallForSandboxBySandboxID(ctx, s.InstallSandboxID)
+	if err != nil || install == nil {
+		return 0
+	}
+	return install.AppSandboxConfig.GetMaxAutoRetries()
+}
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -100,7 +123,7 @@ var (
 	_ signal.SignalWithCloneSteps  = (*Signal)(nil)
 )
 
-func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
+func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
 	return []signal.CloneStepDef{
 		{
 			Signal: &reprovisionsandboxplan.Signal{
@@ -120,7 +143,7 @@ func (s *Signal) CloneSteps(originalStepName string) []signal.CloneStepDef {
 			Name:          originalStepName,
 			ExecutionType: "system",
 		},
-	}
+	}, nil
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -172,6 +195,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to execute deploy")
 	}
 	l.Debug("finished executing sandbox apply plan", zap.String("install_run.id", sandboxRun.ID))
+
+	_ = activities.AwaitSetSandboxRunAppliedAt(ctx, activities.SetSandboxRunAppliedAtRequest{
+		SandboxRunID: sandboxRun.ID,
+	})
 
 	l.Info("updating install sandbox run status", zap.String("install_run.id", sandboxRun.ID))
 	s.updateRunStatus(ctx, sandboxRun.ID, app.SandboxRunStatusActive, "successfully reprovisioned")

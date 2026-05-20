@@ -20,7 +20,7 @@ export const DeleteOrgLinkModal = ({
   <Modal
     heading={
       <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
-        <Icon variant="Warning" size="24" />
+        <Icon variant="WarningIcon" size="24" />
         Unlink Slack workspace?
       </Text>
     }

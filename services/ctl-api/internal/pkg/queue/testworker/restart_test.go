@@ -28,7 +28,7 @@ func (e *EnqueueTestSuite) TestRestartQueue() {
 	require.Nil(e.T(), err)
 	require.True(e.T(), status.Ready)
 
-	err = e.service.Client.Restart(ctx, queue.ID)
+	err = e.service.Client.HintRestartSingle(ctx, queue.ID)
 	require.Nil(e.T(), err)
 
 	err = e.service.Client.QueueReady(ctx, queue.ID)

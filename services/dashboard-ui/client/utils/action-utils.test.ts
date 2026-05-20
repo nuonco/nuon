@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test } from 'bun:test'
 import { hydrateActionRunSteps, sortByIdx } from './action-utils'
 import type { TActionConfig, TInstallActionRun } from '@/types'
 

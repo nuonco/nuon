@@ -40,10 +40,13 @@ func (m *Manager) List() ([]InstalledExtension, error) {
 
 	var exts []InstalledExtension
 	for _, entry := range entries {
-		if !entry.IsDir() {
+		if !strings.HasPrefix(entry.Name(), "nuon-ext-") {
 			continue
 		}
-		if !strings.HasPrefix(entry.Name(), "nuon-ext-") {
+		// Use os.Stat (not entry.IsDir()) so symlinks to directories — the
+		// shape that InstallLocal produces — are followed instead of skipped.
+		info, err := os.Stat(filepath.Join(m.dir, entry.Name()))
+		if err != nil || !info.IsDir() {
 			continue
 		}
 

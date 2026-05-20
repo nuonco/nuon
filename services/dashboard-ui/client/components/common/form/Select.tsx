@@ -354,7 +354,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             )}
           </div>
           <Icon
-            variant="CaretDown"
+            variant="CaretDownIcon"
             className={cn(
               'ml-2 transition-transform flex-shrink-0',
               { 'rotate-180': isOpen }

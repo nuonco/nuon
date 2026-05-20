@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -27,11 +28,12 @@ type Signal struct {
 	OrgName      string `json:"org_name,omitempty"`
 
 	// Conductor configuration — set by the creator when enqueuing.
-	StepGroupQueueName  string `json:"step_group_queue_name"`
-	StepQueueName       string `json:"step_queue_name"`
-	StepTargetQueueName string `json:"step_target_queue_name"`
-	OwnerID             string `json:"owner_id"`
-	OwnerType           string `json:"owner_type"`
+	StepGroupQueueName     string `json:"step_group_queue_name"`
+	StepQueueName          string `json:"step_queue_name"`
+	StepTargetQueueName    string `json:"step_target_queue_name"`
+	GenerateStepsQueueName string `json:"generate_steps_queue_name"`
+	OwnerID                string `json:"owner_id"`
+	OwnerType              string `json:"owner_type"`
 	// OwnerName is the human-readable owner label resolved during Validate()
 	// (e.g. install/app/app_branch name). Stamped onto SignalLifecycleContext
 	// so workflow lifecycle webhook payloads carry owner_name without a
@@ -60,9 +62,40 @@ type Signal struct {
 
 var (
 	_ qsignal.Signal                     = (*Signal)(nil)
+	_ qsignal.SignalWithCancel           = (*Signal)(nil)
 	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
 )
+
+// Cancel is invoked by the queue handler when the signal is cancelled
+// externally (e.g. via clear-queue). It marks the underlying workflow object as
+// cancelled so the install workflow doesn't stay in a stale in-progress state.
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+
+	s.cancelRequested = true
+
+	// Best-effort cancel the active group signal.
+	if s.activeGroupQueueSignalID != "" {
+		client.AwaitCancelSignal(cancelCtx, s.activeGroupQueueSignalID)
+	}
+
+	// Mark the workflow as finished + cancelled with durable metadata.
+	_ = workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowFinishedAtByID(cancelCtx, s.WorkflowID)
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+		ID: s.WorkflowID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusCancelled,
+			StatusHumanDescription: "workflow cancelled",
+			Metadata: map[string]any{
+				"cancel_requested_at": workflow.Now(cancelCtx).Unix(),
+			},
+		},
+	})
+
+	return nil
+}
 
 func (s *Signal) Type() qsignal.SignalType  { return SignalType }
 func (s *Signal) SleepAfter() time.Duration { return time.Second }
@@ -118,7 +151,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	}
 
 	// Resolve queue names from owner type if not explicitly set.
-	if s.StepGroupQueueName == "" || s.StepQueueName == "" || s.StepTargetQueueName == "" {
+	if s.StepGroupQueueName == "" || s.StepQueueName == "" || s.StepTargetQueueName == "" || s.GenerateStepsQueueName == "" {
 		switch s.OwnerType {
 		case "installs":
 			if s.StepGroupQueueName == "" {
@@ -130,6 +163,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "install-signals"
 			}
+			if s.GenerateStepsQueueName == "" {
+				s.GenerateStepsQueueName = "install-generate-steps"
+			}
 		case "apps":
 			if s.StepGroupQueueName == "" {
 				s.StepGroupQueueName = "app-workflow-step-groups"
@@ -140,6 +176,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "app-signals"
 			}
+			if s.GenerateStepsQueueName == "" {
+				s.GenerateStepsQueueName = "app-generate-steps"
+			}
 		case "app_branches":
 			if s.StepGroupQueueName == "" {
 				s.StepGroupQueueName = "app-branch-workflow-step-groups"
@@ -149,6 +188,9 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 			}
 			if s.StepTargetQueueName == "" {
 				s.StepTargetQueueName = "app-branch-signals"
+			}
+			if s.GenerateStepsQueueName == "" {
+				s.GenerateStepsQueueName = "app-branch-generate-steps"
 			}
 		default:
 			return s.failWorkflow(ctx, errors.Errorf("unable to resolve queue names for owner type %s", s.OwnerType))

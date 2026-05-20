@@ -37,7 +37,7 @@ The dashboard-ui is a **Go BFF + React SPA**:
 - **Data Fetching / Mutations**: TanStack Query (`useQuery`, `useMutation`)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **Build**: ESBuild + PostCSS
+- **Build**: Bun bundler + PostCSS
 
 ### Code Location (`client/`)
 - Components: `client/components/` (organized by domain; `common/` has core primitives)
@@ -301,7 +301,7 @@ Rules:
 
 ### Icons
 
-**Use the `Icon` component for ALL icons** — never import from `lucide-react`, `heroicons`, or any other package.
+**Use the `Icon` component for ALL icons** — never import from `lucide-react`, `heroicons`, or any other package. **Always use the `Icon` suffix** for variant names (e.g., `HouseIcon` not `House`).
 
 ```tsx
 // ✅ Correct
@@ -313,6 +313,11 @@ import { Search } from 'lucide-react'
 ```
 
 Browse icons at https://phosphoricons.com. Custom cloud provider icons are in the `customIcons` map in `Icon.tsx`.
+
+**Adding a new icon:** The `Icon` component uses a static map of explicitly imported Phosphor icons for tree-shaking. If you use a variant that isn't in the map, a dev-mode console warning will tell you. To add it, update `client/components/common/Icon.tsx`:
+
+1. Add the named import: `import { NewIconNameIcon } from '@phosphor-icons/react'`
+2. Add it to the `phosphorIcons` object: `NewIconNameIcon,`
 
 ### Links & Navigation
 
@@ -329,7 +334,7 @@ import { Link } from '@/components/common/Link'
 // ✅ Correct — nav button
 import { Button } from '@/components/common/Button'
 <Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
-  <Icon variant="ArrowRight" size={16} />
+  <Icon variant="ArrowRightIcon" size={16} />
 </Button>
 
 // ❌ Wrong
@@ -364,6 +369,47 @@ Tab keys are run through `toSentenceCase(camelToWords(key))` which lowercases ev
 
 Exceptions: proper nouns (AWS, Nuon, Terraform) and acronyms.
 
+## Toast Patterns
+
+### Mutation toasts (action triggered)
+
+When a mutation kicks off a long-running job (build, deploy, reprovision, etc.), show a **heading-only** toast with `theme="info"`. Use a `Badge variant="code" size="md"` for the entity name when one exists. No body copy.
+
+```tsx
+addToast(
+  <Toast
+    heading={
+      <span className="inline-flex items-center gap-1.5">
+        <Badge variant="code" size="md">{component.name}</Badge> build started
+      </span>
+    }
+    theme="info"
+  />
+)
+```
+
+For actions without a named entity (sandbox operations), use a plain string heading:
+
+```tsx
+addToast(<Toast heading="Sandbox reprovision started" theme="info" />)
+```
+
+For mutation errors use `theme="error"` with the same pattern.
+
+### Completion toasts (status transition)
+
+Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook fires a toast once when the status transitions from non-terminal to terminal (success/error). It does NOT fire if the page loads with an already-terminal status.
+
+```tsx
+useStatusToast({
+  status: build?.status_v2?.status,
+  label: build?.component_name,  // optional — shown in a Badge
+  resourceType: 'build',         // produces "build succeeded" / "build failed"
+})
+```
+
+Already wired into: `build-provider`, `deploy-provider`, `sandbox-build-provider`, `sandbox-run-provider`.
+
 ## Dates, Times & Durations
 
 **Always use [Luxon](https://moment.github.io/luxon/)** — never raw `Date` objects or manual millisecond math.
@@ -384,13 +430,13 @@ const diffMs = Date.now() - new Date(dateStr).getTime()
 ## Key Scripts
 
 ```bash
-npm run dev            # Development: esbuild watch + PostCSS + BrowserSync
-npm run build          # Production build (minified)
-npm run lint           # ESLint for the SPA
-npm run dev:ladle      # Ladle component stories
-npm test               # Vitest tests
-npx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
-npm run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
+bun run dev            # Development: bun build watch + PostCSS watch + Bun dev server (SSE live reload)
+bun run build          # Production build (minified, content-hashed assets)
+bun run lint           # ESLint for the SPA
+bun run dev:ladle      # Ladle component stories
+bun run test           # bun test (unit tests)
+bunx tsc --noEmit --project client/tsconfig.json  # Type check changed files (fast)
+bun run tsc            # Full type check — only run when explicitly asked (slow: regenerates API types)
 ```
 
 **Do NOT run** `build`, `build:js`, or `build:css` unless explicitly asked — a dev process handles builds automatically.

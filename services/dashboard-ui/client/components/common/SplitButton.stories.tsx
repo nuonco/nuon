@@ -120,7 +120,7 @@ export const WithIcons = () => (
           buttonProps={{
             children: (
               <>
-                <Icon variant="Plus" size="16" />
+                <Icon variant="PlusIcon" size="16" />
                 Create
               </>
             ),
@@ -131,16 +131,16 @@ export const WithIcons = () => (
                 <Text>Create from template</Text>
                 <Button>
                   Duplicate existing
-                  <Icon variant="Copy" size="16" />
+                  <Icon variant="CopyIcon" size="16" />
                 </Button>
                 <Button>
                   Import from file
-                  <Icon variant="Upload" size="16" />
+                  <Icon variant="UploadIcon" size="16" />
                 </Button>
                 <hr />
                 <Button>
                   Generate with AI
-                  <Icon variant="MagicWand" size="16" />
+                  <Icon variant="MagicWandIcon" size="16" />
                 </Button>
               </Menu>
             ),
@@ -153,7 +153,7 @@ export const WithIcons = () => (
           buttonProps={{
             children: (
               <>
-                <Icon variant="Download" size="16" />
+                <Icon variant="DownloadIcon" size="16" />
                 Export
               </>
             ),
@@ -164,15 +164,15 @@ export const WithIcons = () => (
                 <Text>Export formats</Text>
                 <Button>
                   Export as PDF
-                  <Icon variant="FileText" size="16" />
+                  <Icon variant="FileTextIcon" size="16" />
                 </Button>
                 <Button>
                   Export as CSV
-                  <Icon variant="FileCsv" size="16" />
+                  <Icon variant="FileCsvIcon" size="16" />
                 </Button>
                 <Button>
                   Export as ZIP
-                  <Icon variant="FileZip" size="16" />
+                  <Icon variant="FileZipIcon" size="16" />
                 </Button>
               </Menu>
             ),
@@ -185,7 +185,7 @@ export const WithIcons = () => (
           buttonProps={{
             children: (
               <>
-                <Icon variant="Share" size="16" />
+                <Icon variant="ShareIcon" size="16" />
                 Share
               </>
             ),
@@ -196,16 +196,16 @@ export const WithIcons = () => (
                 <Text>Share options</Text>
                 <Button>
                   Copy link
-                  <Icon variant="Link" size="16" />
+                  <Icon variant="LinkIcon" size="16" />
                 </Button>
                 <Button>
                   Send via email
-                  <Icon variant="Envelope" size="16" />
+                  <Icon variant="EnvelopeIcon" size="16" />
                 </Button>
                 <hr />
                 <Button>
                   Team access
-                  <Icon variant="Users" size="16" />
+                  <Icon variant="UsersIcon" size="16" />
                 </Button>
               </Menu>
             ),
@@ -246,31 +246,31 @@ export const ComplexDropdowns = () => (
                 <Text>Quick Deploy</Text>
                 <Button>
                   Deploy to staging
-                  <Icon variant="Rocket" size="16" />
+                  <Icon variant="RocketIcon" size="16" />
                 </Button>
                 <Button>
                   Deploy to production
-                  <Icon variant="CloudCheck" size="16" />
+                  <Icon variant="CloudCheckIcon" size="16" />
                 </Button>
                 <hr />
                 <Text>Advanced Options</Text>
                 <Button>
                   Custom deployment
-                  <Icon variant="Gear" size="16" />
+                  <Icon variant="GearIcon" size="16" />
                 </Button>
                 <Button>
                   Schedule deployment
-                  <Icon variant="Timer" size="16" />
+                  <Icon variant="TimerIcon" size="16" />
                 </Button>
                 <Button>
                   Deploy from branch
-                  <Icon variant="GitBranch" size="16" />
+                  <Icon variant="GitBranchIcon" size="16" />
                 </Button>
                 <hr />
                 <Text>Rollback</Text>
                 <Button variant="danger">
                   Rollback last deployment
-                  <Icon variant="ArrowCounterClockwise" size="16" />
+                  <Icon variant="ArrowCounterClockwiseIcon" size="16" />
                 </Button>
               </Menu>
             ),
@@ -287,39 +287,39 @@ export const ComplexDropdowns = () => (
                 <Text>Configuration</Text>
                 <Button>
                   Settings
-                  <Icon variant="Sliders" size="16" />
+                  <Icon variant="SlidersIcon" size="16" />
                 </Button>
                 <Button>
                   Environment variables
-                  <Icon variant="Key" size="16" />
+                  <Icon variant="KeyIcon" size="16" />
                 </Button>
                 <Button>
                   Database settings
-                  <Icon variant="Database" size="16" />
+                  <Icon variant="DatabaseIcon" size="16" />
                 </Button>
                 <hr />
                 <Text>Monitoring</Text>
                 <Button>
                   View metrics
-                  <Icon variant="ChartLine" size="16" />
+                  <Icon variant="ChartLineIcon" size="16" />
                 </Button>
                 <Button>
                   Error tracking
-                  <Icon variant="Bug" size="16" />
+                  <Icon variant="BugIcon" size="16" />
                 </Button>
                 <Button>
                   Health checks
-                  <Icon variant="Pulse" size="16" />
+                  <Icon variant="PulseIcon" size="16" />
                 </Button>
                 <hr />
                 <Text>Team</Text>
                 <Button>
                   Invite members
-                  <Icon variant="UserPlus" size="16" />
+                  <Icon variant="UserPlusIcon" size="16" />
                 </Button>
                 <Button>
                   Manage permissions
-                  <Icon variant="Crown" size="16" />
+                  <Icon variant="CrownIcon" size="16" />
                 </Button>
               </Menu>
             ),

@@ -33,7 +33,7 @@ export function parseAccountToTableData(members: TAccount[]): TTeamMemberRow[] {
 const ActionCell = ({ account }: { account: TAccount }) => (
   <Dropdown
     id={`action-${account.id}`}
-    buttonText={<Icon variant="DotsThree" size={20} weight="bold" />}
+    buttonText={<Icon variant="DotsThreeIcon" size={20} weight="bold" />}
     hideIcon
     variant="ghost"
     buttonClassName="!p-1"

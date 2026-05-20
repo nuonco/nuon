@@ -29,11 +29,12 @@ func (s *service) ClearQueue(c *gin.Context) {
 		ctx = cctx.SetOrgIDContext(ctx, *q.OrgID)
 	}
 
-	if err := s.queueClient.ClearQueue(ctx, q.ID); err != nil {
+	cancelled, err := s.queueClient.ClearQueue(ctx, q.ID)
+	if err != nil {
 		s.l.Error("failed to clear queue", zap.Error(err), zap.String("queue_id", queueID))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear queue"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": "cleared"})
+	c.JSON(http.StatusOK, gin.H{"status": "cleared", "signals_cancelled": cancelled})
 }

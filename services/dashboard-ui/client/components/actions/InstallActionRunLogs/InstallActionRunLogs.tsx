@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { LogSeverity } from '@/components/log-stream/LogSeverity'
@@ -13,31 +14,40 @@ import { cn } from '@/utils/classnames'
 interface IInstallActionRunLogs {
   actionConfig: TActionConfig
   layout?: 'vertical' | 'horizontal'
+  allLogs?: TOTELLog[]
   filteredLogs: TOTELLog[]
-  loadMore: () => void
-  hasMore: boolean
   isLoading: boolean
-  isStreamOpen: boolean
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
   filters: TLogFiltersProps
   searchParamPanel?: string | null
+  stepStatuses?: Record<string, string>
 }
 
 export const InstallActionRunLogs = ({
   actionConfig,
   layout = 'vertical',
+  allLogs,
   filteredLogs,
-  loadMore,
-  hasMore,
   isLoading,
-  isStreamOpen,
   activeLog,
   handleActiveLog,
   filters,
   searchParamPanel,
+  stepStatuses,
 }: IInstallActionRunLogs) => {
   const steps = actionConfig?.steps || []
+
+  const allLogStepCounts = useMemo(() => {
+    const source = allLogs ?? filteredLogs
+    if (!source) return {}
+    const counts: Record<string, number> = {}
+    for (const log of source) {
+      const stepName = log.log_attributes?.workflow_step_name
+      if (stepName) counts[stepName] = (counts[stepName] ?? 0) + 1
+    }
+    return counts
+  }, [allLogs, filteredLogs])
 
   const logSteps = useMemo(() => {
     if (!filteredLogs) return {}
@@ -65,15 +75,7 @@ export const InstallActionRunLogs = ({
 
   useEffect(() => {
     if (showAllLogs) return
-    if (!stepKeys.length) {
-      setActiveStep(undefined)
-      return
-    }
-    if (!activeStep) {
-      setActiveStep(stepKeys[0])
-      return
-    }
-    if (!stepKeys.includes(activeStep)) {
+    if (!activeStep && stepKeys.length) {
       setActiveStep(stepKeys[0])
     }
   }, [stepKeys, activeStep, showAllLogs])
@@ -101,7 +103,15 @@ export const InstallActionRunLogs = ({
             setActiveStep(step?.name)
           }}
         >
-          <span className="truncate">{step?.name}</span>
+          <span className="flex items-center gap-2 min-w-0 w-full">
+            {stepStatuses?.[step?.name] && (
+              <Status status={stepStatuses[step.name]} isWithoutText className="shrink-0" />
+            )}
+            <span className="truncate">{step?.name}</span>
+            {allLogStepCounts[step?.name] > 0 && (
+              <Badge size="sm" className="shrink-0">{allLogStepCounts[step.name]}</Badge>
+            )}
+          </span>
         </Button>
       ))}
       <Button
@@ -122,10 +132,8 @@ export const InstallActionRunLogs = ({
     activeStep,
     showAllLogs,
     logSteps,
-    loadMore,
-    hasMore,
+    allLogStepCounts,
     isLoading,
-    isStreamOpen,
     filteredLogs,
     activeLog,
     handleActiveLog,
@@ -148,7 +156,7 @@ export const InstallActionRunLogs = ({
 
   return (
     <div className="flex items-start flex-auto">
-      <div className="flex flex-col gap-2 w-fit md:min-w-64 pr-2 h-full">
+      <div className="flex flex-col gap-2 min-w-48 max-w-64 pr-2 h-full shrink-0">
         {stepButtons}
       </div>
       <div className="pl-2 w-full border-l">
@@ -168,10 +176,8 @@ const StepAwareLogViewer = ({
   activeStep,
   showAllLogs,
   logSteps,
-  loadMore,
-  hasMore,
+  allLogStepCounts,
   isLoading,
-  isStreamOpen,
   filteredLogs,
   activeLog,
   handleActiveLog,
@@ -181,10 +187,8 @@ const StepAwareLogViewer = ({
   activeStep?: string
   showAllLogs: boolean
   logSteps: Record<string, TOTELLog[]>
-  loadMore: () => void
-  hasMore: boolean
+  allLogStepCounts: Record<string, number>
   isLoading: boolean
-  isStreamOpen: boolean
   filteredLogs: TOTELLog[]
   activeLog: TOTELLog | undefined
   handleActiveLog: (id: string) => void
@@ -200,11 +204,21 @@ const StepAwareLogViewer = ({
     return []
   }, [showAllLogs, activeStep, logSteps, filteredLogs])
 
+  const scopedFilters = useMemo(() => {
+    if (showAllLogs) return filters
+    const selectedCount = displayLogs?.length ?? 0
+    const totalCount = activeStep ? allLogStepCounts[activeStep] ?? selectedCount : selectedCount
+    return {
+      ...filters,
+      filterStats: { selectedCount, totalCount },
+    }
+  }, [filters, displayLogs?.length, showAllLogs, activeStep, allLogStepCounts])
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col flex-auto">
         <div className="sticky bg-background border-b z-10 -top-6">
-          <LogFilters filters={filters} />
+          <LogFilters filters={scopedFilters} />
           <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
             <Text variant="subtext" weight="strong" theme="neutral">
               Severity
@@ -222,7 +236,7 @@ const StepAwareLogViewer = ({
         </div>
 
         <div className="flex flex-col divide-y">
-          {!isStreamOpen && !displayLogs?.length && isLoading ? (
+          {!displayLogs?.length && isLoading ? (
             <LogsSkeleton />
           ) : null}
 
@@ -236,22 +250,6 @@ const StepAwareLogViewer = ({
             />
           ))}
 
-          {!isStreamOpen && hasMore ? (
-            <Button
-              onClick={loadMore}
-              disabled={isLoading}
-              variant="ghost"
-              className="mx-auto mt-4"
-            >
-              {isLoading ? (
-                <>
-                  <Icon variant="Loading" /> Loading
-                </>
-              ) : (
-                <>Load more</>
-              )}
-            </Button>
-          ) : null}
         </div>
       </div>
     </div>

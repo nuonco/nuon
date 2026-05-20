@@ -3,7 +3,12 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"go.uber.org/zap"
+
+	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -46,6 +51,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 			"queues":               true,
 			"parallel-runner-jobs": true,
 		},
+		Labeled: labels.Labeled{Labels: defaultOrgLabels(h.cfg, acct)},
 	}
 	if h.cfg.ForceSandboxMode {
 		org.SandboxMode = true
@@ -95,5 +101,48 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		return nil, fmt.Errorf("unable to create org-signals queue: %w", err)
 	}
 
+	// Best-effort: failures are picked up by the periodic reconciler.
+	if h.slackAutoLinkHelper != nil {
+		if _, err := h.slackAutoLinkHelper.EnsureForOrg(ctx, org.ID); err != nil && h.logger != nil {
+			h.logger.Warn("slack auto-link on org create failed", zap.String("org_id", org.ID), zap.Error(err))
+		}
+	}
+
 	return &org, nil
+}
+
+// defaultOrgLabels seeds the configured slack-auto-link label on new orgs.
+// Returns nil when the policy is unconfigured or the creator's email domain
+// is in cfg.InternalEmailDomains.
+func defaultOrgLabels(cfg *internal.Config, acct *app.Account) labels.Labels {
+	key := cfg.SlackAutoLinkOrgLabelKey
+	if key == "" {
+		return nil
+	}
+	if isInternalEmail(acct.Email, cfg.InternalEmailDomains) {
+		return nil
+	}
+	value := cfg.SlackAutoLinkOrgLabelValue
+	if value == "" {
+		value = "true"
+	}
+	return labels.Labels{key: value}
+}
+
+func isInternalEmail(email string, domains []string) bool {
+	if email == "" || len(domains) == 0 {
+		return false
+	}
+	at := strings.LastIndex(email, "@")
+	if at < 0 || at == len(email)-1 {
+		return false
+	}
+	got := strings.ToLower(email[at+1:])
+	for _, d := range domains {
+		d = strings.ToLower(strings.TrimSpace(strings.TrimPrefix(d, "@")))
+		if d != "" && d == got {
+			return true
+		}
+	}
+	return false
 }

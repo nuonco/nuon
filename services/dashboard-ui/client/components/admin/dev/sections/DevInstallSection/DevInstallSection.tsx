@@ -58,7 +58,7 @@ export const DevInstallSection = ({
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <Icon
-              variant="Phone"
+              variant="PhoneIcon"
               size="20"
               className="text-teal-600 dark:text-teal-400"
             />
@@ -84,7 +84,7 @@ export const DevInstallSection = ({
               variant="secondary"
               disabled={!installId}
             >
-              <Icon variant="Phone" />
+              <Icon variant="PhoneIcon" />
               Send phone home
             </Button>
           </div>

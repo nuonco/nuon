@@ -2,9 +2,8 @@ export default {
   title: 'Actions/InstallActionRunLogs',
 }
 
-import type { TActionConfig, TLogStream } from '@/types'
-import type { TLogFiltersProps } from '@/hooks/use-log-filters'
-import { UnifiedLogsContext } from '@/providers/unified-logs-provider'
+import type { TActionConfig } from '@/types'
+import { useLogFilters } from '@/hooks/use-log-filters'
 import { LogStreamContext } from '@/providers/log-stream-provider'
 import { InstallActionRunLogs } from './InstallActionRunLogs'
 
@@ -23,101 +22,245 @@ const mockLogs = Array.from({ length: 5 }, (_, i) => ({
   body: `Log line ${i + 1}: running step...`,
   timestamp: new Date(Date.now() - i * 60000).toISOString(),
   severity_number: 9,
-  severity_text: 'INFO',
+  severity_text: 'Info',
   service_name: 'runner',
   scope_name: 'oteljob',
   log_attributes: { workflow_step_name: 'build' },
 })) as any
 
-const mockFilters: TLogFiltersProps = {
-  selectedSeverities: new Set(['Info', 'Warn', 'Error', 'Fatal']),
-  handleSeverityInputToggle: noop,
-  handleSeverityButtonClick: noop,
-  handleSeverityReset: noop,
-  includeSystemLogs: false,
-  handleSystemLogsToggle: noop,
-  searchQuery: '',
-  sortDirection: 'desc',
-  filteredLogs: mockLogs,
-  handleSearchChange: noop,
-  handleSortToggle: noop,
-  handleSortChange: noop,
-  filterStats: { selectedCount: 5, totalCount: 5 },
-  sortStats: { direction: 'desc', isNewestFirst: true, isOldestFirst: false },
-  severityStats: { selectedCount: 4, totalCount: 4 },
-} as unknown as TLogFiltersProps
-
-const mockLogStream: TLogStream = {
-  id: 'log-stream-1',
-  org_id: 'org-mock-001',
-  open: false,
-} as TLogStream
-
-const mockUnifiedContext = {
+const mockLogStreamContext = {
   logs: mockLogs,
+  logStreamId: 'log-stream-1',
   isLoading: false,
   error: null,
   connectionState: 'disconnected' as const,
-  loadMore: noop,
-  hasMore: false,
-  isStreamOpen: false,
 }
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
-  <LogStreamContext.Provider value={{ logStream: mockLogStream, refresh: noop }}>
-    <UnifiedLogsContext.Provider value={mockUnifiedContext}>
-      {children}
-    </UnifiedLogsContext.Provider>
+  <LogStreamContext.Provider value={mockLogStreamContext}>
+    {children}
   </LogStreamContext.Provider>
 )
 
-export const Vertical = () => (
-  <Providers>
-    <InstallActionRunLogs
-      actionConfig={mockConfig}
-      layout="vertical"
-      filteredLogs={mockLogs}
-      loadMore={noop}
-      hasMore={false}
-      isLoading={false}
-      isStreamOpen={false}
-      activeLog={undefined}
-      handleActiveLog={noop}
-      filters={mockFilters}
-    />
-  </Providers>
+const VerticalStory = () => {
+  const filters = useLogFilters(mockLogs)
+  return (
+    <Providers>
+      <InstallActionRunLogs
+        actionConfig={mockConfig}
+        layout="vertical"
+        allLogs={mockLogs}
+        filteredLogs={filters.filteredLogs ?? []}
+        isLoading={false}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+      />
+    </Providers>
+  )
+}
+export { VerticalStory as Vertical }
+
+const HorizontalStory = () => {
+  const filters = useLogFilters(mockLogs)
+  return (
+    <Providers>
+      <InstallActionRunLogs
+        actionConfig={mockConfig}
+        layout="horizontal"
+        allLogs={mockLogs}
+        filteredLogs={filters.filteredLogs ?? []}
+        isLoading={false}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+      />
+    </Providers>
+  )
+}
+export { HorizontalStory as Horizontal }
+
+const failedStepLogs = [
+  ...[0, 1, 2].map((i) => ({
+    id: `fail-build-${i}`,
+    body: `Compiling module ${i + 1}/3...`,
+    timestamp: new Date(Date.now() - (10 - i) * 60000).toISOString(),
+    severity_number: 9,
+    severity_text: 'Info',
+    service_name: 'runner',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'build' },
+  })),
+  ...[0, 1].map((i) => ({
+    id: `fail-deploy-${i}`,
+    body: i === 0 ? 'Starting deployment to cluster...' : 'Applying manifests...',
+    timestamp: new Date(Date.now() - (7 - i) * 60000).toISOString(),
+    severity_number: 9,
+    severity_text: 'Info',
+    service_name: 'runner',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'deploy' },
+  })),
+  {
+    id: 'fail-deploy-warn',
+    body: 'Warning: pod readiness check taking longer than expected',
+    timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
+    severity_number: 13,
+    severity_text: 'Warn',
+    service_name: 'runner',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'deploy' },
+  },
+  {
+    id: 'fail-deploy-err-1',
+    body: 'Error: container "app" in pod "web-abc123" CrashLoopBackOff',
+    timestamp: new Date(Date.now() - 4 * 60000).toISOString(),
+    severity_number: 17,
+    severity_text: 'Error',
+    service_name: 'runner',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'deploy' },
+  },
+  {
+    id: 'fail-deploy-err-2',
+    body: 'Fatal: deployment rollout failed — deadline exceeded',
+    timestamp: new Date(Date.now() - 3 * 60000).toISOString(),
+    severity_number: 21,
+    severity_text: 'Fatal',
+    service_name: 'runner',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'deploy' },
+  },
+] as any
+
+const failedStepConfig: TActionConfig = {
+  steps: [
+    { id: 'step-1', name: 'build', idx: 0 },
+    { id: 'step-2', name: 'deploy', idx: 1 },
+    { id: 'step-3', name: 'verify', idx: 2 },
+    { id: 'step-4', name: 'notify', idx: 3 },
+  ],
+} as TActionConfig
+
+const failedStepStatuses: Record<string, string> = {
+  build: 'success',
+  deploy: 'error',
+}
+
+const FailedProviders = ({ children }: { children: React.ReactNode }) => (
+  <LogStreamContext.Provider value={{ ...mockLogStreamContext, logs: failedStepLogs }}>
+    {children}
+  </LogStreamContext.Provider>
 )
 
-export const Horizontal = () => (
-  <Providers>
-    <InstallActionRunLogs
-      actionConfig={mockConfig}
-      layout="horizontal"
-      filteredLogs={mockLogs}
-      loadMore={noop}
-      hasMore={true}
-      isLoading={false}
-      isStreamOpen={false}
-      activeLog={undefined}
-      handleActiveLog={noop}
-      filters={mockFilters}
-    />
-  </Providers>
-)
+const FailedStepStory = () => {
+  const filters = useLogFilters(failedStepLogs)
+  return (
+    <FailedProviders>
+      <InstallActionRunLogs
+        actionConfig={failedStepConfig}
+        layout="vertical"
+        allLogs={failedStepLogs}
+        filteredLogs={filters.filteredLogs ?? []}
+        isLoading={false}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+        stepStatuses={failedStepStatuses}
+      />
+    </FailedProviders>
+  )
+}
+export { FailedStepStory as FailedStep }
 
-export const Loading = () => (
-  <Providers>
-    <InstallActionRunLogs
-      actionConfig={mockConfig}
-      layout="vertical"
-      filteredLogs={[]}
-      loadMore={noop}
-      hasMore={false}
-      isLoading={true}
-      isStreamOpen={false}
-      activeLog={undefined}
-      handleActiveLog={noop}
-      filters={{ ...mockFilters, filteredLogs: [] }}
-    />
-  </Providers>
-)
+const FailedStepHorizontalStory = () => {
+  const filters = useLogFilters(failedStepLogs)
+  return (
+    <FailedProviders>
+      <InstallActionRunLogs
+        actionConfig={failedStepConfig}
+        layout="horizontal"
+        allLogs={failedStepLogs}
+        filteredLogs={filters.filteredLogs ?? []}
+        isLoading={false}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+        stepStatuses={failedStepStatuses}
+      />
+    </FailedProviders>
+  )
+}
+export { FailedStepHorizontalStory as FailedStepHorizontal }
+
+const LoadingStory = () => {
+  const filters = useLogFilters([])
+  return (
+    <Providers>
+      <InstallActionRunLogs
+        actionConfig={mockConfig}
+        layout="vertical"
+        filteredLogs={[]}
+        isLoading={true}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+      />
+    </Providers>
+  )
+}
+export { LoadingStory as Loading }
+
+const longNameConfig: TActionConfig = {
+  steps: [
+    { id: 'step-1', name: 'alb-healthcheck-ctl-api-public', idx: 0 },
+    { id: 'step-2', name: 'alb-healthcheck-ctl-api-runner-internal', idx: 1 },
+    { id: 'step-3', name: 'short-step', idx: 2 },
+  ],
+} as TActionConfig
+
+const longNameLogs = [
+  ...Array.from({ length: 3 }, (_, i) => ({
+    id: `long-1-${i}`,
+    body: `Checking endpoint health ${i + 1}...`,
+    timestamp: new Date(Date.now() - (10 - i) * 60000).toISOString(),
+    severity_number: 9,
+    severity_text: 'Info',
+    service_name: 'action',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'alb-healthcheck-ctl-api-public' },
+  })),
+  ...Array.from({ length: 2 }, (_, i) => ({
+    id: `long-2-${i}`,
+    body: `Runner internal check ${i + 1}...`,
+    timestamp: new Date(Date.now() - (5 - i) * 60000).toISOString(),
+    severity_number: 9,
+    severity_text: 'Info',
+    service_name: 'action',
+    scope_name: 'oteljob',
+    log_attributes: { workflow_step_name: 'alb-healthcheck-ctl-api-runner-internal' },
+  })),
+] as any
+
+const LongStepNamesStory = () => {
+  const filters = useLogFilters(longNameLogs)
+  return (
+    <LogStreamContext.Provider value={{ ...mockLogStreamContext, logs: longNameLogs }}>
+      <InstallActionRunLogs
+        actionConfig={longNameConfig}
+        layout="vertical"
+        allLogs={longNameLogs}
+        filteredLogs={filters.filteredLogs ?? []}
+        isLoading={false}
+        activeLog={undefined}
+        handleActiveLog={noop}
+        filters={filters}
+        stepStatuses={{
+          'alb-healthcheck-ctl-api-public': 'success',
+          'alb-healthcheck-ctl-api-runner-internal': 'in-progress',
+        }}
+      />
+    </LogStreamContext.Provider>
+  )
+}
+export { LongStepNamesStory as LongStepNames }

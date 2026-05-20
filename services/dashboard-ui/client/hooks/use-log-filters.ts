@@ -9,8 +9,8 @@ type SortDirection = 'asc' | 'desc'
 // URL-backed filter state. Multi-value params (severity) are repeated in
 // the URL, e.g. ?severity=Info&severity=Warn. Single-value params
 // (tool, helm.release_name, k8s.kind, system_logs, etc.) appear once.
-// System logs (scope=system) are hidden by default; the user opts in
-// via the "Include system logs" toggle (?system_logs=true).
+// System logs (scope=system) are shown by default; the user opts out
+// via the "Include system logs" toggle (?system_logs=false).
 const PARAM_SEVERITY = 'severity'
 const PARAM_TOOL = 'tool'
 const PARAM_HELM_RELEASE = 'helm_release_name'
@@ -24,9 +24,7 @@ const PARAM_BODY = 'q'
 const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
 // Span / trace cross-link from the trace tab. SSE delivers every log on the
-// stream regardless of server filter, so we always have to apply these
-// client-side for the cross-link to feel snappy. The static-fetch path
-// (useLogServerFilters) also forwards these to ctl-api.
+// stream, so we apply these filters client-side.
 const PARAM_SPAN_ID = 'span_id'
 const PARAM_TRACE_ID = 'trace_id'
 
@@ -72,7 +70,7 @@ export const useLogFilters = <T extends TOTELLog>(
     return new Set(fromURL)
   }, [searchParams])
   const severityIsDefault = searchParams.getAll(PARAM_SEVERITY).length === 0
-  const includeSystemLogs = searchParams.get(PARAM_SYSTEM_LOGS) === 'true'
+  const includeSystemLogs = searchParams.get(PARAM_SYSTEM_LOGS) !== 'false'
   const tool = searchParams.get(PARAM_TOOL) || ''
   const helmReleaseName = searchParams.get(PARAM_HELM_RELEASE) || ''
   const helmOperation = searchParams.get(PARAM_HELM_OPERATION) || ''
@@ -291,14 +289,14 @@ export const useLogFilters = <T extends TOTELLog>(
   )
   const handleSystemLogsToggle = useCallback(() => {
     updateParams((next) => {
-      if (includeSystemLogs) next.delete(PARAM_SYSTEM_LOGS)
-      else next.set(PARAM_SYSTEM_LOGS, 'true')
+      if (includeSystemLogs) next.set(PARAM_SYSTEM_LOGS, 'false')
+      else next.delete(PARAM_SYSTEM_LOGS)
     })
   }, [includeSystemLogs, updateParams])
 
   const isFiltered =
     !severityIsDefault ||
-    includeSystemLogs ||
+    !includeSystemLogs ||
     !!tool ||
     !!helmReleaseName ||
     !!helmOperation ||

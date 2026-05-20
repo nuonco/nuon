@@ -259,9 +259,9 @@ export const EditInputsButton = ({
       onClick={handleClick}
       {...props}
     >
-      {props?.isMenuButton ? null : <Icon variant="PencilSimpleLine" />}
+      {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
       {showNameField ? 'Edit install' : 'Edit inputs'}
-      {props?.isMenuButton ? <Icon variant="PencilSimpleLine" /> : null}
+      {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" /> : null}
     </Button>
   )
 }

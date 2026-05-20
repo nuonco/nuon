@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -8,7 +9,37 @@ import type {
   TPolicyAnalyticsTimeseries,
 } from '@/types'
 import { BreakdownChart } from './BreakdownChart'
+import {
+  CHART_SERIES_FAIL,
+  CHART_SERIES_PASS,
+  CHART_SERIES_WARN,
+} from './chart-theme'
+import { ChartLegend } from './ChartLegend'
 import { PolicyAnalyticsChart } from './PolicyAnalyticsChart'
+
+const TIMESERIES_LEGEND = [
+  { color: CHART_SERIES_FAIL, label: 'Denied' },
+  { color: CHART_SERIES_WARN, label: 'Warnings' },
+  { color: CHART_SERIES_PASS, label: 'Passed' },
+]
+
+/**
+ * Compute the largest stacked-bar total across every breakdown so all three
+ * BreakdownCharts share a single X-axis scale and bars are visually
+ * comparable from one chart to the next.
+ */
+function computeSharedXMax(
+  ...breakdowns: (TPolicyAnalyticsBreakdown | undefined)[]
+): number {
+  let max = 0
+  for (const b of breakdowns) {
+    for (const e of b?.entries ?? []) {
+      const total = (e.denies ?? 0) + (e.warns ?? 0) + (e.passes ?? 0)
+      if (total > max) max = total
+    }
+  }
+  return Math.max(max, 1)
+}
 
 const RANGE_OPTIONS = ['2h', '24h', '7d', '30d', '90d', '1y'] as const
 
@@ -65,6 +96,11 @@ export const PolicyAnalytics = ({
   selectedRange,
   onRangeChange,
 }: IPolicyAnalytics) => {
+  const breakdownXMax = useMemo(
+    () => computeSharedXMax(byPolicy, byInstall, byOwnerType),
+    [byPolicy, byInstall, byOwnerType]
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center gap-2">
@@ -146,16 +182,19 @@ export const PolicyAnalytics = ({
         )}
       </div>
 
-      <Card className="!p-0 overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
+      <Card className="!p-0">
+        <div className="flex items-center justify-between gap-4 flex-wrap p-4 border-b border-cool-grey-200 dark:border-dark-grey-600">
           <Text weight="strong" variant="body">
             Evaluations over time
           </Text>
-          {timeseries?.interval && (
-            <Text variant="subtext" theme="neutral">
-              {formatInterval(timeseries.interval)}
-            </Text>
-          )}
+          <div className="flex items-center gap-4 flex-wrap">
+            <ChartLegend items={TIMESERIES_LEGEND} />
+            {timeseries?.interval && (
+              <Text variant="subtext" theme="neutral">
+                {formatInterval(timeseries.interval)}
+              </Text>
+            )}
+          </div>
         </div>
         <div className="p-4">
           {isLoading ? (
@@ -167,24 +206,30 @@ export const PolicyAnalytics = ({
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="!p-0">
           <BreakdownChart
             breakdown={byPolicy}
             title="Violations by policy"
             formatLabel={(key) => policyNames[key] ?? key}
+            xMax={breakdownXMax}
           />
         </Card>
-        <Card>
+        <Card className="!p-0">
           <BreakdownChart
             breakdown={byInstall}
             title="Violations by install"
             formatLabel={(key) => installNames[key] ?? key}
+            xMax={breakdownXMax}
           />
         </Card>
       </div>
 
-      <Card>
-        <BreakdownChart breakdown={byOwnerType} title="Evaluations by stage" />
+      <Card className="!p-0">
+        <BreakdownChart
+          breakdown={byOwnerType}
+          title="Evaluations by stage"
+          xMax={breakdownXMax}
+        />
       </Card>
     </div>
   )

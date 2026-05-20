@@ -32,12 +32,28 @@ type SignalWithRetryCount interface {
 	SetRetryCount(retryIndex, groupRetryIndex int)
 }
 
-// SignalWithCloneSteps is implemented by signals whose steps require prerequisite
-// steps when retried. For example, an apply signal may return a plan step + apply step
-// so that retrying an apply re-runs the plan first.
-type SignalWithCloneSteps interface {
-	CloneSteps(originalStepName string) []CloneStepDef
+// SignalWithClone is the unified clone interface for retry. When a step is
+// cloned for retry (either individual retry or group retry), the clone
+// machinery calls Clone() if implemented. The signal returns one or more
+// CloneStepDef entries:
+//
+//   - Plan signals return a single entry with a clean copy (e.g., DeployID reset)
+//   - Apply signals return multiple entries (plan + apply) so retrying an apply
+//     re-runs the plan first
+//
+// Clone() is also responsible for cleaning up old targets (e.g., marking the
+// old deploy as retried). Signals that don't implement this interface are
+// copied verbatim as a single step.
+//
+// The stepName parameter is the original step name (with retry suffixes stripped),
+// used by multi-step clones to derive human-readable names.
+type SignalWithClone interface {
+	Clone(ctx workflow.Context, stepName string) ([]CloneStepDef, error)
 }
+
+// SignalWithCloneSteps is the old name for SignalWithClone. Keeping as an alias
+// so grep for the old name still finds the right type.
+type SignalWithCloneSteps = SignalWithClone
 
 // SignalWithMaxRetries is implemented by signals that declare a custom maximum retry count.
 // If not implemented, the default max retry count (DefaultMaxRetries) is used.
@@ -99,6 +115,22 @@ type SignalWithPolicyEvaluation interface {
 	RequiresPolicyEvaluation() bool
 }
 
+// SignalWithSkipNoops is implemented by plan signals that can control whether
+// noop plans are auto-skipped. When SkipNoops returns false, noop plans proceed
+// through the normal approval flow instead of being auto-skipped.
+// If not implemented, noops are always auto-skipped (backward compatible).
+type SignalWithSkipNoops interface {
+	SkipNoops(ctx workflow.Context) bool
+}
+
+// SignalWithAutoApproveOnPoliciesPassing is implemented by plan signals that
+// should be auto-approved when all policies pass (no deny violations). The
+// policy check calls this after evaluation — if it returns true and there are
+// no deny violations, the step is auto-approved without waiting for user input.
+type SignalWithAutoApproveOnPoliciesPassing interface {
+	AutoApproveOnPoliciesPassing(ctx workflow.Context) bool
+}
+
 // ---------------------------------------------------------------------------
 // Step Lifecycle
 // ---------------------------------------------------------------------------
@@ -121,8 +153,9 @@ type SignalWithOnApprove interface {
 	OnApprove(ctx workflow.Context) error
 }
 
-// SignalWithOnRetry is called when an approval step receives a "retry plan" response.
-// Signals can implement this to perform cleanup or preparation before the retry clone is created.
+// SignalWithOnRetry is called on any retry (auto or manual) before the step is
+// cloned. Signals implement this to update the target object's status (e.g. mark
+// the deploy or sandbox run as "retried") so the UI reflects the retry immediately.
 type SignalWithOnRetry interface {
 	OnRetry(ctx workflow.Context) error
 }
@@ -139,6 +172,21 @@ type SignalWithOnSkip interface {
 // Signals can implement this to perform cleanup when approval is denied.
 type SignalWithOnDeny interface {
 	OnDeny(ctx workflow.Context) error
+}
+
+// ---------------------------------------------------------------------------
+// Approval Validation
+// ---------------------------------------------------------------------------
+
+// SignalWithApprovalValidation is implemented by plan signals that can check
+// whether their plan has been superseded by a newer deploy or sandbox run.
+// Called as a post-approval response check — if the plan is superseded, the
+// step is auto-retried so a fresh plan is generated.
+//
+// The signal looks up its own run/deploy record and checks whether anything
+// newer exists for the same target from a different workflow.
+type SignalWithApprovalValidation interface {
+	ValidateApproval(ctx workflow.Context) error
 }
 
 // SignalWithSkipGroup is implemented by signals that want a "skip" approval
@@ -171,6 +219,16 @@ type SignalWithFetchSteps interface {
 // activity in the queue dispatcher. If not implemented, the default (2 hours) is used.
 type SignalWithTimeout interface {
 	Timeout() time.Duration
+}
+
+// SignalWithMaxInFlightAge is implemented by signals that should not be deduped
+// indefinitely. When EmitSignal finds an in-flight signal (queued or in-progress)
+// for the same emitter older than this age, the stale signal is marked failed
+// and a fresh one is emitted. Without this interface, in-flight signals dedup
+// forever — fine for user-awaited signals (recoverable via AwaitSignal fallback),
+// but a permanent block for fire-and-forget emitter signals like health checks.
+type SignalWithMaxInFlightAge interface {
+	MaxInFlightAge() time.Duration
 }
 
 // ---------------------------------------------------------------------------

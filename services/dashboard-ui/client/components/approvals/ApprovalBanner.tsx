@@ -49,6 +49,7 @@ export const ApprovalBanner = ({ step }: IApprovalBanner) => {
   const { hasResponded } = useRespondedApprovals()
 
   return step?.approval?.response ||
+    step?.approval?.type === 'approve-all' ||
     step?.status?.status === 'auto-skipped' ||
     step?.status?.status === 'cancelled' ||
     hasResponded(step?.id) ? (

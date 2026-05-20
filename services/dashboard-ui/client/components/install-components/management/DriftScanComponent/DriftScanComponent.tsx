@@ -50,7 +50,7 @@ export const DriftScanComponentModal = ({
             weight="strong"
             theme="info"
           >
-            <Icon variant="Scan" size="24" />
+            <Icon variant="ScanIcon" size="24" />
             Drift scan {component.name} component
           </Text>
           <Text
@@ -73,7 +73,7 @@ export const DriftScanComponentModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="MagnifyingGlass" />
+            <Icon variant="MagnifyingGlassIcon" />
             Drift scan build
           </span>
         ),

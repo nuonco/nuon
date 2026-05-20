@@ -69,7 +69,7 @@ export const ContentTypes = () => (
       <h4 className="text-sm font-medium">Information Card</h4>
       <Card>
         <div className="flex items-center gap-2">
-          <Icon variant="Info" size="20" />
+          <Icon variant="InfoIcon" size="20" />
           <Text variant="h3" weight="stronger">
             System Status
           </Text>
@@ -219,7 +219,7 @@ export const LayoutPatterns = () => (
       <h4 className="text-sm font-medium">Card Grid</h4>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <Icon variant="Database" size="24" />
+          <Icon variant="DatabaseIcon" size="24" />
           <Text variant="base" weight="strong">
             Database
           </Text>
@@ -228,7 +228,7 @@ export const LayoutPatterns = () => (
           </Text>
         </Card>
         <Card>
-          <Icon variant="Gear" size="24" />
+          <Icon variant="GearIcon" size="24" />
           <Text variant="base" weight="strong">
             Settings
           </Text>
@@ -237,7 +237,7 @@ export const LayoutPatterns = () => (
           </Text>
         </Card>
         <Card>
-          <Icon variant="ChartBar" size="24" />
+          <Icon variant="ChartBarIcon" size="24" />
           <Text variant="base" weight="strong">
             Analytics
           </Text>
@@ -279,7 +279,7 @@ export const LayoutPatterns = () => (
                 size="sm"
                 className="w-full justify-start"
               >
-                <Icon variant="Plus" size="16" />
+                <Icon variant="PlusIcon" size="16" />
                 Create New
               </Button>
               <Button
@@ -287,7 +287,7 @@ export const LayoutPatterns = () => (
                 size="sm"
                 className="w-full justify-start"
               >
-                <Icon variant="Upload" size="16" />
+                <Icon variant="UploadIcon" size="16" />
                 Import Data
               </Button>
             </div>

@@ -41,6 +41,7 @@ const (
 	InstallDeployStatusAutoSkipped     InstallDeployStatus = "auto-skipped"
 	InstallDeployStatusNoDrift         InstallDeployStatus = "no-drift"
 	InstallDeployApprovalDenied        InstallDeployStatus = "approval-denied"
+	InstallDeployStatusRetried         InstallDeployStatus = "retried"
 )
 
 type InstallDeploy struct {
@@ -78,6 +79,12 @@ type InstallDeploy struct {
 	// Role to be used when running this component
 	Role string `json:"role,omitempty" gorm:"column:role"`
 
+	// PlannedAt is set when the plan runner job completes successfully.
+	PlannedAt *time.Time `json:"planned_at,omitzero" gorm:"default null" temporaljson:"planned_at,omitzero,omitempty"`
+
+	// AppliedAt is set when the apply runner job completes successfully.
+	AppliedAt *time.Time `json:"applied_at,omitzero" gorm:"default null" temporaljson:"applied_at,omitzero,omitempty"`
+
 	Status            InstallDeployStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string              `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	Type              InstallDeployType   `json:"install_deploy_type,omitzero" temporaljson:"type,omitzero,omitempty"`
@@ -105,6 +112,12 @@ func (c *InstallDeploy) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &InstallDeploy{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &InstallDeploy{}, "install_component_id"),
+			Columns: []string{
+				"install_component_id",
 			},
 		},
 	}

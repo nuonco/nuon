@@ -92,6 +92,7 @@ func init() {
 	config.RegisterDefault("temporal_workflow_failure_panic", false)
 	config.RegisterDefault("temporal_disable_registration_aliasing", false)
 	config.RegisterDefault("temporal_sticky_workflow_cache_size", 40000)
+	config.RegisterDefault("temporal_sticky_schedule_to_start_timeout", "5s")
 
 	config.RegisterDefault("action_crons_enabled", false)
 
@@ -104,7 +105,7 @@ func init() {
 	config.RegisterDefault("queue_idle_timeout", "10m")
 
 	// queue continue-as-new hint period: how often the CAN listener checks for restart hints
-	config.RegisterDefault("queue_continue_as_new_hint_period", "10m")
+	config.RegisterDefault("queue_continue_as_new_hint_period", "1m")
 
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
@@ -114,6 +115,14 @@ func init() {
 
 	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
 	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
+
+	// Slack auto-link: empty TeamID or empty OrgLabelKey disables the feature.
+	config.RegisterDefault("slack_auto_link_team_id", "")
+	config.RegisterDefault("slack_auto_link_channel_id", "")
+	config.RegisterDefault("slack_auto_link_org_label_key", "")
+	config.RegisterDefault("slack_auto_link_org_label_value", "")
+
+	config.RegisterDefault("internal_email_domains", []string{})
 
 	// Nuon Auth Service Configs
 	config.RegisterDefault("nuon_auth_session_key", "insecure-session-key-for-dev-giqi8x82Ti2+qTQ5ofpazomHkQPSnMY")
@@ -125,6 +134,9 @@ func init() {
 	// Blob storage configuration
 	config.RegisterDefault("blob_storage_bucket", "nuon-dev")
 	config.RegisterDefault("blob_storage_region", "us-west-2")
+
+	// Flow check thresholds
+	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
 }
 
 type Config struct {
@@ -184,11 +196,12 @@ type Config struct {
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
 
 	// temporal configuration
-	TemporalHost                          string `config:"temporal_host"  validate:"required"`
-	TemporalStickyWorkflowCacheSize       int    `config:"temporal_sticky_workflow_cache_size"`
-	TemporalDataConverterLargePayloadSize int    `config:"temporal_dataconverter_large_payload_size"`
-	TemporalWorkflowFailurePanic          bool   `config:"temporal_workflow_failure_panic"`
-	TemporalDisableRegistrationAliasing   bool   `config:"temporal_disable_registration_aliasing"`
+	TemporalHost                          string        `config:"temporal_host"  validate:"required"`
+	TemporalStickyWorkflowCacheSize       int           `config:"temporal_sticky_workflow_cache_size"`
+	TemporalDataConverterLargePayloadSize int           `config:"temporal_dataconverter_large_payload_size"`
+	TemporalWorkflowFailurePanic          bool          `config:"temporal_workflow_failure_panic"`
+	TemporalDisableRegistrationAliasing   bool          `config:"temporal_disable_registration_aliasing"`
+	TemporalStickyScheduleToStartTimeout  time.Duration `config:"temporal_sticky_schedule_to_start_timeout"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`
@@ -348,6 +361,9 @@ type Config struct {
 	// Queue continue-as-new hint period: how often the CAN listener checks for restart hints
 	QueueContinueAsNewHintPeriod time.Duration `config:"queue_continue_as_new_hint_period"`
 
+	// Queue continue-as-new history max: trigger CAN when workflow history exceeds this length
+	QueueContinueAsNewHistoryMax int `config:"queue_continue_as_new_history_max"`
+
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
 
@@ -356,9 +372,23 @@ type Config struct {
 	EventLoopGeneralPurgeStaleDataCron        string        `config:"event_loop_general_purge_stale_data_cron"`
 	EventLoopGeneralPurgeStaleDataDurationAgo time.Duration `config:"event_loop_general_purge_stale_data_duration_ago" validate:"required"`
 
+	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
+	// ChannelID is optional and seeds a default org-wide subscription per link.
+	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`
+	SlackAutoLinkChannelID     string `config:"slack_auto_link_channel_id"`
+	SlackAutoLinkOrgLabelKey   string `config:"slack_auto_link_org_label_key"`
+	SlackAutoLinkOrgLabelValue string `config:"slack_auto_link_org_label_value"`
+
+	// InternalEmailDomains: creator emails matching these skip the default
+	// slack-auto-link label seeding in CreateOrg.
+	InternalEmailDomains []string `config:"internal_email_domains"`
+
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+
+	// Flow check thresholds
+	StalePlanThreshold string `config:"stale_plan_threshold"`
 }
 
 func (c *Config) IsAWS() bool {

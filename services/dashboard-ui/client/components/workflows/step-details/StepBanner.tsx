@@ -28,6 +28,7 @@ export const StepBanner = ({
   )
   const isTerminal =
     stepStatus === 'error' ||
+    stepStatus === 'failed-pending-retry' ||
     stepStatus === 'cancelled' ||
     stepStatus === 'discarded'
   const { hasViolations: hasPolicyViolations, hasPolicyData, passedCount } =
@@ -45,7 +46,7 @@ export const StepBanner = ({
               <Text variant="subtext" theme="neutral">
                 {bannerCfg.copy}
               </Text>
-              {stepStatus === 'error' && statusDescription ? (
+              {(stepStatus === 'error' || stepStatus === 'failed-pending-retry') && statusDescription ? (
                 <Text variant="subtext" theme="error">
                   {statusDescription}
                 </Text>
@@ -55,7 +56,7 @@ export const StepBanner = ({
             <div className="flex items-end gap-4">
               {onViewDetails ? (
                 <Button variant="ghost" size="md" onClick={onViewDetails}>
-                  View details <Icon variant="CaretRight" />
+                  View details <Icon variant="CaretRightIcon" />
                 </Button>
               ) : null}
               {bannerCfg.theme === 'error' ? (

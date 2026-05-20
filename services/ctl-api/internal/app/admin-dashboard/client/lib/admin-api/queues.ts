@@ -39,11 +39,17 @@ export const getQueueEmitterDetail = (queueId: string, emitterId: string) =>
 export const getSignalGraph = (queueId: string, signalId: string, depth = 1) =>
   api<{ graph: any; temporal_ui_url: string }>({ path: `queues/${queueId}/signals/${signalId}/graph`, params: { depth } })
 
-export const restartQueue = (id: string) =>
-  api<{ status: string }>({ path: `queues/${id}/restart`, method: 'POST' })
+export const hintRestartQueue = (id: string) =>
+  api<{ status: string }>({ path: `queues/${id}/hint-restart`, method: 'POST' })
 
 export const forceRestartQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/force-restart`, method: 'POST' })
+
+export const checkCANQueue = (id: string) =>
+  api<{ workflow_type: string; namespace: string; history_length: number; history_max: number; hint_requested: boolean; restarting: boolean }>({
+    path: `queues/${id}/check-can`,
+    method: 'POST',
+  })
 
 export const clearQueue = (id: string) =>
   api<{ status: string }>({ path: `queues/${id}/clear`, method: 'POST' })
@@ -51,5 +57,23 @@ export const clearQueue = (id: string) =>
 export const directExecuteSignal = (queueId: string, signalId: string) =>
   api<{ status: string; queue_signal_id: string }>({
     path: `queues/${queueId}/signals/${signalId}/direct-execute`,
+    method: 'POST',
+  })
+
+export const reEnqueueSignal = (queueId: string, signalId: string) =>
+  api<{ status: string; queue_signal_id: string }>({
+    path: `queues/${queueId}/signals/${signalId}/re-enqueue`,
+    method: 'POST',
+  })
+
+export const fullSweep = () =>
+  api<{ enqueued: number; errors: number; duration_ms: number }>({
+    path: 'enqueuer/full-sweep',
+    method: 'POST',
+  })
+
+export const flushLostSignals = () =>
+  api<{ status: string; flushed: number }>({
+    path: 'enqueuer/flush-lost-signals',
     method: 'POST',
   })

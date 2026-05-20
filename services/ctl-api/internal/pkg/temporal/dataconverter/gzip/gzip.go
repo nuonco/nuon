@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -19,6 +20,12 @@ import (
 
 var _ converter.PayloadCodec = (*dataConverter)(nil)
 
+var gzipWriterPool = sync.Pool{
+	New: func() any {
+		return gzip.NewWriter(nil)
+	},
+}
+
 type dataConverter struct {
 	cfg *internal.Config
 	l   *zap.Logger
@@ -26,8 +33,6 @@ type dataConverter struct {
 }
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
-	// TODO(fd): add a gauge or similar to determine how many where actually encoded
-	// TODO(fd): add a tag for success/failure based on whether or not an error was returned
 	startTime := time.Now()
 	tags := []string{"format:gzip", "op:encode"}
 	defer func() {
@@ -44,19 +49,25 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			continue
 		}
 
-		// Compress the payload data
 		var buf bytes.Buffer
-		gzipWriter := gzip.NewWriter(&buf)
+		buf.Grow(len(payload.Data))
 
-		if _, err := gzipWriter.Write(payload.Data); err != nil {
+		gzipWriter := gzipWriterPool.Get().(*gzip.Writer)
+		gzipWriter.Reset(&buf)
+
+		_, err := gzipWriter.Write(payload.Data)
+		if err != nil {
+			gzipWriterPool.Put(gzipWriter)
 			return nil, fmt.Errorf("failed to write gzip data: %w", err)
 		}
 
 		if err := gzipWriter.Close(); err != nil {
+			gzipWriterPool.Put(gzipWriter)
 			return nil, fmt.Errorf("failed to close gzip writer: %w", err)
 		}
 
-		// Create new payload with compressed data
+		gzipWriterPool.Put(gzipWriter)
+
 		result[i] = &commonpb.Payload{
 			Metadata: map[string][]byte{
 				converter.MetadataEncoding: []byte("binary/gzip"),
@@ -64,7 +75,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			Data: buf.Bytes(),
 		}
 
-		// Preserve original metadata if exists
 		for k, v := range payload.Metadata {
 			if k != converter.MetadataEncoding {
 				result[i].Metadata[k] = v
@@ -89,33 +99,28 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 	result := make([]*commonpb.Payload, len(payloads))
 
 	for i, payload := range payloads {
-		// Check if payload is gzip encoded
 		if string(payload.Metadata[converter.MetadataEncoding]) != "binary/gzip" {
-			// Not gzip encoded, return as-is
 			result[i] = payload
 			continue
 		}
 
-		// Decompress the payload data
 		reader := bytes.NewReader(payload.Data)
 		gzipReader, err := gzip.NewReader(reader)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
 		}
-		defer gzipReader.Close()
 
 		decompressed, err := io.ReadAll(gzipReader)
+		gzipReader.Close()
 		if err != nil {
 			return nil, fmt.Errorf("failed to read decompressed data: %w", err)
 		}
 
-		// Create new payload with decompressed data
 		result[i] = &commonpb.Payload{
 			Metadata: make(map[string][]byte),
 			Data:     decompressed,
 		}
 
-		// Copy all metadata except the encoding
 		if payload.Metadata != nil {
 			for k, v := range payload.Metadata {
 				if k != converter.MetadataEncoding {
@@ -124,7 +129,6 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			}
 		}
 
-		// Restore original encoding if it was preserved
 		if originalEncoding, ok := payload.Metadata["original-encoding"]; ok {
 			result[i].Metadata[converter.MetadataEncoding] = originalEncoding
 		}

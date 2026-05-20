@@ -118,6 +118,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 	{
 		// global org operations
 		orgs.GET("", s.GetAllOrgs)
+		orgs.GET("/details", s.AdminListOrgsDetails)
 		orgs.GET("/admin-get", s.AdminGetOrg)
 		orgs.POST("/admin-delete-canarys", s.AdminDeleteCanaryOrgs)
 		orgs.POST("/admin-delete-integrations", s.AdminDeleteIntegrationOrgs)
@@ -151,8 +152,11 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.POST("/admin-forget", s.AdminForgetOrg)
 			org.POST("/admin-force-sandbox-mode", s.AdminForceSandboxMode)
 			org.POST("/admin-restart-queues", s.RestartOrgQueues)
+			org.POST("/admin-force-restart-queues", s.ForceRestartOrgQueues)
 			org.POST("/admin-migrate-queues", s.AdminMigrateOrgQueues)
 			org.POST("/admin-restart-runners", s.AdminRestartRunners)
+			org.POST("/admin-graceful-shutdown-processes", s.AdminGracefulShutdownOrgRunnerProcesses)
+			org.POST("/admin-force-shutdown-processes", s.AdminForceShutdownOrgRunnerProcesses)
 			org.POST("/admin-labels", s.AdminAddOrgLabels)
 			org.DELETE("/admin-labels", s.AdminRemoveOrgLabels)
 			org.PATCH("/admin-features", s.AdminUpdateOrgFeatures)

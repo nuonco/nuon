@@ -1,5 +1,4 @@
 import { Outlet, useParams, useMatch } from 'react-router'
-import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -8,6 +7,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
+import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
@@ -44,60 +44,60 @@ const navLinks: TNavItem[] = [
   { type: 'section', label: 'Overview' },
   {
     path: `/`,
-    iconVariant: 'HouseSimple' as const,
+    iconVariant: 'HouseSimpleIcon' as const,
     text: 'Overview',
   },
   {
     path: `/workflows`,
-    iconVariant: 'TreeStructure' as const,
+    iconVariant: 'TreeStructureIcon' as const,
     text: 'Workflows',
   },
   { type: 'section', label: 'App' },
   {
     path: `/components`,
-    iconVariant: 'Cards' as const,
+    iconVariant: 'CardsIcon' as const,
     text: 'Components',
   },
   {
     path: '/sandbox',
-    iconVariant: 'ShippingContainer' as const,
+    iconVariant: 'ShippingContainerIcon' as const,
     text: 'Sandbox',
   },
   {
     path: `/roles`,
-    iconVariant: 'FileLock' as const,
+    iconVariant: 'FileLockIcon' as const,
     text: 'Roles',
   },
   {
     path: `/actions`,
-    iconVariant: 'TerminalWindow' as const,
+    iconVariant: 'TerminalWindowIcon' as const,
     text: 'Actions',
   },
   { type: 'section', label: 'Customer' },
   {
     path: `/stacks`,
-    iconVariant: 'Stack' as const,
+    iconVariant: 'StackIcon' as const,
     text: 'Stacks',
   },
   {
     path: `/policies`,
-    iconVariant: 'ShieldCheck' as const,
+    iconVariant: 'ShieldCheckIcon' as const,
     text: 'Policy reports',
   },
   {
     path: `/inputs`,
-    iconVariant: 'ListChecks' as const,
+    iconVariant: 'ListChecksIcon' as const,
     text: 'Current inputs',
   },
   {
     path: `/state`,
-    iconVariant: 'CodeBlock' as const,
+    iconVariant: 'CodeBlockIcon' as const,
     text: 'View state',
   },
   { type: 'section', label: 'Advanced' },
   {
     path: `/runner`,
-    iconVariant: 'SneakerMove' as const,
+    iconVariant: 'SneakerMoveIcon' as const,
     text: 'Install runner',
   },
 ]
@@ -177,29 +177,12 @@ const InstallTemplate = () => {
               </div>
             </div>
             {install?.drifted_objects?.length ? (
-              <div className="self-center flex flex-col gap-2">
-                <Text theme="warn">
-                  <span className="flex items-center gap-2">
-                    <Icon variant="WarningIcon" weight="bold" />
-                    Drift detected
-                  </span>
-                </Text>
-                <div className="self-center flex items-center gap-6">
-                  {install?.drifted_objects?.map((drift) => (
-                    <Badge size="sm" theme="warn" key={drift?.target_id}>
-                      Drifted:{' '}
-                      <Link
-                        href={`/${org.id}/installs/${install?.id}/workflows/${drift?.install_workflow_id}`}
-                        className="!leading-none"
-                      >
-                        {drift?.target_type === 'install_deploy'
-                          ? drift?.component_name
-                          : 'Sandbox'}
-                      </Link>
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <DriftedSummary
+                className="mt-4"
+                orgId={org.id}
+                installId={install.id}
+                driftedObjects={install.drifted_objects}
+              />
             ) : null}
           </PageHeader>
           <PageContent className="border-t" variant="row">

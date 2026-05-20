@@ -34,7 +34,7 @@ export const ForgetModal = ({
           weight="strong"
           theme="error"
         >
-          <Icon variant="Trash" size="24" />
+          <Icon variant="TrashIcon" size="24" />
           Forget {installName}
         </Text>
       }
@@ -45,7 +45,7 @@ export const ForgetModal = ({
           </span>
         ) : (
           <span className="flex items-center gap-2">
-            <Icon variant="Trash" />
+            <Icon variant="TrashIcon" />
             Forget install
           </span>
         ),

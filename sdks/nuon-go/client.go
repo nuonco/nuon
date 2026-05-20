@@ -48,6 +48,7 @@ type Client interface {
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxLatestConfig(ctx context.Context, appID string) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxConfigs(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxConfig, bool, error)
+	GetAppSandboxBuilds(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxBuild, bool, error)
 
 	// app runner config methods
 	CreateAppRunnerConfig(ctx context.Context, appID string, req *models.ServiceCreateAppRunnerConfigRequest) (*models.AppAppRunnerConfig, error)
@@ -172,6 +173,7 @@ type Client interface {
 
 	// workflows
 	GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error)
+	GetInstallWorkflows(ctx context.Context, installID string, query *GetInstallWorkflowsQuery) ([]*models.AppWorkflow, bool, error)
 	GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error)
 	GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error)
 	GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error)
@@ -181,6 +183,10 @@ type Client interface {
 	GetWorkflowStepApprovalContents(ctx context.Context, workflowID string, workflowStepID string, workflowApprovalID string) (interface{}, error)
 	RetryWorkflowStep(ctx context.Context, workflowID, stepID string, req *models.ServiceRetryWorkflowStepRequest) error
 
+	// org-level workflow queries
+	GetOrgWorkflows(ctx context.Context, query *GetOrgWorkflowsQuery) ([]*models.AppWorkflow, error)
+	GetOrgPendingApprovals(ctx context.Context) ([]*models.AppWorkflowStepApproval, error)
+
 	// install runner
 	GetInstallRunnerGroup(ctx context.Context, installID string) (*models.AppRunnerGroup, error)
 
@@ -188,6 +194,13 @@ type Client interface {
 	RunnerMngRestart(ctx context.Context, runnerID string) error
 	RunnerMngShutDown(ctx context.Context, runnerID string) error
 	RunnerMngVMShutDown(ctx context.Context, runnerID string) error
+
+	// runner queries
+	GetRunnerCardDetails(ctx context.Context, runnerID string) (*models.ServiceRunnerCardDetailsResponse, error)
+	GetRunnerJobs(ctx context.Context, runnerID string, groups string, limit int64) ([]*models.AppRunnerJob, error)
+	ListRunnerProcesses(ctx context.Context, runnerID string, status string, limit int64) ([]*models.AppRunnerProcess, error)
+	GetLatestRunnerHeartBeats(ctx context.Context, runnerID string) (models.ServiceLatestRunnerHeartBeats, error)
+	GetRunnerRecentHealthChecks(ctx context.Context, runnerID string, processID string) ([]*models.AppRunnerHealthCheck, error)
 
 	// runner job plan
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)

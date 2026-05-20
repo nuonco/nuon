@@ -15,30 +15,39 @@ import (
 
 const queueSignalsPerPage = 100
 
+var allowedSinceValues = map[string]string{
+	"15m": "15 minutes",
+	"1h":  "1 hour",
+	"12h": "12 hours",
+	"24h": "24 hours",
+}
+
 func (s *service) QueueSignals(c *gin.Context) {
 	ctx := c.Request.Context()
 	page := getPageFromQuery(c)
 	search := c.Query("search")
 	ownerID := c.Query("owner_id")
+	orgID := c.Query("org_id")
 	signalType := c.Query("signal_type")
 	status := c.Query("status")
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
 	sortBy := c.Query("sort_by")
+	since := c.DefaultQuery("since", "15m")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, orgID, signalType, status, namespace, enqueued, sortBy, since, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
 		return
 	}
 
-	namespaces, err := s.getDistinctNamespaces(ctx)
+	namespaces, err := s.getDistinctNamespaces(ctx, since)
 	if err != nil {
 		s.l.Error("failed to get namespaces", zap.Error(err))
 	}
 
-	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace, since)
 	if err != nil {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
@@ -57,23 +66,40 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 	page := getPageFromQuery(c)
 	search := c.Query("search")
 	ownerID := c.Query("owner_id")
+	orgID := c.Query("org_id")
 	signalType := c.Query("signal_type")
 	status := c.Query("status")
 	namespace := c.Query("namespace")
 	enqueued := c.Query("enqueued")
 	sortBy := c.Query("sort_by")
+	since := c.DefaultQuery("since", "15m")
 
-	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, signalType, status, namespace, enqueued, sortBy, page)
+	signals, totalPages, err := s.getQueueSignals(ctx, search, ownerID, orgID, signalType, status, namespace, enqueued, sortBy, since, page)
 	if err != nil {
 		s.l.Error("failed to get queue signals", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch queue signals"})
 		return
 	}
 
+	namespaces, err := s.getDistinctNamespaces(ctx, since)
+	if err != nil {
+		s.l.Warn("failed to get namespaces", zap.Error(err))
+	}
+
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace, since)
+	if err != nil {
+		s.l.Warn("failed to get signal types", zap.Error(err))
+	}
+
+	orgOptions := s.getOrgOptions(ctx)
+
 	c.JSON(http.StatusOK, gin.H{
-		"signals":     signals,
-		"page":        page,
-		"total_pages": totalPages,
+		"signals":      signals,
+		"page":         page,
+		"total_pages":  totalPages,
+		"namespaces":   namespaces,
+		"signal_types": signalTypes,
+		"org_options":  orgOptions,
 	})
 }
 
@@ -81,8 +107,9 @@ func (s *service) QueueSignalsGlobalTable(c *gin.Context) {
 func (s *service) QueueSignalTypeOptions(c *gin.Context) {
 	ctx := c.Request.Context()
 	namespace := c.Query("namespace")
+	since := c.DefaultQuery("since", "24h")
 
-	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace)
+	signalTypes, err := s.getDistinctSignalTypes(ctx, namespace, since)
 	if err != nil {
 		s.l.Error("failed to get signal types", zap.Error(err))
 	}
@@ -98,11 +125,16 @@ var allowedSortColumns = map[string]string{
 	"execution_count": "execution_count desc",
 }
 
-func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalType, status, namespace, enqueued, sortBy string, page int) ([]app.QueueSignal, int, error) {
+func (s *service) getQueueSignals(ctx context.Context, search, ownerID, orgID, signalType, status, namespace, enqueued, sortBy, since string, page int) ([]app.QueueSignal, int, error) {
 	var signals []app.QueueSignal
 	var totalCount int64
 
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
+
+	// Apply time window filter to avoid scanning millions of rows.
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
 
 	if search != "" {
 		switch {
@@ -116,6 +148,9 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 	}
 	if ownerID != "" {
 		query = query.Where("owner_id = ?", ownerID)
+	}
+	if orgID != "" {
+		query = query.Where("org_id = ?", orgID)
 	}
 	if signalType != "" {
 		query = query.Where("type = ?", signalType)
@@ -161,13 +196,16 @@ func (s *service) getQueueSignals(ctx context.Context, search, ownerID, signalTy
 	return signals, totalPages, nil
 }
 
-func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
+func (s *service) getDistinctNamespaces(ctx context.Context, since string) ([]string, error) {
 	var namespaces []string
-	res := s.readDB().WithContext(ctx).
+	query := s.readDB().WithContext(ctx).
 		Model(&app.QueueSignal{}).
 		Select("DISTINCT workflow->>'namespace'").
-		Where("workflow->>'namespace' != ''").
-		Pluck("workflow->>'namespace'", &namespaces)
+		Where("workflow->>'namespace' != ''")
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
+	res := query.Pluck("workflow->>'namespace'", &namespaces)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get distinct namespaces: %w", res.Error)
 	}
@@ -175,9 +213,12 @@ func (s *service) getDistinctNamespaces(ctx context.Context) ([]string, error) {
 	return namespaces, nil
 }
 
-func (s *service) getDistinctSignalTypes(ctx context.Context, namespace string) ([]string, error) {
+func (s *service) getDistinctSignalTypes(ctx context.Context, namespace string, since string) ([]string, error) {
 	var types []string
 	query := s.readDB().WithContext(ctx).Model(&app.QueueSignal{})
+	if interval, ok := allowedSinceValues[since]; ok {
+		query = query.Where("created_at >= NOW() - INTERVAL '" + interval + "'")
+	}
 	if namespace != "" {
 		query = query.Where("workflow->>'namespace' = ?", namespace)
 	}

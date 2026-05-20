@@ -1,12 +1,10 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -62,56 +60,11 @@ func (s *service) ShutdownRunnerProcess(ctx *gin.Context) {
 		return
 	}
 
-	shutdown, err := s.createRunnerProcessShutdown(ctx, processID, req)
+	shutdown, err := s.helpers.ShutdownProcess(ctx, process, req.ShutdownType)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create runner process shutdown: %w", err))
+		ctx.Error(fmt.Errorf("unable to shutdown runner process: %w", err))
 		return
 	}
 
-	// Immediately mark process as pending-shutdown so health checks noop
-	if err := s.updateProcessStatusPendingShutdown(ctx, process); err != nil {
-		s.l.Warn("unable to set process pending-shutdown status", zap.Error(err))
-	}
-
-	// Write a red health check to ClickHouse so dashboards reflect the shutdown
-	s.createShutdownHealthCheck(ctx, process.RunnerID, processID)
-
-	// Enqueue the process_shutdown signal to drive the shutdown lifecycle
-	if err := s.helpers.EnqueueProcessShutdown(ctx, process); err != nil {
-		s.l.Warn("unable to enqueue process shutdown signal", zap.Error(err))
-	}
-
 	ctx.JSON(http.StatusCreated, shutdown)
-}
-
-func (s *service) updateProcessStatusPendingShutdown(ctx context.Context, process *app.RunnerProcess) error {
-	newComposite := app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessStatusPendingShutdown))
-	newComposite.StatusHumanDescription = "Shutdown pending"
-	newComposite.History = append([]app.CompositeStatus{process.CompositeStatus}, process.CompositeStatus.History...)
-	newComposite.History[0].History = nil
-
-	res := s.db.WithContext(ctx).
-		Model(&app.RunnerProcess{ID: process.ID}).
-		Updates(app.RunnerProcess{
-			CompositeStatus: newComposite,
-		})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update process status: %w", res.Error)
-	}
-
-	return nil
-}
-
-func (s *service) createRunnerProcessShutdown(ctx context.Context, processID string, req ShutdownRunnerProcessRequest) (*app.RunnerProcessShutdown, error) {
-	shutdown := app.RunnerProcessShutdown{
-		RunnerProcessID: processID,
-		Type:            req.ShutdownType,
-		CompositeStatus: app.NewCompositeStatus(ctx, app.Status(app.RunnerProcessShutdownStatusRequested)),
-	}
-
-	if res := s.db.WithContext(ctx).Create(&shutdown); res.Error != nil {
-		return nil, fmt.Errorf("unable to create runner process shutdown: %w", res.Error)
-	}
-
-	return &shutdown, nil
 }

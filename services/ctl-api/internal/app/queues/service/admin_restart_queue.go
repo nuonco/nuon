@@ -47,8 +47,8 @@ func (s *service) RestartQueue(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.queueClient.Restart(ctx, queue.ID); err != nil {
-		ctx.Error(fmt.Errorf("unable to restart queue: %w", err))
+	if err := s.queueClient.HintRestartSingle(ctx, queue.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to hint restart queue: %w", err))
 		return
 	}
 

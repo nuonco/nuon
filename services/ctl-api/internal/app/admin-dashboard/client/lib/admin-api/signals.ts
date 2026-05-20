@@ -6,13 +6,22 @@ export const getQueueSignalsGlobal = (params: {
   search?: string
   signal_type?: string
   owner_id?: string
+  org_id?: string
   namespace?: string
   status?: string
   enqueued?: string
   sort_by?: string
+  since?: string
   page?: number
 }) =>
-  api<{ signals: TQueueSignal[]; page: number; total_pages: number; namespaces?: string[] }>({
+  api<{
+    signals: TQueueSignal[]
+    page: number
+    total_pages: number
+    namespaces?: string[]
+    signal_types?: string[]
+    org_options?: { id: string; name: string }[]
+  }>({
     path: 'queue-signals/table',
     params,
   })

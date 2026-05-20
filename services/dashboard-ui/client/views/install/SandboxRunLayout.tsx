@@ -92,10 +92,10 @@ const SandboxRunLayoutInner = () => {
 }
 
 export const SandboxRunLayout = () => {
-  const { runId } = useParams()
+  const { installId, runId } = useParams()
 
   return (
-    <SandboxRunProvider runId={runId!} shouldPoll>
+    <SandboxRunProvider installId={installId!} runId={runId!} shouldPoll>
       <SandboxRunLayoutInner />
     </SandboxRunProvider>
   )

@@ -1,6 +1,11 @@
 package service
 
 import (
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/converter"
@@ -14,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
@@ -21,6 +27,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 )
 
 type Params struct {
@@ -38,9 +45,11 @@ type Params struct {
 	AcctClient     *account.Client
 	AuthzClient    *authz.Client
 	OrgsHelpers    *orgshelpers.Helpers
+	RunnersHelpers *runnershelpers.Helpers
 	TemporalClient temporalclient.Client
 	QueueClient    *queueclient.Client
 	EmitterClient  *emitterclient.Client
+	Enqueuer       *enqueuer.Enqueuer
 
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
@@ -61,9 +70,11 @@ type Service struct {
 	acctClient     *account.Client
 	authzClient    *authz.Client
 	orgsHelpers    *orgshelpers.Helpers
+	runnersHelpers *runnershelpers.Helpers
 	temporalClient temporalclient.Client
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
+	enqueuer       *enqueuer.Enqueuer
 	codecs         []converter.PayloadCodec
 	queryCollector *querycollector.Collector
 }
@@ -104,32 +115,62 @@ func (s *service) RegisterAuthRoutes(api *gin.Engine) error {
 	return nil
 }
 
-func (s *service) setAdminAccountContext() gin.HandlerFunc {
+func (s *service) authURL() string {
+	if s.cfg.RootDomain == "" || s.cfg.RootDomain == "localhost" {
+		return fmt.Sprintf("http://localhost:%s", s.cfg.AuthHTTPPort)
+	}
+	return fmt.Sprintf("https://auth.%s", s.cfg.RootDomain)
+}
+
+func (s *service) adminDashboardURL() string {
+	if s.cfg.RootDomain == "" || s.cfg.RootDomain == "localhost" {
+		return fmt.Sprintf("http://localhost:%s", s.cfg.AdminDashboardHTTPPort)
+	}
+	return fmt.Sprintf("https://admin.%s", s.cfg.RootDomain)
+}
+
+func (s *service) requireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Try to resolve account from X-Nuon-Auth cookie
+		// Skip auth for health checks and static assets
+		if c.Request.URL.Path == "/livez" ||
+			c.Request.URL.Path == "/readyz" ||
+			c.Request.URL.Path == "/version" ||
+			c.Request.URL.Path == "/api/livez" ||
+			strings.HasPrefix(c.Request.URL.Path, "/assets/") ||
+			c.Request.URL.Path == "/styles.css" {
+			c.Next()
+			return
+		}
+
 		token, _ := c.Cookie("X-Nuon-Auth")
 		if token != "" {
 			var userToken app.Token
 			if res := s.db.WithContext(c).Where(&app.Token{Token: token}).First(&userToken); res.Error == nil {
 				if acct, err := s.acctClient.FetchAccount(c, userToken.AccountID); err == nil {
 					cctx.SetAccountGinContext(c, acct)
+					c.Request = c.Request.WithContext(cctx.SetAccountContext(c.Request.Context(), acct))
 					c.Next()
 					return
 				}
 			}
 		}
 
-		// Fallback: set account ID on the request context so GORM BeforeCreate hooks
-		// can read it via createdByIDFromContext(tx.Statement.Context).
-		ctx := cctx.SetAccountIDContext(c.Request.Context(), "admin-dashboard")
-		c.Request = c.Request.WithContext(ctx)
-		c.Next()
+		// For API requests, return 401 so the SPA can redirect client-side
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "authentication required"})
+			return
+		}
+
+		// For page requests, redirect to the auth service
+		loginURL := s.authURL() + "/?url=" + url.QueryEscape(s.adminDashboardURL())
+		c.Redirect(http.StatusFound, loginURL)
+		c.Abort()
 	}
 }
 
 func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
-	// Set admin account context from X-Nuon-Auth cookie
-	e.Use(s.setAdminAccountContext())
+	// Require login via the auth service
+	e.Use(s.requireAuth())
 
 	// Health check
 	e.GET("/api/livez", s.Livez)
@@ -146,7 +187,23 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/orgs/:id/labels/remove/:key", s.RemoveOrgLabel)
 		api.POST("/orgs/:id/support-users/add", s.ProxyAddSupportUsers)
 		api.POST("/orgs/:id/migrate-queues", s.ProxyMigrateQueues)
+		api.POST("/orgs/:id/clear-queues", s.ClearOrgQueues)
+		api.POST("/orgs/:id/force-restart-queues", s.ForceRestartOrgQueues)
+		api.POST("/orgs/:id/remove-old-runner-processes", s.RemoveOldRunnerProcesses)
+		api.POST("/orgs/:id/shutdown-runner-processes", s.ShutdownOrgRunnerProcesses)
+		api.POST("/orgs/:id/shutdown-hint-runner-processes", s.ShutdownHintOrgRunnerProcesses)
 		api.GET("/orgs/:id/installs", s.InstallsTable)
+
+		// Org cleanup
+		api.POST("/orgs/:id/deprovision", s.ProxyDeprovisionOrg)
+		api.POST("/orgs/:id/forget", s.ProxyForgetOrg)
+		api.POST("/orgs/:id/forget-installs", s.ProxyForgetOrgInstalls)
+		api.POST("/orgs/:id/deprovision-apps", s.DeprovisionOrgApps)
+		api.GET("/orgs/:id/workflows", s.OrgWorkflows)
+		api.POST("/orgs/:id/terminate-workflows", s.TerminateOrgWorkflows)
+		api.GET("/orgs/:id/queue-signals", s.OrgQueueSignals)
+		api.GET("/orgs/:id/queue-signal-stats", s.OrgQueueSignalStats)
+		api.POST("/orgs/:id/delete-queue-signals", s.DeleteOrgQueueSignals)
 
 		// Accounts
 		api.GET("/accounts", s.Accounts)
@@ -185,6 +242,10 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/installs/:id/labels", s.AddInstallLabel)
 		api.POST("/installs/:id/labels/remove/:key", s.RemoveInstallLabel)
 
+		// Install cleanup
+		api.POST("/installs/:id/forget", s.ProxyForgetInstall)
+		api.POST("/installs/:id/deprovision", s.ProxyDeprovisionInstall)
+
 		// Workflows
 		api.GET("/workflows", s.Workflows)
 		api.GET("/workflows/table", s.WorkflowsTable)
@@ -205,13 +266,18 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.GET("/queues/:id/signals/:signal_id", s.QueueSignalDetail)
 		api.GET("/queues/:id/signals/:signal_id/graph", s.SignalGraph)
 		api.GET("/queues/:id/emitters/:emitter_id", s.QueueEmitterDetail)
-		api.POST("/queues/:id/restart", s.RestartQueue)
+		api.POST("/queues/:id/hint-restart", s.HintRestartQueue)
 		api.POST("/queues/:id/force-restart", s.ForceRestartQueue)
+		api.POST("/queues/:id/check-can", s.CheckCANQueue)
 		api.POST("/queues/:id/clear", s.ClearQueue)
 		api.POST("/queues/:id/signals/:signal_id/direct-execute", s.DirectExecuteSignal)
+		api.POST("/queues/:id/signals/:signal_id/re-enqueue", s.ReEnqueueSignal)
 
 		// Temporal workflow viewer
 		api.GET("/temporal-workflows", s.TemporalWorkflowViewer)
+		api.GET("/temporal-workflows/index", s.TemporalWorkflowIndex)
+		api.GET("/temporal-workflows/namespaces", s.TemporalWorkflowNamespaces)
+		api.GET("/temporal-workflows/stats", s.TemporalWorkflowStats)
 
 		// Temporal workers
 		api.GET("/temporal-workers", s.TemporalWorkers)
@@ -255,6 +321,10 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/query-catalog/:query_id/run", s.QueryCatalogRun)
 		api.POST("/query-collector/toggle", s.QueryCollectorToggle)
 
+		// Enqueuer actions
+		api.POST("/enqueuer/full-sweep", s.FullSweep)
+		api.POST("/enqueuer/flush-lost-signals", s.FlushLostSignals)
+
 		// General actions
 		api.POST("/promote", s.Promote)
 		api.POST("/seed", s.ProxySeed)
@@ -280,9 +350,11 @@ func New(params Params) (*service, error) {
 		acctClient:     params.AcctClient,
 		authzClient:    params.AuthzClient,
 		orgsHelpers:    params.OrgsHelpers,
+		runnersHelpers: params.RunnersHelpers,
 		temporalClient: params.TemporalClient,
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
+		enqueuer:       params.Enqueuer,
 		queryCollector: params.QueryCollector,
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,

@@ -13,16 +13,12 @@ import (
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-// awaitAndHandleApproval writes the await-approval directive, waits for a
-// user response, and dispatches to the appropriate handler based on response type.
-func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
-	l, _ := log.WorkflowLogger(ctx)
-
-	if err := writeDirective(ctx, step.ID, DirectiveAwaitApproval, map[string]any{
-		"step_idx": step.Idx,
-		"status":   "awaiting-approval",
-	}); err != nil {
-		return errors.Wrap(err, "unable to write await-approval directive")
+// awaitApprovalResponse writes the await-approval directive, waits for a user
+// response, and returns it. The caller is responsible for dispatching the response
+// to the appropriate handler.
+func (s *Signal) awaitApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) (*app.WorkflowStepApprovalResponse, error) {
+	if err := setResultDirective(ctx, step.ID, DirectiveAwaitApproval); err != nil {
+		return nil, errors.Wrap(err, "unable to write await-approval directive")
 	}
 
 	if err := statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -31,19 +27,33 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 			Status:                 app.AwaitingApproval,
 			StatusHumanDescription: "awaiting approval for " + step.Name,
 			Metadata: map[string]any{
-				"step_idx":   step.Idx,
-				"status":     "ok",
-				DirectiveKey: DirectiveAwaitApproval,
+				"step_idx":           step.Idx,
+				"status":             "ok",
+				string(DirectiveKey): string(DirectiveAwaitApproval),
 			},
 		},
 	}); err != nil {
-		return errors.Wrap(err, "unable to update step to awaiting approval status")
+		return nil, errors.Wrap(err, "unable to update step to awaiting approval status")
 	}
 
-	resp, err := s.waitForApprovalResponse(ctx, flw, step)
-	if err != nil {
-		return err
-	}
+	// Update workflow status so the UI shows the workflow is awaiting approval.
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: flw.ID,
+		Status: app.CompositeStatus{
+			Status:                 app.AwaitingApproval,
+			StatusHumanDescription: "awaiting approval for " + step.Name,
+			Metadata: map[string]any{
+				"step_id": step.ID,
+			},
+		},
+	})
+
+	return s.waitForApprovalResponse(ctx, flw, step)
+}
+
+// dispatchApprovalResponse routes the approval response to the appropriate handler.
+func (s *Signal) dispatchApprovalResponse(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow, resp *app.WorkflowStepApprovalResponse) error {
+	l, _ := log.WorkflowLogger(ctx)
 
 	switch resp.Type {
 	case app.WorkflowStepApprovalResponseTypeApprove:
@@ -60,9 +70,8 @@ func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.Workflow
 // waitForApprovalResponse waits for an approval response reactively using the
 // "approve-plan" update handler.
 func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow, step *app.WorkflowStep) (*app.WorkflowStepApprovalResponse, error) {
-	// Wait for approve-plan update handler to set s.approved (30-day deadline)
 	ok, err := workflow.AwaitWithTimeout(ctx, 30*24*time.Hour, func() bool {
-		return s.approved
+		return s.approved || s.retried || s.canceled || s.skipped
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error waiting for approval for step %s: %w", step.ID, err)
@@ -77,7 +86,10 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 		return nil, fmt.Errorf("approval timed out for step %s", step.ID)
 	}
 
-	// Fetch the step from DB to get the approval response.
+	if s.retried || s.canceled || s.skipped {
+		return nil, nil
+	}
+
 	step, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get step after approval")
@@ -86,4 +98,23 @@ func (s *Signal) waitForApprovalResponse(ctx workflow.Context, flw *app.Workflow
 		return nil, errors.New("approval response not found after update")
 	}
 	return step.Approval.Response, nil
+}
+
+// awaitAndHandleApproval is the legacy entry point that combines awaiting and
+// dispatching. Kept for backward compatibility but new code should use
+// awaitApprovalResponse + dispatchApprovalResponse separately.
+func (s *Signal) awaitAndHandleApproval(ctx workflow.Context, step *app.WorkflowStep, flw *app.Workflow) error {
+	l, _ := log.WorkflowLogger(ctx)
+	_ = l
+
+	resp, err := s.awaitApprovalResponse(ctx, step, flw)
+	if err != nil {
+		return err
+	}
+
+	if s.retried || s.canceled {
+		return nil
+	}
+
+	return s.dispatchApprovalResponse(ctx, step, flw, resp)
 }

@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -49,6 +50,11 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	switch req.Mode {
 	case app.QueueEmitterModeCron:
 		if req.CronSchedule == "" {
+			err := fmt.Errorf("cron_schedule is needed for cron mode")
+			return nil, temporal.NewNonRetryableApplicationError("validation failure",
+				fmt.Sprintf("%T", err),
+				err,
+			)
 			return nil, errors.New("cron_schedule is required for cron mode")
 		}
 	case app.QueueEmitterModeScheduled, app.QueueEmitterModeFireOnce:
@@ -98,15 +104,9 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	}
 
 	opts := tclient.StartWorkflowOptions{
-		ID:        em.Workflow.ID,
-		TaskQueue: workflows.APITaskQueue,
-		Memo: map[string]any{
-			"id":       em.ID,
-			"queue-id": q.ID,
-			"name":     em.Name,
-			"mode":     string(em.Mode),
-			"emitter":  true,
-		},
+		ID:                    em.Workflow.ID,
+		TaskQueue:             workflows.APITaskQueue,
+		Memo:                  emitterMemo(&em),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
@@ -149,6 +149,18 @@ func (c *Client) getEmitterByID(ctx context.Context, emitterID string) (*app.Que
 		return nil, errors.Wrap(err, "unable to get emitter")
 	}
 	return em, nil
+}
+
+// emitterMemo returns the standard memo map for an emitter workflow.
+func emitterMemo(em *app.QueueEmitter) map[string]any {
+	return map[string]any{
+		"id":       em.ID,
+		"queue-id": em.QueueID,
+		"org-id":   em.OrgID,
+		"name":     em.Name,
+		"mode":     string(em.Mode),
+		"emitter":  true,
+	}
 }
 
 func (c *Client) getEmitter(ctx context.Context, emitterID string) (*app.QueueEmitter, error) {
@@ -294,15 +306,9 @@ func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (
 	}
 
 	opts := tclient.StartWorkflowOptions{
-		ID:        em.Workflow.ID,
-		TaskQueue: workflows.APITaskQueue,
-		Memo: map[string]any{
-			"id":       em.ID,
-			"queue-id": em.QueueID,
-			"name":     em.Name,
-			"mode":     string(em.Mode),
-			"emitter":  true,
-		},
+		ID:                    em.Workflow.ID,
+		TaskQueue:             workflows.APITaskQueue,
+		Memo:                  emitterMemo(em),
 		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
