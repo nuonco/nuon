@@ -159,6 +159,15 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	if flw.Status.Status == app.StatusCancelled {
 		return errors.New("workflow already cancelled")
 	}
+	// Restore cancel flag from persisted metadata. The in-memory
+	// cancelRequested flag is lost across ContinueAsNew boundaries, but
+	// cancel_requested_at in the DB survives.
+	if flw.Status.Metadata != nil {
+		if _, ok := flw.Status.Metadata["cancel_requested_at"]; ok {
+			s.cancelRequested = true
+			return nil
+		}
+	}
 
 	defer func() {
 		if errors.Is(ctx.Err(), workflow.ErrCanceled) {
