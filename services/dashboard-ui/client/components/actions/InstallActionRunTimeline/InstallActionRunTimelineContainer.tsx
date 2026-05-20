@@ -1,7 +1,9 @@
+import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { getInstallAction } from '@/lib'
 import { InstallActionRunTimeline } from './InstallActionRunTimeline'
 
@@ -22,11 +24,40 @@ export const InstallActionRunTimelineContainer = ({
 }: IInstallActionRunTimelineContainer) => {
   const { install } = useInstall()
   const { org } = useOrg()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
+  const queryKey = useMemo(
+    () => ['install-action', org?.id, install?.id, actionId, offset],
+    [org?.id, install?.id, actionId, offset]
+  )
+
+  const sseUrl =
+    org?.id && install?.id && actionId
+      ? `/api/orgs/${org.id}/installs/${install.id}/actions/${actionId}/runs/sse?limit=${LIMIT}&offset=${offset}`
+      : undefined
+
+  const listeners = useMemo(
+    () => ({
+      'action-runs': (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data)
+          queryClient.setQueryData(queryKey, data?.data)
+        } catch {}
+      },
+    }),
+    [queryKey, queryClient]
+  )
+
+  const { connected: sseConnected } = useResourceSSE({
+    url: sseUrl,
+    enabled: shouldPoll,
+    listeners,
+  })
+
   const { data: action } = useQuery({
-    queryKey: ['install-action', org?.id, install?.id, actionId, offset],
+    queryKey,
     queryFn: () =>
       getInstallAction({
         orgId: org.id,
@@ -36,7 +67,7 @@ export const InstallActionRunTimelineContainer = ({
         offset,
       }),
     refetchOnMount: 'always',
-    refetchInterval: shouldPoll ? pollInterval : false,
+    refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,
     enabled: !!org?.id && !!install?.id && !!actionId,
   })
 
