@@ -1,14 +1,14 @@
 package service
 
 import (
-	"errors"
-	"io"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/promotion"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type RestartGeneralEventLoopRequest struct{}
@@ -20,21 +20,22 @@ type RestartGeneralEventLoopRequest struct{}
 // @Tags					general/admin
 // @Accept					json
 // @Produce				json
-// @Success				201	{string}	ok
+// @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/general/restart-event-loop [post]
 func (s *service) RestartGeneralEventLoop(ctx *gin.Context) {
-	var req RestartGeneralEventLoopRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
-		ctx.Error(stderr.NewInvalidRequest(err))
+	q, err := s.generalHelpers.EnsureGeneralQueue(ctx)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to ensure general queue: %w", err))
 		return
 	}
 
-	s.evClient.Send(ctx, "general", &signals.Signal{
-		Type: signals.OperationRestart,
-	})
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: q.ID,
+		Signal:  &promotion.Signal{},
+	}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue promotion signal: %w", err))
+		return
+	}
 
-	ctx.JSON(http.StatusCreated, map[string]string{
-		"status": "ok",
-		"type":   string(signals.OperationRestart),
-	})
+	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
