@@ -31,17 +31,18 @@ func (s *service) AdminMngVMShutDown(ctx *gin.Context) {
 		return
 	}
 
-	// Reuse the log stream from the most recent mng process if one exists
-	var logStreamID string
-	var mngProcess app.RunnerProcess
-	if res := s.db.WithContext(ctx).
-		Where(app.RunnerProcess{RunnerID: runner.ID, Type: app.RunnerProcessTypeMng}).
-		Order("created_at DESC").
-		First(&mngProcess); res.Error == nil && mngProcess.LogStreamID != nil {
-		logStreamID = *mngProcess.LogStreamID
+	// Create a fresh log stream for this shutdown job
+	ls := app.LogStream{
+		OwnerType: "runner_operations",
+		OwnerID:   runner.ID,
+		Open:      true,
+	}
+	if res := s.db.WithContext(ctx).Create(&ls); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to create log stream: %w", res.Error))
+		return
 	}
 
-	job, err := s.helpers.CreateMngJob(ctx, runner.ID, logStreamID, app.RunnerJobTypeMngVMShutDown, map[string]string{
+	job, err := s.helpers.CreateMngJob(ctx, runner.ID, ls.ID, app.RunnerJobTypeMngVMShutDown, map[string]string{
 		"shutdown_type": "vm",
 	})
 	if err != nil {
