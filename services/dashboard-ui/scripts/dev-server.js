@@ -140,6 +140,16 @@ Bun.serve({
     "/favicon.svg": servePublic,
     "/favicon.ico": servePublic,
 
+    "/": async (req) => {
+      const hasCookie = (req.headers.get("cookie") || "").includes("X-Nuon-Auth");
+      if (!hasCookie) {
+        return new Response(null, {
+          status: 302,
+          headers: { location: clientConfig.authServiceUrl + "/?url=" + encodeURIComponent(`http://localhost:${DEV_PORT}/`) },
+        });
+      }
+      return proxyToBFF(req);
+    },
     "/v1/*": (req) => proxyToBFF(req),
     "/api/*": (req) => proxyToBFF(req),
     "/admin/*": (req) => proxyToBFF(req),
