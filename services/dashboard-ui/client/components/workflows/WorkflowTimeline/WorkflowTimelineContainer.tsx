@@ -71,7 +71,7 @@ export const WorkflowTimelineContainer = ({
     listeners,
   })
 
-  const { data: result } = useQuery({
+  const { data: result, isLoading } = useQuery({
     queryKey,
     queryFn: () =>
       getInstallWorkflows({
@@ -99,6 +99,7 @@ export const WorkflowTimelineContainer = ({
       orgId={org?.id}
       installId={installId}
       install={install}
+      isLoading={isLoading}
     />
   )
 }
