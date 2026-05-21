@@ -148,9 +148,12 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return errors.Wrap(err, "unable to get heartbeat")
 	}
-	if heartbeat != nil {
-		tags["runner_version"] = heartbeat.Version
+	if heartbeat == nil {
+		// No heartbeat received yet — cron health checks are a no-op until
+		// MaybeEnqueueInitialHealthCheck fires on the first heartbeat.
+		return nil
 	}
+	tags["runner_version"] = heartbeat.Version
 
 	switch heartbeatAge := s.heartbeatAge(workflow.Now(ctx), heartbeat); {
 	case heartbeatAge >= inactiveTimeout:

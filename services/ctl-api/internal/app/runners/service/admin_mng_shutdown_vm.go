@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 // AdminMngVMShutDownRequest represents the request body for shutting down an install runner VM (admin).
@@ -32,9 +31,31 @@ func (s *service) AdminMngVMShutDown(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type: signals.OperationMngVMShutDown,
+	// Create a fresh log stream for this shutdown job
+	ls := app.LogStream{
+		OwnerType: "runner_operations",
+		OwnerID:   runner.ID,
+		Open:      true,
+	}
+	if res := s.db.WithContext(ctx).Create(&ls); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to create log stream: %w", res.Error))
+		return
+	}
+
+	job, err := s.helpers.CreateMngJob(ctx, runner.ID, ls.ID, app.RunnerJobTypeMngVMShutDown, map[string]string{
+		"shutdown_type": "vm",
 	})
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to create mng vm shutdown job: %w", err))
+		return
+	}
+
+	job.Status = app.RunnerJobStatusAvailable
+	job.StatusDescription = string(app.RunnerJobStatusAvailable)
+	if res := s.db.WithContext(ctx).Save(job); res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to update job status: %w", res.Error))
+		return
+	}
 
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
