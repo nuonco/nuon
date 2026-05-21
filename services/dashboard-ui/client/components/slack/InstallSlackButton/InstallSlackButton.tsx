@@ -21,7 +21,7 @@ export const InstallSlackButton = ({
       </span>
     ) : (
       <span className="flex items-center gap-2">
-        <Icon variant="SlackLogoIcon" />
+        <Icon variant="PlusIcon" />
         Add to Slack
       </span>
     )}
