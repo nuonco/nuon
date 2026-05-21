@@ -20,7 +20,7 @@ type contextKey string
 
 const (
 	defaultContextKey    contextKey    = "gorm_metrics_plugin"
-	targetLatency        time.Duration = time.Millisecond * 50
+	targetLatency        time.Duration = time.Millisecond * 500
 	maxEventTextLen      int           = 4096
 	eventTextTruncSuffix string        = "... [truncated]"
 )
