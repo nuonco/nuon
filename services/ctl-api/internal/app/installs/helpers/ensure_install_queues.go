@@ -22,6 +22,7 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		{InstallWorkflowStepsQueueName, 10},
 		{InstallStateManagerQueueName, 5},
 		{InstallGenerateStepsQueueName, 10},
+		{InstallActionWorkflowsQueueName, 10},
 	}
 
 	ownerType := plugins.TableName(s.db, app.Install{})

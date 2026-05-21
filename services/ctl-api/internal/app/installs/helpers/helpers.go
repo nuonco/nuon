@@ -36,6 +36,10 @@ const (
 	// InstallGenerateStepsQueueName is the queue that handles generate-steps signals.
 	// Throttled at the same concurrency as workflows to prevent overload.
 	InstallGenerateStepsQueueName = "install-generate-steps"
+
+	// InstallActionWorkflowsQueueName is the queue for action workflow execution.
+	// Separate from install-workflows so action runs don't compete with deploys.
+	InstallActionWorkflowsQueueName = "install-action-workflows"
 )
 
 type Params struct {
