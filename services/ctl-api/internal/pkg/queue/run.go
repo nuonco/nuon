@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -131,6 +132,11 @@ func (q *queue) setStatus(ctx workflow.Context, l *zap.Logger, status string) {
 		QueueID: q.queueID,
 		Status:  app.Status(status),
 	}); err != nil {
+		if generics.IsGormErrRecordNotFound(err) {
+			l.Warn("queue not found, skipping status update", zap.String("queue-id", q.queueID))
+			q.stopped = true
+			return
+		}
 		l.Warn("unable to set queue status", zap.String("status", status), zap.Error(err))
 	}
 }
@@ -148,8 +154,16 @@ func (q *queue) setStatusTimestamp(ctx workflow.Context, l *zap.Logger, key stri
 	}
 
 	l.Info("setting queue status", zap.String("status", key))
-	return activities.AwaitUpdateQueueMetadata(ctx, activities.UpdateQueueMetadataRequest{
+	if err := activities.AwaitUpdateQueueMetadata(ctx, activities.UpdateQueueMetadataRequest{
 		QueueID:  q.queueID,
 		Metadata: metadata,
-	})
+	}); err != nil {
+		if generics.IsGormErrRecordNotFound(err) {
+			l.Warn("queue not found, skipping metadata update", zap.String("queue-id", q.queueID))
+			q.stopped = true
+			return nil
+		}
+		return err
+	}
+	return nil
 }
