@@ -1,0 +1,56 @@
+---
+title: '035 - Component Dependency Graph, Real-Time UI, and Workflow UX'
+description: '**New**: Component dependency graph, real-time dashboard updates, replay-stack CLI extension. **Improved**: Workflow timeline, app branches, action runs.'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## Component dependency graph
+
+You can now visualize how an app's [components](/concepts/components) depend on each other directly from the component detail page. The graph renders the full dependency sub-graph so you can quickly trace cycles, missing wiring, or unexpected fan-out before a deploy.
+
+{/* TODO: add screenshot at ../images/changelog/035-component-dep-graph.png */}
+
+Available on both the app and install component detail views.
+
+## Real-time dashboard updates
+
+The dashboard now streams updates over SSE instead of polling, so logs, workflow timelines, the org status bar, and resource pages reflect changes the moment they happen. No more refreshing to see the latest state of an in-flight [workflow](/concepts/workflows).
+
+{/* TODO: screenshot — live workflow timeline streaming updates */}
+
+## Replay install stacks from the CLI
+
+A new `nuon-ext-replay-stack` [CLI extension](/concepts/cli) lets you re-run an install stack version against a customer environment without going through the dashboard. Useful for diagnosing failed installs and replaying provisioning flows in CI.
+
+```bash
+nuon ext install nuon-ext-replay-stack
+nuon ext replay-stack --help
+```
+
+Locally-installed extensions now also show up in `nuon ext list`, and `nuon ext` no longer requires `NUON_PREVIEW`.
+
+## Trigger phone-home from the stacks page
+
+You can now re-trigger the phone-home workflow for any install stack version directly from the [install stacks](/concepts/stacks) page in the dashboard — handy when a customer's initial provisioning needs a nudge.
+
+{/* TODO: screenshot — trigger phone home button on install stacks table */}
+
+## Updates
+
+- **App branches UI** — Refreshed design across the [app branches](/concepts/apps) views, including a cleaner branch list and detail layout.
+- **Workflow badges and timeline** — New status badges and a smoother loading state on the [workflow](/concepts/workflows) timeline make it easier to scan in-flight and historical runs.
+- **Horizontally scrollable logs** — The dashboard logs viewer now scrolls horizontally for long log lines.
+- **Empty states** — Cleaner, more actionable empty states across the app, install, and dashboard tables.
+- **AWS install sizing** — Removed the small-instance option for [AWS runners](/concepts/runners) to ensure every install gets a runner sized for real workloads.
+
+## Bug fixes
+
+- Fixed the `nuon orgs connect-github` callback path so connecting a GitHub org from the CLI works end-to-end.
+- CloudFormation install stacks now correctly require both nested stack parameters when used together.
+- Fixed VM shutdown, re-enqueue, and `approve-all` flows so stuck installs recover cleanly.
+- Auto-approved banners and the "deploy all" toast now render the correct state.
+- The action run cancel button and log step rendering now work consistently on the action run page.
+- "All workflows" now navigates to the workflows page instead of an empty view.
+- SSE log streams no longer get stuck when the underlying stream closes.
