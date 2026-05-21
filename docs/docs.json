@@ -269,6 +269,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/034-aws-terraform-install-stack",
           "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
           "updates/031-operation-roles",
@@ -385,6 +386,10 @@
     {
       "source": "/guides/programmatic-install-config",
       "destination": "/guides/install-configs"
+    },
+    {
+      "source": "/guides/notifications",
+      "destination": "/guides/slack"
     }
   ]
 }
