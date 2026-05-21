@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Input } from '@/components/common/form/Input'
+import { Label } from '@/components/common/form/Label'
 import { Select } from '@/components/common/form/Select'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
   TCreateAppBranchRequest,
@@ -212,16 +214,14 @@ export const CreateBranchModal = ({
                 {reposError && <Banner theme="error">{reposError}</Banner>}
 
                 {loadingRepos ? (
-                  <>
-                    <div className="flex flex-col gap-1">
-                      <Skeleton width="80px" height="14px" />
-                      <Skeleton height="36px" />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <Skeleton width="80px" height="14px" />
-                      <Skeleton height="36px" />
-                    </div>
-                  </>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="repo">
+                      <Text variant="body" className="font-medium">
+                        Repository
+                      </Text>
+                    </Label>
+                    <Skeleton height="36px" />
+                  </div>
                 ) : reposError ? (
                   <Banner theme="error">Failed to load repositories</Banner>
                 ) : repos.length === 0 ? (
@@ -246,7 +246,9 @@ export const CreateBranchModal = ({
                     options={repos.map((repo) => ({
                       value: repo.full_name,
                       label: repo.full_name,
-                      badge: repo.private ? { label: 'private' } : undefined,
+                      badge: repo.private
+                        ? { label: 'private', theme: 'default' }
+                        : undefined,
                     }))}
                     labelProps={{ labelText: 'Repository' }}
                     searchable
@@ -260,7 +262,11 @@ export const CreateBranchModal = ({
                 {!loadingRepos &&
                   (loadingBranches ? (
                     <div className="flex flex-col gap-1">
-                      <Skeleton width="80px" height="14px" />
+                      <Label htmlFor="git-branch">
+                        <Text variant="body" className="font-medium">
+                          Git branch
+                        </Text>
+                      </Label>
                       <Skeleton height="36px" />
                     </div>
                   ) : branchesError ? (
