@@ -170,6 +170,11 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Controls how deployments are approved. Options: 'approve-all' (automatic approval) or 'prompt' (requires confirmation)").
 		Example("approve-all").
 		Example("prompt").
+		Field("labels").Short("key/value labels for the install").
+		Long("Arbitrary key/value metadata used to tag installs (environment, region, version, tier, etc.). Labels are displayed in the dashboard and can be rendered in install READMEs via the nuon-label-badge component.").
+		Example(map[string]string{"env": "production"}).
+		Example(map[string]string{"region": "us-east-1"}).
+		Example(map[string]string{"env": "production", "region": "us-east-1", "tier": "enterprise"}).
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
 		Field("gcp_account").Short("GCP account configuration").
