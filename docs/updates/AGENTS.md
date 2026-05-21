@@ -60,7 +60,7 @@ Place images in the `assets/` subdirectory using one of these patterns:
 - `assets/XXX_image_name.png` - flat naming
 - `assets/XXX/image_name.png` - subfolder per update
 
-Reference in MDX as:
+Reference in MDX using an absolute path from the docs root so Mintlify can resolve it:
 ```mdx
-![Alt text](assets/XXX_image_name.png)
+![Alt text](/updates/assets/XXX_image_name.png)
 ```
