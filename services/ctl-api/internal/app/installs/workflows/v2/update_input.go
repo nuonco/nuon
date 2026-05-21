@@ -19,18 +19,39 @@ import (
 
 func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
-
-	sg := newStepGroup(flw)
-
-	steps := make([]*app.WorkflowStep, 0)
-
-	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
-	changedInputs := strings.Split(changedInputsRaw, ",")
-
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install")
 	}
+
+	sg := newStepGroup(flw)
+	steps := make([]*app.WorkflowStep, 0)
+
+	sg.nextGroup() // refresh inputs partial in state
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+	var stateSignal signal.Signal
+	if stateGenV2 {
+		stateSignal = &statepartialgenerate.Signal{
+			InstallID:       installID,
+			Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
+			TriggeredByID:   installID,
+			TriggeredByType: "installs",
+		}
+	} else {
+		stateSignal = &generatestate.Signal{InstallID: installID}
+	}
+	step, err := sg.installSignalStep(ctx, installID, "update install state inputs", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
+	changedInputs := strings.Split(changedInputsRaw, ",")
 
 	appConfig, err := activities.AwaitGetAppConfig(ctx, activities.GetAppConfigRequest{
 		ID: install.AppConfigID,
@@ -107,29 +128,6 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
-
-	sg.nextGroup() // refresh inputs partial in state
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
-	var stateSignal signal.Signal
-	if stateGenV2 {
-		stateSignal = &statepartialgenerate.Signal{
-			InstallID:       installID,
-			Targets:         statemanager.TargetsForHint(statemanager.HintInputsUpdated, ""),
-			TriggeredByID:   installID,
-			TriggeredByType: "installs",
-		}
-	} else {
-		stateSignal = &generatestate.Signal{InstallID: installID}
-	}
-	step, err := sg.installSignalStep(ctx, installID, "update install state inputs", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
 
 	return sg.Result(steps), nil
 }
