@@ -42,14 +42,16 @@ type Signal struct {
 	runnerJobID string
 }
 
-var _ signal.Signal = &Signal{}
-var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithLifecycleContext = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
-var _ signal.SignalWithMaxRetries = (*Signal)(nil)
-var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
-var _ signal.SignalWithOnRetry = (*Signal)(nil)
+var (
+	_ signal.Signal                     = &Signal{}
+	_ signal.SignalWithStepContext      = (*Signal)(nil)
+	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ signal.SignalWithCancel           = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry        = (*Signal)(nil)
+	_ signal.SignalWithMaxRetries       = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries   = (*Signal)(nil)
+	_ signal.SignalWithOnRetry          = (*Signal)(nil)
+)
 
 func (s *Signal) Cancel(ctx workflow.Context) error {
 	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
@@ -348,19 +350,22 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Ins
 
 	s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusFinished, "finished")
 
-	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
-	if err != nil {
-		return errors.Wrap(err, "unable to check state-gen-v2 feature")
-	}
-	if err := stategen.HintOrGenerate(ctx, stategen.Request{
-		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
-		InstallID:       installID,
-		Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
-		ForceAll:        true,
-		TriggeredByID:   actionWorkflowRunID,
-		TriggeredByType: "install_action_workflow_runs",
-	}); err != nil {
-		return err
+	// this is empty for adhoc actions, for adhoc actions we dont need to generate states post completion
+	if s.InstallActionWorkflowID != "" {
+		orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+		if err != nil {
+			return errors.Wrap(err, "unable to check state-gen-v2 feature")
+		}
+		if err := stategen.HintOrGenerate(ctx, stategen.Request{
+			StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
+			InstallID:       installID,
+			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
+			ForceAll:        true,
+			TriggeredByID:   actionWorkflowRunID,
+			TriggeredByType: "install_action_workflow_runs",
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil
