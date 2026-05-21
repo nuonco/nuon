@@ -1,0 +1,59 @@
+---
+title: '035 - App Branches, Live Updates, and an EC2 Example App'
+description: '**New**: App Branches deployment plan editor, component dependency graph, EC2 example app. **Improved**: Real-time workflow and log streaming, workflow timeline.'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## New
+
+### App Branches deployment plan editor
+
+A redesigned editor for [App Branches](/concepts/apps) makes it easier to compose a deployment plan from your installs. You can group installs, drag and drop them into ordered stages, and see unassigned installs at a glance before promoting a branch.
+
+{/* TODO: screenshot — App Branch deployment plan editor */}
+
+### Component dependency graph
+
+Each [component](/concepts/components) now renders a dependency sub-graph in its config view, so you can see at a glance how it connects to other components in your app and what an update will touch.
+
+{/* TODO: screenshot — component dependency graph */}
+
+### EC2 example app (CDE)
+
+A new [Create An AWS EC2 App](/get-started/app-aws-ec2) guide walks through packaging a Cloud Development Environment on EC2 with Nuon. It demonstrates eleven actions, conditional inputs, OPA policies, README templating, and cost-control cron jobs working together — a useful reference for any VM-based app, not just CDEs.
+
+{/* TODO: screenshot — EC2 CDE app install page */}
+
+## Updates
+
+### Real-time workflow, log, and resource updates
+
+Workflow detail, action runs, sandbox runs, builds, and log viewers now stream updates over SSE instead of polling. Status badges, step states, and logs reflect changes in the runner with no manual refresh and fewer stale views.
+
+{/* TODO: screenshot — live workflow detail page */}
+
+### Refreshed workflow timeline and step badges
+
+The [workflow](/concepts/workflows) timeline has a refreshed loading state and new step status badges that make in-progress, succeeded, failed, and skipped states easier to scan at a glance.
+
+### Horizontally scrollable logs
+
+The log viewer now scrolls horizontally, so long lines from Terraform, Helm, and Kubernetes output stay readable without wrapping.
+
+### Empty-state polish on App Branches
+
+Empty branches, install groups, and deployment plans now show clearer prompts and next-step actions, so it's obvious what to do on a freshly created branch.
+
+## Bug fixes
+
+- Auto-approved workflows no longer show a stale "awaiting approval" banner.
+- Action run pages now show the correct cancel button state and log step grouping.
+- The "All workflows" link now routes to the workflows page instead of a sub-view.
+- Plan-only installs no longer trigger auto-approval.
+- Fixed a validation-error display issue when creating installs.
+- Terraform provider mirror builds now work in orgs that also use `docker_build` components.
+- Phone-home payloads preserve nested values instead of flattening them.
+- Healthcheck records are no longer soft-deleted, preventing missing-runner alerts on restart.
+- Fixed missing install inputs when no vendor inputs were available.
