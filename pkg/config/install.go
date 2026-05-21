@@ -171,7 +171,7 @@ func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("approve-all").
 		Example("prompt").
 		Field("labels").Short("key/value labels for the install").
-		Long("Arbitrary key/value metadata used to tag installs (environment, region, version, tier, etc.). Labels are displayed in the dashboard and can be rendered in install READMEs via the nuon-label-badge component.").
+		Long("Tag installs with arbitrary metadata like environment, region, or version.").
 		Example(map[string]string{"env": "production", "region": "us-east-1", "tier": "enterprise"}).
 		Field("aws_account").Short("AWS account configuration").
 		Long("AWS-specific settings for this install, including region and other account details").
