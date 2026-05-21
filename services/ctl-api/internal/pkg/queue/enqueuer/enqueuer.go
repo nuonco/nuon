@@ -2,6 +2,7 @@ package enqueuer
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	enumsv1 "go.temporal.io/api/enums/v1"
@@ -20,11 +21,13 @@ import (
 const (
 	enqueueChannelSize = 1000
 	processOneTimeout  = 30 * time.Second
+	defaultMaxWorkers  = 100
 )
 
 // Enqueuer processes signal enqueue requests in the background. It receives
 // queue signal IDs via a channel and performs the UpdateWithStart call to
-// enqueue them into their respective queue workflows.
+// enqueue them into their respective queue workflows. Up to maxWorkers
+// signals are processed in parallel.
 type Enqueuer struct {
 	db      *gorm.DB
 	cfg     *internal.Config
@@ -32,8 +35,9 @@ type Enqueuer struct {
 	l       *zap.Logger
 	mw      metrics.Writer
 
-	ctx    context.Context
-	cancel context.CancelFunc
+	ctx        context.Context
+	cancel     context.CancelFunc
+	maxWorkers int
 
 	ch     chan string
 	stopCh chan struct{}
@@ -54,17 +58,23 @@ type Params struct {
 func New(params Params) *Enqueuer {
 	ctx, cancel := context.WithCancel(context.Background())
 
+	maxWorkers := params.Cfg.EnqueuerMaxWorkers
+	if maxWorkers <= 0 {
+		maxWorkers = defaultMaxWorkers
+	}
+
 	e := &Enqueuer{
-		db:      params.DB,
-		cfg:     params.Cfg,
-		tClient: params.TClient,
-		l:       params.L.Named("queue-enqueuer"),
-		mw:      params.MW,
-		ctx:     ctx,
-		cancel:  cancel,
-		ch:      make(chan string, enqueueChannelSize),
-		stopCh:  make(chan struct{}),
-		doneCh:  make(chan struct{}),
+		db:         params.DB,
+		cfg:        params.Cfg,
+		tClient:    params.TClient,
+		l:          params.L.Named("queue-enqueuer"),
+		mw:         params.MW,
+		ctx:        ctx,
+		cancel:     cancel,
+		maxWorkers: maxWorkers,
+		ch:         make(chan string, enqueueChannelSize),
+		stopCh:     make(chan struct{}),
+		doneCh:     make(chan struct{}),
 	}
 
 	params.LC.Append(fx.Hook{
@@ -101,15 +111,28 @@ func (e *Enqueuer) Send(queueSignalID string) {
 func (e *Enqueuer) run() {
 	defer close(e.doneCh)
 
-	for {
-		select {
-		case <-e.stopCh:
-			e.drain()
-			return
-		case id := <-e.ch:
-			e.processOne(id)
-		}
+	var wg sync.WaitGroup
+	for i := 0; i < e.maxWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-e.stopCh:
+					return
+				case id := <-e.ch:
+					e.processOne(id)
+				}
+			}
+		}()
 	}
+
+	e.l.Info("enqueuer started", zap.Int("max_workers", e.maxWorkers))
+
+	// Wait for stop signal, then drain remaining items.
+	<-e.stopCh
+	wg.Wait()
+	e.drain()
 }
 
 // startSweepWorkflow starts the EnqueuerSweep workflow as a cron-scheduled
