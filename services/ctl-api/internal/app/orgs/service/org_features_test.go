@@ -176,7 +176,7 @@ func (s *OrgFeaturesTestSuite) TestGetOrgFeatures() {
 
 				assert.True(s.T(), featureNames[string(app.OrgFeatureUserManagedFeatures)])
 				assert.True(s.T(), featureNames[string(app.OrgFeatureOrgDashboard)])
-				assert.True(s.T(), featureNames[string(app.OrgFeatureAPIPagination)])
+				assert.True(s.T(), featureNames[string(app.OrgFeatureAppBranches)])
 			},
 		},
 	}
@@ -296,7 +296,7 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureOrgDashboard):        true,
-						string(app.OrgFeatureAPIPagination):       false,
+						string(app.OrgFeatureAppBranches):         false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -322,7 +322,7 @@ func (s *OrgFeaturesTestSuite) TestGetCurrentOrgFeatures() {
 				// Verify custom values are preserved
 				assert.True(s.T(), features[string(app.OrgFeatureUserManagedFeatures)])
 				assert.True(s.T(), features[string(app.OrgFeatureOrgDashboard)])
-				assert.False(s.T(), features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), features[string(app.OrgFeatureAppBranches)])
 			},
 		},
 	}
@@ -385,7 +385,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true, // ENABLED
 						string(app.OrgFeatureOrgDashboard):        false,
-						string(app.OrgFeatureAPIPagination):       true,
+						string(app.OrgFeatureAppBranches):         true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -408,8 +408,8 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureOrgDashboard):  true,  // Toggle to true
-					string(app.OrgFeatureAPIPagination): false, // Toggle to false
+					string(app.OrgFeatureOrgDashboard): true,  // Toggle to true
+					string(app.OrgFeatureAppBranches):  false, // Toggle to false
 				},
 			},
 			expectedCode: http.StatusOK,
@@ -420,7 +420,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 
 				// Verify features were updated
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 
 				// Verify user-managed-features flag preserved
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
@@ -432,7 +432,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 				require.NoError(s.T(), err)
 
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
 			},
 		},
 		{
@@ -625,7 +625,7 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 					Features: map[string]bool{
 						string(app.OrgFeatureUserManagedFeatures): true,
 						string(app.OrgFeatureOrgDashboard):        false,
-						string(app.OrgFeatureAPIPagination):       false,
+						string(app.OrgFeatureAppBranches):         false,
 						string(app.OrgFeatureOrgRunner):           false,
 					},
 				}
@@ -649,16 +649,16 @@ func (s *OrgFeaturesTestSuite) TestUpdateOrgFeatures() {
 			},
 			requestBody: UpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureOrgDashboard):  true,
-					string(app.OrgFeatureAPIPagination): true,
-					string(app.OrgFeatureOrgRunner):     true,
+					string(app.OrgFeatureOrgDashboard): true,
+					string(app.OrgFeatureAppBranches):  true,
+					string(app.OrgFeatureOrgRunner):    true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				// Verify all three features were updated
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureAPIPagination)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
 			},
 		},
