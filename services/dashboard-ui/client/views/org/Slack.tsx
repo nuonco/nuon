@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
@@ -24,8 +24,11 @@ export const Slack = () => {
   const [search, setSearch] = useSearchParams()
   const { addToast } = useToast()
 
+  const toastShown = useRef(false)
   useEffect(() => {
+    if (toastShown.current) return
     if (search.get('slack') !== 'installed') return
+    toastShown.current = true
     addToast(
       <Toast heading="Slack workspace connected" theme="success">
         <Text>
