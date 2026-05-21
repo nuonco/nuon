@@ -1,0 +1,86 @@
+---
+title: '035 - Component graphs, trace timeline, and Slack notifications'
+description: '**New**: Component dependency graph, Trace timeline view, Slack app, workflow cancellation from the UI, sandbox auto-retries
+**Improved**: Policy reports redesign, live updates via SSE, AWS runner auth'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## Component dependency graph
+
+Every [component](/concepts/components) now has an interactive dependency graph in the dashboard. See the full sub-graph of upstream and downstream components at a glance, so you can quickly understand what a change will affect before you ship it.
+
+{/* TODO: screenshot of the component dependency graph */}
+
+## Trace timeline view
+
+[Workflow](/concepts/workflows) traces have a new timeline view with indent guides, a unified header, and a split tree + timeline-bar layout. Logs are easier to filter — severity and combined filters are now consolidated into single dropdowns, so finding the step that matters takes one click instead of three.
+
+{/* TODO: screenshot of the trace timeline view */}
+
+## Cancel active workflows from the dashboard
+
+You can now cancel in-flight workflows directly from the active workflows view. No more dropping into the CLI to stop a long-running deploy — hit cancel from the workflow detail or the active workflows grid and the run halts cleanly.
+
+{/* TODO: screenshot of workflow cancellation UI */}
+
+## Slack app
+
+The Nuon Slack app is live. Connect your workspace to receive drift-detected events and other install notifications in the channel of your choice, with per-channel subscriptions per org. See the [notifications guide](/guides/notifications) to get set up.
+
+## Resend stack outputs
+
+The Install Stacks table now has a "trigger phone home" action so you can resend a [stack's](/concepts/stacks) outputs to the Nuon control plane on demand. Useful when an install was created out-of-band or when you need to recover from a missed callback.
+
+{/* TODO: screenshot of the resend stack outputs modal */}
+
+## Sandbox auto-retries
+
+Sandbox deploys now honor a `max_auto_retries` setting, the same knob already available on regular components. Transient sandbox failures retry automatically up to the configured limit, while genuinely broken sandboxes still surface for you to inspect.
+
+## Architecture diagram export
+
+The install architecture diagram is now exportable from the dashboard, so you can drop it straight into runbooks, design docs, or customer-facing material.
+
+## Updates
+
+### Policy reports page redesign
+
+The [policy](/concepts/policies) reports page has been redesigned for faster scanning. Reports group cleanly by install and component, and the drift detection install page now surfaces policy state alongside drift state in one view.
+
+{/* TODO: screenshot of redesigned policy reports page */}
+
+### Live updates via SSE
+
+Logs, workflow detail, org status, the active resources view, and the trace timeline are all now powered by server-sent events. The dashboard reflects what's happening on your installs in real time without manual refreshes or polling lag.
+
+### Dashboard polish
+
+- New workflow status badges and updated timeline loading state.
+- Refreshed install navbar and app/install branding.
+- Keyboard shortcuts on tables for faster navigation.
+- Install state can now be downloaded or copied from the dashboard.
+- Empty states across app tables and install tables now point you to the next action.
+
+### AWS runner auth defaults to IID
+
+New AWS runners default to [Instance Identity Document (IID)](/concepts/runners) auth out of the box. Existing runners are unaffected; new installs get the zero-trust posture without any extra configuration.
+
+### Optional GitHub app deletion
+
+When you remove a [VCS connection](/guides/vcs), you can now choose whether to also delete the underlying GitHub app installation. Useful when the same GitHub app backs multiple environments.
+
+### Nuon CLI
+
+- `nuon ext` is no longer behind `NUON_PREVIEW` — [CLI extensions](/guides/cli-extensions) are generally available. Locally-installed extensions also show up in `nuon ext list`.
+- New `nuon-ext-replay-stack` extension for replaying stack runs from the CLI.
+
+## Bug fixes
+
+- **CLI**: `nuon orgs connect-github` now uses the correct dashboard callback path, so the GitHub app handshake completes cleanly.
+- **CLI**: CloudFormation install stacks correctly require both nested stack templates when configured.
+- **Approvals**: Plan-only mode no longer triggers auto-approval, matching the documented behavior.
+- **Runner**: VM shutdown, re-enqueue, and approve-all flows are more reliable under load.
+- **Workflows**: Fixed cases where noop checks, state, and workflow runs could end up in an inconsistent state.
+- **UI**: "All workflows" navigation now routes correctly to the workflows page; action-run cancel button, log-step rendering, and log-link copy all behave correctly on closed streams.
