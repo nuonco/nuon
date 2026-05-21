@@ -157,15 +157,22 @@ func (c *cli) appsCmd() *cobra.Command {
 	}
 	appsCmd.AddCommand(unsetCurrentAppCmd)
 
-	var syncCreate bool
+	var (
+		syncCreate bool
+		syncAppID  string
+	)
 	syncCmd := &cobra.Command{
-		Use:               "sync",
+		Use:               "sync [dir]",
 		Short:             "Sync nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			var dirName string
+			var (
+				dirName     string
+				dirExplicit bool
+			)
 			if len(args) > 0 {
 				dirName = args[0]
+				dirExplicit = true
 			} else {
 				var err error
 				dirName, err = os.Getwd()
@@ -174,14 +181,20 @@ func (c *cli) appsCmd() *cobra.Command {
 				}
 			}
 
+			opts := apps.SyncOptions{
+				AppFlag:     syncAppID,
+				DirExplicit: dirExplicit,
+				Create:      syncCreate,
+			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if syncCreate {
-				return svc.SyncDirWithCreate(cmd.Context(), dirName, version.Version)
+				return svc.SyncDirWithCreate(cmd.Context(), dirName, version.Version, opts)
 			}
-			return svc.SyncDir(cmd.Context(), dirName, version.Version)
+			return svc.SyncDir(cmd.Context(), dirName, version.Version, opts)
 		}),
 	}
 	syncCmd.Flags().BoolVar(&syncCreate, "create", false, "Create the app if it doesn't exist")
+	syncCmd.Flags().StringVarP(&syncAppID, "app-id", "a", "", "The ID or name of an app (default: positional dir, selected app, or cwd)")
 	appsCmd.AddCommand(syncCmd)
 
 	var (
@@ -210,9 +223,13 @@ func (c *cli) appsCmd() *cobra.Command {
 		Hidden:            true,
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			var dirName string
+			var (
+				dirName     string
+				dirExplicit bool
+			)
 			if len(args) > 0 {
 				dirName = args[0]
+				dirExplicit = true
 			} else {
 				var err error
 				dirName, err = os.Getwd()
@@ -222,7 +239,9 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version)
+			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version, apps.SyncOptions{
+				DirExplicit: dirExplicit,
+			})
 		}),
 	}
 	appsCmd.AddCommand(syncDirCmd)
