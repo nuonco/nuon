@@ -42,28 +42,16 @@ const (
 type OrgFeature string
 
 const (
-	OrgFeatureAPIPagination           OrgFeature = "api-pagination"
-	OrgFeatureOrgDashboard            OrgFeature = "org-dashboard"
-	OrgFeatureOrgRunner               OrgFeature = "org-runner"
-	OrgFeatureOrgSettings             OrgFeature = "org-settings"
-	OrgFeatureOrgSupport              OrgFeature = "org-support"
-	OrgFeatureInstallBreakGlass       OrgFeature = "install-break-glass"
-	OrgFeatureInstallDeleteComponents OrgFeature = "install-delete-components"
-	OrgFeatureInstallDelete           OrgFeature = "install-delete"
-	OrgFeatureTerraformWorkspace      OrgFeature = "terraform-workspace"
-	OrgFeatureDevCommand              OrgFeature = "dev-command"
-	OrgFeatureAppBranches             OrgFeature = "app-branches"
-	OrgFeatureStratusLayout           OrgFeature = "stratus-layout"
-	OrgFeatureStratusWorkflow         OrgFeature = "stratus-workflow"
-	OrgFeatureTerraformInstaller      OrgFeature = "terraform-installer"
-	OrgFeatureDashboardSSE            OrgFeature = "dashboard-sse"
-	OrgFeatureUserManagedFeatures     OrgFeature = "user-managed-features"
-	OrgFeatureQueues                  OrgFeature = "queues"
-	OrgFeatureSupportRole             OrgFeature = "support-role"
-	OrgFeatureParallelRunnerJobs      OrgFeature = "parallel-runner-jobs"
-	OrgFeatureStepsWorkflows          OrgFeature = "steps-workflows"
-	OrgFeatureInstallRename           OrgFeature = "install-rename"
-	OrgFeatureDeployOutputs           OrgFeature = "deploy-outputs"
+	OrgFeatureOrgDashboard        OrgFeature = "org-dashboard"
+	OrgFeatureOrgRunner           OrgFeature = "org-runner"
+	OrgFeatureOrgSettings         OrgFeature = "org-settings"
+	OrgFeatureAppBranches         OrgFeature = "app-branches"
+	OrgFeatureUserManagedFeatures OrgFeature = "user-managed-features"
+	OrgFeatureQueues              OrgFeature = "queues"
+	OrgFeatureSupportRole         OrgFeature = "support-role"
+	OrgFeatureParallelRunnerJobs  OrgFeature = "parallel-runner-jobs"
+	OrgFeatureInstallRename       OrgFeature = "install-rename"
+	OrgFeatureDeployOutputs       OrgFeature = "deploy-outputs"
 	// OrgFeatureTerraformProviderMirror enables build-time vendoring of
 	// terraform providers via `terraform providers mirror` and ships the
 	// resulting filesystem mirror inside the OCI artifact. The install
@@ -184,10 +172,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	// except install-break-glass and user-managed-features which remain disabled
 	defaultFeatures := map[OrgFeature]bool{
 		// Disabled by default
-		OrgFeatureInstallBreakGlass:       false,
-		OrgFeatureTerraformInstaller:      false,
 		OrgFeatureInstallRename:           false,
-		OrgFeatureDeployOutputs:           false,
+		OrgFeatureDeployOutputs:           true,
 		OrgFeatureSupportRole:             false,
 		OrgFeatureTerraformProviderMirror: false,
 		OrgFeatureAppBranchesUI:           false,
@@ -196,21 +182,12 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSlack:                   false,
 
 		// Enabled by default
-		OrgFeatureParallelRunnerJobs:      true,
-		OrgFeatureQueues:                  true,
-		OrgFeatureStratusLayout:           true,
-		OrgFeatureStratusWorkflow:         true,
-		OrgFeatureDashboardSSE:            true,
-		OrgFeatureAPIPagination:           true,
-		OrgFeatureOrgDashboard:            true,
-		OrgFeatureOrgRunner:               true,
-		OrgFeatureOrgSettings:             true,
-		OrgFeatureOrgSupport:              true,
-		OrgFeatureInstallDeleteComponents: true,
-		OrgFeatureInstallDelete:           true,
-		OrgFeatureTerraformWorkspace:      true,
-		OrgFeatureDevCommand:              true,
-		OrgFeatureAppBranches:             true,
+		OrgFeatureParallelRunnerJobs: true,
+		OrgFeatureQueues:             true,
+		OrgFeatureOrgDashboard:       true,
+		OrgFeatureOrgRunner:          true,
+		OrgFeatureOrgSettings:        true,
+		OrgFeatureAppBranches:        true,
 	}
 
 	for _, feature := range GetFeatures() {
@@ -245,21 +222,10 @@ func (o *Org) EventLoops() []bulk.EventLoop {
 // active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
-		OrgFeatureAPIPagination,
 		OrgFeatureOrgDashboard,
 		OrgFeatureOrgRunner,
 		OrgFeatureOrgSettings,
-		OrgFeatureOrgSupport,
-		OrgFeatureInstallBreakGlass,
-		OrgFeatureInstallDeleteComponents,
-		OrgFeatureInstallDelete,
-		OrgFeatureTerraformWorkspace,
-		OrgFeatureDevCommand,
 		OrgFeatureAppBranches,
-		OrgFeatureStratusLayout,
-		OrgFeatureStratusWorkflow,
-		OrgFeatureTerraformInstaller,
-		OrgFeatureDashboardSSE,
 		OrgFeatureQueues,
 		OrgFeatureUserManagedFeatures,
 		OrgFeatureParallelRunnerJobs,
@@ -284,21 +250,10 @@ type OrgFeatureInfo struct {
 // GetFeatureDescriptions returns a map of feature names to their descriptions
 func GetFeatureDescriptions() map[OrgFeature]string {
 	return map[OrgFeature]string{
-		OrgFeatureAPIPagination:           "Enable pagination support across API endpoints for improved performance with large datasets",
 		OrgFeatureOrgDashboard:            "Access to the organization dashboard interface for managing org-wide settings and analytics",
 		OrgFeatureOrgRunner:               "Enable organization-specific runner functionality for executing deployments",
 		OrgFeatureOrgSettings:             "Access to organization settings management interface",
-		OrgFeatureOrgSupport:              "Enable organization support features including help documentation and support ticket integration",
-		OrgFeatureInstallBreakGlass:       "Emergency override access to installs for critical troubleshooting and recovery operations",
-		OrgFeatureInstallDeleteComponents: "Allow deletion of individual components within an installation",
-		OrgFeatureInstallDelete:           "Allow complete deletion of installations including all associated resources",
-		OrgFeatureTerraformWorkspace:      "Enable Terraform workspace management for infrastructure state isolation",
-		OrgFeatureDevCommand:              "Enable development command support for testing and debugging workflows",
 		OrgFeatureAppBranches:             "Support for multiple application branches allowing parallel development and testing",
-		OrgFeatureStratusLayout:           "Enable Stratus layout framework for enhanced UI rendering and component organization",
-		OrgFeatureStratusWorkflow:         "Enable Stratus workflow engine for advanced deployment orchestration and automation",
-		OrgFeatureTerraformInstaller:      "Enable Terraform-based installer for infrastructure provisioning and management",
-		OrgFeatureDashboardSSE:            "Enable server-sent events for real-time dashboard updates without polling",
 		OrgFeatureUserManagedFeatures:     "Allow organization users to manage feature flags through the public API (admin-only flag)",
 		OrgFeatureQueues:                  "Enable queue-based workflow execution for improved task scheduling and resource management",
 		OrgFeatureSupportRole:             "Enable the support role option when inviting users to the organization",
