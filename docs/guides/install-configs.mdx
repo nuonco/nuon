@@ -1,10 +1,14 @@
 ---
-title: "Install Configs"
-description: "Generate install configs from code using JSON Schema."
+title: "Creating Installs"
+description: "Configuring the installs for your customers"
 icon: "code"
 boost: 10
-keywords: ["install-config", "install config", "install configuration", "install.toml", "install schema", "install file", "install configuration reference", "install config reference", "configure install", "programmatic install", "json install config", "automated install onboarding", "generate install config"]
+keywords: ["Install Configs", "creating installs", "install-config", "install config", "install configuration", "install.toml", "install schema", "install file", "install configuration reference", "install config reference", "configure install", "programmatic install", "json install config", "automated install onboarding", "generate install config", "monitor workflows", "deploy notifications"]
 ---
+
+When you ship an app to customers through Nuon, you create one install per customer. This page covers configuring those installs, labeling them so they're easy to identify, and monitoring their workflows once they're running.
+
+## Install Configs
 
 If you create installs at scale — for example, one per customer in an automated onboarding flow — you can generate install configs programmatically instead of authoring them by hand.
 
@@ -17,3 +21,24 @@ nuon installs sync --file <your-install>.toml --app-id <your-app-id> --yes
 ```
 
 For the full property list, see the [Install configuration reference](/config-ref/install).
+
+## Labeling installs
+
+Installs support arbitrary key/value `labels` set via the `labels` field in the install config. Labels are useful for tagging installs with metadata like environment, region, or version, and they're surfaced in the dashboard alongside the install.
+
+```toml install.toml
+name = "customer-acme"
+
+[labels]
+env = "production"
+region = "us-east-1"
+tier = "enterprise"
+```
+
+See [Label badges](/guides/using-readmes#label-badge) for how labels render in install READMEs.
+
+## Monitoring in-progress workflows
+
+Once an install kicks off a deploy — or any other workflow — you can monitor progress from the dashboard, via outbound webhooks, or via Slack notifications.
+
+Connect your workspace to get real-time deploy notifications — see the [Slack integration guide](/guides/slack). For programmatic integrations, [webhooks](/guides/webhooks) deliver the same workflow lifecycle events as CloudEvents over HTTP.
