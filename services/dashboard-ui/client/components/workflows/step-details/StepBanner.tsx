@@ -33,6 +33,8 @@ export const StepBanner = ({
     stepStatus === 'discarded'
   const { hasViolations: hasPolicyViolations, hasPolicyData, passedCount } =
     getPolicyViolationCounts(step)
+  const metadata = step?.status?.metadata as Record<string, unknown> | undefined
+  const isPolicyAutoApproved = metadata?.auto_approved && metadata?.check === 'policy-auto-approve'
 
   return (
     <>
@@ -46,7 +48,7 @@ export const StepBanner = ({
               <Text variant="subtext" theme="neutral">
                 {bannerCfg.copy}
               </Text>
-              {(stepStatus === 'error' || stepStatus === 'failed-pending-retry') && statusDescription ? (
+              {(stepStatus === 'error' || stepStatus === 'failed-pending-retry') && statusDescription && bannerCfg.theme === 'error' ? (
                 <Text variant="subtext" theme="error">
                   {statusDescription}
                 </Text>
@@ -71,7 +73,9 @@ export const StepBanner = ({
       ) : hasPolicyData && passedCount > 0 ? (
         <Banner theme="success">
           <Text weight="strong">
-            All policy checks passed successfully
+            {isPolicyAutoApproved
+              ? 'Auto-approved: all policy checks passed'
+              : 'All policy checks passed successfully'}
           </Text>
         </Banner>
       ) : null}
