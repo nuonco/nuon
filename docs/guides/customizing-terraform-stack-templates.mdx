@@ -130,6 +130,44 @@ After `terraform apply` succeeds, the stack POSTs a JSON payload to `var.phone_h
 | `install_inputs` | Echo of `var.install_inputs`. |
 | `<secret_name>` | One key per secret declared in `stack.toml`, flattened into the top-level payload (Secret Manager secret names, not ARNs). |
 
+## Manually trigger phone-home from the dashboard
+
+When you fork the install stack, the first apply you run against a fresh install is also your first chance to verify the payload reaches ctl-api with the right shape. The dashboard exposes a manual trigger so you don't have to re-run `terraform apply` (or wait for the stack to retry on its own) every time you tweak the payload.
+
+Use it to:
+
+- Iterate on a forked stack — send a hand-crafted JSON body until ctl-api accepts every key and the install moves past `await-install-stack`.
+- Recover an install when the automatic phone-home failed (for example, the runner had no egress to the phone-home URL at apply time).
+- Update an install stack output after the fact — every key in the payload overwrites the matching `nuon.install_stack.outputs.<key>` value.
+
+To trigger it:
+
+1. Open the install in the dashboard and go to the **Stacks** tab.
+2. Find the stack version row, open the actions menu (the three-dot button on the right), and select **Trigger phone home**. The option only appears when the version has a phone-home ID — versions that have already been finalized do not show it.
+3. Paste the JSON payload into the editor. Use **Format** to pretty-print it and catch syntax errors. The button stays disabled until the JSON parses cleanly.
+4. Click **Trigger phone home**. The dashboard POSTs the payload to the same endpoint the stack template uses, so the keys you send must match the contract for your cloud (see the tables above).
+
+```json
+{
+  "request_type": "Create",
+  "phone_home_type": "aws",
+  "account_id": "123456789012",
+  "region": "us-east-1",
+  "vpc_id": "vpc-0abc123",
+  "runner_subnet": "subnet-0abc123",
+  "public_subnets": "subnet-0abc123,subnet-0def456",
+  "private_subnets": "subnet-0ghi789,subnet-0jkl012",
+  "runner_security_group_id": "sg-0abc123",
+  "runner_iam_role_arn": "arn:aws:iam::123456789012:role/nuon-runner",
+  "runner_instance_profile": "nuon-runner",
+  "runner_asg_name": "nuon-runner-asg",
+  "runner_log_group_name": "/nuon/install-abc/runner",
+  "install_inputs": {}
+}
+```
+
+Each trigger overwrites the previous outputs for that version, so you can re-send the payload as many times as you need while you iterate.
+
 ## What you can customize freely
 
 - VPC / VNet / VPC layout, CIDRs, subnet count and sizes — as long as the runner subnet has working egress to the
