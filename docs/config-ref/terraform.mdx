@@ -18,7 +18,6 @@ title: 'Terraform'
 | **`labels`**<br/>object | - | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
-| **`pulumi`**<br/>[PulumiComponentConfig](#pulumi) | pulumi component configuration Configuration for Pulumi deployments. Required when type is 'pulumi' | **Optional** | - |
 | **`env_vars`**<br/>object | environment variables Map of environment variables passed to Terraform as key-value pairs | **Optional** | - |
 | **`vars`**<br/>object | Terraform variables Map of Terraform input variables as key-value pairs. Supports templating | **Optional** | - |
 | **`var_file`**<br/>[array](#var_file) | Terraform variable files Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git rep... | **Optional** | - |
@@ -39,23 +38,6 @@ title: 'Terraform'
 |----------|----------|----------|----------|
 | **`operation`**<br/>string | operation type Type of operation: provision, deprovision, update, reprovision, or trigger | **✅ Required** | `"provision"`, `"deploy"`, `"deprovision"` |
 | **`role`**<br/>string | IAM role name Name of the IAM role to use for this operation (not ARN). Role must exist in install stack outputs | **✅ Required** | `"{{.nuon.install.id}}-maintenance"`, `"{{.nuon.install.id}}-provision"` |
-
-### `pulumi`
-
-| Property | Description | Values | Example |
-|----------|----------|----------|----------|
-| **`runtime`**<br/>string | Pulumi runtime The Pulumi runtime to use for the program (go, nodejs, python) | **✅ Required** | `"go"`, `"nodejs"`, `"python"` |
-| **`pulumi_version`**<br/>string | Pulumi version Version of the Pulumi CLI to use for deployments. If not specified, uses the latest version | **Optional** | `"3.100.0"` |
-| **`config`**<br/>object | Pulumi stack config Map of Pulumi stack configuration values as key-value pairs. Supports templating. Keys use the format 'namespace:key' (e.g., 'aws:region') | **Optional** | - |
-| **`env_vars`**<br/>object | environment variables Map of environment variables passed to Pulumi as key-value pairs | **Optional** | - |
-| **`public_repo`**<br/>PublicRepoConfig | public repository configuration Configuration for a public repository accessible without authentication | **Optional** | - |
-| **`connected_repo`**<br/>ConnectedRepoConfig | connected repository configuration Configuration for a private repository connected to the Nuon platform | **Optional** | - |
-| **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled. Supports templating | **Optional** | `"0 2 * * *"` |
-| **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | - |
-| **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | - |
-| **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
-| **`skip_noops`**<br/>boolean | - | **Optional** | - |
-| **`auto_approve_on_policies_passing`**<br/>boolean | - | **Optional** | - |
 
 ### `var_file`
 
