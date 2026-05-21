@@ -9,33 +9,63 @@ import (
 
 func TestStackConfig_Parse_NoCustomNestedStacks(t *testing.T) {
 	cfg := &StackConfig{
-		Type:        "aws-cloudformation",
-		Name:        "my-stack",
-		Description: "test stack",
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
 	}
 	require.NoError(t, cfg.parse())
 }
 
 func TestStackConfig_Parse_EmptyCustomNestedStacks(t *testing.T) {
 	cfg := &StackConfig{
-		Type:               "aws-cloudformation",
-		Name:               "my-stack",
-		Description:        "test stack",
-		CustomNestedStacks: []CustomNestedStack{},
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+		CustomNestedStacks:      []CustomNestedStack{},
 	}
 	require.NoError(t, cfg.parse())
 }
 
 func TestStackConfig_Parse_ValidCustomNestedStacks(t *testing.T) {
 	cfg := &StackConfig{
-		Type:        "aws-cloudformation",
-		Name:        "my-stack",
-		Description: "test stack",
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
 		CustomNestedStacks: []CustomNestedStack{
 			{Name: "k8s_namespaces", TemplateURL: "https://s3.amazonaws.com/bucket/template.yaml", Index: 0},
 		},
 	}
 	require.NoError(t, cfg.parse())
+}
+
+func TestStackConfig_Parse_AWSCloudFormation_MissingVPCTemplateURL(t *testing.T) {
+	cfg := &StackConfig{
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+	}
+	err := cfg.parse()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "vpc_nested_template_url is required when type is aws-cloudformation")
+}
+
+func TestStackConfig_Parse_AWSCloudFormation_MissingRunnerTemplateURL(t *testing.T) {
+	cfg := &StackConfig{
+		Type:                 "aws-cloudformation",
+		Name:                 "my-stack",
+		Description:          "test stack",
+		VPCNestedTemplateURL: "https://s3.amazonaws.com/bucket/vpc.yaml",
+	}
+	err := cfg.parse()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "runner_nested_template_url is required when type is aws-cloudformation")
 }
 
 func TestStackConfig_Parse_MissingName(t *testing.T) {
@@ -63,9 +93,11 @@ func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
 func TestStackConfig_Parse_NonS3URLAccepted(t *testing.T) {
 	// Custom nested stack template URLs no longer require S3 — go-getter handles fetching.
 	cfg := &StackConfig{
-		Type:        "aws-cloudformation",
-		Name:        "my-stack",
-		Description: "test stack",
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
 		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "https://example.com/template.yaml", Index: 0},
 		},
@@ -75,9 +107,11 @@ func TestStackConfig_Parse_NonS3URLAccepted(t *testing.T) {
 
 func TestStackConfig_Parse_FilePathURLAccepted(t *testing.T) {
 	cfg := &StackConfig{
-		Type:        "aws-cloudformation",
-		Name:        "my-stack",
-		Description: "test stack",
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
 		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", TemplateURL: "./templates/custom.yaml", Index: 0},
 		},
@@ -116,9 +150,11 @@ func TestStackConfig_Parse_ValidFirstClassS3URLs(t *testing.T) {
 
 func TestStackConfig_Parse_ValidParameters(t *testing.T) {
 	cfg := &StackConfig{
-		Type:        "aws-cloudformation",
-		Name:        "my-stack",
-		Description: "test stack",
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
 		CustomNestedStacks: []CustomNestedStack{
 			{
 				Name:        "k8s_namespaces",
@@ -155,9 +191,11 @@ func TestStackConfig_Parse_InvalidParameterValue(t *testing.T) {
 
 func TestStackConfig_Parse_EmptyParameters(t *testing.T) {
 	cfg := &StackConfig{
-		Type:        "aws-cloudformation",
-		Name:        "my-stack",
-		Description: "test stack",
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
 		CustomNestedStacks: []CustomNestedStack{
 			{
 				Name:        "my_stack",
