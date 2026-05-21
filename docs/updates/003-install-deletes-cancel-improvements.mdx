@@ -24,7 +24,7 @@ They will use this ordering:
 3. `terraform_module`
 4. `helm_deploy`
 
-![UI showing component ordering based on type and dependencies](assets/003/2025-05-07-15-48-54.png)
+![UI showing component ordering based on type and dependencies](/updates/assets/003/2025-05-07-15-48-54.png)
 
 If two components have the same dependencies _and_ the same type, they will be ordered by name. For instance, in the following deploy, only the helm deploy has any defined dependencies.
 
@@ -32,20 +32,20 @@ If two components have the same dependencies _and_ the same type, they will be o
 
 The side-nav bar will now automatically hide when not being used.
 
-![Collapsible side navigation bar](assets/003/2025-05-07-16-02-30.png)
+![Collapsible side navigation bar](/updates/assets/003/2025-05-07-16-02-30.png)
 
 ## Restart Runner
 
 While you should not need this for normal usage, you can now restart your runner from the runners page.
 
-![Button to restart a runner from the runners page](assets/003/2025-05-07-16-44-36.png)
+![Button to restart a runner from the runners page](/updates/assets/003/2025-05-07-16-44-36.png)
 
 ## OCI Artifact Information
 
 Whenever a component is deployed into an install, an OCI artifact is synced into the install first. You can now see any 
 container image, helm chart artifact or terraform artifact that was synced during a deploy on the image tab.
 
-![UI showing OCI artifacts synced during component deployment](assets/003/2025-05-07-16-52-47.png)
+![UI showing OCI artifacts synced during component deployment](/updates/assets/003/2025-05-07-16-52-47.png)
 
 ## Deprovision an Install
 
@@ -53,18 +53,18 @@ Deleting an install requires tearing down its deployed components, destroying th
 
 You can now delete an install from the install overview page in the UI:
 
-![Deprovision Install button on the install overview page](assets/003/2025-05-07-15-58-31.png)
+![Deprovision Install button on the install overview page](/updates/assets/003/2025-05-07-15-58-31.png)
 
 If you have components that are not successfully deploying and you want to attempt to tear down everything in the install, you can use the `continue` option:
 
-![Continue option when deprovisioning with failing components](assets/003/2025-05-07-15-57-57.png)
+![Continue option when deprovisioning with failing components](/updates/assets/003/2025-05-07-15-57-57.png)
 
 ## Forgot an Install
 
 Once you have deprovisioned an install, you must forget it to remove it from Nuon's system. You can do this from the 
 install overview page:
 
-![Forget Install button to remove a deprovisioned install](assets/003/2025-05-07-16-01-21.png)
+![Forget Install button to remove a deprovisioned install](/updates/assets/003/2025-05-07-16-01-21.png)
 
 ## Additional Delete Options
 
@@ -75,7 +75,7 @@ when things go wrong or you are iterating, you can delete individual parts of an
 
 Sometimes an install will fail to destroy because a single component has leaked state. You can manually tear down a component on the install component page.
 
-![Teardown Component button on the install component page](assets/003/2025-05-07-15-55-12.png)
+![Teardown Component button on the install component page](/updates/assets/003/2025-05-07-15-55-12.png)
 
 <Note>If you have a failed install deprovision due to a component, you can directly tear down the component and then re-run Deprovision Install to try again</Note>
 
@@ -83,13 +83,13 @@ Sometimes an install will fail to destroy because a single component has leaked 
 
 You can delete all install components using the Teardown All Components option from the components overview.
 
-![Teardown All Components option on the components overview page](assets/003/2025-05-07-15-56-47.png)
+![Teardown All Components option on the components overview page](/updates/assets/003/2025-05-07-15-56-47.png)
 
 ### Deprovision a Sandbox
 
 In rare cases, it can be helpful to forgo tearing down install components and deprovision only the sandbox. You can deprovision a sandbox directly from the sandbox tab on an install.
 
-![Deprovision Sandbox button on the sandbox tab](assets/003/2025-05-07-15-53-35.png)
+![Deprovision Sandbox button on the sandbox tab](/updates/assets/003/2025-05-07-15-53-35.png)
 
 <Note>It is recommended to try the `Deprovision Install` button first</Note>
 
@@ -98,4 +98,4 @@ In rare cases, it can be helpful to forgo tearing down install components and de
 The install stack can only be deleted from an install AWS account directly. If you click the deprovision stack button 
 from the install overview, you can find directions to deprovision it.
 
-![Deprovision Stack dialog with AWS CloudFormation instructions](assets/003/2025-05-07-15-50-36.png)
+![Deprovision Stack dialog with AWS CloudFormation instructions](/updates/assets/003/2025-05-07-15-50-36.png)
