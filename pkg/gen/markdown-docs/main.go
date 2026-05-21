@@ -71,6 +71,7 @@ func generateSchemaDoc(schemaName, outputDir, format string) error {
 		"helm_chart",
 		"job",
 		"kubernetes_manifest",
+		"pulumi",
 		"terraform_module",
 	}
 	log.Printf("[%s] Generating documentation...", schemaName)
