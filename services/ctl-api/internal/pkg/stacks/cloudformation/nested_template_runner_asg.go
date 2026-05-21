@@ -91,10 +91,8 @@ func (a *Templates) getRunnerParameters() map[string]cloudformation.Parameter {
 			Description: generics.ToPtr("EC2 instance type for the runner"),
 			Default:     "t3a.medium",
 			AllowedValues: []interface{}{
-				"t3.small",
 				"t3.medium",
 				"t3.large",
-				"t3a.small",
 				"t3a.medium",
 				"t3a.large",
 				"c4.large",
