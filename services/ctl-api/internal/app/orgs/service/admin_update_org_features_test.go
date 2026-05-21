@@ -216,9 +216,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureOrgDashboard):  false,
-						string(app.OrgFeatureAPIPagination): true,
-						string(app.OrgFeatureOrgRunner):     false,
+						string(app.OrgFeatureOrgDashboard): false,
+						string(app.OrgFeatureAppBranches):  true,
+						string(app.OrgFeatureOrgRunner):    false,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -231,16 +231,16 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			},
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
-					string(app.OrgFeatureOrgDashboard):  true,
-					string(app.OrgFeatureAPIPagination): false,
-					string(app.OrgFeatureOrgRunner):     true,
+					string(app.OrgFeatureOrgDashboard): true,
+					string(app.OrgFeatureAppBranches):  false,
+					string(app.OrgFeatureOrgRunner):    true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
 			},
 			checkDBFunc: func(org *app.Org) {
@@ -248,7 +248,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				err := s.service.DB.First(&dbOrg, "id = ?", org.ID).Error
 				require.NoError(s.T(), err)
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgRunner)])
 			},
 		},
@@ -351,7 +351,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 					},
 					Features: map[string]bool{
 						string(app.OrgFeatureOrgDashboard):        false,
-						string(app.OrgFeatureAPIPagination):       false,
+						string(app.OrgFeatureAppBranches):         false,
 						string(app.OrgFeatureOrgRunner):           false,
 						string(app.OrgFeatureUserManagedFeatures): false,
 					},
@@ -367,22 +367,22 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 			requestBody: AdminUpdateOrgFeaturesRequest{
 				Features: map[string]bool{
 					string(app.OrgFeatureOrgDashboard):        true,
-					string(app.OrgFeatureAPIPagination):       true,
+					string(app.OrgFeatureAppBranches):         true,
 					string(app.OrgFeatureOrgRunner):           true,
 					string(app.OrgFeatureUserManagedFeatures): true,
 					string(app.OrgFeatureOrgSettings):         true,
-					string(app.OrgFeatureInstallBreakGlass):   true,
+					string(app.OrgFeatureInstallRename):       true,
 				},
 			},
 			expectedCode: http.StatusOK,
 			validateFunc: func(org *app.Org) {
 				require.NotNil(s.T(), org)
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureAPIPagination)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureUserManagedFeatures)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgSettings)])
-				assert.True(s.T(), org.Features[string(app.OrgFeatureInstallBreakGlass)])
+				assert.True(s.T(), org.Features[string(app.OrgFeatureInstallRename)])
 			},
 			checkDBFunc: func(org *app.Org) {
 				var dbOrg app.Org
@@ -406,9 +406,9 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 						InternalSlackWebhookURL: "https://hooks.slack.com/test",
 					},
 					Features: map[string]bool{
-						string(app.OrgFeatureOrgDashboard):  true,
-						string(app.OrgFeatureAPIPagination): false,
-						string(app.OrgFeatureOrgRunner):     true,
+						string(app.OrgFeatureOrgDashboard): true,
+						string(app.OrgFeatureAppBranches):  false,
+						string(app.OrgFeatureOrgRunner):    true,
 					},
 				}
 				err := s.service.DB.WithContext(ctx).Create(org).Error
@@ -430,7 +430,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				// Modified feature
 				assert.False(s.T(), org.Features[string(app.OrgFeatureOrgDashboard)])
 				// Unmodified features should be preserved
-				assert.False(s.T(), org.Features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), org.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), org.Features[string(app.OrgFeatureOrgRunner)])
 			},
 			checkDBFunc: func(org *app.Org) {
@@ -439,7 +439,7 @@ func (s *AdminUpdateOrgFeaturesTestSuite) TestAdminUpdateOrgFeatures() {
 				require.NoError(s.T(), err)
 				// Verify database state matches
 				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureOrgDashboard)])
-				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAPIPagination)])
+				assert.False(s.T(), dbOrg.Features[string(app.OrgFeatureAppBranches)])
 				assert.True(s.T(), dbOrg.Features[string(app.OrgFeatureOrgRunner)])
 			},
 		},
