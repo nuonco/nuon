@@ -1,0 +1,127 @@
+---
+title: 'Slack'
+description: "Install the Nuon Slack app, link it to your org, and subscribe channels to deploy, action, and approval events."
+icon: "slack"
+keywords: ["Slack", "Slack app", "notifications", "subscriptions", "approvals", "events"]
+---
+
+The Nuon Slack app posts deploy, action, workflow, and approval events into Slack
+channels you choose, and lets users approve workflow steps without leaving Slack.
+
+<Info>
+The Slack integration is gated by an org feature flag. If you don't see **Slack**
+in the dashboard sidebar, ask Nuon support to enable the `slack` feature flag for
+your org.
+</Info>
+
+## Overview
+
+There are three pieces of state involved:
+
+| Concept                   | What it is                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **Slack installation**    | The OAuth installation of the Nuon app in a Slack workspace. One per workspace.                                                     |
+| **Org link**              | Connects a Nuon org to a Slack workspace. One Nuon org can be linked to multiple workspaces; one workspace can host multiple orgs.   |
+| **Channel subscription**  | A per-channel rule that decides *which* events from a linked org are posted into *that* channel. Backed by `match` + `interests`.   |
+
+## Installing the Slack app
+
+1. In the dashboard sidebar, click **Slack**.
+2. Click **Install in Slack**. You'll be redirected to Slack's OAuth consent screen.
+3. Approve the requested scopes. Slack redirects back to Nuon and creates the
+   workspace installation.
+4. The workspace now shows up under **Slack → Linked workspaces** for your org.
+
+Repeat step 1–2 from another org to link the same workspace to multiple orgs.
+
+## Subscribing a channel
+
+Subscriptions are created from inside Slack via the slash command:
+
+```
+/nuon subscribe
+```
+
+This opens a modal where you choose:
+
+- **Org** — which linked Nuon org to subscribe to.
+- **Match** — *which entities* in the org events must come from.
+- **Interests** — *which events* you care about.
+
+Re-running `/nuon subscribe` in a channel that already has a subscription opens
+the modal pre-filled with the current settings — you can use it to edit.
+
+### Slash commands
+
+| Command              | What it does                                                                                       |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| `/nuon subscribe`    | Open the subscribe dialog for the current channel.                                                 |
+| `/nuon unsubscribe`  | Open the unsubscribe dialog for the current channel.                                               |
+| `/nuon status`       | Show the workspace installation, linked orgs, and the current channel's subscription (if any).    |
+| `/nuon help`         | Show the help message.                                                                             |
+
+All responses are ephemeral — only the user who ran the command sees them.
+
+## Match — routing predicate
+
+`match` decides which entities a subscription cares about. Three modes:
+
+- **Org-wide** — every entity in the linked org.
+- **Specific IDs** — an explicit list of install / app / component IDs.
+- **Label selector** — entities whose labels match a selector (e.g.
+  `env=prod,tier=critical`).
+
+The same `match` contract is shared with [webhooks](/guides/webhooks), so the same
+mental model applies in both places.
+
+## Interests — event filter
+
+`interests` decides which kinds of events are delivered. It's a structured filter
+across:
+
+- **Resource kinds** — `installs`, `components`, `actions`, `workflows`.
+- **Operations** — `deploy`, `destroy`, `plan`, etc.
+- **Outcomes** — `completion`, `failures`.
+- **Approvals** — approval requests and approval responses.
+
+For example, a "production deploy failures" subscription matches `installs` with
+the `env=prod` label, and interests of `deploy` + `failures`.
+
+## Approvals from Slack
+
+When a workflow step requires approval and a channel is subscribed to approval
+events, Nuon posts the approval request into that channel with **Approve** /
+**Reject** buttons. Clicking either button records the response against the
+approver's Nuon account (resolved from their Slack identity), so the audit trail
+matches a dashboard approval.
+
+## Unsubscribing
+
+From inside the channel, run:
+
+```
+/nuon unsubscribe
+```
+
+You can also remove a subscription from **Slack → Subscriptions** in the
+dashboard.
+
+## Removing the workspace installation
+
+To fully remove the Nuon app from a workspace, an org admin can delete the
+**Slack installation** from **Slack → Linked workspaces** in the dashboard. This
+deletes the OAuth token, all org links for the workspace, and all channel
+subscriptions tied to those links.
+
+## Troubleshooting
+
+- **`/nuon subscribe` says "this workspace isn't linked to any Nuon org yet"** —
+  Open the dashboard and complete the OAuth install for the org you want to
+  subscribe to.
+- **No events arriving in a subscribed channel** — Run `/nuon status` in the
+  channel to confirm the subscription is recorded, then verify the source entity's
+  labels actually match the `match` selector.
+- **Buttons in approval messages do nothing** — The Slack app's *Interactivity
+  Request URL* must be reachable from Slack. If you're running locally, your
+  Slack app config must point at a public tunnel (e.g. Tailscale Funnel or ngrok)
+  in front of the Nuon Slack listener.
