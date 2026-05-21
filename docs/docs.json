@@ -166,7 +166,6 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
-              "guides/notifications",
               "guides/team-management"
             ]
           },
@@ -177,6 +176,7 @@
               "guides/control-plane-integration",
               "guides/github-actions",
               "guides/webhooks",
+              "guides/slack",
               "guides/ai-and-apps"
             ]
           },
