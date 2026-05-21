@@ -33,6 +33,13 @@ re-deployed via a Nuon component. This is particularly useful for networking com
 
 ## Configuration
 
+<Note>
+For `aws-cloudformation` stacks, both `vpc_nested_template_url` and `runner_nested_template_url` are
+required. The CLI rejects a `stack.toml` that omits either field with an error such as
+`vpc_nested_template_url is required when type is aws-cloudformation`. Define them at the top of
+`stack.toml` before any `[[custom_nested_stacks]]` blocks.
+</Note>
+
 Custom nested stacks are configured in `[[custom_nested_stacks]]` blocks in `stack.toml`:
 
 ```toml
