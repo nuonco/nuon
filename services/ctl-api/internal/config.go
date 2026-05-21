@@ -387,6 +387,9 @@ type Config struct {
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
 
+	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
+	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`
+
 	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`
 }
