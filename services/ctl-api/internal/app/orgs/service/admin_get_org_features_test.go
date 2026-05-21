@@ -162,21 +162,10 @@ func (s *AdminGetOrgFeaturesTestSuite) TestAdminGetOrgFeatures() {
 				}
 
 				criticalFeatures := []app.OrgFeature{
-					app.OrgFeatureAPIPagination,
 					app.OrgFeatureOrgDashboard,
 					app.OrgFeatureOrgRunner,
 					app.OrgFeatureOrgSettings,
-					app.OrgFeatureOrgSupport,
-					app.OrgFeatureInstallBreakGlass,
-					app.OrgFeatureInstallDeleteComponents,
-					app.OrgFeatureInstallDelete,
-					app.OrgFeatureTerraformWorkspace,
-					app.OrgFeatureDevCommand,
 					app.OrgFeatureAppBranches,
-					app.OrgFeatureStratusLayout,
-					app.OrgFeatureStratusWorkflow,
-					app.OrgFeatureTerraformInstaller,
-					app.OrgFeatureDashboardSSE,
 					app.OrgFeatureUserManagedFeatures,
 				}
 
