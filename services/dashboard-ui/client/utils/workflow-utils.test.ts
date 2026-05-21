@@ -141,7 +141,7 @@ describe('workflow-utils', () => {
       })
     })
 
-    test('should return auto-approved badge for approval-awaiting step when not approval prompt', () => {
+    test('should return awaiting approval badge for approval-awaiting step when not approval prompt', () => {
       const step: TWorkflowStep = {
         execution_type: 'approval',
         status: { status: 'approval-awaiting' },
@@ -150,8 +150,8 @@ describe('workflow-utils', () => {
 
       const badge = getStepBadge(step, false)
       expect(badge).toEqual({
-        children: 'Auto approved',
-        theme: 'neutral',
+        children: 'Awaiting approval',
+        theme: 'warn',
       })
     })
 
@@ -165,6 +165,72 @@ describe('workflow-utils', () => {
       const badge = getStepBadge(step, true)
       expect(badge).toEqual({
         children: 'Awaiting approval',
+        theme: 'warn',
+      })
+    })
+
+    test('should return auto-approved badge for pending approval step', () => {
+      const step: TWorkflowStep = {
+        execution_type: 'approval',
+        status: { status: 'pending' },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step, false)
+      expect(badge).toEqual({
+        children: 'Auto approved',
+        theme: 'neutral',
+      })
+    })
+
+    test('should return policy auto-approved badge', () => {
+      const step: TWorkflowStep = {
+        execution_type: 'approval',
+        status: {
+          status: 'approved',
+          metadata: {
+            check: 'policy-auto-approve',
+            auto_approved: true,
+          },
+        },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step, false)
+      expect(badge).toEqual({
+        children: 'Auto-approved (policies)',
+        theme: 'success',
+      })
+    })
+
+    test('should return stale-plan badge for stale plan error', () => {
+      const step: TWorkflowStep = {
+        status: {
+          status: 'error',
+          metadata: { check: 'stale-plan' },
+        },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step)
+      expect(badge).toEqual({
+        children: 'Plan stale',
+        theme: 'warn',
+      })
+    })
+
+    test('should return superseded badge for superseded plan error', () => {
+      const step: TWorkflowStep = {
+        status: {
+          status: 'error',
+          metadata: { check: 'superseded' },
+        },
+        retried: false,
+      } as TWorkflowStep
+
+      const badge = getStepBadge(step)
+      expect(badge).toEqual({
+        children: 'Plan superseded',
         theme: 'warn',
       })
     })
@@ -389,6 +455,46 @@ describe('workflow-utils', () => {
         copy: 'Step was retried by user@example.com: Completed after retry',
         theme: 'info',
         title: 'Step undefined retried',
+      })
+    })
+
+    test('should return stale plan banner', () => {
+      const step: TWorkflowStep = {
+        name: 'approve plan',
+        status: {
+          status: 'error',
+          metadata: {
+            check: 'stale-plan',
+            detail: 'Approval was submitted 4380m after plan creation (threshold: 4320m)',
+          },
+        },
+      } as TWorkflowStep
+
+      const banner = getStepBanner(step)
+      expect(banner).toEqual({
+        copy: 'Approval was submitted 4380m after plan creation (threshold: 4320m)  The step will be automatically retried with a fresh plan.',
+        theme: 'warn',
+        title: 'Step approve plan — plan stale',
+      })
+    })
+
+    test('should return superseded plan banner', () => {
+      const step: TWorkflowStep = {
+        name: 'approve plan',
+        status: {
+          status: 'error',
+          metadata: {
+            check: 'superseded',
+            detail: 'A newer deploy was approved for this component',
+          },
+        },
+      } as TWorkflowStep
+
+      const banner = getStepBanner(step)
+      expect(banner).toEqual({
+        copy: 'A newer deploy was approved for this component The step will be automatically retried with a fresh plan.',
+        theme: 'warn',
+        title: 'Step approve plan — plan superseded',
       })
     })
 

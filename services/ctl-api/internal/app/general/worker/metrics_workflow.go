@@ -229,7 +229,7 @@ func (w *Workflows) writeQueueSignalEnqueueMetrics(ctx workflow.Context) error {
 	for _, t := range m.UnenqueuedByType {
 		w.mw.Gauge(ctx, "queue_signals.unenqueued",
 			float64(t.Count),
-			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type})...)
+			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type, "signal_namespace": t.Namespace})...)
 	}
 
 	return nil
@@ -244,7 +244,7 @@ func (w *Workflows) writeQueueSignalNotEnqueuedMetrics(ctx workflow.Context) err
 	for _, t := range m.NotEnqueuedByType {
 		w.mw.Gauge(ctx, "queue_signals.not_enqueued",
 			float64(t.Count),
-			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type})...)
+			metrics.ToTags(map[string]string{"general": "true", "signal_type": t.Type, "signal_namespace": t.Namespace})...)
 	}
 
 	return nil
