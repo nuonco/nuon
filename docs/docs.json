@@ -175,7 +175,6 @@
             "pages": [
               "guides/control-plane-integration",
               "guides/github-actions",
-              "guides/slack",
               "guides/webhooks",
               "guides/ai-and-apps"
             ]
