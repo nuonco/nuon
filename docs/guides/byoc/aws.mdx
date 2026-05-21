@@ -93,6 +93,7 @@ Nuon will provision the following subdomains under the domain you configure. Onl
 | api       | The control plane API, used by the Vendor Dashboard and the CLI | |
 | admin     | The admin API. Exposes functionality for administration of the control plane | |
 | runner    | The API used by runners to communicate with the control plane. | true |
+| slack     | The Slack integration listener (OAuth callback, slash commands, events, interactions). Provisioned on every install — active once Slack credentials are configured. | true |
 
 <Warning>
 The Nuon Dashboard uses cookies for authentication, and they will be shared on all subdomains of the provided root domain. We strongly recommend creating a Nuon-specific subdomain to avoid leaking auth cookies.
@@ -243,8 +244,75 @@ Create a Native Application for CLI authentication.
 | Allow Cross-Origin Authentication | `true` |
 | Device Code (Advanced > Grant Types) | Checked |
 
+### Slack App (Optional)
 
+If you would like Nuon BYOC to send notifications to your Slack workspace, you can configure a Slack app for it to integrate with. This is optional. You can skip this, or enable it later.
 
+<Note>
+Since the Slack app requires secrets, enabling it later will require reprovisioning the install, so you can provide these secrets to the Stack.
+</Note>
+
+Create the Slack app from the manifest below — it pre-configures scopes, the `/nuon` slash command, interactivity, and event subscriptions. You can edit any of these later from the Slack app's settings.
+
+1. Copy the manifest below into a scratch buffer and replace **both** occurrences of `<your-root-domain>` with your actual root domain (e.g. `nuon.my-domain.com`). The host is the `slack.` subdomain in front of your install.
+
+   ```yaml
+   display_information:
+     name: Nuon
+     description: Nuon BYOC deployment notifications in Slack.
+     background_color: "#0b0b0f"
+     long_description: |
+       Nuon posts deployment lifecycle events from your installs, sandboxes,
+       runners, and actions into the Slack channels you choose. Subscribe per
+       org, filter by interest (failures, components, sandboxes, runners,
+       actions).
+
+   features:
+     bot_user:
+       display_name: Nuon
+       always_online: true
+     slash_commands:
+       - command: /nuon
+         url: https://slack.<your-root-domain>/slack/commands/nuon
+         description: Manage Nuon notifications in Slack
+         usage_hint: subscribe [install] | unsubscribe | status | help
+         should_escape: false
+
+   oauth_config:
+     redirect_urls:
+       - https://slack.<your-root-domain>/slack/oauth/callback
+     scopes:
+       bot:
+         - chat:write
+         - chat:write.public
+         - channels:read
+         - groups:read
+         - team:read
+         - commands
+     pkce_enabled: false
+
+   settings:
+     org_deploy_enabled: false
+     socket_mode_enabled: false
+     token_rotation_enabled: false
+     is_mcp_enabled: false
+     interactivity:
+       is_enabled: true
+       request_url: https://slack.<your-root-domain>/slack/interactions
+       message_menu_options_url: https://slack.<your-root-domain>/slack/interactions
+     event_subscriptions:
+       request_url: https://slack.<your-root-domain>/slack/events
+       bot_events:
+         - app_uninstalled
+         - tokens_revoked
+         - channel_rename
+         - channel_archive
+         - channel_left
+   ```
+
+2. Go to [Slack API: Your Apps](https://api.slack.com/apps) and click **Create New App → From a manifest**. Select your own Slack workspace as the development workspace — this is where you'll manage the app's settings going forward. Customers will install the app into their own workspaces later via OAuth. Paste the manifest and create the app.
+
+3. Under **Basic Information**, copy your **Client ID**, **Client Secret**, and **Signing Secret** — you'll provide these to Nuon as inputs and secrets.
 ## Inputs
 
 After configuring all dependencies, update your install inputs in the customer dashboard.
@@ -287,6 +355,15 @@ If using the deprecated Auth0 integration, you will need to provide these inputs
 
 Adjust instance sizes for RDS, Temporal, and ClickHouse clusters if needed.
 
+### Slack Configuration (Optional)
+
+Provide these only if you created a Slack app in the [Slack App](#slack-app-optional) section. Leave blank to disable the Slack integration.
+
+| Input                     | Value                                                     |
+| ------------------------- | --------------------------------------------------------- |
+| Slack Client ID           | Client ID from your Slack app's Basic Information page    |
+| Slack OAuth Redirect URL  | `https://slack.<your-root-domain>/slack/oauth/callback`   |
+
 ## Secrets
 
 When provisioning the CloudFormation stack, provide these secrets:
@@ -295,6 +372,9 @@ When provisioning the CloudFormation stack, provide these secrets:
 | -------------------- | -------------------------------------- |
 | `github_app_key`     | Your base64-encoded GitHub App PEM key |
 | `auth_client_secret` | The client secret from your Auth0 SPA  |
+| `slack_client_secret` | Client Secret from your Slack app (optional — required only if using Slack) |
+| `slack_signing_secret` | Signing Secret from your Slack app (optional — required only if using Slack) |
+| `slack_state_jwt_secret` | A random high-entropy string (e.g. `openssl rand -hex 32`); signs the OAuth state JWT during Slack installation. Optional — required only if using Slack. |
 
 <Note>
 The GitHub App PEM key must be base64 encoded because AWS CloudFormation doesn't preserve newlines in text fields.
