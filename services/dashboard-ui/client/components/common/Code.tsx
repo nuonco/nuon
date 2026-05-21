@@ -10,7 +10,7 @@ const VARIANT_CLASSES: Record<string, string> = {
   default: 'p-4 min-h-[3rem] max-h-[40rem]',
   preformated: 'p-4 min-h-[3rem] max-h-[40rem]',
   inline:
-    '!p-1 leading-3 min-h-min overflow-x-scroll w-fit inline-block align-middle',
+    '!p-1 leading-3 min-h-min overflow-x-auto w-fit inline-block align-middle',
 }
 
 export const Code = ({
