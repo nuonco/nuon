@@ -1152,6 +1152,48 @@ In a group:
     </div>
 
     <div className="space-y-4">
+      <h4 className="text-sm font-medium">Card</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        Use {'<nuon-card>'} to wrap content in a styled card container.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-card>
+
+## Environment status
+
+<nuon-group gap="2" align="center">
+  <nuon-badge theme="success">Production</nuon-badge>
+  <nuon-badge theme="warn">Staging</nuon-badge>
+  <nuon-badge theme="error">Development</nuon-badge>
+</nuon-group>
+
+</nuon-card>
+
+Cards in a group:
+
+<nuon-group gap="4">
+  <nuon-card>
+
+**Step 1:** Create an install
+
+  </nuon-card>
+  <nuon-card>
+
+**Step 2:** Deploy components
+
+  </nuon-card>
+  <nuon-card>
+
+**Step 3:** Verify health
+
+  </nuon-card>
+</nuon-group>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
       <h4 className="text-sm font-medium">Combined example</h4>
       <div className="p-4 border rounded-lg">
         <Markdown
