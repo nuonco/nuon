@@ -1,0 +1,51 @@
+---
+title: '035 - Component dependency graph, stack replay, and real-time UI'
+description: '**New**: Component dependency graph, stack replay extension, send stack outputs from the dashboard
+**Improved**: Real-time workflow and resource updates, workflow timeline, branch and policy pages'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## Component dependency graph
+
+The component detail page now includes an interactive dependency graph so you can see how a [component](/concepts/components) connects to the rest of your app at a glance. Click a node to expand its sub-graph and trace dependencies a few hops out.
+
+{/* TODO: screenshot of component dependency graph */}
+
+## Replay a stack from the CLI
+
+A new `nuon-ext-replay-stack` [CLI extension](/cli) makes it easy to re-run an [install stack](/concepts/stacks) without recreating the install. Locally-installed extensions now show up in `nuon ext list` and `nuon ext` no longer requires `NUON_PREVIEW`.
+
+```bash
+nuon ext install nuon-ext-replay-stack
+nuon ext replay-stack
+```
+
+## Send stack outputs from the dashboard
+
+You can now trigger a "phone home" of stack outputs directly from the install stacks page in the dashboard. Useful when a runner is up but the control plane is missing the latest stack outputs — no CLI required.
+
+{/* TODO: screenshot of send stack outputs modal on the stacks page */}
+
+## Real-time workflow and resource pages
+
+[Workflow](/concepts/workflows) detail, timeline, log viewer, sandbox runs, and deploy pages now stream updates over SSE instead of polling. Status, logs, and step output appear as they happen, with fewer stale views and noticeably less load on the API.
+
+## Updates
+
+- **Workflow timeline & badges.** New step badges, refreshed timeline rendering, and clearer banners for auto-approved workflows.
+- **App branches redesign.** The app branches view has been refreshed with cleaner layout and status indicators.
+- **Policy UI refinements.** Updated policy reports and drift detection views on the install page. See [policies](/concepts/policies).
+- **Empty states.** Cleaner empty states across the [dashboard](/concepts/dashboard) so first-time pages are easier to act on.
+- **Horizontally scrollable logs.** Long log lines no longer wrap awkwardly — scroll horizontally to read full output.
+
+## Bug fixes
+
+- Fixed the `nuon orgs connect-github` callback path so the CLI-to-dashboard GitHub connect flow works again.
+- Fixed "All workflows" links so they always route to the workflows page.
+- Fixed the action run cancel button and action run log step rendering.
+- Fixed log streaming errors when an SSE stream had already closed.
+- Fixed the code block split rendering on the dashboard.
+- Removed the small instance option for AWS install runners — small instances were undersized for real workloads and are no longer offered when creating an install.
+- Improved VM shutdown, re-enqueue, and approve-all behavior on the runner to reduce stuck workflows.

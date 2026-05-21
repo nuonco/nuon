@@ -269,6 +269,8 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/035-dependency-graph-stack-replay-realtime-ui",
+          "updates/034-aws-terraform-install-stack",
           "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
           "updates/031-operation-roles",
