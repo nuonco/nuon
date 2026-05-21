@@ -32,6 +32,7 @@ interface IAdminOrgSection {
   orgId: string
   org: TOrg
   adminEmail: string
+  adminDashboardUrl: string | undefined
   runner: TRunner | undefined
   runnerLoading: boolean
 }
@@ -40,6 +41,7 @@ export const AdminOrgSection = ({
   orgId,
   org,
   adminEmail,
+  adminDashboardUrl,
   runner,
   runnerLoading,
 }: IAdminOrgSection) => {
@@ -119,7 +121,7 @@ export const AdminOrgSection = ({
           action={async () => {
             const resp = await adminForceRestartOrgQueues({ orgId, adminEmail })
             if (resp?.queue_signal_id && resp?.queue_id) {
-              window.open(`/queues/${resp.queue_id}/signals/${resp.queue_signal_id}`, '_blank')
+              window.open(`${adminDashboardUrl}/queues/${resp.queue_id}/signals/${resp.queue_signal_id}`, '_blank')
             }
           }}
           variant="danger"

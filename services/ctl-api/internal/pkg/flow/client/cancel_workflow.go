@@ -28,18 +28,12 @@ func (c *Client) CancelWorkflow(ctx context.Context, req *CancelWorkflowRequest)
 		return nil, fmt.Errorf("unable to find execute-flow queue signal: %w", err)
 	}
 
-	handle, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
+	if _, err := handler.UpdateWithStart(ctx, c.tClient, qs, handler.UpdateWithStartOptions{
 		UpdateName:   "cancel-workflow",
-		WaitForStage: tclient.WorkflowUpdateStageCompleted,
-	})
-	if err != nil {
+		WaitForStage: tclient.WorkflowUpdateStageAccepted,
+	}); err != nil {
 		return nil, fmt.Errorf("unable to send cancel-workflow update: %w", err)
 	}
 
-	var resp CancelWorkflowResponse
-	if err := handle.Get(ctx, &resp); err != nil {
-		return nil, fmt.Errorf("unable to get cancel-workflow response: %w", err)
-	}
-
-	return &resp, nil
+	return &CancelWorkflowResponse{WorkflowID: req.InstallWorkflowID}, nil
 }
