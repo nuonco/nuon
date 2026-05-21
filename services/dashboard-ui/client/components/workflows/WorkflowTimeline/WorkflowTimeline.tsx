@@ -23,6 +23,7 @@ export interface IWorkflowTimeline {
   orgId: string
   installId: string
   install?: TInstall
+  isLoading?: boolean
 }
 
 export const WorkflowTimeline = ({
@@ -31,7 +32,10 @@ export const WorkflowTimeline = ({
   orgId,
   installId,
   install,
+  isLoading,
 }: IWorkflowTimeline) => {
+  if (isLoading) return <WorkflowTimelineSkeleton />
+
   return workflows?.length ? (
     <Timeline<TWorkflow>
       events={workflows}
