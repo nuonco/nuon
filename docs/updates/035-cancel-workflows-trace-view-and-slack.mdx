@@ -1,0 +1,81 @@
+---
+title: '035 - Cancel Workflows, Trace Timeline, and Slack'
+description: 'New: Cancel active workflows, trace timeline view, drift notifications, Slack app, component dependency graph, sandbox auto-retries. Improved: policy reports, app branches, live updates over SSE. Fixed: auto-approval, CLI, action run cancel.'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## New features
+
+### Cancel active workflows
+
+You can now cancel in-flight [workflows](/concepts/workflows) directly from the dashboard. Stuck deploys, runaway sandboxes, and approval-blocked flows no longer require a wait or a support ticket — open the workflow and hit cancel.
+
+{/* TODO: add screenshot of cancel workflow UI */}
+
+### Trace timeline view
+
+The workflow detail page now renders as a split trace view — a fixed step tree on the left and a timeline bar chart on the right — so you can see at a glance where time was spent across a run.
+
+{/* TODO: add screenshot of trace timeline view */}
+
+- Indent guides make parent/child relationships obvious in deeply nested flows.
+- Log filters are consolidated into a severity dropdown plus a combined filter for narrowing to a specific tool.
+- System logs are included by default, and trace logs stream live.
+
+### Drift detection notifications
+
+Drift checks now emit a dedicated event whenever a plan-only check finds non-no-op changes. Subscribe webhook or Slack consumers to get notified the moment drift appears — independently of any deploy outcome. See [Webhooks](/guides/webhooks) for the event payload and filter options.
+
+A new install-scoped sandbox drift cron complements the per-component drift check, so sandbox infrastructure is polled on the same schedule as your app components.
+
+### Slack app
+
+Nuon now ships with a first-class Slack integration. Connect a workspace to your org and subscribe channels to workflow, approval, runner, and drift events — the same event taxonomy that powers [webhooks](/guides/webhooks), delivered as readable Slack messages.
+
+{/* TODO: add screenshot of Slack notifications */}
+
+### Component dependency graph
+
+Installs now render a full dependency graph of their [components](/concepts/components), including transitive dependencies. Use it to understand blast radius before approving a deploy, or to debug why a component is waiting.
+
+{/* TODO: add screenshot of component dep graph */}
+
+### Sandbox auto-retries
+
+[Sandboxes](/concepts/sandboxes) now support `max_auto_retries` in their config, matching the behavior already available on components. Transient sandbox failures self-heal without manual re-runs, and a configurable cap prevents genuinely broken sandboxes from looping forever.
+
+### Per-webhook event filters
+
+Org [webhooks](/guides/webhooks) now accept a structured `interests` filter so each subscription can opt into a subset of events — by resource (workflow, step, approval, runner), operation, outcome, or approval state — instead of receiving every lifecycle event. Existing subscriptions continue to behave exactly as before.
+
+## Updates
+
+- **Policy reports** redesigned for faster scanning of evaluations across installs.
+- **Install navbar** updated with clearer sections and quicker access to runner, components, and workflows.
+- **App branches** UI refreshed with a cleaner design and improved empty states.
+- **Workflow badges** refreshed with new statuses and consistent colors across the dashboard.
+- **Live updates** — the workflow detail page, log viewer, timeline, resource pages, and org status bar now stream over server-sent events instead of polling, so state changes appear instantly.
+- **Diff rendering** handles long lines and overflow more gracefully; overflow highlights are clearer.
+- **Onboarding** flow now validates org details before provisioning.
+- **Runner AWS auth** defaults to instance identity document (IID) authentication for new runners, aligning AWS with the zero-trust posture already used on GCP and Azure. See [Runner authentication](/architecture/runner-auth).
+
+## Bug fixes
+
+- Fixed an auto-approval bug where plan-only mode could incorrectly auto-approve plans.
+- Fixed the action run cancel button on the workflow detail page.
+- Fixed `nuon orgs connect-github` CLI callback path so the GitHub App flow completes correctly.
+- Fixed Terraform provider mirror builds for orgs that also use `docker_build` components.
+- Fixed log panel "copy link" and log loading on already-closed streams.
+- Fixed VM shutdown, signal re-enqueue, and "approve all" edge cases.
+- Fixed `time.Duration` fields in the API and SDK to serialize as documented.
+
+## Nuon CLI
+
+- New `nuon-ext-replay-stack` extension for replaying install stack runs from the CLI. See [CLI extensions](/guides/cli-extensions).
+
+## API
+
+- New endpoint to cancel active workflows for an install.
+- Active workflows and pending approvals are now excluded from responses for deleted installs.
