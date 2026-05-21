@@ -43,7 +43,8 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 
 	ctx = queuecctx.Apply(ctx, qs.SignalContext)
 
-	enqueueStartedAt := time.Now().UTC().Format(time.RFC3339)
+	enqueueStart := time.Now().UTC()
+	enqueueStartedAt := enqueueStart.Format(time.RFC3339)
 
 	startOp := e.queueStartOperation(&q)
 	_, err := e.tClient.UpdateWithStartWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWithStartWorkflowOptions{
@@ -88,17 +89,23 @@ func (e *Enqueuer) EnqueueInline(ctx context.Context, queueSignalID string, sour
 	}
 
 	if err != nil {
-		e.mw.Incr("queue_signals.enqueue", metrics.ToTags(map[string]string{
-			"source":  source,
-			"success": "false",
-		}))
+		failTags := metrics.ToTags(map[string]string{
+			"source":           source,
+			"success":          "false",
+			"signal_namespace": q.Workflow.Namespace,
+		})
+		e.mw.Incr("queue_signals.enqueue", failTags)
+		e.mw.Timing("queue_signals.enqueue.latency", time.Since(enqueueStart), failTags)
 		return errors.Wrap(err, "enqueue UpdateWithStart failed")
 	}
 
-	e.mw.Incr("queue_signals.enqueue", metrics.ToTags(map[string]string{
-		"source":  source,
-		"success": "true",
-	}))
+	enqueueTags := metrics.ToTags(map[string]string{
+		"source":           source,
+		"success":          "true",
+		"signal_namespace": q.Workflow.Namespace,
+	})
+	e.mw.Incr("queue_signals.enqueue", enqueueTags)
+	e.mw.Timing("queue_signals.enqueue.latency", time.Since(enqueueStart), enqueueTags)
 
 	return nil
 }
