@@ -57,6 +57,8 @@ See the full [deployment options guide](https://docs.nuon.co/guides/deployment-o
 
 ## Documentation
 
+Checkout our [Knowledge Base](https://support.nuon.co) for commonly asked questions.
+
 Browse our docs [here](https://docs.nuon.co) or visit a specific section below:
 
 - [Concepts](https://docs.nuon.co/concepts/overview): apps, components, actions, inputs, installs, workflows
@@ -70,9 +72,9 @@ Also browse the [Nuon blog](https://nuon.co/blog) for technical posts on specifi
 
 ## Support
 
-Have a technical question? Instead of opening a GitHub issue, please ask in
-[our Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag) in
-particular the `help` channel.
+Have a technical question? Please [open a GitHub issue](https://github.com/nuonco/nuon/issues), or join
+[our Community Slack](https://join.slack.com/t/nuon-byoc/shared_invite/zt-3kzp3zpn4-0pHH4kGZ3OJul2p_y1Mzag) — the
+`help` channel is the best place to chat with the team.
 
 ## Enterprise
 
