@@ -8,7 +8,7 @@ import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import type { TInstallStack } from '@/types'
-import { StackVersionDetails } from '../StackVersionDetails'
+import { StackVersionActions } from '../StackVersionActions'
 
 export type TInstallStackRow = {
   versionId: string
@@ -35,7 +35,7 @@ export function parseInstallStackSummaryToTableData(
       ),
       runs: version?.runs?.length?.toString() || '-',
       createdAt: version?.created_at,
-      more: <StackVersionDetails version={version} />,
+      more: <StackVersionActions version={version} />,
     }
   })
 }
@@ -86,8 +86,8 @@ const columns: ColumnDef<TInstallStackRow>[] = [
     accessorKey: 'more',
     header: '',
     id: 'more-options',
-    cell: (info) => info.getValue() as string,
-    enableSorting: true,
+    cell: (info) => info.getValue() as ReactNode,
+    enableSorting: false,
   },
 ]
 
