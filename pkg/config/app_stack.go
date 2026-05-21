@@ -40,8 +40,8 @@ type StackConfig struct {
 	Name        string `mapstructure:"name" toml:"name" jsonschema:"required" features:"template"`
 	Description string `mapstructure:"description" toml:"description" jsonschema:"required" features:"template"`
 
-	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" features:"template"`
-	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" features:"template"`
+	VPCNestedTemplateURL    string `mapstructure:"vpc_nested_template_url" toml:"vpc_nested_template_url" jsonschema:"required" features features:"template"`
+	RunnerNestedTemplateURL string `mapstructure:"runner_nested_template_url" toml:"runner_nested_template_url" jsonschema:"required" features features:"template"`
 
 	CustomNestedStacks []CustomNestedStack `mapstructure:"custom_nested_stacks" toml:"custom_nested_stacks"`
 }
@@ -133,6 +133,20 @@ func isS3URL(u *url.URL) bool {
 }
 
 func (a *StackConfig) parse() error {
+	if a.Type == "aws-cloudformation" {
+		if a.VPCNestedTemplateURL == "" {
+			return ErrConfig{
+				Description: "vpc_nested_template_url is required when type is aws-cloudformation",
+				Err:         fmt.Errorf("vpc_nested_template_url is required when type is aws-cloudformation"),
+			}
+		}
+		if a.RunnerNestedTemplateURL == "" {
+			return ErrConfig{
+				Description: "runner_nested_template_url is required when type is aws-cloudformation",
+				Err:         fmt.Errorf("runner_nested_template_url is required when type is aws-cloudformation"),
+			}
+		}
+	}
 	if a.VPCNestedTemplateURL != "" {
 		if a.Type == "azure-bicep" {
 			if err := ValidateHTTPSURL(a.VPCNestedTemplateURL, "vpc_nested_template_url"); err != nil {
