@@ -2,14 +2,13 @@ import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Expand } from '@/components/common/Expand'
-import { Icon } from '@/components/common/Icon'
 import { JSONViewer } from '@/components/common/JSONViewer'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Panel } from '@/components/surfaces/Panel'
+import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import type { TInstallStack } from '@/types'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
@@ -19,12 +18,14 @@ type TStackVersion = TInstallStack['versions'][number]
 
 export const StackVersionDetails = ({
   version,
+  ...props
 }: {
   version: TStackVersion
-}) => {
+} & IPanel) => {
   return (
     <Panel
       size="3/4"
+      {...props}
       className={cn('border-t-6', {
         '!border-t-orange-600 dark:!border-t-orange-500':
           version?.composite_status?.status === 'expired',
@@ -62,16 +63,6 @@ export const StackVersionDetails = ({
           </Text>
         </div>
       }
-      triggerButton={{
-        children: (
-          <>
-            <Icon variant="InfoIcon" />
-          </>
-        ),
-        className: '!p-1',
-        size: 'sm',
-        variant: 'ghost',
-      }}
     >
       <div className="flex flex-col gap-12 my-8">
         <StackVersionLinks version={version} />
