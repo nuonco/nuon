@@ -23,7 +23,23 @@ func NewConnectHandler(cfg *internal.Config, l *zap.Logger) *ConnectHandler {
 
 func (h *ConnectHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/connect", h.Handle)
+	e.GET("/api/connect-github", h.StartConnectGithub)
 	return nil
+}
+
+func (h *ConnectHandler) StartConnectGithub(c *gin.Context) {
+	orgID := c.Query("org_id")
+	if orgID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "missing org_id"})
+		return
+	}
+	if h.cfg.GithubAppName == "" {
+		h.l.Error("github_app_name not configured")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "github app not configured"})
+		return
+	}
+	target := fmt.Sprintf("https://github.com/apps/%s/installations/new?state=%s", h.cfg.GithubAppName, orgID)
+	c.Redirect(http.StatusFound, target)
 }
 
 func (h *ConnectHandler) Handle(c *gin.Context) {
