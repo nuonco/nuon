@@ -2,6 +2,7 @@ export default {
   title: 'Stacks/StackVersionDetails',
 }
 
+import { PanelStory } from '@/components/__stories__/helpers'
 import { StackVersionDetails } from './StackVersionDetails'
 import type { TInstallStack } from '@/types'
 
@@ -34,10 +35,16 @@ const mockVersion: TStackVersion = {
   contents: btoa(JSON.stringify({ template: 'cloudformation', version: '1.0' })),
 } as TStackVersion
 
-export const Default = () => <StackVersionDetails version={mockVersion} />
+export const Default = () => (
+  <PanelStory>
+    <StackVersionDetails version={mockVersion} />
+  </PanelStory>
+)
 
 export const Expired = () => (
-  <StackVersionDetails
-    version={{ ...mockVersion, composite_status: { ...mockVersion.composite_status, status: 'expired' } }}
-  />
+  <PanelStory>
+    <StackVersionDetails
+      version={{ ...mockVersion, composite_status: { ...mockVersion.composite_status, status: 'expired' } }}
+    />
+  </PanelStory>
 )
