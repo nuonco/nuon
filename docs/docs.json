@@ -321,6 +321,18 @@
     "href": "/get-started/introduction"
   },
   "navbar": {
+    "links": [
+      {
+        "type": "github",
+        "href": "https://github.com/nuonco/nuon"
+      },
+      {
+        "label": "Slack",
+        "href": "https://nuon-byoc.slack.com/join/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA#/shared-invite/email",
+        "icon": "slack",
+        "iconType": "brands"
+      }
+    ],
     "primary": {
       "type": "button",
       "label": "Sign up",
