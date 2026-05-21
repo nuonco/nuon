@@ -1,7 +1,7 @@
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { MainNavLink } from '../MainNavLink'
-import { MAIN_LINKS, SETTINGS_LINKS, SUPPORT_LINKS } from '../main-nav-links'
+import { MAIN_LINKS, SETTINGS_LINKS, SLACK_LINK, SUPPORT_LINKS } from '../main-nav-links'
 import type { TOrg } from '@/types'
 
 interface IMainNav {
@@ -9,6 +9,7 @@ interface IMainNav {
   isSidebarOpen: boolean
   hasOrgDashboard: boolean
   hasOrgSettings: boolean
+  hasSlack: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
 }
@@ -42,6 +43,7 @@ export const MainNav = ({
   isSidebarOpen,
   hasOrgDashboard,
   hasOrgSettings,
+  hasSlack,
   hasCustomerPortal,
   customerPortalUrl,
 }: IMainNav) => {
@@ -77,6 +79,10 @@ export const MainNav = ({
           {SETTINGS_LINKS.map((link) => (
             <MainNavLink key={link.text} basePath={basePath} {...link} />
           ))}
+
+          {hasSlack ? (
+            <MainNavLink basePath={basePath} {...SLACK_LINK} />
+          ) : null}
         </div>
       ) : null}
 
