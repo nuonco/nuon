@@ -1,12 +1,12 @@
 {
   "announcements": [
     {
-      "id": "slack-integration-035",
-      "title": "Slack Integration",
+      "id": "slack-webhooks-aws-tf-034",
+      "title": "Slack Integration, Webhooks, and AWS Terraform Stacks",
       "date": "May 12, 2026",
-      "description": "Install Nuon into a Slack workspace and route install, workflow, approval, and drift events into your channels.",
+      "description": "Route install and workflow events into Slack, subscribe your own services via org-scoped webhooks, and provision AWS install stacks with Terraform.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/035-slack-integration",
+      "ctaUrl": "https://docs.nuon.co/updates/034-aws-terraform-install-stack",
       "dismissible": false
     },
     {
