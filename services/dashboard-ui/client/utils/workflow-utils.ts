@@ -24,6 +24,8 @@ const WORKFLOW_BADGE_MAP: Record<
   'not-attempted': { children: 'Not attempted' },
   noop: { children: 'NOOP' },
   cancelled: { children: 'Cancelled', theme: 'warn' },
+  'stale-plan': { children: 'Plan stale', theme: 'warn' },
+  superseded: { children: 'Plan superseded', theme: 'warn' },
 }
 
 export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
@@ -61,15 +63,18 @@ export function getStepBadge(
   }
 
   if (step?.execution_type === 'approval' && !isApprovalPrompt) {
+    const metadata = step?.status?.metadata as Record<string, unknown> | undefined
+    if (metadata?.auto_approved && metadata?.check === 'policy-auto-approve') {
+      return { children: 'Auto-approved (policies)', theme: 'success' as TBadgeTheme }
+    }
     if (step?.status?.status === 'approved') {
       if (planOnly) {
         return { children: 'Plan created', theme: 'success' }
       }
       return WORKFLOW_BADGE_MAP['approved']
-    } else if (
-      step?.status?.status === 'pending' ||
-      step?.status?.status === 'approval-awaiting'
-    ) {
+    } else if (step?.status?.status === 'approval-awaiting') {
+      return WORKFLOW_BADGE_MAP['approval-awaiting']
+    } else if (step?.status?.status === 'pending') {
       return WORKFLOW_BADGE_MAP['auto-approved']
     } else if (
       step?.approval?.type === 'approve-all' ||
@@ -79,6 +84,11 @@ export function getStepBadge(
     }
   }
   const status = step?.status?.status
+  const checkType = (step?.status?.metadata as Record<string, unknown>)?.check
+
+  if (status === 'error' && (checkType === 'stale-plan' || checkType === 'superseded')) {
+    return WORKFLOW_BADGE_MAP[checkType === 'stale-plan' ? 'stale-plan' : 'superseded']
+  }
 
   // Show retryable/skippable hints for failed steps awaiting user action.
   if (status === 'failed-pending-retry' || (status === 'error' && step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted)) {
@@ -134,6 +144,20 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
 
   if (status === 'error') {
     const metadata = step?.status?.metadata
+    if (metadata?.check === 'stale-plan') {
+      return {
+        copy: `${metadata?.detail ?? 'The plan was approved after it became stale.'}  The step will be automatically retried with a fresh plan.`,
+        theme: 'warn',
+        title: `Step ${step?.name} — plan stale`,
+      }
+    }
+    if (metadata?.check === 'superseded') {
+      return {
+        copy: `${metadata?.detail ?? 'A newer workflow was approved, making this plan outdated.'} The step will be automatically retried with a fresh plan.`,
+        theme: 'warn',
+        title: `Step ${step?.name} — plan superseded`,
+      }
+    }
     if (metadata?.retries_exhausted) {
       return {
         copy: `This step has used all ${metadata.max_retries ?? ''} retry attempts. No further retries are possible. Rerun the workflow to start fresh.`,
