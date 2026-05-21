@@ -1,0 +1,84 @@
+---
+title: '035 - Component Dependency Graph, Branch Editor, and Policy UI'
+description: '**New**: Component dependency graph, deployment plan editor for app branches, new policy UI, auto-approve on policy pass, skip noop steps, real-time workflow updates.
+**Fixed**: CLI GitHub connect, CloudFormation nested stacks, terraform provider mirror, and assorted UI polish.'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## New
+
+### Component dependency graph
+
+[Components](/concepts/components) now render a full dependency sub-graph from their detail page, so you can see at a glance what depends on what before you plan a change.
+
+{/* TODO: screenshot of component dependency graph */}
+
+### Deployment plan editor for app branches
+
+App [branches](/concepts/apps) ship with a redesigned deployment plan editor — drag-and-drop install grouping, an unassigned section, and a cleaner create-branch flow.
+
+{/* TODO: screenshot of deployment plan editor */}
+
+### New policy UI
+
+A refreshed UI for [policies](/concepts/policies):
+
+- **Policy reports** page lists every evaluation with status and target.
+- **Drift detection** is surfaced on the install page.
+- **Policy analytics** rolls up evaluation trends per app.
+
+{/* TODO: screenshot of policy reports / analytics */}
+
+### Auto-approve on policies passing
+
+A new `auto_approve_on_policies_passing` flag on [components](/concepts/components) (Terraform, Helm, Kubernetes manifest, Docker build, container image, and sandbox) auto-approves a workflow when all attached policies pass — keeping a human in the loop only when something actually fails policy.
+
+### Skip noop steps
+
+Set `skip_noops: true` on a component to short-circuit steps that would be a no-op. Workflows finish faster and timelines stay focused on real changes.
+
+### Real-time workflow and resource updates
+
+Workflow detail, deploy, sandbox build/run, and log pages now stream updates over SSE. Pages update live as steps progress — no manual refresh.
+
+### New workflow badges and step banners
+
+[Workflows](/concepts/workflows) timelines have refreshed badges and step banners, plus better loading states for in-flight runs.
+
+{/* TODO: screenshot of new workflow badges */}
+
+### Trigger phone-home from the stacks page
+
+Resend the latest [install stack](/concepts/stacks) outputs from the dashboard with a one-click "send stack outputs" action — useful when a runner missed a phone-home or you need to replay outputs.
+
+### `replay-stack` CLI extension
+
+A new `nuon-ext-replay-stack` [CLI extension](/guides/cli-extensions) for replaying install stack outputs from the terminal. Install it with:
+
+```bash
+nuon extensions install nuonco/nuon-ext-replay-stack
+```
+
+`nuon ext` is also now generally available — the `NUON_PREVIEW` flag is no longer required.
+
+### Horizontally scrollable logs
+
+The dashboard log viewer scrolls horizontally so long lines stay readable without wrapping.
+
+### Dashboard empty states
+
+App, install, and branch pages have new empty states that guide you to the next action when there's nothing to show yet.
+
+## Fixed
+
+- **CLI**: `nuon orgs connect-github` callback path was missing after the dashboard SPA migration — re-added.
+- **CLI**: CloudFormation [custom nested stacks](/guides/custom-nested-stacks) now correctly require both nested stack values together.
+- **CLI**: Locally-installed extensions show up in `nuon ext list`.
+- **Builds**: Terraform provider mirror builds no longer fail when the same org has `docker_build` components.
+- **UI**: Action run cancel button, log step rendering, and the "all workflows" link now behave correctly.
+- **UI**: Auto-approved banner and "deploy all components" toast copy and behavior.
+- **UI**: SSE log streams handle closed connections cleanly instead of spinning.
+- **Workflows**: Fixes for noop checks, state handling, and re-enqueue on VM shutdown / approve-all paths.
+- **Phone-home**: Nested values are preserved in the phone-home payload.
