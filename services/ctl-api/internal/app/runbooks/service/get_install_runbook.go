@@ -5,8 +5,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -55,6 +57,28 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install runbook: %w", res.Error))
 		return
+	}
+
+	// Render runbook config readmes with install state, matching the install
+	// readme endpoint pattern (get_install_readme.go).
+	if installRunbook.Runbook.Configs != nil {
+		installState, err := s.installHelpers.GetInstallState(ctx, installID, true, true)
+		if err == nil {
+			stateMap, err := installState.AsMap()
+			if err == nil {
+				for i := range installRunbook.Runbook.Configs {
+					cfg := &installRunbook.Runbook.Configs[i]
+					if cfg.Readme != "" {
+						rendered, _, renderErr := render.RenderWithWarnings(cfg.Readme, stateMap)
+						if renderErr != nil {
+							zap.L().Warn("unable to render runbook readme", zap.Error(renderErr))
+							continue
+						}
+						cfg.Readme = rendered
+					}
+				}
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusOK, installRunbook)

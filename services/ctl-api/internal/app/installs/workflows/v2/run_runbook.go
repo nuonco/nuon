@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -53,8 +54,8 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	}
 	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
 
+	sg.nextGroupEager()
 	if !stateGenV2 {
-		sg.nextGroupEager()
 		stateStep, err := sg.installSignalStep(ctx, installID, "generate-state", pgtype.Hstore{}, &generatestate.Signal{
 			InstallID: installID,
 		}, false)
@@ -136,12 +137,9 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	deploy, err := activities.AwaitCreateDeployForRunbook(ctx, activities.CreateDeployForRunbookRequest{
-		InstallID:   installID,
-		ComponentID: componentID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create deploy")
+	var installComponentID string
+	if installComp != nil {
+		installComponentID = installComp.ID
 	}
 
 	component, err := activities.AwaitGetComponentByComponentID(ctx, componentID)
@@ -155,8 +153,7 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 	if component.Type.IsImage() {
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", name))
 		syncStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync %s", name), pgtype.Hstore{}, &componentsyncimage.Signal{
-			InstallComponentID: installComp.ID,
-			DeployID:           deploy.ID,
+			InstallComponentID: installComponentID,
 			ComponentID:        componentID,
 			Role:               flw.Role,
 		}, flw.PlanOnly)
@@ -165,30 +162,30 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 		}
 		result = append(result, syncStep)
 	} else {
-		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (plan)", name))
-		planStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("plan %s", name), pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
-			InstallComponentID: installComp.ID,
+		sg.nextGroupNamed(fmt.Sprintf("deploy: %s", name))
+		planStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("sync and plan %s", name), pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
+			InstallComponentID: installComponentID,
 			InstallID:          installID,
-			DeployID:           deploy.ID,
 			ComponentID:        componentID,
 			Role:               flw.Role,
 		}, flw.PlanOnly, WithSkippable(false))
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, planStep)
 
-		if !flw.PlanOnly {
-			sg.nextGroupNamed(fmt.Sprintf("deploy: %s (apply)", name))
-			applyStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("apply %s", name), pgtype.Hstore{}, &componentdeployapplyplan.Signal{
-				InstallComponentID: installComp.ID,
-				InstallID:          installID,
-				ComponentID:        componentID,
-			}, flw.PlanOnly)
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, applyStep)
+		applyStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("apply %s", name), pgtype.Hstore{}, &componentdeployapplyplan.Signal{
+			InstallComponentID: installComponentID,
+			InstallID:          installID,
+			ComponentID:        componentID,
+		}, flw.PlanOnly)
+		if err != nil {
+			return nil, err
+		}
+
+		if flw.PlanOnly {
+			result = append(result, planStep)
+		} else {
+			result = append(result, planStep, applyStep)
 		}
 	}
 
@@ -204,7 +201,10 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 	sg.nextGroupNamed(fmt.Sprintf("action: %s", stepCfg.Name))
 
 	if stepCfg.ActionWorkflowID.ValueString() != "" {
-		iaw, err := activities.AwaitGetInstallActionWorkflowByID(ctx, stepCfg.ActionWorkflowID.ValueString())
+		iaw, err := activities.AwaitGetInstallActionWorkflow(ctx, activities.GetInstallActionWorkflowRequest{
+			InstallID:        installID,
+			ActionWorkflowID: stepCfg.ActionWorkflowID.ValueString(),
+		})
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get install action workflow")
 		}
@@ -216,6 +216,7 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 				TriggerType:             app.ActionWorkflowTriggerTypeManual,
 				TriggeredByID:           triggeredByID,
 				TriggeredByType:         "runbook",
+				RunEnvVars:              dbgenerics.ToStringMap(stepCfg.EnvVars),
 			},
 		}
 

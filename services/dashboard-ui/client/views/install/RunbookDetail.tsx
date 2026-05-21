@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
@@ -104,7 +104,7 @@ export const RunbookDetail = () => {
                 className="border rounded-md"
               >
                 <div className="p-4 border-t">
-                  <Markdown content={latestConfig.readme} mode="app" />
+                  <Markdown content={latestConfig.readme} mode="install" />
                 </div>
               </Expand>
             </PageSection>
@@ -153,6 +153,18 @@ export const RunbookDetail = () => {
                           </LabeledValue>
                         ) : null}
                       </div>
+                      {step.env_vars && Object.keys(step.env_vars).length > 0 ? (
+                        <div className="flex flex-col gap-2">
+                          <Text weight="strong">Environment variables</Text>
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(step.env_vars).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => (
+                              <Badge key={k} variant="code" size="sm" theme="neutral">
+                                {k}={v}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                       {step.command ? (
                         <div className="flex flex-col gap-2">
                           <Text weight="strong">Command</Text>
@@ -186,8 +198,13 @@ export const RunbookDetail = () => {
                   ? (run.install_workflow.status as { status?: string })?.status
                   : run.install_workflow?.status
                 const status = wfStatus ?? run.status ?? 'unknown'
+                const workflowId = run.install_workflow_id ?? run.install_workflow?.id
                 return (
-                  <div key={run.id} className="border rounded-lg p-3 flex flex-col gap-1">
+                  <Link
+                    key={run.id}
+                    to={workflowId ? `/${org?.id}/installs/${install?.id}/workflows/${workflowId}` : '#'}
+                    className="border rounded-lg p-3 flex flex-col gap-1 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <Badge variant="code" size="sm" theme={
                         status === 'completed' ? 'success' :
@@ -205,7 +222,7 @@ export const RunbookDetail = () => {
                       />
                     </div>
                     <ID>{run.id}</ID>
-                  </div>
+                  </Link>
                 )
               })}
             </div>

@@ -135,6 +135,18 @@ export const RunbookDetail = () => {
                       </LabeledValue>
                     ) : null}
                   </div>
+                  {step.env_vars && Object.keys(step.env_vars).length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      <Text weight="strong">Environment variables</Text>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(step.env_vars).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => (
+                          <Badge key={k} variant="code" size="sm" theme="neutral">
+                            {k}={v}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   {step.command ? (
                     <div className="flex flex-col gap-2">
                       <Text weight="strong">Command</Text>
