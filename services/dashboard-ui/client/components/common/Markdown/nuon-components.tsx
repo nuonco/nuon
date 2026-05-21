@@ -10,6 +10,7 @@ import { SandboxCard } from '@/components/sandbox/SandboxCard'
 import { RunnerCard } from '@/components/runners/RunnerCard'
 import { StackCard } from '@/components/stacks/StackCard'
 import { Group } from '@/components/common/Group'
+import { Card } from '@/components/common/Card'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
 
 export type MarkdownMode = 'app' | 'install'
@@ -107,6 +108,13 @@ const registry: Record<string, NuonComponent> = {
       align: attrs.align,
       justify: attrs.justify,
       wrap: attrs.wrap === 'false' ? false : true,
+    }),
+  },
+  'nuon-card': {
+    component: Card,
+    mapProps: (attrs) => ({
+      children: attrs.children,
+      className: attrs.class,
     }),
   },
 }
