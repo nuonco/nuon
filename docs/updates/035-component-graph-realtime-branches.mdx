@@ -1,0 +1,63 @@
+---
+title: '035 - Component Dependency Graph, Real-time UI, and Branches'
+description: '**New**: Component dependency graph, re-trigger stack outputs, real-time dashboard. **Improved**: App branches, workflow timeline, logs.'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## Component dependency graph
+
+You can now visualize how [components](/concepts/components) depend on each other directly from the app and install component detail pages. The graph renders the full dependency sub-graph so you can see upstream and downstream impact before making a change.
+
+{/* TODO: add screenshot — component dependency graph on component detail page */}
+
+## Re-trigger stack outputs from the dashboard
+
+[Install stacks](/concepts/stacks) now expose a **Send outputs** action that re-fires the phone-home for a specific stack version. Useful when an install's outputs need to be re-delivered after a manual stack change or a transient failure — no CLI required.
+
+{/* TODO: add screenshot — Send outputs modal on the stacks page */}
+
+## Real-time dashboard
+
+The dashboard now uses server-sent events for live updates across the surfaces you watch most:
+
+- Workflow detail pages and the workflow timeline stream step status as it happens.
+- Logs stream live and continue to render cleanly after a stream closes.
+- The org status bar and resource pages refresh without manual reloads.
+
+{/* TODO: add screenshot — live-updating workflow timeline */}
+
+## App branches redesign
+
+The [app branches](/concepts/apps) view has been redesigned around a new deployment plan editor. Install groups, unassigned installs, and group configuration are now consolidated into a single editor that's easier to scan and faster to update.
+
+{/* TODO: add screenshot — redesigned app branches view with deployment plan editor */}
+
+## Workflow timeline and badges
+
+[Workflow](/concepts/workflows) step badges and the timeline have been refreshed for clearer state at a glance, with better loading states and step status surfaced on logs and outputs.
+
+{/* TODO: add screenshot — new workflow badges and timeline */}
+
+## CLI extension: replay stack
+
+The `nuon-ext-replay-stack` [extension](/cli) is now generally available. `nuon ext` no longer requires `NUON_PREVIEW`, and `nuon ext list` now includes locally-installed extensions.
+
+```bash
+nuon ext list
+```
+
+## Other updates
+
+- **Horizontally scrollable logs.** Long log lines no longer wrap awkwardly — the logs panel now scrolls horizontally.
+- **Improved empty states.** New apps, installs, and components show clearer empty-state guidance to help you take the next step.
+- **AWS runner instance sizes.** `t3.small` and `t3a.small` have been removed from the supported runner instance types. `t3.medium` remains the default. Existing installs are unaffected.
+
+## Bug Fixes
+
+- Fixed the `nuon orgs connect-github` callback path so the GitHub connect flow completes correctly.
+- Fixed the auto-approved workflow banner and the "deploy all" toast message.
+- Fixed the action run cancel button and step rendering on action run logs.
+- Fixed the "all workflows" link so it routes to the workflows page.
+- Fixed log loading when an SSE stream closes mid-render.
