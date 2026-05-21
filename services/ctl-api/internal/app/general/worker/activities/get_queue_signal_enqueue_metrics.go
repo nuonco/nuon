@@ -8,8 +8,9 @@ import (
 )
 
 type UnenqueuedByType struct {
-	Type  string `gorm:"column:type"`
-	Count int64  `gorm:"column:count"`
+	Type      string `gorm:"column:type"`
+	Namespace string `gorm:"column:namespace"`
+	Count     int64  `gorm:"column:count"`
 }
 
 type QueueSignalEnqueueMetrics struct {
@@ -44,7 +45,7 @@ func (a *Activities) getQueueSignalEnqueueMetrics(ctx context.Context, db *gorm.
 
 	// Break down unenqueued signals by type for per-signal-type gauges.
 	if res := db.WithContext(ctx).
-		Raw(`SELECT type, count(*) as count FROM queue_signals WHERE deleted_at = 0 AND enqueued = false GROUP BY type`).
+		Raw(`SELECT qs.type, q.workflow->>'namespace' as namespace, count(*) as count FROM queue_signals qs JOIN queues q ON q.id = qs.queue_id WHERE qs.deleted_at = 0 AND qs.enqueued = false GROUP BY qs.type, q.workflow->>'namespace'`).
 		Scan(&m.UnenqueuedByType); res.Error != nil {
 		return nil, fmt.Errorf("unable to count unenqueued signals by type: %w", res.Error)
 	}

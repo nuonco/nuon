@@ -8,8 +8,9 @@ import (
 )
 
 type NotEnqueuedByType struct {
-	Type  string `gorm:"column:type"`
-	Count int64  `gorm:"column:count"`
+	Type      string `gorm:"column:type"`
+	Namespace string `gorm:"column:namespace"`
+	Count     int64  `gorm:"column:count"`
 }
 
 type QueueSignalNotEnqueuedMetrics struct {
@@ -27,7 +28,7 @@ func (a *Activities) getQueueSignalNotEnqueuedMetrics(ctx context.Context, db *g
 	var m QueueSignalNotEnqueuedMetrics
 
 	if res := db.WithContext(ctx).
-		Raw(`SELECT type, count(*) as count FROM queue_signals WHERE enqueued = false GROUP BY type`).
+		Raw(`SELECT qs.type, q.workflow->>'namespace' as namespace, count(*) as count FROM queue_signals qs JOIN queues q ON q.id = qs.queue_id WHERE qs.enqueued = false GROUP BY qs.type, q.workflow->>'namespace'`).
 		Scan(&m.NotEnqueuedByType); res.Error != nil {
 		return nil, fmt.Errorf("unable to count not enqueued signals by type: %w", res.Error)
 	}
