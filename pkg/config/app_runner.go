@@ -59,20 +59,26 @@ func (a *AppRunnerConfig) parse() error {
 		}
 	}
 
-	if a.Source == "" {
-		return nil
-	}
+	if a.Source != "" {
+		obj, err := source.LoadSource(a.Source)
+		if err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("unable to load source %s", a.Source),
+				Err:         err,
+			}
+		}
 
-	obj, err := source.LoadSource(a.Source)
-	if err != nil {
-		return ErrConfig{
-			Description: fmt.Sprintf("unable to load source %s", a.Source),
-			Err:         err,
+		if err := mapstructure.Decode(obj, &a); err != nil {
+			return err
 		}
 	}
 
-	if err := mapstructure.Decode(obj, &a); err != nil {
-		return err
+	if a.RunnerType == "aws" && a.InitScriptURL == "" {
+		return ErrConfig{
+			Description: "init_script_url is required when runner_type is aws",
+			Err:         fmt.Errorf("init_script_url is required when runner_type is aws"),
+		}
 	}
+
 	return nil
 }
