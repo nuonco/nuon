@@ -1,0 +1,67 @@
+---
+title: '035 - Real-Time Dashboard, Component Dependency Graph, and CLI Extensions'
+description: '**New**: Live workflow updates, component dependency graph, replay-stack CLI extension.
+**Improved**: Policy reports, workflow badges, app branches UI.
+**Fixed**: Approval banners, action cancel, VM shutdown.'
+boost: 0.3
+---
+
+_May 21, 2026_
+
+## Real-time dashboard updates
+
+The dashboard now streams live updates for workflows, deploys, builds, sandbox runs, action runs, logs, and the org status bar. No more refreshing to see the latest state — pages update as events happen on the runner.
+
+{/* TODO: screenshot — live workflow detail page streaming */}
+
+## Component dependency graph
+
+[Components](/concepts/components) now render a full dependency sub-graph on the component page, so you can see exactly what a change will impact before you ship it.
+
+{/* TODO: screenshot — component dependency graph */}
+
+## `replay-stack` CLI extension
+
+A new [CLI extension](/concepts/cli) for replaying [install stacks](/concepts/stacks). Useful for re-running a stack deployment without recreating the install — handy for debugging stack failures or applying updated stack templates.
+
+```bash
+nuon ext replay-stack
+```
+
+Locally-installed extensions now also show up in `nuon ext list`, and `nuon ext` no longer requires the `NUON_PREVIEW` flag.
+
+## New workflow badges and timeline
+
+[Workflow](/concepts/workflows) status badges have been refreshed across the dashboard, and the workflow timeline now has improved loading states so you can tell what's in flight at a glance.
+
+{/* TODO: screenshot — new workflow badges */}
+
+## App branches UI refresh
+
+The [app branches](/concepts/apps) view has been redesigned for a cleaner, easier-to-scan layout.
+
+{/* TODO: screenshot — app branches redesign */}
+
+## Policy UI updates
+
+[Policy reports](/concepts/policies), drift detection on the install page, and policy analytics all have refreshed UIs that make it easier to spot which install, component, or action triggered an evaluation.
+
+{/* TODO: screenshot — policy reports page */}
+
+## Other improvements
+
+- **Horizontally scrollable logs** — long log lines no longer wrap unreadably; scroll sideways to read full output.
+- **Empty states** — onboarding flows and empty dashboard pages have clearer prompts to get you to your first install faster.
+- **`nuon apps sync`** — the CLI now honors the currently selected app when running `apps sync` / `sync`.
+- **Slack auto-link** — new orgs are automatically linked to their Slack workspace at creation time.
+
+## Bug fixes
+
+- Auto-approved workflows no longer show a stale approval banner, and the "Deploy all" toast now reports the correct message.
+- The action run cancel button and log step rendering have been fixed.
+- VM shutdown, re-enqueue, and approve-all paths now behave correctly under load.
+- "All workflows" in the install nav now routes to the workflows page.
+- Action and install detail pages no longer get stuck on loading skeletons.
+- Long-running activity heartbeats and queue cancellation no longer time out prematurely.
+- Terraform provider mirror builds now work for orgs that also have `docker_build` components.
+- Runner health checks are no longer soft-deleted, so health state stays accurate after restarts.
