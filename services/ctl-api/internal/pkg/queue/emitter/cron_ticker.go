@@ -56,6 +56,7 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 			info := workflow.GetInfo(ctx)
 			_ = activities.AwaitTerminateWorkflow(ctx, &activities.TerminateWorkflowRequest{
 				WorkflowID: info.WorkflowExecution.ID,
+				Namespace:  info.Namespace,
 				Reason:     "emitter not found",
 			})
 			return nil
