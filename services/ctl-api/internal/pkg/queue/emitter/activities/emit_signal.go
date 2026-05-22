@@ -31,7 +31,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	if res := a.db.WithContext(ctx).
 		Where("id = ?", req.EmitterID).
 		First(&emitter); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get emitter")
+		return nil, generics.TemporalGormError(res.Error, "unable to get emitter")
 	}
 
 	if emitter.SignalTemplate.Signal == nil {
@@ -103,7 +103,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	// Look up the queue so we can propagate its owner to the signal.
 	var queue app.Queue
 	if res := a.db.WithContext(ctx).First(&queue, "id = ?", req.QueueID); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get queue")
+		return nil, generics.TemporalGormError(res.Error, "unable to get queue")
 	}
 
 	// Enqueue the signal to the queue using the queue client
