@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pkg/errors"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 // NOTE(jm): this could probably be implemented with some type of parsing the ID to figure out what model is represented
@@ -52,7 +51,7 @@ func (a *Activities) PkgStatusGetInstallStackVersionStatus(ctx context.Context, 
 func (a *Activities) getStatus(ctx context.Context, obj any, objID string) error {
 	if res := a.db.WithContext(ctx).
 		First(obj, "id = ?", objID); res.Error != nil {
-		return errors.Wrap(res.Error, fmt.Sprintf("unable to get status for %s", objID))
+		return generics.TemporalGormError(res.Error, fmt.Sprintf("unable to get status for %s", objID))
 	}
 
 	return nil
