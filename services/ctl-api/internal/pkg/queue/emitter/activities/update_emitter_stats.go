@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type UpdateEmitterStatsRequest struct {
@@ -42,7 +43,7 @@ func (a *Activities) UpdateEmitterStats(ctx context.Context, req *UpdateEmitterS
 		Select("emit_count").
 		Where("id = ?", req.EmitterID).
 		First(&emitter); res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to get updated emitter")
+		return nil, generics.TemporalGormError(res.Error, "unable to get updated emitter")
 	}
 
 	a.l.Info("updated emitter stats",
