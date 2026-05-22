@@ -180,13 +180,9 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureAppBranchesUI:           false,
 		OrgFeatureTraceView:               false,
 		OrgFeatureStateGenV2:              false,
-<<<<<<< HEAD
 		OrgFeatureSlack:                   false,
-=======
 		OrgFeatureRunbooks:                false,
->>>>>>> 433303da0 (feat: initial commit for runbooks)
-
-		// Enabled by default
+                // Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
 		OrgFeatureQueues:             true,
 		OrgFeatureOrgDashboard:       true,
