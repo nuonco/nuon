@@ -2,12 +2,14 @@ package activities
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type MarkEmitterFiredRequest struct {
@@ -36,7 +38,7 @@ func (a *Activities) MarkEmitterFired(ctx context.Context, req *MarkEmitterFired
 	}
 
 	if res.RowsAffected == 0 {
-		return nil, errors.New("emitter not found")
+		return nil, generics.TemporalDoNotRetry(fmt.Errorf("emitter %s not found", req.EmitterID))
 	}
 
 	a.l.Info("marked emitter as fired",
