@@ -182,7 +182,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureStateGenV2:              false,
 		OrgFeatureSlack:                   false,
 		OrgFeatureRunbooks:                false,
-                // Enabled by default
+		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
 		OrgFeatureQueues:             true,
 		OrgFeatureOrgDashboard:       true,
@@ -238,11 +238,8 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAppBranchesUI,
 		OrgFeatureTraceView,
 		OrgFeatureAutoSkipNoop,
-<<<<<<< HEAD
 		OrgFeatureSlack,
-=======
 		OrgFeatureRunbooks,
->>>>>>> 433303da0 (feat: initial commit for runbooks)
 	}
 }
 
@@ -270,11 +267,8 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureTraceView:               "Enable the trace view tab on action runs, deploys, and sandbox runs to visualize OTEL spans emitted by the runner",
 		OrgFeatureStateGenV2:              "Use the new queue-based partial state regeneration system instead of the legacy full-regeneration workflow",
 		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
-<<<<<<< HEAD
 		OrgFeatureSlack:                   "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
-=======
 		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
->>>>>>> 433303da0 (feat: initial commit for runbooks)
 	}
 }
 
