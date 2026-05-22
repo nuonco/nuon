@@ -323,8 +323,10 @@
   "navbar": {
     "links": [
       {
-        "type": "github",
-        "href": "https://github.com/nuonco/nuon"
+        "label": "GitHub",
+        "href": "https://github.com/nuonco/nuon",
+        "icon": "github",
+        "iconType": "brands"
       },
       {
         "label": "Slack",
