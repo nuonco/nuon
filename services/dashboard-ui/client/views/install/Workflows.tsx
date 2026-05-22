@@ -31,6 +31,7 @@ export const Workflows = () => {
         orgId: org.id,
         installId: install!.id,
         finished: false,
+        planonly: false,
         limit: 50,
         offset: 0,
       }),
