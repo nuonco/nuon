@@ -53,6 +53,7 @@ func (w *Workflows) Queue(ctx workflow.Context, req QueueWorkflowRequest) error 
 		}
 	}
 	q.paused = q.state.Paused
+	q.lastActivityTime = q.state.LastActivityTime
 
 	for _, hook := range w.StartupHooks {
 		if err := hook(ctx, req); err != nil {
