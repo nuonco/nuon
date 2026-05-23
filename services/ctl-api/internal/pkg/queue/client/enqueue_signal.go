@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -20,6 +21,7 @@ type EnqueueSignalRequest struct {
 	Signal    signal.Signal `validate:"required"`
 	OwnerID   string
 	OwnerType string
+	ExpiresAt *time.Time
 }
 
 // @temporal-gen-v2 activity
@@ -53,6 +55,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		OwnerID:   req.OwnerID,
 		OwnerType: req.OwnerType,
 		Status:    status,
+		ExpiresAt: req.ExpiresAt,
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: q.Workflow.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
