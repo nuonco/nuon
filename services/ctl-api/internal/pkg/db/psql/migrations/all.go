@@ -100,5 +100,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "106-backfill-queue-signal-expires-at",
 			Fn:   m.Migration106BackfillQueueSignalExpiresAt,
 		},
+		{
+			Name: "107-backfill-emitter-signal-expires-in",
+			Fn:   m.Migration107BackfillEmitterSignalExpiresIn,
+		},
 	}
 }
