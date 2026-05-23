@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -34,10 +35,12 @@ func (h *Helpers) MaybeEnqueueInitialHealthCheck(ctx context.Context, runnerID, 
 		return fmt.Errorf("unable to find process queue %s: %w", queueName, res.Error)
 	}
 
+	expiresAt := time.Now().Add(1 * time.Hour)
 	if _, err := h.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:   q.ID,
 		OwnerID:   processID,
 		OwnerType: plugins.TableName(h.db, app.RunnerProcess{}),
+		ExpiresAt: &expiresAt,
 		Signal: queuesignal.NewRaw("process_healthcheck", map[string]any{
 			"runner_id":  runnerID,
 			"process_id": processID,

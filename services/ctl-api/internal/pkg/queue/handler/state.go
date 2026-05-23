@@ -19,6 +19,20 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get queue signal")
 	}
 
+	// If the signal has an expiry time and we're past it, terminate without processing.
+	if queueSignal.ExpiresAt != nil && workflow.Now(ctx).After(*queueSignal.ExpiresAt) {
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     h.queueSignalID,
+			Status:            app.StatusError,
+			StatusDescription: "signal expired",
+			Metadata: map[string]any{
+				"expired_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
+		})
+		h.setFinished(app.StatusError, "signal expired")
+		return nil
+	}
+
 	// Detect abandoned previous runs by checking for started-but-not-finished timestamps.
 	// If a previous handler crashed mid-validate or mid-execute, the started_at timestamp
 	// will exist but the finished_at timestamp will not.

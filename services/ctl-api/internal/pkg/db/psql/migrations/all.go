@@ -96,5 +96,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "105-fix-skip-noops-default",
 			Fn:   m.Migration105FixSkipNoopsDefault,
 		},
+		{
+			Name: "106-backfill-queue-signal-expires-at",
+			Fn:   m.Migration106BackfillQueueSignalExpiresAt,
+		},
 	}
 }

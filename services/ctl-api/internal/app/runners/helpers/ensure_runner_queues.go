@@ -68,14 +68,15 @@ func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Ru
 	}
 
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-		QueueID:        healthCheckQueueID,
-		Name:           emitterName,
-		Description:    "Periodic runner health check",
-		Mode:           app.QueueEmitterModeCron,
-		CronSchedule:   "* * * * *",
-		JitterWindow:   time.Second * 30,
-		SignalType:     healthcheckSignalType,
-		SignalTemplate: &healthcheckSignalTemplate{RunnerID: runner.ID},
+		QueueID:         healthCheckQueueID,
+		Name:            emitterName,
+		Description:     "Periodic runner health check",
+		Mode:            app.QueueEmitterModeCron,
+		CronSchedule:    "* * * * *",
+		JitterWindow:    time.Second * 30,
+		SignalType:      healthcheckSignalType,
+		SignalExpiresIn: 1 * time.Hour,
+		SignalTemplate:  &healthcheckSignalTemplate{RunnerID: runner.ID},
 	}); err != nil {
 		return fmt.Errorf("unable to create health check emitter: %w", err)
 	}

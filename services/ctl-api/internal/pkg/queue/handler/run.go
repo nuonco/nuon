@@ -7,10 +7,13 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (h *handler) run(ctx workflow.Context) (bool, error) {
@@ -44,23 +47,49 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	l.Debug("handler is ready")
 	h.ready = true
 
-	// Periodically check that the queue signal still exists. If it has been
-	// deleted (e.g. the owning queue was terminated), set h.stopped so the
-	// Await below unblocks and the handler workflow terminates cleanly.
+	// Periodically check that the queue signal still exists and hasn't expired.
+	// If deleted or expired, set h.stopped so the Await below unblocks and the
+	// handler workflow terminates cleanly.
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		for {
-			if err := workflow.Sleep(gCtx, 5*time.Minute); err != nil {
+			if err := workflow.Sleep(gCtx, 1*time.Minute); err != nil {
 				return
 			}
 			if h.finished || h.stopped || h.restarted {
 				return
 			}
-			if _, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID); err != nil {
+			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+			if err != nil {
 				if dbgenerics.IsGormErrRecordNotFound(err) {
 					l.Warn("queue signal deleted, terminating orphaned handler")
+					if h.mw != nil {
+						h.mw.Incr("queue.handler.signal_not_found", metrics.ToTags(map[string]string{
+							"queue_id": h.queueID,
+						}))
+					}
 					h.stopped = true
 					return
 				}
+				continue
+			}
+
+			// If the signal has an expiry and it has passed, mark it as
+			// expired in the DB so callers see a terminal status.
+			if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
+				l.Warn("queue signal expired, terminating handler")
+				if h.mw != nil {
+					h.mw.Incr("queue.handler.signal_expired", metrics.ToTags(map[string]string{
+						"queue_id":    h.queueID,
+						"signal_type": string(qs.Type),
+					}))
+				}
+				_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+					QueueSignalID:     h.queueSignalID,
+					Status:            app.StatusError,
+					StatusDescription: "signal expired without being executed",
+				})
+				h.stopped = true
+				return
 			}
 		}
 	})

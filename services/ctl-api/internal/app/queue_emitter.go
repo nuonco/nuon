@@ -71,6 +71,10 @@ type QueueEmitter struct {
 	SignalType     signal.SignalType   `json:"signal_type,omitzero" gorm:"type:text;not null" temporaljson:"signal_type,omitzero,omitempty"`
 	SignalTemplate signaldb.SignalData `json:"signal_template,omitzero" temporaljson:"-"`
 
+	// Optional TTL for emitted signals. When set, each emitted signal's ExpiresAt
+	// is computed as time.Now().Add(SignalExpiresIn) at emission time.
+	SignalExpiresIn time.Duration `json:"signal_expires_in,omitzero" gorm:"default:null" swaggertype:"primitive,integer" temporaljson:"signal_expires_in,omitzero,omitempty"`
+
 	// Runtime state using shared CompositeStatus
 	Status        CompositeStatus `json:"status" temporaljson:"status,omitzero,omitempty"`
 	LastEmittedAt *time.Time      `json:"last_emitted_at,omitzero" temporaljson:"last_emitted_at,omitzero,omitempty"`
