@@ -70,14 +70,15 @@ func (h *Helpers) CreateRunnerQueues(ctx context.Context, runner *app.Runner, se
 
 	// Create a cron emitter on the health-check queue to drive runner health monitoring.
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-		QueueID:        healthCheckQueueID,
-		Name:           fmt.Sprintf("runner-%s-health-check", runner.ID),
-		Description:    "Periodic runner health check",
-		Mode:           app.QueueEmitterModeCron,
-		CronSchedule:   "* * * * *",
-		JitterWindow:   time.Second * 30,
-		SignalType:     healthcheckSignalType,
-		SignalTemplate: &healthcheckSignalTemplate{RunnerID: runner.ID},
+		QueueID:         healthCheckQueueID,
+		Name:            fmt.Sprintf("runner-%s-health-check", runner.ID),
+		Description:     "Periodic runner health check",
+		Mode:            app.QueueEmitterModeCron,
+		CronSchedule:    "* * * * *",
+		JitterWindow:    time.Second * 30,
+		SignalType:      healthcheckSignalType,
+		SignalExpiresIn: 1 * time.Hour,
+		SignalTemplate:  &healthcheckSignalTemplate{RunnerID: runner.ID},
 	}); err != nil {
 		return fmt.Errorf("unable to create health check emitter: %w", err)
 	}
