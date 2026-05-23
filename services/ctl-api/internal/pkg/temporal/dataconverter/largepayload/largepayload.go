@@ -19,10 +19,11 @@ import (
 var _ converter.PayloadCodec = (*dataConverter)(nil)
 
 type dataConverter struct {
-	cfg *internal.Config
-	l   *zap.Logger
-	db  *gorm.DB
-	mw  metrics.Writer
+	cfg           *internal.Config
+	l             *zap.Logger
+	db            *gorm.DB
+	mw            metrics.Writer
+	encodeEnabled bool
 }
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
@@ -44,6 +45,12 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 		}
 
 		if len(payload.Data) < d.cfg.TemporalDataConverterLargePayloadSize {
+			result[i] = payload
+			continue
+		}
+
+		// Skip encoding if disabled (toggle set to "blob")
+		if !d.encodeEnabled {
 			result[i] = payload
 			continue
 		}

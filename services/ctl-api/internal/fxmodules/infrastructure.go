@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/filecache"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
@@ -39,6 +40,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/temporalblob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -110,10 +112,25 @@ var InfrastructureModule = fx.Module("infrastructure",
 	// Blob storage service
 	fx.Provide(blobstore.NewService),
 
+	// File cache for temporal blob codec
+	fx.Provide(func(cfg *internal.Config, l *zap.Logger) *filecache.FileCache {
+		cache, err := filecache.New(filecache.Options{
+			Dir:      cfg.TemporalBlobCacheDir,
+			MaxCount: cfg.TemporalBlobCacheMaxCount,
+			MaxBytes: int64(cfg.TemporalBlobCacheMaxSizeMB) * 1024 * 1024,
+		})
+		if err != nil {
+			l.Warn("failed to create temporal blob cache, caching disabled", zap.Error(err))
+			return nil
+		}
+		return cache
+	}),
+
 	// Temporal data converters and client
 	fx.Provide(gzip.AsGzip(gzip.New)),
 	fx.Provide(largepayload.AsLargePayload(largepayload.New)),
 	fx.Provide(s3payload.AsS3Payload(s3payload.New)),
+	fx.Provide(temporalblob.AsTemporalBlob(temporalblob.New)),
 	fx.Provide(signaldb.NewPayloadConverter),
 	fx.Provide(dataconverter.New),
 	fx.Provide(temporal.New),
