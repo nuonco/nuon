@@ -107,12 +107,17 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	}
 
 	// Enqueue the signal to the queue using the queue client
-	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
+	enqueueReq := &client.EnqueueSignalRequest{
 		QueueID:   req.QueueID,
 		Signal:    emitter.SignalTemplate.Signal,
 		OwnerID:   queue.OwnerID,
 		OwnerType: queue.OwnerType,
-	})
+	}
+	if emitter.SignalExpiresIn > 0 {
+		expiresAt := time.Now().Add(emitter.SignalExpiresIn)
+		enqueueReq.ExpiresAt = &expiresAt
+	}
+	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, enqueueReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal to queue")
 	}

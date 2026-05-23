@@ -48,6 +48,8 @@ type QueueSignal struct {
 	SignalContext queuecctx.SignalContext `json:"signal_context" gorm:"type:jsonb;default:null" temporaljson:"signal_context,omitzero,omitempty"`
 
 	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
+
+	ExpiresAt *time.Time `json:"expires_at,omitempty" gorm:"default:null" temporaljson:"expires_at,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {

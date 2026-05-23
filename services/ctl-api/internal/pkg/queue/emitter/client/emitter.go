@@ -40,8 +40,9 @@ type CreateEmitterRequest struct {
 	// For scheduled mode: when to fire the signal
 	ScheduledAt *time.Time
 
-	SignalType     signal.SignalType `validate:"required"`
-	SignalTemplate signal.Signal
+	SignalType      signal.SignalType `validate:"required"`
+	SignalTemplate  signal.Signal
+	SignalExpiresIn time.Duration
 }
 
 // @temporal-gen-v2 activity
@@ -76,14 +77,15 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	}
 
 	em := app.QueueEmitter{
-		QueueID:      q.ID,
-		Name:         req.Name,
-		Description:  req.Description,
-		Mode:         req.Mode,
-		CronSchedule: req.CronSchedule,
-		JitterWindow: req.JitterWindow,
-		ScheduledAt:  req.ScheduledAt,
-		SignalType:   req.SignalType,
+		QueueID:         q.ID,
+		Name:            req.Name,
+		Description:     req.Description,
+		Mode:            req.Mode,
+		CronSchedule:    req.CronSchedule,
+		JitterWindow:    req.JitterWindow,
+		ScheduledAt:     req.ScheduledAt,
+		SignalType:      req.SignalType,
+		SignalExpiresIn: req.SignalExpiresIn,
 		SignalTemplate: signaldb.SignalData{
 			Signal: req.SignalTemplate,
 		},
