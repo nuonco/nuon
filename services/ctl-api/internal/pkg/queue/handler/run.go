@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -41,6 +43,27 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 
 	l.Debug("handler is ready")
 	h.ready = true
+
+	// Periodically check that the queue signal still exists. If it has been
+	// deleted (e.g. the owning queue was terminated), set h.stopped so the
+	// Await below unblocks and the handler workflow terminates cleanly.
+	workflow.Go(ctx, func(gCtx workflow.Context) {
+		for {
+			if err := workflow.Sleep(gCtx, 5*time.Minute); err != nil {
+				return
+			}
+			if h.finished || h.stopped || h.restarted {
+				return
+			}
+			if _, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID); err != nil {
+				if dbgenerics.IsGormErrRecordNotFound(err) {
+					l.Warn("queue signal deleted, terminating orphaned handler")
+					h.stopped = true
+					return
+				}
+			}
+		}
+	})
 
 	// execute the handler and handle a restart or stop
 	if err := workflow.Await(ctx, func() bool {
