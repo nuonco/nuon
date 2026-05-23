@@ -127,6 +127,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.GET("", s.AdminGetAllRunners)
 		runners.GET("/details", s.AdminListRunnersDetails)
 		runners.POST("/restart", s.AdminRestartRunners)
+		runners.POST("/shutdown-processes", s.AdminShutdownAllRunnerProcesses)
 		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 
 		// sandbox management
