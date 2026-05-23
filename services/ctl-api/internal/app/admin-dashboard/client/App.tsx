@@ -33,6 +33,7 @@ import { WorkflowIndex } from '@/views/temporal-workflows/WorkflowIndex'
 import { SlowQueries } from '@/views/slow-queries/SlowQueries'
 import { QueryCatalog } from '@/views/query-catalog/QueryCatalog'
 import { RunnerUptime } from '@/views/runner-uptime/RunnerUptime'
+import { DataModel } from '@/views/data-model/DataModel'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,6 +79,7 @@ const router = createBrowserRouter([
       { path: 'queries', element: <SlowQueries /> },
       { path: 'query-catalog', element: <QueryCatalog /> },
       { path: 'runner-uptime', element: <RunnerUptime /> },
+      { path: 'data-model', element: <DataModel /> },
     ],
   },
 ])

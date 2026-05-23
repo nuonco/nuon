@@ -325,6 +325,9 @@ func (s *service) RegisterAdminDashboardRoutes(e *gin.Engine) error {
 		api.POST("/enqueuer/full-sweep", s.FullSweep)
 		api.POST("/enqueuer/flush-lost-signals", s.FlushLostSignals)
 
+		// Data model reference diagram
+		api.GET("/data-model", s.DataModel)
+
 		// General actions
 		api.POST("/promote", s.Promote)
 		api.POST("/seed", s.ProxySeed)

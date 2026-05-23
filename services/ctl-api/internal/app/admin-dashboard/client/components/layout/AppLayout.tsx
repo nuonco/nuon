@@ -42,6 +42,12 @@ const navGroups = [
       { path: '/api/livez', label: 'Health', external: true },
     ],
   },
+  {
+    label: 'Reference',
+    items: [
+      { path: '/data-model', label: 'Data model' },
+    ],
+  },
 ]
 
 function useDarkMode() {
