@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"time"
 
 	"go.temporal.io/sdk/activity"
 
@@ -20,8 +21,9 @@ type CreateQueueSignalRequest struct {
 
 	// OwnerID and OwnerType are optional — when set they populate the polymorphic
 	// owner association on the created QueueSignal so no separate UPDATE is needed.
-	OwnerID   string `json:"owner_id,omitempty"`
-	OwnerType string `json:"owner_type,omitempty"`
+	OwnerID   string     `json:"owner_id,omitempty"`
+	OwnerType string     `json:"owner_type,omitempty"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -41,6 +43,7 @@ func (a *Activities) CreateQueueSignal(ctx context.Context, req *CreateQueueSign
 		OwnerID:   req.OwnerID,
 		OwnerType: req.OwnerType,
 		Status:    app.NewCompositeStatus(ctx, app.StatusQueued),
+		ExpiresAt: req.ExpiresAt,
 		Workflow: signaldb.WorkflowRef{
 			Namespace:  info.WorkflowNamespace,
 			IDTemplate: info.WorkflowExecution.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
