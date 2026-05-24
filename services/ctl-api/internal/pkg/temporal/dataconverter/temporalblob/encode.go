@@ -15,17 +15,9 @@ import (
 )
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
-	startTime := time.Now()
-	tags := []string{"format:temporalblob", "op:encode"}
-	defer func() {
-		duration := time.Since(startTime)
-		d.mw.Incr("temporal.codec.incr", tags)
-		d.mw.Timing("temporal.codec.duration", duration, tags)
-	}()
-
 	result := make([]*commonpb.Payload, len(payloads))
 	for i, payload := range payloads {
-		encoded, err := d.encodePayload(payload, tags)
+		encoded, err := d.encodePayload(payload)
 		if err != nil {
 			return nil, err
 		}
@@ -35,14 +27,13 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 	return result, nil
 }
 
-func (d *dataConverter) encodePayload(payload *commonpb.Payload, tags []string) (*commonpb.Payload, error) {
+func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payload, error) {
 	// Skip if already encoded
 	if string(payload.Metadata[converter.MetadataEncoding]) == encoding {
 		return payload, nil
 	}
 
 	// Skip if payload is below threshold
-	fmt.Println("JM_TEST", d.cfg.TemporalDataConverterLargePayloadSize)
 	if len(payload.Data) < d.cfg.TemporalDataConverterLargePayloadSize {
 		return payload, nil
 	}
@@ -51,6 +42,17 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload, tags []string) 
 	if !d.encodeEnabled {
 		return payload, nil
 	}
+
+	startTime := time.Now()
+	status := "success"
+	defer func() {
+		tags := []string{"format:temporalblob", "status:" + status, "cache:no"}
+		d.mw.Incr("temporal.dataconverter.encode", tags)
+		d.mw.Timing("temporal.dataconverter.encode.latency", time.Since(startTime), tags)
+		if status == "success" {
+			d.mw.Gauge("temporal.dataconverter.encode.size", float64(len(payload.Data)), tags)
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.TemporalBlobS3Timeout)
 	defer cancel()
@@ -63,14 +65,11 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload, tags []string) 
 	reader := strings.NewReader(string(payload.Data))
 	checksum, err := d.blobSvc.UploadStream(ctx, s3Key, reader)
 	if err != nil {
+		status = "error"
 		d.l.Error("error uploading temporal blob to S3", zap.Error(err), zap.String("s3_key", s3Key))
-		d.mw.Incr("temporal.codec.blob.upload.error", tags)
 		// Graceful degradation: return original payload
 		return payload, nil
 	}
-
-	d.mw.Incr("temporal.codec.blob.upload.success", tags)
-	d.mw.Gauge("temporal.codec.blob.upload.size", float64(len(payload.Data)), tags)
 
 	// Write pointer row to DB
 	dbRecord := app.TemporalBlob{

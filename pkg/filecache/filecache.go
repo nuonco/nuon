@@ -46,13 +46,36 @@ func New(opts Options) (*FileCache, error) {
 		return nil, err
 	}
 
-	return &FileCache{
+	fc := &FileCache{
 		dir:      opts.Dir,
 		maxCount: opts.MaxCount,
 		maxBytes: opts.MaxBytes,
 		entries:  make(map[string]*cacheEntry),
 		order:    list.New(),
-	}, nil
+	}
+
+	// Hydrate from existing files on disk so cached data survives restarts.
+	dirEntries, _ := os.ReadDir(opts.Dir)
+	for _, de := range dirEntries {
+		if de.IsDir() {
+			continue
+		}
+		info, err := de.Info()
+		if err != nil {
+			continue
+		}
+		id := de.Name()
+		elem := fc.order.PushBack(id)
+		fc.entries[id] = &cacheEntry{
+			id:      id,
+			size:    info.Size(),
+			element: elem,
+		}
+		fc.totalSize += info.Size()
+	}
+	fc.evict()
+
+	return fc, nil
 }
 
 // Put writes data to the cache atomically and evicts old entries if needed.
