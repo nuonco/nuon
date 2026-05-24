@@ -1,4 +1,4 @@
-package temporalblob
+package blob
 
 import (
 	"go.temporal.io/sdk/converter"
@@ -35,9 +35,9 @@ func New(params Params) converter.PayloadCodec {
 	}
 }
 
-func AsTemporalBlob(f any) any {
+func AsBlob(f any) any {
 	return fx.Annotate(
 		f,
-		fx.ResultTags(`name:"temporalblob"`),
+		fx.ResultTags(`name:"blob"`),
 	)
 }

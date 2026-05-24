@@ -1,4 +1,4 @@
-package temporalblob
+package blob
 
 import (
 	"context"
@@ -27,12 +27,20 @@ func (d *dataConverter) Decode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 }
 
 func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payload, error) {
-	// Only decode payloads with our encoding
-	if string(payload.Metadata[converter.MetadataEncoding]) != encoding {
+	enc := string(payload.Metadata[converter.MetadataEncoding])
+
+	// Handle current encoding and legacy encodings
+	var metadataPrefix string
+	switch enc {
+	case encoding: // "nuon/blob"
+		metadataPrefix = "nuon/blob/"
+	case "nuon/temporal-blob":
+		metadataPrefix = "nuon/temporal-blob/"
+	default:
 		return payload, nil
 	}
 
-	if string(payload.Metadata["nuon/temporal-blob/enabled"]) != "true" {
+	if string(payload.Metadata[metadataPrefix+"enabled"]) != "true" {
 		return payload, nil
 	}
 
@@ -41,7 +49,7 @@ func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payl
 	cache := "no"
 	var size float64
 	defer func() {
-		tags := []string{"format:temporalblob", "status:" + status, "cache:" + cache}
+		tags := []string{"format:blob", "status:" + status, "cache:" + cache}
 		d.mw.Incr("temporal.dataconverter.decode", tags)
 		d.mw.Timing("temporal.dataconverter.decode.latency", time.Since(startTime), tags)
 		if status == "success" {
@@ -55,14 +63,14 @@ func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payl
 	if data, ok := d.cache.Get(blobID); ok {
 		cache = "yes"
 		size = float64(len(data))
-		return d.restorePayload(payload, data), nil
+		return d.restorePayload(payload, data, metadataPrefix), nil
 	}
 
 	// Cache miss: download from S3
-	s3Key := string(payload.Metadata["nuon/temporal-blob/s3_key"])
+	s3Key := string(payload.Metadata[metadataPrefix+"s3_key"])
 	if s3Key == "" {
 		status = "error"
-		return nil, errors.New("temporal blob decode: missing s3_key in metadata")
+		return nil, errors.New("blob decode: missing s3_key in metadata")
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.TemporalBlobS3Timeout)
@@ -71,23 +79,23 @@ func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payl
 	reader, err := d.blobSvc.DownloadStream(ctx, s3Key)
 	if err != nil {
 		status = "error"
-		d.l.Error("error downloading temporal blob from S3", zap.Error(err), zap.String("s3_key", s3Key))
-		return nil, errors.Wrap(err, "unable to download temporal blob from S3")
+		d.l.Error("error downloading blob from S3", zap.Error(err), zap.String("s3_key", s3Key))
+		return nil, errors.Wrap(err, "unable to download blob from S3")
 	}
 	defer reader.Close()
 
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		status = "error"
-		d.l.Error("error reading temporal blob data", zap.Error(err), zap.String("s3_key", s3Key))
-		return nil, errors.Wrap(err, "unable to read temporal blob from S3")
+		d.l.Error("error reading blob data", zap.Error(err), zap.String("s3_key", s3Key))
+		return nil, errors.Wrap(err, "unable to read blob from S3")
 	}
 
 	size = float64(len(data))
-	return d.restorePayload(payload, data), nil
+	return d.restorePayload(payload, data, metadataPrefix), nil
 }
 
-func (d *dataConverter) restorePayload(encoded *commonpb.Payload, data []byte) *commonpb.Payload {
+func (d *dataConverter) restorePayload(encoded *commonpb.Payload, data []byte, metadataPrefix string) *commonpb.Payload {
 	restored := &commonpb.Payload{
 		Metadata: make(map[string][]byte),
 		Data:     data,
@@ -96,14 +104,14 @@ func (d *dataConverter) restorePayload(encoded *commonpb.Payload, data []byte) *
 	// Copy non-codec metadata
 	if encoded.Metadata != nil {
 		for k, v := range encoded.Metadata {
-			if k != converter.MetadataEncoding && !strings.HasPrefix(k, "nuon/temporal-blob/") {
+			if k != converter.MetadataEncoding && !strings.HasPrefix(k, metadataPrefix) {
 				restored.Metadata[k] = v
 			}
 		}
 	}
 
 	// Restore original encoding
-	if originalEncoding, ok := encoded.Metadata["nuon/temporal-blob/original-encoding"]; ok {
+	if originalEncoding, ok := encoded.Metadata[metadataPrefix+"original-encoding"]; ok {
 		restored.Metadata[converter.MetadataEncoding] = originalEncoding
 	}
 

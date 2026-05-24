@@ -1,4 +1,4 @@
-package temporalblob
+package blob
 
 import (
 	"go.temporal.io/sdk/converter"
@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
-const encoding = "nuon/temporal-blob"
+const encoding = "nuon/blob"
 
 var _ converter.PayloadCodec = (*dataConverter)(nil)
 

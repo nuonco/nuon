@@ -41,9 +41,9 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -94,7 +94,7 @@ func (s *SignalTestSuite) SetupSuite() {
 
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(s3payload.AsS3Payload(s3payload.New)),
+		fx.Provide(blob.AsBlob(blob.New)),
 		fx.Provide(blobstore.NewService),
 		fx.Provide(dataconverter.New),
 		fx.Provide(temporal.New),

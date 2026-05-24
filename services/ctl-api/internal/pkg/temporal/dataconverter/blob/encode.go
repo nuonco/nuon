@@ -1,4 +1,4 @@
-package temporalblob
+package blob
 
 import (
 	"context"
@@ -46,7 +46,7 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 	startTime := time.Now()
 	status := "success"
 	defer func() {
-		tags := []string{"format:temporalblob", "status:" + status, "cache:no"}
+		tags := []string{"format:blob", "status:" + status, "cache:no"}
 		d.mw.Incr("temporal.dataconverter.encode", tags)
 		d.mw.Timing("temporal.dataconverter.encode.latency", time.Since(startTime), tags)
 		if status == "success" {
@@ -66,7 +66,7 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 	checksum, err := d.blobSvc.UploadStream(ctx, s3Key, reader)
 	if err != nil {
 		status = "error"
-		d.l.Error("error uploading temporal blob to S3", zap.Error(err), zap.String("s3_key", s3Key))
+		d.l.Error("error uploading blob to S3", zap.Error(err), zap.String("s3_key", s3Key))
 		// Graceful degradation: return original payload
 		return payload, nil
 	}
@@ -78,25 +78,25 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		Size:     int64(len(payload.Data)),
 	}
 	if res := d.db.WithContext(ctx).Create(&dbRecord); res.Error != nil {
-		d.l.Error("error writing temporal blob record", zap.Error(res.Error), zap.String("s3_key", s3Key))
+		d.l.Error("error writing blob record", zap.Error(res.Error), zap.String("s3_key", s3Key))
 		// S3 upload succeeded but DB write failed; payload is in S3 and can be recovered
 		// Still return the encoded payload since the s3_key is in metadata
 	}
 
 	// Write to local file cache
 	if err := d.cache.Put(blobID, payload.Data); err != nil {
-		d.l.Warn("error writing to temporal blob cache", zap.Error(err), zap.String("blob_id", blobID))
+		d.l.Warn("error writing to blob cache", zap.Error(err), zap.String("blob_id", blobID))
 	}
 
 	// Build encoded payload
 	encoded := &commonpb.Payload{
 		Metadata: map[string][]byte{
-			converter.MetadataEncoding:    []byte(encoding),
-			"nuon/temporal-blob/enabled":  []byte("true"),
-			"nuon/temporal-blob/blob_id":  []byte(blobID),
-			"nuon/temporal-blob/s3_key":   []byte(s3Key),
-			"nuon/temporal-blob/checksum": []byte(checksum),
-			"nuon/temporal-blob/size":     []byte(fmt.Sprintf("%d", len(payload.Data))),
+			converter.MetadataEncoding: []byte(encoding),
+			"nuon/blob/enabled":        []byte("true"),
+			"nuon/blob/blob_id":        []byte(blobID),
+			"nuon/blob/s3_key":         []byte(s3Key),
+			"nuon/blob/checksum":       []byte(checksum),
+			"nuon/blob/size":           []byte(fmt.Sprintf("%d", len(payload.Data))),
 		},
 		Data: []byte(blobID),
 	}
@@ -106,7 +106,7 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		if k != converter.MetadataEncoding {
 			encoded.Metadata[k] = v
 		} else {
-			encoded.Metadata["nuon/temporal-blob/original-encoding"] = v
+			encoded.Metadata["nuon/blob/original-encoding"] = v
 		}
 	}
 
