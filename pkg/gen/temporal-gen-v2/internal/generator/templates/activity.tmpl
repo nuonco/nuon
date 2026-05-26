@@ -14,6 +14,9 @@ type {{$reqType}} struct {
 
 // {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}} is a wrapper for the {{.OriginalName}} activity
 func (a {{.Receiver}}) {{if .Options.WrapperPrefix}}{{.Options.WrapperPrefix}}{{end}}{{.Name | ToPascal}}(ctx context.Context, req {{$reqType}}) ({{if .OutputType}}{{.OutputType}}, {{end}}error) {
+	{{- if .Options.ReplicaRead}}
+	ctx = routing.WithReplica(ctx)
+	{{- end}}
 	return a.{{.OriginalName}}(ctx, {{range .Params}}req.{{.ExportedName}}, {{end}})
 }
 {{- end}}
