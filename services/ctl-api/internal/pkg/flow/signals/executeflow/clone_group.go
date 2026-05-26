@@ -47,20 +47,30 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		}
 	}
 
-	// If steps have a WorkflowStepGroupID, create a new group and mark the old one as discarded.
+	// If steps have a WorkflowStepGroupID, create a new group and mark ALL old ones as discarded.
+	// On retry-of-retry, steps from multiple group generations coexist for the same GroupIdx.
+	// We must discard every previous group object, not just one.
 	var newGroupID string
-	oldGroupID := groupSteps[0].WorkflowStepGroupID
-	if oldGroupID != "" {
-		// Mark old group as discarded.
-		_ = statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
-			ID: oldGroupID,
-			Status: app.CompositeStatus{
-				Status: app.StatusDiscarded,
-				Metadata: map[string]any{
-					"reason": "group retry",
+	groupIDs := make(map[string]bool)
+	for _, step := range groupSteps {
+		if step.WorkflowStepGroupID != "" {
+			groupIDs[step.WorkflowStepGroupID] = true
+		}
+	}
+
+	if len(groupIDs) > 0 {
+		// Mark all old groups as discarded (idempotent — already-discarded is harmless).
+		for gid := range groupIDs {
+			_ = statusactivities.AwaitPkgStatusUpdateFlowStepGroupStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: gid,
+				Status: app.CompositeStatus{
+					Status: app.StatusDiscarded,
+					Metadata: map[string]any{
+						"reason": "group retry",
+					},
 				},
-			},
-		})
+			})
+		}
 
 		// Create a new group for the retry.
 		newGroupID = domains.NewWorkflowStepGroupID()
@@ -90,10 +100,14 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 		})
 	}
 
-	// Only clone primary steps (no retries) to avoid duplicates.
+	// Clone from the latest group retry generation (not always gen 0).
+	// On retry-of-retry the latest generation's signals carry the most
+	// current state. Within a generation, skip individual retries
+	// (RetryIndex > 0) to avoid duplicates.
+	latestGroupRetryIdx := newGroupRetryIdx - 1
 	var primarySteps []app.WorkflowStep
 	for _, step := range groupSteps {
-		if step.RetryIndex > 0 || step.GroupRetryIdx > 0 {
+		if step.GroupRetryIdx != latestGroupRetryIdx || step.RetryIndex > 0 {
 			continue
 		}
 		primarySteps = append(primarySteps, step)

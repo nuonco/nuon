@@ -506,9 +506,8 @@ func scrubbedEnvMap(env []string) map[string]string {
 // directory and returns its exec path. The returned cleanup func removes
 // the install directory.
 //
-// The install dir is prefixed with `tf-build-` to avoid the runner's
-// `workspace.CleanupAll` reset hook (which wipes any /tmp dir starting with
-// `workspace`, `run`, `plugin`, or `archive`).
+// The install dir is prefixed with `tf-build-` to keep it separate from
+// workspace directories (which are prefixed with `workspace-`).
 func installTerraform(ctx context.Context, l *zap.Logger, ver string) (string, func(), error) {
 	tfVersion, err := version.NewVersion(ver)
 	if err != nil {

@@ -708,6 +708,8 @@ type ClientService interface {
 
 	GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowOK, error)
 
+	GetWorkflowQueuePosition(params *GetWorkflowQueuePositionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionOK, error)
+
 	GetWorkflowStep(params *GetWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepOK, error)
 
 	GetWorkflowStepApproval(params *GetWorkflowStepApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalOK, error)
@@ -14617,6 +14619,52 @@ func (a *Client) GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientA
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetWorkflowQueuePosition gets queue position for a workflow
+
+Returns the queue position and workflows ahead when a workflow is pending.
+*/
+func (a *Client) GetWorkflowQueuePosition(params *GetWorkflowQueuePositionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowQueuePositionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowQueuePosition",
+		Method:             "GET",
+		PathPattern:        "/v1/workflows/{workflow_id}/queue-position",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowQueuePositionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowQueuePositionOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowQueuePosition: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

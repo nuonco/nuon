@@ -21,10 +21,11 @@ type Params struct {
 
 func New(params Params) converter.PayloadCodec {
 	return &dataConverter{
-		cfg: params.Cfg,
-		l:   params.L,
-		db:  params.DB,
-		mw:  params.MW,
+		cfg:           params.Cfg,
+		l:             params.L,
+		db:            params.DB,
+		mw:            params.MW,
+		encodeEnabled: params.Cfg.LargePayloadType != "blob",
 	}
 }
 
