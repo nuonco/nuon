@@ -1,7 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { TAPIError } from '@/types'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { APIHealthProvider } from '@/providers/api-health-provider'
 import { AuthProvider } from '@/providers/auth-provider'
@@ -61,7 +60,7 @@ export const App = () => {
             <RouterProvider router={router} />
           </APIHealthProvider>
         </AuthProvider>
-        <ReactQueryDevtools />
+
       </QueryClientProvider>
     </ConfigProvider>
   )

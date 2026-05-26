@@ -23,6 +23,11 @@ func init() {
 	config.RegisterDefault("github_app_name", "nuon-connect")
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
+	config.RegisterDefault("agent_enabled", false)
+	config.RegisterDefault("agent_provider", "anthropic")
+	config.RegisterDefault("agent_model", "")
+	config.RegisterDefault("agent_max_turns", 10)
+	config.RegisterDefault("anthropic_api_key", "")
 }
 
 type Config struct {
@@ -53,6 +58,12 @@ type Config struct {
 	SFTrialEndpoint       string `config:"sf_trial_access_endpoint"`
 	OnboardingV2          bool   `config:"nuon_onboarding_v2"`
 	AdminDashboardUrl     string `config:"nuon_admin_dashboard_url"`
+
+	AgentEnabled    bool   `config:"agent_enabled"`
+	AgentProvider   string `config:"agent_provider"`
+	AgentModel      string `config:"agent_model"`
+	AgentMaxTurns   int    `config:"agent_max_turns"`
+	AnthropicAPIKey string `config:"anthropic_api_key"`
 }
 
 func NewConfig() (*Config, error) {

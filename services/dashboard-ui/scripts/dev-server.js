@@ -29,6 +29,7 @@ const clientConfig = {
   sfTrialEndpoint: env("SF_TRIAL_ACCESS_ENDPOINT") || undefined,
   onboardingV2: env("NUON_ONBOARDING_V2") === "true" || undefined,
   adminDashboardUrl: env("NUON_ADMIN_DASHBOARD_URL") || undefined,
+  agentEnabled: env("AGENT_ENABLED") === "true" || undefined,
 };
 
 const configScript = `window.__NUON_CONFIG__=${JSON.stringify(clientConfig)};`;

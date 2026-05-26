@@ -19,6 +19,7 @@ export type TRuntimeConfig = {
   sfTrialEndpoint?: string
   onboardingV2?: boolean
   adminDashboardUrl?: string
+  agentEnabled?: boolean
   isDev?: boolean
 }
 

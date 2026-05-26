@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Outlet } from 'react-router'
 import { MainLayout } from '@/components/layout/MainLayout'
@@ -19,12 +20,27 @@ import { useSpotlight } from '@/hooks/use-spotlight'
 import { useHelp } from '@/hooks/use-help'
 import { useNavShortcuts } from '@/hooks/use-nav-shortcuts'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
+import { AgentProvider } from '@/providers/agent-provider'
+import { AgentToggle } from '@/components/agent'
+import { useConfig } from '@/hooks/use-config'
 
 const SpotlightListener = () => {
   useSpotlight()
   useHelp()
   useNavShortcuts()
   return null
+}
+
+const MaybeAgentProvider = ({ children }: { children: ReactNode }) => {
+  const config = useConfig()
+  if (!config?.agentEnabled) return <>{children}</>
+  return <AgentProvider>{children}</AgentProvider>
+}
+
+const MaybeAgentToggle = () => {
+  const config = useConfig()
+  if (!config?.agentEnabled) return null
+  return <AgentToggle />
 }
 
 export const OrgLayout = () => {
@@ -44,7 +60,9 @@ export const OrgLayout = () => {
                   <OrgStatusSSEProvider>
                   <ActiveWorkflowsProvider>
                     <WorkflowApprovalsProvider>
+                      <MaybeAgentProvider>
                       <SurfacesProvider>
+                      <MaybeAgentToggle />
                       <SpotlightListener />
                       <VCSConnectionSuccess />
                       <MainLayout
@@ -62,6 +80,7 @@ export const OrgLayout = () => {
                         <OrgStatusBar />
                       </MainLayout>
                       </SurfacesProvider>
+                      </MaybeAgentProvider>
                     </WorkflowApprovalsProvider>
                   </ActiveWorkflowsProvider>
                   </OrgStatusSSEProvider>
