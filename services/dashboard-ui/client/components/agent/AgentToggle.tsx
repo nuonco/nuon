@@ -21,9 +21,12 @@ export function AgentToggle() {
         variant="primary"
         onClick={handleOpen}
         title="Open agent"
-        className="!rounded-full !h-12 !w-12 !p-0 justify-center shadow-lg"
+        className="group !rounded-full !h-12 !w-12 hover:!w-40 justify-center shadow-lg !transition-all duration-fast ease-cubic overflow-hidden !gap-0"
       >
-        <Icon variant="SparkleIcon" size={20} />
+        <Icon variant="SparkleIcon" size={24} />
+        <span className="opacity-0 w-0 whitespace-nowrap transition-all duration-fast ease-cubic group-hover:opacity-100 group-hover:w-full group-hover:ml-3">
+          Nuon agent
+        </span>
       </Button>
     </div>
   )

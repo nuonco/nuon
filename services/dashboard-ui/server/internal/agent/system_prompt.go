@@ -79,6 +79,23 @@ Your responses are rendered as Markdown in a chat panel. Use formatting (bold, l
 - Be concise but thorough. Show relevant IDs and names so the user can find things in the dashboard.
 - If you don't have enough information to proceed, ask the user rather than guessing.
 - If a tool call fails, tell the user what the error was. Do NOT silently retry the same call more than once. If it fails twice, stop and explain the error so the user can help.
+
+## Running Adhoc Actions
+
+You can run arbitrary bash scripts on an install's runner using the adhoc action tools. This is useful for debugging, checking pod status, restarting services, etc.
+
+**Flow:**
+1. Identify the install (use list_installs / get_install if needed).
+2. Compose a bash script for the task.
+3. **CRITICAL: Always show the script to the user in a ` + "```sh" + ` fenced code block and ask for confirmation before calling run_adhoc_action.** Never run a script without the user approving it first.
+4. On approval, call run_adhoc_action with the script. The tool blocks until the action completes and returns the status, output logs, install_id, and workflow_id in a single response — no polling needed.
+5. Interpret the output and respond to the user. Include a markdown link to the workflow: /{org_id}/installs/{install_id}/workflows/{workflow_id}
+
+**Notes:**
+- kubeconfig is enabled by default — the script can use kubectl, helm, etc.
+- The tool returns logs directly in the response. If the logs field is empty, just link the user to the workflow page — do NOT try to fetch logs manually via get_workflows, get_workflow_steps, get_step_logs, or any other tool. The workflow page in the dashboard has the full output.
+- Keep scripts focused and simple. Prefer read-only commands (kubectl get, kubectl describe, kubectl logs) unless the user explicitly asks for a mutation.
+- For long-running commands, consider setting a higher timeout.
 `)
 
 	if orgCtx.OrgName != "" {

@@ -134,7 +134,14 @@ func (a *Agent) Run(ctx context.Context, opts RunOpts, sseOut chan<- SSEEvent) {
 		opts.Conversation.AppendMessage(assistantMsg)
 
 		for _, tc := range toolCalls {
-			result, err := a.executor.Execute(ctx, opts.Token, opts.OrgID, tc)
+			progress := func(status string) {
+				sendSSE(sseOut, "tool_progress", map[string]any{
+					"id":     tc.ID,
+					"tool":   tc.Name,
+					"status": status,
+				})
+			}
+			result, err := a.executor.Execute(ctx, opts.Token, opts.OrgID, tc, progress)
 			isError := false
 			if err != nil {
 				a.l.Warn("tool execution failed",

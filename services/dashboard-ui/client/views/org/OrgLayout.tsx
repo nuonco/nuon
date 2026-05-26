@@ -21,7 +21,7 @@ import { useHelp } from '@/hooks/use-help'
 import { useNavShortcuts } from '@/hooks/use-nav-shortcuts'
 import { VCSConnectionSuccess } from '@/components/vcs-connections/VCSConnectionSuccess'
 import { AgentProvider } from '@/providers/agent-provider'
-import { AgentToggle } from '@/components/agent'
+import { AgentToggle } from '@/components/agent/AgentToggle'
 import { useConfig } from '@/hooks/use-config'
 
 const SpotlightListener = () => {

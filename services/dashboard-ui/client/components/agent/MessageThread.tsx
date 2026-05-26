@@ -54,7 +54,7 @@ export function MessageThread({ messages }: IMessageThread) {
         } else if (block.type === 'text' && block.content) {
           items.push(
             <div key={`${msg.id}-text-${i}`} className="flex justify-start">
-              <div className="max-w-[85%] rounded-md border border-cool-grey-300 bg-cool-grey-50 px-3 py-2 dark:border-dark-grey-500 dark:bg-dark-grey-800">
+              <div className="max-w-[85%] rounded-md border border-cool-grey-300 bg-cool-grey-50 px-3 py-2 dark:border-dark-grey-300 dark:bg-dark-grey-600">
                 <div className="break-words text-sm [&_pre]:overflow-x-auto [&_pre]:max-w-full [&_table]:text-xs">
                   <Markdown content={block.content} />
                 </div>

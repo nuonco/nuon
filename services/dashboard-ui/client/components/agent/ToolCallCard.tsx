@@ -30,6 +30,7 @@ const toolLabels: Record<string, string> = {
   get_runner_job_plan: 'Reading Terraform plan',
   get_runner: 'Getting runner details',
   get_runner_health: 'Checking runner health',
+  run_adhoc_action: 'Running action',
 }
 
 const statusMap: Record<string, string> = {

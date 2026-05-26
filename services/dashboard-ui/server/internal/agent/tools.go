@@ -216,8 +216,13 @@ var AppTools = []ToolDef{
 var InstallTools = []ToolDef{
 	{
 		Name:        "list_installs",
-		Description: "List all installs in the current organization.",
-		Parameters:  ToolDefParameters{Type: "object"},
+		Description: "List installs in the current organization. Returns up to 100 installs. Use the q parameter to search by name.",
+		Parameters: ToolDefParameters{
+			Type: "object",
+			Properties: map[string]ToolDefProperty{
+				"q": {Type: "string", Description: "Optional search query to filter installs by name."},
+			},
+		},
 	},
 	{
 		Name:        "get_install",
@@ -343,6 +348,20 @@ var InstallTools = []ToolDef{
 				"runner_id": {Type: "string", Description: "The runner ID."},
 			},
 			Required: []string{"runner_id"},
+		},
+	},
+	{
+		Name:        "run_adhoc_action",
+		Description: "Run a bash script on an install's runner. The script runs with kubeconfig available so kubectl works. This tool blocks until the action completes and returns the output logs. CRITICAL: Always show the script to the user and get confirmation before calling this tool.",
+		Parameters: ToolDefParameters{
+			Type: "object",
+			Properties: map[string]ToolDefProperty{
+				"install_id":      {Type: "string", Description: "The install ID."},
+				"inline_contents": {Type: "string", Description: "The bash script to run."},
+				"name":            {Type: "string", Description: "Optional label for the action run."},
+				"timeout":         {Type: "number", Description: "Timeout in seconds (default 300)."},
+			},
+			Required: []string{"install_id", "inline_contents"},
 		},
 	},
 }

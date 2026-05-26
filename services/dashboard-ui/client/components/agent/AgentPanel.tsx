@@ -33,6 +33,7 @@ export function AgentPanel(props: IPanel) {
       childrenClassName="!p-0 !gap-0 overflow-hidden"
       className="!overflow-hidden"
       onClose={() => props.onClose?.()}
+      size="half"
       {...props}
     >
       <div className="flex flex-col flex-auto overflow-hidden">
