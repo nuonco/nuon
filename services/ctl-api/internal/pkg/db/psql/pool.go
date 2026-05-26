@@ -91,14 +91,17 @@ func (d *database) createPool() (*pgxpool.Pool, error) {
 func (d *database) recordPoolMetrics() {
 	stat := d.pool.Stat()
 
-	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.TotalConns()), []string{"conn_type:total"})
-	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.AcquiredConns()), []string{"conn_type:acquired"})
-	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.ConstructingConns()), []string{"conn_type:connecting"})
-	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.IdleConns()), []string{"conn_type:idle"})
-	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.MaxConns()), []string{"conn_type:max"})
+	role := d.Role
+	if role == "" {
+		role = "primary"
+	}
+	roleTag := "pool:" + role
 
-	avgAcquireDuration := stat.AcquireDuration() / time.Duration(stat.AcquireCount())
-	d.MetricsWriter.Timing("gorm_pool.average_acquire_duration", avgAcquireDuration, nil)
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.TotalConns()), []string{"conn_type:total", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.AcquiredConns()), []string{"conn_type:acquired", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.ConstructingConns()), []string{"conn_type:connecting", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.IdleConns()), []string{"conn_type:idle", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.MaxConns()), []string{"conn_type:max", roleTag})
 }
 
 func (d *database) startPoolBackgroundJob() {

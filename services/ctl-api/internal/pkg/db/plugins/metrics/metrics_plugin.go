@@ -14,6 +14,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/routing"
 )
 
 type contextKey string
@@ -114,6 +115,9 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		"db_type:" + m.dbType,
 		"db_operation_type:" + string(operationType),
 		"within_target_latency:" + strconv.FormatBool(withinTargetLatency),
+	}
+	if m.dbType == "psql" {
+		tags = append(tags, "pool:"+string(routing.DecisionFromContext(ctx)))
 	}
 
 	metricCtx, err := cctx.MetricsContextFromGinContext(ctx)
