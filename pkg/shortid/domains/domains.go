@@ -418,6 +418,10 @@ func NewBlobID() string {
 	return shortid.NewNanoID("blb")
 }
 
+func NewTemporalBlob() string {
+	return shortid.NewNanoID("tpb")
+}
+
 func NewRunnerProcessID() string {
 	return shortid.NewNanoID("rpr")
 }

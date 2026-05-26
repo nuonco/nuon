@@ -356,7 +356,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, job.JobErrorMessage(err, "deprovision plan job failed"))
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 	if status != app.RunnerJobStatusFinished {

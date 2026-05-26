@@ -53,7 +53,7 @@ type Params struct {
 
 	TemporalCodecGzip         converter.PayloadCodec `name:"gzip"`
 	TemporalCodecLargePayload converter.PayloadCodec `name:"largepayload"`
-	TemporalCodecS3Payload    converter.PayloadCodec `name:"s3payload"`
+	TemporalCodecBlob         converter.PayloadCodec `name:"blob"`
 
 	QueryCollector *querycollector.Collector
 }
@@ -359,7 +359,7 @@ func New(params Params) (*service, error) {
 		codecs: []converter.PayloadCodec{
 			params.TemporalCodecGzip,
 			params.TemporalCodecLargePayload,
-			params.TemporalCodecS3Payload,
+			params.TemporalCodecBlob,
 		},
 	}
 

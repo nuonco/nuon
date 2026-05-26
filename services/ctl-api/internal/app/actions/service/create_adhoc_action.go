@@ -162,14 +162,14 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 		return
 	}
 	if useQueues {
-		queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+		queueID, err := s.getInstallActionWorkflowsQueueID(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
 			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
+		}, workflow.ID, "install_action_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

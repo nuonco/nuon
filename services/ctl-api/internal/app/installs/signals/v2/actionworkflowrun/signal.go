@@ -344,7 +344,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Ins
 		WorkflowID: "actions-install-run-exec-job" + run.ID,
 	})
 	if err != nil {
-		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, "job failed")
+		s.updateActionRunStatus(ctx, run.ID, app.InstallActionRunStatusError, job.JobErrorMessage(err, "action workflow job failed"))
 		return errors.Wrap(err, "runner job failed")
 	}
 

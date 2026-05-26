@@ -22,15 +22,12 @@ func (h *handler) writePolicies(ctx context.Context) error {
 		return err
 	}
 
-	// NOTE: this block ⤵A is preserved here for posterity
-	// policyPath := filepath.Join(h.state.workspace.Root(), policiesDirName)
+	// Write policies inside the workspace so they are cleaned up automatically
+	// by workspace.Cleanup(). The workspace root is per-job-execution, so
+	// concurrent jobs for the same install don't race.
+	policyPath := filepath.Join(h.state.workspace.Root(), policiesDirName)
 
-	// NOTE: we are using a deterministic filepath here in order to avoid the change in the path breaking the plan/apply
-	// due to the change in the policy dir location. this potentially exposes for a undesirable type of error so we must
-	// ensure we clean up this directory.
-	policyPath := filepath.Join("/tmp", h.state.plan.InstallID)
-
-	// Remove the policy directory if it exits.
+	// Remove the policy directory if it exists from a previous attempt.
 	if err := os.RemoveAll(policyPath); err != nil {
 		return errors.Wrap(err, "unable to remove policy directory")
 	}
