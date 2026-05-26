@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Component, error) {
@@ -18,11 +18,10 @@ func (s *Helpers) GetComponent(ctx context.Context, cmpID string) (*app.Componen
 		Preload("Org.RunnerGroup").
 		Preload("Org.RunnerGroup.Runners").
 
-		// preload configs
-		Preload("ComponentConfigs").
+		// preload configs (latest only via view to bound memory + match other callers)
 		Preload("Dependencies").
 		Preload("ComponentConfigs", func(db *gorm.DB) *gorm.DB {
-			return db.Order(views.TableOrViewName(s.db, &app.ComponentConfigConnection{}, ".created_at DESC")).Limit(1)
+			return db.Scopes(scopes.WithOverrideTable("component_config_connections_latest_configs_view"))
 		}).
 
 		// preload all terraform configs
