@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"context"
-	"fmt"
-	"os"
 	"slices"
 
 	"github.com/spf13/cobra"
@@ -23,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 
 	check "github.com/nuonco/nuon/bins/runner/internal/jobs/healthcheck/check"
 )
@@ -40,12 +36,6 @@ func (c *cli) registerRun() error {
 }
 
 func (c *cli) runRun(cmd *cobra.Command, _ []string) {
-	// Clean up any orphaned temp directories from a previous runner process.
-	// This runs once at startup before any job loops start, so it's safe.
-	if err := workspace.CleanupAll(context.Background()); err != nil {
-		fmt.Fprintf(os.Stderr, "warning: unable to cleanup old workspaces: %v\n", err)
-	}
-
 	providers := []fx.Option{}
 
 	// common providers

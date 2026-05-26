@@ -81,6 +81,13 @@ func init() {
 	config.RegisterDefault("gcp_stack_template_base_url", "https://storage.googleapis.com/nuon-install-templates-gcp")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
+	config.RegisterDefault("large_payload_type", "blob")
+
+	config.RegisterDefault("temporal_blob_s3_prefix", "temporal-blobs/")
+	config.RegisterDefault("temporal_blob_cache_dir", "/tmp/temporal-blobs")
+	config.RegisterDefault("temporal_blob_cache_max_count", 10000)
+	config.RegisterDefault("temporal_blob_cache_max_size_mb", 1024)
+	config.RegisterDefault("temporal_blob_s3_timeout", "30s")
 
 	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
@@ -202,6 +209,12 @@ type Config struct {
 	TemporalHost                          string        `config:"temporal_host"  validate:"required"`
 	TemporalStickyWorkflowCacheSize       int           `config:"temporal_sticky_workflow_cache_size"`
 	TemporalDataConverterLargePayloadSize int           `config:"temporal_dataconverter_large_payload_size"`
+	LargePayloadType                      string        `config:"large_payload_type"`
+	TemporalBlobS3Prefix                  string        `config:"temporal_blob_s3_prefix"`
+	TemporalBlobCacheDir                  string        `config:"temporal_blob_cache_dir"`
+	TemporalBlobCacheMaxCount             int           `config:"temporal_blob_cache_max_count"`
+	TemporalBlobCacheMaxSizeMB            int           `config:"temporal_blob_cache_max_size_mb"`
+	TemporalBlobS3Timeout                 time.Duration `config:"temporal_blob_s3_timeout"`
 	TemporalWorkflowFailurePanic          bool          `config:"temporal_workflow_failure_panic"`
 	TemporalDisableRegistrationAliasing   bool          `config:"temporal_disable_registration_aliasing"`
 	TemporalStickyScheduleToStartTimeout  time.Duration `config:"temporal_sticky_schedule_to_start_timeout"`

@@ -36,6 +36,18 @@ const (
 	// InstallGenerateStepsQueueName is the queue that handles generate-steps signals.
 	// Throttled at the same concurrency as workflows to prevent overload.
 	InstallGenerateStepsQueueName = "install-generate-steps"
+
+	// InstallActionWorkflowsQueueName is the queue for action workflow execution.
+	// Separate from install-workflows so action runs don't compete with deploys.
+	InstallActionWorkflowsQueueName = "install-action-workflows"
+
+	// InstallDriftWorkflowsQueueName is the queue for drift scan workflow execution.
+	// Separate from install-workflows so drift scans don't compete with deploys.
+	InstallDriftWorkflowsQueueName = "install-drift-workflows"
+
+	// InstallActionCronSignalsQueueName is the queue for action cron emitter signals.
+	// Separate from install-signals so action crons don't compete with other signals.
+	InstallActionCronSignalsQueueName = "install-action-cron-signals"
 )
 
 type Params struct {

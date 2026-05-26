@@ -424,6 +424,15 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			}
 			flw = completedFlw
 
+			// Check for cancellation before overwriting status. The cancel
+			// handler may have set StatusCancelled while we were waiting for
+			// step generation to complete.
+			if s.cancelRequested {
+				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+				s.markRemainingStepsNotAttempted(ctx, l)
+				return nil
+			}
+
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: s.WorkflowID,
 				Status: app.CompositeStatus{

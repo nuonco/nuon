@@ -1,47 +1,18 @@
 package workspace
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/nuonco/nuon/pkg/generics"
 )
 
-var cleanupPrefixes []string = []string{
-	"workspace",
-	"run",
-	"plugin",
-	"archive",
-}
-
-func CleanupAll(ctx context.Context) error {
-	entries, err := os.ReadDir(defaultTmpRootDir)
-	if err != nil {
-		return nil
+// CleanupByID removes a single workspace directory by its ID.
+// This is safe to call with parallel runner jobs since it only
+// targets the specific workspace, not all workspace-prefixed dirs.
+func CleanupByID(workspaceID string) error {
+	dirPath := filepath.Join(defaultTmpRootDir, "workspace-"+workspaceID)
+	if err := os.RemoveAll(dirPath); err != nil {
+		return fmt.Errorf("failed to remove workspace directory %s: %w", dirPath, err)
 	}
-
-	for _, entry := range entries {
-		// Check if context is done
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		if !entry.IsDir() {
-			continue
-		}
-
-		if generics.HasAnyPrefix(entry.Name(), cleanupPrefixes...) {
-			dirPath := filepath.Join(defaultTmpRootDir, entry.Name())
-
-			if err := os.RemoveAll(dirPath); err != nil {
-				return fmt.Errorf("failed to remove workspace directory %s: %w", dirPath, err)
-			}
-		}
-	}
-
 	return nil
 }
