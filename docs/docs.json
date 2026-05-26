@@ -166,7 +166,6 @@
               "guides/configuring-policies",
               "guides/operation-roles",
               "guides/runner-management-mode",
-              "guides/notifications",
               "guides/team-management"
             ]
           },
@@ -177,6 +176,7 @@
               "guides/control-plane-integration",
               "guides/github-actions",
               "guides/webhooks",
+              "guides/slack",
               "guides/ai-and-apps"
             ]
           },
@@ -269,6 +269,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/034-aws-terraform-install-stack",
           "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
           "updates/031-operation-roles",
@@ -320,6 +321,20 @@
     "href": "/get-started/introduction"
   },
   "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/nuonco/nuon",
+        "icon": "github",
+        "iconType": "brands"
+      },
+      {
+        "label": "Slack",
+        "href": "https://nuon-byoc.slack.com/join/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA#/shared-invite/email",
+        "icon": "slack",
+        "iconType": "brands"
+      }
+    ],
     "primary": {
       "type": "button",
       "label": "Sign up",
@@ -385,6 +400,10 @@
     {
       "source": "/guides/programmatic-install-config",
       "destination": "/guides/install-configs"
+    },
+    {
+      "source": "/guides/notifications",
+      "destination": "/guides/slack"
     }
   ]
 }

@@ -4425,6 +4425,11 @@ export interface components {
       queue_id?: string;
       /** @description For scheduled mode: the time to fire the signal */
       scheduled_at?: string;
+      /**
+       * @description Optional TTL for emitted signals. When set, each emitted signal's ExpiresAt
+       * is computed as time.Now().Add(SignalExpiresIn) at emission time.
+       */
+      signal_expires_in?: number;
       signal_template?: components["schemas"]["signaldb.SignalData"];
       /** @description Signal template - the signal to emit on each tick */
       signal_type?: string;
@@ -4443,6 +4448,7 @@ export interface components {
       emitter_id?: string;
       enqueued?: boolean;
       execution_count?: number;
+      expires_at?: string;
       id?: string;
       org_id?: string;
       owner_id?: string;

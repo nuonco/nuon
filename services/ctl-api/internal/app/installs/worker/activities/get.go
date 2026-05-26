@@ -10,14 +10,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 )
 
-type GetRequest struct {
-	InstallID string `validate:"required"`
-}
-
 // @temporal-gen-v2 activity
-// @by-field InstallID
-func (a *Activities) Get(ctx context.Context, req GetRequest) (*app.Install, error) {
-	return a.getInstall(ctx, req.InstallID)
+// @as-wrapper
+// @by-field installID
+// @replica-read
+func (a *Activities) get(ctx context.Context, installID string) (*app.Install, error) {
+	return a.getInstall(ctx, installID)
 }
 
 func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {

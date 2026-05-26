@@ -2,7 +2,8 @@
 title: Using READMEs
 description: Use READMEs to support operating Installs.
 icon: "file-lines"
-keywords: ["install documentation", "per-install README", "Markdown template", "app README", "install instructions"]
+boost: 5
+keywords: ["Readme", "read me", "READMEs", "readmes", "labels", "label", "label badge", "install documentation", "per-install README", "Markdown template", "app README", "install instructions"]
 ---
 
 App READMEs allow you to define documentation for an App that can be rendered
@@ -139,7 +140,7 @@ __No app components are active in this install. You may need to run "Deploy Comp
 
 ```
 
-Because the dashboard polls the Control Plane, you will get get near-real-time
+Because the dashboard polls the Control Plane, you will get near-real-time
 statuses for each component.
 
 ## Tables
@@ -340,6 +341,26 @@ A flexbox layout container for arranging other elements.
 
 Attributes: `gap` (number), `align`, `justify`, `wrap` (`"true"` or `"false"`,
 defaults to true).
+
+### Card
+
+Wraps content in a styled card container with border, padding, and shadow.
+
+```markdown README.md
+<nuon-card>
+
+## Quick reference
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REPLICAS` | `2` | Number of API server replicas |
+| `LOG_LEVEL` | `info` | Application log level |
+
+</nuon-card>
+```
+
+Attributes:
+- `class` — optional CSS class name for custom styling
 
 ### Tabs
 

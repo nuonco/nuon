@@ -171,6 +171,9 @@ type Config struct {
 	DBName                       string `config:"db_name" validate:"required"`
 	DBHost                       string `config:"db_host" validate:"required"`
 	DBReplicaHost                string `config:"db_replica_host"`
+	DBGormReplicaHost            string `config:"db_gorm_replica_host"`
+	DBReplicaEnabled             bool   `config:"db_replica_enabled"`
+	DBReplicaBypassOptIn         bool   `config:"db_replica_bypass_opt_in"`
 	DBPort                       string `config:"db_port" validate:"required"`
 	DBSSLMode                    string `config:"db_ssl_mode" validate:"required"`
 	DBPassword                   string `config:"db_password"`
@@ -386,6 +389,9 @@ type Config struct {
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+
+	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
+	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`
 
 	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`

@@ -114,7 +114,7 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 
 	existingStatus, err := statusGetter(ctx)
 	if err != nil {
-		return errors.Wrap(err, "unable to get existing status")
+		return err
 	}
 	history := existingStatus.History
 	existingStatus.History = nil

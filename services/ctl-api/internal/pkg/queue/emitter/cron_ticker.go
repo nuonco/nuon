@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
 )
@@ -48,6 +49,18 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		EmitterID: req.EmitterID,
 	})
 	if err != nil {
+		if generics.IsGormErrRecordNotFound(err) {
+			l.Warn("emitter not found, terminating orphaned cron ticker",
+				zap.String("emitter-id", req.EmitterID),
+			)
+			info := workflow.GetInfo(ctx)
+			_ = activities.AwaitTerminateWorkflow(ctx, &activities.TerminateWorkflowRequest{
+				WorkflowID: info.WorkflowExecution.ID,
+				Namespace:  info.Namespace,
+				Reason:     "emitter not found",
+			})
+			return nil
+		}
 		l.Error("failed to get emitter", zap.Error(err))
 		return err
 	}

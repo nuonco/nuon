@@ -92,12 +92,11 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 		default:
 		}
 
-		finished := false
-		activeLimit := int64(50)
-		activeWorkflows, err := client.GetOrgWorkflows(ctx, &nuon.GetOrgWorkflowsQuery{
-			Finished: finished,
-			Planonly: false,
-			Limit:    activeLimit,
+		f := false
+		activeWorkflows, _, err := client.GetInstallWorkflows(ctx, installID, &nuon.GetInstallWorkflowsQuery{
+			Finished: &f,
+			Planonly: &f,
+			Limit:    50,
 		})
 		if err == nil {
 			aData, aHash, err := hashJSON(activeWorkflows)
