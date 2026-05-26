@@ -19,10 +19,11 @@ import (
 var _ converter.PayloadCodec = (*dataConverter)(nil)
 
 type dataConverter struct {
-	cfg *internal.Config
-	l   *zap.Logger
-	db  *gorm.DB
-	mw  metrics.Writer
+	cfg           *internal.Config
+	l             *zap.Logger
+	db            *gorm.DB
+	mw            metrics.Writer
+	encodeEnabled bool
 }
 
 func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payload, error) {
@@ -48,6 +49,12 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 			continue
 		}
 
+		// Skip encoding if disabled (toggle set to "blob")
+		if !d.encodeEnabled {
+			result[i] = payload
+			continue
+		}
+
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
 		defer cancel()
@@ -57,7 +64,6 @@ func (d *dataConverter) Encode(payloads []*commonpb.Payload) ([]*commonpb.Payloa
 		}
 		if res := d.db.WithContext(ctx).Create(&dbPayload); res.Error != nil {
 			d.l.Error("error encoding using large payload codec", zap.Error(res.Error))
-			panic("error encoding" + res.Error.Error())
 			return nil, errors.Wrap(res.Error, "unable to write temporal payload")
 		}
 

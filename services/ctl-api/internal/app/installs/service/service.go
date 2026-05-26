@@ -230,6 +230,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 		workflows.GET("", s.GetWorkflow)
 		workflows.PATCH("", s.UpdateWorkflow)
 		workflows.POST("/cancel", s.CancelWorkflow)
+		workflows.GET("/queue-position", s.GetWorkflowQueuePosition)
 
 		stepGroups := workflows.Group("/step-groups")
 		{

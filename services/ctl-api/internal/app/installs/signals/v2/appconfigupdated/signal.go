@@ -65,9 +65,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	queue, err := activities.AwaitGetInstallSignalsQueueByInstallID(ctx, s.InstallID)
+	signalsQueue, err := activities.AwaitGetInstallSignalsQueueByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install signals queue: %w", err)
+	}
+
+	actionCronQueue, err := activities.AwaitGetInstallActionCronSignalsQueueByInstallID(ctx, s.InstallID)
+	if err != nil {
+		return fmt.Errorf("unable to get install action cron signals queue: %w", err)
 	}
 
 	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
@@ -75,17 +80,27 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
-	// Fetch existing emitters and split by prefix
-	existingEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, queue.ID)
+	// Fetch existing emitters from the signals queue (drift emitters live here)
+	signalsEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, signalsQueue.ID)
 	if err != nil {
-		return fmt.Errorf("unable to get existing emitters: %w", err)
+		return fmt.Errorf("unable to get signals queue emitters: %w", err)
 	}
 
-	var actionEmitters, driftEmitters, driftSandboxEmitters []app.QueueEmitter
-	for _, em := range existingEmitters {
+	// Fetch existing emitters from the action cron queue
+	actionCronEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, actionCronQueue.ID)
+	if err != nil {
+		return fmt.Errorf("unable to get action cron queue emitters: %w", err)
+	}
+
+	// Split signals queue emitters by prefix. Action cron emitters that were
+	// previously on the signals queue are also collected for cleanup.
+	var legacyActionEmitters, driftEmitters, driftSandboxEmitters []app.QueueEmitter
+	for _, em := range signalsEmitters {
 		switch {
 		case strings.HasPrefix(em.Name, actionCronEmitterPrefix):
-			actionEmitters = append(actionEmitters, em)
+			// Legacy: action cron emitters that lived on the signals queue
+			// before they got their own queue. Clean them up.
+			legacyActionEmitters = append(legacyActionEmitters, em)
 		// Check the more specific `drift-sandbox-` prefix BEFORE the bare
 		// `drift-` case — otherwise sandbox emitters would be swept into
 		// the per-component drift bucket.
@@ -96,15 +111,26 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.reconcileActionCronEmitters(ctx, l, install, appCfg, queue, actionEmitters); err != nil {
+	// Clean up legacy action cron emitters from the signals queue.
+	stopAndDeleteEmitters(ctx, l, legacyActionEmitters)
+
+	// Collect action cron emitters from their dedicated queue.
+	var actionEmitters []app.QueueEmitter
+	for _, em := range actionCronEmitters {
+		if strings.HasPrefix(em.Name, actionCronEmitterPrefix) {
+			actionEmitters = append(actionEmitters, em)
+		}
+	}
+
+	if err := s.reconcileActionCronEmitters(ctx, l, install, appCfg, actionCronQueue, actionEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile action cron emitters: %w", err)
 	}
 
-	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, queue, driftEmitters); err != nil {
+	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, signalsQueue, driftEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile drift emitters: %w", err)
 	}
 
-	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, queue, driftSandboxEmitters); err != nil {
+	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, signalsQueue, driftSandboxEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile sandbox drift emitter: %w", err)
 	}
 
