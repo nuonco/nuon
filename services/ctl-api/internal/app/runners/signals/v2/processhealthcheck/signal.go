@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
+	semver "github.com/Masterminds/semver/v3"
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/metrics"
@@ -334,6 +335,10 @@ func (s *Signal) handleActive(ctx workflow.Context, l *zap.Logger, process *app.
 // heartbeat-reported version, emits a Datadog event when 'latest' is in
 // use, and writes the corresponding version_warning into process metadata
 // (empty string when versions agree).
+//
+// When the configured version is an alias tag (e.g. "cloud") rather than a
+// semver string, the comparison is made against the current API version
+// instead, since alias tags resolve to whatever the platform is running.
 func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runner *app.Runner, process *app.RunnerProcess, heartbeat *app.RunnerHeartBeat, tags map[string]string) error {
 	if heartbeat == nil || heartbeat.Version == "" {
 		return nil
@@ -367,12 +372,36 @@ func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runne
 		})
 	}
 
+	// Determine the expected version. When the configured version is a
+	// non-semver alias (e.g. "cloud", "stable"), the runner image resolves
+	// to the current platform release, so compare against the API version.
+	expectedVersion := configuredVersion
+	if configuredVersion != "" && !isSemver(configuredVersion) {
+		apiVersion, err := activities.AwaitGetAPIVersion(ctx)
+		if err != nil {
+			l.Warn("unable to fetch API version for alias comparison",
+				zap.String("configured_version", configuredVersion),
+				zap.Error(err),
+			)
+		} else if apiVersion != "" {
+			expectedVersion = apiVersion
+		}
+	}
+
 	var versionWarning string
-	if configuredVersion != "" && configuredVersion != heartbeat.Version {
-		versionWarning = fmt.Sprintf(
-			"Reported runner version (%s) does not match configured version (%s). Please update the runner to the correct version.",
-			heartbeat.Version, configuredVersion,
-		)
+	if expectedVersion != "" && expectedVersion != heartbeat.Version {
+		if expectedVersion != configuredVersion {
+			// Alias tag: tell the user which version the alias resolves to.
+			versionWarning = fmt.Sprintf(
+				"Reported runner version (%s) does not match expected version (%s) for tag %q. The runner may need to be restarted to pick up the latest release.",
+				heartbeat.Version, expectedVersion, configuredVersion,
+			)
+		} else {
+			versionWarning = fmt.Sprintf(
+				"Reported runner version (%s) does not match configured version (%s). Please update the runner to the correct version.",
+				heartbeat.Version, configuredVersion,
+			)
+		}
 	}
 
 	if _, err := activities.AwaitUpdateRunnerProcessStatus(ctx, activities.UpdateRunnerProcessStatusRequest{
@@ -390,6 +419,13 @@ func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runne
 	}
 
 	return nil
+}
+
+// isSemver returns true if the string looks like a semantic version
+// (with or without a leading "v").
+func isSemver(s string) bool {
+	_, err := semver.NewVersion(s)
+	return err == nil
 }
 
 func (s *Signal) heartbeatAge(now time.Time, heartbeat *app.RunnerHeartBeat) time.Duration {

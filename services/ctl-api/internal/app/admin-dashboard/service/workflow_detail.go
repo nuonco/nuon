@@ -16,16 +16,24 @@ func (s *service) WorkflowDetail(c *gin.Context) {
 	ctx := c.Request.Context()
 	workflowID := c.Param("workflow_id")
 
+	workflowQuery := func(db *gorm.DB) *gorm.DB {
+		return db.WithContext(ctx).
+			Preload("CreatedBy").
+			Preload("Steps", func(db *gorm.DB) *gorm.DB {
+				return db.Order("group_idx ASC, group_retry_idx ASC, idx ASC, created_at ASC")
+			}).
+			Preload("Steps.Approval").
+			Preload("Steps.Approval.Response").
+			Where("id = ?", workflowID)
+	}
+
 	var wf app.Workflow
-	res := s.readDB().WithContext(ctx).
-		Preload("CreatedBy").
-		Preload("Steps", func(db *gorm.DB) *gorm.DB {
-			return db.Order("group_idx ASC, group_retry_idx ASC, idx ASC, created_at ASC")
-		}).
-		Preload("Steps.Approval").
-		Preload("Steps.Approval.Response").
-		Where("id = ?", workflowID).
-		First(&wf)
+	res := workflowQuery(s.readDB()).First(&wf)
+
+	// Fall back to primary when the replica hasn't replicated yet.
+	if res.Error != nil && s.replicaDB != nil {
+		res = workflowQuery(s.db).First(&wf)
+	}
 
 	if res.Error != nil {
 		s.l.Error("failed to fetch workflow", zap.Error(res.Error))
