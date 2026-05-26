@@ -27,6 +27,7 @@ type ActivityOptions struct {
 	ByFieldOnly            bool
 	GenerateWrapper        bool
 	WrapperPrefix          string // Prefix to add to generated wrapper function name
+	ReplicaRead            bool
 }
 
 type WorkflowOptions struct {
@@ -65,6 +66,9 @@ func (a *Annotation) Validate() error {
 		}
 		if a.ActivityOpts.WrapperPrefix != "" && !a.ActivityOpts.GenerateWrapper {
 			return fmt.Errorf("@wrapper-prefix requires @as-wrapper to be specified")
+		}
+		if a.ActivityOpts.ReplicaRead && !a.ActivityOpts.GenerateWrapper {
+			return fmt.Errorf("@replica-read requires @as-wrapper to be specified")
 		}
 	}
 	if a.WorkflowOpts != nil {
@@ -306,6 +310,12 @@ func Parse(comments []string) (*Annotation, error) {
 				continue
 			}
 			annotation.ActivityOpts.GenerateWrapper = true
+
+		case "@replica-read":
+			if annotation.Type != "activity" {
+				continue
+			}
+			annotation.ActivityOpts.ReplicaRead = true
 
 		case "@wrapper-prefix":
 			if annotation.Type != "activity" {

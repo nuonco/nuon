@@ -51,7 +51,7 @@ func (s *service) GetCurrentUserOrgs(ctx *gin.Context) {
 func (s *service) getOrgs(ctx *gin.Context, orgIDs []string, q string) ([]app.Org, error) {
 	var orgs []app.Org
 	tx := s.db.WithContext(ctx).
-		Scopes(scopes.WithOffsetPagination).
+		Scopes(scopes.WithOffsetPagination, scopes.WithReplica).
 		Joins("JOIN accounts ON accounts.id = orgs.created_by_id").
 		Where("orgs.id IN ?", orgIDs).
 		Order(fmt.Sprintf("CASE WHEN accounts.account_type = '%s' THEN 1 ELSE 0 END, orgs.id", app.AccountTypeCanary))
