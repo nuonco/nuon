@@ -8,17 +8,6 @@
       "ctaText": "Learn more",
       "ctaUrl": "https://docs.nuon.co/updates/034-aws-terraform-install-stack",
       "dismissible": false
-    },
-    {
-      "id": "nuon-tuis-extensions-032",
-      "title": "Nuon TUIs, Extensions, and Role Management",
-      "date": "Mar 25, 2026",
-      "description": "Workflow TUIs and CLI extensions are now generally available. Manage workflows, approve steps, and extend the CLI — all from your terminal.",
-      "image": "/images/announcements/tui-light.png",
-      "imageDark": "/images/announcements/tui-dark.png",
-      "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/032-extensions-and-roles",
-      "dismissible": false
     }
   ]
 }
