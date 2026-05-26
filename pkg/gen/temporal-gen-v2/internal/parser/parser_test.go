@@ -276,6 +276,27 @@ func TestParse(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		"Activity with replica-read and as-wrapper": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @as-wrapper",
+				"// @replica-read",
+			},
+			expected: &Annotation{
+				Type: "activity",
+				ActivityOpts: &ActivityOptions{
+					GenerateWrapper: true,
+					ReplicaRead:     true,
+				},
+			},
+		},
+		"Activity with replica-read without as-wrapper (invalid)": {
+			comments: []string{
+				"// @" + config.AnnotationPrefix + " activity",
+				"// @replica-read",
+			},
+			wantErr: true,
+		},
 		"Workflow with single memo": {
 			comments: []string{
 				"// @" + config.AnnotationPrefix + " workflow",
