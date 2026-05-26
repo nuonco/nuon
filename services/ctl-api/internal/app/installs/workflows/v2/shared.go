@@ -103,10 +103,6 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 		}
 	}
 
-	if sigType == generatestate.SignalType || sigType == statepartialgenerate.SignalType {
-		meta.executionType = app.WorkflowStepExecutionTypeHidden
-	}
-
 	return meta
 }
 

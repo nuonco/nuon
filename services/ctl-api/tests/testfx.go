@@ -38,9 +38,9 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/largepayload"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/s3payload"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 	validatorpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -117,7 +117,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		// Temporal dependencies
 		fx.Provide(gzip.AsGzip(gzip.New)),
 		fx.Provide(largepayload.AsLargePayload(largepayload.New)),
-		fx.Provide(s3payload.AsS3Payload(s3payload.New)),
+		fx.Provide(blob.AsBlob(blob.New)),
 		fx.Provide(signaldb.NewPayloadConverter),
 		fx.Provide(dataconverter.New),
 
