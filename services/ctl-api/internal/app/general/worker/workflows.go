@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
-
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -26,14 +25,8 @@ type Workflows struct {
 
 func (w Workflows) All() []any {
 	wkflows := []any{
-		w.EventLoop,
-		w.PurgeStaleData,
 		w.Metrics,
-		w.Promotion,
-		w.TerminateEventLoops,
 		w.Seed,
-		w.RestartOrgRunners,
-		w.RestartOrgEventLoops,
 	}
 	return wkflows
 }
@@ -41,9 +34,7 @@ func (w Workflows) All() []any {
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
 	return []any{
-		w.Promotion,
 		w.Seed,
-		w.TerminateEventLoops,
 	}
 }
 

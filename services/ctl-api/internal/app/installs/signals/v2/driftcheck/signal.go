@@ -103,11 +103,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update install deploy with workflow: %w", err)
 	}
 
-	// Enqueue the flow execution signal to the install's workflows queue
+	// Enqueue the flow execution signal to the install's drift workflows queue
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
-		QueueName: helpers.InstallWorkflowsQueueName,
+		QueueName: helpers.InstallDriftWorkflowsQueueName,
 		Signal: &executeflow.Signal{
 			WorkflowID: wkflw.ID,
 		},

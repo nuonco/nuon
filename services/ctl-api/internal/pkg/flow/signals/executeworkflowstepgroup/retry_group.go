@@ -64,12 +64,14 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		})
 	}
 
-	// Only clone primary steps — filter out any step that is a retry clone
-	// (RetryIndex > 0 from auto-retry, or GroupRetryIdx > 0 from group retry).
-	// This gives us exactly the original set of steps from generation 0.
+	// Clone from the latest group retry generation (not always gen 0).
+	// On retry-of-retry the latest generation's signals carry the most
+	// current state. Within a generation, skip individual retries
+	// (RetryIndex > 0) to avoid duplicates.
+	latestGroupRetryIdx := newGroupRetryIdx - 1
 	var stepsToClone []app.WorkflowStep
 	for _, step := range steps {
-		if step.RetryIndex > 0 || step.GroupRetryIdx > 0 {
+		if step.GroupRetryIdx != latestGroupRetryIdx || step.RetryIndex > 0 {
 			continue
 		}
 		stepsToClone = append(stepsToClone, step)
@@ -87,9 +89,9 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 		return fmt.Errorf("group retry %d exceeds max retries %d", newGroupRetryIdx, groupMaxRetries)
 	}
 
-	// Clone each step. Always simple-clone from gen 0 — CloneSteps expansion
-	// was already applied during initial workflow creation, so the gen 0 steps
-	// already represent the full set (e.g. plan + apply as separate steps).
+	// Clone each step from the latest generation. CloneSteps expansion was
+	// already applied during initial workflow creation, so each generation
+	// already represents the full set (e.g. plan + apply as separate steps).
 	cloneSteps := make([]activities.CreateFlowStep, 0, len(stepsToClone))
 	for i, step := range stepsToClone {
 		// If the signal implements Clone(), use it to produce clean copies.

@@ -349,7 +349,7 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")
+		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, job.JobErrorMessage(err, "provision apply job failed"))
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 	if status != app.RunnerJobStatusFinished {
