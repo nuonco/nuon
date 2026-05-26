@@ -251,7 +251,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			ID: s.WorkflowID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "generated eager step groups, executing",
+				StatusHumanDescription: "generated initial step groups, executing",
 				Metadata: map[string]any{
 					"eager_steps_loaded": true,
 				},
