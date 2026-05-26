@@ -67,7 +67,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   s.InstallID,
 		OwnerType: "installs",
-		QueueName: helpers.InstallWorkflowsQueueName,
+		QueueName: helpers.InstallDriftWorkflowsQueueName,
 		Signal: &executeflow.Signal{
 			WorkflowID: wkflw.ID,
 		},
