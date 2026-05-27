@@ -123,7 +123,7 @@ func (s *service) CreateInstallActionWorkflowRun(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
 			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_action_workflows"); err != nil {
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}
