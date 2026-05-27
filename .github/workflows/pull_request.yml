@@ -36,3 +36,4 @@ jobs:
         with:
           name: pull_request ✅
           status: success
+          ignoreForks: "false"
