@@ -123,5 +123,4 @@ jobs:
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: services ✅
-          ignoreForks: "false"
           status: ${{steps.check.outputs.status}}          
