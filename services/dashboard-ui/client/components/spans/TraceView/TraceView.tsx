@@ -120,9 +120,9 @@ export const TraceView = ({
   return (
     <div className="flex flex-col gap-4 h-full">
       {showUpgradeBanner ? (
-        <Banner theme="info">
+        <Banner theme="info" className="mt-3">
           <Text weight="strong">No trace data available</Text>
-          <Text variant="subtext">
+          <Text variant="subtext" className="!block">
             Traces require a recent version of the runner. If this run completed
             without spans, upgrade your runner to see execution traces here.
           </Text>
