@@ -1971,6 +1971,15 @@ export interface paths {
      */
     post: operations["ResendOrgInvite"];
   };
+  "/v1/orgs/current/invites/{invite_id}/revoke": {
+    /**
+     * Revoke an org invite
+     * @description Revoke a pending org invite. The invite status is set to "revoked" and the record is soft-deleted, freeing the unique constraint so the same email can be re-invited.
+     *
+     * Only org admins can revoke invites. Only pending invites can be revoked.
+     */
+    post: operations["RevokeOrgInvite"];
+  };
   "/v1/orgs/current/remove-user": {
     /**
      * Remove a user from the current org
@@ -4235,7 +4244,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.OrgInviteStatus": "pending" | "accepted";
+    "app.OrgInviteStatus": "pending" | "accepted" | "revoked";
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -21094,6 +21103,58 @@ export interface operations {
    * The invite must be in "pending" status. Accepted invites cannot be resent.
    */
   ResendOrgInvite: {
+    parameters: {
+      path: {
+        /** @description invite ID */
+        invite_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * Revoke an org invite
+   * @description Revoke a pending org invite. The invite status is set to "revoked" and the record is soft-deleted, freeing the unique constraint so the same email can be re-invited.
+   *
+   * Only org admins can revoke invites. Only pending invites can be revoked.
+   */
+  RevokeOrgInvite: {
     parameters: {
       path: {
         /** @description invite ID */
