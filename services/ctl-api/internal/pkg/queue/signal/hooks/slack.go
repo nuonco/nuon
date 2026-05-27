@@ -434,7 +434,11 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 		return fmt.Errorf("lookup slack thread anchor: %w", err)
 	}
 
+	// Use the workflow's own start time so elapsed matches the dashboard.
 	startedAt := time.Now().UTC()
+	if !rendered.event.Workflow.CreatedAt.IsZero() {
+		startedAt = rendered.event.Workflow.CreatedAt.UTC()
+	}
 	parentTS := ""
 
 	if found {
@@ -583,11 +587,13 @@ func buildRenderEvent(data lifecycleEventData) renderEvent {
 		OrgID:      data.OrgID,
 		OrgName:    data.OrgName,
 		Workflow: slackrender.WorkflowRef{
-			ID:        data.Workflow.ID,
-			Type:      data.Workflow.Type,
-			OwnerID:   data.Workflow.OwnerID,
-			OwnerType: data.Workflow.OwnerType,
-			OwnerName: data.Workflow.OwnerName,
+			ID:             data.Workflow.ID,
+			Type:           data.Workflow.Type,
+			OwnerID:        data.Workflow.OwnerID,
+			OwnerType:      data.Workflow.OwnerType,
+			OwnerName:      data.Workflow.OwnerName,
+			CreatedByEmail: data.Workflow.CreatedByEmail,
+			CreatedAt:      data.Workflow.CreatedAt,
 		},
 	}
 
