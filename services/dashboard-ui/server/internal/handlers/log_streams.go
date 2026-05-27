@@ -141,6 +141,8 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 				} else {
 					continue
 				}
+			} else if !isOpen {
+				sendEvent(logs)
 			} else {
 				for _, log := range logs {
 					select {
