@@ -70,6 +70,10 @@ type AppQueueEmitter struct {
 	// For scheduled mode: the time to fire the signal
 	ScheduledAt string `json:"scheduled_at,omitempty"`
 
+	// Optional TTL for emitted signals. When set, each emitted signal's ExpiresAt
+	// is computed as time.Now().Add(SignalExpiresIn) at emission time.
+	SignalExpiresIn int64 `json:"signal_expires_in,omitempty"`
+
 	// signal template
 	SignalTemplate *SignaldbSignalData `json:"signal_template,omitempty"`
 
