@@ -10,6 +10,7 @@ import { LogLineSkeleton } from '@/components/log-stream/LogLine'
 import type { TOTELLog, TActionConfig } from '@/types'
 import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 import { cn } from '@/utils/classnames'
+import { getSeverityTextClasses } from '@/utils/log-stream-utils'
 
 interface IInstallActionRunLogs {
   actionConfig: TActionConfig
@@ -214,43 +215,56 @@ const StepAwareLogViewer = ({
     }
   }, [filters, displayLogs?.length, showAllLogs, activeStep, allLogStepCounts])
 
+  const isRaw = scopedFilters.viewMode === 'raw'
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col flex-auto">
-        <div className="sticky bg-background border-b z-10 -top-6">
+        <div className="@container sticky bg-background border-b z-10 -top-6">
           <LogFilters filters={scopedFilters} />
-          <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Severity
-            </Text>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Datetime
-            </Text>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Service
-            </Text>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Content
-            </Text>
+          {!isRaw && (
+            <div className="grid grid-cols-[3rem_15rem_8rem_1fr] gap-6 py-2">
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Severity
+              </Text>
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Datetime
+              </Text>
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Service
+              </Text>
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Content
+              </Text>
+            </div>
+          )}
+        </div>
+
+        {isRaw ? (
+          <pre className="pt-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
+            {displayLogs?.map((logLine) => (
+              <div key={logLine?.id} className={getSeverityTextClasses(logLine.severity_number)}>
+                {logLine.body}
+              </div>
+            ))}
+          </pre>
+        ) : (
+          <div className="flex flex-col divide-y">
+            {!displayLogs?.length && isLoading ? (
+              <LogsSkeleton />
+            ) : null}
+
+            {displayLogs?.map((logLine) => (
+              <LogLine
+                key={logLine?.id}
+                log={logLine}
+                activeLog={activeLog}
+                handleActiveLog={handleActiveLog}
+                searchParamPanel={searchParamPanel}
+              />
+            ))}
           </div>
-        </div>
-
-        <div className="flex flex-col divide-y">
-          {!displayLogs?.length && isLoading ? (
-            <LogsSkeleton />
-          ) : null}
-
-          {displayLogs?.map((logLine) => (
-            <LogLine
-              key={logLine?.id}
-              log={logLine}
-              activeLog={activeLog}
-              handleActiveLog={handleActiveLog}
-              searchParamPanel={searchParamPanel}
-            />
-          ))}
-
-        </div>
+        )}
       </div>
     </div>
   )
