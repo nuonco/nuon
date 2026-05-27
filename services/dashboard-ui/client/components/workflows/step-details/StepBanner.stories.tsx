@@ -108,6 +108,27 @@ export const ErrorAutoRetriesExhausted = () => (
   />
 )
 
+export const ErrorAutoRetriesExhaustedNoAutoRetries = () => (
+  <StepBanner
+    step={{
+      ...baseStep,
+      retryable: true,
+      skippable: true,
+      status: {
+        status: 'error',
+        status_human_description: 'auto-retries exhausted',
+        history: [],
+        metadata: {
+          auto_retries_exhausted: true,
+          max_auto_retries: 0,
+          retry_index: 1,
+          max_retries: 15,
+        },
+      },
+    } as TWorkflowStep}
+  />
+)
+
 export const ErrorRetriesExhausted = () => (
   <StepBanner
     step={{
