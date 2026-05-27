@@ -39,34 +39,39 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 	if meta := queueSignal.Status.Metadata; meta != nil {
 		// If init previously failed, the signal is already in a terminal error state.
 		if _, initFailed := meta["init_failed_at"]; initFailed {
+			h.setFinished(app.StatusError, "previous init failed; signal already in terminal state")
 			return nil
 		}
 
 		_, valStarted := meta["validate_started_at"]
 		_, valFinished := meta["validate_finished_at"]
 		if valStarted && !valFinished {
+			desc := "previous execution was abandoned (crashed mid-validate), marking as failed"
 			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
-				StatusDescription: "previous execution was abandoned (crashed mid-validate), marking as failed",
+				StatusDescription: desc,
 				Metadata: map[string]any{
 					"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
+			h.setFinished(app.StatusError, desc)
 			return nil
 		}
 
 		_, execStarted := meta["execute_started_at"]
 		_, execFinished := meta["execute_finished_at"]
 		if execStarted && !execFinished {
+			desc := "previous execution was abandoned (crashed mid-execute), marking as failed"
 			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
-				StatusDescription: "previous execution was abandoned (crashed mid-execute), marking as failed",
+				StatusDescription: desc,
 				Metadata: map[string]any{
 					"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
+			h.setFinished(app.StatusError, desc)
 			return nil
 		}
 	}
