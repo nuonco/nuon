@@ -42,6 +42,8 @@ jobs:
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
       DISABLE_GITHUB_OIDC: ${{ inputs.disable_github_oidc }}
       GEN_API_TYPES: ${{ contains(github.event.pull_request.labels.*.name, 'gen-api-types') }}
+      # Fork PRs don't push artifacts (security).
+      IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
 
@@ -87,7 +89,8 @@ jobs:
           CI=true nuonctl builds release \
             ${{inputs.service}} \
             --tag=${{inputs.tag}} \
-            --no-cache=${{ env.NO_CACHE == 'true' || inputs.is_promotion }}
+            --no-cache=${{ env.NO_CACHE == 'true' || inputs.is_promotion }} \
+            --push=${{ env.IS_FORK_PR != 'true' }}
         # --write-cache=${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
           BUILD_PROMOTION: ${{ inputs.is_promotion }}
