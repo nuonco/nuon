@@ -123,7 +123,7 @@ jobs:
       prod: true
       stage: false
       is_promotion: true
-      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
+      disable_github_oidc: true
     secrets: inherit
 
   bump_tag:

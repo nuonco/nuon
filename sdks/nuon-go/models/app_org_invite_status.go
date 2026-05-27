@@ -35,6 +35,9 @@ const (
 
 	// AppOrgInviteStatusAccepted captures enum value "accepted"
 	AppOrgInviteStatusAccepted AppOrgInviteStatus = "accepted"
+
+	// AppOrgInviteStatusRevoked captures enum value "revoked"
+	AppOrgInviteStatusRevoked AppOrgInviteStatus = "revoked"
 )
 
 // for schema
@@ -42,7 +45,7 @@ var appOrgInviteStatusEnum []any
 
 func init() {
 	var res []AppOrgInviteStatus
-	if err := json.Unmarshal([]byte(`["pending","accepted"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["pending","accepted","revoked"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

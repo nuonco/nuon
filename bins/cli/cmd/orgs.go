@@ -319,6 +319,7 @@ EXAMPLES
       "interests": {
         "resources": {
           "installs":               {"outcome": "completion", "approval_requests": true, "approval_responses": true},
+          "stacks":                 {"outcome": "completion"},
           "components":             {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
           "sandboxes":              {"outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true},
           "install_configurations": {"outcome": "completion", "approval_requests": true, "approval_responses": true}
