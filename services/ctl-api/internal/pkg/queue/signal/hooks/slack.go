@@ -727,6 +727,12 @@ func (h *SlackSignalLifecycleHook) eventTargetsFromEvent(ctx context.Context, ev
 					t.ActionID = id
 				}
 			}
+		case string(app.WorkflowStepTargetTypeInstallStackVersions):
+			if t.InstallID == "" {
+				if id := h.lookupInstallIDFromStackVersion(ctx, data.Step.TargetID); id != "" {
+					t.InstallID = id
+				}
+			}
 		}
 
 		// Sandbox-derived install. The sandbox is owned by exactly one
@@ -847,6 +853,27 @@ func (l *labelLoader) fetch(ctx context.Context, table, id string) (labels.Label
 	}
 	l.cache[key] = row.Labels
 	return row.Labels, nil
+}
+
+// lookupInstallIDFromStackVersion resolves the install id behind an
+// install_stack_versions row directly via its install_id column. Used by
+// the await-install-stack-version-run step's (stacks, version_active) event
+// so install-scoped Match works.
+func (h *SlackSignalLifecycleHook) lookupInstallIDFromStackVersion(ctx context.Context, stackVersionID string) string {
+	if h.db == nil || stackVersionID == "" {
+		return ""
+	}
+	var row struct {
+		InstallID string
+	}
+	if err := h.db.WithContext(ctx).
+		Table("install_stack_versions").
+		Select("install_id").
+		Where("id = ?", stackVersionID).
+		Scan(&row).Error; err != nil {
+		return ""
+	}
+	return row.InstallID
 }
 
 func (h *SlackSignalLifecycleHook) lookupInstallIDFromDeploy(ctx context.Context, deployID string) string {
