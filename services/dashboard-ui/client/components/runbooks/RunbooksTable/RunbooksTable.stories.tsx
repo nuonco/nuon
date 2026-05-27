@@ -8,7 +8,7 @@ const mockRows: TRunbookRow[] = Array.from({ length: 3 }, (_, i) => ({
   runbookId: `runbook-${i + 1}`,
   runbookName: `rotate-secrets-${i + 1}`,
   description: <span className="text-sm text-gray-500">Rotates API keys and secrets for the install.</span>,
-  stepCount: <span className="text-sm">3 steps</span>,
+  labels: <span className="text-sm text-gray-500">production</span>,
   href: `/org-1/apps/app-1/runbooks/runbook-${i + 1}`,
 }))
 
