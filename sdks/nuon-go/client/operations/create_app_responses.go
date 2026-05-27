@@ -55,6 +55,12 @@ func (o *CreateAppReader) ReadResponse(response runtime.ClientResponse, consumer
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *CreateAppNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppConflict creates a CreateAppConflict with default headers values
+func NewCreateAppConflict() *CreateAppConflict {
+	return &CreateAppConflict{}
+}
+
+/*
+CreateAppConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app conflict response has a 2xx status code
+func (o *CreateAppConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app conflict response has a 3xx status code
+func (o *CreateAppConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app conflict response has a 4xx status code
+func (o *CreateAppConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app conflict response has a 5xx status code
+func (o *CreateAppConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app conflict response a status code equal to that given
+func (o *CreateAppConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app conflict response
+func (o *CreateAppConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps][%d] createAppConflict %s", 409, payload)
+}
+
+func (o *CreateAppConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps][%d] createAppConflict %s", 409, payload)
+}
+
+func (o *CreateAppConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

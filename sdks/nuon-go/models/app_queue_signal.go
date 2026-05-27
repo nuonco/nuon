@@ -34,6 +34,9 @@ type AppQueueSignal struct {
 	// execution count
 	ExecutionCount int64 `json:"execution_count,omitempty"`
 
+	// expires at
+	ExpiresAt string `json:"expires_at,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
 

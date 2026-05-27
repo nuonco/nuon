@@ -55,6 +55,12 @@ func (o *CreateAppOperationRoleConfigReader) ReadResponse(response runtime.Clien
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppOperationRoleConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppOperationRoleConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppOperationRoleConfigNotFound) GetPayload() *models.StderrErrRes
 }
 
 func (o *CreateAppOperationRoleConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppOperationRoleConfigConflict creates a CreateAppOperationRoleConfigConflict with default headers values
+func NewCreateAppOperationRoleConfigConflict() *CreateAppOperationRoleConfigConflict {
+	return &CreateAppOperationRoleConfigConflict{}
+}
+
+/*
+CreateAppOperationRoleConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppOperationRoleConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app operation role config conflict response has a 2xx status code
+func (o *CreateAppOperationRoleConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app operation role config conflict response has a 3xx status code
+func (o *CreateAppOperationRoleConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app operation role config conflict response has a 4xx status code
+func (o *CreateAppOperationRoleConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app operation role config conflict response has a 5xx status code
+func (o *CreateAppOperationRoleConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app operation role config conflict response a status code equal to that given
+func (o *CreateAppOperationRoleConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app operation role config conflict response
+func (o *CreateAppOperationRoleConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppOperationRoleConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/operation-role-configs][%d] createAppOperationRoleConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppOperationRoleConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/operation-role-configs][%d] createAppOperationRoleConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppOperationRoleConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppOperationRoleConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

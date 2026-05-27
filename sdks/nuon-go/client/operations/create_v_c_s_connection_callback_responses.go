@@ -55,6 +55,12 @@ func (o *CreateVCSConnectionCallbackReader) ReadResponse(response runtime.Client
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateVCSConnectionCallbackConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateVCSConnectionCallbackInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateVCSConnectionCallbackNotFound) GetPayload() *models.StderrErrResp
 }
 
 func (o *CreateVCSConnectionCallbackNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateVCSConnectionCallbackConflict creates a CreateVCSConnectionCallbackConflict with default headers values
+func NewCreateVCSConnectionCallbackConflict() *CreateVCSConnectionCallbackConflict {
+	return &CreateVCSConnectionCallbackConflict{}
+}
+
+/*
+CreateVCSConnectionCallbackConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateVCSConnectionCallbackConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create v c s connection callback conflict response has a 2xx status code
+func (o *CreateVCSConnectionCallbackConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create v c s connection callback conflict response has a 3xx status code
+func (o *CreateVCSConnectionCallbackConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create v c s connection callback conflict response has a 4xx status code
+func (o *CreateVCSConnectionCallbackConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create v c s connection callback conflict response has a 5xx status code
+func (o *CreateVCSConnectionCallbackConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create v c s connection callback conflict response a status code equal to that given
+func (o *CreateVCSConnectionCallbackConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create v c s connection callback conflict response
+func (o *CreateVCSConnectionCallbackConflict) Code() int {
+	return 409
+}
+
+func (o *CreateVCSConnectionCallbackConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/vcs/connection-callback][%d] createVCSConnectionCallbackConflict %s", 409, payload)
+}
+
+func (o *CreateVCSConnectionCallbackConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/vcs/connection-callback][%d] createVCSConnectionCallbackConflict %s", 409, payload)
+}
+
+func (o *CreateVCSConnectionCallbackConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateVCSConnectionCallbackConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

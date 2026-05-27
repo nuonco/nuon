@@ -43,6 +43,7 @@ func (c *CreateInstallInputsRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.InstallInputs
 // @Router					/v1/installs/{install_id}/inputs [post]
