@@ -424,3 +424,4 @@ NUON_NO_TTY=true nuon <command>   # Explicit disable
 CI=true nuon <command>             # CI simulation
 nuon <command> | cat               # Pipe (auto-detected)
 ```
+
