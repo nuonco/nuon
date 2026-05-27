@@ -16,6 +16,7 @@ type OrgInviteStatus string
 const (
 	OrgInviteStatusPending  OrgInviteStatus = "pending"
 	OrgInviteStatusAccepted OrgInviteStatus = "accepted"
+	OrgInviteStatusRevoked  OrgInviteStatus = "revoked"
 )
 
 type OrgInvite struct {

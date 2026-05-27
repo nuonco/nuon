@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ResendOrgInviteButton } from '@/components/team/ResendOrgInvite'
+import { RevokeOrgInviteButton } from '@/components/team/RevokeOrgInvite'
 import type { TOrgInvite } from '@/types'
 
 export const InvitedUsers = ({
@@ -39,6 +40,7 @@ export const InvitedUsers = ({
             {i?.role_type === 'org_admin' ? 'Admin' : i?.role_type}
           </Badge>
           <ResendOrgInviteButton invite={i} size="sm" />
+          <RevokeOrgInviteButton invite={i} size="sm" />
         </div>
       ))}
     </div>
