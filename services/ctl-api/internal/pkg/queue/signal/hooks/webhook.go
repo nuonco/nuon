@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -94,6 +95,9 @@ const (
 // make truncation safer than shipping multi-MB plans inline.
 const approvalPlanExcerptMaxBytes = 8 * 1024
 
+// orgNameCacheTTL bounds how long a renamed org keeps showing its old name.
+const orgNameCacheTTL = 10 * time.Minute
+
 type Params struct {
 	fx.In
 
@@ -111,6 +115,19 @@ type WebhookSignalLifecycleHook struct {
 	appURL       string
 	publicAPIURL string
 	mw           metrics.Writer
+
+	// workflowCreatorCache holds workflowCreatorRow values keyed by workflow
+	// id. The underlying row is write-once, so entries never expire.
+	workflowCreatorCache sync.Map
+
+	// orgNameCache holds orgNameCacheEntry values keyed by org id. Entries
+	// expire after orgNameCacheTTL.
+	orgNameCache sync.Map
+}
+
+type orgNameCacheEntry struct {
+	name      string
+	expiresAt time.Time
 }
 
 var _ signal.SignalLifecycleHook = (*WebhookSignalLifecycleHook)(nil)
@@ -308,6 +325,12 @@ type workflowRef struct {
 	// when the data is available from existing enrichment JOINs without an
 	// extra round-trip; may be empty in other cases.
 	OwnerName string `json:"owner_name,omitempty"`
+	// CreatedByEmail labels who started the workflow. Falls back to the
+	// raw account id for accounts without an email; empty when the
+	// workflow has no creator.
+	CreatedByEmail string `json:"created_by_email,omitempty"`
+	// CreatedAt is the workflow's start time. Zero when unknown.
+	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
 type workflowStepRef struct {
@@ -562,6 +585,14 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		},
 	}
 
+	creator := h.lookupWorkflowCreator(ctx, event.WorkflowID)
+	data.Workflow.CreatedByEmail = creator.CreatedByEmail
+	data.Workflow.CreatedAt = creator.CreatedAt
+
+	if data.OrgName == "" {
+		data.OrgName = h.lookupOrgName(ctx, event.OrgID)
+	}
+
 	if outcome != nil {
 		data.Outcome = h.buildOutcome(event, outcome)
 	}
@@ -685,6 +716,14 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 		},
 	}
 
+	creator := h.lookupWorkflowCreator(ctx, event.WorkflowID)
+	data.Workflow.CreatedByEmail = creator.CreatedByEmail
+	data.Workflow.CreatedAt = creator.CreatedAt
+
+	if data.OrgName == "" {
+		data.OrgName = h.lookupOrgName(ctx, event.OrgID)
+	}
+
 	if installName != "" && data.Workflow.OwnerType == "installs" && data.Workflow.OwnerName == "" {
 		data.Workflow.OwnerName = installName
 	}
@@ -799,6 +838,70 @@ func (h *WebhookSignalLifecycleHook) lookupApprovalResponse(ctx context.Context,
 		Type:        app.WorkflowStepResponseType(row.ResponseType),
 		RespondedBy: row.RespondedBy,
 	}, true
+}
+
+// lookupOrgName returns the org's display name. Empty when the row is
+// missing or the lookup fails.
+func (h *WebhookSignalLifecycleHook) lookupOrgName(ctx context.Context, orgID string) string {
+	if h.db == nil || orgID == "" {
+		return ""
+	}
+	if v, ok := h.orgNameCache.Load(orgID); ok {
+		entry := v.(orgNameCacheEntry)
+		if time.Now().Before(entry.expiresAt) {
+			return entry.name
+		}
+	}
+	var name string
+	if err := h.db.WithContext(ctx).
+		Table("orgs").
+		Select("name").
+		Where("id = ?", orgID).
+		Limit(1).
+		Scan(&name).Error; err != nil {
+		h.l.Debug("failed to load org name for lifecycle enrichment",
+			zap.String("org_id", orgID),
+			zap.Error(err))
+		return ""
+	}
+	h.orgNameCache.Store(orgID, orgNameCacheEntry{
+		name:      name,
+		expiresAt: time.Now().Add(orgNameCacheTTL),
+	})
+	return name
+}
+
+type workflowCreatorRow struct {
+	CreatedByEmail string
+	CreatedAt      time.Time
+}
+
+// lookupWorkflowCreator returns who started the workflow and when. Email
+// when the account has one, raw account id otherwise. Zero value when the
+// row is missing or the lookup fails.
+func (h *WebhookSignalLifecycleHook) lookupWorkflowCreator(ctx context.Context, workflowID string) workflowCreatorRow {
+	if h.db == nil || workflowID == "" {
+		return workflowCreatorRow{}
+	}
+	if v, ok := h.workflowCreatorCache.Load(workflowID); ok {
+		return v.(workflowCreatorRow)
+	}
+	var row workflowCreatorRow
+	if err := h.db.WithContext(ctx).
+		Table("install_workflows AS w").
+		Select(`COALESCE(NULLIF(acc.email, ''), w.created_by_id, '') AS created_by_email,
+			w.created_at AS created_at`).
+		Joins("LEFT JOIN accounts AS acc ON acc.id = w.created_by_id").
+		Where("w.id = ?", workflowID).
+		Limit(1).
+		Scan(&row).Error; err != nil {
+		h.l.Debug("failed to load workflow creator for lifecycle enrichment",
+			zap.String("workflow_id", workflowID),
+			zap.Error(err))
+		return workflowCreatorRow{}
+	}
+	h.workflowCreatorCache.Store(workflowID, row)
+	return row
 }
 
 // respondAPIURL builds the ctl-api endpoint a consumer would POST to in order
