@@ -107,7 +107,17 @@
             "boost": 3,
             "pages": [
               "guides/app-install-life-cycle",
-              "concepts/stacks",
+              {
+                "group": "Stacks",
+                "root": "concepts/stacks",
+                "icon": "layer-group",
+                "expanded": true,
+                "pages": [
+                  "concepts/stacks/stand-alone-vpc",
+                  "concepts/stacks/customer-vpc",
+                  "concepts/stacks/customer-cluster"
+                ]
+              },
               "concepts/cli"
             ]
           },

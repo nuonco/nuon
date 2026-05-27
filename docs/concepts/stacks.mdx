@@ -1,10 +1,10 @@
 ---
 title: "Stacks"
 icon: "layer-group"
-description: "Stacks are cloud-native templates that bootstrap an install in a customer's cloud account."
+description: "Customers use Stacks to install an app in their account."
 ---
 
-A Stack is the first thing deployed in a customer's cloud account when an install is created. It is an infrastructure template that provisions the foundational resources needed to deploy and operate the app.
+A Stack is the first thing deployed in a customer's cloud account when an install is created. It provisions the foundational resources needed to deploy and operate the app.
 
 For each install, Nuon generates a Stack template in both Terraform and the platform's native IaC language. Both formats produce the same resources, so you or your customer can use whichever one fits into your tooling and processes the best.
 
@@ -14,17 +14,17 @@ For each install, Nuon generates a Stack template in both Terraform and the plat
 
 ## What does a Stack create?
 
-A Stack provisions:
+Every Stack provisions the same three things:
 
-- **Networking** by creating a new VPC or connecting to an existing one provided by the customer
-- **The [Runner](/concepts/runners)** as a VM with Docker running the Runner binary
-- **IAM roles and permissions** for the Runner to operate
+- The network the app runs in
+- The [permissions the Runner needs](/concepts/operation-roles#what-are-operation-roles) to deploy and operate your app
+- The Nuon-powered [Runner](/concepts/runners) itself
 
-Stacks also support customers bringing their own Kubernetes clusters or other existing infrastructure through [inputs](/concepts/app-inputs).
+The network can either be **created** by the Stack or **selected** from resources the customer already has. See [Stand-Alone VPC](/concepts/stacks/stand-alone-vpc), [Customer VPC](/concepts/stacks/customer-vpc), and [Customer Cluster](/concepts/stacks/customer-cluster) for each pattern.
 
 ## How is a Stack deployed?
 
-When a vendor creates an install, Nuon generates Stack templates (Terraform and the platform's native IaC, where applicable) along with links and CLI snippets the vendor can share with the customer. The customer deploys whichever format fits their tooling using their own credentials. This is how access is granted: the customer creates the resources themselves.
+When a vendor creates an install, Nuon generates Stack templates (Terraform and the platform's native IaC, where applicable) along with links and CLI snippets the vendor can share with the customer. The customer deploys whichever format fits their tooling, using their own credentials. This is how access is granted: the customer provisions the Stack themselves.
 
 No cross-account access is required. The customer retains full ownership and visibility of all infrastructure created by the Stack.
 
@@ -32,7 +32,7 @@ No cross-account access is required. The customer retains full ownership and vis
 
 ## Customer Control
 
-The Stack gives the customer full control over the Runner's access. Through the stack parameters, the customer can:
+The Stack gives the customer full control over the Runner's access to their cloud account. Through the Stack parameters, the customer can:
 
 - **Enable or disable the Runner** to stop it from executing jobs
 - **Configure IAM roles and policies** to control what the Runner can do
@@ -42,4 +42,8 @@ This means the customer always has a killswitch. See [Customer-Controlled Runner
 
 ## Stack Inputs
 
-Stacks can accept customer-provided values at deploy time. [Secrets](/concepts/app-secrets) are entered by the customer when deploying the stack template (as CloudFormation parameters, Terraform variables, etc.) and are stored in the customer's cloud secret manager (e.g., AWS Secrets Manager). [Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs) marked as `user_configurable` are also passed through the stack.
+Stacks accept customer-provided values at deploy time. They come in three forms:
+
+- **[Secrets](/concepts/app-secrets)** — entered by the customer as CloudFormation/Bicep parameters or Terraform variables, then stored in the customer's cloud secret manager (e.g., AWS Secrets Manager).
+- **[Customer-facing inputs](/concepts/app-inputs#customer-facing-inputs)** marked `user_configurable` — passed through the Stack at deploy time.
+- **VPC and cluster IDs** — required when the app uses the [Customer VPC](/concepts/stacks/customer-vpc) or [Customer Cluster](/concepts/stacks/customer-cluster) pattern. The customer enters them in the Stack's parameter form alongside any other inputs.
