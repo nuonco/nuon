@@ -340,30 +340,51 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	installsCmds.AddCommand(sandboxRunLogsCmd)
 
 	sandboxOutputsCmd := &cobra.Command{
-		Use:   "sandbox-outputs",
-		Short: "View sandbox outputs",
-		Long:  "View the latest sandbox outputs for an install",
+		Use:        "sandbox-outputs",
+		Deprecated: "Use `nuon installs outputs --sandbox` instead",
+		Hidden:     true,
+		Short:      "View sandbox outputs (deprecated)",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.SandboxOutputs(cmd.Context(), id, PrintJSON)
+			return svc.Outputs(cmd.Context(), id, installs.OutputsOptions{SandboxOnly: true}, PrintJSON)
 		}),
 	}
 	sandboxOutputsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	sandboxOutputsCmd.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(sandboxOutputsCmd)
 
+	var (
+		outputsStack   bool
+		outputsSandbox bool
+	)
 	outputsCmd := &cobra.Command{
 		Use:   "outputs",
-		Short: "View all install outputs",
-		Long:  "View unified outputs from stack, sandbox, and components for an install. Use -c to filter by component.",
+		Short: "View install outputs",
+		Long: `View install outputs across stack, sandbox, and components.
+
+By default, all sections are shown. Use a filter flag to scope the output to
+a single section:
+
+  --stack                       show only the install stack outputs
+  --sandbox                     show only sandbox outputs
+  --component-id <id-or-name>   show outputs for a single component
+
+The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Outputs(cmd.Context(), id, componentID, PrintJSON)
+			return svc.Outputs(cmd.Context(), id, installs.OutputsOptions{
+				StackOnly:   outputsStack,
+				SandboxOnly: outputsSandbox,
+				ComponentID: componentID,
+			}, PrintJSON)
 		}),
 	}
 	outputsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
 	outputsCmd.MarkFlagRequired("install-id")
-	outputsCmd.Flags().StringVarP(&componentID, "component", "c", "", "Filter by component name or ID")
+	outputsCmd.Flags().BoolVar(&outputsStack, "stack", false, "Show only the install stack outputs")
+	outputsCmd.Flags().BoolVar(&outputsSandbox, "sandbox", false, "Show only sandbox outputs")
+	outputsCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The ID or name of a component to show outputs for")
+	outputsCmd.MarkFlagsMutuallyExclusive("stack", "sandbox", "component-id")
 	installsCmds.AddCommand(outputsCmd)
 
 	currentInputs := &cobra.Command{

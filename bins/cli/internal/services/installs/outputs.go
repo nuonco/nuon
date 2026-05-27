@@ -4,15 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 	"sync"
 
+	"charm.land/lipgloss/v2"
+
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+// OutputsOptions filters what `Outputs` returns. At most one of StackOnly,
+// SandboxOnly, or ComponentID may be set — Cobra enforces this at the flag layer.
+type OutputsOptions struct {
+	StackOnly   bool
+	SandboxOnly bool
+	ComponentID string // id or name; empty means no component filter
+}
 
 type installOutputs struct {
 	Stack      map[string]any            `json:"stack,omitempty"`
@@ -20,13 +30,17 @@ type installOutputs struct {
 	Components map[string]map[string]any `json:"components,omitempty"`
 }
 
-func (s *Service) Outputs(ctx context.Context, installID, componentFilter string, asJSON bool) error {
+func (s *Service) Outputs(ctx context.Context, installID string, opts OutputsOptions, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
-	// Fetch all data in parallel.
+	filtered := opts.StackOnly || opts.SandboxOnly || opts.ComponentID != ""
+	wantStack := !filtered || opts.StackOnly
+	wantSandbox := !filtered || opts.SandboxOnly
+	wantComponents := !filtered || opts.ComponentID != ""
+
 	var (
 		stack      *models.AppInstallStack
 		sandboxes  []*models.AppInstallSandboxRun
@@ -34,147 +48,89 @@ func (s *Service) Outputs(ctx context.Context, installID, componentFilter string
 		mu         sync.Mutex
 		wg         sync.WaitGroup
 		fetchErrs  []error
+		warnings   []string
 	)
 
-	var warnings []string
-	wg.Add(3)
-	go func() {
-		defer wg.Done()
-		stk, err := s.api.GetInstallStack(ctx, installID)
-		mu.Lock()
-		defer mu.Unlock()
-		if err != nil {
-			warnings = append(warnings, fmt.Sprintf("stack outputs unavailable: %s", err))
-			return
-		}
-		stack = stk
-	}()
-	go func() {
-		defer wg.Done()
-		runs, _, err := s.api.GetInstallSandboxRuns(ctx, installID, &models.GetPaginatedQuery{Limit: 50})
-		mu.Lock()
-		defer mu.Unlock()
-		if err != nil {
-			warnings = append(warnings, fmt.Sprintf("sandbox outputs unavailable: %s", err))
-			return
-		}
-		sandboxes = runs
-	}()
-	go func() {
-		defer wg.Done()
-		comps, _, err := s.api.GetInstallComponents(ctx, installID, &models.GetPaginatedQuery{Limit: 100})
-		mu.Lock()
-		defer mu.Unlock()
-		if err != nil {
-			fetchErrs = append(fetchErrs, err)
-			return
-		}
-		components = comps
-	}()
+	if wantStack {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			stk, err := s.api.GetInstallStack(ctx, installID)
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				warnings = append(warnings, fmt.Sprintf("stack outputs unavailable: %s", err))
+				return
+			}
+			stack = stk
+		}()
+	}
+	if wantSandbox {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			runs, _, err := s.api.GetInstallSandboxRuns(ctx, installID, &models.GetPaginatedQuery{Limit: 50})
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				warnings = append(warnings, fmt.Sprintf("sandbox outputs unavailable: %s", err))
+				return
+			}
+			sandboxes = runs
+		}()
+	}
+	if wantComponents {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			comps, _, err := s.api.GetInstallComponents(ctx, installID, &models.GetPaginatedQuery{Limit: 100})
+			mu.Lock()
+			defer mu.Unlock()
+			if err != nil {
+				fetchErrs = append(fetchErrs, err)
+				return
+			}
+			components = comps
+		}()
+	}
 	wg.Wait()
 
 	if len(fetchErrs) > 0 {
 		return ui.PrintError(fetchErrs[0])
 	}
 
-	out := installOutputs{
-		Components: make(map[string]map[string]any),
+	out := installOutputs{}
+
+	if wantStack && stack != nil && stack.InstallStackOutputs != nil {
+		out.Stack = flattenStackOutputs(stack.InstallStackOutputs)
 	}
 
-	// Stack outputs (skip when filtering by component).
-	if componentFilter == "" && stack != nil && stack.InstallStackOutputs != nil {
-		outputs := stack.InstallStackOutputs
-		flat := make(map[string]any)
-		if outputs.Aws != nil {
-			aws := outputs.Aws
-			if aws.AccountID != "" {
-				flat["account_id"] = aws.AccountID
-			}
-			if aws.Region != "" {
-				flat["region"] = aws.Region
-			}
-			if aws.VpcID != "" {
-				flat["vpc_id"] = aws.VpcID
-			}
-			if aws.RunnerSubnet != "" {
-				flat["runner_subnet"] = aws.RunnerSubnet
-			}
-			if len(aws.PrivateSubnets) > 0 {
-				flat["private_subnets"] = aws.PrivateSubnets
-			}
-			if len(aws.PublicSubnets) > 0 {
-				flat["public_subnets"] = aws.PublicSubnets
-			}
-			if aws.ProvisionIamRoleArn != "" {
-				flat["provision_iam_role_arn"] = aws.ProvisionIamRoleArn
-			}
-			if aws.DeprovisionIamRoleArn != "" {
-				flat["deprovision_iam_role_arn"] = aws.DeprovisionIamRoleArn
-			}
-			if aws.MaintenanceIamRoleArn != "" {
-				flat["maintenance_iam_role_arn"] = aws.MaintenanceIamRoleArn
-			}
-			if aws.RunnerIamRoleArn != "" {
-				flat["runner_iam_role_arn"] = aws.RunnerIamRoleArn
-			}
-			if len(aws.BreakGlassRoleArns) > 0 {
-				flat["break_glass_role_arns"] = aws.BreakGlassRoleArns
-			}
-			if len(aws.CustomRoleArns) > 0 {
-				flat["custom_role_arns"] = aws.CustomRoleArns
-			}
-		}
-		if outputs.Data != nil {
-			for k, v := range outputs.Data {
-				flat[k] = v
-			}
-		}
-		if outputs.DataContents != nil {
-			for k, v := range outputs.DataContents {
-				flat[k] = v
-			}
-		}
-		out.Stack = flat
+	if wantSandbox {
+		out.Sandbox = latestSandboxOutputs(sandboxes)
 	}
 
-	// Sandbox outputs (skip when filtering by component).
-	if componentFilter == "" {
-		for _, run := range sandboxes {
-			if (run.Status == "active" || run.Status == "succeeded") && run.Outputs != nil {
-				out.Sandbox = run.Outputs
-				break
-			}
-		}
-		if out.Sandbox == nil && len(sandboxes) > 0 && sandboxes[0].Outputs != nil {
-			out.Sandbox = sandboxes[0].Outputs
-		}
-	}
-
-	// Component outputs — fetch terraform state outputs via workspace state JSON.
-	if len(components) > 0 {
+	if wantComponents {
+		out.Components = make(map[string]map[string]any)
 		var cmu sync.Mutex
 		var cwg sync.WaitGroup
-		cwg.Add(len(components))
 		for _, ic := range components {
-			go func(comp *models.AppInstallComponent) {
+			ic := ic
+			name := componentDisplayName(ic)
+
+			// Skip if filtering and this isn't the target.
+			if opts.ComponentID != "" &&
+				!strings.EqualFold(name, opts.ComponentID) &&
+				!strings.EqualFold(ic.ComponentID, opts.ComponentID) {
+				continue
+			}
+			if ic.TerraformWorkspace == nil || ic.TerraformWorkspace.ID == "" {
+				continue
+			}
+
+			cwg.Add(1)
+			go func() {
 				defer cwg.Done()
-				name := comp.ComponentID
-				if comp.Component != nil && comp.Component.Name != "" {
-					name = comp.Component.Name
-				}
-
-				// Skip if filtering and this isn't the target.
-				if componentFilter != "" &&
-					!strings.EqualFold(name, componentFilter) &&
-					!strings.EqualFold(comp.ComponentID, componentFilter) {
-					return
-				}
-
-				if comp.TerraformWorkspace == nil || comp.TerraformWorkspace.ID == "" {
-					return
-				}
-
-				outputs, err := s.getTerraformOutputs(ctx, comp.TerraformWorkspace.ID)
+				outputs, err := s.getTerraformOutputs(ctx, ic.TerraformWorkspace.ID)
 				cmu.Lock()
 				defer cmu.Unlock()
 				if err != nil {
@@ -185,44 +141,50 @@ func (s *Service) Outputs(ctx context.Context, installID, componentFilter string
 					return
 				}
 				out.Components[name] = outputs
-			}(ic)
+			}()
 		}
 		cwg.Wait()
 	}
 
 	if asJSON {
-		if componentFilter != "" && len(out.Components) == 1 {
-			// When filtering by component in JSON mode, return just that component's outputs.
+		switch {
+		case opts.StackOnly:
+			ui.PrintJSON(out.Stack)
+		case opts.SandboxOnly:
+			ui.PrintJSON(out.Sandbox)
+		case opts.ComponentID != "":
+			// Return the bare component map for the single match (if any).
 			for _, v := range out.Components {
 				ui.PrintJSON(v)
 				return nil
 			}
+			ui.PrintJSON(map[string]any{})
+		default:
+			ui.PrintJSON(out)
 		}
-		ui.PrintJSON(out)
 		return nil
 	}
 
-	// Human-friendly table output grouped by section.
+	header := lipgloss.NewStyle().Foreground(styles.AccentColor).Bold(true)
 	view := ui.NewListView()
 	empty := true
+	printedSection := false
 
 	if len(out.Stack) > 0 {
 		empty = false
-		fmt.Println("Stack:")
-		flat := make(map[string]string)
-		flattenMap("", out.Stack, flat)
-		printSection(view, flat)
+		printedSection = true
+		fmt.Println(header.Render("Stack"))
+		printOutputsTable(view, out.Stack)
 	}
 
 	if len(out.Sandbox) > 0 {
 		empty = false
-		if len(out.Stack) > 0 {
+		if printedSection {
 			fmt.Println()
 		}
-		fmt.Println("Sandbox:")
-		flat := make(map[string]string)
-		flattenMap("", out.Sandbox, flat)
-		printSection(view, flat)
+		printedSection = true
+		fmt.Println(header.Render("Sandbox"))
+		printOutputsTable(view, out.Sandbox)
 	}
 
 	compNames := make([]string, 0, len(out.Components))
@@ -232,47 +194,123 @@ func (s *Service) Outputs(ctx context.Context, installID, componentFilter string
 	sort.Strings(compNames)
 	for _, name := range compNames {
 		empty = false
-		fmt.Printf("\nComponent %s:\n", name)
-		flat := make(map[string]string)
-		flattenMap("", out.Components[name], flat)
-		printSection(view, flat)
+		if printedSection {
+			fmt.Println()
+		}
+		printedSection = true
+		fmt.Println(header.Render("Component " + name))
+		printOutputsTable(view, out.Components[name])
 	}
 
 	if empty {
-		if componentFilter != "" {
-			fmt.Printf("No outputs found for component %q.\n", componentFilter)
-			// List available components.
-			names := make([]string, 0, len(components))
-			for _, c := range components {
-				name := c.ComponentID
-				if c.Component != nil && c.Component.Name != "" {
-					name = c.Component.Name
-				}
-				names = append(names, name)
-			}
-			if len(names) > 0 {
-				sort.Strings(names)
-				fmt.Printf("\nAvailable components: %s\n", strings.Join(names, ", "))
-			}
-		} else {
+		switch {
+		case opts.ComponentID != "":
+			view.Print(fmt.Sprintf("No outputs found for component %q.", opts.ComponentID))
+			availableComponents(components)
+		case opts.SandboxOnly:
+			view.Print("No sandbox outputs available for this install.")
+		case opts.StackOnly:
+			view.Print("No stack outputs available for this install.")
+		default:
 			view.Print("No outputs available for this install.")
 		}
 	}
 
-	if len(warnings) > 0 {
-		fmt.Fprintln(os.Stderr)
-		for _, w := range warnings {
-			fmt.Fprintf(os.Stderr, "warning: %s\n", w)
-		}
+	for _, w := range warnings {
+		ui.PrintWarning(w)
 	}
 
 	return nil
 }
 
-// getTerraformOutputs fetches the latest terraform state JSON for a workspace
-// and extracts the output values.
+func componentDisplayName(c *models.AppInstallComponent) string {
+	if c.Component != nil && c.Component.Name != "" {
+		return c.Component.Name
+	}
+	return c.ComponentID
+}
+
+func availableComponents(components []*models.AppInstallComponent) {
+	if len(components) == 0 {
+		return
+	}
+	names := make([]string, 0, len(components))
+	for _, c := range components {
+		names = append(names, componentDisplayName(c))
+	}
+	sort.Strings(names)
+	fmt.Printf("\nAvailable components: %s\n", strings.Join(names, ", "))
+}
+
+// latestSandboxOutputs returns the outputs map from the most relevant sandbox
+// run: the first active/succeeded run with outputs, otherwise the most recent
+// run's outputs if any. Returns nil if no run has outputs.
+func latestSandboxOutputs(runs []*models.AppInstallSandboxRun) map[string]any {
+	for _, run := range runs {
+		if (run.Status == "active" || run.Status == "succeeded") && run.Outputs != nil {
+			return run.Outputs
+		}
+	}
+	if len(runs) > 0 && runs[0].Outputs != nil {
+		return runs[0].Outputs
+	}
+	return nil
+}
+
+func flattenStackOutputs(o *models.AppInstallStackOutputs) map[string]any {
+	flat := make(map[string]any)
+	if o.Aws != nil {
+		aws := o.Aws
+		if aws.AccountID != "" {
+			flat["account_id"] = aws.AccountID
+		}
+		if aws.Region != "" {
+			flat["region"] = aws.Region
+		}
+		if aws.VpcID != "" {
+			flat["vpc_id"] = aws.VpcID
+		}
+		if aws.RunnerSubnet != "" {
+			flat["runner_subnet"] = aws.RunnerSubnet
+		}
+		if len(aws.PrivateSubnets) > 0 {
+			flat["private_subnets"] = aws.PrivateSubnets
+		}
+		if len(aws.PublicSubnets) > 0 {
+			flat["public_subnets"] = aws.PublicSubnets
+		}
+		if aws.ProvisionIamRoleArn != "" {
+			flat["provision_iam_role_arn"] = aws.ProvisionIamRoleArn
+		}
+		if aws.DeprovisionIamRoleArn != "" {
+			flat["deprovision_iam_role_arn"] = aws.DeprovisionIamRoleArn
+		}
+		if aws.MaintenanceIamRoleArn != "" {
+			flat["maintenance_iam_role_arn"] = aws.MaintenanceIamRoleArn
+		}
+		if aws.RunnerIamRoleArn != "" {
+			flat["runner_iam_role_arn"] = aws.RunnerIamRoleArn
+		}
+		if len(aws.BreakGlassRoleArns) > 0 {
+			flat["break_glass_role_arns"] = aws.BreakGlassRoleArns
+		}
+		if len(aws.CustomRoleArns) > 0 {
+			flat["custom_role_arns"] = aws.CustomRoleArns
+		}
+	}
+	for k, v := range o.Data {
+		flat[k] = v
+	}
+	for k, v := range o.DataContents {
+		flat[k] = v
+	}
+	return flat
+}
+
+// getTerraformOutputs fetches the latest terraform state for a workspace and
+// extracts the output values. It tries the state-json endpoint first (already
+// in `terraform show -json` shape) and falls back to the raw state.
 func (s *Service) getTerraformOutputs(ctx context.Context, workspaceID string) (map[string]any, error) {
-	// Try state-json by ID — returns terraform show -json directly.
 	raw, err := s.api.GetTerraformWorkspaceLatestStateJSON(ctx, workspaceID)
 	if err == nil && len(raw) > 0 {
 		if outputs := parseTerraformShowOutputs(raw); len(outputs) > 0 {
@@ -283,7 +321,6 @@ func (s *Service) getTerraformOutputs(ctx context.Context, workspaceID string) (
 		}
 	}
 
-	// Fall back to raw state by ID.
 	state, stateErr := s.api.GetTerraformWorkspaceLatestState(ctx, workspaceID)
 	if stateErr == nil && state != nil && len(state.Contents) > 0 {
 		raw := int64SliceToBytes(state.Contents)
@@ -310,7 +347,8 @@ func int64SliceToBytes(s []int64) []byte {
 	return b
 }
 
-// parseTerraformShowOutputs parses `terraform show -json` format: {values: {outputs: {name: {value, type}}}}
+// parseTerraformShowOutputs parses `terraform show -json` format:
+// {values: {outputs: {name: {value, type}}}}.
 func parseTerraformShowOutputs(raw []byte) map[string]any {
 	var tfShow struct {
 		Values struct {
@@ -330,7 +368,8 @@ func parseTerraformShowOutputs(raw []byte) map[string]any {
 	return result
 }
 
-// parseRawTerraformStateOutputs parses raw terraform state: {outputs: {name: {value, type}}}
+// parseRawTerraformStateOutputs parses raw terraform state:
+// {outputs: {name: {value, type}}}.
 func parseRawTerraformStateOutputs(raw []byte) (map[string]any, error) {
 	var tfState struct {
 		Outputs map[string]struct {
@@ -351,7 +390,10 @@ func parseRawTerraformStateOutputs(raw []byte) (map[string]any, error) {
 	return result, nil
 }
 
-func printSection(view *ui.ListView, flat map[string]string) {
+func printOutputsTable(view *ui.ListView, m map[string]any) {
+	flat := make(map[string]string)
+	flattenMap("", m, flat)
+
 	keys := make([]string, 0, len(flat))
 	for k := range flat {
 		keys = append(keys, k)
@@ -363,4 +405,26 @@ func printSection(view *ui.ListView, flat map[string]string) {
 		data = append(data, []string{k, flat[k]})
 	}
 	view.Render(data)
+}
+
+// flattenMap recursively flattens a nested map into dot-notation keys.
+func flattenMap(prefix string, m map[string]any, out map[string]string) {
+	for k, v := range m {
+		key := k
+		if prefix != "" {
+			key = prefix + "." + k
+		}
+		switch val := v.(type) {
+		case map[string]any:
+			flattenMap(key, val, out)
+		case []any:
+			parts := make([]string, len(val))
+			for i, item := range val {
+				parts[i] = fmt.Sprintf("%v", item)
+			}
+			out[key] = strings.Join(parts, ", ")
+		default:
+			out[key] = fmt.Sprintf("%v", v)
+		}
+	}
 }
