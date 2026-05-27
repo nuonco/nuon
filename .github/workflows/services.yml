@@ -77,7 +77,7 @@ jobs:
     env:
       NO_CACHE: ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') }}
       NO_REMOTE_BUILDKIT: ${{ contains(github.event.pull_request.labels.*.name, 'no-remote-buildkit') }}
-      DISABLE_GITHUB_OIDC: ${{ github.repository != 'nuonco/nuon' }}
+      DISABLE_GITHUB_OIDC: true
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
       - name: Checkout repo
@@ -107,7 +107,7 @@ jobs:
       prod: false
       stage: ${{ github.event_name != 'pull_request' || needs.prepare.outputs.auto_deploy == 'true'}}
       tag: ${{ needs.prepare.outputs.git_ref }}
-      disable_github_oidc: ${{ github.repository != 'nuonco/nuon' }}
+      disable_github_oidc: true
     secrets: inherit
 
   update_status:
