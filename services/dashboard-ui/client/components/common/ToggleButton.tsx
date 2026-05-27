@@ -6,6 +6,7 @@ export interface IToggleButtonOption<T extends string> {
   value: T
   label: ReactNode
   ariaLabel?: string
+  title?: string
 }
 
 export interface IToggleButton<T extends string> {
@@ -36,6 +37,7 @@ export const ToggleButton = <T extends string>({
             variant="secondary"
             isActive={value === option.value}
             onClick={() => onChange(option.value)}
+            title={option.title}
             aria-label={option.ariaLabel}
             aria-pressed={value === option.value}
             className={cn(
