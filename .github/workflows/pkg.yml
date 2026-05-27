@@ -73,4 +73,3 @@ jobs:
         with:
           name: pkg ✅
           status: ${{steps.check.outputs.status}}
-          ignoreForks: "false"
