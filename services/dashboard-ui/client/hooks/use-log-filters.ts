@@ -5,6 +5,7 @@ import type { TOTELLog, TSpan } from '@/types'
 import { collectDescendantIds } from '@/utils/span-tree'
 
 type SortDirection = 'asc' | 'desc'
+export type ViewMode = 'structured' | 'raw'
 
 // URL-backed filter state. Multi-value params (severity) are repeated in
 // the URL, e.g. ?severity=Info&severity=Warn. Single-value params
@@ -23,6 +24,7 @@ const PARAM_K8S_NAME = 'k8s_name'
 const PARAM_BODY = 'q'
 const PARAM_SYSTEM_LOGS = 'system_logs'
 const PARAM_SORT = 'sort'
+const PARAM_VIEW = 'view'
 // Span / trace cross-link from the trace tab. SSE delivers every log on the
 // stream, so we apply these filters client-side.
 const PARAM_SPAN_ID = 'span_id'
@@ -84,6 +86,8 @@ export const useLogFilters = <T extends TOTELLog>(
   const traceId = searchParams.get(PARAM_TRACE_ID) || ''
   const sortDirection: SortDirection =
     searchParams.get(PARAM_SORT) === 'asc' ? 'asc' : 'desc'
+  const viewMode: ViewMode =
+    searchParams.get(PARAM_VIEW) === 'raw' ? 'raw' : 'structured'
 
   const updateParams = useCallback(
     (mutate: (sp: URLSearchParams) => void) => {
@@ -287,6 +291,11 @@ export const useLogFilters = <T extends TOTELLog>(
     (direction: SortDirection) => setSingleValue(PARAM_SORT, direction),
     [setSingleValue]
   )
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => setSingleValue(PARAM_VIEW, mode === 'raw' ? 'raw' : ''),
+    [setSingleValue]
+  )
+
   const handleSystemLogsToggle = useCallback(() => {
     updateParams((next) => {
       if (includeSystemLogs) next.set(PARAM_SYSTEM_LOGS, 'false')
@@ -373,6 +382,10 @@ export const useLogFilters = <T extends TOTELLog>(
     setK8sNamespace,
     k8sName,
     setK8sName,
+
+    // View mode
+    viewMode,
+    handleViewModeChange,
 
     // Search and sort
     searchQuery,
