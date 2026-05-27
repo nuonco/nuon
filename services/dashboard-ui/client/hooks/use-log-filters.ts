@@ -292,8 +292,20 @@ export const useLogFilters = <T extends TOTELLog>(
     [setSingleValue]
   )
   const handleViewModeChange = useCallback(
-    (mode: ViewMode) => setSingleValue(PARAM_VIEW, mode === 'raw' ? 'raw' : ''),
-    [setSingleValue]
+    (mode: ViewMode) => {
+      updateParams((next) => {
+        if (mode === 'raw') {
+          next.set(PARAM_VIEW, 'raw')
+          next.set(PARAM_SORT, 'asc')
+          next.set(PARAM_SYSTEM_LOGS, 'false')
+        } else {
+          next.delete(PARAM_VIEW)
+          next.delete(PARAM_SORT)
+          next.delete(PARAM_SYSTEM_LOGS)
+        }
+      })
+    },
+    [updateParams]
   )
 
   const handleSystemLogsToggle = useCallback(() => {
