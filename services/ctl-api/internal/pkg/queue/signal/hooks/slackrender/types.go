@@ -16,6 +16,8 @@
 // link).
 package slackrender
 
+import "time"
+
 // Kind values for Event.Kind. Matches the wire vocabulary in
 // services/ctl-api/internal/pkg/queue/signal/hooks/webhook.go.
 const (
@@ -82,6 +84,12 @@ type WorkflowRef struct {
 	OwnerID   string
 	OwnerType string
 	OwnerName string
+	// CreatedByEmail labels who started the workflow. Falls back to the
+	// raw account id for accounts without an email; empty when the
+	// workflow has no creator.
+	CreatedByEmail string
+	// CreatedAt is the workflow's start time. Zero when unknown.
+	CreatedAt time.Time
 }
 
 // StepRef identifies a workflow step. Present only on workflow_step /
