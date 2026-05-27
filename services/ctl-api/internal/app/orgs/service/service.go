@@ -91,6 +91,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 				invites.GET("", s.GetOrgInvites)
 				invites.POST("", s.CreateOrgInvite)
 				invites.POST("/:invite_id/resend", s.ResendOrgInvite)
+				invites.POST("/:invite_id/revoke", s.RevokeOrgInvite)
 			}
 
 			// runners
