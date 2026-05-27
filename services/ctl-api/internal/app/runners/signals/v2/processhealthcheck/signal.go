@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-playground/validator/v10"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -367,8 +368,24 @@ func (s *Signal) checkVersionMismatch(ctx workflow.Context, l *zap.Logger, runne
 		})
 	}
 
+	isAliasTag := configuredVersion != "" && func() bool {
+		_, err := semver.NewVersion(configuredVersion)
+		return err != nil
+	}()
+
 	var versionWarning string
-	if configuredVersion != "" && configuredVersion != heartbeat.Version {
+	switch {
+	case configuredVersion == "" || configuredVersion == heartbeat.Version:
+		// No warning needed.
+	case configuredVersion == "cloud":
+		// "cloud" means "track the API version" — this is expected for
+		// Nuon-managed cloud runners, so no mismatch warning.
+	case isAliasTag:
+		versionWarning = fmt.Sprintf(
+			"Runner is configured with alias tag (%s). We recommend pinning a specific version to avoid drift.",
+			configuredVersion,
+		)
+	default:
 		versionWarning = fmt.Sprintf(
 			"Reported runner version (%s) does not match configured version (%s). Please update the runner to the correct version.",
 			heartbeat.Version, configuredVersion,
