@@ -21,14 +21,26 @@ import (
 // oauthErrorPage is the HTML shown to the user in their browser when the OAuth
 // callback fails. Slack opens the redirect in a browser tab so we render a
 // human-readable page rather than a JSON error envelope.
+//
+// The body is intentionally padded past 512 bytes: Chrome (and some other
+// browsers) replace short 4xx/5xx response bodies with their own generic
+// error page, hiding the actual failure message from the user.
 var oauthErrorPage = template.Must(template.New("slack-oauth-error").Parse(`<!doctype html>
-<html><head><meta charset="utf-8"><title>Slack install failed</title>
-<style>body{font-family:system-ui,sans-serif;max-width:540px;margin:64px auto;color:#222}
-h1{font-size:20px}p{line-height:1.45}code{background:#f3f3f3;padding:2px 4px;border-radius:3px}</style>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Slack install failed</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:600px;margin:64px auto;padding:0 24px;color:#222;line-height:1.5}
+h1{font-size:22px;margin-bottom:16px;color:#b00020}
+p{margin:12px 0}
+.message{background:#fff3f3;border-left:4px solid #b00020;padding:12px 16px;border-radius:4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;word-break:break-word}
+.hint{color:#666;font-size:14px}
+code{background:#f3f3f3;padding:2px 6px;border-radius:3px;font-size:13px}
+</style>
 </head><body>
 <h1>Slack install failed</h1>
-<p>{{.Message}}</p>
-<p>You can close this tab and retry the install from the Nuon dashboard.</p>
+<p>We couldn't complete the Slack install. The error reported by the server was:</p>
+<p class="message">{{.Message}}</p>
+<p class="hint">You can safely close this tab and retry the install from the Nuon dashboard. If the problem persists, check the <code>ctl-api</code> server logs for entries tagged <code>slack oauth</code> — the warn/error line there will have the underlying cause (e.g. redirect_uri mismatch, expired state JWT, or missing client credentials).</p>
+<p class="hint">If you need to contact support, include the timestamp of this attempt and the Slack workspace you were installing into.</p>
 </body></html>`))
 
 // SlackOAuthCallback is the redirect target for the Slack OAuth v2 install
