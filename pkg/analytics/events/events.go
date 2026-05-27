@@ -10,6 +10,7 @@ const (
 	InviteSent     Event = "invite_sent"
 	InviteResent   Event = "invite_resent"
 	InviteAccepted Event = "invite_accepted"
+	InviteRevoked  Event = "invite_revoked"
 
 	OrgCreated Event = "org_created"
 
