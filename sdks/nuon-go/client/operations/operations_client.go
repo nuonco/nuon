@@ -708,6 +708,8 @@ type ClientService interface {
 
 	GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowOK, error)
 
+	GetWorkflowQueuePosition(params *GetWorkflowQueuePositionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionOK, error)
+
 	GetWorkflowStep(params *GetWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepOK, error)
 
 	GetWorkflowStepApproval(params *GetWorkflowStepApprovalParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowStepApprovalOK, error)
@@ -771,6 +773,8 @@ type ClientService interface {
 	RetryWorkflow(params *RetryWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowCreated, error)
 
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
+
+	RevokeOrgInvite(params *RevokeOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeOrgInviteOK, error)
 
 	ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngOK, error)
 
@@ -14621,6 +14625,52 @@ func (a *Client) GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientA
 }
 
 /*
+GetWorkflowQueuePosition gets queue position for a workflow
+
+Returns the queue position and workflows ahead when a workflow is pending.
+*/
+func (a *Client) GetWorkflowQueuePosition(params *GetWorkflowQueuePositionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowQueuePositionOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetWorkflowQueuePositionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetWorkflowQueuePosition",
+		Method:             "GET",
+		PathPattern:        "/v1/workflows/{workflow_id}/queue-position",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetWorkflowQueuePositionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetWorkflowQueuePositionOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetWorkflowQueuePosition: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetWorkflowStep gets a workflow step
 
 Return a single workflow step.
@@ -16096,6 +16146,54 @@ func (a *Client) RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RetryWorkflowStep: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+	RevokeOrgInvite revokes an org invite
+
+	Revoke a pending org invite. The invite status is set to "revoked" and the record is soft-deleted, freeing the unique constraint so the same email can be re-invited.
+
+Only org admins can revoke invites. Only pending invites can be revoked.
+*/
+func (a *Client) RevokeOrgInvite(params *RevokeOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeOrgInviteOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRevokeOrgInviteParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RevokeOrgInvite",
+		Method:             "POST",
+		PathPattern:        "/v1/orgs/current/invites/{invite_id}/revoke",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RevokeOrgInviteReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RevokeOrgInviteOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RevokeOrgInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

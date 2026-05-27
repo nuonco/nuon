@@ -251,7 +251,7 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 			ID: s.WorkflowID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusInProgress,
-				StatusHumanDescription: "generated eager step groups, executing",
+				StatusHumanDescription: "generated initial step groups, executing",
 				Metadata: map[string]any{
 					"eager_steps_loaded": true,
 				},
@@ -423,6 +423,15 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 				return errors.Wrap(completeErr, "unable to complete step generation")
 			}
 			flw = completedFlw
+
+			// Check for cancellation before overwriting status. The cancel
+			// handler may have set StatusCancelled while we were waiting for
+			// step generation to complete.
+			if s.cancelRequested {
+				s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi)
+				s.markRemainingStepsNotAttempted(ctx, l)
+				return nil
+			}
 
 			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 				ID: s.WorkflowID,

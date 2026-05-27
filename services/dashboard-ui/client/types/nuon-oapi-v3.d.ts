@@ -1971,6 +1971,15 @@ export interface paths {
      */
     post: operations["ResendOrgInvite"];
   };
+  "/v1/orgs/current/invites/{invite_id}/revoke": {
+    /**
+     * Revoke an org invite
+     * @description Revoke a pending org invite. The invite status is set to "revoked" and the record is soft-deleted, freeing the unique constraint so the same email can be re-invited.
+     *
+     * Only org admins can revoke invites. Only pending invites can be revoked.
+     */
+    post: operations["RevokeOrgInvite"];
+  };
   "/v1/orgs/current/remove-user": {
     /**
      * Remove a user from the current org
@@ -2633,6 +2642,13 @@ export interface paths {
      * @description Cancel a running workflow execution.
      */
     post: operations["CancelWorkflow"];
+  };
+  "/v1/workflows/{workflow_id}/queue-position": {
+    /**
+     * get queue position for a workflow
+     * @description Returns the queue position and workflows ahead when a workflow is pending.
+     */
+    get: operations["GetWorkflowQueuePosition"];
   };
   "/v1/workflows/{workflow_id}/step-groups": {
     /**
@@ -4228,7 +4244,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.OrgInviteStatus": "pending" | "accepted";
+    "app.OrgInviteStatus": "pending" | "accepted" | "revoked";
     "app.OtelLogRecord": {
       body?: string;
       created_at?: string;
@@ -6931,6 +6947,23 @@ export interface components {
     };
     "service.WaitlistRequest": {
       org_name: string;
+    };
+    "service.WorkflowQueueItem": {
+      created_at?: string;
+      metadata?: {
+        [key: string]: string;
+      };
+      status?: components["schemas"]["app.Status"];
+      workflow_id?: string;
+      workflow_type?: components["schemas"]["app.WorkflowType"];
+    };
+    "service.WorkflowQueuePositionResponse": {
+      /** @description Position is the 1-based queue position (1 = next to execute). */
+      position?: number;
+      /** @description QueueDepth is the total number of signals waiting in the queue. */
+      queue_depth?: number;
+      /** @description SignalsAhead are the workflows ahead in the queue, ordered from front to back. */
+      signals_ahead?: components["schemas"]["service.WorkflowQueueItem"][];
     };
     "service.awsECRImageConfigRequest": {
       aws_region?: string;
@@ -21116,6 +21149,58 @@ export interface operations {
     };
   };
   /**
+   * Revoke an org invite
+   * @description Revoke a pending org invite. The invite status is set to "revoked" and the record is soft-deleted, freeing the unique constraint so the same email can be re-invited.
+   *
+   * Only org admins can revoke invites. Only pending invites can be revoked.
+   */
+  RevokeOrgInvite: {
+    parameters: {
+      path: {
+        /** @description invite ID */
+        invite_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.OrgInvite"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * Remove a user from the current org
    * @description Remove a user from an org.
    */
@@ -25558,6 +25643,56 @@ export interface operations {
       202: {
         content: {
           "application/json": components["schemas"]["app.EmptyResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get queue position for a workflow
+   * @description Returns the queue position and workflows ahead when a workflow is pending.
+   */
+  GetWorkflowQueuePosition: {
+    parameters: {
+      path: {
+        /** @description workflow ID */
+        workflow_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.WorkflowQueuePositionResponse"];
         };
       };
       /** @description Bad Request */

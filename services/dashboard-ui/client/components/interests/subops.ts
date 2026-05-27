@@ -13,6 +13,7 @@ import type { ResourceKind } from './types'
 
 export const SUB_OPS: Record<ResourceKind, string[]> = {
   installs: ['provision', 'deprovision', 'reprovision'],
+  stacks: ['version_active'],
   components: ['deploy', 'teardown'],
   sandboxes: ['provision', 'reprovision', 'deprovision'],
   install_configurations: ['inputs', 'secrets'],
@@ -43,6 +44,8 @@ const SUB_OP_LABELS: Record<string, string> = {
   inactive: 'Inactive',
   // actions
   run: 'Run',
+  // stacks
+  version_active: 'Version active',
 }
 
 export const labelForSubOp = (op: string): string =>

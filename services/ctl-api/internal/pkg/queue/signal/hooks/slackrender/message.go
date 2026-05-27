@@ -219,6 +219,9 @@ func parentFooterParts(e Event, startedAt, now time.Time) []string {
 	if e.Workflow.Type != "" {
 		parts = append(parts, "workflow: "+e.Workflow.Type)
 	}
+	if e.Workflow.CreatedByEmail != "" {
+		parts = append(parts, "by: "+slackEscape(e.Workflow.CreatedByEmail))
+	}
 	if elapsed := buildElapsed(e, startedAt, now); elapsed != "" {
 		parts = append(parts, elapsed)
 	}

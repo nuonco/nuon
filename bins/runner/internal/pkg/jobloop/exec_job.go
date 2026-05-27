@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 )
 
 type executeJobStep struct {
@@ -100,6 +101,11 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 		}
 		rootSpan.End()
 	}()
+
+	// Always clean up the workspace directory for this execution, even if
+	// the job panics or errors before the cleanup step runs. This uses the
+	// workspace package directly so it works regardless of handler state.
+	defer workspace.CleanupByID(execution.ID)
 
 	l.Info("getting job handler")
 	handler, err := j.getHandler(job)

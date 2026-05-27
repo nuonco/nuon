@@ -75,10 +75,10 @@ func WithGitSource(src *plantypes.GitSource) workspaceOption {
 	}
 }
 
-// WithWorkspaceID sets an ID on the workspace
+// WithWorkspaceID sets an ID on the workspace, prefixed for identification.
 func WithWorkspaceID(workspaceID string) workspaceOption {
 	return func(obj *workspace) {
-		obj.ID = workspaceID
+		obj.ID = "workspace-" + workspaceID
 	}
 }
 

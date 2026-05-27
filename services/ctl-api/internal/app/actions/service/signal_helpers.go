@@ -24,6 +24,11 @@ func (s *service) getInstallWorkflowsQueueID(ctx context.Context, installID stri
 	return s.getInstallQueueID(ctx, installID, helpers.InstallWorkflowsQueueName)
 }
 
+// getInstallActionWorkflowsQueueID returns the install-action-workflows queue ID.
+func (s *service) getInstallActionWorkflowsQueueID(ctx context.Context, installID string) (string, error) {
+	return s.getInstallQueueID(ctx, installID, helpers.InstallActionWorkflowsQueueName)
+}
+
 // enqueueInstallSignal enqueues a v2 signal to the given install queue.
 func (s *service) enqueueInstallSignal(ctx context.Context, queueID string, sig signal.Signal, ownerID, ownerType string) error {
 	_, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{

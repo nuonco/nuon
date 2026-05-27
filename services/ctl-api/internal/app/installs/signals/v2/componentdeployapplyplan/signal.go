@@ -359,7 +359,7 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "apply job failed"))
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)
 	}
