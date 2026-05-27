@@ -8,6 +8,7 @@
 
 export type ResourceKind =
   | 'installs'
+  | 'stacks'
   | 'components'
   | 'sandboxes'
   | 'install_configurations'
@@ -39,6 +40,7 @@ export interface Interests {
 // UI rows render in this order; defaults() walks it.
 export const ALL_RESOURCES: ResourceKind[] = [
   'installs',
+  'stacks',
   'components',
   'sandboxes',
   'install_configurations',
@@ -49,6 +51,7 @@ export const ALL_RESOURCES: ResourceKind[] = [
 // Human label per resource. Sentence-case.
 export const RESOURCE_LABELS: Record<ResourceKind, string> = {
   installs: 'Installs',
+  stacks: 'Stacks',
   components: 'Components',
   sandboxes: 'Sandboxes',
   install_configurations: 'Install configurations',
@@ -58,6 +61,7 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
 
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
   installs: 'Install provision, deprovision, reprovision lifecycle.',
+  stacks: 'Install stack lifecycle, including when a stack version becomes active.',
   components: 'Per-component deploy and teardown. Toggle drift detected to be notified when drift is found.',
   sandboxes: 'Sandbox provision, reprovision, deprovision. Toggle drift detected to be notified when drift is found.',
   install_configurations: 'Install input updates and secret syncs.',

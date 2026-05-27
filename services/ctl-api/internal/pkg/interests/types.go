@@ -25,6 +25,7 @@ type ResourceKind string
 
 const (
 	ResourceInstalls              ResourceKind = "installs"
+	ResourceStacks                ResourceKind = "stacks"
 	ResourceComponents            ResourceKind = "components"
 	ResourceSandboxes             ResourceKind = "sandboxes"
 	ResourceInstallConfigurations ResourceKind = "install_configurations"
@@ -36,6 +37,7 @@ const (
 // renders rows in this order; defaults() / docs walk it.
 var AllResources = []ResourceKind{
 	ResourceInstalls,
+	ResourceStacks,
 	ResourceComponents,
 	ResourceSandboxes,
 	ResourceInstallConfigurations,
@@ -76,6 +78,7 @@ const (
 // event that only fires when the plan-only check observes actual changes.
 var SubOps = map[ResourceKind][]string{
 	ResourceInstalls:              {"provision", "deprovision", "reprovision"},
+	ResourceStacks:                {"version_active"},
 	ResourceComponents:            {"deploy", "teardown"},
 	ResourceSandboxes:             {"provision", "reprovision", "deprovision"},
 	ResourceInstallConfigurations: {"inputs", "secrets"},
