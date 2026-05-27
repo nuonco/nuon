@@ -49,6 +49,7 @@ type API interface {
 var (
 	resourceKinds = []string{
 		"installs",
+		"stacks",
 		"components",
 		"sandboxes",
 		"install_configurations",
@@ -61,6 +62,7 @@ var (
 	// multi-select blank is a valid (and idiomatic) choice.
 	resourceOps = map[string][]string{
 		"installs":               {"provision", "deprovision", "reprovision"},
+		"stacks":                 {"version_active"},
 		"components":             {"deploy", "teardown"},
 		"sandboxes":              {"provision", "reprovision", "deprovision"},
 		"install_configurations": {"inputs", "secrets"},
