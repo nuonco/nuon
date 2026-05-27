@@ -1,0 +1,40 @@
+---
+title: "Stand-alone VPC"
+icon: "circle-nodes"
+description: "The Stack template creates a brand-new VPC dedicated to the install."
+keywords: ["stand-alone vpc", "new vpc", "dedicated vpc", "stack pattern"]
+---
+
+<Note>
+Every [Stack](/concepts/stacks) provisions the same three things:
+
+- The network the app runs in
+- The [permissions the Runner needs](/concepts/operation-roles#what-are-operation-roles)
+- The Nuon-powered [Runner](/concepts/runners) itself
+</Note>
+
+## Deploying an Example App
+
+If you're still designing your BYOC architecture, it is helpful to deploy a sample app. For the Stand-Alone VPC architecture, see [`eks-simple-auto`](https://github.com/nuonco/example-app-configs/tree/main/eks-simple-auto) in `nuonco/example-app-configs`.
+
+## Overview
+
+When the customer deploys the Nuon-generated CloudFormation or Terraform template that [you provide](/guides/install-configs), a fresh VPC is provisioned alongside the Runner and its permissions, all inside the customer's account. 
+
+## App config
+
+Pointing `vpc_nested_template_url` at the `vpc/eks/default` template tells the Stack to create a new VPC:
+
+```toml stack.toml
+vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/vpc/eks/default/stack.yaml"
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/runner/asg/stack.yaml"
+```
+
+The [Sandbox](/concepts/sandboxes) runs after the Stack and provisions the app's compute layer inside the new VPC. It picks up the VPC by reading the Stack's outputs:
+
+```toml sandbox.toml
+[vars]
+region = "{{.nuon.install_stack.outputs.region}}"
+vpc_id = "{{.nuon.install_stack.outputs.vpc_id}}"
+```
+
