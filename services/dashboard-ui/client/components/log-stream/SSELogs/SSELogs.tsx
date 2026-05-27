@@ -10,6 +10,7 @@ import { LogSeverity } from '../LogSeverity'
 import { LogLineSkeleton } from '../LogLine'
 import { Skeleton } from '@/components/common/Skeleton'
 import { LogFilters } from '../log-filters/LogFilters'
+import { getSeverityTextClasses } from '@/utils/log-stream-utils'
 
 export const LogsSkeleton = () => {
   return Array.from({ length: 20 }).map((_, idx) => (
@@ -84,80 +85,163 @@ export const SSELogs = ({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col flex-auto">
         <div
-          className={cn('sticky bg-background border-b z-10', filterClassName)}
+          className={cn('@container sticky bg-background border-b z-10', filterClassName)}
         >
           <div className="flex items-center gap-4">
             <LogFilters filters={filters} />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-full w-max">
-            <div className="grid grid-cols-[3rem_15rem_8rem_auto] gap-6 py-2 border-b bg-background">
-              <Text variant="subtext" weight="strong" theme="neutral">
-                Severity
-              </Text>
-              <Text variant="subtext" weight="strong" theme="neutral">
-                Datetime
-              </Text>
-              <Text variant="subtext" weight="strong" theme="neutral">
-                Service
-              </Text>
-              <Text variant="subtext" weight="strong" theme="neutral">
-                Content
-              </Text>
-            </div>
-
-            {!filteredLogs?.length && filters.filterStats.totalCount > 0 ? (
-              <EmptyState
-                variant="search"
-                emptyTitle="Filters are hiding logs"
-                emptyMessage={`${filters.filterStats.totalCount} log(s) are hidden by the current filters.`}
-                action={
-                  <Button size="sm" onClick={filters.handleResetAll}>
-                    Reset filters
-                  </Button>
-                }
-              />
-            ) : null}
-
-            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isConnected ? (
-              <EmptyState
-                variant="table"
-                emptyTitle="Waiting for logs"
-                emptyMessage="Logs will appear here once they start coming in."
-              />
-            ) : null}
-
-            {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isConnected ? (
-              <EmptyState
-                variant="table"
-                emptyTitle="No logs available"
-                emptyMessage=""
-              />
-            ) : null}
-
-            <div className="flex flex-col divide-y">
-              {!filteredLogs?.length && isLoading ? (
-                <LogsSkeleton />
-              ) : null}
-
-              {filteredLogs?.map((logLine) => (
-                <LogLine
-                  key={logLine?.id}
-                  log={logLine}
-                  activeLogId={activeLog?.id}
-                  onActivate={handleActiveLog}
-                />
-              ))}
-
-            </div>
-          </div>
-        </div>
+        {filters.viewMode === 'raw' ? (
+          <RawLogs
+            filteredLogs={filteredLogs}
+            filters={filters}
+            isLoading={isLoading}
+            isConnected={isConnected}
+          />
+        ) : (
+          <StructuredLogs
+            filteredLogs={filteredLogs}
+            filters={filters}
+            activeLog={activeLog}
+            handleActiveLog={handleActiveLog}
+            isLoading={isLoading}
+            isConnected={isConnected}
+          />
+        )}
       </div>
     </div>
   )
 }
+
+const StructuredLogs = ({
+  filteredLogs,
+  filters,
+  activeLog,
+  handleActiveLog,
+  isLoading,
+  isConnected,
+}: {
+  filteredLogs: TOTELLog[] | undefined
+  filters: TLogFiltersProps
+  activeLog: TOTELLog | undefined
+  handleActiveLog: (logId: string) => void
+  isLoading: boolean
+  isConnected: boolean
+}) => (
+  <div className="overflow-x-auto">
+    <div className="min-w-full w-max">
+      <div className="grid grid-cols-[3rem_15rem_8rem_auto] gap-6 py-2 border-b bg-background">
+        <Text variant="subtext" weight="strong" theme="neutral">
+          Severity
+        </Text>
+        <Text variant="subtext" weight="strong" theme="neutral">
+          Datetime
+        </Text>
+        <Text variant="subtext" weight="strong" theme="neutral">
+          Service
+        </Text>
+        <Text variant="subtext" weight="strong" theme="neutral">
+          Content
+        </Text>
+      </div>
+
+      <LogsEmptyStates
+        filteredLogs={filteredLogs}
+        filters={filters}
+        isLoading={isLoading}
+        isConnected={isConnected}
+      />
+
+      <div className="flex flex-col divide-y">
+        {!filteredLogs?.length && isLoading ? <LogsSkeleton /> : null}
+
+        {filteredLogs?.map((logLine) => (
+          <LogLine
+            key={logLine?.id}
+            log={logLine}
+            activeLogId={activeLog?.id}
+            onActivate={handleActiveLog}
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
+const RawLogs = ({
+  filteredLogs,
+  filters,
+  isLoading,
+  isConnected,
+}: {
+  filteredLogs: TOTELLog[] | undefined
+  filters: TLogFiltersProps
+  isLoading: boolean
+  isConnected: boolean
+}) => (
+  <div className="overflow-x-auto">
+    <LogsEmptyStates
+      filteredLogs={filteredLogs}
+      filters={filters}
+      isLoading={isLoading}
+      isConnected={isConnected}
+    />
+
+    {!filteredLogs?.length && isLoading ? <LogsSkeleton /> : null}
+
+    <pre className="pt-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
+      {filteredLogs?.map((logLine) => (
+        <div key={logLine?.id} className={getSeverityTextClasses(logLine.severity_number)}>
+          {logLine.body}
+        </div>
+      ))}
+    </pre>
+  </div>
+)
+
+const LogsEmptyStates = ({
+  filteredLogs,
+  filters,
+  isLoading,
+  isConnected,
+}: {
+  filteredLogs: TOTELLog[] | undefined
+  filters: TLogFiltersProps
+  isLoading: boolean
+  isConnected: boolean
+}) => (
+  <>
+    {!filteredLogs?.length && filters.filterStats.totalCount > 0 ? (
+      <EmptyState
+        variant="search"
+        emptyTitle="Filters are hiding logs"
+        emptyMessage={`${filters.filterStats.totalCount} log(s) are hidden by the current filters.`}
+        action={
+          <Button size="sm" onClick={filters.handleResetAll}>
+            Reset filters
+          </Button>
+        }
+      />
+    ) : null}
+
+    {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && isConnected ? (
+      <EmptyState
+        variant="table"
+        emptyTitle="Waiting for logs"
+        emptyMessage="Logs will appear here once they start coming in."
+      />
+    ) : null}
+
+    {!filteredLogs?.length && !filters.filterStats.totalCount && !isLoading && !isConnected ? (
+      <EmptyState
+        variant="table"
+        emptyTitle="No logs available"
+        emptyMessage=""
+      />
+    ) : null}
+  </>
+)
 
 interface ILogLine {
   log: TOTELLog

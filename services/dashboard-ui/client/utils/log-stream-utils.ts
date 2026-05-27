@@ -79,6 +79,15 @@ export function getSeverityBorderClasses(
   return SEVERITY_BORDERS[position][severityLevel]
 }
 
+export function getSeverityTextClasses(severityNumber: number): string {
+  if (severityNumber <= 4) return 'text-primary-400 dark:text-primary-300'
+  if (severityNumber <= 8) return 'text-cool-grey-600 dark:text-cool-grey-500'
+  if (severityNumber <= 12) return 'text-blue-600 dark:text-blue-500'
+  if (severityNumber <= 16) return 'text-orange-600 dark:text-orange-500'
+  if (severityNumber <= 20) return 'text-red-600 dark:text-red-500'
+  return 'text-red-700 dark:text-red-600'
+}
+
 export function getBadgeThemeFromSeverity(severityNumber: number): TBadgeTheme {
   if (severityNumber <= 4) return 'brand'
   if (severityNumber <= 8) return 'neutral'

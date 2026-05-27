@@ -33,6 +33,8 @@ const mockFilters: TLogFiltersProps = {
   setK8sNamespace: noop,
   k8sName: '',
   setK8sName: noop,
+  viewMode: 'structured',
+  handleViewModeChange: noop,
   searchQuery: '',
   sortDirection: 'desc',
   filteredLogs: [],
