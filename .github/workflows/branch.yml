@@ -21,3 +21,4 @@ jobs:
         with:
           name: branch ✅
           status: ${{steps.check.outputs.status}}
+          ignoreForks: "false"
