@@ -5,14 +5,6 @@ description: "The Stack deploys into a Kubernetes cluster the customer already r
 keywords: ["byo eks", "byo cluster", "existing cluster", "shared cluster", "stack pattern"]
 ---
 
-<Note>
-Every [Stack](/concepts/stacks) provisions the same three things:
-
-- The network the app runs in
-- The [permissions the Runner needs](/concepts/operation-roles#what-are-operation-roles)
-- The Nuon-powered [Runner](/concepts/runners) itself
-</Note>
-
 ## Deploying an Example App
 
 If you're still designing your BYOC architecture, it is helpful to deploy a sample app. For the Customer Cluster architecture, see [`byo-eks`](https://github.com/nuonco/example-app-configs/tree/main/byo-eks) in `nuonco/example-app-configs`.
@@ -25,7 +17,13 @@ Common when the app is an agent or operator that needs in-cluster access, or whe
 
 ## App config
 
-Start from the [Customer VPC](/concepts/stacks/customer-vpc) pattern, then add [custom nested stacks](/guides/custom-nested-stacks) to wire the Runner into the existing cluster:
+Start from the [Customer VPC](/concepts/stacks/customer-vpc) pattern, then add [custom nested stacks](/guides/custom-nested-stacks) to wire the Runner into the existing cluster.
+
+Customer Cluster is natively supported via the Nuon-generated CloudFormation template. Terraform deployments are also possible but require forking the published modules at [`install-stacks`](https://github.com/nuonco/install-stacks) — see the Terraform section below.
+
+### CloudFormation
+
+The vendor's `stack.toml` references CloudFormation nested templates plus the custom nested stacks that wire the Runner into the cluster:
 
 ```toml stack.toml
 vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/byo-vpc/default/stack.yaml"
@@ -47,7 +45,17 @@ template_url = "CUSTOMER_CLOUD_DEPENDENT"
 index        = 2
 ```
 
-The sandbox skips cluster provisioning and consumes the customer's cluster name + subnets:
+The customer enters the VPC and subnet IDs (plus the cluster name) when deploying the stack.
+
+### Terraform
+
+<Warning>
+Custom nested stacks are CloudFormation-only. To support Terraform deployments for this pattern, fork [`install-stacks`](https://github.com/nuonco/install-stacks) and add equivalent resources (BYO-VPC inputs, cluster security-group access, namespaces, EKS access entries) directly in the Terraform module — see [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates).
+</Warning>
+
+### Sandbox
+
+The Sandbox skips cluster provisioning and consumes the customer's cluster name plus the subnet IDs from install stack outputs:
 
 ```toml sandbox.toml
 [vars]
