@@ -1,0 +1,47 @@
+---
+title: "Customer VPC"
+icon: "diagram-project"
+description: "The Stack deploys into a VPC the customer already owns."
+keywords: ["byo vpc", "customer-provided vpc", "existing vpc", "stack pattern"]
+---
+
+## Deploying an Example App
+
+If you're still designing your BYOC architecture, it is helpful to deploy a sample app. For the Customer VPC architecture, see [`byo-vpc`](https://github.com/nuonco/example-app-configs/tree/main/byo-vpc) in `nuonco/example-app-configs`.
+
+## Overview
+
+The customer provides VPC and subnet IDs at deploy time, common when the customer prefers you use their VPC.
+
+## App config
+
+Customer VPC is natively supported via the Nuon-generated CloudFormation template. Terraform deployments are also possible but require forking the published modules at [`install-stacks`](https://github.com/nuonco/install-stacks) to add BYO-VPC inputs — see the Terraform section below.
+
+### CloudFormation
+
+The vendor's `stack.toml` references CloudFormation nested templates. Point `vpc_nested_template_url` at the `byo-vpc/default` template — it accepts existing VPC and subnet IDs as parameters instead of creating them:
+
+```toml stack.toml
+vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/byo-vpc/default/stack.yaml"
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/runner/asg/stack.yaml"
+```
+
+The customer enters `VpcID`, `RunnerSubnetID`, `PublicSubnetIDs`, and `PrivateSubnetIDs` in the CloudFormation Quick Create form.
+
+### Terraform
+
+<Warning>
+The default Terraform modules at [`install-stacks`](https://github.com/nuonco/install-stacks) always create a fresh VPC — they don't accept existing VPC or subnet IDs as inputs. To support Terraform deployments of this pattern, fork the module and add BYO-VPC variables — see [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates).
+</Warning>
+
+### Sandbox
+
+Whichever format the customer deploys, the Stack reports the VPC and subnet IDs back to Nuon as install stack outputs. The vendor's `sandbox.toml` wires them into the [Sandbox](/concepts/sandboxes) so it attaches to the customer's subnets instead of creating its own:
+
+```toml sandbox.toml
+[vars]
+vpc_id             = "{{.nuon.install_stack.outputs.vpc_id}}"
+public_subnet_ids  = "{{.nuon.install_stack.outputs.public_subnets}}"
+private_subnet_ids = "{{.nuon.install_stack.outputs.private_subnets}}"
+runner_subnet_id   = "{{.nuon.install_stack.outputs.runner_subnet}}"
+```
