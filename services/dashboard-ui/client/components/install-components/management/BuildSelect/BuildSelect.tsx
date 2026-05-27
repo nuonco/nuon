@@ -255,10 +255,10 @@ export const BuildSelect = ({
 
   return (
     <div
-      className="relative flex flex-col max-h-80 overflow-y-auto -mx-6 -my-6 pb-6"
+      className="relative flex flex-col max-h-80 overflow-y-auto -mx-6 -mt-6 border-b border-cool-grey-200 dark:border-dark-grey-600"
       onScroll={onScroll}
     >
-      <div className="px-6 pt-6">{renderContent()}</div>
+      <div className="px-6 py-6">{renderContent()}</div>
     </div>
   )
 }

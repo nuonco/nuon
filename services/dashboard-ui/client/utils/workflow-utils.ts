@@ -174,8 +174,15 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
       }
     }
     if (metadata?.auto_retries_exhausted) {
+      const maxAuto = Number(metadata.max_auto_retries ?? 0)
+      const autoRetryCopy = maxAuto > 0
+        ? `All ${maxAuto} automatic retries have been used.`
+        : 'No automatic retries are configured for this step.'
+      const manualRetryCopy = metadata.max_retries
+        ? ` You can still manually retry this step (${metadata.retry_index ?? 0} of ${metadata.max_retries} total retries used).`
+        : ''
       return {
-        copy: `Automatic retries are exhausted (${metadata.max_auto_retries ?? '?'} of ${metadata.max_auto_retries ?? '?'}). You can still manually retry this step (${metadata.retry_index ?? '?'} of ${metadata.max_retries ?? '?'} total retries used).`,
+        copy: `${autoRetryCopy}${manualRetryCopy}`,
         theme: 'warn',
         title: `Step ${step?.name} — auto-retries exhausted`,
       }
