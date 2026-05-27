@@ -38,53 +38,45 @@ jobs:
         with:
           name: services ✅
           status: success
-          ignoreForks: "false"
       - name:  set artifacts
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: artifacts ✅
           status: success
-          ignoreForks: "false"
       - name:  set pkg
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: pkg ✅
           status: success
-          ignoreForks: "false"
       - name:  set protos
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: protos ✅
           status: success
-          ignoreForks: "false"
       - name:  set pull_request
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: pull_request ✅
           status: success
-          ignoreForks: "false"
       - name:  set branch
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: branch ✅
           status: success
-          ignoreForks: "false"
       - name:  set lint
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: lint ✅
           status: success
-          ignoreForks: "false"
       - name:  set terraform cloud
         if: contains( github.event.pull_request.labels.*.name, 'skip-ci')
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: Terraform Cloud/nuonco/repo-id-B14tP6vG7ia3CQHo
-          ignoreForks: "false"
           status: success
