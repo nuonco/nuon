@@ -85,6 +85,7 @@ Each resource accepts a list of sub-ops drawn from a fixed vocabulary:
 | Resource                 | Supported `ops`                                            |
 | ------------------------ | ---------------------------------------------------------- |
 | `installs`               | `provision`, `deprovision`, `reprovision`                  |
+| `stacks`                 | `version_active`                                           |
 | `components`             | `deploy`, `teardown`                                       |
 | `sandboxes`              | `provision`, `reprovision`, `deprovision`                  |
 | `install_configurations` | `inputs`, `secrets`                                        |
@@ -151,6 +152,7 @@ notifications for the four most common resources:
 {
   "resources": {
     "installs":               { "outcome": "completion", "approval_requests": true, "approval_responses": true },
+    "stacks":                 { "outcome": "completion" },
     "components":             { "outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true },
     "sandboxes":              { "outcome": "completion", "approval_requests": true, "approval_responses": true, "drift_detected": true },
     "install_configurations": { "outcome": "completion", "approval_requests": true, "approval_responses": true }

@@ -9,10 +9,10 @@ func AllEvents() Interests {
 }
 
 // Default returns the materialised "power user opted out of AllEvents"
-// baseline. Four resources (installs, components, sandboxes,
+// baseline. Five resources (installs, stacks, components, sandboxes,
 // install_configurations) are present with empty ops (= all sub-ops),
-// Outcome=Completion, and approval flags both true. Runners + actions are
-// absent (= off).
+// Outcome=Completion, and approval flags both true (where supported).
+// Runners + actions are absent (= off).
 //
 // Toggling "Send all events" off in the picker writes this exact shape so
 // users land on a sensible per-resource starting point instead of an empty
@@ -24,6 +24,9 @@ func Default() Interests {
 				Outcome:           OutcomeCompletion,
 				ApprovalRequests:  true,
 				ApprovalResponses: true,
+			},
+			ResourceStacks: {
+				Outcome: OutcomeCompletion,
 			},
 			ResourceComponents: {
 				Outcome:           OutcomeCompletion,
