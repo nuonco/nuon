@@ -47,5 +47,4 @@ jobs:
         uses: ouzi-dev/commit-status-updater@v2.0.1
         with:
           name: lint ✅
-          ignoreForks: "false"
           status: success
