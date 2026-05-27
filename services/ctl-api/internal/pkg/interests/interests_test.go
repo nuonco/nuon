@@ -668,6 +668,22 @@ func TestStepResolution(t *testing.T) {
 			wantOK:         true,
 		},
 		{
+			name:           "install stack version step inside provision → stacks.version_active",
+			stepTargetType: stepTargetInstallStackVersions,
+			parentWfType:   "provision",
+			wantResource:   ResourceStacks,
+			wantOp:         "version_active",
+			wantOK:         true,
+		},
+		{
+			name:           "install stack version step inside reprovision → stacks.version_active",
+			stepTargetType: stepTargetInstallStackVersions,
+			parentWfType:   "reprovision",
+			wantResource:   ResourceStacks,
+			wantOp:         "version_active",
+			wantOK:         true,
+		},
+		{
 			name:           "unknown step target type → not resolved",
 			stepTargetType: "install_random_thing",
 			parentWfType:   "provision",
