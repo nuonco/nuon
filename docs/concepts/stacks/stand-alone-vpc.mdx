@@ -1,0 +1,59 @@
+---
+title: "Stand-alone VPC"
+icon: "circle-nodes"
+description: "The Stack template creates a brand-new VPC dedicated to the install."
+keywords: ["stand-alone vpc", "new vpc", "dedicated vpc", "stack pattern"]
+---
+
+## Deploying an Example App
+
+If you're still designing your BYOC architecture, it is helpful to deploy a sample app. For the Stand-Alone VPC architecture, see [`eks-simple-auto`](https://github.com/nuonco/example-app-configs/tree/main/eks-simple-auto) in `nuonco/example-app-configs`.
+
+## Overview
+
+When the customer deploys the Nuon-generated CloudFormation/Bicep or Terraform template that [you provide](/guides/install-configs), a fresh VPC is provisioned alongside the Runner and its permissions, all inside the customer's account. 
+
+## App config
+
+Each install supports two deployment formats: a Nuon-generated CloudFormation/Bicep template and the Terraform modules Nuon publishes at [`install-stacks`](https://github.com/nuonco/install-stacks) (AWS and GCP subfolders).
+
+### CloudFormation/Bicep
+
+The vendor's `stack.toml` references nested templates. Set `type` to the cloud's native format — `aws-cloudformation` or `azure-bicep` — and point `vpc_nested_template_url` at the matching template.
+
+**AWS (CloudFormation)** — point at `vpc/eks/default` to create a new VPC:
+
+```toml stack.toml
+type = "aws-cloudformation"
+
+vpc_nested_template_url    = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/vpc/eks/default/stack.yaml"
+runner_nested_template_url = "https://nuon-artifacts.s3.us-west-2.amazonaws.com/aws-cloudformation-templates/v0.4.0/runner/asg/stack.yaml"
+```
+
+The customer deploys via the CloudFormation Quick Create form (or `aws cloudformation deploy`) — no further input is needed beyond account and region.
+
+**Azure (Bicep)** — point at the `vnet.json` and `runner.json` templates in [`install-stacks/azure`](https://github.com/nuonco/install-stacks/tree/main/azure):
+
+```toml stack.toml
+type = "azure-bicep"
+
+vpc_nested_template_url    = "https://raw.githubusercontent.com/nuonco/install-stacks/main/azure/vnet.json"
+runner_nested_template_url = "https://raw.githubusercontent.com/nuonco/install-stacks/main/azure/runner.json"
+```
+
+See [`aca-simple`](https://github.com/nuonco/example-app-configs/tree/main/aca-simple) for a complete Bicep example.
+
+### Terraform
+
+Nuon publishes Terraform modules for both AWS and GCP at [`install-stacks`](https://github.com/nuonco/install-stacks) that provision the same resources. The customer clones (or wraps) their cloud's module and runs `terraform apply` against it. See [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates) if you need to fork.
+
+### Sandbox
+
+The [Sandbox](/concepts/sandboxes) runs after the Stack and provisions the app's compute layer inside the new VPC. It picks up the VPC by reading the Stack's outputs:
+
+```toml sandbox.toml
+[vars]
+region = "{{.nuon.install_stack.outputs.region}}"
+vpc_id = "{{.nuon.install_stack.outputs.vpc_id}}"
+```
+
