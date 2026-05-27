@@ -12,9 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type InstallMetadata struct {
@@ -203,82 +201,9 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to create install: %w", res.Error)
 	}
 
-	// Create the install-workflows queue (orchestrates workflow execution, limited concurrency)
-	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     install.ID,
-		OwnerType:   plugins.TableName(s.db, app.Install{}),
-		Namespace:   "installs",
-		Name:        InstallWorkflowsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install-workflows queue: %w", err)
-	}
-
-	// Create the install-signals queue (handles individual signal execution, higher concurrency)
-	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     install.ID,
-		OwnerType:   plugins.TableName(s.db, app.Install{}),
-		Namespace:   "installs",
-		Name:        InstallSignalsQueueName,
-		MaxInFlight: 20,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install-signals queue: %w", err)
-	}
-
-	// Create the install-workflow-step-groups queue (executes step groups)
-	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     install.ID,
-		OwnerType:   plugins.TableName(s.db, app.Install{}),
-		Namespace:   "installs",
-		Name:        InstallWorkflowStepGroupsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install-workflow-step-groups queue: %w", err)
-	}
-
-	// Create the install-workflow-steps queue (executes individual workflow steps as signals)
-	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     install.ID,
-		OwnerType:   plugins.TableName(s.db, app.Install{}),
-		Namespace:   "installs",
-		Name:        InstallWorkflowStepsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install-workflow-steps queue: %w", err)
-	}
-
-	// Create the install-generate-steps queue (handles generate-steps signals, throttled like workflows)
-	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     install.ID,
-		OwnerType:   plugins.TableName(s.db, app.Install{}),
-		Namespace:   "installs",
-		Name:        InstallGenerateStepsQueueName,
-		MaxInFlight: 10,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create install-generate-steps queue: %w", err)
-	}
-
-	// Create the state-manager queue (handles state regeneration operations)
-	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
-		OwnerID:     install.ID,
-		OwnerType:   plugins.TableName(s.db, app.Install{}),
-		Namespace:   "installs",
-		Name:        InstallStateManagerQueueName,
-		MaxInFlight: 5,
-		MaxDepth:    50,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("unable to create state-manager queue: %w", err)
+	// Create all install queues (workflows, signals, actions, drift, etc.)
+	if err := s.EnsureInstallQueues(ctx, install.ID); err != nil {
+		return nil, fmt.Errorf("unable to create install queues: %w", err)
 	}
 
 	if req.InstallConfig != nil {
