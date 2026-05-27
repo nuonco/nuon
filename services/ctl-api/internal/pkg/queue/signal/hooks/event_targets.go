@@ -84,6 +84,12 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 					t.ActionID = id
 				}
 			}
+		case string(app.WorkflowStepTargetTypeInstallStackVersions):
+			if t.InstallID == "" {
+				if id := lookupInstallIDFromStackVersion(ctx, db, data.Step.TargetID); id != "" {
+					t.InstallID = id
+				}
+			}
 		}
 
 		// Sandbox-derived install. The sandbox is owned by exactly one
@@ -151,6 +157,28 @@ func lookupInstallIDFromSandbox(ctx context.Context, db *gorm.DB, sandboxID stri
 		Table("install_sandboxes").
 		Select("install_id").
 		Where("id = ?", sandboxID).
+		Scan(&row).Error; err != nil {
+		return ""
+	}
+	return row.InstallID
+}
+
+// lookupInstallIDFromStackVersion resolves the install id behind an
+// install_stack_versions row directly via its install_id column. The
+// await-install-stack-version-run step uses this target type, so install-scoped
+// Match (specific installs / label selectors) needs this to fire for the
+// (stacks, version_active) event.
+func lookupInstallIDFromStackVersion(ctx context.Context, db *gorm.DB, stackVersionID string) string {
+	if db == nil || stackVersionID == "" {
+		return ""
+	}
+	var row struct {
+		InstallID string
+	}
+	if err := db.WithContext(ctx).
+		Table("install_stack_versions").
+		Select("install_id").
+		Where("id = ?", stackVersionID).
 		Scan(&row).Error; err != nil {
 		return ""
 	}
