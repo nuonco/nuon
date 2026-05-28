@@ -1,12 +1,17 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
+import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
+import { Menu } from '@/components/common/Menu'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
+import { RunRunbookButton } from '@/components/runbooks/RunRunbook/RunRunbook'
 import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
 
 export type TInstallRunbookRow = {
@@ -14,7 +19,10 @@ export type TInstallRunbookRow = {
   runbookName: string
   description: ReactNode
   labels: ReactNode
+  lastRun: ReactNode
   href: string
+  latestRunHref: string | null
+  installRunbook: TInstallRunbook
 }
 
 export function parseInstallRunbooksToTableData(
@@ -49,7 +57,25 @@ export function parseInstallRunbooksToTableData(
         ) : (
           <Icon variant="MinusIcon" />
         ),
+      lastRun: ir.runs?.[0] ? (
+        <Text flex className="gap-2">
+          <Icon variant="CalendarBlankIcon" />
+          <Time
+            time={ir.runs[0].created_at}
+            format="relative"
+            variant="subtext"
+          />
+        </Text>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       href: `${basePath}/runbooks/${ir.runbook_id ?? ir.id}`,
+      latestRunHref: (() => {
+        const latestRun = ir.runs?.[0]
+        const workflowId = latestRun?.install_workflow_id ?? latestRun?.install_workflow?.id
+        return workflowId ? `${basePath}/workflows/${workflowId}` : null
+      })(),
+      installRunbook: ir,
     }
   })
 }
@@ -81,16 +107,44 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
     enableSorting: false,
   },
   {
+    accessorKey: 'lastRun',
+    header: 'Last run',
+    cell: (info) => info.getValue() as ReactNode,
+    enableSorting: false,
+  },
+  {
     enableSorting: false,
     accessorKey: 'href',
     id: 'action',
     header: '',
     cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
-        </Link>
-      </Text>
+      <Dropdown
+        alignment="right"
+        buttonText=""
+        buttonClassName="!p-1"
+        icon={<Icon variant="DotsThreeVerticalIcon" />}
+        id={info.row.original.runbookId}
+        variant="ghost"
+      >
+        <Menu>
+          <RunRunbookButton
+            installRunbook={info.row.original.installRunbook}
+            isMenuButton
+          >
+            Run runbook
+          </RunRunbookButton>
+          {info.row.original.latestRunHref ? (
+            <Button href={info.row.original.latestRunHref} isMenuButton>
+              Latest run
+              <Icon variant="CaretRightIcon" />
+            </Button>
+          ) : null}
+          <Button href={info.row.original.href} isMenuButton>
+            View details
+            <Icon variant="CaretRightIcon" />
+          </Button>
+        </Menu>
+      </Dropdown>
     ),
   },
 ]

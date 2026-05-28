@@ -26,6 +26,11 @@ export type TInstallRunbookRun = {
   status?: string
   status_description?: string
   triggered_by_id?: string
+  created_by_id?: string
+  created_by?: {
+    email?: string
+    name?: string
+  }
   install_workflow_id?: string | null
   install_workflow?: {
     id: string
