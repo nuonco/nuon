@@ -43,8 +43,10 @@ export type TRunbookStep = {
   type?: string
   component_name?: string
   deploy_dependencies?: boolean
+  action_workflow_id?: string
   command?: string
   inline_contents?: string
   role?: string
+  timeout?: number
   env_vars?: Record<string, string>
 }
