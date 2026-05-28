@@ -19,7 +19,7 @@ import (
 // @Summary				get all installs for an org
 // @Description.markdown	get_org_installs.md
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
-// @Param         q								 query	string	false	"search query to filter installs by name"
+// @Param         q								 query	string	false	"search query to filter installs by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					runner_id				query	string	false	"filter by runner ID"
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -93,7 +93,7 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	}
 
 	if q != "" {
-		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".name")+" ILIKE ?", "%"+q+"%")
+		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".name")+" ILIKE ? OR "+views.TableOrViewName(s.db, &app.Install{}, ".id")+" = ?", "%"+q+"%", q)
 	}
 	res := tx.Find(&installs)
 	if res.Error != nil {

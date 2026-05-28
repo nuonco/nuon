@@ -181,7 +181,7 @@ export const ComponentsTable = ({
         emptyTitle: 'No components',
       }}
       pagination={pagination}
-      searchPlaceholder="Search component name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }
