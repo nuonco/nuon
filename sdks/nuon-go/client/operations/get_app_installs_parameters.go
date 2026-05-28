@@ -96,7 +96,7 @@ type GetAppInstallsParams struct {
 
 	/* Q.
 
-	   search query
+	   search query to filter installs by name or ID
 	*/
 	Q *string
 

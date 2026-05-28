@@ -186,7 +186,7 @@ export const InstallActionsTable = ({
         ),
       }}
       pagination={pagination}
-      searchPlaceholder="Search component name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }

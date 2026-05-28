@@ -84,7 +84,7 @@ type GetAppsParams struct {
 
 	/* Q.
 
-	   search query to filter apps by name
+	   search query to filter apps by name or ID
 	*/
 	Q *string
 
