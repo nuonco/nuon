@@ -8,7 +8,7 @@
     "dev:ts": "esbuild client/index.tsx --bundle --outfile=dist/app.js --jsx=automatic --tsconfig=client/tsconfig.json --alias:@=./client --sourcemap --define:process.env.NODE_ENV='\"development\"' --watch=forever",
     "dev:html": "cp client/index.html dist/index.html",
     "dev:static": "cp client/favicon.svg dist/favicon.svg",
-    "dev:bs": "browser-sync start --proxy localhost:${ADMIN_PORT:-8087} --files 'dist/**/*' --no-open --port $((${ADMIN_PORT:-8087}+1))",
+    "dev:bs": "browser-sync start --proxy localhost:${ADMIN_PORT:-8087} --files 'dist/**/*' --no-open --no-ui --port ${ADMIN_BS_PORT:-9088}",
     "build:js": "esbuild client/index.tsx --bundle --outdir=dist/assets --entry-names=[name]-[hash] --jsx=automatic --tsconfig=client/tsconfig.json --alias:@=./client --minify --define:process.env.NODE_ENV='\"production\"' --metafile=dist/meta.json",
     "build:css": "cross-env NODE_ENV=production postcss client/styles.css -o dist/styles.css",
     "build:static": "cp client/favicon.svg dist/favicon.svg",
