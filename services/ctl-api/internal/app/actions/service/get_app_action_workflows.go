@@ -19,7 +19,7 @@ import (
 // @Summary				get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param         q 						query	string	false	"search query to filter action workflows by name"
+// @Param         q 						query	string	false	"search query to filter action workflows by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -44,7 +44,7 @@ func (s *service) GetAppActions(ctx *gin.Context) {
 // @Summary				get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param         q 						query	string	false	"search query to filter action workflows by name"
+// @Param         q 						query	string	false	"search query to filter action workflows by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -101,7 +101,7 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string, 
 		Where("org_id = ? AND app_id = ?", orgID, appID)
 
 	if q != "" {
-		tx = tx.Where("name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("name ILIKE ? OR action_workflows.id = ?", "%"+q+"%", q)
 	}
 	res := tx.Find(&actionWorkflows)
 	if res.Error != nil {

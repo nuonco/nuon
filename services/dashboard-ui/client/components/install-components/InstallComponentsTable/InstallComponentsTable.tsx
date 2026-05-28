@@ -205,7 +205,7 @@ export const InstallComponentsTable = ({
       filterActions={filterActions}
       emptyMessage="No components found"
       pagination={pagination}
-      searchPlaceholder="Search component name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }
