@@ -62,7 +62,7 @@ func (s *syncer) createJobComponentConfig(ctx context.Context, resource, compID 
 		return "", "", err
 	}
 
-	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+	s.trackBuildScheduled(compID)
 
 	return cfg.ID, cmpChecksum.Checksum, nil
 }

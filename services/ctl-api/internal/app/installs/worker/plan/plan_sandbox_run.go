@@ -134,12 +134,13 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		AppConfigID: install.AppConfigID,
 		InstallID:   install.ID,
 
-		Vars:      vars,
-		EnvVars:   envVars,
-		VarsFiles: appCfg.SandboxConfig.VariablesFiles,
-		GitSource: gitSource,
-		State:     state,
-		Policies:  policies,
+		Vars:               vars,
+		EnvVars:            envVars,
+		VarsFiles:          appCfg.SandboxConfig.VariablesFiles,
+		GitSource:          gitSource,
+		State:              state,
+		Policies:           policies,
+		KyvernoPoliciesDir: fmt.Sprintf("kyverno-policies-%s", run.ID),
 
 		LocalArchive: nil,
 

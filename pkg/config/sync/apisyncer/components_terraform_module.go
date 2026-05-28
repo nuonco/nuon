@@ -101,7 +101,7 @@ func (s *syncer) createTerraformModuleComponentConfig(ctx context.Context, resou
 		return "", "", err
 	}
 
-	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+	s.trackBuildScheduled(compID)
 
 	return cfg.ID, cmpChecksum.Checksum, nil
 }

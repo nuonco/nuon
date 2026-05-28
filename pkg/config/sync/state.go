@@ -11,6 +11,12 @@ type ActionState struct {
 	ID   string `json:"id"`
 }
 
+// RunbookState represents a runbook in the sync state
+type RunbookState struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
+}
+
 // State represents the synchronized state of an app config.
 // This is stored as JSON in the app_configs.state column to track
 // what was synced in each config version.
@@ -25,4 +31,5 @@ type State struct {
 	InputConfigID   string           `json:"input_config_id"`
 	Components      []ComponentState `json:"components"`
 	Actions         []ActionState    `json:"actions"`
+	Runbooks        []RunbookState   `json:"runbooks"`
 }

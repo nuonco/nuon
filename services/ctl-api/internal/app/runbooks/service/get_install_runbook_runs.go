@@ -1,0 +1,104 @@
+package service
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
+)
+
+// @ID				GetInstallRunbookRuns
+// @Summary		get runbook runs for an install
+// @Tags			runbooks
+// @Accept			json
+// @Produce		json
+// @Security		APIKey
+// @Security		OrgID
+// @Param			install_id	path	string	true	"install ID"
+// @Param			offset		query	int		false	"offset"	Default(0)
+// @Param			limit		query	int		false	"limit"		Default(10)
+// @Success		200			{array}	app.InstallRunbookRun
+// @Router			/v1/installs/{install_id}/runbook-runs [get]
+func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
+	if err != nil || !enabled {
+		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
+		return
+	}
+
+	installID := ctx.Param("install_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	runs := []*app.InstallRunbookRun{}
+	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
+		Preload("InstallRunbook").
+		Preload("InstallRunbook.Runbook").
+		Preload("InstallWorkflow").
+		Where(app.InstallRunbookRun{OrgID: org.ID, InstallID: installID}).
+		Order("created_at DESC").
+		Find(&runs)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to get runbook runs: %w", res.Error))
+		return
+	}
+
+	runs, err = db.HandlePaginatedResponse(ctx, runs)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to handle paginated response: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runs)
+}
+
+// @ID				GetInstallRunbookRun
+// @Summary		get a runbook run
+// @Tags			runbooks
+// @Accept			json
+// @Produce		json
+// @Security		APIKey
+// @Security		OrgID
+// @Param			install_id	path	string	true	"install ID"
+// @Param			run_id		path	string	true	"run ID"
+// @Success		200			{object}	app.InstallRunbookRun
+// @Router			/v1/installs/{install_id}/runbook-runs/{run_id} [get]
+func (s *service) GetInstallRunbookRun(ctx *gin.Context) {
+	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
+	if err != nil || !enabled {
+		ctx.Error(fmt.Errorf("runbooks feature is not enabled"))
+		return
+	}
+
+	runID := ctx.Param("run_id")
+	org, err := cctx.OrgFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	var run app.InstallRunbookRun
+	res := s.db.WithContext(ctx).
+		Preload("InstallRunbook").
+		Preload("InstallRunbook.Runbook").
+		Preload("RunbookConfig").
+		Preload("RunbookConfig.Steps").
+		Preload("InstallWorkflow").
+		Where(app.InstallRunbookRun{OrgID: org.ID}).
+		First(&run, "id = ?", runID)
+	if res.Error != nil {
+		ctx.Error(fmt.Errorf("unable to get runbook run: %w", res.Error))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, run)
+}
