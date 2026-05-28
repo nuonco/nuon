@@ -67,26 +67,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// sendNotification sends email and slack notifications (inlined from worker/notification.go)
 func (s *Signal) sendNotification(ctx workflow.Context, l *zap.Logger, typ notifications.Type, appID string, vars map[string]string) {
-	// Send email
 	if err := sharedactivities.AwaitSendEmail(ctx, sharedactivities.SendNotificationRequest{
 		AppID: appID,
 		Type:  typ,
 		Vars:  vars,
 	}); err != nil {
 		l.Error("unable to send email",
-			zap.Error(err),
-			zap.String("type", typ.String()))
-	}
-
-	// Send slack notification
-	if err := sharedactivities.AwaitSendSlack(ctx, sharedactivities.SendNotificationRequest{
-		AppID: appID,
-		Type:  typ,
-		Vars:  vars,
-	}); err != nil {
-		l.Error("unable to send slack notification",
 			zap.Error(err),
 			zap.String("type", typ.String()))
 	}
