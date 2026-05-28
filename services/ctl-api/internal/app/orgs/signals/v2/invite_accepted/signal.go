@@ -56,9 +56,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := sharedactivities.AwaitSendEmail(ctx, sharedactivities.SendNotificationRequest{OrgID: s.OrgID, Type: notifications.NotificationsTypeOrgInviteAccepted, Vars: vars}); err != nil {
 		l.Error("unable to send email", zap.Error(err))
 	}
-	if err := sharedactivities.AwaitSendSlack(ctx, sharedactivities.SendNotificationRequest{OrgID: s.OrgID, Type: notifications.NotificationsTypeOrgInviteAccepted, Vars: vars}); err != nil {
-		l.Error("unable to send slack notification", zap.Error(err))
-	}
 
 	return nil
 }
