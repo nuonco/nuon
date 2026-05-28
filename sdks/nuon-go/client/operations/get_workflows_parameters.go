@@ -114,6 +114,12 @@ type GetWorkflowsParams struct {
 	*/
 	Planonly *bool
 
+	/* Search.
+
+	   case-insensitive substring match against workflow id, type, and metadata (component / action / runbook name)
+	*/
+	Search *string
+
 	/* Type.
 
 	   filter by workflow type
@@ -281,6 +287,17 @@ func (o *GetWorkflowsParams) SetPlanonly(planonly *bool) {
 	o.Planonly = planonly
 }
 
+// WithSearch adds the search to the get workflows params
+func (o *GetWorkflowsParams) WithSearch(search *string) *GetWorkflowsParams {
+	o.SetSearch(search)
+	return o
+}
+
+// SetSearch adds the search to the get workflows params
+func (o *GetWorkflowsParams) SetSearch(search *string) {
+	o.Search = search
+}
+
 // WithType adds the typeVar to the get workflows params
 func (o *GetWorkflowsParams) WithType(typeVar *string) *GetWorkflowsParams {
 	o.SetType(typeVar)
@@ -419,6 +436,23 @@ func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if qPlanonly != "" {
 
 			if err := r.SetQueryParam("planonly", qPlanonly); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Search != nil {
+
+		// query param search
+		var qrSearch string
+
+		if o.Search != nil {
+			qrSearch = *o.Search
+		}
+		qSearch := qrSearch
+		if qSearch != "" {
+
+			if err := r.SetQueryParam("search", qSearch); err != nil {
 				return err
 			}
 		}
