@@ -33,23 +33,6 @@ func (a *Activities) SendEmail(ctx context.Context, req SendNotificationRequest)
 	return nil
 }
 
-// @temporal-gen-v2 activity
-// @schedule-to-close-timeout 1m
-// @start-to-close-timeout 10s
-func (a *Activities) SendSlack(ctx context.Context, req SendNotificationRequest) error {
-	cfg, err := a.getNotificationsConfig(ctx, req.OrgID, req.AppID)
-	if err != nil {
-		return fmt.Errorf("unable to get org: %w", err)
-	}
-
-	err = a.notifs.SendSlack(ctx, cfg, req.Type, req.Vars)
-	if err != nil {
-		return fmt.Errorf("unable to send slack notification: %w", err)
-	}
-
-	return nil
-}
-
 func (a *Activities) getNotificationsConfig(ctx context.Context, orgID, appID string) (*app.NotificationsConfig, error) {
 	ownerType := "orgs"
 	ownerID := orgID

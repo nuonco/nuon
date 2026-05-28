@@ -81,16 +81,6 @@ func (s *Signal) sendNotification(ctx workflow.Context, typ notifications.Type, 
 			zap.Error(err),
 			zap.String("type", typ.String()))
 	}
-
-	if err := sharedactivities.AwaitSendSlack(ctx, sharedactivities.SendNotificationRequest{
-		OrgID: orgID,
-		Type:  typ,
-		Vars:  vars,
-	}); err != nil {
-		l.Error("unable to send slack notification",
-			zap.Error(err),
-			zap.String("type", typ.String()))
-	}
 }
 
 func hasTag(tags []string, target string) bool {
