@@ -113,7 +113,7 @@ export const InstallRunbooksTable = ({ data, isLoading, pagination }: IInstallRu
         emptyMessage: 'Runbooks let you run operational procedures on this install.',
       }}
       pagination={pagination}
-      searchPlaceholder="Search runbook name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }

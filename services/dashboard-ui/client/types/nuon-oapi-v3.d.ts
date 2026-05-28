@@ -8056,7 +8056,7 @@ export interface operations {
       query?: {
         /** @description offset of jobs to return */
         offset?: number;
-        /** @description search query to filter apps by name */
+        /** @description search query to filter apps by name or ID */
         q?: string;
         /** @description limit of jobs to return */
         limit?: number;
@@ -8317,7 +8317,7 @@ export interface operations {
   GetActionWorkflows: {
     parameters: {
       query?: {
-        /** @description search query to filter action workflows by name */
+        /** @description search query to filter action workflows by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -8489,7 +8489,7 @@ export interface operations {
   GetAppActions: {
     parameters: {
       query?: {
-        /** @description search query to filter action workflows by name */
+        /** @description search query to filter action workflows by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -9801,7 +9801,7 @@ export interface operations {
   GetAppComponents: {
     parameters: {
       query?: {
-        /** @description search query to filter components by name */
+        /** @description search query to filter components by name or ID */
         q?: string;
         /** @description comma-separated list of component types to filter by (e.g., terraform_module, helm_chart) */
         types?: string;
@@ -12016,7 +12016,7 @@ export interface operations {
   GetAppInstalls: {
     parameters: {
       query?: {
-        /** @description search query */
+        /** @description search query to filter installs by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -12982,6 +12982,8 @@ export interface operations {
   GetRunbooks: {
     parameters: {
       query?: {
+        /** @description search query to filter runbooks by name or ID */
+        q?: string;
         /** @description offset */
         offset?: number;
         /** @description limit */
@@ -16013,7 +16015,7 @@ export interface operations {
       query?: {
         /** @description offset of results to return */
         offset?: number;
-        /** @description search query to filter installs by name */
+        /** @description search query to filter installs by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -16466,7 +16468,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query for action workflow name */
+        /** @description search query for action workflow name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -17033,7 +17035,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query for action workflow name */
+        /** @description search query for action workflow name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -17650,7 +17652,7 @@ export interface operations {
       query?: {
         /** @description component types to filter by */
         types?: string;
-        /** @description search query for component name */
+        /** @description search query for component name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -19744,7 +19746,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query to filter roles by display name */
+        /** @description search query to filter roles by display name or ID */
         q?: string;
       };
       path: {
@@ -19804,7 +19806,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query to filter roles by display name */
+        /** @description search query to filter roles by display name or ID */
         q?: string;
       };
       path: {
@@ -21102,7 +21104,7 @@ export interface operations {
   GetOrgs: {
     parameters: {
       query?: {
-        /** @description search query */
+        /** @description search query to filter orgs by name or ID */
         q?: string;
         /** @description offset of results to return */
         offset?: number;

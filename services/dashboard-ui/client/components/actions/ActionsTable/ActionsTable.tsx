@@ -152,7 +152,7 @@ export const ActionsTable = ({
       }}
       filterActions={filterActions}
       pagination={pagination}
-      searchPlaceholder="Search action name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }
