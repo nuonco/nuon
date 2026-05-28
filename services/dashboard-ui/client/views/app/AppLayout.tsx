@@ -51,7 +51,7 @@ const AppTemplate = () => {
     { path: `/actions`, iconVariant: 'TerminalWindowIcon' as const, text: 'Actions' },
     hasRunbooks && {
       path: `/runbooks`,
-      iconVariant: 'BookOpenTextIcon' as const,
+      iconVariant: 'BookIcon' as const,
       text: 'Runbooks',
     },
     hasAppBranchesUI && {
