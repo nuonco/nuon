@@ -64,6 +64,7 @@ const ActionRunLayoutInner = () => {
         ]}
       />
       <InstallActionRunHeader
+        action={action}
         actionId={actionId!}
         actionName={actionName ?? ''}
         workflow={workflow}

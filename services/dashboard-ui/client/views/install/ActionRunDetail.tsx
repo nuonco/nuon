@@ -1,5 +1,6 @@
 import { ActionStepGraph } from '@/components/actions/ActionStepsGraph'
 import { InstallActionRunOutputs } from '@/components/actions/InstallActionRunOutputs'
+import { KeyValueList } from '@/components/common/KeyValueList'
 import { Text } from '@/components/common/Text'
 import { useInstall } from '@/hooks/use-install'
 import { useInstallActionRun } from '@/hooks/use-install-action-run'
@@ -15,6 +16,9 @@ export const ActionRunDetail = () => {
     stepConfigs: installActionRun?.config?.steps,
   })
 
+  const envVars = installActionRun?.run_env_vars
+  const envVarEntries = Object.entries(envVars ?? {})
+
   return (
     <div className="flex flex-col gap-6">
       <PageTitle title={`${installActionRun?.trigger_type ? `${installActionRun.trigger_type} run` : 'Run'} | ${install?.name}`} />
@@ -23,6 +27,14 @@ export const ActionRunDetail = () => {
       ) : null}
       <Text variant="base" weight="strong">Outputs</Text>
       <InstallActionRunOutputs />
+      {envVarEntries.length > 0 && (
+        <>
+          <Text variant="base" weight="strong">Environment variables</Text>
+          <KeyValueList
+            values={envVarEntries.map(([key, value]) => ({ key, value }))}
+          />
+        </>
+      )}
     </div>
   )
 }
