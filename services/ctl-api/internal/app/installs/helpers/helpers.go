@@ -9,6 +9,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
@@ -58,6 +59,7 @@ type Params struct {
 	DB               *gorm.DB `name:"psql"`
 	ComponentHelpers *componenthelpers.Helpers
 	ActionsHelpers   *actionshelpers.Helpers
+	RunbooksHelpers  *runbookshelpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
 	EvClient         eventloop.Client
@@ -71,6 +73,7 @@ type Helpers struct {
 	runnersHelpers   *runnershelpers.Helpers
 	appsHelpers      *appshelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
+	runbooksHelpers  *runbookshelpers.Helpers
 	db               *gorm.DB
 	evClient         eventloop.Client
 	queueClient      *queueclient.Client
@@ -83,6 +86,7 @@ func New(params Params) *Helpers {
 		componentHelpers: params.ComponentHelpers,
 		runnersHelpers:   params.RunnersHelpers,
 		actionsHelpers:   params.ActionsHelpers,
+		runbooksHelpers:  params.RunbooksHelpers,
 		appsHelpers:      params.AppsHelpers,
 		db:               params.DB,
 		evClient:         params.EvClient,

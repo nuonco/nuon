@@ -46,6 +46,9 @@ const (
 
 	// app config builds
 	WorkflowTypeAppConfigBuild WorkflowType = "app_config_build"
+
+	// runbooks
+	WorkflowTypeRunbookRun WorkflowType = "runbook_run"
 )
 
 type WorkflowMetadataKey string
@@ -81,6 +84,8 @@ func (i WorkflowType) PastTenseName() string {
 		return "Action run"
 	case WorkflowTypeAppConfigBuild:
 		return "Built app config components"
+	case WorkflowTypeRunbookRun:
+		return "Runbook run"
 	default:
 	}
 
@@ -111,6 +116,8 @@ func (i WorkflowType) Name() string {
 		return "Action run"
 	case WorkflowTypeAppConfigBuild:
 		return "Building app config components"
+	case WorkflowTypeRunbookRun:
+		return "Running runbook"
 	default:
 	}
 
@@ -139,6 +146,8 @@ func (i WorkflowType) Description() string {
 		return "Syncing customer secrets into cluster."
 	case WorkflowTypeAppConfigBuild:
 		return "Builds all components defined in an app config."
+	case WorkflowTypeRunbookRun:
+		return "Executes an ordered set of deploy and action steps defined in a runbook."
 	}
 
 	return "unknown"
@@ -294,6 +303,11 @@ func (r *Workflow) AfterQuery(tx *gorm.DB) error {
 	if r.Type == WorkflowTypeActionWorkflowRun {
 		if actionName, ok := r.Metadata["install_action_workflow_name"]; ok {
 			r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(actionName))
+		}
+	}
+	if r.Type == WorkflowTypeRunbookRun {
+		if runbookName, ok := r.Metadata["runbook_name"]; ok {
+			r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(runbookName))
 		}
 	}
 

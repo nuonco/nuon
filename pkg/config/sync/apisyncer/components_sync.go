@@ -134,7 +134,7 @@ func (s *syncer) syncComponent(ctx context.Context, resource string, comp *confi
 		return "", err
 	}
 
-	s.state.Components = append(s.state.Components, sync.ComponentState{
+	s.appendComponentState(sync.ComponentState{
 		Name:     apiComp.Name,
 		Type:     comp.Type.APIType(),
 		ID:       apiComp.ID,

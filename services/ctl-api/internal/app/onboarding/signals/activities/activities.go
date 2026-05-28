@@ -12,6 +12,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -27,6 +28,7 @@ type Params struct {
 	AppsHelpers      *appshelpers.Helpers
 	ComponentHelpers *componenthelpers.Helpers
 	ActionsHelpers   *actionshelpers.Helpers
+	RunbooksHelpers  *runbookshelpers.Helpers
 	InstallsHelpers  *installshelpers.Helpers
 	OrgsHelpers      *orgshelpers.Helpers
 	EvClient         eventloop.Client
@@ -42,6 +44,7 @@ type Activities struct {
 	appsHelpers      *appshelpers.Helpers
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
+	runbooksHelpers  *runbookshelpers.Helpers
 	installsHelpers  *installshelpers.Helpers
 	orgsHelpers      *orgshelpers.Helpers
 	evClient         eventloop.Client
@@ -58,6 +61,7 @@ func New(params Params) (*Activities, error) {
 		appsHelpers:      params.AppsHelpers,
 		componentHelpers: params.ComponentHelpers,
 		actionsHelpers:   params.ActionsHelpers,
+		runbooksHelpers:  params.RunbooksHelpers,
 		installsHelpers:  params.InstallsHelpers,
 		orgsHelpers:      params.OrgsHelpers,
 		evClient:         params.EvClient,

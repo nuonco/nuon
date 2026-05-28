@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	policiesDirName    string = "kyverno-policies"
-	policiesDirVarName string = "kyverno_policy_dir"
+	defaultPoliciesDirName string = "kyverno-policies"
+	policiesDirVarName     string = "kyverno_policy_dir"
 )
 
 func (h *handler) writePolicies(ctx context.Context) error {
@@ -22,12 +22,13 @@ func (h *handler) writePolicies(ctx context.Context) error {
 		return err
 	}
 
-	// Write policies inside the workspace so they are cleaned up automatically
-	// by workspace.Cleanup(). The workspace root is per-job-execution, so
-	// concurrent jobs for the same install don't race.
-	policyPath := filepath.Join(h.state.workspace.Root(), policiesDirName)
+	dirName := h.state.plan.KyvernoPoliciesDir
+	if dirName == "" {
+		dirName = defaultPoliciesDirName
+	}
+	policyPath := filepath.Join(h.state.workspace.Root(), dirName)
 
-	// Remove the policy directory if it exists from a previous attempt.
+	// Remove the policy directory if it exits.
 	if err := os.RemoveAll(policyPath); err != nil {
 		return errors.Wrap(err, "unable to remove policy directory")
 	}
