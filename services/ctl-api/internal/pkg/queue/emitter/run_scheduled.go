@@ -72,6 +72,10 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 					l.Info("queue terminated while waiting")
 					return true, nil
 				}
+				if e.restarted {
+					l.Info("queue restarted while waiting")
+					return false, nil
+				}
 			}
 		}
 	}
