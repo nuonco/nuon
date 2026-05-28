@@ -5141,6 +5141,15 @@ export interface components {
       metadata?: {
         [key: string]: string;
       };
+      /**
+       * @description Name is the human-readable workflow title shown in the UI (e.g.
+       * "Deploying to install (rds_cluster_temporal)"). It is computed by a
+       * STORED generated column in Postgres — see
+       * migrations.Migration108InstallWorkflowsNameGenerated — so the
+       * expression has one source of truth and Postgres recomputes it
+       * automatically when finished_at or metadata changes. The `-:migration`
+       * tag tells gorm AutoMigrate not to create a regular column for it.
+       */
       name?: string;
       owner_id?: string;
       /**
@@ -20570,6 +20579,8 @@ export interface operations {
         created_at_gte?: string;
         /** @description filter workflows created before timestamp (RFC3339 format) */
         created_at_lte?: string;
+        /** @description case-insensitive substring match against workflow id, type, and metadata (component / action / runbook name) */
+        search?: string;
       };
       path: {
         /** @description install ID */

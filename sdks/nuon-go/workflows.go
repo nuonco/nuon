@@ -11,6 +11,7 @@ type GetInstallWorkflowsQuery struct {
 	Finished *bool
 	Planonly *bool
 	Type     string
+	Search   string
 	Limit    int
 	Offset   int
 }
@@ -27,6 +28,9 @@ func (c *client) GetInstallWorkflows(ctx context.Context, installID string, quer
 		params.Planonly = query.Planonly
 		if query.Type != "" {
 			params.Type = &query.Type
+		}
+		if query.Search != "" {
+			params.Search = &query.Search
 		}
 		limit = query.Limit
 		offset = query.Offset
