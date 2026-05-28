@@ -162,16 +162,17 @@ func (s *service) findCancelableStep(wf *app.Workflow) *app.WorkflowStep {
 }
 
 func (s *service) cancelWorkflow(ctx context.Context, installWorkflowID string) error {
-	obj := app.Workflow{
-		ID: installWorkflowID,
+	// Load-then-Save so Workflow.BeforeSave sees Type/Metadata and can
+	// recompute name to the past-tense title.
+	var obj app.Workflow
+	if err := s.db.WithContext(ctx).Where("id = ?", installWorkflowID).Take(&obj).Error; err != nil {
+		return pkgerrors.Wrap(err, "unable to load workflow")
 	}
 
-	status := app.NewCompositeStatus(ctx, app.StatusCancelled)
-	res := s.db.WithContext(ctx).Model(&obj).Updates(
-		map[string]any{
-			"status":      status,
-			"finished_at": time.Now(),
-		})
+	obj.Status = app.NewCompositeStatus(ctx, app.StatusCancelled)
+	obj.FinishedAt = time.Now()
+
+	res := s.db.WithContext(ctx).Save(&obj)
 	if res.Error != nil {
 		return pkgerrors.Wrap(res.Error, "unable to update")
 	}

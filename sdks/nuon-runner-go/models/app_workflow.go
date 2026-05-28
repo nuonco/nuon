@@ -69,7 +69,11 @@ type AppWorkflow struct {
 	// metadata
 	Metadata map[string]string `json:"metadata,omitempty"`
 
-	// name
+	// Name is the human-readable workflow title shown in the UI (e.g.
+	// "Deploying to install (rds_cluster_temporal)"). Populated by
+	// BeforeSave via computeWorkflowName — callers that mutate Type,
+	// Metadata, or FinishedAt must go through GORM (Save / struct-based
+	// Updates) so the hook fires.
 	Name string `json:"name,omitempty"`
 
 	// owner id
