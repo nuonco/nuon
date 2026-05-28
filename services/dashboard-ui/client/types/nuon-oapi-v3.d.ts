@@ -5893,6 +5893,7 @@ export interface components {
       git_source?: components["schemas"]["plantypes.GitSource"];
       hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
       install_id?: string;
+      kyverno_policies_dir?: string;
       local_archive?: components["schemas"]["plantypes.TerraformLocalArchive"];
       policies?: {
         [key: string]: string;
