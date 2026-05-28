@@ -499,6 +499,15 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 		}
 	}
 
+	// Skip child replies for workflow-kind events. The parent message
+	// itself already renders the workflow's headline + latest status, so
+	// a threaded reply with the same content ("Running runbook —
+	// Started" / "Succeeded") is redundant noise. Step events still post
+	// as children.
+	if rendered.event.Kind == slackrender.KindWorkflow {
+		return nil
+	}
+
 	// Post the child as a threaded reply.
 	childMsg := slackrender.BuildChildMessage(rendered.event)
 	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
@@ -594,6 +603,7 @@ func buildRenderEvent(data lifecycleEventData) renderEvent {
 			OwnerName:      data.Workflow.OwnerName,
 			CreatedByEmail: data.Workflow.CreatedByEmail,
 			CreatedAt:      data.Workflow.CreatedAt,
+			RunbookName:    data.Workflow.RunbookName,
 		},
 	}
 

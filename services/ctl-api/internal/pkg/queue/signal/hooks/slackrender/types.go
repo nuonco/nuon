@@ -91,6 +91,9 @@ type WorkflowRef struct {
 	CreatedByEmail string
 	// CreatedAt is the workflow's start time. Zero when unknown.
 	CreatedAt time.Time
+	// RunbookName labels the runbook this workflow is executing. Populated
+	// only for runbook_run workflows.
+	RunbookName string
 }
 
 // StepRef identifies a workflow step. Present only on workflow_step /

@@ -185,7 +185,21 @@ func parentHeadline(e Event) string {
 	icon := workflowSubjectIcon(e)
 	title := workflowHeaderTitle(e)
 	headline := strings.TrimSpace(strings.Join(nonEmpty(icon, title), " "))
-	return "*" + slackEscape(headline) + "*"
+	headline = "*" + slackEscape(headline) + "*"
+	if subj := workflowSubjectLabel(e); subj != "" {
+		headline = headline + " — " + slackEscape(subj)
+	}
+	return headline
+}
+
+// workflowSubjectLabel returns a workflow-scoped subject for the parent
+// headline. For runbook_run workflows that is the runbook's name; other
+// workflow types return "" so the headline stays the workflow title alone.
+func workflowSubjectLabel(e Event) string {
+	if e.Workflow.Type == WorkflowTypeRunbookRun && e.Workflow.RunbookName != "" {
+		return e.Workflow.RunbookName
+	}
+	return ""
 }
 
 // workflowHeaderTitle returns the title for the parent message — always
