@@ -5,6 +5,7 @@ import (
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/kube"
+	"github.com/nuonco/nuon/pkg/types/state"
 )
 
 type KubernetesManifestDeployPlan struct {
@@ -24,6 +25,13 @@ type KubernetesManifestDeployPlan struct {
 
 	// OCIArtifact reference (set during plan creation, used by runner to pull manifest)
 	OCIArtifact *OCIArtifactReference `json:"oci_artifact,omitempty"`
+
+	// State carries the install state the runner needs to interpolate
+	// nuon template placeholders into the kustomize-produced manifest.yaml
+	// after pulling the OCI artifact. Nil for inline-manifest deploys,
+	// which are pre-rendered planner-side and short-circuit the OCI pull
+	// on the runner. Same shape as SandboxRunPlan.State.
+	State *state.State `json:"state,omitempty"`
 }
 
 // OCIArtifactReference points to the packaged manifest artifact
