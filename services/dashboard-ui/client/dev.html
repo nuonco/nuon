@@ -37,6 +37,11 @@
       fav.type = 'image/svg+xml'
       document.head.appendChild(fav)
 
+      // Suppress benign ResizeObserver error from @container queries
+      window.addEventListener('error', function (e) {
+        if (e.message?.includes('ResizeObserver')) e.stopImmediatePropagation()
+      })
+
       // CSS-only hot reload via SSE
       var es = new EventSource('/__dev/css-reload')
       es.onmessage = function () {
