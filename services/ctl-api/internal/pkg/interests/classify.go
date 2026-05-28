@@ -274,6 +274,10 @@ func workflowResolution(wfType string) (ResourceKind, string, bool) {
 	// actions.*
 	case "action_workflow_run":
 		return ResourceActions, "run", true
+
+	// installs.* (runbook orchestration)
+	case "runbook_run":
+		return ResourceInstalls, "runbook", true
 	}
 
 	return "", "", false
@@ -366,6 +370,10 @@ func stepResolutionFromParent(parentWorkflowType string) (ResourceKind, string, 
 		return ResourceSandboxes, "deprovision", true
 	case "action_workflow_run":
 		return ResourceActions, "run", true
+	case "runbook_run":
+		// Runbook steps are predominantly component deploys; the DB-enriched
+		// path will refine to the per-step target when available.
+		return ResourceComponents, "deploy", true
 	case "input_update":
 		return ResourceInstallConfigurations, "inputs", true
 	case "sync_secrets":

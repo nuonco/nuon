@@ -63,6 +63,7 @@ const (
 	WorkflowTypeReprovisionSandbox = "reprovision_sandbox"
 	WorkflowTypeAppConfigBuild     = "app_config_build"
 	WorkflowTypeAppBranchesRun     = "app_branches_manual_update"
+	WorkflowTypeRunbookRun         = "runbook_run"
 )
 
 // TargetType values for StepRef.TargetType. Matches the actual string
