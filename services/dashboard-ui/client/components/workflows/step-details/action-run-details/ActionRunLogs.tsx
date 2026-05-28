@@ -1,3 +1,4 @@
+import { KeyValueList } from '@/components/common/KeyValueList'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
@@ -46,11 +47,32 @@ export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
                       />
                     </div>
                   ),
-                  outputs: (
+                  trace: (
                     <div className="pt-4">
-                      <InstallActionRunOutputsComponent
-                        installActionRun={actionRun}
+                      <TraceView
+                        logStreamId={actionRun.log_stream.id}
+                        shouldPoll={actionRun.log_stream.open}
                       />
+                    </div>
+                  ),
+                  summary: (
+                    <div className="pt-4 flex flex-col gap-6">
+                      <div className="flex flex-col gap-2">
+                        <Text weight="strong">Outputs</Text>
+                        <InstallActionRunOutputsComponent
+                          installActionRun={actionRun}
+                        />
+                      </div>
+                      {Object.keys(actionRun?.run_env_vars ?? {}).length > 0 && (
+                        <div className="flex flex-col gap-2">
+                          <Text weight="strong">Environment variables</Text>
+                          <KeyValueList
+                            values={Object.entries(actionRun.run_env_vars!).map(
+                              ([key, value]) => ({ key, value })
+                            )}
+                          />
+                        </div>
+                      )}
                     </div>
                   ),
                 }}
