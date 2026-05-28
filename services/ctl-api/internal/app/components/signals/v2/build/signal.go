@@ -228,28 +228,15 @@ func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status ap
 	}
 }
 
-// sendNotification sends email and slack notifications
 func (s *Signal) sendNotification(ctx workflow.Context, typ notifications.Type, appID string, vars map[string]string) {
 	l := workflow.GetLogger(ctx)
 
-	// Send email
 	if err := sharedactivities.AwaitSendEmail(ctx, sharedactivities.SendNotificationRequest{
 		AppID: appID,
 		Type:  typ,
 		Vars:  vars,
 	}); err != nil {
 		l.Error("unable to send email",
-			zap.Error(err),
-			zap.String("type", typ.String()))
-	}
-
-	// Send slack notification
-	if err := sharedactivities.AwaitSendSlack(ctx, sharedactivities.SendNotificationRequest{
-		AppID: appID,
-		Type:  typ,
-		Vars:  vars,
-	}); err != nil {
-		l.Error("unable to send slack notification",
 			zap.Error(err),
 			zap.String("type", typ.String()))
 	}
