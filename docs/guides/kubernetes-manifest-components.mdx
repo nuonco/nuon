@@ -186,6 +186,66 @@ spec:
     targetPort: 8080
 ```
 
+## Kustomize
+
+In addition to inline manifests, Kubernetes manifest components can be sourced from a [Kustomize](https://kustomize.io) overlay in a Git repo. Use this when you want to assemble your manifests from a base + overlays, layer in patches, or share manifests across multiple components.
+
+### Pointing a component at a Kustomize overlay
+
+A Kustomize-backed component references the repo holding the overlay (either `public_repo` for a public GitHub repo, or `connected_repo` for a Nuon-connected private repo) and a `kustomize.path` relative to the source root.
+
+```toml components/kustomize-demo.toml
+name = "kustomize-demo"
+type = "kubernetes_manifest"
+
+namespace = "kustomize-demo"
+
+[public_repo]
+repo = "nuonco/example-app-configs"
+directory = "gke-simple/src/components/kustomize-demo"
+branch = "main"
+
+[kustomize]
+path = "."
+```
+
+The directory at `directory` must contain a standard `kustomization.yaml`. Nuon runs `kustomize build` on it during deploy.
+
+```yaml gke-simple/src/components/kustomize-demo/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - deployment.yaml
+```
+
+### State interpolation in Kustomize trees
+
+Kustomize-backed components support the same `{{.nuon.*}}` template variables as inline manifests. Placeholders are rendered on the runner, against the live install state, **after** `kustomize build` produces the final manifest. This means you can reference install IDs, app metadata, install stack outputs, and other component outputs directly from any YAML file inside your Kustomize overlay.
+
+```yaml gke-simple/src/components/kustomize-demo/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: install-info
+  namespace: kustomize-demo
+  annotations:
+    nuon.co/rendered-install-id: "{{.nuon.install.id}}"
+data:
+  install_id: "{{.nuon.install.id}}"
+  install_name: "{{.nuon.install.name}}"
+  app_id: "{{.nuon.app.id}}"
+  project_id: "{{.nuon.install_stack.outputs.project_id}}"
+```
+
+After a deploy, the rendered ConfigMap on the cluster will have the placeholders replaced with the install's actual values — for example, `install_id: inl...`, `project_id: nuon-gcp-support`.
+
+<Note>
+Kustomize-backed manifests are interpolated on the runner, not in the planner. This keeps the Temporal workflow payload small even for large Kustomize trees. Inline manifests, by contrast, are still rendered in the planner.
+</Note>
+
 ## Nuon Managed Sandbox Components
 
 The `aws-eks-sandbox` [managed Sandbox](/concepts/sandboxes#nuon-managed-sandboxes) ships with standard components that your Kubernetes manifests can leverage:
