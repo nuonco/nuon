@@ -275,8 +275,9 @@ type Config struct {
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
 
 	// notifications configuration
-	LoopsAPIKey             string `config:"loops_api_key" validate:"required"`
-	InternalSlackWebhookURL string `config:"internal_slack_webhook_url" validate:"required"`
+	LoopsAPIKey string `config:"loops_api_key" validate:"required"`
+	// Deprecated: legacy Slack webhook send path is gone; field is read only to populate unused NotificationsConfig rows pending a follow-up cleanup.
+	InternalSlackWebhookURL string `config:"internal_slack_webhook_url"`
 	DisableNotifications    bool   `config:"disable_notifications"`
 
 	// webhook configuration
