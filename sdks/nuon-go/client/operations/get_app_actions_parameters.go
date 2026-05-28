@@ -96,7 +96,7 @@ type GetAppActionsParams struct {
 
 	/* Q.
 
-	   search query to filter action workflows by name
+	   search query to filter action workflows by name or ID
 	*/
 	Q *string
 

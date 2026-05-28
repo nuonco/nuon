@@ -82,6 +82,12 @@ type GetRunbooksParams struct {
 	*/
 	Offset *int64
 
+	/* Q.
+
+	   search query to filter runbooks by name or ID
+	*/
+	Q *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -182,6 +188,17 @@ func (o *GetRunbooksParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
+// WithQ adds the q to the get runbooks params
+func (o *GetRunbooksParams) WithQ(q *string) *GetRunbooksParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the get runbooks params
+func (o *GetRunbooksParams) SetQ(q *string) {
+	o.Q = q
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetRunbooksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -224,6 +241,23 @@ func (o *GetRunbooksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.R
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
 				return err
 			}
 		}

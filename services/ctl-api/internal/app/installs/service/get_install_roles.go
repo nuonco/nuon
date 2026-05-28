@@ -20,7 +20,7 @@ import (
 // @Param					offset		query	int		false	"offset of results to return"	Default(0)
 // @Param					limit		query	int		false	"limit of results to return"	Default(10)
 // @Param					page		query	int		false	"page number of results to return"	Default(0)
-// @Param					q			query	string	false	"search query to filter roles by display name"
+// @Param					q			query	string	false	"search query to filter roles by display name or ID"
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -51,7 +51,7 @@ func (s *service) GetInstallRoles(ctx *gin.Context) {
 
 	if q != "" {
 		tx = tx.Joins("JOIN app_awsiam_role_configs ON app_awsiam_role_configs.id = install_roles.app_role_config_id").
-			Where("app_awsiam_role_configs.display_name ILIKE ?", "%"+q+"%")
+			Where("app_awsiam_role_configs.display_name ILIKE ? OR install_roles.id = ?", "%"+q+"%", q)
 	}
 
 	res := tx.Find(&roles)

@@ -16,7 +16,7 @@ import (
 // @Summary				get all apps for the current org
 // @Description.markdown	get_apps.md
 // @Param					offset						query	int		false	"offset of jobs to return"	Default(0)
-// @Param					q							query	string	false	"search query to filter apps by name"
+// @Param					q							query	string	false	"search query to filter apps by name or ID"
 // @Param					limit						query	int		false	"limit of jobs to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Tags					apps
@@ -70,7 +70,7 @@ func (s *service) getApps(ctx *gin.Context, orgID, q string) ([]*app.App, error)
 		Order("apps.name ASC")
 
 	if q != "" {
-		tx = tx.Where("apps.name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("apps.name ILIKE ? OR apps.id = ?", "%"+q+"%", q)
 	}
 
 	err := tx.Model(&org).Association("Apps").Find(&apps)
