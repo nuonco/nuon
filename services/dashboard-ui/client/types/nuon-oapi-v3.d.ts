@@ -5143,12 +5143,10 @@ export interface components {
       };
       /**
        * @description Name is the human-readable workflow title shown in the UI (e.g.
-       * "Deploying to install (rds_cluster_temporal)"). It is computed by a
-       * STORED generated column in Postgres — see
-       * migrations.Migration108InstallWorkflowsNameGenerated — so the
-       * expression has one source of truth and Postgres recomputes it
-       * automatically when finished_at or metadata changes. The `-:migration`
-       * tag tells gorm AutoMigrate not to create a regular column for it.
+       * "Deploying to install (rds_cluster_temporal)"). Populated by
+       * BeforeSave via computeWorkflowName — callers that mutate Type,
+       * Metadata, or FinishedAt must go through GORM (Save / struct-based
+       * Updates) so the hook fires.
        */
       name?: string;
       owner_id?: string;
