@@ -9,6 +9,7 @@ import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstall, TWorkflow } from '@/types'
 import { cn } from '@/utils/classnames'
+import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getPendingApprovalCount } from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 

@@ -160,4 +160,3 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 
 	return workflows, nil
 }
-
