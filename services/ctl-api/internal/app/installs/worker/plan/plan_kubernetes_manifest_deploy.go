@@ -15,7 +15,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	types "github.com/nuonco/nuon/pkg/types/approvals"
-	"github.com/nuonco/nuon/pkg/types/state"
+	statepkg "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -26,7 +26,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 	req *CreateDeployPlanRequest,
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
-	state *state.State,
+	state *statepkg.State,
 	installDeploy *app.InstallDeploy,
 ) (*plantypes.KubernetesManifestDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -106,6 +106,16 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 		return nil, errors.Wrap(err, "unable to get cluster info")
 	}
 
+	// Ship the install state to the runner only when the manifest will be
+	// loaded from the OCI artifact (kustomize path — inline manifests are
+	// already pre-rendered above and the runner short-circuits the OCI pull
+	// when plan.Manifest is non-empty). This lets the runner interpolate
+	// {{.nuon.*}} placeholders that survived kustomize unchanged.
+	var planState *statepkg.State
+	if renderedManifest == "" {
+		planState = state
+	}
+
 	return &plantypes.KubernetesManifestDeployPlan{
 		ClusterInfo: clusterInfo,
 		Namespace:   renderedNamespace,
@@ -115,6 +125,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 			Tag:    ociArtifact.Tag,
 			Digest: ociArtifact.Digest,
 		},
+		State:     planState,
 		AWSAuth:   cloudAuth.AWS,
 		AzureAuth: cloudAuth.Azure,
 		GCPAuth:   cloudAuth.GCP,
