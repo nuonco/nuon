@@ -45,6 +45,15 @@ type PlantypesKubernetesManifestDeployPlan struct {
 	OciArtifact struct {
 		PlantypesOCIArtifactReference
 	} `json:"oci_artifact,omitempty"`
+
+	// State carries the install state the runner needs to interpolate
+	// nuon template placeholders into the kustomize-produced manifest.yaml
+	// after pulling the OCI artifact. Nil for inline-manifest deploys,
+	// which are pre-rendered planner-side and short-circuit the OCI pull
+	// on the runner. Same shape as SandboxRunPlan.State.
+	State struct {
+		GithubComNuoncoNuonPkgTypesStateState
+	} `json:"state,omitempty"`
 }
 
 // Validate validates this plantypes kubernetes manifest deploy plan
@@ -68,6 +77,10 @@ func (m *PlantypesKubernetesManifestDeployPlan) Validate(formats strfmt.Registry
 	}
 
 	if err := m.validateOciArtifact(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateState(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -162,6 +175,14 @@ func (m *PlantypesKubernetesManifestDeployPlan) validateOciArtifact(formats strf
 	return nil
 }
 
+func (m *PlantypesKubernetesManifestDeployPlan) validateState(formats strfmt.Registry) error {
+	if swag.IsZero(m.State) { // not required
+		return nil
+	}
+
+	return nil
+}
+
 // ContextValidate validate this plantypes kubernetes manifest deploy plan based on the context it is used
 func (m *PlantypesKubernetesManifestDeployPlan) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -183,6 +204,10 @@ func (m *PlantypesKubernetesManifestDeployPlan) ContextValidate(ctx context.Cont
 	}
 
 	if err := m.contextValidateOciArtifact(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateState(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -273,6 +298,11 @@ func (m *PlantypesKubernetesManifestDeployPlan) contextValidateGcpAuth(ctx conte
 }
 
 func (m *PlantypesKubernetesManifestDeployPlan) contextValidateOciArtifact(ctx context.Context, formats strfmt.Registry) error {
+
+	return nil
+}
+
+func (m *PlantypesKubernetesManifestDeployPlan) contextValidateState(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
