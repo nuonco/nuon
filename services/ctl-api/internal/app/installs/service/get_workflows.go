@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,7 @@ import (
 // @Param					finished					query	bool	false	"filter by finished state"
 // @Param					created_at_gte				query	string	false	"filter workflows created after timestamp (RFC3339 format)"
 // @Param					created_at_lte				query	string	false	"filter workflows created before timestamp (RFC3339 format)"
+// @Param					search						query	string	false	"case-insensitive substring match against workflow id, type, and metadata (component / action / runbook name)"
 // @Tags					installs
 // @Accept					json
 // @Produce					json
@@ -87,7 +89,9 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 		createdAtLte = &parsedTime
 	}
 
-	workflows, err := s.getWorkflows(ctx, installID, planOnly, workflowType, finished, createdAtGte, createdAtLte)
+	search := ctx.Query("search")
+
+	workflows, err := s.getWorkflows(ctx, installID, planOnly, workflowType, search, finished, createdAtGte, createdAtLte)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get workflows"))
 		return
@@ -96,7 +100,7 @@ func (s *service) GetWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, workflows)
 }
 
-func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOnly bool, workflowType string, finished *bool, createAtGte *time.Time, createdAtLte *time.Time) ([]app.Workflow, error) {
+func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOnly bool, workflowType, search string, finished *bool, createAtGte *time.Time, createdAtLte *time.Time) ([]app.Workflow, error) {
 	var workflows []app.Workflow
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -122,6 +126,18 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 
 	if workflowType != "" {
 		query = query.Where("type = ?", workflowType)
+	}
+
+	// Search matches the user-visible title each workflow is rendered with
+	// (e.g. "Deploying to install (rds_cluster_temporal)"). The title lives
+	// in the `name` column — a STORED generated column maintained by
+	// Postgres, see migrations.Migration108InstallWorkflowsNameGenerated —
+	// so we don't have to recompute it here. Whitespace tokens are AND'd so
+	// a query like "deploying rds" matches a title containing both words in
+	// any order. Workflow id is also accepted so users can paste a ULID.
+	for _, token := range strings.Fields(search) {
+		like := "%" + token + "%"
+		query = query.Where("name ILIKE ? OR id ILIKE ?", like, like)
 	}
 
 	if createAtGte != nil {
