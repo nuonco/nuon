@@ -17,6 +17,7 @@ interface IWorkflowTimelineContainer {
   shouldPoll?: boolean
   type?: string
   planonly?: boolean
+  search?: string
 }
 
 export const WorkflowTimelineContainer = ({
@@ -25,6 +26,7 @@ export const WorkflowTimelineContainer = ({
   pollInterval = 20000,
   planonly = true,
   type = '',
+  search = '',
 }: IWorkflowTimelineContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
@@ -33,13 +35,13 @@ export const WorkflowTimelineContainer = ({
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const queryKey = useMemo(
-    () => ['install-workflows', org?.id, installId, offset, planonly, type],
-    [org?.id, installId, offset, planonly, type]
+    () => ['install-workflows', org?.id, installId, offset, planonly, type, search],
+    [org?.id, installId, offset, planonly, type, search]
   )
 
   const sseUrl =
     org?.id && installId
-      ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}`
+      ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}&search=${encodeURIComponent(search)}`
       : undefined
 
   const activeWorkflowsQueryKey = useMemo(
@@ -81,6 +83,7 @@ export const WorkflowTimelineContainer = ({
         offset,
         planonly,
         type,
+        search,
       }),
     refetchOnMount: 'always',
     refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,

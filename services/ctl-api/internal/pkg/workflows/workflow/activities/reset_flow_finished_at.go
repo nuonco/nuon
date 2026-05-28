@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -14,16 +15,15 @@ type ResetFlowFinishedAtRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ID
 func (a *Activities) PkgWorkflowsFlowResetFlowFinishedAt(ctx context.Context, req ResetFlowFinishedAtRequest) error {
-	iwf := app.Workflow{
-		ID: req.ID,
+	// Load-then-Save so Workflow.BeforeSave fires and recomputes name back
+	// to its in-progress form when finished_at goes to NULL.
+	var iwf app.Workflow
+	if err := a.db.WithContext(ctx).Where("id = ?", req.ID).Take(&iwf).Error; err != nil {
+		return generics.TemporalGormError(err)
 	}
-
-	// temporary path to implement reset of finished_at for a specific workflow
-	// ideally we'd want to do via gorm
-	res := a.db.Raw("UPDATE install_workflows SET finished_at = NULL WHERE id = ? ", iwf.ID).Scan(&iwf)
-	if res.Error != nil {
-		return generics.TemporalGormError(res.Error)
+	iwf.FinishedAt = time.Time{}
+	if err := a.db.WithContext(ctx).Save(&iwf).Error; err != nil {
+		return generics.TemporalGormError(err)
 	}
-
 	return nil
 }
