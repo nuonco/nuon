@@ -36,6 +36,7 @@ func (e *emitterWorkflow) registerHandlers(ctx workflow.Context) error {
 		{EnsureRunningUpdateName, handlerTypeUpdate, e.ensureRunningHandler, nil},
 		{PauseUpdateName, handlerTypeUpdate, e.pauseHandler, nil},
 		{ResumeUpdateName, handlerTypeUpdate, e.resumeHandler, nil},
+		{CheckCANUpdateName, handlerTypeUpdate, e.checkCANHandler, nil},
 	}
 
 	for _, h := range updateHandlers {
