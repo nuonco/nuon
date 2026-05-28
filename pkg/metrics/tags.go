@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -38,6 +39,9 @@ func ToTags(inputs map[string]string, addtlTags ...string) []string {
 		tags = append(tags, strings.Join(kv, ":"))
 	}
 
+	// sort tags for consistency
+	sort.Strings(tags)
+
 	return tags
 }
 
@@ -52,8 +56,14 @@ func AddTags(tags []string, vals ...string) []string {
 }
 
 func AddTagsMap(tags []string, vals map[string]string) []string {
-	for key, val := range vals {
-		tags = append(tags, ToTag(key, val))
+	keys := make([]string, 0, len(vals))
+	for k := range vals {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		tags = append(tags, ToTag(key, vals[key]))
 	}
 
 	return tags
