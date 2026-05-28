@@ -43,6 +43,7 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 	planonlyStr := c.DefaultQuery("planonly", "true")
 	planonly := planonlyStr == "true"
 	workflowType := c.DefaultQuery("type", "")
+	search := c.DefaultQuery("search", "")
 
 	token, err := c.Cookie(authCookie)
 	if err != nil || token == "" {
@@ -109,6 +110,7 @@ func (h *WorkflowTimelineHandler) StreamWorkflowTimeline(c *gin.Context) {
 		historyWorkflows, hasMore, err := client.GetInstallWorkflows(ctx, installID, &nuon.GetInstallWorkflowsQuery{
 			Planonly: &planonly,
 			Type:     workflowType,
+			Search:   search,
 			Limit:    limit,
 			Offset:   offset,
 		})

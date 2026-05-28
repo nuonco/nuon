@@ -120,6 +120,12 @@ type GetWorkflowsParams struct {
 	*/
 	Type *string
 
+	/* Search.
+
+	   case-insensitive substring match against workflow id, type, and metadata
+	*/
+	Search *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -292,6 +298,17 @@ func (o *GetWorkflowsParams) SetType(typeVar *string) {
 	o.Type = typeVar
 }
 
+// WithSearch adds the search to the get workflows params
+func (o *GetWorkflowsParams) WithSearch(search *string) *GetWorkflowsParams {
+	o.SetSearch(search)
+	return o
+}
+
+// SetSearch adds the search to the get workflows params
+func (o *GetWorkflowsParams) SetSearch(search *string) {
+	o.Search = search
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -436,6 +453,23 @@ func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if qType != "" {
 
 			if err := r.SetQueryParam("type", qType); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Search != nil {
+
+		// query param search
+		var qrSearch string
+
+		if o.Search != nil {
+			qrSearch = *o.Search
+		}
+		qSearch := qrSearch
+		if qSearch != "" {
+
+			if err := r.SetQueryParam("search", qSearch); err != nil {
 				return err
 			}
 		}
