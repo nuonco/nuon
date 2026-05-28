@@ -188,7 +188,11 @@ export const ActionDetail = () => {
                 <InstallActionManualRunButton
                   action={action.action_workflow}
                   actionConfigId={action.action_workflow.configs[0].id}
-                />
+                  variant="primary"
+                >
+                  Run action
+                  <Icon variant="PlayIcon" />
+                </InstallActionManualRunButton>
               ) : null}
             </div>
           </div>

@@ -82,7 +82,7 @@ const InstallTemplate = () => {
       ? [
           {
             path: `/runbooks`,
-            iconVariant: 'BookOpenTextIcon' as const,
+            iconVariant: 'BookIcon' as const,
             text: 'Runbooks',
           },
         ]

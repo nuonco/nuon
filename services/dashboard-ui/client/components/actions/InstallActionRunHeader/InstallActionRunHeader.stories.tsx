@@ -37,6 +37,7 @@ export const Default = () => (
     step={{ id: 'step-1' } as any}
     cancelWorkflowButton={<Button variant="danger">Cancel workflow</Button>}
     runnerJobPlanButton={<Button>View plan</Button>}
+    runActionButton={<Button>Run action</Button>}
   />
 )
 
@@ -51,6 +52,7 @@ export const Admin = () => (
     step={{ id: 'step-1' } as any}
     cancelWorkflowButton={<Button variant="danger">Cancel workflow</Button>}
     runnerJobPlanButton={<Button>View plan</Button>}
+    runActionButton={<Button>Run action</Button>}
   />
 )
 

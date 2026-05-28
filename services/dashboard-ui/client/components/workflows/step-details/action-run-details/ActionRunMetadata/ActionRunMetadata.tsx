@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
@@ -12,6 +13,7 @@ import type { IActionRunMetadata } from '../types'
 
 interface IActionRunMetadataPresentation extends IActionRunMetadata {
   orgId: string
+  rerunButton?: ReactNode
 }
 
 export const ActionRunMetadata = ({
@@ -19,6 +21,7 @@ export const ActionRunMetadata = ({
   createdBy,
   step,
   orgId,
+  rerunButton,
 }: IActionRunMetadataPresentation) => {
   const isAdhocActionRun = actionRun?.trigger_type === 'adhoc'
   const firstStep = actionRun?.steps?.at(0)
@@ -90,6 +93,10 @@ export const ActionRunMetadata = ({
             Edit and rerun
             <Icon variant="TerminalWindowIcon" />
           </RunAdhocActionButton>
+        </div>
+      ) : rerunButton ? (
+        <div className="self-end">
+          {rerunButton}
         </div>
       ) : null}
     </div>
