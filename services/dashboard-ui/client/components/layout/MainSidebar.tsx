@@ -51,26 +51,32 @@ export const MainSidebar = ({
           <UserDropdown
             alignment="left"
             className="!w-full"
-            buttonClassName="!w-full"
+            buttonClassName="!w-full !h-[39px]"
+            collapsible
+            isCollapsed={!isSidebarOpen}
             hideOrgSettings={hideOrgContent}
-            icon={<Icon variant="CaretUpIcon" />}
+            icon={isSidebarOpen ? <Icon variant="CaretUpIcon" /> : null}
             position="above"
           />
         </div>
       </div>
-      {isSidebarOpen ? (
-        <TransitionDiv
-          className="flex flex-col gap-0 items-end p-4 fade"
-          isVisible={true}
+      {
+        <div
+          className={cn('grid transition-all ease-cubic duration-fast', {
+            'grid-rows-[1fr] opacity-100': isSidebarOpen,
+            'grid-rows-[0fr] opacity-0': !isSidebarOpen,
+          })}
         >
-          <Text variant="label" theme="neutral">
-            API: <b>{versions?.api?.version}</b>
-          </Text>
-          <Text variant="label" theme="neutral">
-            UI: <b>{versions?.ui?.version}</b>
-          </Text>
-        </TransitionDiv>
-      ) : null}
+          <div className="flex flex-col items-end p-4 overflow-hidden">
+            <Text variant="label" theme="neutral">
+              API: <b>{versions?.api?.version}</b>
+            </Text>
+            <Text variant="label" theme="neutral">
+              UI: <b>{versions?.ui?.version}</b>
+            </Text>
+          </div>
+        </div>
+      }
     </aside>
   )
 }
