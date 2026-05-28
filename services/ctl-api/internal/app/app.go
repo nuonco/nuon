@@ -48,6 +48,7 @@ type App struct {
 	Components                 []Component            `faker:"components" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"components,omitzero,omitempty"`
 	Installs                   []Install              `faker:"-" json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"installs,omitzero,omitempty"`
 	ActionWorkflows            []ActionWorkflow       `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"action_workflows,omitzero,omitempty"`
+	Runbooks                   []Runbook              `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"runbooks,omitzero,omitempty"`
 	AppBranches                []AppBranch            `json:"-" swaggerignore:"true" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branches,omitzero,omitempty"`
 	AppInputConfigs            []AppInputConfig       `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_input_configs,omitzero,omitempty"`
 	AppPermissionsConfigs      []AppPermissionsConfig `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_permissions_config,omitzero,omitempty"`

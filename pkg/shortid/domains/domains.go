@@ -453,3 +453,23 @@ func NewSlackChannelSubscriptionID() string {
 func NewSlackThreadAnchorID() string {
 	return shortid.NewNanoID("sta")
 }
+
+func NewRunbookID() string {
+	return shortid.NewNanoID("rbk")
+}
+
+func NewRunbookConfigID() string {
+	return shortid.NewNanoID("rbc")
+}
+
+func NewRunbookStepConfigID() string {
+	return shortid.NewNanoID("rbs")
+}
+
+func NewInstallRunbookID() string {
+	return shortid.NewNanoID("irb")
+}
+
+func NewInstallRunbookRunID() string {
+	return shortid.NewNanoID("irr")
+}
