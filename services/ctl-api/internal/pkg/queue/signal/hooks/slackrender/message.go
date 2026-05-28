@@ -176,15 +176,69 @@ func buildParent(e Event, startedAt, now time.Time) Message {
 // intentionally NOT appended here: both already appear as chips in the
 // context block below, and inlining them turns the headline into noise
 // like "Workflow step — bdoans _(provision)_".
+//
+// The parent message is rewritten on every event (BuildParentRollup), so
+// the title must anchor on the workflow's identity rather than the
+// triggering event's step — otherwise the parent's headline swaps to the
+// latest step name and readers lose the "what workflow am I in" anchor.
 func parentHeadline(e Event) string {
-	icon := subjectIcon(e)
-	title := headerTitle(e)
+	icon := workflowSubjectIcon(e)
+	title := workflowHeaderTitle(e)
 	headline := strings.TrimSpace(strings.Join(nonEmpty(icon, title), " "))
 	headline = "*" + slackEscape(headline) + "*"
-	if subj := subjectLabel(e); subj != "" && !strings.EqualFold(subj, title) {
+	if subj := workflowSubjectLabel(e); subj != "" {
 		headline = headline + " — " + slackEscape(subj)
 	}
 	return headline
+}
+
+// workflowSubjectLabel returns a workflow-scoped subject for the parent
+// headline. For runbook_run workflows that is the runbook's name; other
+// workflow types return "" so the headline stays the workflow title alone.
+func workflowSubjectLabel(e Event) string {
+	if e.Workflow.Type == WorkflowTypeRunbookRun && e.Workflow.RunbookName != "" {
+		return e.Workflow.RunbookName
+	}
+	return ""
+}
+
+// workflowHeaderTitle returns the title for the parent message — always
+// derived from the workflow type, ignoring any step in the event.
+func workflowHeaderTitle(e Event) string {
+	if title := titleFromWorkflowType(e.Workflow.Type); title != "" {
+		return title
+	}
+	if e.Workflow.Type != "" {
+		return e.Workflow.Type
+	}
+	return "Workflow"
+}
+
+// workflowSubjectIcon returns the icon for the parent message — always
+// derived from the workflow type, ignoring any step in the event.
+func workflowSubjectIcon(e Event) string {
+	switch e.Workflow.Type {
+	case WorkflowTypeProvision,
+		WorkflowTypeReprovision,
+		WorkflowTypeDeprovision,
+		WorkflowTypeInputUpdate,
+		WorkflowTypeSyncSecrets:
+		return "🏗"
+	case WorkflowTypeDeprovisionSandbox,
+		WorkflowTypeReprovisionSandbox:
+		return "📦"
+	case WorkflowTypeManualDeploy,
+		WorkflowTypeDeployComponents,
+		WorkflowTypeTeardownComponent,
+		WorkflowTypeTeardownComponents,
+		WorkflowTypeDriftRun:
+		return "🧩"
+	case WorkflowTypeActionWorkflowRun:
+		return "🏃"
+	case WorkflowTypeRunbookRun:
+		return "📒"
+	}
+	return ""
 }
 
 // parentStatusLine renders the second line in the section block: the
@@ -354,6 +408,8 @@ func subjectIcon(e Event) string {
 		return "🧩"
 	case WorkflowTypeActionWorkflowRun:
 		return "🏃"
+	case WorkflowTypeRunbookRun:
+		return "📒"
 	}
 	return ""
 }

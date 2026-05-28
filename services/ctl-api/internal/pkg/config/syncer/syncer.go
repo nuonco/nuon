@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/appconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
@@ -32,6 +33,7 @@ type syncer struct {
 	cfg              *config.AppConfig
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
+	runbooksHelpers  *runbookshelpers.Helpers
 
 	appID       string
 	appConfigID string
@@ -53,12 +55,13 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
+func NewDBSyncer(db *gorm.DB, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
 	return &syncer{
 		db:               db,
 		cfg:              cfg,
 		componentHelpers: componentHelpers,
 		actionsHelpers:   actionsHelpers,
+		runbooksHelpers:  runbooksHelpers,
 		appID:            appID,
 		appConfigID:      appConfigID,
 		state:            nil, // will be populated by fetchState()
@@ -106,12 +109,14 @@ func (s *syncer) Sync(ctx context.Context) error {
 		AppID:      s.appID,
 		Components: []sync.ComponentState{},
 		Actions:    []sync.ActionState{},
+		Runbooks:   []sync.RunbookState{},
 	}
 
 	// Initialize prevState for orphaned resource tracking
 	s.prevState = &sync.State{
 		Components: []sync.ComponentState{},
 		Actions:    []sync.ActionState{},
+		Runbooks:   []sync.RunbookState{},
 	}
 
 	// Build sync steps
@@ -234,6 +239,28 @@ func (s *syncer) syncSteps() []syncStep {
 			Resource: fmt.Sprintf("action-sync-%s", a.Name),
 			Method: func(ctx context.Context) error {
 				return s.syncAction(ctx, a)
+			},
+		})
+	}
+
+	// Ensure all runbooks exist (with full initialization: install runbooks)
+	for _, runbook := range s.cfg.Runbooks {
+		r := runbook // Capture loop variable
+		steps = append(steps, syncStep{
+			Resource: fmt.Sprintf("runbook-ensure-%s", r.Name),
+			Method: func(ctx context.Context) error {
+				return s.ensureRunbook(ctx, r)
+			},
+		})
+	}
+
+	// Sync runbook configurations
+	for _, runbook := range s.cfg.Runbooks {
+		r := runbook // Capture loop variable
+		steps = append(steps, syncStep{
+			Resource: fmt.Sprintf("runbook-sync-%s", r.Name),
+			Method: func(ctx context.Context) error {
+				return s.syncRunbook(ctx, r)
 			},
 		})
 	}

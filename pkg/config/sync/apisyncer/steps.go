@@ -5,8 +5,20 @@ import (
 	"fmt"
 )
 
-func (s *syncer) syncSteps() ([]syncStep, error) {
-	steps := []syncStep{
+// syncPhases returns the ordered list of sync phases. Steps within a phase
+// are independent of each other and run concurrently; phases run
+// sequentially relative to each other.
+//
+// Phase order:
+//  1. top-level app config (inputs, sandbox, permissions, etc.) — independent
+//  2. ensure all components — must finish before any component sync, since
+//     sync paths read component IDs created during ensure
+//  3. sync all components (including their configs / build scheduling)
+//  4. actions
+//  5. runbooks (depend on actions existing in the API so step refs by name
+//     resolve cleanly)
+func (s *syncer) syncPhases() ([][]syncStep, error) {
+	topLevel := []syncStep{
 		{
 			Resource: "app",
 			Method: func(ctx context.Context) error {
@@ -76,54 +88,57 @@ func (s *syncer) syncSteps() ([]syncStep, error) {
 		},
 	}
 
-	// ensure all components
+	ensureComponents := make([]syncStep, 0, len(s.cfg.Components))
+	syncComponents := make([]syncStep, 0, len(s.cfg.Components))
 	for _, comp := range s.cfg.Components {
+		comp := comp
 		resourceName := fmt.Sprintf("component-%s", comp.Name)
-		steps = append(steps, syncStep{
+		ensureComponents = append(ensureComponents, syncStep{
 			Resource: resourceName,
 			Method: func(ctx context.Context) error {
-				err := s.ensureComponent(ctx, resourceName, comp)
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return s.ensureComponent(ctx, resourceName, comp)
 			},
 		})
-	}
-
-	// sync all components and their configs
-	for _, comp := range s.cfg.Components {
-		resourceName := fmt.Sprintf("component-%s", comp.Name)
-		steps = append(steps, syncStep{
+		syncComponents = append(syncComponents, syncStep{
 			Resource: resourceName,
 			Method: func(ctx context.Context) error {
 				_, err := s.syncComponent(ctx, resourceName, comp)
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return err
 			},
 		})
 	}
 
+	actions := make([]syncStep, 0, len(s.cfg.Actions))
 	for _, action := range s.cfg.Actions {
 		obj := action
-
 		resourceName := fmt.Sprintf("action-%s", obj.Name)
-		steps = append(steps, syncStep{
+		actions = append(actions, syncStep{
 			Resource: resourceName,
 			Method: func(ctx context.Context) error {
 				_, _, err := s.syncAction(ctx, resourceName, obj)
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return err
 			},
 		})
 	}
 
-	return steps, nil
+	runbooks := make([]syncStep, 0, len(s.cfg.Runbooks))
+	for _, runbook := range s.cfg.Runbooks {
+		obj := runbook
+		resourceName := fmt.Sprintf("runbook-%s", obj.Name)
+		runbooks = append(runbooks, syncStep{
+			Resource: resourceName,
+			Method: func(ctx context.Context) error {
+				_, _, err := s.syncRunbook(ctx, resourceName, obj)
+				return err
+			},
+		})
+	}
+
+	return [][]syncStep{
+		topLevel,
+		ensureComponents,
+		syncComponents,
+		actions,
+		runbooks,
+	}, nil
 }

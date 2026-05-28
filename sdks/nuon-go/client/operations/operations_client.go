@@ -260,6 +260,12 @@ type ClientService interface {
 
 	CreatePulumiComponentConfig(params *CreatePulumiComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreatePulumiComponentConfigCreated, error)
 
+	CreateRunbook(params *CreateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookCreated, error)
+
+	CreateRunbookConfig(params *CreateRunbookConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookConfigCreated, error)
+
+	CreateRunbookRun(params *CreateRunbookRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookRunCreated, error)
+
 	CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error)
 
 	CreateSlackChannelSubscription(params *CreateSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateSlackChannelSubscriptionCreated, error)
@@ -301,6 +307,8 @@ type ClientService interface {
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
 
 	DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error)
+
+	DeleteRunbook(params *DeleteRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRunbookOK, error)
 
 	DeleteSlackChannelSubscription(params *DeleteSlackChannelSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteSlackChannelSubscriptionNoContent, error)
 
@@ -558,6 +566,14 @@ type ClientService interface {
 
 	GetInstallRoles(params *GetInstallRolesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRolesOK, error)
 
+	GetInstallRunbook(params *GetInstallRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbookOK, error)
+
+	GetInstallRunbookRun(params *GetInstallRunbookRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbookRunOK, error)
+
+	GetInstallRunbookRuns(params *GetInstallRunbookRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbookRunsOK, error)
+
+	GetInstallRunbooks(params *GetInstallRunbooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbooksOK, error)
+
 	GetInstallRunnerGroup(params *GetInstallRunnerGroupParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunnerGroupOK, error)
 
 	GetInstallSandboxRun(params *GetInstallSandboxRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallSandboxRunOK, error)
@@ -645,6 +661,12 @@ type ClientService interface {
 	GetQueueSignals(params *GetQueueSignalsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueSignalsOK, error)
 
 	GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetQueueStatusOK, error)
+
+	GetRunbook(params *GetRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookOK, error)
+
+	GetRunbookConfigs(params *GetRunbookConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookConfigsOK, error)
+
+	GetRunbooks(params *GetRunbooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbooksOK, error)
 
 	GetRunnerCardDetails(params *GetRunnerCardDetailsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunnerCardDetailsOK, error)
 
@@ -835,6 +857,8 @@ type ClientService interface {
 	UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error)
 
 	UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgFeaturesOK, error)
+
+	UpdateRunbook(params *UpdateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunbookOK, error)
 
 	UpdateRunnerMng(params *UpdateRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunnerMngCreated, error)
 
@@ -4226,6 +4250,138 @@ func (a *Client) CreatePulumiComponentConfig(params *CreatePulumiComponentConfig
 }
 
 /*
+CreateRunbook creates a runbook for an app
+*/
+func (a *Client) CreateRunbook(params *CreateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRunbookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRunbook",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/runbooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRunbookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRunbookCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRunbook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateRunbookConfig creates a runbook config
+*/
+func (a *Client) CreateRunbookConfig(params *CreateRunbookConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRunbookConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRunbookConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/runbooks/{runbook_id}/configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRunbookConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRunbookConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRunbookConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateRunbookRun runs a runbook on an install
+*/
+func (a *Client) CreateRunbookRun(params *CreateRunbookRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunbookRunCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateRunbookRunParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateRunbookRun",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/runbooks/{runbook_id}/runs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateRunbookRunReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateRunbookRunCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateRunbookRun: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateRunnerBootstrapToken creates a bootstrap token for an install s runner
 */
 func (a *Client) CreateRunnerBootstrapToken(params *CreateRunnerBootstrapTokenParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateRunnerBootstrapTokenCreated, error) {
@@ -5183,6 +5339,50 @@ func (a *Client) DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteOrg: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteRunbook deletes a runbook
+*/
+func (a *Client) DeleteRunbook(params *DeleteRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteRunbookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteRunbookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteRunbook",
+		Method:             "DELETE",
+		PathPattern:        "/v1/apps/{app_id}/runbooks/{runbook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteRunbookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteRunbookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteRunbook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11179,6 +11379,182 @@ func (a *Client) GetInstallRoles(params *GetInstallRolesParams, authInfo runtime
 }
 
 /*
+GetInstallRunbook gets an install runbook
+*/
+func (a *Client) GetInstallRunbook(params *GetInstallRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunbookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunbook",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runbooks/{runbook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunbookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunbookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunbook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallRunbookRun gets a runbook run
+*/
+func (a *Client) GetInstallRunbookRun(params *GetInstallRunbookRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbookRunOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunbookRunParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunbookRun",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runbook-runs/{run_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunbookRunReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunbookRunOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunbookRun: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallRunbookRuns gets runbook runs for an install
+*/
+func (a *Client) GetInstallRunbookRuns(params *GetInstallRunbookRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbookRunsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunbookRunsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunbookRuns",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runbook-runs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunbookRunsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunbookRunsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunbookRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallRunbooks gets runbooks for an install
+*/
+func (a *Client) GetInstallRunbooks(params *GetInstallRunbooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallRunbooksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallRunbooksParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallRunbooks",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/runbooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallRunbooksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallRunbooksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallRunbooks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallRunnerGroup gets an install s runner group
 
 Return the runner group, including runners and settings for the provided install.
@@ -13195,6 +13571,138 @@ func (a *Client) GetQueueStatus(params *GetQueueStatusParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetQueueStatus: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunbook gets a runbook
+*/
+func (a *Client) GetRunbook(params *GetRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunbookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunbook",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/runbooks/{runbook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunbookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunbookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunbook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunbookConfigs gets runbook configs
+*/
+func (a *Client) GetRunbookConfigs(params *GetRunbookConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbookConfigsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunbookConfigsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunbookConfigs",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/runbooks/{runbook_id}/configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunbookConfigsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunbookConfigsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunbookConfigs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRunbooks gets runbooks for an app
+*/
+func (a *Client) GetRunbooks(params *GetRunbooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetRunbooksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetRunbooksParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRunbooks",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/runbooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRunbooksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetRunbooksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRunbooks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17565,6 +18073,50 @@ func (a *Client) UpdateOrgFeatures(params *UpdateOrgFeaturesParams, authInfo run
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateOrgFeatures: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateRunbook updates a runbook
+*/
+func (a *Client) UpdateRunbook(params *UpdateRunbookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateRunbookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateRunbookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateRunbook",
+		Method:             "PATCH",
+		PathPattern:        "/v1/apps/{app_id}/runbooks/{runbook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateRunbookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateRunbookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateRunbook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
