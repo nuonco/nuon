@@ -55,10 +55,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	wkflw, err := activities.AwaitCreateWorkflow(ctx, activities.CreateWorkflowRequest{
-		InstallID:    s.InstallID,
-		WorkflowType: app.WorkflowTypeDriftRunReprovisionSandbox,
-		PlanOnly:     true,
-		Metadata:     map[string]string{},
+		InstallID:      s.InstallID,
+		WorkflowType:   app.WorkflowTypeDriftRunReprovisionSandbox,
+		PlanOnly:       true,
+		Metadata:       map[string]string{},
+		IdempotencyKey: workflow.GetInfo(ctx).WorkflowExecution.RunID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create sandbox drift workflow: %w", err)

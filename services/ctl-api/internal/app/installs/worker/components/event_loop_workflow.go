@@ -149,6 +149,7 @@ func (w *Workflows) DriftCheck(ctx workflow.Context, req *DriftRequest) error {
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       "false",
 		},
+		IdempotencyKey: workflow.GetInfo(ctx).WorkflowExecution.RunID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create workflow: %w", err)

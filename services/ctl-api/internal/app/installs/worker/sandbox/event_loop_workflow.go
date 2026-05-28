@@ -97,10 +97,11 @@ func driftWorkflowID(installID string) string {
 
 func (w *Workflows) DriftCheckSandbox(ctx workflow.Context, req *DriftRequest) error {
 	wkflw, err := activities.AwaitCreateWorkflow(ctx, activities.CreateWorkflowRequest{
-		InstallID:    req.InstallID,
-		WorkflowType: app.WorkflowTypeDriftRunReprovisionSandbox,
-		Metadata:     map[string]string{},
-		PlanOnly:     true,
+		InstallID:      req.InstallID,
+		WorkflowType:   app.WorkflowTypeDriftRunReprovisionSandbox,
+		Metadata:       map[string]string{},
+		PlanOnly:       true,
+		IdempotencyKey: workflow.GetInfo(ctx).WorkflowExecution.RunID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to create workflow: %w", err)
