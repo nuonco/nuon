@@ -114,17 +114,17 @@ type GetWorkflowsParams struct {
 	*/
 	Planonly *bool
 
+	/* Search.
+
+	   case-insensitive substring match against workflow id, type, and metadata (component / action / runbook name)
+	*/
+	Search *string
+
 	/* Type.
 
 	   filter by workflow type
 	*/
 	Type *string
-
-	/* Search.
-
-	   case-insensitive substring match against workflow id, type, and metadata
-	*/
-	Search *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -287,17 +287,6 @@ func (o *GetWorkflowsParams) SetPlanonly(planonly *bool) {
 	o.Planonly = planonly
 }
 
-// WithType adds the typeVar to the get workflows params
-func (o *GetWorkflowsParams) WithType(typeVar *string) *GetWorkflowsParams {
-	o.SetType(typeVar)
-	return o
-}
-
-// SetType adds the type to the get workflows params
-func (o *GetWorkflowsParams) SetType(typeVar *string) {
-	o.Type = typeVar
-}
-
 // WithSearch adds the search to the get workflows params
 func (o *GetWorkflowsParams) WithSearch(search *string) *GetWorkflowsParams {
 	o.SetSearch(search)
@@ -307,6 +296,17 @@ func (o *GetWorkflowsParams) WithSearch(search *string) *GetWorkflowsParams {
 // SetSearch adds the search to the get workflows params
 func (o *GetWorkflowsParams) SetSearch(search *string) {
 	o.Search = search
+}
+
+// WithType adds the typeVar to the get workflows params
+func (o *GetWorkflowsParams) WithType(typeVar *string) *GetWorkflowsParams {
+	o.SetType(typeVar)
+	return o
+}
+
+// SetType adds the type to the get workflows params
+func (o *GetWorkflowsParams) SetType(typeVar *string) {
+	o.Type = typeVar
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -441,23 +441,6 @@ func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		}
 	}
 
-	if o.Type != nil {
-
-		// query param type
-		var qrType string
-
-		if o.Type != nil {
-			qrType = *o.Type
-		}
-		qType := qrType
-		if qType != "" {
-
-			if err := r.SetQueryParam("type", qType); err != nil {
-				return err
-			}
-		}
-	}
-
 	if o.Search != nil {
 
 		// query param search
@@ -470,6 +453,23 @@ func (o *GetWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		if qSearch != "" {
 
 			if err := r.SetQueryParam("search", qSearch); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Type != nil {
+
+		// query param type
+		var qrType string
+
+		if o.Type != nil {
+			qrType = *o.Type
+		}
+		qType := qrType
+		if qType != "" {
+
+			if err := r.SetQueryParam("type", qType); err != nil {
 				return err
 			}
 		}
