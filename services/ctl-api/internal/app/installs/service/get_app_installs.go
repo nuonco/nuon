@@ -18,7 +18,7 @@ import (
 // @Summary				get all installs for an app
 // @Description.markdown	get_app_installs.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param					q							query	string	false	"search query"
+// @Param					q							query	string	false	"search query to filter installs by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -82,7 +82,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string
 		Scopes(labels.WithLabels("labels", lbls))
 
 	if q != "" {
-		tx = tx.Where("name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("name ILIKE ? OR installs.id = ?", "%"+q+"%", q)
 	}
 
 	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).

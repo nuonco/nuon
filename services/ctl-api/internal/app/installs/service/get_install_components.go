@@ -19,7 +19,7 @@ import (
 // @Description.markdown	get_install_components.md
 // @Param					install_id					path	string	true	"install ID"
 // @Param					types						query	string	false	"component types to filter by"
-// @Param         q					query	string	false	"search query for component name"
+// @Param         q					query	string	false	"search query for component name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
@@ -68,7 +68,7 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, ty
 
 	if q != "" {
 		tx = tx.
-			Where("components.name ILIKE ?", "%"+q+"%")
+			Where("components.name ILIKE ? OR components.id = ?", "%"+q+"%", q)
 	}
 
 	tx = tx.Preload("Component").

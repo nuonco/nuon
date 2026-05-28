@@ -102,7 +102,7 @@ type GetAppComponentsParams struct {
 
 	/* Q.
 
-	   search query to filter components by name
+	   search query to filter components by name or ID
 	*/
 	Q *string
 
