@@ -2,7 +2,7 @@ import React from 'react'
 import { cn } from '@/utils/classnames'
 import { getInitials } from '@/utils/string-utils'
 
-type TAvatarSizeKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+type TAvatarSizeKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | "sidebar"
 type TAvatarSize = { tw: string; px: number }
 
 const AVATAR_SIZES: Record<TAvatarSizeKey, TAvatarSize> = {
@@ -11,6 +11,7 @@ const AVATAR_SIZES: Record<TAvatarSizeKey, TAvatarSize> = {
   md: { tw: 'h-8 w-8 text-base', px: 32 },
   lg: { tw: 'h-9 w-9 text-lg', px: 36 },
   xl: { tw: 'h-10 w-10 text-xl', px: 40 },
+  sidebar: { tw: `h-[35px] w-[35px] text-xl`, px: 35 }
 }
 
 interface IAvatarProps
