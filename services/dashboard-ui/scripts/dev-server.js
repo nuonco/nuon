@@ -55,19 +55,19 @@ await waitForBFF();
 
 // --- CSS-only reload via SSE ---
 
-const cssClients = new Set();
+const cssClients = new Map();
 
-const CSS_PATH = new URL("../dist/assets/styles.css", import.meta.url).pathname;
 if (existsSync(new URL("../dist/assets", import.meta.url).pathname)) {
   let debounce;
   watch(new URL("../dist/assets", import.meta.url).pathname, (event, filename) => {
     if (filename !== "styles.css") return;
     clearTimeout(debounce);
     debounce = setTimeout(() => {
-      for (const c of cssClients) {
+      for (const [c, heartbeat] of cssClients) {
         try {
           c.enqueue("data: css\n\n");
         } catch {
+          clearInterval(heartbeat);
           cssClients.delete(c);
         }
       }
@@ -102,6 +102,7 @@ function servePublic(req) {
 
 Bun.serve({
   port: DEV_PORT,
+  development: true,
   routes: {
     "/__dev/config.js": new Response(configScript, {
       headers: { "content-type": "application/javascript" },
@@ -109,12 +110,22 @@ Bun.serve({
 
     "/__dev/css-reload": (req) => {
       let controller;
+      let heartbeat;
       const stream = new ReadableStream({
         start(c) {
           controller = c;
-          cssClients.add(c);
+          heartbeat = setInterval(() => {
+            try {
+              c.enqueue(": keepalive\n\n");
+            } catch {
+              clearInterval(heartbeat);
+              cssClients.delete(c);
+            }
+          }, 30_000);
+          cssClients.set(c, heartbeat);
         },
         cancel() {
+          clearInterval(heartbeat);
           cssClients.delete(controller);
         },
       });
@@ -172,10 +183,9 @@ const PARENT_PID = process.ppid;
 
 const BFF_CHECK_INTERVAL = 5000;
 let failCount = 0;
-const MAX_FAILURES = 6; // 30s instead of 60s
+const MAX_FAILURES = 6;
 
 setInterval(async () => {
-  // Exit immediately if parent process is gone (orphaned)
   try {
     process.kill(PARENT_PID, 0);
   } catch {
