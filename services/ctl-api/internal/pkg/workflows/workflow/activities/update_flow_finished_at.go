@@ -17,18 +17,15 @@ type UpdateFlowFinishedAtRequest struct {
 // @temporal-gen-v2 activity
 // @by-field ID
 func (a *Activities) PkgWorkflowsFlowUpdateFlowFinishedAt(ctx context.Context, req UpdateFlowFinishedAtRequest) error {
-	runner := app.Workflow{
-		ID: req.ID,
-	}
-	res := a.db.WithContext(ctx).Model(&runner).Updates(app.Workflow{
-		FinishedAt: time.Now(),
-	})
-	if res.Error != nil {
+	// Load-then-Save so Workflow.BeforeSave fires and recomputes name to
+	// the past-tense title once finished_at is set.
+	var runner app.Workflow
+	if err := a.db.WithContext(ctx).Where("id = ?", req.ID).Take(&runner).Error; err != nil {
 		return generics.TemporalGormError(gorm.ErrRecordNotFound)
 	}
-	if res.RowsAffected < 1 {
+	runner.FinishedAt = time.Now()
+	if err := a.db.WithContext(ctx).Save(&runner).Error; err != nil {
 		return generics.TemporalGormError(gorm.ErrRecordNotFound)
 	}
-
 	return nil
 }

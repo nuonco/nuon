@@ -228,13 +228,11 @@ type Workflow struct {
 	// steps represent each piece of the workflow
 	Steps []WorkflowStep `json:"steps,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
 	// Name is the human-readable workflow title shown in the UI (e.g.
-	// "Deploying to install (rds_cluster_temporal)"). It is computed by a
-	// STORED generated column in Postgres — see
-	// migrations.Migration108InstallWorkflowsNameGenerated — so the
-	// expression has one source of truth and Postgres recomputes it
-	// automatically when finished_at or metadata changes. The `-:migration`
-	// tag tells gorm AutoMigrate not to create a regular column for it.
-	Name string `json:"name,omitzero" gorm:"-:migration;->;column:name" temporaljson:"name,omitzero,omitempty"`
+	// "Deploying to install (rds_cluster_temporal)"). Populated by
+	// BeforeSave via computeWorkflowName — callers that mutate Type,
+	// Metadata, or FinishedAt must go through GORM (Save / struct-based
+	// Updates) so the hook fires.
+	Name string `json:"name,omitzero" gorm:"column:name;index" temporaljson:"name,omitzero,omitempty"`
 
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 
@@ -263,7 +261,13 @@ func (i *Workflow) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// BeforeSave keeps install_workflows.name in sync with computeWorkflowName.
+// Callers that mutate type, metadata, or finished_at must pass a fully
+// populated struct (load-then-Save) so this hook can see the post-update
+// state. Partial Updates(map / struct-with-only-finished_at) and raw SQL
+// bypass the hook's view and will leave name stale.
 func (i *Workflow) BeforeSave(tx *gorm.DB) error {
+	i.Name = computeWorkflowName(i)
 	return nil
 }
 
@@ -297,11 +301,6 @@ func (r *Workflow) AfterQuery(tx *gorm.DB) error {
 
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()
-
-	// Name is populated by Postgres via a STORED generated column — see
-	// migrations.Migration108InstallWorkflowsNameGenerated. WorkflowType.Name
-	// and WorkflowType.PastTenseName remain for callers that need the title
-	// without hitting the database.
 
 	return nil
 }

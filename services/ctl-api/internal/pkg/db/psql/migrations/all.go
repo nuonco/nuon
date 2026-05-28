@@ -105,8 +105,8 @@ func (m *Migrations) All() []migrations.Migration {
 			Fn:   m.Migration107BackfillEmitterSignalExpiresIn,
 		},
 		{
-			Name: "108-install-workflows-name-generated",
-			Fn:   m.Migration108InstallWorkflowsNameGenerated,
+			Name: "108-install-workflows-name-hook-managed",
+			Fn:   m.Migration108InstallWorkflowsNameHookManaged,
 		},
 	}
 }
