@@ -22,6 +22,8 @@ import { DeployOutputsTab } from './deploy-tabs/DeployOutputsTab'
 import { DeployManifestTab } from './deploy-tabs/DeployManifestTab'
 import { DeployArtifactTab } from './deploy-tabs/DeployArtifactTab'
 import { ActionDetail } from './ActionDetail'
+import { Runbooks } from './Runbooks'
+import { RunbookDetail } from './RunbookDetail'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
@@ -111,6 +113,11 @@ export const installRoutes: RouteObject[] = [
       {
         path: ':orgId/installs/:installId/actions/:actionId',
         element: <ActionDetail />,
+      },
+      { path: ':orgId/installs/:installId/runbooks', element: <Runbooks /> },
+      {
+        path: ':orgId/installs/:installId/runbooks/:runbookId',
+        element: <RunbookDetail />,
       },
       {
         path: ':orgId/installs/:installId/actions/:actionId/runs',
