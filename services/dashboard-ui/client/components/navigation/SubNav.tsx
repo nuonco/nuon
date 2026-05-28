@@ -75,20 +75,31 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             i === 0 ? null : (
               <div
                 key={`section-${item.label}`}
-                className={cn('hidden md:flex items-center gap-2', {
-                  'px-3 mt-2 mb-0.5': isPageSidebarOpen,
-                  'mx-2 mt-4 mb-1': !isPageSidebarOpen,
-                })}
-              >
-                {isPageSidebarOpen && (
-                  <Text
-                    variant="label"
-                    theme="neutral"
-                    className="shrink-0 font-mono uppercase tracking-wider text-[10px]"
-                  >
-                    {item.label}
-                  </Text>
+                className={cn(
+                  'hidden md:flex items-center transition-all duration-fast ease-cubic',
+                  {
+                    'px-3 mt-2 mb-0.5': isPageSidebarOpen,
+                    'mx-2 mt-4 mb-1': !isPageSidebarOpen,
+                  }
                 )}
+              >
+                <Text
+                  variant="label"
+                  theme="neutral"
+                  family="mono"
+                  className={cn(
+                    'uppercase tracking-wider text-[10px] !grid duration-fast transition-all ease-cubic',
+                    {
+                      'md:grid-cols-[1fr] md:opacity-100 mr-2':
+                        isPageSidebarOpen,
+                      'md:grid-cols-[0fr] md:opacity-0 mr-0':
+                        !isPageSidebarOpen,
+                    }
+                  )}
+                >
+                  <span className="overflow-hidden">{item.label}</span>
+                </Text>
+
                 <div className="h-px flex-1 bg-cool-grey-200 dark:bg-white/10" />
               </div>
             )
@@ -97,6 +108,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
           )
         )}
       </nav>
+
       <div
         ref={handleRef}
         className={cn(
@@ -132,12 +144,7 @@ export const SubNav = ({ basePath, links }: ISubNav) => {
             position="right"
             tipContent={
               <div className="w-fit">
-                <Text
-                  flex
-                  nowrap
-                  className="gap-2"
-                  variant="subtext"
-                >
+                <Text flex nowrap className="gap-2" variant="subtext">
                   {isPageSidebarOpen ? 'Collapse' : 'Expand'} sidebar
                   <span className="inline-flex gap-0.5">
                     <Badge variant="code" size="sm">
