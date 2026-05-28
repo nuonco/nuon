@@ -22,6 +22,11 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
+	// Start the background CAN listener to detect unbounded history growth
+	// and entity deletion. It sets e.restarted or e.stopped which the
+	// mode-specific loops pick up on their next check interval.
+	e.startCANListener(ctx)
+
 	// Fetch the emitter from DB and set e.queueID from the authoritative record.
 	emitter, err := e.ensureEmitterActive(ctx)
 	if err != nil {
