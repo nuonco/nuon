@@ -24,6 +24,7 @@ interface IInstallActionRunHeader {
   isAdmin: boolean
   step?: TWorkflowStep
   cancelWorkflowButton: ReactNode
+  runActionButton?: ReactNode
   runnerJobPlanButton?: ReactNode
 }
 
@@ -36,6 +37,7 @@ export const InstallActionRunHeader = ({
   isAdmin,
   step,
   cancelWorkflowButton,
+  runActionButton,
   runnerJobPlanButton,
 }: IInstallActionRunHeader) => {
   return (
@@ -76,6 +78,7 @@ export const InstallActionRunHeader = ({
         <div className="flex items-center gap-4">
           {cancelWorkflowButton}
           {runnerJobPlanButton}
+          {runActionButton}
         </div>
       </div>
 
