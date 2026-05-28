@@ -107,8 +107,22 @@ func (s *HealthTestSuite) makeRequest(method, path string) *httptest.ResponseRec
 	return rr
 }
 
-func (s *HealthTestSuite) TestLivezReturnsValidResponse() {
+func (s *HealthTestSuite) TestLivezReturnsOK() {
 	rr := s.makeRequest(http.MethodGet, "/livez")
+
+	require.Equal(s.T(), http.StatusOK, rr.Code)
+
+	var response map[string]any
+	err := json.Unmarshal(rr.Body.Bytes(), &response)
+	require.NoError(s.T(), err)
+
+	status, ok := response["status"].(string)
+	require.True(s.T(), ok, "response should have status field")
+	require.Equal(s.T(), "ok", status)
+}
+
+func (s *HealthTestSuite) TestReadyzReturnsValidResponse() {
+	rr := s.makeRequest(http.MethodGet, "/readyz")
 
 	// Should return 200 OK or 207 Multi-Status (degraded)
 	require.Contains(s.T(), []int{http.StatusOK, http.StatusMultiStatus}, rr.Code)
@@ -125,20 +139,6 @@ func (s *HealthTestSuite) TestLivezReturnsValidResponse() {
 	// Response should have degraded array
 	_, ok = response["degraded"].([]any)
 	require.True(s.T(), ok, "response should have degraded field")
-}
-
-func (s *HealthTestSuite) TestReadyzReturnsOK() {
-	rr := s.makeRequest(http.MethodGet, "/readyz")
-
-	require.Equal(s.T(), http.StatusOK, rr.Code)
-
-	var response map[string]any
-	err := json.Unmarshal(rr.Body.Bytes(), &response)
-	require.NoError(s.T(), err)
-
-	status, ok := response["status"].(string)
-	require.True(s.T(), ok, "response should have status field")
-	require.Equal(s.T(), "ok", status)
 }
 
 func (s *HealthTestSuite) TestVersionReturnsVersionInfo() {
