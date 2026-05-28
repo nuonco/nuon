@@ -40,71 +40,81 @@ export const InstallLayout = () => {
   )
 }
 
-const navLinks: TNavItem[] = [
-  { type: 'section', label: 'Overview' },
-  {
-    path: `/`,
-    iconVariant: 'HouseSimpleIcon' as const,
-    text: 'Overview',
-  },
-  {
-    path: `/workflows`,
-    iconVariant: 'TreeStructureIcon' as const,
-    text: 'Workflows',
-  },
-  { type: 'section', label: 'App' },
-  {
-    path: `/components`,
-    iconVariant: 'CardsIcon' as const,
-    text: 'Components',
-  },
-  {
-    path: '/sandbox',
-    iconVariant: 'ShippingContainerIcon' as const,
-    text: 'Sandbox',
-  },
-  {
-    path: `/roles`,
-    iconVariant: 'FileLockIcon' as const,
-    text: 'Roles',
-  },
-  {
-    path: `/actions`,
-    iconVariant: 'TerminalWindowIcon' as const,
-    text: 'Actions',
-  },
-  { type: 'section', label: 'Customer' },
-  {
-    path: `/stacks`,
-    iconVariant: 'StackIcon' as const,
-    text: 'Stacks',
-  },
-  {
-    path: `/policies`,
-    iconVariant: 'ShieldCheckIcon' as const,
-    text: 'Policy reports',
-  },
-  {
-    path: `/inputs`,
-    iconVariant: 'ListChecksIcon' as const,
-    text: 'Current inputs',
-  },
-  {
-    path: `/state`,
-    iconVariant: 'CodeBlockIcon' as const,
-    text: 'View state',
-  },
-  { type: 'section', label: 'Advanced' },
-  {
-    path: `/runner`,
-    iconVariant: 'SneakerMoveIcon' as const,
-    text: 'Install runner',
-  },
-]
-
 const InstallTemplate = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const hasRunbooks = !!org?.features?.runbooks
+
+  const navLinks: TNavItem[] = [
+    { type: 'section', label: 'Overview' },
+    {
+      path: `/`,
+      iconVariant: 'HouseSimpleIcon' as const,
+      text: 'Overview',
+    },
+    {
+      path: `/workflows`,
+      iconVariant: 'TreeStructureIcon' as const,
+      text: 'Workflows',
+    },
+    { type: 'section', label: 'App' },
+    {
+      path: `/components`,
+      iconVariant: 'CardsIcon' as const,
+      text: 'Components',
+    },
+    {
+      path: '/sandbox',
+      iconVariant: 'ShippingContainerIcon' as const,
+      text: 'Sandbox',
+    },
+    {
+      path: `/roles`,
+      iconVariant: 'FileLockIcon' as const,
+      text: 'Roles',
+    },
+    {
+      path: `/actions`,
+      iconVariant: 'TerminalWindowIcon' as const,
+      text: 'Actions',
+    },
+    ...(hasRunbooks
+      ? [
+          {
+            path: `/runbooks`,
+            iconVariant: 'BookOpenTextIcon' as const,
+            text: 'Runbooks',
+          },
+        ]
+      : []),
+    { type: 'section', label: 'Customer' },
+    {
+      path: `/stacks`,
+      iconVariant: 'StackIcon' as const,
+      text: 'Stacks',
+    },
+    {
+      path: `/policies`,
+      iconVariant: 'ShieldCheckIcon' as const,
+      text: 'Policy reports',
+    },
+    {
+      path: `/inputs`,
+      iconVariant: 'ListChecksIcon' as const,
+      text: 'Current inputs',
+    },
+    {
+      path: `/state`,
+      iconVariant: 'CodeBlockIcon' as const,
+      text: 'View state',
+    },
+    { type: 'section', label: 'Advanced' },
+    {
+      path: `/runner`,
+      iconVariant: 'SneakerMoveIcon' as const,
+      text: 'Install runner',
+    },
+  ]
   const isChildRoute = !!useMatch('/:orgId/installs/:installId/:section/:rest/*')
 
   if (!install) return null

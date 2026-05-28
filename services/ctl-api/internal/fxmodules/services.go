@@ -16,6 +16,7 @@ import (
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
 	queuesservice "github.com/nuonco/nuon/services/ctl-api/internal/app/queues/service"
+	runbooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/service"
 	runnerauthservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runner-auth/service"
 	runnersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/service"
 	slackservice "github.com/nuonco/nuon/services/ctl-api/internal/app/slack/service"
@@ -49,6 +50,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(policyreportsservice.New)),
 	fx.Provide(api.AsService(queuesservice.New)),
 	// fx.Provide(api.AsService(releasesservice.New)), // removed - releases being deprecated
+	fx.Provide(api.AsService(runbooksservice.New)),
 	fx.Provide(api.AsService(runnerauthservice.New)),
 	fx.Provide(runnersservice.NewRunnerHeartbeatCache),
 	fx.Provide(api.AsService(runnersservice.New)),

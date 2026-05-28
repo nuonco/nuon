@@ -36,6 +36,7 @@ const AppTemplate = () => {
   const { app } = useApp()
   const isChildRoute = !!useMatch('/:orgId/apps/:appId/:section/:rest/*')
   const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
+  const hasRunbooks = !!org?.features?.runbooks
 
   if (!app) return null
 
@@ -48,6 +49,11 @@ const AppTemplate = () => {
     },
     { path: `/components`, iconVariant: 'CardsIcon' as const, text: 'Components' },
     { path: `/actions`, iconVariant: 'TerminalWindowIcon' as const, text: 'Actions' },
+    hasRunbooks && {
+      path: `/runbooks`,
+      iconVariant: 'BookOpenTextIcon' as const,
+      text: 'Runbooks',
+    },
     hasAppBranchesUI && {
       path: `/branches`,
       iconVariant: 'GitBranchIcon' as const,

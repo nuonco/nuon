@@ -134,7 +134,7 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		}
 	}
 
-	s.state.Actions = append(s.state.Actions, sync.ActionState{
+	s.appendActionState(sync.ActionState{
 		Name: action.Name,
 		ID:   actionWorkflow.ID,
 	})
