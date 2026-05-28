@@ -81,7 +81,7 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 		}
 	}
 
-	s.state.Runbooks = append(s.state.Runbooks, sync.RunbookState{
+	s.appendRunbookState(sync.RunbookState{
 		Name: runbook.Name,
 		ID:   savedRunbook.ID,
 	})
