@@ -112,7 +112,7 @@ export const RunbooksTable = ({ data, isLoading, pagination }: IRunbooksTable) =
         emptyMessage: 'Runbooks let you define operational procedures for your installs.',
       }}
       pagination={pagination}
-      searchPlaceholder="Search runbook name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }

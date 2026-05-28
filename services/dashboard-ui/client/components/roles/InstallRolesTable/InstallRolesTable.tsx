@@ -129,7 +129,7 @@ export const InstallRolesTable = ({
       data={roles}
       isLoading={isLoading}
       pagination={pagination}
-      searchPlaceholder="Search role name..."
+      searchPlaceholder="Search by name or ID..."
       emptyMessage="No roles found"
     />
   )
