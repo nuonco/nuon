@@ -46,7 +46,7 @@ type SandboxRunPlan struct {
 
 	Hooks *TerraformDeployHooks `json:"hooks"`
 
-	Policies          map[string]string `json:"policies"`
+	Policies           map[string]string `json:"policies"`
 	KyvernoPoliciesDir string            `json:"kyverno_policies_dir,omitempty"`
 
 	State *state.State `json:"state"`
