@@ -40,6 +40,7 @@ export const InstallActionManualRunModal = ({
 }: IInstallActionManualRunModal) => {
   const config = action?.configs?.[0]
   const envVars = normalizeEnvVars(config?.steps || [])
+  const hasEnvVars = Object.keys(envVars).length > 0
 
   const [customVars, setCustomVars] = useState<number[]>([])
   const formRef = useRef<HTMLFormElement>(null)
@@ -82,7 +83,7 @@ export const InstallActionManualRunModal = ({
   return (
     <Modal
       heading={`Run action ${action?.name}?`}
-      size="default"
+      size="lg"
       primaryActionTrigger={{
         children: isLoading ? (
           <>
@@ -108,6 +109,7 @@ export const InstallActionManualRunModal = ({
           id="action-env-vars"
           heading={<Text weight="strong">Edit environment variables</Text>}
           className="border rounded-md"
+          isOpen={hasEnvVars}
         >
           <div className="p-4 border-t flex flex-col gap-4">
             <Text variant="subtext">
@@ -116,7 +118,7 @@ export const InstallActionManualRunModal = ({
             </Text>
 
             {Object.keys(envVars).length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-4">
                 {Object.keys(envVars).map((envVar) => (
                   <label key={envVar} className="flex flex-col gap-1">
                     <Text variant="label" weight="strong">
@@ -139,7 +141,7 @@ export const InstallActionManualRunModal = ({
                 {customVars.map((cv) => (
                   <fieldset
                     key={cv}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-2 py-2 border-t relative"
+                    className="flex flex-col gap-2 py-2 border-t relative"
                   >
                     <legend className="text-base font-medium pr-2 mb-2 flex items-center justify-between">
                       <span>Custom env var {cv + 1}</span>
