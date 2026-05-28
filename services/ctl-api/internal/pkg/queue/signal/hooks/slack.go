@@ -272,6 +272,21 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		return nil
 	}
 
+	// Suppress the step-succeeded message when the step was rejected or
+	// skipped via an approval. The approval-response signal already posted
+	// a "Rejected" reply, and the wrapping step's lifecycle still reports
+	// success because it processed the rejection cleanly — surfacing
+	// "Succeeded" right after "Rejected" reads as a contradiction.
+	if data.Kind == kindWorkflowStep && data.Transition == transitionSucceeded && event.StepID != "" {
+		if approval, ok := h.enricher.lookupStepApproval(ctx, event.StepID); ok {
+			if resp, ok := h.enricher.lookupApprovalResponse(ctx, approval.ID); ok {
+				if mapApprovalResponseTransition(resp.Type) == transitionRejected {
+					return nil
+				}
+			}
+		}
+	}
+
 	rendered := buildRenderEvent(data)
 
 	// Resolve the entity ids referenced by this event (install / component /
@@ -499,6 +514,15 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 		}
 	}
 
+	// Skip child replies for workflow-kind events. The parent message
+	// itself already renders the workflow's headline + latest status, so
+	// a threaded reply with the same content ("Running runbook —
+	// Started" / "Succeeded") is redundant noise. Step events still post
+	// as children.
+	if rendered.event.Kind == slackrender.KindWorkflow {
+		return nil
+	}
+
 	// Post the child as a threaded reply.
 	childMsg := slackrender.BuildChildMessage(rendered.event)
 	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
@@ -594,6 +618,7 @@ func buildRenderEvent(data lifecycleEventData) renderEvent {
 			OwnerName:      data.Workflow.OwnerName,
 			CreatedByEmail: data.Workflow.CreatedByEmail,
 			CreatedAt:      data.Workflow.CreatedAt,
+			RunbookName:    data.Workflow.RunbookName,
 		},
 	}
 

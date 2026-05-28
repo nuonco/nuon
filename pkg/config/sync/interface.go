@@ -59,6 +59,19 @@ type Syncer interface {
 	// This allows consumers to notify users about removed actions.
 	// This should only be called after a successful Sync() operation.
 	OrphanedActions() map[string]string
+
+	// GetRunbookStateIds returns the IDs of all runbooks that were synced
+	// during the most recent sync operation.
+	//
+	// This should only be called after a successful Sync() operation.
+	GetRunbookStateIds() []string
+
+	// OrphanedRunbooks returns a map of runbook names to IDs for runbooks that
+	// existed in the previous config but are no longer in the current config.
+	//
+	// This allows consumers to notify users about removed runbooks.
+	// This should only be called after a successful Sync() operation.
+	OrphanedRunbooks() map[string]string
 }
 
 // ComponentState represents the synchronized state of a component.

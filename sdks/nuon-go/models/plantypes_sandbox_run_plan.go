@@ -52,6 +52,9 @@ type PlantypesSandboxRunPlan struct {
 	// install id
 	InstallID string `json:"install_id,omitempty"`
 
+	// kyverno policies dir
+	KyvernoPoliciesDir string `json:"kyverno_policies_dir,omitempty"`
+
 	// local archive
 	LocalArchive *PlantypesTerraformLocalArchive `json:"local_archive,omitempty"`
 

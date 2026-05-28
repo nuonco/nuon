@@ -37,5 +37,6 @@ func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeDeprovision:                v2workflows.Deprovision,
 		app.WorkflowTypeDeprovisionSandbox:         v2workflows.DeprovisionSandbox,
 		app.WorkflowTypeSyncSecrets:                v2workflows.SyncSecrets,
+		app.WorkflowTypeRunbookRun:                 v2workflows.RunRunbook,
 	}
 }
