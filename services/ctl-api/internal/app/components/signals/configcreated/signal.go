@@ -44,7 +44,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	build, err := activities.AwaitCreateComponentBuildRecord(ctx, activities.CreateComponentBuildRecordRequest{
-		CreatedByID: cmp.CreatedByID,
 		ComponentID: s.ComponentID,
 		OrgID:       cmp.OrgID,
 	})
