@@ -58,6 +58,7 @@ export const WorkflowTimeline = ({
               </Badge>
             ) : null}
             {workflow?.approval_option === 'prompt' &&
+            workflow?.status?.status !== 'approval-awaiting' &&
             getPendingApprovalCount(workflow) ? (
               <Badge size="sm" theme="warn">
                 Pending approval
