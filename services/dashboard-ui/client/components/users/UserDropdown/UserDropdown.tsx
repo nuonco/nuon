@@ -12,6 +12,8 @@ import { Button } from '@/components/common/Button'
 
 export interface IUserDropdown
   extends Omit<IDropdown, 'buttonText' | 'children' | 'id' | 'variant'> {
+  collapsible?: boolean
+  isCollapsed?: boolean
   hideOrgSettings?: boolean
   isAdmin: boolean
   isNuonEmployee: boolean
@@ -32,6 +34,8 @@ export interface IUserDropdown
 
 export const UserDropdown = ({
   buttonClassName,
+  collapsible,
+  isCollapsed,
   hideOrgSettings,
   isAdmin,
   isNuonEmployee,
@@ -53,7 +57,7 @@ export const UserDropdown = ({
   return (
     <Dropdown
       buttonClassName={cn('text-left !px-px !py-px', buttonClassName)}
-      buttonText={<UserProfile isLoading={isUserLoading} user={user} />}
+      buttonText={<UserProfile collapsible={collapsible} isCollapsed={isCollapsed} isLoading={isUserLoading} user={user} />}
       id="profile"
       variant="ghost"
       {...props}
