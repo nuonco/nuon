@@ -5798,6 +5798,14 @@ export interface components {
       namespace?: string;
       /** @description OCIArtifact reference (set during plan creation, used by runner to pull manifest) */
       oci_artifact?: components["schemas"]["plantypes.OCIArtifactReference"];
+      /**
+       * @description State carries the install state the runner needs to interpolate
+       * nuon template placeholders into the kustomize-produced manifest.yaml
+       * after pulling the OCI artifact. Nil for inline-manifest deploys,
+       * which are pre-rendered planner-side and short-circuit the OCI pull
+       * on the runner. Same shape as SandboxRunPlan.State.
+       */
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
     };
     "plantypes.KubernetesSandboxMode": {
       plan_contents?: string;
