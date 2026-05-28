@@ -34,4 +34,8 @@ else
     echo "Warning: port file not found, falling back to default"
 fi
 
+# Build JS bundle for the Go BFF on :4000 (separate process to avoid
+# interfering with Bun's native HMR on :4001)
+bun run dev:ts &
+
 bun run dev
