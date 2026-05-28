@@ -272,6 +272,21 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		return nil
 	}
 
+	// Suppress the step-succeeded message when the step was rejected or
+	// skipped via an approval. The approval-response signal already posted
+	// a "Rejected" reply, and the wrapping step's lifecycle still reports
+	// success because it processed the rejection cleanly — surfacing
+	// "Succeeded" right after "Rejected" reads as a contradiction.
+	if data.Kind == kindWorkflowStep && data.Transition == transitionSucceeded && event.StepID != "" {
+		if approval, ok := h.enricher.lookupStepApproval(ctx, event.StepID); ok {
+			if resp, ok := h.enricher.lookupApprovalResponse(ctx, approval.ID); ok {
+				if mapApprovalResponseTransition(resp.Type) == transitionRejected {
+					return nil
+				}
+			}
+		}
+	}
+
 	rendered := buildRenderEvent(data)
 
 	// Resolve the entity ids referenced by this event (install / component /
