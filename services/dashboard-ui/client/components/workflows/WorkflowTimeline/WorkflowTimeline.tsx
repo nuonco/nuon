@@ -10,7 +10,6 @@ import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import type { TInstall, TWorkflow } from '@/types'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import {
   getWorkflowBadge,
   getPendingApprovalCount,
@@ -47,10 +46,7 @@ export const WorkflowTimeline = ({
               className="inline-flex gap-2 items-center"
               href={`/${orgId}/installs/${installId}/workflows/${workflow.id}`}
             >
-              {workflow?.type === 'action_workflow_run' &&
-              workflow?.metadata?.adhoc_action
-                ? `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-                : workflow.name || toSentenceCase(snakeToWords(workflow.type))}
+              {workflow.name}
             </Link>
             {workflow?.status?.status === 'in-progress' ? (
               <Badge size="sm" theme="info">

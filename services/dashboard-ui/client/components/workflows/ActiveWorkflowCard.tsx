@@ -9,19 +9,8 @@ import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
 import type { TInstall, TWorkflow } from '@/types'
 import { cn } from '@/utils/classnames'
-import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getPendingApprovalCount } from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
-
-function getWorkflowTitle(workflow: TWorkflow) {
-  if (
-    workflow?.type === 'action_workflow_run' &&
-    workflow?.metadata?.adhoc_action
-  ) {
-    return `Adhoc action run (${workflow?.metadata?.install_action_workflow_name})`
-  }
-  return workflow.name || toSentenceCase(snakeToWords(workflow.type))
-}
 
 export const ActiveWorkflowCard = ({
   workflow,
@@ -70,7 +59,7 @@ export const ActiveWorkflowCard = ({
               {installName} /
             </span>
           )}
-          {getWorkflowTitle(workflow)}
+          {workflow.name}
         </Text>
       </Link>
       {pendingApprovals > 0 &&

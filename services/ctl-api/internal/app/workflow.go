@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -228,7 +227,14 @@ type Workflow struct {
 
 	// steps represent each piece of the workflow
 	Steps []WorkflowStep `json:"steps,omitzero" gorm:"foreignKey:InstallWorkflowID;constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
-	Name  string         `json:"name,omitzero" gorm:"-" temporaljson:"name,omitzero,omitempty"`
+	// Name is the human-readable workflow title shown in the UI (e.g.
+	// "Deploying to install (rds_cluster_temporal)"). It is computed by a
+	// STORED generated column in Postgres — see
+	// migrations.Migration108InstallWorkflowsNameGenerated — so the
+	// expression has one source of truth and Postgres recomputes it
+	// automatically when finished_at or metadata changes. The `-:migration`
+	// tag tells gorm AutoMigrate not to create a regular column for it.
+	Name string `json:"name,omitzero" gorm:"-:migration;->;column:name" temporaljson:"name,omitzero,omitempty"`
 
 	ExecutionTime time.Duration `json:"execution_time,omitzero" gorm:"-" swaggertype:"primitive,integer" temporaljson:"execution_time,omitzero,omitempty"`
 
@@ -292,24 +298,10 @@ func (r *Workflow) AfterQuery(tx *gorm.DB) error {
 	r.ExecutionTime = generics.GetTimeDuration(r.StartedAt, r.FinishedAt)
 	r.Finished = !r.FinishedAt.IsZero()
 
-	name := r.Type.Name()
-	if !r.FinishedAt.IsZero() {
-		name = r.Type.PastTenseName()
-	}
-	r.Name = name
-	if component_name, ok := r.Metadata[WorkflowMetadataKeyWorkflowNameSuffix]; ok {
-		r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(component_name))
-	}
-	if r.Type == WorkflowTypeActionWorkflowRun {
-		if actionName, ok := r.Metadata["install_action_workflow_name"]; ok {
-			r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(actionName))
-		}
-	}
-	if r.Type == WorkflowTypeRunbookRun {
-		if runbookName, ok := r.Metadata["runbook_name"]; ok {
-			r.Name = fmt.Sprintf("%s (%s)", r.Name, generics.FromPtrStr(runbookName))
-		}
-	}
+	// Name is populated by Postgres via a STORED generated column — see
+	// migrations.Migration108InstallWorkflowsNameGenerated. WorkflowType.Name
+	// and WorkflowType.PastTenseName remain for callers that need the title
+	// without hitting the database.
 
 	return nil
 }
