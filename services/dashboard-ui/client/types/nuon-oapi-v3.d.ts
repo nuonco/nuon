@@ -706,6 +706,26 @@ export interface paths {
      */
     get: operations["GetAppPolicyConfig"];
   };
+  "/v1/apps/{app_id}/runbooks": {
+    /** get runbooks for an app */
+    get: operations["GetRunbooks"];
+    /** create a runbook for an app */
+    post: operations["CreateRunbook"];
+  };
+  "/v1/apps/{app_id}/runbooks/{runbook_id}": {
+    /** get a runbook */
+    get: operations["GetRunbook"];
+    /** delete a runbook */
+    delete: operations["DeleteRunbook"];
+    /** update a runbook */
+    patch: operations["UpdateRunbook"];
+  };
+  "/v1/apps/{app_id}/runbooks/{runbook_id}/configs": {
+    /** get runbook configs */
+    get: operations["GetRunbookConfigs"];
+    /** create a runbook config */
+    post: operations["CreateRunbookConfig"];
+  };
   "/v1/apps/{app_id}/runner-configs": {
     /**
      * get app runner configs
@@ -1713,6 +1733,26 @@ export interface paths {
      * @description enable or disable an install role
      */
     patch: operations["UpdateInstallRole"];
+  };
+  "/v1/installs/{install_id}/runbook-runs": {
+    /** get runbook runs for an install */
+    get: operations["GetInstallRunbookRuns"];
+  };
+  "/v1/installs/{install_id}/runbook-runs/{run_id}": {
+    /** get a runbook run */
+    get: operations["GetInstallRunbookRun"];
+  };
+  "/v1/installs/{install_id}/runbooks": {
+    /** get runbooks for an install */
+    get: operations["GetInstallRunbooks"];
+  };
+  "/v1/installs/{install_id}/runbooks/{runbook_id}": {
+    /** get an install runbook */
+    get: operations["GetInstallRunbook"];
+  };
+  "/v1/installs/{install_id}/runbooks/{runbook_id}/runs": {
+    /** run a runbook on an install */
+    post: operations["CreateRunbookRun"];
   };
   "/v1/installs/{install_id}/runner-bootstrap-token": {
     /** create a bootstrap token for an install's runner */
@@ -3938,6 +3978,38 @@ export interface components {
       role_id?: string;
       updated_at?: string;
     };
+    "app.InstallRunbook": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      runbook?: components["schemas"]["app.Runbook"];
+      runbook_id?: string;
+      runs?: components["schemas"]["app.InstallRunbookRun"][];
+      /** @description after query fields */
+      status?: string;
+      updated_at?: string;
+    };
+    "app.InstallRunbookRun": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      /** @description after query */
+      execution_time?: number;
+      id?: string;
+      install_id?: string;
+      install_runbook?: components["schemas"]["app.InstallRunbook"];
+      install_runbook_id?: string;
+      install_workflow?: components["schemas"]["app.Workflow"];
+      install_workflow_id?: string;
+      runbook_config?: components["schemas"]["app.RunbookConfig"];
+      runbook_config_id?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      triggered_by_id?: string;
+      updated_at?: string;
+    };
     "app.InstallSandbox": {
       created_at?: string;
       created_by_id?: string;
@@ -4489,6 +4561,55 @@ export interface components {
     };
     /** @enum {string} */
     "app.RoleType": "org_admin" | "org_support" | "installer" | "runner" | "hosted-installer";
+    "app.Runbook": {
+      app_id?: string;
+      config_count?: number;
+      configs?: components["schemas"]["app.RunbookConfig"][];
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      name?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    "app.RunbookConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      readme?: string;
+      runbook_id?: string;
+      steps?: components["schemas"]["app.RunbookStepConfig"][];
+      updated_at?: string;
+    };
+    "app.RunbookStepConfig": {
+      /** @description action reference field */
+      action_workflow_id?: string;
+      /** @description inline action fields */
+      command?: string;
+      /** @description deploy fields */
+      component_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      deploy_dependencies?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      idx?: number;
+      inline_contents?: string;
+      name?: string;
+      role?: string;
+      runbook_config_id?: string;
+      timeout?: number;
+      type?: string;
+      updated_at?: string;
+    };
     "app.Runner": {
       created_at?: string;
       created_by_id?: string;
@@ -5219,7 +5340,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build" | "runbook_run";
     "blobstore.Blob": Record<string, never>;
     "cctx.SignalContext": {
       account_id?: string;
@@ -6488,6 +6609,33 @@ export interface components {
       skip_noops?: boolean;
       version?: string;
     };
+    "service.CreateRunbookConfigRequest": {
+      app_config_id?: string;
+      readme?: string;
+      steps: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
+    };
+    "service.CreateRunbookRequest": {
+      description?: string;
+      labels?: {
+        [key: string]: string;
+      };
+      name: string;
+    };
+    "service.CreateRunbookStepConfigRequest": {
+      action_name?: string;
+      command?: string;
+      component_name?: string;
+      deploy_dependencies?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      idx?: number;
+      inline_contents?: string;
+      name: string;
+      role?: string;
+      timeout?: number;
+      type: string;
+    };
     "service.CreateRunnerBootstrapTokenResponse": {
       expires_at?: string;
       token?: string;
@@ -6881,6 +7029,13 @@ export interface components {
     };
     "service.UpdateOrgRequest": {
       name: string;
+    };
+    "service.UpdateRunbookRequest": {
+      description?: string;
+      labels?: {
+        [key: string]: string;
+      };
+      name?: string;
     };
     "service.UpdateRunnerSettingsRequest": {
       /** @enum {string} */
@@ -12818,6 +12973,225 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get runbooks for an app */
+  GetRunbooks: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"][];
+        };
+      };
+    };
+  };
+  /** create a runbook for an app */
+  CreateRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRunbookRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a runbook */
+  GetRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"];
+        };
+      };
+    };
+  };
+  /** delete a runbook */
+  DeleteRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+    };
+  };
+  /** update a runbook */
+  UpdateRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateRunbookRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get runbook configs */
+  GetRunbookConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunbookConfig"][];
+        };
+      };
+    };
+  };
+  /** create a runbook config */
+  CreateRunbookConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRunbookConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.RunbookConfig"];
         };
       };
     };
@@ -19584,6 +19958,109 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get runbook runs for an install */
+  GetInstallRunbookRuns: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbookRun"][];
+        };
+      };
+    };
+  };
+  /** get a runbook run */
+  GetInstallRunbookRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbookRun"];
+        };
+      };
+    };
+  };
+  /** get runbooks for an install */
+  GetInstallRunbooks: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbook"][];
+        };
+      };
+    };
+  };
+  /** get an install runbook */
+  GetInstallRunbook: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbook"];
+        };
+      };
+    };
+  };
+  /** run a runbook on an install */
+  CreateRunbookRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbookRun"];
         };
       };
     };

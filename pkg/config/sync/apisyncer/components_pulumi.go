@@ -91,7 +91,7 @@ func (s *syncer) createPulumiComponentConfig(ctx context.Context, resource, comp
 		return "", "", err
 	}
 
-	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+	s.trackBuildScheduled(compID)
 
 	return cfg.ID, cmpChecksum.Checksum, nil
 }

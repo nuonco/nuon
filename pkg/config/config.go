@@ -52,6 +52,8 @@ type AppConfig struct {
 	Installs []*Install `mapstructure:"installs,omitempty" toml:"installs,omitempty"`
 
 	Actions []*ActionConfig `mapstructure:"actions,omitempty" toml:"actions,omitempty"`
+
+	Runbooks []*RunbookConfig `mapstructure:"runbooks,omitempty" toml:"runbooks,omitempty"`
 }
 type ComponentList []*Component
 
@@ -107,7 +109,9 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("installs").Short("install configurations").
 		Long("Install-specific overrides and configurations").
 		Field("actions").Short("action configurations").
-		Long("Custom workflows and actions that can be executed on installs")
+		Long("Custom workflows and actions that can be executed on installs").
+		Field("runbooks").Short("runbook configurations").
+		Long("Ordered release procedures with deploy and action steps that can be executed on installs")
 }
 
 type parseFn struct {
@@ -182,6 +186,13 @@ func (a *AppConfig) Parse() error {
 		parseFns = append(parseFns, parseFn{
 			fmt.Sprintf("installs.%d", idx),
 			install.Parse,
+		})
+	}
+
+	for idx, runbook := range a.Runbooks {
+		parseFns = append(parseFns, parseFn{
+			fmt.Sprintf("runbooks.%d", idx),
+			runbook.parse,
 		})
 	}
 

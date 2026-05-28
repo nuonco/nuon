@@ -2,6 +2,7 @@ package nuon
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -11,6 +12,36 @@ type stderrResponse interface {
 	IsCode(int) bool
 	IsServerError() bool
 	GetPayload() *models.StderrErrResponse
+}
+
+// httpAPIError is a simple error type for hand-written SDK methods that
+// satisfies the stderrResponse interface so IsNotFound/IsForbidden/etc work.
+type httpAPIError struct {
+	statusCode int
+	body       string
+}
+
+func (e *httpAPIError) Error() string {
+	return fmt.Sprintf("unexpected status code %d: %s", e.statusCode, e.body)
+}
+
+func (e *httpAPIError) IsCode(code int) bool {
+	return e.statusCode == code
+}
+
+func (e *httpAPIError) IsServerError() bool {
+	return e.statusCode >= 500
+}
+
+func (e *httpAPIError) GetPayload() *models.StderrErrResponse {
+	return &models.StderrErrResponse{
+		Error:       e.body,
+		Description: fmt.Sprintf("HTTP %d", e.statusCode),
+	}
+}
+
+func newHTTPAPIError(statusCode int, body string) error {
+	return &httpAPIError{statusCode: statusCode, body: body}
 }
 
 // ToUserError returns the error as a user error if possible
