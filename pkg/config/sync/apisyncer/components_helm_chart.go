@@ -108,7 +108,7 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 		return "", "", err
 	}
 
-	s.cmpBuildsScheduled = append(s.cmpBuildsScheduled, compID)
+	s.trackBuildScheduled(compID)
 
 	return cfg.ID, cmpChecksum.Checksum, nil
 }

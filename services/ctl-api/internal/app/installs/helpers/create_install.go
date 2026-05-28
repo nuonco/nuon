@@ -217,7 +217,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, []string{install.ID}); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+		return nil, fmt.Errorf("unable to ensure install action workflows: %w", err)
+	}
+	if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, appID, []string{install.ID}); err != nil {
+		return nil, fmt.Errorf("unable to ensure install runbooks: %w", err)
 	}
 
 	//if err := s.EnsureInstallSandbox(ctx, appID, []string{install.ID}); err != nil {

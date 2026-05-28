@@ -10,6 +10,7 @@ import (
 	generalhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/general/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
@@ -26,4 +27,5 @@ var HelpersModule = fx.Module("helpers",
 	fx.Provide(installshelpers.New),
 	fx.Provide(runnershelpers.New),
 	fx.Provide(generalhelpers.New),
+	fx.Provide(runbookshelpers.New),
 )

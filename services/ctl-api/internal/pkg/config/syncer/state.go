@@ -71,6 +71,36 @@ func (s *syncer) OrphanedComponents() map[string]string {
 	return orphaned
 }
 
+// GetRunbookStateIds implements sync.Syncer
+func (s *syncer) GetRunbookStateIds() []string {
+	ids := make([]string, 0)
+	if s.state == nil || s.state.Runbooks == nil {
+		return ids
+	}
+	for _, runbook := range s.state.Runbooks {
+		ids = append(ids, runbook.ID)
+	}
+	return ids
+}
+
+// OrphanedRunbooks implements sync.Syncer
+func (s *syncer) OrphanedRunbooks() map[string]string {
+	orphaned := make(map[string]string)
+
+	current := make(map[string]bool)
+	for _, runbook := range s.cfg.Runbooks {
+		current[runbook.Name] = true
+	}
+
+	for _, prevRunbook := range s.prevState.Runbooks {
+		if !current[prevRunbook.Name] {
+			orphaned[prevRunbook.Name] = prevRunbook.ID
+		}
+	}
+
+	return orphaned
+}
+
 // OrphanedActions implements sync.Syncer
 func (s *syncer) OrphanedActions() map[string]string {
 	orphaned := make(map[string]string)
