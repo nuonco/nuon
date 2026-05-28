@@ -96,7 +96,7 @@ type GetInstallActionsLatestRunsParams struct {
 
 	/* Q.
 
-	   search query for action workflow name
+	   search query for action workflow name or ID
 	*/
 	Q *string
 

@@ -269,7 +269,7 @@ export const InstallsTable = ({
       }}
       filterActions={filterActions}
       pagination={pagination}
-      searchPlaceholder="Search install name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }

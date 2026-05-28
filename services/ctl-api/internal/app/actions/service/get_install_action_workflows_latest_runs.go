@@ -22,7 +22,7 @@ import (
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
-// @Param		 			q							query	string	false	"search query for action workflow name"
+// @Param		 			q							query	string	false	"search query for action workflow name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Tags					actions
 // @Accept					json
@@ -48,7 +48,7 @@ func (s *service) GetInstallActionsLatestRuns(ctx *gin.Context) {
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
-// @Param		 			q							query	string	false	"search query for action workflow name"
+// @Param		 			q							query	string	false	"search query for action workflow name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
 // @Tags					actions
 // @Accept					json
@@ -120,7 +120,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		tx = tx.Scopes(labels.WithLabels("action_workflows.labels", lbls))
 	}
 	if q != "" {
-		tx = tx.Where("action_workflows.name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("action_workflows.name ILIKE ? OR action_workflows.id = ?", "%"+q+"%", q)
 	}
 
 	res := tx.Find(&iaws, "install_action_workflows.org_id = ? AND install_action_workflows.install_id = ?", orgID, installID)

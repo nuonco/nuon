@@ -23,6 +23,7 @@ import (
 // @Security		APIKey
 // @Security		OrgID
 // @Param			app_id	path	string	true	"app ID"
+// @Param			q		query	string	false	"search query to filter runbooks by name or ID"
 // @Param			offset	query	int		false	"offset"	Default(0)
 // @Param			limit	query	int		false	"limit"		Default(10)
 // @Success		200		{array}	app.Runbook
@@ -57,7 +58,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Where(app.Runbook{OrgID: org.ID, AppID: appID})
 
 	if q != "" {
-		tx = tx.Where("name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)
 	}
 
 	res := tx.Find(&runbooks)

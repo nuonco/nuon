@@ -90,7 +90,7 @@ type GetInstallComponentsParams struct {
 
 	/* Q.
 
-	   search query for component name
+	   search query for component name or ID
 	*/
 	Q *string
 

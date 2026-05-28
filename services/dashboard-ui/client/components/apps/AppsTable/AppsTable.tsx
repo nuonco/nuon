@@ -136,7 +136,7 @@ export const AppsTable = ({
         action: emptyStateAction,
       }}
       pagination={pagination}
-      searchPlaceholder="Search app name..."
+      searchPlaceholder="Search by name or ID..."
     />
   )
 }

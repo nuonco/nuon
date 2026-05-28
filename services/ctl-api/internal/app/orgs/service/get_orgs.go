@@ -16,7 +16,7 @@ import (
 // @ID                     GetOrgs
 // @Summary                Return current user's orgs
 // @Description.markdown   get_orgs.md
-// @Param                  q                           query   string  false   "search query"
+// @Param                  q                           query   string  false   "search query to filter orgs by name or ID"
 // @Param                  offset                      query   int     false   "offset of results to return"   Default(0)
 // @Param                  limit                       query   int     false   "limit of results to return"    Default(10)
 // @Param                  page                        query   int     false   "page number of results to return"   Default(0)
@@ -57,7 +57,7 @@ func (s *service) getOrgs(ctx *gin.Context, orgIDs []string, q string) ([]app.Or
 		Order(fmt.Sprintf("CASE WHEN accounts.account_type = '%s' THEN 1 ELSE 0 END, orgs.id", app.AccountTypeCanary))
 
 	if q != "" {
-		tx = tx.Where("name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("name ILIKE ? OR orgs.id = ?", "%"+q+"%", q)
 	}
 
 	res := tx.
