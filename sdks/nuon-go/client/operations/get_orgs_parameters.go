@@ -84,7 +84,7 @@ type GetOrgsParams struct {
 
 	/* Q.
 
-	   search query
+	   search query to filter orgs by name or ID
 	*/
 	Q *string
 

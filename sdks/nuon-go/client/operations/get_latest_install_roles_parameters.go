@@ -90,7 +90,7 @@ type GetLatestInstallRolesParams struct {
 
 	/* Q.
 
-	   search query to filter roles by display name
+	   search query to filter roles by display name or ID
 	*/
 	Q *string
 
