@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 )
@@ -48,9 +49,30 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return fmt.Errorf("error reading manifest after initializing: %w", err)
 	}
 
-	h.state.plan.KubernetesManifestDeployPlan.Manifest = string(manifestBytes)
+	manifest := string(manifestBytes)
+
+	// Interpolate {{.nuon.*}} placeholders that survived kustomize unchanged.
+	// Inline-manifest deploys never reach this branch (planner pre-renders and
+	// the early return above skips the OCI pull), so State is only ever set
+	// for the kustomize path. Older planners may not populate it; in that
+	// case we just apply the manifest as-is.
+	if planState := h.state.plan.KubernetesManifestDeployPlan.State; planState != nil {
+		stateMap, err := planState.AsMap()
+		if err != nil {
+			return fmt.Errorf("unable to flatten install state for kustomize manifest: %w", err)
+		}
+		rendered, err := render.RenderV2(manifest, stateMap)
+		if err != nil {
+			return fmt.Errorf("unable to render install state into kustomize manifest: %w", err)
+		}
+		manifest = rendered
+		l.Info("rendered install state into kustomize manifest",
+			zap.Int("rendered_size", len(rendered)))
+	}
+
+	h.state.plan.KubernetesManifestDeployPlan.Manifest = manifest
 	l.Info("manifest loaded from OCI artifact",
-		zap.Int("content_size", len(manifestBytes)))
+		zap.Int("content_size", len(manifest)))
 
 	return nil
 }
