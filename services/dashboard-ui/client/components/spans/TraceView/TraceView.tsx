@@ -68,7 +68,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="UserIcon" size="12" />
-                <span className="@max-[26rem]:hidden">User</span>
+                <span className="@max-[22rem]:hidden">User</span>
               </>
             ),
             ariaLabel:
@@ -81,7 +81,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="StackIcon" size="12" />
-                <span className="@max-[26rem]:hidden">All</span>
+                <span className="@max-[22rem]:hidden">All</span>
               </>
             ),
             ariaLabel: 'Show all spans including runner internals',
@@ -97,7 +97,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="ListIcon" size="12" />
-                <span className="@max-[24rem]:hidden">Logs</span>
+                <span className="@max-[22rem]:hidden">Logs</span>
               </>
             ),
             ariaLabel: 'Show logs',
@@ -107,7 +107,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="TimerIcon" size="12" />
-                <span className="@max-[24rem]:hidden">Timeline</span>
+                <span className="@max-[22rem]:hidden">Timeline</span>
               </>
             ),
             ariaLabel: 'Show timeline',
