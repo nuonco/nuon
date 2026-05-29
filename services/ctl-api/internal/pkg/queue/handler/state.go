@@ -92,6 +92,9 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	h.queueSignal = queueSignal
 
+	// Load callback info from the DB record (set at enqueue time).
+	h.callback = queueSignal.Callback
+
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
 		V:             h.v,
