@@ -6,8 +6,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -43,12 +43,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Enqueue the shared execute-workflow signal to the branch's queue
+	cb := callback.New(ctx, run.ID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   branch.ID,
 		OwnerType: "app_branches",
 		Signal: &executeflow.Signal{
 			WorkflowID: *run.WorkflowID,
 		},
+		Callback: cb,
 	})
 	if err != nil {
 		logger.Error("unable to enqueue execute-workflow signal", "error", err)
@@ -67,7 +69,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	)
 
 	// Await the execute-workflow signal completion
-	if _, err = queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+	if _, err = callback.Await(ctx, cb); err != nil {
 		logger.Error("workflow execution failed", "error", err)
 		if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 			RunID:        run.ID,

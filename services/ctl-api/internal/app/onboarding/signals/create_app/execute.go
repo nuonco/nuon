@@ -8,8 +8,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -104,9 +104,11 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 		}
 
 		// Trigger app branch run to clone repo, parse config, create components, and build
+		cb := callback.New(ctx, s.OnboardingID)
 		runResp, err := activities.AwaitTriggerOnboardingAppBranchRun(ctx, activities.TriggerOnboardingAppBranchRunRequest{
 			AppBranchID:       appResp.AppBranchID,
 			AppBranchConfigID: branchConfig.ID,
+			Cb:                cb,
 		})
 		if err != nil {
 			return fmt.Errorf("unable to trigger app branch run: %w", err)
@@ -116,7 +118,7 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 
 		// Wait for the branch run to complete so app config (input_config) is ready
 		// before advancing. Without this, the install step loads before inputs exist.
-		_, err = queueclient.AwaitQueueSignal(ctx, runResp.QueueSignalID)
+		_, err = callback.Await(ctx, cb)
 		if err != nil {
 			return fmt.Errorf("app branch run failed: %w", err)
 		}

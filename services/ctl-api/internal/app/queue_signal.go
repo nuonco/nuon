@@ -8,6 +8,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	queuecctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
@@ -50,6 +51,11 @@ type QueueSignal struct {
 	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
 
 	ExpiresAt *time.Time `json:"expires_at,omitempty" gorm:"default:null" temporaljson:"expires_at,omitzero,omitempty"`
+
+	// Callback describes where to send a Temporal signal when this queue signal
+	// completes. When set, the handler signals the parent workflow on completion
+	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+	Callback callback.Ref `json:"callback" gorm:"type:jsonb;default:null" temporaljson:"callback,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
