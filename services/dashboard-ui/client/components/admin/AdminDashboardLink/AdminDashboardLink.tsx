@@ -1,7 +1,6 @@
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { useAuth } from '@/hooks/use-auth'
-import { useConfig } from '@/hooks/use-config'
 
 export const AdminDashboardLink = ({
   path,
@@ -10,13 +9,12 @@ export const AdminDashboardLink = ({
   label?: string
 }) => {
   const { isAdmin } = useAuth()
-  const config = useConfig()
 
-  if (!isAdmin || !config.adminDashboardUrl) {
+  if (!isAdmin) {
     return null
   }
 
-  const href = `${config.adminDashboardUrl}${path}`
+  const href = `/admin/dashboard${path}`
 
   return (
     <Link

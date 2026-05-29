@@ -74,11 +74,14 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 		ErrorLog: zap.NewStdLog(h.l),
 	}
 
+	adminDashboardProxy := h.newAdminDashboardProxy(h.cfg.AdminDashboardUrl)
+
 	nuonOnly.POST("/admin/temporal-codec/decode", h.proxyTemporalCodecDecode)
 	nuonOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
 	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
 	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
 	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
+	nuonOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))
 
 	return nil
 }
@@ -130,6 +133,48 @@ func (h *ProxyHandler) newSwaggerProxy(upstreamBase, frontendPrefix string) *htt
 			}
 			resp.Body.Close()
 			rewritten := bytes.ReplaceAll(body, specURLOld, specURLNew)
+			resp.Body = io.NopCloser(bytes.NewReader(rewritten))
+			resp.ContentLength = int64(len(rewritten))
+			resp.Header.Set("Content-Length", strconv.Itoa(len(rewritten)))
+			return nil
+		},
+		ErrorLog: zap.NewStdLog(h.l),
+	}
+}
+
+const adminDashboardPrefix = "/admin/dashboard"
+
+func (h *ProxyHandler) newAdminDashboardProxy(upstreamBase string) *httputil.ReverseProxy {
+	target, _ := url.Parse(upstreamBase)
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, adminDashboardPrefix)
+			if req.URL.Path == "" {
+				req.URL.Path = "/"
+			}
+			req.Host = target.Host
+			req.Header.Del("Accept-Encoding")
+		},
+		ModifyResponse: func(resp *http.Response) error {
+			if !strings.Contains(resp.Header.Get("Content-Type"), "text/html") {
+				return nil
+			}
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+			resp.Body.Close()
+
+			rewritten := bytes.ReplaceAll(body, []byte(`href="/`), []byte(`href="`+adminDashboardPrefix+`/`))
+			rewritten = bytes.ReplaceAll(rewritten, []byte(`src="/`), []byte(`src="`+adminDashboardPrefix+`/`))
+
+			rewritten = bytes.Replace(rewritten,
+				[]byte(`__ADMIN_CONFIG__={`),
+				[]byte(`__ADMIN_CONFIG__={"basePath":"`+adminDashboardPrefix+`",`),
+				1)
+
 			resp.Body = io.NopCloser(bytes.NewReader(rewritten))
 			resp.ContentLength = int64(len(rewritten))
 			resp.Header.Set("Content-Length", strconv.Itoa(len(rewritten)))
