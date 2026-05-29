@@ -55,6 +55,12 @@ func (o *CreateRunnerBootstrapTokenReader) ReadResponse(response runtime.ClientR
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateRunnerBootstrapTokenConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateRunnerBootstrapTokenInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateRunnerBootstrapTokenNotFound) GetPayload() *models.StderrErrRespo
 }
 
 func (o *CreateRunnerBootstrapTokenNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunnerBootstrapTokenConflict creates a CreateRunnerBootstrapTokenConflict with default headers values
+func NewCreateRunnerBootstrapTokenConflict() *CreateRunnerBootstrapTokenConflict {
+	return &CreateRunnerBootstrapTokenConflict{}
+}
+
+/*
+CreateRunnerBootstrapTokenConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateRunnerBootstrapTokenConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runner bootstrap token conflict response has a 2xx status code
+func (o *CreateRunnerBootstrapTokenConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runner bootstrap token conflict response has a 3xx status code
+func (o *CreateRunnerBootstrapTokenConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runner bootstrap token conflict response has a 4xx status code
+func (o *CreateRunnerBootstrapTokenConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runner bootstrap token conflict response has a 5xx status code
+func (o *CreateRunnerBootstrapTokenConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runner bootstrap token conflict response a status code equal to that given
+func (o *CreateRunnerBootstrapTokenConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create runner bootstrap token conflict response
+func (o *CreateRunnerBootstrapTokenConflict) Code() int {
+	return 409
+}
+
+func (o *CreateRunnerBootstrapTokenConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runner-bootstrap-token][%d] createRunnerBootstrapTokenConflict %s", 409, payload)
+}
+
+func (o *CreateRunnerBootstrapTokenConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runner-bootstrap-token][%d] createRunnerBootstrapTokenConflict %s", 409, payload)
+}
+
+func (o *CreateRunnerBootstrapTokenConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunnerBootstrapTokenConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

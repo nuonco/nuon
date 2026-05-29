@@ -55,6 +55,12 @@ func (o *CreateComponentBuildReader) ReadResponse(response runtime.ClientRespons
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateComponentBuildConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateComponentBuildInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateComponentBuildNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *CreateComponentBuildNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateComponentBuildConflict creates a CreateComponentBuildConflict with default headers values
+func NewCreateComponentBuildConflict() *CreateComponentBuildConflict {
+	return &CreateComponentBuildConflict{}
+}
+
+/*
+CreateComponentBuildConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateComponentBuildConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create component build conflict response has a 2xx status code
+func (o *CreateComponentBuildConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create component build conflict response has a 3xx status code
+func (o *CreateComponentBuildConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create component build conflict response has a 4xx status code
+func (o *CreateComponentBuildConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create component build conflict response has a 5xx status code
+func (o *CreateComponentBuildConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create component build conflict response a status code equal to that given
+func (o *CreateComponentBuildConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create component build conflict response
+func (o *CreateComponentBuildConflict) Code() int {
+	return 409
+}
+
+func (o *CreateComponentBuildConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/builds][%d] createComponentBuildConflict %s", 409, payload)
+}
+
+func (o *CreateComponentBuildConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/builds][%d] createComponentBuildConflict %s", 409, payload)
+}
+
+func (o *CreateComponentBuildConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateComponentBuildConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

@@ -55,6 +55,12 @@ func (o *CreateDockerBuildComponentConfigReader) ReadResponse(response runtime.C
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateDockerBuildComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateDockerBuildComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateDockerBuildComponentConfigNotFound) GetPayload() *models.StderrEr
 }
 
 func (o *CreateDockerBuildComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateDockerBuildComponentConfigConflict creates a CreateDockerBuildComponentConfigConflict with default headers values
+func NewCreateDockerBuildComponentConfigConflict() *CreateDockerBuildComponentConfigConflict {
+	return &CreateDockerBuildComponentConfigConflict{}
+}
+
+/*
+CreateDockerBuildComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateDockerBuildComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create docker build component config conflict response has a 2xx status code
+func (o *CreateDockerBuildComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create docker build component config conflict response has a 3xx status code
+func (o *CreateDockerBuildComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create docker build component config conflict response has a 4xx status code
+func (o *CreateDockerBuildComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create docker build component config conflict response has a 5xx status code
+func (o *CreateDockerBuildComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create docker build component config conflict response a status code equal to that given
+func (o *CreateDockerBuildComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create docker build component config conflict response
+func (o *CreateDockerBuildComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateDockerBuildComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/docker-build][%d] createDockerBuildComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateDockerBuildComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/docker-build][%d] createDockerBuildComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateDockerBuildComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateDockerBuildComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
