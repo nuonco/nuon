@@ -102,6 +102,16 @@ func (d *database) recordPoolMetrics() {
 	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.ConstructingConns()), []string{"conn_type:connecting", roleTag})
 	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.IdleConns()), []string{"conn_type:idle", roleTag})
 	d.MetricsWriter.Gauge("gorm_pool.conns", float64(stat.MaxConns()), []string{"conn_type:max", roleTag})
+
+	// empty = waited for a conn; canceled = caller ctx expired while waiting (pool too small)
+	d.MetricsWriter.Gauge("gorm_pool.acquire", float64(stat.AcquireCount()), []string{"acquire_type:total", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.acquire", float64(stat.EmptyAcquireCount()), []string{"acquire_type:empty", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.acquire", float64(stat.CanceledAcquireCount()), []string{"acquire_type:canceled", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.acquire_duration_ms", float64(stat.AcquireDuration().Milliseconds()), []string{roleTag})
+
+	d.MetricsWriter.Gauge("gorm_pool.conns_destroyed", float64(stat.NewConnsCount()), []string{"reason:new", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.conns_destroyed", float64(stat.MaxIdleDestroyCount()), []string{"reason:idle", roleTag})
+	d.MetricsWriter.Gauge("gorm_pool.conns_destroyed", float64(stat.MaxLifetimeDestroyCount()), []string{"reason:lifetime", roleTag})
 }
 
 func (d *database) startPoolBackgroundJob() {
