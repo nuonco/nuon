@@ -11,6 +11,8 @@ export const WithRun = () => (
     status="success"
     href="/org-123/installs/inst-456/actions/action-789"
     hasRun
+    canRun
+    onRun={() => alert('Run clicked')}
   />
 )
 
@@ -41,6 +43,16 @@ export const PostDeployTrigger = () => (
     status="success"
     href="/org-123/installs/inst-456/actions/action-jkl"
     hasRun
+  />
+)
+
+export const ManualNoRuns = () => (
+  <ActionCard
+    name="cleanup-resources"
+    href="/org-123/installs/inst-456/actions/action-ghi"
+    hasRun={false}
+    canRun
+    onRun={() => alert('Run clicked')}
   />
 )
 
