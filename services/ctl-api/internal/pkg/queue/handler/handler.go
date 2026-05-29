@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -78,6 +79,10 @@ type handler struct {
 	// cancelable context for execution
 	executingCtx    workflow.Context
 	executingCancel workflow.CancelFunc
+
+	// Callback loaded from the QueueSignal DB record during initializeState.
+	// When set, the handler sends a Temporal signal to the parent workflow on completion.
+	callback callback.Ref
 
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal

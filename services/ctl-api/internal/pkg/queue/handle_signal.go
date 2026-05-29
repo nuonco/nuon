@@ -9,30 +9,16 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 // ErrSignalNoop is returned when a signal has already been processed (e.g. via direct-execute)
 // and the dispatcher encounters it again. Callers should check for this error and skip gracefully.
 var ErrSignalNoop = errors.New("queue signal already in terminal state")
-
-// longRunningActivityOptions is used for activities that call workflow update handlers
-// (validate, execute) which block until the signal finishes. These can run for
-// extended periods. Heartbeating ensures Temporal can detect dead workers and retry.
-// Idempotent update IDs ensure retried update calls are deduplicated by Temporal.
-//
-// HeartbeatTimeout is 60s to give the 30s heartbeat ticker (see heartbeat.WithHeartbeat
-// usage in handler/activities and client/) headroom for one missed beat without
-// the server tripping a HeartbeatTimeout.
-var longRunningActivityOptions = &workflow.ActivityOptions{
-	StartToCloseTimeout:    5 * time.Minute,
-	ScheduleToCloseTimeout: 2 * time.Hour,
-	HeartbeatTimeout:       60 * time.Second,
-}
 
 func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error {
 	l, err := log.WorkflowLogger(ctx)
@@ -70,9 +56,10 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		},
 	})
 
-	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
+	var signalErr error
+	signalErr = q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
-		// Persist error status so AwaitSignal callers don't block forever
+		// Persist error status so callers don't block forever
 		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,
 			Status:        app.StatusError,
@@ -87,55 +74,59 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	return nil
 }
 
+// processQueueSignal drives the handler through ready → validate → execute.
+// Each update waits for accepted only (no heartbeating). The queue waits for a
+// per-phase callback after validate and execute to guarantee ordering.
 func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSignal *app.QueueSignal, queueRef QueueRef) error {
-	l.Info("making sure queue signal workflow is ready")
+	// 1. Ready: start the handler workflow via update-with-start (waits for completed — fast).
+	l.Info("starting handler workflow")
 	readyResp, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "unable to update")
+		return errors.Wrap(err, "unable to start handler")
 	}
 
-	// Persist the handler's RunID so client activities (FetchSteps, AwaitSignal)
-	// can recover it on retry without re-calling Ready.
+	// Persist the handler's RunID for recovery.
 	_ = activities.AwaitUpdateQueueSignalRunID(ctx, &activities.UpdateQueueSignalRunIDRequest{
 		QueueSignalID: queueSignal.ID,
 		RunID:         readyResp.RunID,
 	})
 
-	l.Info("making sure queue signal workflow is valid")
-	if _, err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
+	// 2. Validate: send update (accepted-only), wait for callback.
+	validateCB := callback.New(ctx, queueSignal.ID+"-validate")
+	l.Info("sending validate update")
+	if err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
 		RunID:      readyResp.RunID,
-	}, longRunningActivityOptions); err != nil {
-		return errors.Wrap(err, "unable to validate")
+		Cb:         validateCB,
+	}); err != nil {
+		return errors.Wrap(err, "unable to send validate update")
 	}
 
-	executeOpts := longRunningActivityOptions
-
-	// Fetch the deserialized signal to check for a custom timeout.
-	// The queueSignal from the DB activity has Signal excluded (temporaljson:"-"),
-	// so we fetch it separately via the signal-specific activity.
-	sig, sigErr := activities.AwaitGetQueueSignalSignalByQueueSignalID(ctx, queueSignal.ID)
-	if sigErr == nil {
-		if t, ok := sig.(signal.SignalWithTimeout); ok && t.Timeout() > 0 {
-			custom := *longRunningActivityOptions
-			custom.ScheduleToCloseTimeout = t.Timeout()
-			executeOpts = &custom
-		}
+	if _, err := callback.Await(ctx, validateCB); err != nil {
+		return errors.Wrap(err, "validate failed")
 	}
 
-	if _, err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
+	// 3. Execute: send update (accepted-only), wait for callback.
+	executeCB := callback.New(ctx, queueSignal.ID+"-execute")
+	l.Info("sending execute update")
+	if err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
 		RunID:      readyResp.RunID,
-	}, executeOpts); err != nil {
-		return errors.Wrap(err, "unable to execute")
+		Cb:         executeCB,
+	}); err != nil {
+		return errors.Wrap(err, "unable to send execute update")
+	}
+
+	if _, err := callback.Await(ctx, executeCB); err != nil {
+		return errors.Wrap(err, "execute failed")
 	}
 
 	return nil

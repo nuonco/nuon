@@ -5,8 +5,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -30,8 +30,9 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		zap.String("step_name", step.Name),
 		zap.Int("group_idx", s.GroupIdx))
 
-	// Dispatch the step signal.
-	qsID, err := s.dispatchStep(ctx, step)
+	// Dispatch the step signal with a callback for completion notification.
+	cb := callback.New(ctx, step.ID)
+	qsID, err := s.dispatchStep(ctx, step, cb)
 	if err != nil {
 		l.Error("step dispatch error",
 			zap.String("step_id", step.ID),
@@ -45,7 +46,7 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 	// Await step completion. Execute() stays alive until the directive is
 	// terminal, so this blocks for the full lifecycle including approval
 	// waiting and retry waiting.
-	_, qsErr := client.AwaitQueueSignal(ctx, qsID)
+	_, qsErr := callback.Await(ctx, cb)
 	if ctx.Err() != nil {
 		s.handleCancellation(ctx, l, step)
 		return StepResult{

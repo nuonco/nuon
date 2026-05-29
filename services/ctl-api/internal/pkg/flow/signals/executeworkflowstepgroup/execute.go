@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -162,7 +163,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 }
 
 // dispatchStep enqueues an execute-workflow-step signal and returns the queue signal ID.
-func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep) (string, error) {
+func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb callback.Ref) (string, error) {
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
 		WorkflowID:      s.WorkflowID,
@@ -197,6 +198,7 @@ func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep) (str
 		Signal:          sig,
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
+		Callback:        cb,
 	})
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
