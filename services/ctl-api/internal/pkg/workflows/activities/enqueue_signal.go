@@ -27,7 +27,11 @@ type EnqueueSignalToOwnerRequest struct {
 	SignalOwnerType string `json:"signal_owner_type,omitempty"`
 
 	// Callback describes where the handler should send a Temporal signal on completion.
+	// Deprecated: use Callbacks for new code.
 	Callback callback.Ref `json:"callback,omitempty"`
+
+	// Callbacks supports multiple completion targets.
+	Callbacks callback.Refs `json:"callbacks,omitempty"`
 }
 
 type EnqueueSignalToOwnerResponse struct {
@@ -67,6 +71,7 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		OwnerID:   req.SignalOwnerID,
 		OwnerType: req.SignalOwnerType,
 		Callback:  req.Callback,
+		Callbacks: req.Callbacks,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")

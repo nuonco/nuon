@@ -84,7 +84,11 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 		TaskQueue:             parentInfo.TaskQueueName,
 		CronSchedule:          emitter.CronSchedule,
 		WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
-		ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_REQUEST_CANCEL,
+		// TERMINATE so the child is cleaned up when the parent closes
+		// (including ContinueAsNew). The new parent run re-starts a fresh
+		// child, which is allowed because TERMINATE puts the old child in
+		// a terminated state that satisfies ALLOW_DUPLICATE_FAILED_ONLY.
+		ParentClosePolicy: enums.PARENT_CLOSE_POLICY_TERMINATE,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 0,
 		},

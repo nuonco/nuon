@@ -101,6 +101,7 @@ func (c *Client) CreateEmitter(ctx context.Context, req *CreateEmitterRequest) (
 	}
 
 	wkflowReq := emitter.EmitterWorkflowRequest{
+		QueueID:   q.ID,
 		EmitterID: em.ID,
 		Version:   c.cfg.Version,
 	}
@@ -303,6 +304,7 @@ func (c *Client) RestartEmitterWorkflow(ctx context.Context, emitterID string) (
 	}
 
 	wkflowReq := emitter.EmitterWorkflowRequest{
+		QueueID:   em.QueueID,
 		EmitterID: em.ID,
 		Version:   c.cfg.Version,
 	}
