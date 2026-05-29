@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, useCallback, useRef } from 'react'
 import { Link } from 'react-router'
-import { getTemporalWorkflowNamespaces } from '@/lib/admin-api'
+import { getTemporalWorkflowNamespaces, getBasePath } from '@/lib/admin-api'
 import { Badge } from '@/components/common/Badge'
 import { LoadingSpinner } from '@/components/common/LoadingSpinner'
 import { truncateId } from '@/utils/format'
@@ -70,7 +70,7 @@ export const WorkflowIndex = () => {
     abortRef.current = controller
 
     try {
-      const resp = await fetch(`/api/temporal-workflows/index?namespace=${encodeURIComponent(namespace)}`, {
+      const resp = await fetch(`${getBasePath()}/api/temporal-workflows/index?namespace=${encodeURIComponent(namespace)}`, {
         signal: controller.signal,
       })
       if (!resp.ok || !resp.body) {
