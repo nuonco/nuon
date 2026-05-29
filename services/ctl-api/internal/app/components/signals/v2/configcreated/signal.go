@@ -8,6 +8,8 @@ import (
 
 	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -33,6 +35,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	cmp, err := activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
 	if err != nil {
 		return fmt.Errorf("unable to get component: %w", err)
+	}
+
+	// Ensure org is provisioned before creating a build.
+	if err := queueclient.EnsureQueueSignal(ctx, cmp.OrgID, "orgs", orgprovision.SignalType); err != nil {
+		return fmt.Errorf("org provision not ready: %w", err)
 	}
 
 	build, err := activities.AwaitCreateComponentBuildRecord(ctx, activities.CreateComponentBuildRecordRequest{
