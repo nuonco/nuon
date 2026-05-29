@@ -1,0 +1,15 @@
+export * from './create-datadog-connection'
+export * from './delete-datadog-connection'
+export * from './get-datadog-connection'
+export * from './get-datadog-connections'
+export * from './test-datadog-connection'
+export * from './update-datadog-connection'
+
+export * from './create-datadog-event-subscription'
+export * from './delete-datadog-event-subscription'
+export * from './get-datadog-event-subscriptions'
+export * from './update-datadog-event-subscription'
+
+export * from './create-datadog-managed-monitor'
+export * from './delete-datadog-managed-monitor'
+export * from './get-datadog-managed-monitors'

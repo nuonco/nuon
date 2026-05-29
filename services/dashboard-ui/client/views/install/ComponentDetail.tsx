@@ -12,6 +12,7 @@ import {
   ComponentConfigCard,
   ComponentConfigCardSkeleton,
 } from '@/components/components/ComponentConfigCard'
+import { CreateManagedMonitorButton } from '@/components/datadog'
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
@@ -138,6 +139,14 @@ export const InstallComponentDetail = () => {
                   Deploy history
                 </Button>
               </div>
+              {installComponent?.id ? (
+                <CreateManagedMonitorButton
+                  targetType="component"
+                  targetId={installComponent.id}
+                  displayName={component.name}
+                  size="sm"
+                />
+              ) : null}
               <ManagementDropdown
                 component={component}
                 currentBuildId={latestDeploy?.build_id}

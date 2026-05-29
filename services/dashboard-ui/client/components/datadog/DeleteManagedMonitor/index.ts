@@ -1,0 +1,1 @@
+export { DeleteManagedMonitorButton } from './DeleteManagedMonitorContainer'

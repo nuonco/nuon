@@ -1,5 +1,6 @@
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { ApproveAllButton } from '@/components/approvals/ApproveAll'
+import { CreateManagedMonitorButton } from '@/components/datadog'
 import type { TWorkflow } from '@/types'
 import { CancelWorkflowButton } from '../../CancelWorkflow'
 
@@ -22,6 +23,15 @@ export const WorkflowActionButtons = ({
 
       {canShowCancel && (
         <CancelWorkflowButton workflow={workflow} />
+      )}
+
+      {workflow?.id && (
+        <CreateManagedMonitorButton
+          targetType="workflow"
+          targetId={workflow.id}
+          displayName={workflow.name || workflow.type}
+          size="sm"
+        />
       )}
 
       {workflow?.id && (

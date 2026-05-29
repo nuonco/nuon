@@ -10,6 +10,7 @@ import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Team } from './Team'
 import { VCSConnectionDetail } from './VCSConnectionDetail'
 import { Slack } from './Slack'
+import { Datadog } from './Datadog'
 import { Webhooks } from './Webhooks'
 import { NotFound } from '@/views/NotFound'
 import { appRoutes } from '@/views/app/routes'
@@ -29,6 +30,7 @@ export const orgRoutes: RouteObject[] = [
       { path: ':orgId/team', element: <Team /> },
       { path: ':orgId/webhooks', element: <Webhooks /> },
       { path: ':orgId/slack', element: <Slack /> },
+      { path: ':orgId/datadog', element: <Datadog /> },
       { path: ':orgId/connections', loader: ({ params }) => redirect(`/${params.orgId}`) },
       { path: ':orgId/connections/vcs', loader: ({ params }) => redirect(`/${params.orgId}`) },
       { path: ':orgId/connections/vcs/:connectionId', element: <VCSConnectionDetail /> },

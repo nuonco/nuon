@@ -24,6 +24,7 @@ export const MainNavContainer = () => {
       hasOrgDashboard={!!org?.features?.['org-dashboard']}
       hasOrgSettings={!!org?.features?.['org-settings']}
       hasSlack={!!org?.features?.['slack']}
+      hasDatadog={!!org?.features?.['datadog']}
       hasCustomerPortal={false}
       customerPortalUrl={customerPortalUrl}
     />

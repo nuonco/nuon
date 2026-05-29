@@ -49,6 +49,16 @@ export const SLACK_LINK: TNavLink = {
   shortcut: 'g s',
 }
 
+// GraphIcon stands in for Datadog's monitoring/graphing identity since
+// the Phosphor set doesn't ship a dog-shaped glyph. Swap for a custom
+// branded icon if design lands on one later.
+export const DATADOG_LINK: TNavLink = {
+  iconVariant: 'GraphIcon',
+  path: `/datadog`,
+  text: 'Datadog',
+  shortcut: 'g d g',
+}
+
 export const SUPPORT_LINKS: TNavLink[] = [
   {
     iconVariant: 'BookOpenTextIcon',

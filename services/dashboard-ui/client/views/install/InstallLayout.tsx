@@ -7,6 +7,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
+import { CreateManagedMonitorButton } from '@/components/datadog'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
@@ -183,6 +184,12 @@ const InstallTemplate = () => {
                   </Text>
                 </LabeledValue>
                 <InstallStatusesContainer collapsible />
+                <CreateManagedMonitorButton
+                  targetType="install"
+                  targetId={install.id}
+                  displayName={install.name}
+                  size="sm"
+                />
                 <InstallManagementDropdown />
               </div>
             </div>

@@ -17,6 +17,7 @@ import { Duration } from '@/components/common/Duration'
 import { ActionStep } from '@/components/actions/ActionStep'
 import { ActionTriggerType } from '@/components/actions/ActionTriggerType'
 import { InstallActionManualRunButton } from '@/components/actions/InstallActionManualRun'
+import { CreateManagedMonitorButton } from '@/components/datadog'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { InstallActionRunTimeline } from '@/components/actions/InstallActionRunTimeline'
 import { PageSection } from '@/components/layout/PageSection'
@@ -182,6 +183,15 @@ export const ActionDetail = () => {
                   Run history
                 </Button>
               </div>
+              {action?.action_workflow_id && install?.id ? (
+                <CreateManagedMonitorButton
+                  targetType="action"
+                  targetId={action.action_workflow_id}
+                  installId={install.id}
+                  displayName={action?.action_workflow?.name}
+                  size="sm"
+                />
+              ) : null}
               {action?.action_workflow?.configs?.[0]?.triggers?.find(
                 (t) => t.type === 'manual'
               ) ? (

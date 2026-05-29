@@ -154,6 +154,139 @@ export type TSlackChannelSubscription = Omit<
 export type TSlackInstallURLResponse =
   components['schemas']['service.GetInstallURLResponse']
 export type TSlackChannel = components['schemas']['client.Conversation']
+
+// datadog
+//
+// The DD endpoints landed after the SDK was last regenerated, so these
+// shapes are hand-mirrored from the Go models in
+// services/ctl-api/internal/app/datadog_*.go. After the next swagger
+// regen they can be swapped for `components['schemas']['app.Datadog*']`
+// without other call-site changes — the interface is the same.
+//
+// Like Slack subscriptions, `interests` and `match` are stamped
+// `swaggertype:"object"` on the Go side, so the generated SDK will
+// surface them as `unknown` / `object`. We use the hand-written mirrors
+// here so dashboard code can read `sub.match?.installs?.ids` etc.
+export type TDatadogConnectionStatus = 'verified' | 'revoked'
+export type TDatadogConnectionPurpose = 'internal' | 'customer'
+
+export type TDatadogConnection = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  name?: string
+  purpose?: TDatadogConnectionPurpose
+  site?: string
+  status?: TDatadogConnectionStatus
+  default_tags?: string[]
+  default_notify_handles?: string[]
+}
+
+export type TCreateDatadogConnectionBody = {
+  name: string
+  site: string
+  api_key: string
+  application_key?: string
+  purpose?: TDatadogConnectionPurpose
+  default_tags?: string[]
+  default_notify_handles?: string[]
+}
+
+export type TUpdateDatadogConnectionBody = {
+  name?: string
+  site?: string
+  api_key?: string
+  application_key?: string
+  purpose?: TDatadogConnectionPurpose
+  default_tags?: string[]
+  default_notify_handles?: string[]
+}
+
+// TestConnection's response mirrors the handler in
+// services/ctl-api/internal/app/datadog/service/test_connection.go.
+export type TDatadogTestConnectionResponse = {
+  validated?: boolean
+  posted_event_url?: string
+  posted_at?: string
+}
+
+export type TDatadogEventSubscription = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  connection_id?: string
+  interests?: TInterests
+  match?: TSubscriptionMatch
+  additional_tags?: string[]
+  alert_type_override?: TDatadogAlertType
+  priority_override?: TDatadogPriority
+}
+
+export type TDatadogAlertType = 'info' | 'warning' | 'error' | 'success'
+export type TDatadogPriority = 'normal' | 'low'
+
+export type TCreateDatadogEventSubscriptionBody = {
+  connection_id: string
+  interests?: TInterests
+  match?: TSubscriptionMatch
+  additional_tags?: string[]
+  alert_type_override?: TDatadogAlertType
+  priority_override?: TDatadogPriority
+}
+
+export type TUpdateDatadogEventSubscriptionBody = {
+  interests?: TInterests
+  // Explicit null on `match` clears the row to org-wide; omit to leave
+  // unchanged. The Go handler keys off the JSON key's presence via
+  // UnmarshalJSON, so the dashboard MUST send `match: null` (not just
+  // omit it) when clearing.
+  match?: TSubscriptionMatch | null
+  additional_tags?: string[]
+  alert_type_override?: TDatadogAlertType
+  priority_override?: TDatadogPriority
+}
+
+export type TDatadogManagedMonitorTargetType =
+  | 'action'
+  | 'install'
+  | 'component'
+  | 'workflow'
+export type TDatadogManagedMonitorPreset = 'failure' | 'drift'
+export type TDatadogManagedMonitorStatus = 'active' | 'disabled'
+
+export type TDatadogManagedMonitor = {
+  id?: string
+  created_by_id?: string
+  created_at?: string
+  updated_at?: string
+  org_id?: string
+  connection_id?: string
+  target_type?: TDatadogManagedMonitorTargetType
+  target_id?: string
+  install_id?: string
+  preset?: TDatadogManagedMonitorPreset
+  dd_monitor_id?: number
+  status?: TDatadogManagedMonitorStatus
+  notify_handles?: string[]
+}
+
+export type TCreateDatadogManagedMonitorBody = {
+  connection_id: string
+  target_type: TDatadogManagedMonitorTargetType
+  target_id: string
+  // install_id is required when target_type=action and ignored
+  // otherwise. The org-level action_workflows.id needs install
+  // qualification to mirror the per-install scoping the other targets
+  // get for free from their own target_id.
+  install_id?: string
+  preset: TDatadogManagedMonitorPreset
+  display_name?: string
+  notify_handles?: string[]
+}
 export type TSlackChannelsResponse =
   components['schemas']['service.ListChannelsResponse']
 export type TCreateSlackOrgLinkBody =

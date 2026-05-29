@@ -21,6 +21,7 @@ export const Default = () => (
       hasOrgDashboard
       hasOrgSettings
       hasSlack
+      hasDatadog
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />
@@ -35,6 +36,7 @@ export const Collapsed = () => (
       hasOrgDashboard
       hasOrgSettings={false}
       hasSlack={false}
+      hasDatadog={false}
       hasCustomerPortal={false}
       customerPortalUrl="https://customers.nuon.co"
     />

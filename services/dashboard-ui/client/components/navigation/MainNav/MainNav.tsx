@@ -1,7 +1,7 @@
 import { Text } from '@/components/common/Text'
 import { cn } from '@/utils/classnames'
 import { MainNavLink } from '../MainNavLink'
-import { MAIN_LINKS, SETTINGS_LINKS, SLACK_LINK, SUPPORT_LINKS } from '../main-nav-links'
+import { DATADOG_LINK, MAIN_LINKS, SETTINGS_LINKS, SLACK_LINK, SUPPORT_LINKS } from '../main-nav-links'
 import type { TOrg } from '@/types'
 
 interface IMainNav {
@@ -10,6 +10,7 @@ interface IMainNav {
   hasOrgDashboard: boolean
   hasOrgSettings: boolean
   hasSlack: boolean
+  hasDatadog: boolean
   hasCustomerPortal: boolean
   customerPortalUrl: string
 }
@@ -44,6 +45,7 @@ export const MainNav = ({
   hasOrgDashboard,
   hasOrgSettings,
   hasSlack,
+  hasDatadog,
   hasCustomerPortal,
   customerPortalUrl,
 }: IMainNav) => {
@@ -82,6 +84,10 @@ export const MainNav = ({
 
           {hasSlack ? (
             <MainNavLink basePath={basePath} {...SLACK_LINK} />
+          ) : null}
+
+          {hasDatadog ? (
+            <MainNavLink basePath={basePath} {...DATADOG_LINK} />
           ) : null}
         </div>
       ) : null}
