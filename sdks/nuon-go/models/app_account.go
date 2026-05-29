@@ -32,6 +32,11 @@ type AppAccount struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// IsAdmin is a persisted, toggle-able flag granting Nuon admin access. Unlike IsEmployee (which is
+	// derived from the email domain on every query), IsAdmin is stored in the database and managed via the
+	// admin API. It defaults to false; admins are granted explicitly.
+	IsAdmin bool `json:"is_admin,omitempty"`
+
 	// ReadOnly Fields
 	OrgIds []string `json:"org_ids"`
 

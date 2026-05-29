@@ -93,6 +93,7 @@ func init() {
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
 	config.RegisterDefault("evaluation_journey_enabled", true)
+	config.RegisterDefault("auto_nuon_admin", false)
 	config.RegisterDefault("webhook_urls", []string{})
 	config.RegisterDefault("webhook_timeout", "5s")
 
@@ -357,6 +358,9 @@ type Config struct {
 	EnableHttpBinDebugEndpoints bool `config:"enable_httpbin_debug_endpoints"`
 	EnableEndpointAuditing      bool `config:"enable_endpoint_auditing"`
 	EvaluationJourneyEnabled    bool `config:"evaluation_journey_enabled"`
+
+	// AutoNuonAdmin, when enabled, grants is_admin=true to newly created auth/auth0 accounts for @nuon.co users.
+	AutoNuonAdmin bool `config:"auto_nuon_admin"`
 
 	// chaos configuration
 	ChaosRate   int           `config:"chaos_rate"`

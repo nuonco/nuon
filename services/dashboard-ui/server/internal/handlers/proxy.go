@@ -21,6 +21,7 @@ import (
 
 type authCacheEntry struct {
 	email   string
+	isAdmin bool
 	expires time.Time
 }
 
@@ -56,7 +57,7 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/public/swagger/*path", gin.WrapH(publicSwaggerProxy))
 
 	authed := e.Group("/", h.requireAuth())
-	nuonOnly := authed.Group("/", h.requireNuonEmail())
+	adminOnly := authed.Group("/", h.requireAdmin())
 	adminAPITarget, _ := url.Parse(h.cfg.AdminAPIUrl)
 	adminAPIProxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
@@ -76,12 +77,12 @@ func (h *ProxyHandler) RegisterRoutes(e *gin.Engine) error {
 
 	adminDashboardProxy := h.newAdminDashboardProxy(h.cfg.AdminDashboardUrl)
 
-	nuonOnly.POST("/admin/temporal-codec/decode", h.proxyTemporalCodecDecode)
-	nuonOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
-	nuonOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
-	nuonOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
-	nuonOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
-	nuonOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))
+	adminOnly.POST("/admin/temporal-codec/decode", h.proxyTemporalCodecDecode)
+	adminOnly.GET("/admin/swagger/*path", gin.WrapH(adminSwaggerProxy))
+	adminOnly.Any("/admin/temporal/*path", gin.WrapH(temporalProxy))
+	adminOnly.GET("/_app/*path", gin.WrapH(temporalProxy))
+	adminOnly.Any("/admin/v1/*path", gin.WrapH(adminAPIProxy))
+	adminOnly.Any("/admin/dashboard/*path", gin.WrapH(adminDashboardProxy))
 
 	return nil
 }
@@ -260,34 +261,36 @@ func (h *ProxyHandler) proxyTemporalCodecDecode(c *gin.Context) {
 
 const authCacheTTL = 5 * time.Minute
 
-func (h *ProxyHandler) lookupAuth(token string) (email string, ok bool) {
+func (h *ProxyHandler) lookupAuth(token string) (authCacheEntry, bool) {
 	if v, found := h.authCache.Load(token); found {
 		entry := v.(authCacheEntry)
 		if time.Now().Before(entry.expires) {
-			return entry.email, true
+			return entry, true
 		}
 		h.authCache.Delete(token)
 	}
-	return "", false
+	return authCacheEntry{}, false
 }
 
-func (h *ProxyHandler) verifyAndCache(c *gin.Context, token string) (string, error) {
-	if email, ok := h.lookupAuth(token); ok {
-		return email, nil
+func (h *ProxyHandler) verifyAndCache(c *gin.Context, token string) (authCacheEntry, error) {
+	if entry, ok := h.lookupAuth(token); ok {
+		return entry, nil
 	}
 	client, err := nuon.New(nuon.WithURL(h.cfg.APIUrl), nuon.WithAuthToken(token))
 	if err != nil {
-		return "", err
+		return authCacheEntry{}, err
 	}
 	me, err := client.GetAuthMe(c.Request.Context())
 	if err != nil {
-		return "", err
+		return authCacheEntry{}, err
 	}
-	h.authCache.Store(token, authCacheEntry{
+	entry := authCacheEntry{
 		email:   me.Email,
+		isAdmin: me.IsAdmin,
 		expires: time.Now().Add(authCacheTTL),
-	})
-	return me.Email, nil
+	}
+	h.authCache.Store(token, entry)
+	return entry, nil
 }
 
 func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
@@ -308,11 +311,11 @@ func (h *ProxyHandler) requireAuth() gin.HandlerFunc {
 	}
 }
 
-func (h *ProxyHandler) requireNuonEmail() gin.HandlerFunc {
+func (h *ProxyHandler) requireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, _ := c.Cookie(authCookie)
-		email, err := h.verifyAndCache(c, token)
-		if err != nil || !strings.HasSuffix(email, "@nuon.co") {
+		entry, err := h.verifyAndCache(c, token)
+		if err != nil || !entry.isAdmin {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}

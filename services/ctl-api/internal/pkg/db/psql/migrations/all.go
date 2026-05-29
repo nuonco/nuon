@@ -108,5 +108,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "108-install-workflows-name-hook-managed",
 			Fn:   m.Migration108InstallWorkflowsNameHookManaged,
 		},
+		{
+			Name: "109-backfill-nuon-accounts-is-admin",
+			Fn:   m.Migration109BackfillNuonAccountsIsAdmin,
+		},
 	}
 }

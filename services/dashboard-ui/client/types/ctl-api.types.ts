@@ -534,6 +534,7 @@ export type TCompleteInstallStepRequest =
 export type TMe = {
   id: string
   email: string
+  is_admin?: boolean
   identities: Array<{
     picture?: string
     name?: string

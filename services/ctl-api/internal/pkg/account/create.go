@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -22,6 +23,7 @@ func (m *Client) createAccount(ctx context.Context, email, subject string, accou
 		Subject:      subject,
 		AccountType:  accountType,
 		UserJourneys: userJourneys,
+		IsAdmin:      m.cfg.AutoNuonAdmin && strings.HasSuffix(email, "@nuon.co"),
 	}
 
 	if err := m.db.WithContext(ctx).

@@ -41,6 +41,11 @@ type Account struct {
 	Identities   []AccountIdentity `gorm:"constraint:OnDelete:CASCADE;" json:"-" temporaljson:"identities,omitzero,omitempty"`
 	UserJourneys UserJourneys      `json:"user_journeys,omitzero" gorm:"type:jsonb;default null" temporaljson:"user_journeys,omitzero,omitempty"`
 
+	// IsAdmin is a persisted, toggle-able flag granting Nuon admin access. Unlike IsEmployee (which is
+	// derived from the email domain on every query), IsAdmin is stored in the database and managed via the
+	// admin API. It defaults to false; admins are granted explicitly.
+	IsAdmin bool `json:"is_admin,omitzero" gorm:"not null;default:false" temporaljson:"is_admin,omitzero,omitempty"`
+
 	// ReadOnly Fields
 	OrgIDs         []string        `json:"org_ids,omitzero" gorm:"-" temporaljson:"org_i_ds,omitzero,omitempty"`
 	Orgs           []*Org          `json:"-" gorm:"-" temporaljson:"orgs,omitzero,omitempty"`
