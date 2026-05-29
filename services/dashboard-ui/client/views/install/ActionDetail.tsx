@@ -189,6 +189,7 @@ export const ActionDetail = () => {
                   targetId={action.action_workflow_id}
                   installId={install.id}
                   displayName={action?.action_workflow?.name}
+                  defaultMode="metric"
                   size="sm"
                 />
               ) : null}

@@ -188,6 +188,7 @@ const InstallTemplate = () => {
                   targetType="install"
                   targetId={install.id}
                   displayName={install.name}
+                  defaultMode="metric"
                   size="sm"
                 />
                 <InstallManagementDropdown />

@@ -30,6 +30,7 @@ export const WorkflowActionButtons = ({
           targetType="workflow"
           targetId={workflow.id}
           displayName={workflow.name || workflow.type}
+          defaultMode="metric"
           size="sm"
         />
       )}

@@ -144,6 +144,7 @@ export const InstallComponentDetail = () => {
                   targetType="component"
                   targetId={installComponent.id}
                   displayName={component.name}
+                  defaultMode="metric"
                   size="sm"
                 />
               ) : null}
