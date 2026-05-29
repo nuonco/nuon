@@ -3,100 +3,28 @@ package client
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/pkg/errors"
-
-	tclient "go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
+	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/temporal/heartbeat"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
 )
 
+// AwaitSignal is deprecated — callers should use the callback-based await pattern instead.
+// This method logs an error with the caller's queue signal ID and returns a non-retryable
+// error so the offending call site is surfaced immediately.
+//
 // @temporal-gen-v2 activity
-// @start-to-close-timeout 5m
-// @heartbeat-timeout 60s
+// @start-to-close-timeout 1m
 func (c *Client) AwaitSignal(ctx context.Context, queueSignalID string) (*handler.FinishedResponse, error) {
-	q, err := c.getQueueSignal(ctx, queueSignalID)
-	if err != nil {
-		return nil, dbgenerics.TemporalGormError(err, "unable to get queue signal")
-	}
-
-	// If the DB status already indicates completion, return immediately.
-	if isTerminalStatus(q.Status.Status) {
-		return terminalResponse(q.Status.Status, q.Status.StatusHumanDescription)
-	}
-
-	// If the signal hasn't been enqueued yet, do it inline so the handler
-	// workflow is running before we try to await its finished update.
-	if !q.Enqueued {
-		if err := c.enqueuer.EnqueueInline(ctx, queueSignalID, enqueuer.EnqueueSourceAwait); err != nil {
-			return nil, errors.Wrap(err, "inline enqueue failed")
-		}
-	}
-
-	return heartbeat.WithHeartbeat(ctx, 30*time.Second, func(ctx context.Context) (*handler.FinishedResponse, error) {
-		rawResp, err := c.tClient.UpdateWorkflowInNamespace(ctx, q.Workflow.Namespace, tclient.UpdateWorkflowOptions{
-			UpdateID:     queueSignalID + "-finished",
-			WorkflowID:   q.Workflow.ID,
-			RunID:        q.Workflow.RunID, // empty for old rows = latest run
-			UpdateName:   handler.FinishedHandlerName,
-			WaitForStage: tclient.WorkflowUpdateStageCompleted,
-			Args: []any{
-				handler.FinishedRequest{},
-			},
-		})
-		if err != nil {
-			// Workflow may have been slept/terminated between our DB check and now.
-			// Re-check DB status to confirm.
-			fresh, dbErr := c.getQueueSignal(ctx, queueSignalID)
-			if dbErr != nil {
-				return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
-			}
-			if isTerminalStatus(fresh.Status.Status) {
-				return terminalResponse(fresh.Status.Status, fresh.Status.StatusHumanDescription)
-			}
-			return nil, errors.Wrap(err, "unable to call finished handler")
-		}
-
-		var resp handler.FinishedResponse
-		if err := rawResp.Get(ctx, &resp); err != nil {
-			// The update itself may have returned an error. Check DB as fallback.
-			fresh, dbErr := c.getQueueSignal(ctx, queueSignalID)
-			if dbErr != nil {
-				return nil, errors.Wrap(dbErr, "unable to get queue signal from db")
-			}
-			if isTerminalStatus(fresh.Status.Status) {
-				return terminalResponse(fresh.Status.Status, fresh.Status.StatusHumanDescription)
-			}
-			return nil, errors.Wrap(err, "unable get response")
-		}
-
-		// The handler returned a terminal status directly - use it.
-		if resp.Status == app.StatusError {
-			return nil, temporal.NewNonRetryableApplicationError(
-				resp.StatusDescription,
-				"SIGNAL_FAILED", nil)
-		}
-
-		return &resp, nil
-	})
-}
-
-// terminalResponse converts a terminal DB status into the appropriate return value.
-func terminalResponse(status app.Status, description string) (*handler.FinishedResponse, error) {
-	if status == app.StatusError {
-		msg := description
-		if msg == "" {
-			msg = fmt.Sprintf("signal execution failed with status: %s", status)
-		}
-		return nil, temporal.NewNonRetryableApplicationError(msg, "SIGNAL_FAILED", nil)
-	}
-	return &handler.FinishedResponse{Status: status, StatusDescription: description}, nil
+	c.l.Error("AwaitSignal is deprecated: use callback-based await instead",
+		zap.String("queue_signal_id", queueSignalID),
+	)
+	return nil, temporal.NewNonRetryableApplicationError(
+		fmt.Sprintf("AwaitSignal is deprecated and must not be called (queue_signal_id=%s); use callback-based await instead", queueSignalID),
+		"DEPRECATED_AWAIT_SIGNAL", nil)
 }
 
 // @temporal-gen-v2 activity
