@@ -1,8 +1,10 @@
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { Banner } from '@/components/common/Banner'
+import { Icon } from '@/components/common/Icon'
 import { Status } from '@/components/common/Status'
+import { Time } from '@/components/common/Time'
 import { ActionCard } from '@/components/actions/ActionCard'
 import { ComponentCard } from '@/components/install-components/ComponentCard'
 import { InstallConfigGraph } from '@/components/installs/InstallConfigGraph'
@@ -11,7 +13,59 @@ import { RunnerCard } from '@/components/runners/RunnerCard'
 import { StackCard } from '@/components/stacks/StackCard'
 import { Group } from '@/components/common/Group'
 import { Card } from '@/components/common/Card'
+import { RunRunbookCard } from '@/components/runbooks/RunRunbookCard'
 import { ViewStateButton } from '@/components/installs/management/ViewState'
+
+const ALERT_CONFIG: Record<string, { label: string; icon: ReactNode; borderClass: string; textClass: string }> = {
+  note: {
+    label: 'Note',
+    icon: <Icon variant="InfoIcon" size={16} />,
+    // eslint-disable-next-line tailwindcss/no-custom-classname
+    borderClass: '!border-l-blue-500 dark:!border-l-blue-400',
+    textClass: 'text-blue-600 dark:text-blue-400',
+  },
+  tip: {
+    label: 'Tip',
+    icon: <Icon variant="LightbulbIcon" size={16} />,
+    borderClass: '!border-l-green-500 dark:!border-l-green-400',
+    textClass: 'text-green-600 dark:text-green-400',
+  },
+  important: {
+    label: 'Important',
+    icon: <Icon variant="WarningCircleIcon" size={16} />,
+    borderClass: '!border-l-primary-500 dark:!border-l-primary-400',
+    textClass: 'text-primary-600 dark:text-primary-400',
+  },
+  warning: {
+    label: 'Warning',
+    icon: <Icon variant="WarningIcon" size={16} />,
+    borderClass: '!border-l-orange-500 dark:!border-l-orange-400',
+    textClass: 'text-orange-600 dark:text-orange-400',
+  },
+  caution: {
+    label: 'Caution',
+    icon: <Icon variant="WarningOctagonIcon" size={16} />,
+    borderClass: '!border-l-red-500 dark:!border-l-red-400',
+    textClass: 'text-red-600 dark:text-red-400',
+  },
+}
+
+function MarkdownAlert({ type, children }: { type: string; children: ReactNode }) {
+  const config = ALERT_CONFIG[type]
+  if (!config) return <>{children}</>
+
+  return (
+    <div className={`my-4 border-l-4 pl-4 py-1 ${config.borderClass}`}>
+      <p className={`flex items-center gap-1.5 font-semibold text-sm !mt-0 !mb-1 ${config.textClass}`}>
+        {config.icon}
+        {config.label}
+      </p>
+      <div className="text-sm [&>p]:my-1 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0">
+        {children}
+      </div>
+    </div>
+  )
+}
 
 export type MarkdownMode = 'app' | 'install'
 
@@ -24,6 +78,13 @@ type NuonComponent = {
 const noProps = () => ({})
 
 const registry: Record<string, NuonComponent> = {
+  'nuon-alert': {
+    component: MarkdownAlert,
+    mapProps: (attrs) => ({
+      type: attrs.type,
+      children: attrs.children,
+    }),
+  },
   'nuon-badge': {
     component: Badge,
     mapProps: (attrs) => ({
@@ -58,6 +119,24 @@ const registry: Record<string, NuonComponent> = {
       status: attrs.status,
       variant: attrs.variant,
     }),
+  },
+  'nuon-time': {
+    component: Time,
+    mapProps: (attrs) => ({
+      time: attrs.time,
+      seconds: attrs.seconds ? Number(attrs.seconds) : undefined,
+      format: attrs.format,
+      shouldTick: attrs.format === 'relative',
+      variant: 'inline',
+    }),
+  },
+  'nuon-run-runbook': {
+    component: RunRunbookCard,
+    mapProps: (attrs) => ({
+      id: attrs.id,
+      name: attrs.name,
+    }),
+    requiresInstall: true,
   },
   'nuon-view-state': {
     component: ViewStateButton,

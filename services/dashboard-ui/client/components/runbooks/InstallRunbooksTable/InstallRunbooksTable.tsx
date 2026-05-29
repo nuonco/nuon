@@ -19,6 +19,7 @@ export type TInstallRunbookRow = {
   runbookName: string
   description: ReactNode
   labels: ReactNode
+  lastUpdated: ReactNode
   lastRun: ReactNode
   href: string
   latestRunHref: string | null
@@ -57,6 +58,14 @@ export function parseInstallRunbooksToTableData(
         ) : (
           <Icon variant="MinusIcon" />
         ),
+      lastUpdated: runbook?.updated_at ? (
+        <Text flex className="gap-2">
+          <Icon variant="CalendarBlankIcon" />
+          <Time time={runbook.updated_at} format="relative" variant="subtext" />
+        </Text>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       lastRun: ir.runs?.[0] ? (
         <Text flex className="gap-2">
           <Icon variant="CalendarBlankIcon" />
@@ -103,6 +112,12 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
   {
     accessorKey: 'labels',
     header: 'Labels',
+    cell: (info) => info.getValue() as ReactNode,
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'lastUpdated',
+    header: 'Last updated',
     cell: (info) => info.getValue() as ReactNode,
     enableSorting: false,
   },
