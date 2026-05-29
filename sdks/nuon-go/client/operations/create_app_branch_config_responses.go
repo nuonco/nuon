@@ -55,6 +55,12 @@ func (o *CreateAppBranchConfigReader) ReadResponse(response runtime.ClientRespon
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppBranchConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppBranchConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppBranchConfigNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *CreateAppBranchConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppBranchConfigConflict creates a CreateAppBranchConfigConflict with default headers values
+func NewCreateAppBranchConfigConflict() *CreateAppBranchConfigConflict {
+	return &CreateAppBranchConfigConflict{}
+}
+
+/*
+CreateAppBranchConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppBranchConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app branch config conflict response has a 2xx status code
+func (o *CreateAppBranchConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app branch config conflict response has a 3xx status code
+func (o *CreateAppBranchConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app branch config conflict response has a 4xx status code
+func (o *CreateAppBranchConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app branch config conflict response has a 5xx status code
+func (o *CreateAppBranchConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app branch config conflict response a status code equal to that given
+func (o *CreateAppBranchConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app branch config conflict response
+func (o *CreateAppBranchConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppBranchConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/branches/{app_branch_id}/configs][%d] createAppBranchConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppBranchConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/branches/{app_branch_id}/configs][%d] createAppBranchConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppBranchConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppBranchConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

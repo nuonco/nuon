@@ -55,6 +55,12 @@ func (o *CreateInstallComponentDeployReader) ReadResponse(response runtime.Clien
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateInstallComponentDeployConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateInstallComponentDeployInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateInstallComponentDeployNotFound) GetPayload() *models.StderrErrRes
 }
 
 func (o *CreateInstallComponentDeployNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateInstallComponentDeployConflict creates a CreateInstallComponentDeployConflict with default headers values
+func NewCreateInstallComponentDeployConflict() *CreateInstallComponentDeployConflict {
+	return &CreateInstallComponentDeployConflict{}
+}
+
+/*
+CreateInstallComponentDeployConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateInstallComponentDeployConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create install component deploy conflict response has a 2xx status code
+func (o *CreateInstallComponentDeployConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create install component deploy conflict response has a 3xx status code
+func (o *CreateInstallComponentDeployConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create install component deploy conflict response has a 4xx status code
+func (o *CreateInstallComponentDeployConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create install component deploy conflict response has a 5xx status code
+func (o *CreateInstallComponentDeployConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create install component deploy conflict response a status code equal to that given
+func (o *CreateInstallComponentDeployConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create install component deploy conflict response
+func (o *CreateInstallComponentDeployConflict) Code() int {
+	return 409
+}
+
+func (o *CreateInstallComponentDeployConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/{component_id}/deploys][%d] createInstallComponentDeployConflict %s", 409, payload)
+}
+
+func (o *CreateInstallComponentDeployConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/components/{component_id}/deploys][%d] createInstallComponentDeployConflict %s", 409, payload)
+}
+
+func (o *CreateInstallComponentDeployConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateInstallComponentDeployConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

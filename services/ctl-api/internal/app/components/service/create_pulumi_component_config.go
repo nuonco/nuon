@@ -95,6 +95,7 @@ func (c *CreatePulumiComponentConfigRequest) Validate(v *validator.Validate) err
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.PulumiComponentConfig
 // @Router					/v1/apps/{app_id}/components/{component_id}/configs/pulumi [POST]
@@ -124,6 +125,7 @@ func (s *service) CreateAppPulumiComponentConfig(ctx *gin.Context) {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.PulumiComponentConfig
 // @Router					/v1/components/{component_id}/configs/pulumi [POST]

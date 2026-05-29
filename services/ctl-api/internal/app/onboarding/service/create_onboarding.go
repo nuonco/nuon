@@ -23,6 +23,7 @@ import (
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Router					/v1/onboarding [POST]
 func (s *service) CreateOnboarding(ctx *gin.Context) {
 	account, err := cctx.AccountFromContext(ctx)
