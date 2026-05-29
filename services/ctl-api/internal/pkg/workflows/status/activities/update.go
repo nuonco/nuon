@@ -118,7 +118,12 @@ func (a *Activities) updateStatusCommon(ctx context.Context, obj any, status app
 	}
 	history := existingStatus.History
 	existingStatus.History = nil
-	status.History = append(history, existingStatus)
+	history = append(history, existingStatus)
+	// Limit history to the most recent 25 entries to prevent unbounded growth.
+	if len(history) > 25 {
+		history = history[len(history)-25:]
+	}
+	status.History = history
 
 	// Carry forward existing metadata into the new status so it's not lost.
 	newMetadata := status.Metadata

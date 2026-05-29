@@ -19,8 +19,8 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 	}{
 		{InstallWorkflowsQueueName, 25},
 		{InstallSignalsQueueName, 20},
-		{InstallWorkflowStepGroupsQueueName, 10},
-		{InstallWorkflowStepsQueueName, 10},
+		{InstallWorkflowStepGroupsQueueName, 40},
+		{InstallWorkflowStepsQueueName, 40},
 		{InstallStateManagerQueueName, 5},
 		{InstallGenerateStepsQueueName, 10},
 		{InstallActionWorkflowsQueueName, 10},

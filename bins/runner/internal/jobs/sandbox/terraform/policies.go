@@ -26,7 +26,7 @@ func (h *handler) writePolicies(ctx context.Context) error {
 	if dirName == "" {
 		dirName = defaultPoliciesDirName
 	}
-	policyPath := filepath.Join(h.state.workspace.Root(), dirName)
+	policyPath := filepath.Join("/tmp", dirName)
 
 	// Remove the policy directory if it exits.
 	if err := os.RemoveAll(policyPath); err != nil {
