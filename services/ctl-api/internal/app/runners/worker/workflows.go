@@ -31,6 +31,23 @@ func (w *Workflows) All() []any {
 
 	return []any{
 		w.CronShutdownVM,
+		w.InstallStackVersionRun,
+		w.MngFetchToken,
+		w.MngRestart,
+		w.MngShutdown,
+		w.MngUpdate,
+		w.MngVMShutdown,
+		w.OfflineCheck,
+		w.ProcessJob,
+		w.Provision,
+		w.ProvisionServiceAccount,
+		w.Reprovision,
+		w.ReprovisionServiceAccount,
+		w.Restart,
+		w.UpdateVersion,
+		w.EventLoop,
+		w.RunnerHealthSweep,
+		w.ProcessHealthSweep,
 		wkflow.ProvisionRunner,
 		wkflow.DeprovisionRunner,
 	}

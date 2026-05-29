@@ -17,13 +17,14 @@ import (
 func (s *Signal) reconcileActionCronEmitters(
 	ctx workflow.Context,
 	l log.Logger,
+	nativeOn bool,
 	install *app.Install,
 	appCfg *app.AppConfig,
 	queue *app.Queue,
 	existing []app.QueueEmitter,
 ) error {
 	// Stop and delete all existing action cron emitters
-	stopAndDeleteEmitters(ctx, l, existing)
+	stopAndDeleteEmitters(ctx, l, nativeOn, existing)
 
 	// Fetch install action workflows
 	actionWorkflows, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
@@ -50,14 +51,13 @@ func (s *Signal) reconcileActionCronEmitters(
 		}
 
 		name := actionCronEmitterPrefix + iaw.ID
-		if _, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:         queue.ID,
-			Name:            name,
-			Description:     fmt.Sprintf("action cron for install %s, action workflow %s", s.InstallID, iaw.ActionWorkflowID),
-			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    awc.CronTrigger.CronSchedule,
-			SignalExpiresIn: 15 * time.Minute,
-			SignalType:      executeactionworkflow.SignalType,
+		em, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+			QueueID:      queue.ID,
+			Name:         name,
+			Description:  fmt.Sprintf("action cron for install %s, action workflow %s", s.InstallID, iaw.ActionWorkflowID),
+			Mode:         app.QueueEmitterModeCron,
+			CronSchedule: awc.CronTrigger.CronSchedule,
+			SignalType:   executeactionworkflow.SignalType,
 			SignalTemplate: &executeactionworkflow.Signal{
 				Signal: &actionworkflowrun.Signal{
 					InstallID:               install.ID,
@@ -67,8 +67,15 @@ func (s *Signal) reconcileActionCronEmitters(
 					RunEnvVars:              map[string]string{"TRIGGER_TYPE": "cron"},
 				},
 			},
-		}); err != nil {
+		})
+		if err != nil {
 			return fmt.Errorf("unable to create action cron emitter %s: %w", name, err)
+		}
+
+		if nativeOn {
+			if err := emitterclient.AwaitEnsureSchedule(ctx, em.ID); err != nil {
+				return fmt.Errorf("unable to ensure action cron schedule %s: %w", name, err)
+			}
 		}
 	}
 

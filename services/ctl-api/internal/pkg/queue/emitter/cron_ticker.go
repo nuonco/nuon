@@ -44,6 +44,16 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		zap.String("queue-id", req.QueueID),
 	)
 
+	// Work-layer gate: when native scheduling is enabled, Temporal Schedules drive
+	// emission instead. This single choke point neutralizes ALL legacy cron emits
+	// (drift, sandbox-drift, action crons, runner/process/vcs health) without
+	// requiring teardown - the flip is instant and reversible.
+	if w.cfg.NativeSchedulingEnabled {
+		l.Info("native scheduling enabled, legacy cron ticker no-op",
+			zap.String("emitter-id", req.EmitterID))
+		return nil
+	}
+
 	// Fetch emitter to check status and get signal template
 	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{
 		EmitterID: req.EmitterID,

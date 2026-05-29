@@ -20,6 +20,9 @@ type Client interface {
 
 	GetNamespaceClient(namespace string) (tclient.Client, error)
 
+	// ScheduleClientInNamespace returns a ScheduleClient bound to the given namespace.
+	ScheduleClientInNamespace(namespace string) (tclient.ScheduleClient, error)
+
 	// ExecuteWorkflowInNamespace is a wrapper that will execute a workflow in a different namespace
 	ExecuteWorkflowInNamespace(ctx context.Context,
 		namespace string,

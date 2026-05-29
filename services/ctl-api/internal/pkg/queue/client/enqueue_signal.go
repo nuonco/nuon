@@ -10,7 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -54,22 +54,18 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		status.Metadata["timeout_ns"] = t.Timeout().Nanoseconds()
 	}
 
-	// Merge single Callback into Callbacks for backward compat.
-	callbacks := req.Callbacks
-	if req.Callback.IsSet() {
-		found := false
-		for _, cb := range callbacks {
-			if cb.WorkflowID == req.Callback.WorkflowID && cb.SignalName == req.Callback.SignalName {
-				found = true
-				break
-			}
-		}
-		if !found {
-			callbacks = append(callbacks, req.Callback)
-		}
+	// Resolve created_by_id: prefer the creator carried in context (user-initiated
+	// enqueues), falling back to the queue's creator when there is none. Schedule-
+	// started workflows (native cron ScheduleEmit + health sweeps) run without a
+	// creator in context, so without this fallback the not-null created_by_id
+	// constraint is violated.
+	createdByID := keys.CreatedByIDFromContext(ctx)
+	if createdByID == "" {
+		createdByID = q.CreatedByID
 	}
 
 	queueSignal := app.QueueSignal{
+		CreatedByID:   createdByID,
 		SignalContext: queuecctx.FromContext(ctx),
 		Signal: signaldb.SignalData{
 			Signal: req.Signal,

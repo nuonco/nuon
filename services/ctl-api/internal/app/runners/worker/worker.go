@@ -89,8 +89,21 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	params.Lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(startCtx context.Context) error {
 			params.L.Info("starting runners worker")
+
+			// Idempotently register the native health-sweep schedules. They no-op
+			// when native scheduling is disabled, so creating them regardless of the
+			// flag keeps the flip instant.
+			if err := workflows.EnsureSweepSchedule(startCtx, params.Tclient, signals.TemporalNamespace,
+				"runner-health-sweep", "* * * * *", "RunnerHealthSweep", RunnerHealthSweepRequest{}); err != nil {
+				params.L.Warn("unable to ensure runner health sweep schedule", zap.Error(err))
+			}
+			if err := workflows.EnsureSweepSchedule(startCtx, params.Tclient, signals.TemporalNamespace,
+				"process-health-sweep", "* * * * *", "ProcessHealthSweep", ProcessHealthSweepRequest{}); err != nil {
+				params.L.Warn("unable to ensure process health sweep schedule", zap.Error(err))
+			}
+
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()

@@ -16,13 +16,14 @@ import (
 func (s *Signal) reconcileDriftEmitters(
 	ctx workflow.Context,
 	l log.Logger,
+	nativeOn bool,
 	install *app.Install,
 	appCfg *app.AppConfig,
 	queue *app.Queue,
 	existing []app.QueueEmitter,
 ) error {
 	// Stop and delete all existing drift emitters
-	stopAndDeleteEmitters(ctx, l, existing)
+	stopAndDeleteEmitters(ctx, l, nativeOn, existing)
 
 	// Fetch install components
 	installComponents, err := activities.AwaitGetInstallComponentsByInstallID(ctx, s.InstallID)
@@ -47,21 +48,27 @@ func (s *Signal) reconcileDriftEmitters(
 		}
 
 		name := driftEmitterPrefix + ic.ID
-		if _, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:         queue.ID,
-			Name:            name,
-			Description:     fmt.Sprintf("drift check for install %s, component %s", s.InstallID, ic.ComponentID),
-			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    ccc.DriftSchedule,
-			SignalExpiresIn: 15 * time.Minute,
-			SignalType:      driftcheck.SignalType,
+		em, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+			QueueID:      queue.ID,
+			Name:         name,
+			Description:  fmt.Sprintf("drift check for install %s, component %s", s.InstallID, ic.ComponentID),
+			Mode:         app.QueueEmitterModeCron,
+			CronSchedule: ccc.DriftSchedule,
+			SignalType:   driftcheck.SignalType,
 			SignalTemplate: &driftcheck.Signal{
 				InstallID:          install.ID,
 				InstallComponentID: ic.ID,
 				ComponentID:        ic.ComponentID,
 			},
-		}); err != nil {
+		})
+		if err != nil {
 			return fmt.Errorf("unable to create drift emitter %s: %w", name, err)
+		}
+
+		if nativeOn {
+			if err := emitterclient.AwaitEnsureSchedule(ctx, em.ID); err != nil {
+				return fmt.Errorf("unable to ensure drift schedule %s: %w", name, err)
+			}
 		}
 	}
 

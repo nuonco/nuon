@@ -31,6 +31,15 @@ func (t *temporal) GetNamespaceClient(namespace string) (tclient.Client, error) 
 	return client, nil
 }
 
+func (t *temporal) ScheduleClientInNamespace(namespace string) (tclient.ScheduleClient, error) {
+	client, err := t.GetNamespaceClient(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get namespace client")
+	}
+
+	return client.ScheduleClient(), nil
+}
+
 func (t *temporal) ExecuteWorkflowInNamespace(ctx context.Context,
 	namespace string,
 	options tclient.StartWorkflowOptions,

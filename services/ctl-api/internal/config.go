@@ -104,6 +104,8 @@ func init() {
 
 	config.RegisterDefault("action_crons_enabled", false)
 
+	config.RegisterDefault("native_scheduling_enabled", false)
+
 	// queue handler grace period: how long a finished handler stays alive before auto-terminating
 	// short for local dev; prod overrides via config
 	config.RegisterDefault("queue_handler_grace_period", "1m")
@@ -391,6 +393,12 @@ type Config struct {
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
+
+	// NativeSchedulingEnabled gates the cutover from legacy queue emitters to
+	// Temporal-native Schedules + health sweeps. Work-layer gate: legacy ticks
+	// no-op when true, native Schedules/sweeps no-op when false. The flip is
+	// instant and reversible; no resource teardown is required for correctness.
+	NativeSchedulingEnabled bool `config:"native_scheduling_enabled"`
 
 	MinCLIVersion string `config:"min_cli_version"`
 

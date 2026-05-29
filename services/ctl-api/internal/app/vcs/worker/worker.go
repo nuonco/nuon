@@ -73,9 +73,23 @@ func New(params WorkerParams) (*Worker, error) {
 		wkr.RegisterWorkflow(wkflow)
 	}
 
+	// register custom vcs workflows (health sweep)
+	vcsWorkflows := NewWorkflows(params.Cfg)
+	for _, wkflow := range vcsWorkflows.All() {
+		wkr.RegisterWorkflow(wkflow)
+	}
+
 	params.Lc.Append(fx.Hook{
-		OnStart: func(context.Context) error {
+		OnStart: func(startCtx context.Context) error {
 			params.L.Info("starting vcs worker")
+
+			// Idempotently register the native vcs health-sweep schedule (no-ops
+			// when native scheduling is disabled).
+			if err := workflows.EnsureSweepSchedule(startCtx, params.Tclient, TemporalNamespace,
+				"vcs-health-sweep", "*/5 * * * *", "VCSHealthSweep", VCSHealthSweepRequest{}); err != nil {
+				params.L.Warn("unable to ensure vcs health sweep schedule", zap.Error(err))
+			}
+
 			go func() {
 				wkr.Run(worker.InterruptCh())
 			}()

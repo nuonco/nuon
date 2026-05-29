@@ -151,7 +151,24 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		}
 	}
 
-	// update install app_config_id
+	// Advance the install's pinned sandbox config alongside app_config_id. These
+	// are separate FKs: leaving AppSandboxConfigID pinned to the old config means
+	// anything reading install.AppSandboxConfig (e.g. the sandbox drift schedule)
+	// sees stale config after a sync. An app without a sandbox config yields no
+	// row, in which case the zero value is skipped by the struct-based Updates.
+	var sandboxConfigIDs []string
+	if err := tx.Model(&app.AppSandboxConfig{}).
+		Where(app.AppSandboxConfig{AppConfigID: appConfigID}).
+		Limit(1).
+		Pluck("id", &sandboxConfigIDs).Error; err != nil {
+		tx.Rollback()
+		return stderr.ErrSystem{
+			Err:         fmt.Errorf("unable to resolve sandbox config for app config %s: %w", appConfigID, err),
+			Description: "Failed to resolve new sandbox config",
+		}
+	}
+
+	// update install app_config_id (and sandbox config FK)
 	res := tx.Model(&app.Install{}).
 		Where(app.Install{AppID: appID})
 
@@ -159,7 +176,12 @@ func (s *service) updateAppConfigInstalls(ctx context.Context, appID, appConfigI
 		res = res.Where("id in ?", req.InstallIDs)
 	}
 
-	if err := res.Updates(app.Install{AppConfigID: appConfigID}).Error; err != nil {
+	updates := app.Install{AppConfigID: appConfigID}
+	if len(sandboxConfigIDs) > 0 {
+		updates.AppSandboxConfigID = sandboxConfigIDs[0]
+	}
+
+	if err := res.Updates(updates).Error; err != nil {
 		tx.Rollback()
 		return stderr.ErrSystem{
 			Err:         fmt.Errorf("unable to update installs: %w", err),

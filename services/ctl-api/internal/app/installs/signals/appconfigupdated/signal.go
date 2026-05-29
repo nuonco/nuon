@@ -80,6 +80,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app config: %w", err)
 	}
 
+	// Work-layer gate: when native scheduling is enabled, reconcile Temporal
+	// Schedules alongside the emitter rows (the legacy Emitter workflow's
+	// CronTicker no-ops). When disabled, the legacy emitter path is authoritative.
+	nativeOn, err := emitterclient.AwaitNativeSchedulingEnabled(ctx, &emitterclient.NativeSchedulingEnabledRequest{})
+	if err != nil {
+		return fmt.Errorf("unable to read native scheduling flag: %w", err)
+	}
+
 	// Fetch existing emitters from the signals queue (drift emitters live here)
 	signalsEmitters, err := emitterclient.AwaitGetEmittersByQueueID(ctx, signalsQueue.ID)
 	if err != nil {
@@ -112,7 +120,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Clean up legacy action cron emitters from the signals queue.
-	stopAndDeleteEmitters(ctx, l, legacyActionEmitters)
+	stopAndDeleteEmitters(ctx, l, nativeOn, legacyActionEmitters)
 
 	// Collect action cron emitters from their dedicated queue.
 	var actionEmitters []app.QueueEmitter
@@ -122,24 +130,36 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.reconcileActionCronEmitters(ctx, l, install, appCfg, actionCronQueue, actionEmitters); err != nil {
+	if err := s.reconcileActionCronEmitters(ctx, l, nativeOn, install, appCfg, actionCronQueue, actionEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile action cron emitters: %w", err)
 	}
 
-	if err := s.reconcileDriftEmitters(ctx, l, install, appCfg, signalsQueue, driftEmitters); err != nil {
+	if err := s.reconcileDriftEmitters(ctx, l, nativeOn, install, appCfg, signalsQueue, driftEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile drift emitters: %w", err)
 	}
 
-	if err := s.reconcileDriftSandboxEmitter(ctx, l, install, signalsQueue, driftSandboxEmitters); err != nil {
+	if err := s.reconcileDriftSandboxEmitter(ctx, l, nativeOn, install, appCfg, signalsQueue, driftSandboxEmitters); err != nil {
 		return fmt.Errorf("unable to reconcile sandbox drift emitter: %w", err)
 	}
 
 	return nil
 }
 
-// stopAndDeleteEmitters stops and deletes a list of emitters. Errors are logged but not fatal.
-func stopAndDeleteEmitters(ctx workflow.Context, l interface{ Warn(string, ...interface{}) }, emitters []app.QueueEmitter) {
+// stopAndDeleteEmitters stops and deletes a list of emitters. When native
+// scheduling is enabled it also prunes the backing Temporal Schedule. Errors are
+// logged but not fatal.
+func stopAndDeleteEmitters(ctx workflow.Context, l interface{ Warn(string, ...interface{}) }, nativeOn bool, emitters []app.QueueEmitter) {
 	for _, em := range emitters {
+		if nativeOn {
+			if err := emitterclient.AwaitDeleteSchedule(ctx, &emitterclient.DeleteScheduleRequest{
+				ScheduleID: em.Name,
+				Namespace:  em.Workflow.Namespace,
+			}); err != nil {
+				l.Warn("unable to delete schedule",
+					zap.String("emitter_id", em.ID),
+					zap.Error(err))
+			}
+		}
 		if _, err := emitterclient.AwaitStopEmitter(ctx, em.ID); err != nil {
 			l.Warn("unable to stop emitter",
 				zap.String("emitter_id", em.ID),

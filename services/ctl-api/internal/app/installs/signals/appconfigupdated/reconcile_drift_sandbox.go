@@ -12,9 +12,15 @@ import (
 )
 
 // reconcileDriftSandboxEmitter reconciles a single per-install sandbox drift
-// cron emitter against AppSandboxConfig.DriftSchedule. Mirrors
-// reconcileDriftEmitters but install-scoped (sandbox drift is configured at
-// the app-sandbox-config level, not per-component).
+// cron emitter against the sandbox drift schedule. Mirrors reconcileDriftEmitters
+// but install-scoped (sandbox drift is configured at the app-sandbox-config level,
+// not per-component).
+//
+// The schedule is read from appCfg.SandboxConfig (the install's CURRENT app
+// config, which `apps sync` advances via install.AppConfigID) — NOT from
+// install.AppSandboxConfig, whose pinned AppSandboxConfigID is not advanced on
+// sync and would therefore reconcile against a stale (or no-longer-disabled)
+// schedule.
 //
 // `existing` is the pre-filtered list of emitters whose name matched the
 // driftSandboxEmitterPrefix. They're stopped and deleted unconditionally;
@@ -22,19 +28,21 @@ import (
 func (s *Signal) reconcileDriftSandboxEmitter(
 	ctx workflow.Context,
 	l log.Logger,
+	nativeOn bool,
 	install *app.Install,
+	appCfg *app.AppConfig,
 	queue *app.Queue,
 	existing []app.QueueEmitter,
 ) error {
-	stopAndDeleteEmitters(ctx, l, existing)
+	stopAndDeleteEmitters(ctx, l, nativeOn, existing)
 
-	schedule := install.AppSandboxConfig.DriftSchedule
+	schedule := appCfg.SandboxConfig.DriftSchedule
 	if schedule == "" {
 		return nil
 	}
 
 	name := driftSandboxEmitterPrefix + install.ID
-	if _, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+	em, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:      queue.ID,
 		Name:         name,
 		Description:  fmt.Sprintf("sandbox drift check for install %s", install.ID),
@@ -44,8 +52,15 @@ func (s *Signal) reconcileDriftSandboxEmitter(
 		SignalTemplate: &driftchecksandbox.Signal{
 			InstallID: install.ID,
 		},
-	}); err != nil {
+	})
+	if err != nil {
 		return fmt.Errorf("unable to create sandbox drift emitter %s: %w", name, err)
+	}
+
+	if nativeOn {
+		if err := emitterclient.AwaitEnsureSchedule(ctx, em.ID); err != nil {
+			return fmt.Errorf("unable to ensure sandbox drift schedule %s: %w", name, err)
+		}
 	}
 
 	return nil
