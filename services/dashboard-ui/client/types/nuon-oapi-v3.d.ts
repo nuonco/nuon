@@ -4534,8 +4534,15 @@ export interface components {
        * @description Callback describes where to send a Temporal signal when this queue signal
        * completes. When set, the handler signals the parent workflow on completion
        * instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+       * Deprecated: use Callbacks for new code. Kept for backward compat during migration.
        */
       callback?: components["schemas"]["callback.Ref"];
+      /**
+       * @description Callbacks is the multi-callback successor to Callback. It supports multiple
+       * completion targets, enabling patterns like EnsureSignal where callers dynamically
+       * register callbacks on in-flight signals.
+       */
+      callbacks?: components["schemas"]["callback.Ref"][];
       created_at?: string;
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
