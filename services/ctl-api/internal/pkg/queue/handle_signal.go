@@ -74,8 +74,11 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	return nil
 }
 
+// processQueueSignal drives the handler through ready → validate → execute.
+// Each update waits for accepted only (no heartbeating). The queue waits for a
+// per-phase callback after validate and execute to guarantee ordering.
 func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSignal *app.QueueSignal, queueRef QueueRef) error {
-	// 1. Ready: start the handler workflow via update-with-start (wait for accepted).
+	// 1. Ready: start the handler workflow via update-with-start (waits for completed — fast).
 	l.Info("starting handler workflow")
 	readyResp, err := handleractivities.AwaitUpdateWorkflowReady(ctx, handleractivities.UpdateWorkflowReadyRequest{
 		UpdateID:   queueSignal.ID,
@@ -92,36 +95,38 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		RunID:         readyResp.RunID,
 	})
 
-	// Create a callback so the handler signals us on completion.
-	cb := callback.New(ctx, queueSignal.ID)
-
-	// 2. Validate: send the validate update (wait for accepted only, no heartbeat).
+	// 2. Validate: send update (accepted-only), wait for callback.
+	validateCB := callback.New(ctx, queueSignal.ID+"-validate")
 	l.Info("sending validate update")
 	if err := handleractivities.AwaitUpdateWorkflowValidate(ctx, handleractivities.UpdateWorkflowValidateRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
 		RunID:      readyResp.RunID,
+		Cb:         validateCB,
 	}); err != nil {
 		return errors.Wrap(err, "unable to send validate update")
 	}
 
-	// 3. Execute: send the execute update (wait for accepted only, no heartbeat).
+	if _, err := callback.Await(ctx, validateCB); err != nil {
+		return errors.Wrap(err, "validate failed")
+	}
+
+	// 3. Execute: send update (accepted-only), wait for callback.
+	executeCB := callback.New(ctx, queueSignal.ID+"-execute")
 	l.Info("sending execute update")
 	if err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
 		UpdateID:   queueSignal.ID,
 		WorkflowID: queueRef.WorkflowID,
 		QueueID:    queueSignal.QueueID,
 		RunID:      readyResp.RunID,
+		Cb:         executeCB,
 	}); err != nil {
 		return errors.Wrap(err, "unable to send execute update")
 	}
 
-	// 4. Wait for the handler's completion callback.
-	l.Info("waiting for handler completion callback")
-	_, err = callback.Await(ctx, cb)
-	if err != nil {
-		return errors.Wrap(err, "handler execution failed")
+	if _, err := callback.Await(ctx, executeCB); err != nil {
+		return errors.Wrap(err, "execute failed")
 	}
 
 	return nil
