@@ -25,7 +25,11 @@ type EnqueueSignalRequest struct {
 	ExpiresAt *time.Time
 
 	// Callback describes where the handler should send a Temporal signal on completion.
+	// Deprecated: use Callbacks for new code.
 	Callback callback.Ref
+
+	// Callbacks supports multiple completion targets.
+	Callbacks callback.Refs
 }
 
 // @temporal-gen-v2 activity
@@ -49,6 +53,21 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		status.Metadata["timeout_ns"] = t.Timeout().Nanoseconds()
 	}
 
+	// Merge single Callback into Callbacks for backward compat.
+	callbacks := req.Callbacks
+	if req.Callback.IsSet() {
+		found := false
+		for _, cb := range callbacks {
+			if cb.WorkflowID == req.Callback.WorkflowID && cb.SignalName == req.Callback.SignalName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			callbacks = append(callbacks, req.Callback)
+		}
+	}
+
 	queueSignal := app.QueueSignal{
 		SignalContext: queuecctx.FromContext(ctx),
 		Signal: signaldb.SignalData{
@@ -64,7 +83,8 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: q.Workflow.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
 		},
-		Callback: req.Callback,
+		Callback:  req.Callback,
+		Callbacks: callbacks,
 	}
 
 	if res := c.db.WithContext(ctx).Create(&queueSignal); res.Error != nil {

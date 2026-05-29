@@ -80,9 +80,9 @@ type handler struct {
 	executingCtx    workflow.Context
 	executingCancel workflow.CancelFunc
 
-	// Callback loaded from the QueueSignal DB record during initializeState.
-	// When set, the handler sends a Temporal signal to the parent workflow on completion.
-	callback callback.Ref
+	// Callbacks loaded from the QueueSignal DB record during initializeState.
+	// When set, the handler sends Temporal signals to all parent workflows on completion.
+	callbacks callback.Refs
 
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal
