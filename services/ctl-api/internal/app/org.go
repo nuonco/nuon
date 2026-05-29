@@ -65,6 +65,7 @@ const (
 	OrgFeatureSlack                   OrgFeature = "slack"
 	OrgFeatureRunbooks                OrgFeature = "runbooks"
 	OrgFeatureDatadog                 OrgFeature = "datadog"
+	OrgFeatureClickHouseEvents        OrgFeature = "clickhouse-events"
 )
 
 type Org struct {
@@ -184,6 +185,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSlack:                   false,
 		OrgFeatureRunbooks:                false,
 		OrgFeatureDatadog:                 false,
+		OrgFeatureClickHouseEvents:        false,
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
 		OrgFeatureQueues:             true,
@@ -243,6 +245,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSlack,
 		OrgFeatureRunbooks,
 		OrgFeatureDatadog,
+		OrgFeatureClickHouseEvents,
 	}
 }
 
@@ -273,6 +276,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSlack:                   "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
 		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
 		OrgFeatureDatadog:                 "Enable the Datadog integration, including the Datadog link in the dashboard sidebar, multi-tenant DD connections, event subscriptions, and one-click managed monitors",
+		OrgFeatureClickHouseEvents:        "Mirror every signal lifecycle event into ClickHouse as a durable per-org event log. Powers the in-dashboard event feed and lets metric-mode Datadog monitors fire without an event subscription routing events into DD.",
 	}
 }
 

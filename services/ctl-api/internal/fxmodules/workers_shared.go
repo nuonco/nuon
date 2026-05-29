@@ -56,6 +56,7 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewSlackSignalLifecycleHook)),
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewDatadogSignalLifecycleHook)),
+	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewClickHouseSignalLifecycleHook)),
 	fx.Provide(signal.NewSignalLifecycleActivities),
 
 	fx.Provide(jobactivities.New),

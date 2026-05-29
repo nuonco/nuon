@@ -36,5 +36,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "08-add-queries-indexes",
 			Fn:   m.Migration008AddQueriesIndexes,
 		},
+		{
+			Name: "09-create-nuon-events-table",
+			Fn:   m.Migration009CreateNuonEventsTable,
+		},
 	}
 }
