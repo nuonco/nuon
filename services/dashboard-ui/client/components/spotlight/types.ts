@@ -123,11 +123,26 @@ export function parseQuery(raw: string): ParsedQuery {
   return { prefix: null, query: raw.trim(), command: null }
 }
 
+const GLOBAL_COMMANDS = [
+  'run adhoc action',
+  'deploy all components',
+  'reprovision install',
+  'sync secrets',
+]
+
 export function getAutocompletion(input: string): string | null {
   if (!input) return null
   if (input.includes('/')) {
     const parsed = parseQuery(input)
-    if (!parsed.prefix) return null
+    if (!parsed.prefix) {
+      if (input.startsWith('/')) {
+        const after = input.slice(1).toLowerCase()
+        if (!after) return null
+        const match = GLOBAL_COMMANDS.find((c) => c.startsWith(after) && c !== after)
+        return match ? '/' + match : null
+      }
+      return null
+    }
     const commands = COMMANDS_BY_PREFIX[parsed.prefix]
     if (!commands) return null
     const slashIdx = input.indexOf('/')

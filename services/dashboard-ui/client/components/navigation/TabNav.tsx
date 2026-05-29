@@ -1,13 +1,15 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useLocation } from 'react-router'
 import { Button } from '@/components/common/Button'
 import type { TNavLink } from '@/types'
 import './TabNav.css'
 
+type TTabLink = Omit<TNavLink, 'text'> & { text: ReactNode } 
+
 export interface ITabNav {
   activeIndex?: number
   basePath: string
-  tabs: TNavLink[]
+  tabs: TTabLink[]
 }
 
 export const TabNav = ({ activeIndex, basePath, tabs }: ITabNav) => {

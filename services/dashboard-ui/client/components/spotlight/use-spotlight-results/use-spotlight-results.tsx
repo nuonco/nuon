@@ -59,12 +59,19 @@ export function useSpotlightResults(
   })
 
   const isRunnerIdQuery = parsed.query.startsWith('run')
+  const isGlobalCommand = parsed.prefix === null && parsed.query.startsWith('/')
 
   const { data: installsResult, isFetching: installsFetching } = useQuery({
     queryKey: ['spotlight', 'installs', parsed.query, orgId],
     queryFn: () =>
       getInstalls({ orgId, q: parsed.query || undefined, limit: 5 }),
-    enabled: (parsed.prefix === 'install' || (parsed.prefix === null && parsed.query.length > 0)) && !!orgId,
+    enabled: (parsed.prefix === 'install' || (parsed.prefix === null && parsed.query.length > 0 && !isGlobalCommand)) && !!orgId,
+  })
+
+  const { data: globalCommandInstalls, isFetching: globalCommandInstallsFetching } = useQuery({
+    queryKey: ['spotlight', 'global-command-installs', orgId],
+    queryFn: () => getInstalls({ orgId, limit: 20 }),
+    enabled: isGlobalCommand && !!orgId,
   })
 
   const { data: runnerInstallsResult, isFetching: runnerInstallsFetching } = useQuery({
@@ -196,6 +203,53 @@ export function useSpotlightResults(
         path: `/installs/${install.id}`,
         icon: 'CubeIcon',
       }))
+      if (isGlobalCommand) {
+        const commandQuery = liveParsed.query.slice(1).trim().toLowerCase()
+        const gcInstalls = globalCommandInstalls?.data ?? []
+        const commandResults: SpotlightResult[] = []
+        for (const install of gcInstalls) {
+          const installId = install.id!
+          const name = install.name ?? installId
+          const commands: SpotlightResult[] = [
+            {
+              label: `${name} › Run adhoc action`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'TerminalWindowIcon',
+              action: () => addModal?.(<InstallAdhocActionModal installId={installId} />),
+            },
+            {
+              label: `${name} › Deploy all components`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'LightningIcon',
+              action: () => addModal?.(<InstallDeployAllComponentsModal installId={installId} />),
+            },
+            {
+              label: `${name} › Reprovision install`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'LightningIcon',
+              action: () => addModal?.(<InstallReprovisionModal installId={installId} />),
+            },
+            {
+              label: `${name} › Sync secrets`,
+              subtitle: install.app?.name,
+              tag: 'command',
+              icon: 'LightningIcon',
+              action: () => addModal?.(<InstallSyncSecretsModal installId={installId} />),
+            },
+          ]
+          for (const cmd of commands) {
+            const cmdName = cmd.label.split(' › ')[1].toLowerCase()
+            if (!commandQuery || tokenMatch(cmdName, commandQuery)) {
+              commandResults.push(cmd)
+            }
+          }
+        }
+        return commandResults
+      }
+
       return [...matched, ...apps, ...runnerPages, ...installs]
     }
 
@@ -510,9 +564,9 @@ export function useSpotlightResults(
     }
 
     return []
-  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures])
+  }, [liveParsed, parsed, appsResult, installsResult, runnerInstallsResult, globalCommandInstalls, orgsResult, actionResults, componentResults, appSubPages, addModal, orgFeatures, isGlobalCommand])
 
-  const isFetching = appsFetching || installsFetching || runnerInstallsFetching || orgsFetching || actionsFetching || componentsFetching
+  const isFetching = appsFetching || installsFetching || runnerInstallsFetching || globalCommandInstallsFetching || orgsFetching || actionsFetching || componentsFetching
 
   return { results, isFetching }
 }
