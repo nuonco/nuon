@@ -5,6 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -47,6 +48,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 		"queue", cfg.QueueName,
 	)
 
+	cb := callback.New(ctx, signalOwnerID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
@@ -54,6 +56,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 		Signal:          sig,
 		SignalOwnerID:   signalOwnerID,
 		SignalOwnerType: signalOwnerType,
+		Callback:        cb,
 	})
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to enqueue group signal for group %d", group.GroupIdx)
@@ -63,7 +66,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 
 	// Wait for the group to finish via the group-finished update handler.
 	// If the group has a StepGroupID, use ForwardGroupFinished for resilient
-	// completion tracking. Fall back to AwaitQueueSignal for backward compat
+	// completion tracking. Fall back to callback.Await for backward compat
 	// when no StepGroupID is available (legacy in-flight workflows).
 	if group.ID != "" {
 		resp, err := workflowactivities.AwaitForwardGroupFinished(ctx, workflowactivities.ForwardGroupFinishedRequest{
@@ -81,7 +84,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	}
 
 	// Legacy fallback: no StepGroupID, use framework-level finished handler.
-	_, err = client.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
+	_, err = callback.Await(ctx, cb)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)

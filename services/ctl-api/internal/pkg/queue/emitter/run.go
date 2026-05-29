@@ -1,6 +1,8 @@
 package emitter
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -9,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/workflowmanager"
 )
 
 func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
@@ -22,10 +25,40 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 		return false, errors.Wrap(err, "unable to register handlers")
 	}
 
-	// Start the background CAN listener to detect unbounded history growth
-	// and entity deletion. It sets e.restarted or e.stopped which the
-	// mode-specific loops pick up on their next check interval.
-	e.startCANListener(ctx)
+	// Start the lifecycle manager to detect unbounded history growth and
+	// entity deletion. It bridges to e.restarted/e.stopped which the
+	// mode-specific loops check.
+	mgr := workflowmanager.New(
+		workflowmanager.WithHistoryMax(emitterCANHistoryMax),
+		workflowmanager.WithCheckInterval(5*time.Minute),
+		workflowmanager.WithMetricsWriter(e.mw),
+		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
+			if _, err := e.ensureEmitterActive(gCtx); err != nil {
+				return false, err
+			}
+			if e.stopped {
+				return false, nil
+			}
+			if err := e.ensureQueueActive(gCtx); err != nil {
+				return false, err
+			}
+			return !e.stopped, nil
+		}),
+	)
+	mgr.Start(ctx)
+
+	// Bridge manager state to emitter fields read by mode-specific loops.
+	workflow.Go(ctx, func(gCtx workflow.Context) {
+		_ = workflow.Await(gCtx, func() bool {
+			return mgr.Stopped || mgr.Restarted
+		})
+		if mgr.Stopped {
+			e.stopped = true
+		}
+		if mgr.Restarted {
+			e.restarted = true
+		}
+	})
 
 	// Fetch the emitter from DB and set e.queueID from the authoritative record.
 	emitter, err := e.ensureEmitterActive(ctx)
