@@ -55,6 +55,12 @@ func (o *CreateAppKubernetesManifestComponentConfigReader) ReadResponse(response
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppKubernetesManifestComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppKubernetesManifestComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppKubernetesManifestComponentConfigNotFound) GetPayload() *model
 }
 
 func (o *CreateAppKubernetesManifestComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppKubernetesManifestComponentConfigConflict creates a CreateAppKubernetesManifestComponentConfigConflict with default headers values
+func NewCreateAppKubernetesManifestComponentConfigConflict() *CreateAppKubernetesManifestComponentConfigConflict {
+	return &CreateAppKubernetesManifestComponentConfigConflict{}
+}
+
+/*
+CreateAppKubernetesManifestComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppKubernetesManifestComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app kubernetes manifest component config conflict response has a 2xx status code
+func (o *CreateAppKubernetesManifestComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app kubernetes manifest component config conflict response has a 3xx status code
+func (o *CreateAppKubernetesManifestComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app kubernetes manifest component config conflict response has a 4xx status code
+func (o *CreateAppKubernetesManifestComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app kubernetes manifest component config conflict response has a 5xx status code
+func (o *CreateAppKubernetesManifestComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app kubernetes manifest component config conflict response a status code equal to that given
+func (o *CreateAppKubernetesManifestComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app kubernetes manifest component config conflict response
+func (o *CreateAppKubernetesManifestComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppKubernetesManifestComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/configs/kubernetes-manifest][%d] createAppKubernetesManifestComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppKubernetesManifestComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/configs/kubernetes-manifest][%d] createAppKubernetesManifestComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppKubernetesManifestComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppKubernetesManifestComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

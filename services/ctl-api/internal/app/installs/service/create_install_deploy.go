@@ -48,6 +48,7 @@ func (c *CreateInstallComponentDeployRequest) Validate(v *validator.Validate) er
 // @Failure                 401 {object} stderr.ErrResponse
 // @Failure                 403 {object} stderr.ErrResponse
 // @Failure                 404 {object} stderr.ErrResponse
+// @Failure                 409 {object} stderr.ErrResponse
 // @Failure                 500 {object} stderr.ErrResponse
 // @Success                 201 {object} app.InstallDeploy
 // @Router                  /v1/installs/{install_id}/components/{component_id}/deploys [post]
@@ -156,6 +157,7 @@ func (c *CreateInstallDeployRequest) Validate(v *validator.Validate) error {
 // @Failure                 401 {object} stderr.ErrResponse
 // @Failure                 403 {object} stderr.ErrResponse
 // @Failure                 404 {object} stderr.ErrResponse
+// @Failure                 409 {object} stderr.ErrResponse
 // @Failure                 500 {object} stderr.ErrResponse
 // @Success                 201 {object} app.InstallDeploy
 // @Router                  /v1/installs/{install_id}/deploys [post]

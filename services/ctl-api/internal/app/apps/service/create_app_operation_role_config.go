@@ -47,6 +47,7 @@ func (c *CreateAppOperationRoleConfigRequest) Validate(v *validator.Validate) er
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppOperationRoleConfig
 // @Router					/v1/apps/{app_id}/operation-role-configs [post]

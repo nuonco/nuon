@@ -55,6 +55,12 @@ func (o *CreatePulumiComponentConfigReader) ReadResponse(response runtime.Client
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreatePulumiComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreatePulumiComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreatePulumiComponentConfigNotFound) GetPayload() *models.StderrErrResp
 }
 
 func (o *CreatePulumiComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreatePulumiComponentConfigConflict creates a CreatePulumiComponentConfigConflict with default headers values
+func NewCreatePulumiComponentConfigConflict() *CreatePulumiComponentConfigConflict {
+	return &CreatePulumiComponentConfigConflict{}
+}
+
+/*
+CreatePulumiComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreatePulumiComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create pulumi component config conflict response has a 2xx status code
+func (o *CreatePulumiComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create pulumi component config conflict response has a 3xx status code
+func (o *CreatePulumiComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create pulumi component config conflict response has a 4xx status code
+func (o *CreatePulumiComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create pulumi component config conflict response has a 5xx status code
+func (o *CreatePulumiComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create pulumi component config conflict response a status code equal to that given
+func (o *CreatePulumiComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create pulumi component config conflict response
+func (o *CreatePulumiComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreatePulumiComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/pulumi][%d] createPulumiComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreatePulumiComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/pulumi][%d] createPulumiComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreatePulumiComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreatePulumiComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
