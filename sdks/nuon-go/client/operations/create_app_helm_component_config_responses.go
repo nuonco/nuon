@@ -55,6 +55,12 @@ func (o *CreateAppHelmComponentConfigReader) ReadResponse(response runtime.Clien
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppHelmComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppHelmComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppHelmComponentConfigNotFound) GetPayload() *models.StderrErrRes
 }
 
 func (o *CreateAppHelmComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppHelmComponentConfigConflict creates a CreateAppHelmComponentConfigConflict with default headers values
+func NewCreateAppHelmComponentConfigConflict() *CreateAppHelmComponentConfigConflict {
+	return &CreateAppHelmComponentConfigConflict{}
+}
+
+/*
+CreateAppHelmComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppHelmComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app helm component config conflict response has a 2xx status code
+func (o *CreateAppHelmComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app helm component config conflict response has a 3xx status code
+func (o *CreateAppHelmComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app helm component config conflict response has a 4xx status code
+func (o *CreateAppHelmComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app helm component config conflict response has a 5xx status code
+func (o *CreateAppHelmComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app helm component config conflict response a status code equal to that given
+func (o *CreateAppHelmComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app helm component config conflict response
+func (o *CreateAppHelmComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppHelmComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/configs/helm][%d] createAppHelmComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppHelmComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/configs/helm][%d] createAppHelmComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppHelmComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppHelmComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

@@ -30,6 +30,7 @@ type CreateHelmReleaseRequest any
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}	app.HelmRelease
 // @Router					/v1/helm-releases/{helm_chart_id}/releases/{namespace}/{key} [post]
