@@ -23,7 +23,11 @@ import { DeployManifestTab } from './deploy-tabs/DeployManifestTab'
 import { DeployArtifactTab } from './deploy-tabs/DeployArtifactTab'
 import { ActionDetail } from './ActionDetail'
 import { Runbooks } from './Runbooks'
-import { RunbookDetail } from './RunbookDetail'
+import { RunbookDetailLayout } from './RunbookDetailLayout'
+import { RunbookLatestRunTab } from './runbook-tabs/RunbookLatestRunTab'
+import { RunbookReadmeTab } from './runbook-tabs/RunbookReadmeTab'
+import { RunbookStepsTab } from './runbook-tabs/RunbookStepsTab'
+import { RunbookHistoryTab } from './runbook-tabs/RunbookHistoryTab'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
@@ -117,7 +121,13 @@ export const installRoutes: RouteObject[] = [
       { path: ':orgId/installs/:installId/runbooks', element: <Runbooks /> },
       {
         path: ':orgId/installs/:installId/runbooks/:runbookId',
-        element: <RunbookDetail />,
+        element: <RunbookDetailLayout />,
+        children: [
+          { index: true, element: <RunbookLatestRunTab /> },
+          { path: 'readme', element: <RunbookReadmeTab /> },
+          { path: 'steps', element: <RunbookStepsTab /> },
+          { path: 'history', element: <RunbookHistoryTab /> },
+        ],
       },
       {
         path: ':orgId/installs/:installId/actions/:actionId/runs',
