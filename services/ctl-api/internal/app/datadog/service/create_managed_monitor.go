@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -42,6 +43,12 @@ type CreateManagedMonitorRequest struct {
 	Preset        app.DatadogManagedMonitorPreset `json:"preset" validate:"required,oneof=failure drift"`
 	DisplayName   string                          `json:"display_name,omitempty"`
 	NotifyHandles []string                        `json:"notify_handles,omitempty"`
+
+	// Mode selects event-stream vs metric-driven matching. Empty defaults
+	// to "event" for back-compat with v1 clients. Metric mode is the
+	// recommended choice for orgs that don't route events into DD via an
+	// event subscription — see DatadogManagedMonitorMode for the tradeoff.
+	Mode app.DatadogManagedMonitorMode `json:"mode,omitempty" validate:"omitempty,oneof=event metric"`
 }
 
 func (r *CreateManagedMonitorRequest) Validate(v *validator.Validate) error {
@@ -140,6 +147,14 @@ func (s *service) createManagedMonitor(
 		installID = ""
 	}
 
+	// Resolve effective mode here so the rest of the flow has a single
+	// non-empty value to reason about. Empty request → event mode for
+	// back-compat (v1 clients submit no `mode` field).
+	mode := req.Mode
+	if mode == "" {
+		mode = app.DatadogManagedMonitorModeEvent
+	}
+
 	// Idempotency: if a row already exists for
 	// (connection, target_type, target_id, install_id, preset) return
 	// it instead of failing — the button is designed to be "create or
@@ -153,6 +168,7 @@ func (s *service) createManagedMonitor(
 			TargetID:     req.TargetID,
 			InstallID:    installID,
 			Preset:       req.Preset,
+			Mode:         mode,
 		}).
 		First(&existing).Error; err == nil {
 		return &existing, nil
@@ -169,7 +185,14 @@ func (s *service) createManagedMonitor(
 		handles = []string(conn.DefaultNotifyHandles)
 	}
 
-	ddReq, err := buildMonitorRequest(req.TargetType, req.TargetID, installID, req.Preset, handles, req.DisplayName, s.cfg.AppURL, orgID)
+	// Metric-mode monitors need the Nuon row ID baked into the DD
+	// metric-alert query (it's the only tag carried on the submitted
+	// metric). Pre-generate the row ID here so the DD monitor can
+	// reference it without a two-pass create/update dance — the DB
+	// BeforeCreate hook respects a non-empty ID and never rewrites it.
+	monitorRowID := domains.NewDatadogManagedMonitorID()
+
+	ddReq, err := buildMonitorRequest(monitorRowID, mode, req.TargetType, req.TargetID, installID, req.Preset, handles, req.DisplayName, s.cfg.AppURL, orgID)
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(fmt.Errorf("build monitor request: %w", err))
 	}
@@ -191,12 +214,14 @@ func (s *service) createManagedMonitor(
 	}
 
 	row := app.DatadogManagedMonitor{
+		ID:            monitorRowID,
 		ConnectionID:  conn.ID,
 		OrgID:         orgID,
 		TargetType:    req.TargetType,
 		TargetID:      req.TargetID,
 		InstallID:     installID,
 		Preset:        req.Preset,
+		Mode:          mode,
 		DDMonitorID:   ddMonitor.ID,
 		NotifyHandles: cleanHandles(handles),
 		CreatedByID:   acct.ID,
@@ -215,6 +240,7 @@ func (s *service) createManagedMonitor(
 					TargetID:     req.TargetID,
 					InstallID:    installID,
 					Preset:       req.Preset,
+					Mode:         mode,
 				}).
 				First(&racer).Error; rErr == nil {
 				return &racer, nil

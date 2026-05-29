@@ -43,6 +43,37 @@ const (
 	DatadogManagedMonitorStatusDisabled DatadogManagedMonitorStatus = "disabled"
 )
 
+// DatadogManagedMonitorMode selects how the monitor evaluates Nuon
+// lifecycle outcomes. There are two modes; both fire the same DD monitor
+// alert on the user's side, but they differ in where the matching
+// happens:
+//
+//   - event: DD's event-v2 query language matches over the DD event
+//     stream. Requires the org to have a verified DD event subscription
+//     because the events have to be flowing into DD for DD to query
+//     them. Original v1 mode; default for back-compat.
+//
+//   - metric: Nuon evaluates match / interests on its own side via the
+//     signal lifecycle hook and submits a single low-cardinality metric
+//     `nuon.monitor.fired{nuon_monitor_id:<id>}` to DD. The DD monitor
+//     is a sum(last_5m) > 0 metric alert on that one tag value.
+//     Decouples DD-side alerting from the event-subscription path —
+//     useful when an org wants alerts in DD without routing every Nuon
+//     event through the DD event stream.
+//
+// Metric mode keeps DD custom-metric cardinality bounded: only one tag
+// (nuon_monitor_id) is ever submitted, so the total series count equals
+// the number of managed-monitor rows regardless of how many installs /
+// components / actions / labels feed into the matcher. Install / action
+// / label filtering happens inside the Nuon hook before the metric is
+// ever submitted.
+type DatadogManagedMonitorMode string
+
+const (
+	DatadogManagedMonitorModeEvent  DatadogManagedMonitorMode = "event"
+	DatadogManagedMonitorModeMetric DatadogManagedMonitorMode = "metric"
+)
+
 // DatadogManagedMonitor records a DD monitor created by Nuon on behalf of
 // the user via the one-click "Alert on failure in Datadog" button. The
 // (connection_id, target_type, target_id, install_id, preset) tuple is
@@ -83,6 +114,17 @@ type DatadogManagedMonitor struct {
 
 	Status DatadogManagedMonitorStatus `json:"status,omitzero" gorm:"notnull;default:'active'" temporaljson:"status,omitzero,omitempty"`
 
+	// Mode selects event-stream vs metric-driven matching. Defaults to
+	// "event" via the DB-level default so existing v1 rows keep their
+	// original behavior without a backfill. See the type doc for the
+	// tradeoff between modes.
+	//
+	// Included in the unique index so the same (connection, target,
+	// preset) tuple can host one event-mode AND one metric-mode monitor
+	// — e.g. during a migration where the user is moving alerts off the
+	// event-subscription path onto metric mode but doesn't want a gap.
+	Mode DatadogManagedMonitorMode `json:"mode,omitzero" gorm:"notnull;default:'event';uniqueIndex:idx_datadog_managed_monitors_conn_target_preset" temporaljson:"mode,omitzero,omitempty"`
+
 	// NotifyHandles snapshots the DD @-handles spliced into the monitor
 	// body at creation time. Mirrors what's actually in DD so the
 	// dashboard can show "alerting @pagerduty-prod" without round-tripping
@@ -105,6 +147,10 @@ func (a *DatadogManagedMonitor) BeforeCreate(tx *gorm.DB) error {
 
 	if a.Status == "" {
 		a.Status = DatadogManagedMonitorStatusActive
+	}
+
+	if a.Mode == "" {
+		a.Mode = DatadogManagedMonitorModeEvent
 	}
 
 	return nil

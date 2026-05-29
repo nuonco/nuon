@@ -9,6 +9,7 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type {
   TAPIError,
   TDatadogConnection,
+  TDatadogManagedMonitorMode,
   TDatadogManagedMonitorPreset,
   TDatadogManagedMonitorTargetType,
 } from '@/types'
@@ -18,6 +19,7 @@ export type CreateManagedMonitorInput = {
   targetType: TDatadogManagedMonitorTargetType
   targetId: string
   preset: TDatadogManagedMonitorPreset
+  mode: TDatadogManagedMonitorMode
   displayName?: string
   notifyHandles: string[]
 }
@@ -36,6 +38,7 @@ export const CreateManagedMonitorModal = ({
   targetId,
   displayName,
   defaultPreset = 'failure',
+  defaultMode = 'event',
   isPending,
   error,
   onSubmit,
@@ -46,6 +49,7 @@ export const CreateManagedMonitorModal = ({
   targetId: string
   displayName?: string
   defaultPreset?: TDatadogManagedMonitorPreset
+  defaultMode?: TDatadogManagedMonitorMode
   isPending: boolean
   error: TAPIError | null
   onSubmit: (input: CreateManagedMonitorInput) => void
@@ -66,6 +70,8 @@ export const CreateManagedMonitorModal = ({
   )
   const [preset, setPreset] =
     useState<TDatadogManagedMonitorPreset>(defaultPreset)
+  const [mode, setMode] =
+    useState<TDatadogManagedMonitorMode>(defaultMode)
 
   // handlesText tracks the user-edited textarea contents and starts
   // pre-populated with the chosen connection's DefaultNotifyHandles.
@@ -117,6 +123,7 @@ export const CreateManagedMonitorModal = ({
             targetType,
             targetId,
             preset,
+            mode,
             displayName,
             notifyHandles: splitLines(handlesText),
           }),
@@ -186,6 +193,28 @@ export const CreateManagedMonitorModal = ({
           <Text variant="subtext" theme="neutral">
             Failure fires on the first failed event in a 5m window. Drift
             fires on drift-detected events from installs.
+          </Text>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="dd-mon-mode">Mode</Label>
+          <Select
+            id="dd-mon-mode"
+            options={[
+              { value: 'event', label: 'Event stream (needs DD event subscription)' },
+              { value: 'metric', label: 'Metric (works without event subscription)' },
+            ]}
+            value={mode}
+            onChange={(e) =>
+              setMode(e.target.value as TDatadogManagedMonitorMode)
+            }
+          />
+          <Text variant="subtext" theme="neutral">
+            Event mode queries the DD event stream — requires an active
+            event subscription routing Nuon events into DD. Metric mode
+            lets Nuon evaluate the match and submit a single
+            <code>{' nuon.monitor.fired '}</code>
+            count to DD, so the alert fires without an event subscription.
           </Text>
         </div>
 

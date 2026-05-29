@@ -257,6 +257,12 @@ export type TDatadogManagedMonitorTargetType =
   | 'workflow'
 export type TDatadogManagedMonitorPreset = 'failure' | 'drift'
 export type TDatadogManagedMonitorStatus = 'active' | 'disabled'
+// TDatadogManagedMonitorMode mirrors app.DatadogManagedMonitorMode.
+//   - event: DD-side matching over the DD event stream (needs an event
+//     subscription routing Nuon events into DD).
+//   - metric: Nuon-side matching, only `nuon.monitor.fired` is sent
+//     to DD; works without an event subscription.
+export type TDatadogManagedMonitorMode = 'event' | 'metric'
 
 export type TDatadogManagedMonitor = {
   id?: string
@@ -269,6 +275,7 @@ export type TDatadogManagedMonitor = {
   target_id?: string
   install_id?: string
   preset?: TDatadogManagedMonitorPreset
+  mode?: TDatadogManagedMonitorMode
   dd_monitor_id?: number
   status?: TDatadogManagedMonitorStatus
   notify_handles?: string[]
@@ -286,6 +293,9 @@ export type TCreateDatadogManagedMonitorBody = {
   preset: TDatadogManagedMonitorPreset
   display_name?: string
   notify_handles?: string[]
+  // mode picks event-stream vs metric-driven matching. Empty falls back
+  // to "event" server-side for back-compat.
+  mode?: TDatadogManagedMonitorMode
 }
 export type TSlackChannelsResponse =
   components['schemas']['service.ListChannelsResponse']

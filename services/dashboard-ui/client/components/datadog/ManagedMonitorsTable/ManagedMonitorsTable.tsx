@@ -45,6 +45,9 @@ export const ManagedMonitorsTable = ({
                 >
                   {m.preset}
                 </Badge>
+                <Badge theme={m.mode === 'metric' ? 'info' : 'neutral'}>
+                  {m.mode || 'event'}
+                </Badge>
               </div>
               <Code variant="inline" className="!px-2 !py-0.5 w-fit">
                 {m.target_id}

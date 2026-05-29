@@ -9,10 +9,19 @@ import (
 )
 
 // buildMonitorRequest assembles the DD monitor body for a given target +
-// preset combo. The query uses DD's event-v2 search syntax against the
-// stable nuon_* tags emitted by datadogrender.intrinsicTags — keeping
-// the contract between the emitter and the monitor in one auditable
-// place.
+// preset combo. The query depends on the monitor mode:
+//
+//   - event mode: DD's event-v2 search syntax against the stable nuon_*
+//     tags emitted by datadogrender.intrinsicTags. Requires the org to
+//     route lifecycle events into DD via an event subscription.
+//
+//   - metric mode: a sum(last_5m) > 0 query over the Nuon-emitted
+//     `nuon.monitor.fired{nuon_monitor_id:<id>}` metric. Nuon evaluates
+//     the per-event match on its own side (see the metric-mode signal
+//     lifecycle hook) and submits the metric only when a row matches —
+//     so DD's matching reduces to "did Nuon submit a point for this
+//     monitor in the last 5 minutes?". Decouples monitor wiring from
+//     the event subscription path.
 //
 // Naming convention: monitor name is "[Nuon] <preset> on <target> <id>"
 // so it sorts adjacent to other Nuon-managed monitors in the DD UI. The
@@ -25,6 +34,8 @@ import (
 // the message as routing directives, so this is how PagerDuty/Slack
 // fan-out gets wired without us touching those integrations directly.
 func buildMonitorRequest(
+	monitorRowID string,
+	mode app.DatadogManagedMonitorMode,
 	targetType app.DatadogManagedMonitorTargetType,
 	targetID string,
 	installID string,
@@ -34,9 +45,8 @@ func buildMonitorRequest(
 	appURL string,
 	orgID string,
 ) (ddclient.CreateMonitorRequest, error) {
-	query, err := buildMonitorQuery(targetType, targetID, installID, preset)
-	if err != nil {
-		return ddclient.CreateMonitorRequest{}, err
+	if mode == "" {
+		mode = app.DatadogManagedMonitorModeEvent
 	}
 
 	name := fmt.Sprintf("[Nuon] %s on %s %s", preset, targetType, targetIDLabel(targetID, displayName))
@@ -52,14 +62,51 @@ func buildMonitorRequest(
 		fmt.Sprintf("nuon_target_type:%s", targetType),
 		fmt.Sprintf("nuon_target_id:%s", targetID),
 		fmt.Sprintf("nuon_preset:%s", preset),
+		fmt.Sprintf("nuon_mode:%s", mode),
 	}
 	if installID != "" {
 		tags = append(tags, fmt.Sprintf("nuon_install_id:%s", installID))
 	}
 
+	var (
+		query       string
+		monitorType ddclient.MonitorType
+		err         error
+	)
+	switch mode {
+	case app.DatadogManagedMonitorModeEvent:
+		query, err = buildMonitorQuery(targetType, targetID, installID, preset)
+		if err != nil {
+			return ddclient.CreateMonitorRequest{}, err
+		}
+		monitorType = ddclient.MonitorTypeEventV2Alert
+	case app.DatadogManagedMonitorModeMetric:
+		// monitorRowID is the Nuon-side managed-monitor row ID — the
+		// same value the signal lifecycle hook stamps onto
+		// nuon.monitor.fired as the only tag. Empty would produce a
+		// query that fires on _any_ tag value, which would route
+		// every metric-mode monitor's submissions to every metric-
+		// mode monitor's alert. Surface that loudly rather than
+		// silently mis-wiring.
+		if monitorRowID == "" {
+			return ddclient.CreateMonitorRequest{}, fmt.Errorf("monitor row id is required for metric-mode monitors")
+		}
+		// Validate that the target/preset combo would have produced a
+		// sane event-mode query too — we reuse the same shape on the
+		// Nuon evaluator side, so an unknown preset / missing
+		// install_id for action target is still an error here.
+		if _, qErr := buildMonitorQuery(targetType, targetID, installID, preset); qErr != nil {
+			return ddclient.CreateMonitorRequest{}, qErr
+		}
+		query = buildMetricMonitorQuery(monitorRowID)
+		monitorType = ddclient.MonitorTypeMetricAlert
+	default:
+		return ddclient.CreateMonitorRequest{}, fmt.Errorf("unknown monitor mode %q", mode)
+	}
+
 	return ddclient.CreateMonitorRequest{
 		Name:    name,
-		Type:    ddclient.MonitorTypeEventV2Alert,
+		Type:    monitorType,
 		Query:   query,
 		Message: message,
 		Tags:    tags,
@@ -69,6 +116,19 @@ func buildMonitorRequest(
 			RenotifyInterval: 0,
 		},
 	}, nil
+}
+
+// buildMetricMonitorQuery returns the DD metric-alert query string for a
+// metric-mode managed monitor. The threshold is `> 0` over the last 5
+// minutes so any single Nuon-submitted point in the window pages — same
+// semantics as the event-mode `count >= 1`. The `as_count()` modifier
+// lets DD aggregate raw count submissions across the window without
+// rate normalization.
+func buildMetricMonitorQuery(monitorRowID string) string {
+	return fmt.Sprintf(
+		`sum(last_5m):sum:%s{nuon_monitor_id:%s}.as_count() > 0`,
+		ddclient.MonitorFiredMetric, monitorRowID,
+	)
 }
 
 // buildMonitorQuery returns the DD event-v2 search string for the given

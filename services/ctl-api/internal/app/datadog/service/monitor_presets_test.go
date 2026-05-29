@@ -124,6 +124,8 @@ func TestBuildMonitorQuery_EmptyTargetID(t *testing.T) {
 //     message body).
 func TestBuildMonitorRequest_NameAndMessage(t *testing.T) {
 	req, err := buildMonitorRequest(
+		"ddmonrow1",
+		app.DatadogManagedMonitorModeEvent,
 		app.DatadogManagedMonitorTargetTypeInstall,
 		"inst123",
 		"",
@@ -175,6 +177,73 @@ func TestBuildMonitorRequest_NameAndMessage(t *testing.T) {
 		if !found {
 			t.Errorf("expected tag %q on managed monitor request, missing", tag)
 		}
+	}
+}
+
+// TestBuildMonitorRequest_MetricMode pins the metric-alert query shape
+// and confirms the metric-mode monitor surfaces nuon_mode:metric as a
+// monitor tag for DD UI filtering. Drift here breaks the contract with
+// the lifecycle hook that submits `nuon.monitor.fired{nuon_monitor_id:…}`
+// — the DD monitor would silently never fire.
+func TestBuildMonitorRequest_MetricMode(t *testing.T) {
+	req, err := buildMonitorRequest(
+		"ddmonrow42",
+		app.DatadogManagedMonitorModeMetric,
+		app.DatadogManagedMonitorTargetTypeInstall,
+		"inst123",
+		"",
+		app.DatadogManagedMonitorPresetFailure,
+		nil,
+		"acme-prod",
+		"https://app.nuon.co",
+		"org456",
+	)
+	if err != nil {
+		t.Fatalf("buildMonitorRequest returned error: %v", err)
+	}
+
+	wantQuery := `sum(last_5m):sum:nuon.monitor.fired{nuon_monitor_id:ddmonrow42}.as_count() > 0`
+	if req.Query != wantQuery {
+		t.Errorf("metric mode query mismatch\n  got:  %s\n  want: %s", req.Query, wantQuery)
+	}
+	if req.Type != "metric alert" {
+		t.Errorf("metric mode type mismatch: got %q want \"metric alert\"", req.Type)
+	}
+
+	wantModeTag := false
+	for _, tag := range req.Tags {
+		if tag == "nuon_mode:metric" {
+			wantModeTag = true
+		}
+	}
+	if !wantModeTag {
+		t.Errorf("expected nuon_mode:metric tag on monitor request, got %v", req.Tags)
+	}
+}
+
+// TestBuildMonitorRequest_MetricModeRequiresRowID guards the contract
+// between the metric-alert query and the lifecycle-hook submission path:
+// the monitor row ID is the only tag the metric carries, so an empty ID
+// would produce a query matching every metric-mode monitor's
+// submissions in the org.
+func TestBuildMonitorRequest_MetricModeRequiresRowID(t *testing.T) {
+	_, err := buildMonitorRequest(
+		"",
+		app.DatadogManagedMonitorModeMetric,
+		app.DatadogManagedMonitorTargetTypeInstall,
+		"inst123",
+		"",
+		app.DatadogManagedMonitorPresetFailure,
+		nil,
+		"",
+		"",
+		"",
+	)
+	if err == nil {
+		t.Fatal("expected error for metric mode without monitor row id, got nil")
+	}
+	if !strings.Contains(err.Error(), "monitor row id is required") {
+		t.Errorf("unexpected error text: %v", err)
 	}
 }
 

@@ -5,13 +5,24 @@ import (
 	"fmt"
 )
 
-// MonitorType matches DD's monitor type strings. For Nuon's one-click
-// alerts we only ever create "event-v2 alert" monitors (event stream
-// queries) since our entire emit path is the events API.
+// MonitorType matches DD's monitor type strings. Nuon's one-click
+// alerts use two monitor types depending on the managed-monitor mode:
+//
+//   - event-v2 alert: queries DD's event stream. Used by event-mode
+//     managed monitors, which require an active DD event subscription
+//     so events are actually flowing into DD.
+//
+//   - metric alert: queries a Nuon-emitted custom metric. Used by
+//     metric-mode managed monitors — Nuon evaluates the match on its
+//     own side and submits `nuon.monitor.fired{nuon_monitor_id:<id>}`
+//     to DD. The monitor then fires on `sum(last_5m) > 0` of that one
+//     tag value. Total custom-metric cardinality stays constant at one
+//     series per managed-monitor row.
 type MonitorType string
 
 const (
 	MonitorTypeEventV2Alert MonitorType = "event-v2 alert"
+	MonitorTypeMetricAlert  MonitorType = "metric alert"
 )
 
 // MonitorOptions matches the subset of DD's monitor `options` block we

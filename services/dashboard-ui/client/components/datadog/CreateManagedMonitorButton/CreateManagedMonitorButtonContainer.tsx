@@ -13,6 +13,7 @@ import {
 } from '@/lib'
 import type {
   TAPIError,
+  TDatadogManagedMonitorMode,
   TDatadogManagedMonitorPreset,
   TDatadogManagedMonitorTargetType,
 } from '@/types'
@@ -44,6 +45,7 @@ type Props = {
   installId?: string
   displayName?: string
   defaultPreset?: TDatadogManagedMonitorPreset
+  defaultMode?: TDatadogManagedMonitorMode
 } & Omit<IButtonAsButton, 'children'>
 
 const CreateManagedMonitorModalContainer = (
@@ -53,6 +55,7 @@ const CreateManagedMonitorModalContainer = (
     installId?: string
     displayName?: string
     defaultPreset?: TDatadogManagedMonitorPreset
+    defaultMode?: TDatadogManagedMonitorMode
   } & Record<string, any>
 ) => {
   const { org } = useOrg()
@@ -75,6 +78,7 @@ const CreateManagedMonitorModalContainer = (
           target_id: input.targetId,
           install_id: props.installId,
           preset: input.preset,
+          mode: input.mode,
           display_name: input.displayName,
           notify_handles: input.notifyHandles,
         },
@@ -106,6 +110,7 @@ const CreateManagedMonitorModalContainer = (
       targetId={props.targetId}
       displayName={props.displayName}
       defaultPreset={props.defaultPreset}
+      defaultMode={props.defaultMode}
       isPending={isPending}
       error={error}
       onSubmit={mutate}
@@ -120,6 +125,7 @@ export const CreateManagedMonitorButton = ({
   installId,
   displayName,
   defaultPreset,
+  defaultMode,
   ...props
 }: Props) => {
   const { org } = useOrg()
@@ -144,12 +150,21 @@ export const CreateManagedMonitorButton = ({
   // can have one managed monitor per install. Compare with `|| ''` so a
   // missing install_id from either side normalizes to the same empty
   // string the backend uses for the non-action target types.
+  //
+  // Mode matters too: the backend's unique index includes Mode, so the
+  // same (connection, target, preset) tuple can host one event-mode and
+  // one metric-mode row independently. The "(active)" CTA should only
+  // flip when an existing row matches the mode the user is about to
+  // create — otherwise the user picking metric mode would see the CTA
+  // claim "already alerting in DD" because of a stale event-mode row.
+  const expectMode = defaultMode || 'event'
   const existing = monitorsQuery.data?.find(
     (m) =>
       m.target_type === targetType &&
       m.target_id === targetId &&
       (m.install_id || '') === (installId || '') &&
-      (defaultPreset ? m.preset === defaultPreset : m.preset === 'failure')
+      (defaultPreset ? m.preset === defaultPreset : m.preset === 'failure') &&
+      (m.mode || 'event') === expectMode
   )
 
   if (existing) {
@@ -167,6 +182,7 @@ export const CreateManagedMonitorButton = ({
               installId={installId}
               displayName={displayName}
               defaultPreset={defaultPreset}
+              defaultMode={defaultMode}
             />
           )
         }
@@ -189,6 +205,7 @@ export const CreateManagedMonitorButton = ({
             installId={installId}
             displayName={displayName}
             defaultPreset={defaultPreset}
+            defaultMode={defaultMode}
           />
         )
       }
