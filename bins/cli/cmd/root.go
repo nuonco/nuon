@@ -78,6 +78,7 @@ nuon sync
 		c.buildsCmd(),
 		c.loginCmd(),
 		c.extensionsCmd(),
+		c.runbooksCmd(),
 	}
 
 	for _, cmd := range cmds {

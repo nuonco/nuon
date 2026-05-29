@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -17,19 +17,21 @@ import (
 // The caller is responsible for populating InstallID, InstallWorkflowID,
 // WorkflowStepID, OwnerID, and OwnerType on sig before calling.
 func Dispatch(ctx workflow.Context, sig *Signal) error {
-	resp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	cb := callback.New(ctx, sig.WorkflowStepID)
+	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         sig.InstallID,
 		OwnerType:       "installs",
 		QueueName:       installSignalsQueueName,
 		Signal:          sig,
 		SignalOwnerID:   sig.WorkflowStepID,
 		SignalOwnerType: installWorkflowStepsOwnerType,
+		Callback:        cb,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to enqueue drift-detected signal")
 	}
 
-	if _, err := client.AwaitQueueSignal(ctx, resp.QueueSignalID); err != nil {
+	if _, err := callback.Await(ctx, cb); err != nil {
 		return errors.Wrap(err, "drift-detected signal failed")
 	}
 	return nil

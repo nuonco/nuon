@@ -90,7 +90,7 @@ type GetOrgInstallsParams struct {
 
 	/* Q.
 
-	   search query to filter installs by name
+	   search query to filter installs by name or ID
 	*/
 	Q *string
 

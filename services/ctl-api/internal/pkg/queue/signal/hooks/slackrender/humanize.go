@@ -93,6 +93,8 @@ func titleFromWorkflowType(wfType string) string {
 		return "Building app config"
 	case WorkflowTypeAppBranchesRun:
 		return "Running app branch"
+	case WorkflowTypeRunbookRun:
+		return "Running runbook"
 	}
 	return ""
 }

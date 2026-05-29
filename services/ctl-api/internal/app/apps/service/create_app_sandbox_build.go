@@ -22,6 +22,7 @@ import (
 // @Failure   400  {object}  stderr.ErrResponse
 // @Failure   401  {object}  stderr.ErrResponse
 // @Failure   404  {object}  stderr.ErrResponse
+// @Failure   409  {object}  stderr.ErrResponse
 // @Failure   500  {object}  stderr.ErrResponse
 // @Success   201  {object}  app.AppSandboxBuild
 // @Router    /v1/apps/{app_id}/sandbox/builds [post]

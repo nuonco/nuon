@@ -55,6 +55,12 @@ func (o *CreateAppPermissionsConfigReader) ReadResponse(response runtime.ClientR
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppPermissionsConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppPermissionsConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppPermissionsConfigNotFound) GetPayload() *models.StderrErrRespo
 }
 
 func (o *CreateAppPermissionsConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppPermissionsConfigConflict creates a CreateAppPermissionsConfigConflict with default headers values
+func NewCreateAppPermissionsConfigConflict() *CreateAppPermissionsConfigConflict {
+	return &CreateAppPermissionsConfigConflict{}
+}
+
+/*
+CreateAppPermissionsConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppPermissionsConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app permissions config conflict response has a 2xx status code
+func (o *CreateAppPermissionsConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app permissions config conflict response has a 3xx status code
+func (o *CreateAppPermissionsConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app permissions config conflict response has a 4xx status code
+func (o *CreateAppPermissionsConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app permissions config conflict response has a 5xx status code
+func (o *CreateAppPermissionsConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app permissions config conflict response a status code equal to that given
+func (o *CreateAppPermissionsConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app permissions config conflict response
+func (o *CreateAppPermissionsConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppPermissionsConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/permissions-configs][%d] createAppPermissionsConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppPermissionsConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/permissions-configs][%d] createAppPermissionsConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppPermissionsConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppPermissionsConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

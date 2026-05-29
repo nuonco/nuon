@@ -14,6 +14,7 @@ type ConfigDir struct {
 	Branch     *config.AppBranchConfig `name:"branch"`
 	Components []*config.Component     `name:"components"`
 	Actions    []*config.ActionConfig  `name:"actions"`
+	Runbooks   []*config.RunbookConfig `name:"runbooks"`
 	Installs   []*config.Install       `name:"installs"`
 
 	Policies    *config.PoliciesConfig `name:"policies"`
@@ -182,6 +183,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	cfg := &config.AppConfig{
 		Components:     c.Components,
 		Actions:        c.Actions,
+		Runbooks:       c.Runbooks,
 		Installs:       c.Installs,
 		BreakGlass:     breakGlass,
 		Secrets:        secrets,

@@ -5,6 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -53,6 +54,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		"queue", cfg.QueueName,
 	)
 
+	cb := callback.New(ctx, signalOwnerID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
@@ -60,6 +62,7 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		Signal:          sig,
 		SignalOwnerID:   signalOwnerID,
 		SignalOwnerType: signalOwnerType,
+		Callback:        cb,
 	})
 	if err != nil {
 		return "", errors.Wrapf(err, "unable to enqueue group signal for group %d", group.GroupIdx)
@@ -69,10 +72,8 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 	s.activeGroupQueueSignalID = enqueueResp.QueueSignalID
 	defer func() { s.activeGroupQueueSignalID = "" }()
 
-	// Wait for the group signal to finish using the framework's built-in
-	// finished handler. This avoids the custom group-finished handler which
-	// may not be registered yet when the update arrives.
-	_, err = client.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
+	// Wait for the group signal to finish using the callback signal.
+	_, err = callback.Await(ctx, cb)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)

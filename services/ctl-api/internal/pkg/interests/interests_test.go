@@ -54,6 +54,16 @@ func TestMatches(t *testing.T) {
 		WorkflowType: "app_branches_manual_update", // not in the v1 taxonomy
 		Phase:        signal.SignalPhaseExecute,
 	}
+	runbookRunSuccess := signal.SignalPhaseEvent{
+		SignalType:   signalTypeExecuteWorkflow,
+		WorkflowType: "runbook_run",
+		Phase:        signal.SignalPhaseExecute,
+	}
+	runbookRunStepSuccess := signal.SignalPhaseEvent{
+		SignalType:   signalTypeExecuteWorkflowStep,
+		WorkflowType: "runbook_run",
+		Phase:        signal.SignalPhaseExecute,
+	}
 	approvalRequest := signal.SignalPhaseEvent{
 		SignalType:   signalTypeWorkflowStepApprovalRequest,
 		WorkflowType: "deploy_components",
@@ -349,6 +359,31 @@ func TestMatches(t *testing.T) {
 				ResourceSandboxes: {Ops: []string{"drift"}, Outcome: OutcomeAll},
 			}},
 			want: false,
+		},
+		{
+			name:    "runbook_run workflow matches installs.runbook",
+			event:   runbookRunSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceInstalls: {Ops: []string{"runbook"}, Outcome: OutcomeAll},
+			}},
+			want: true,
+		},
+		{
+			name:    "runbook_run workflow matches AllEvents",
+			event:   runbookRunSuccess,
+			outcome: successOutcome,
+			in:      AllEvents(),
+			want:    true,
+		},
+		{
+			name:    "runbook_run step matches components.deploy via parent fallback",
+			event:   runbookRunStepSuccess,
+			outcome: successOutcome,
+			in: Interests{Resources: map[ResourceKind]ResourceCfg{
+				ResourceComponents: {Ops: []string{"deploy"}, Outcome: OutcomeAll},
+			}},
+			want: true,
 		},
 		{
 			name:  "Unknown WorkflowType does not match",

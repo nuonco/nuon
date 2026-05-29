@@ -706,6 +706,26 @@ export interface paths {
      */
     get: operations["GetAppPolicyConfig"];
   };
+  "/v1/apps/{app_id}/runbooks": {
+    /** get runbooks for an app */
+    get: operations["GetRunbooks"];
+    /** create a runbook for an app */
+    post: operations["CreateRunbook"];
+  };
+  "/v1/apps/{app_id}/runbooks/{runbook_id}": {
+    /** get a runbook */
+    get: operations["GetRunbook"];
+    /** delete a runbook */
+    delete: operations["DeleteRunbook"];
+    /** update a runbook */
+    patch: operations["UpdateRunbook"];
+  };
+  "/v1/apps/{app_id}/runbooks/{runbook_id}/configs": {
+    /** get runbook configs */
+    get: operations["GetRunbookConfigs"];
+    /** create a runbook config */
+    post: operations["CreateRunbookConfig"];
+  };
   "/v1/apps/{app_id}/runner-configs": {
     /**
      * get app runner configs
@@ -1713,6 +1733,26 @@ export interface paths {
      * @description enable or disable an install role
      */
     patch: operations["UpdateInstallRole"];
+  };
+  "/v1/installs/{install_id}/runbook-runs": {
+    /** get runbook runs for an install */
+    get: operations["GetInstallRunbookRuns"];
+  };
+  "/v1/installs/{install_id}/runbook-runs/{run_id}": {
+    /** get a runbook run */
+    get: operations["GetInstallRunbookRun"];
+  };
+  "/v1/installs/{install_id}/runbooks": {
+    /** get runbooks for an install */
+    get: operations["GetInstallRunbooks"];
+  };
+  "/v1/installs/{install_id}/runbooks/{runbook_id}": {
+    /** get an install runbook */
+    get: operations["GetInstallRunbook"];
+  };
+  "/v1/installs/{install_id}/runbooks/{runbook_id}/runs": {
+    /** run a runbook on an install */
+    post: operations["CreateRunbookRun"];
   };
   "/v1/installs/{install_id}/runner-bootstrap-token": {
     /** create a bootstrap token for an install's runner */
@@ -3938,6 +3978,38 @@ export interface components {
       role_id?: string;
       updated_at?: string;
     };
+    "app.InstallRunbook": {
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      install_id?: string;
+      runbook?: components["schemas"]["app.Runbook"];
+      runbook_id?: string;
+      runs?: components["schemas"]["app.InstallRunbookRun"][];
+      /** @description after query fields */
+      status?: string;
+      updated_at?: string;
+    };
+    "app.InstallRunbookRun": {
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      /** @description after query */
+      execution_time?: number;
+      id?: string;
+      install_id?: string;
+      install_runbook?: components["schemas"]["app.InstallRunbook"];
+      install_runbook_id?: string;
+      install_workflow?: components["schemas"]["app.Workflow"];
+      install_workflow_id?: string;
+      runbook_config?: components["schemas"]["app.RunbookConfig"];
+      runbook_config_id?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      triggered_by_id?: string;
+      updated_at?: string;
+    };
     "app.InstallSandbox": {
       created_at?: string;
       created_by_id?: string;
@@ -4458,6 +4530,12 @@ export interface components {
     /** @enum {string} */
     "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
     "app.QueueSignal": {
+      /**
+       * @description Callback describes where to send a Temporal signal when this queue signal
+       * completes. When set, the handler signals the parent workflow on completion
+       * instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+       */
+      callback?: components["schemas"]["callback.Ref"];
       created_at?: string;
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
@@ -4489,6 +4567,55 @@ export interface components {
     };
     /** @enum {string} */
     "app.RoleType": "org_admin" | "org_support" | "installer" | "runner" | "hosted-installer";
+    "app.Runbook": {
+      app_id?: string;
+      config_count?: number;
+      configs?: components["schemas"]["app.RunbookConfig"][];
+      created_at?: string;
+      created_by_id?: string;
+      description?: string;
+      id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      name?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+    };
+    "app.RunbookConfig": {
+      app_config_id?: string;
+      app_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      readme?: string;
+      runbook_id?: string;
+      steps?: components["schemas"]["app.RunbookStepConfig"][];
+      updated_at?: string;
+    };
+    "app.RunbookStepConfig": {
+      /** @description action reference field */
+      action_workflow_id?: string;
+      /** @description inline action fields */
+      command?: string;
+      /** @description deploy fields */
+      component_name?: string;
+      created_at?: string;
+      created_by_id?: string;
+      deploy_dependencies?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      idx?: number;
+      inline_contents?: string;
+      name?: string;
+      role?: string;
+      runbook_config_id?: string;
+      timeout?: number;
+      type?: string;
+      updated_at?: string;
+    };
     "app.Runner": {
       created_at?: string;
       created_by_id?: string;
@@ -5020,6 +5147,13 @@ export interface components {
       metadata?: {
         [key: string]: string;
       };
+      /**
+       * @description Name is the human-readable workflow title shown in the UI (e.g.
+       * "Deploying to install (rds_cluster_temporal)"). Populated by
+       * BeforeSave via computeWorkflowName — callers that mutate Type,
+       * Metadata, or FinishedAt must go through GORM (Save / struct-based
+       * Updates) so the hook fires.
+       */
       name?: string;
       owner_id?: string;
       /**
@@ -5219,8 +5353,13 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build" | "runbook_run";
     "blobstore.Blob": Record<string, never>;
+    "callback.Ref": {
+      namespace?: string;
+      signal_name?: string;
+      workflow_id?: string;
+    };
     "cctx.SignalContext": {
       account_id?: string;
       log_stream_id?: string;
@@ -5677,6 +5816,14 @@ export interface components {
       namespace?: string;
       /** @description OCIArtifact reference (set during plan creation, used by runner to pull manifest) */
       oci_artifact?: components["schemas"]["plantypes.OCIArtifactReference"];
+      /**
+       * @description State carries the install state the runner needs to interpolate
+       * nuon template placeholders into the kustomize-produced manifest.yaml
+       * after pulling the OCI artifact. Nil for inline-manifest deploys,
+       * which are pre-rendered planner-side and short-circuit the OCI pull
+       * on the runner. Same shape as SandboxRunPlan.State.
+       */
+      state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
     };
     "plantypes.KubernetesSandboxMode": {
       plan_contents?: string;
@@ -5772,6 +5919,7 @@ export interface components {
       git_source?: components["schemas"]["plantypes.GitSource"];
       hooks?: components["schemas"]["plantypes.TerraformDeployHooks"];
       install_id?: string;
+      kyverno_policies_dir?: string;
       local_archive?: components["schemas"]["plantypes.TerraformLocalArchive"];
       policies?: {
         [key: string]: string;
@@ -6488,6 +6636,33 @@ export interface components {
       skip_noops?: boolean;
       version?: string;
     };
+    "service.CreateRunbookConfigRequest": {
+      app_config_id?: string;
+      readme?: string;
+      steps: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
+    };
+    "service.CreateRunbookRequest": {
+      description?: string;
+      labels?: {
+        [key: string]: string;
+      };
+      name: string;
+    };
+    "service.CreateRunbookStepConfigRequest": {
+      action_name?: string;
+      command?: string;
+      component_name?: string;
+      deploy_dependencies?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      idx?: number;
+      inline_contents?: string;
+      name: string;
+      role?: string;
+      timeout?: number;
+      type: string;
+    };
     "service.CreateRunnerBootstrapTokenResponse": {
       expires_at?: string;
       token?: string;
@@ -6881,6 +7056,13 @@ export interface components {
     };
     "service.UpdateOrgRequest": {
       name: string;
+    };
+    "service.UpdateRunbookRequest": {
+      description?: string;
+      labels?: {
+        [key: string]: string;
+      };
+      name?: string;
     };
     "service.UpdateRunnerSettingsRequest": {
       /** @enum {string} */
@@ -7900,7 +8082,7 @@ export interface operations {
       query?: {
         /** @description offset of jobs to return */
         offset?: number;
-        /** @description search query to filter apps by name */
+        /** @description search query to filter apps by name or ID */
         q?: string;
         /** @description limit of jobs to return */
         limit?: number;
@@ -8161,7 +8343,7 @@ export interface operations {
   GetActionWorkflows: {
     parameters: {
       query?: {
-        /** @description search query to filter action workflows by name */
+        /** @description search query to filter action workflows by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -8333,7 +8515,7 @@ export interface operations {
   GetAppActions: {
     parameters: {
       query?: {
-        /** @description search query to filter action workflows by name */
+        /** @description search query to filter action workflows by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -9645,7 +9827,7 @@ export interface operations {
   GetAppComponents: {
     parameters: {
       query?: {
-        /** @description search query to filter components by name */
+        /** @description search query to filter components by name or ID */
         q?: string;
         /** @description comma-separated list of component types to filter by (e.g., terraform_module, helm_chart) */
         types?: string;
@@ -11860,7 +12042,7 @@ export interface operations {
   GetAppInstalls: {
     parameters: {
       query?: {
-        /** @description search query */
+        /** @description search query to filter installs by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -12818,6 +13000,227 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get runbooks for an app */
+  GetRunbooks: {
+    parameters: {
+      query?: {
+        /** @description search query to filter runbooks by name or ID */
+        q?: string;
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"][];
+        };
+      };
+    };
+  };
+  /** create a runbook for an app */
+  CreateRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRunbookRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get a runbook */
+  GetRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"];
+        };
+      };
+    };
+  };
+  /** delete a runbook */
+  DeleteRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": boolean;
+        };
+      };
+    };
+  };
+  /** update a runbook */
+  UpdateRunbook: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateRunbookRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Runbook"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get runbook configs */
+  GetRunbookConfigs: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunbookConfig"][];
+        };
+      };
+    };
+  };
+  /** create a runbook config */
+  CreateRunbookConfig: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRunbookConfigRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.RunbookConfig"];
         };
       };
     };
@@ -15638,7 +16041,7 @@ export interface operations {
       query?: {
         /** @description offset of results to return */
         offset?: number;
-        /** @description search query to filter installs by name */
+        /** @description search query to filter installs by name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -16091,7 +16494,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query for action workflow name */
+        /** @description search query for action workflow name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -16658,7 +17061,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query for action workflow name */
+        /** @description search query for action workflow name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -17275,7 +17678,7 @@ export interface operations {
       query?: {
         /** @description component types to filter by */
         types?: string;
-        /** @description search query for component name */
+        /** @description search query for component name or ID */
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
@@ -19369,7 +19772,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query to filter roles by display name */
+        /** @description search query to filter roles by display name or ID */
         q?: string;
       };
       path: {
@@ -19429,7 +19832,7 @@ export interface operations {
         limit?: number;
         /** @description page number of results to return */
         page?: number;
-        /** @description search query to filter roles by display name */
+        /** @description search query to filter roles by display name or ID */
         q?: string;
       };
       path: {
@@ -19584,6 +19987,109 @@ export interface operations {
       500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /** get runbook runs for an install */
+  GetInstallRunbookRuns: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbookRun"][];
+        };
+      };
+    };
+  };
+  /** get a runbook run */
+  GetInstallRunbookRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbookRun"];
+        };
+      };
+    };
+  };
+  /** get runbooks for an install */
+  GetInstallRunbooks: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbook"][];
+        };
+      };
+    };
+  };
+  /** get an install runbook */
+  GetInstallRunbook: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbook"];
+        };
+      };
+    };
+  };
+  /** run a runbook on an install */
+  CreateRunbookRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description runbook ID */
+        runbook_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallRunbookRun"];
         };
       };
     };
@@ -20082,6 +20588,8 @@ export interface operations {
         created_at_gte?: string;
         /** @description filter workflows created before timestamp (RFC3339 format) */
         created_at_lte?: string;
+        /** @description case-insensitive substring match against workflow id, type, and metadata (component / action / runbook name) */
+        search?: string;
       };
       path: {
         /** @description install ID */
@@ -20624,7 +21132,7 @@ export interface operations {
   GetOrgs: {
     parameters: {
       query?: {
-        /** @description search query */
+        /** @description search query to filter orgs by name or ID */
         q?: string;
         /** @description offset of results to return */
         offset?: number;

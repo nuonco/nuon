@@ -10,6 +10,7 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnerhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -32,6 +33,7 @@ type Params struct {
 	VCSHelpers       *vcshelpers.Helpers
 	ComponentHelpers *componenthelpers.Helpers
 	ActionsHelpers   *actionshelpers.Helpers
+	RunbooksHelpers  *runbookshelpers.Helpers
 }
 
 type Activities struct {
@@ -47,6 +49,7 @@ type Activities struct {
 	vcsHelpers       *vcshelpers.Helpers
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
+	runbooksHelpers  *runbookshelpers.Helpers
 }
 
 func New(params Params) (*Activities, error) {
@@ -63,5 +66,6 @@ func New(params Params) (*Activities, error) {
 		vcsHelpers:       params.VCSHelpers,
 		componentHelpers: params.ComponentHelpers,
 		actionsHelpers:   params.ActionsHelpers,
+		runbooksHelpers:  params.RunbooksHelpers,
 	}, nil
 }

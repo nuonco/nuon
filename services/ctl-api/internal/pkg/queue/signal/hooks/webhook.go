@@ -331,6 +331,9 @@ type workflowRef struct {
 	CreatedByEmail string `json:"created_by_email,omitempty"`
 	// CreatedAt is the workflow's start time. Zero when unknown.
 	CreatedAt time.Time `json:"created_at,omitempty"`
+	// RunbookName labels the runbook this workflow is executing. Populated
+	// only for runbook_run workflows; sourced from install_workflows.metadata.
+	RunbookName string `json:"runbook_name,omitempty"`
 }
 
 type workflowStepRef struct {
@@ -588,6 +591,7 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 	creator := h.lookupWorkflowCreator(ctx, event.WorkflowID)
 	data.Workflow.CreatedByEmail = creator.CreatedByEmail
 	data.Workflow.CreatedAt = creator.CreatedAt
+	data.Workflow.RunbookName = creator.RunbookName
 
 	if data.OrgName == "" {
 		data.OrgName = h.lookupOrgName(ctx, event.OrgID)
@@ -719,6 +723,7 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 	creator := h.lookupWorkflowCreator(ctx, event.WorkflowID)
 	data.Workflow.CreatedByEmail = creator.CreatedByEmail
 	data.Workflow.CreatedAt = creator.CreatedAt
+	data.Workflow.RunbookName = creator.RunbookName
 
 	if data.OrgName == "" {
 		data.OrgName = h.lookupOrgName(ctx, event.OrgID)
@@ -874,6 +879,7 @@ func (h *WebhookSignalLifecycleHook) lookupOrgName(ctx context.Context, orgID st
 type workflowCreatorRow struct {
 	CreatedByEmail string
 	CreatedAt      time.Time
+	RunbookName    string
 }
 
 // lookupWorkflowCreator returns who started the workflow and when. Email
@@ -890,7 +896,8 @@ func (h *WebhookSignalLifecycleHook) lookupWorkflowCreator(ctx context.Context, 
 	if err := h.db.WithContext(ctx).
 		Table("install_workflows AS w").
 		Select(`COALESCE(NULLIF(acc.email, ''), w.created_by_id, '') AS created_by_email,
-			w.created_at AS created_at`).
+			w.created_at AS created_at,
+			COALESCE(w.metadata->'runbook_name', '') AS runbook_name`).
 		Joins("LEFT JOIN accounts AS acc ON acc.id = w.created_by_id").
 		Where("w.id = ?", workflowID).
 		Limit(1).

@@ -55,6 +55,12 @@ func (o *CreateAdHocActionReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAdHocActionConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAdHocActionInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAdHocActionNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *CreateAdHocActionNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAdHocActionConflict creates a CreateAdHocActionConflict with default headers values
+func NewCreateAdHocActionConflict() *CreateAdHocActionConflict {
+	return &CreateAdHocActionConflict{}
+}
+
+/*
+CreateAdHocActionConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAdHocActionConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create ad hoc action conflict response has a 2xx status code
+func (o *CreateAdHocActionConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create ad hoc action conflict response has a 3xx status code
+func (o *CreateAdHocActionConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create ad hoc action conflict response has a 4xx status code
+func (o *CreateAdHocActionConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create ad hoc action conflict response has a 5xx status code
+func (o *CreateAdHocActionConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create ad hoc action conflict response a status code equal to that given
+func (o *CreateAdHocActionConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create ad hoc action conflict response
+func (o *CreateAdHocActionConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAdHocActionConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionConflict %s", 409, payload)
+}
+
+func (o *CreateAdHocActionConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/adhoc-run][%d] createAdHocActionConflict %s", 409, payload)
+}
+
+func (o *CreateAdHocActionConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAdHocActionConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

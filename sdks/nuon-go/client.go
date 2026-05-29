@@ -2,6 +2,7 @@ package nuon
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -214,6 +215,12 @@ type Client interface {
 	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, error)
 	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, string, error)
 
+	// terraform workspaces
+	GetTerraformWorkspaceStatesJSON(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceStateJSON, error)
+	GetTerraformWorkspaceStates(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceState, error)
+	GetTerraformWorkspaceLatestState(ctx context.Context, workspaceID string) (*models.AppTerraformWorkspaceState, error)
+	GetTerraformWorkspaceLatestStateJSON(ctx context.Context, workspaceID string) (json.RawMessage, error)
+
 	// components
 	GetAllComponents(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)
 	GetAppComponents(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error)
@@ -258,6 +265,17 @@ type Client interface {
 	GetInstallActionWorkflowRun(ctx context.Context, installID, runID string) (*models.AppInstallActionWorkflowRun, error)
 	GetInstallActionWorkflowOutputs(ctx context.Context, installID, actionID string) (any, error)
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)
+
+	// runbooks - app level
+	GetAppRunbook(ctx context.Context, appID, nameOrID string) (*Runbook, error)
+	CreateRunbook(ctx context.Context, appID string, req *CreateRunbookRequest) (*Runbook, error)
+	UpdateRunbook(ctx context.Context, runbookID string, req *UpdateRunbookRequest) (*Runbook, error)
+	CreateRunbookConfig(ctx context.Context, runbookID string, req *CreateRunbookConfigRequest) (*RunbookConfig, error)
+
+	// runbooks - install level
+	GetInstallRunbooks(ctx context.Context, installID string) ([]*InstallRunbook, error)
+	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*InstallRunbook, error)
+	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*InstallRunbookRun, error)
 }
 
 var _ Client = (*client)(nil)

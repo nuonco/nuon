@@ -12,7 +12,7 @@ import (
 // completion. This should be used instead of calling AwaitAwaitSignal directly
 // so that every await uses the signal's declared timeout rather than a hardcoded
 // default.
-func AwaitQueueSignal(ctx workflow.Context, queueSignalID string) (*handler.FinishedResponse, error) {
+func BAwaitQueueSignal(ctx workflow.Context, queueSignalID string) (*handler.FinishedResponse, error) {
 	qs, err := AwaitGetQueueSignal(ctx, queueSignalID)
 	if err != nil {
 		return nil, err

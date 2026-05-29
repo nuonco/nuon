@@ -18,6 +18,10 @@ import (
 )
 
 func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.AppActionWorkflowStepConfig, src *plantypes.GitSource, envVars map[string]string) error {
+	defaultEnvVars := map[string]string{
+		"COLUMNS": "500",
+	}
+
 	builtInEnv, err := h.getBuiltInEnv(ctx, cfg)
 	if err != nil {
 		return errors.Wrap(err, "unable to get execution env")
@@ -70,6 +74,7 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		command.WithEnv(h.state.run.RunEnvVars),
 		command.WithEnv(envVars),
 		command.WithEnv(h.state.plan.OverrideEnvVars),
+		command.WithEnv(defaultEnvVars),
 		command.WithArgs(args),
 		command.WithStdout(lOut),
 		command.WithStderr(lErr),

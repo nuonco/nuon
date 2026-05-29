@@ -78,6 +78,7 @@ type CreateAdHocActionResponse struct {
 // @Failure                  401 {object} stderr.ErrResponse
 // @Failure                  403 {object} stderr.ErrResponse
 // @Failure                  404 {object} stderr.ErrResponse
+// @Failure                  409 {object} stderr.ErrResponse
 // @Failure                  500 {object} stderr.ErrResponse
 // @Success                  201 {object} CreateAdHocActionResponse
 // @Router                   /v1/installs/{install_id}/actions/adhoc-run [post]
@@ -169,7 +170,7 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 		}
 		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
 			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_action_workflows"); err != nil {
+		}, workflow.ID, "install_workflows"); err != nil {
 			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 			return
 		}

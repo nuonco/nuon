@@ -20,7 +20,7 @@ import (
 // @Summary				get all components for an app
 // @Description.markdown	get_app_components.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param         q                 query	string	false	"search query to filter components by name"
+// @Param         q                 query	string	false	"search query to filter components by name or ID"
 // @Param         types					    query	string	false	"comma-separated list of component types to filter by (e.g., terraform_module, helm_chart)"
 // @Param 				component_ids		query	string	false	"comma-separated list of component IDs to filter by"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
@@ -87,7 +87,7 @@ func (s *service) getAppComponents(ctx *gin.Context, appID, q string, types []st
 		}).
 		Preload("ComponentConfigs.ComponentBuilds.VCSConnectionCommit")
 	if q != "" {
-		tx = tx.Where("components.name ILIKE ?", "%"+q+"%")
+		tx = tx.Where("components.name ILIKE ? OR components.id = ?", "%"+q+"%", q)
 	}
 
 	if len(types) > 0 {

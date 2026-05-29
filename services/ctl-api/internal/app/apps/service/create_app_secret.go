@@ -39,6 +39,7 @@ func (c *CreateAppSecretRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppSecret
 // @Router					/v1/apps/{app_id}/secrets [post]
@@ -79,6 +80,7 @@ func (s *service) CreateAppSecretV2(ctx *gin.Context) {
 //		@Failure				401	{object}	stderr.ErrResponse
 //		@Failure				403	{object}	stderr.ErrResponse
 //		@Failure				404	{object}	stderr.ErrResponse
+//		@Failure				409	{object}	stderr.ErrResponse
 //		@Failure				500	{object}	stderr.ErrResponse
 //		@Success				201	{object}	app.AppSecret
 //		@Router					/v1/apps/{app_id}/secret [post]

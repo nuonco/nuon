@@ -63,6 +63,7 @@ const (
 	WorkflowTypeReprovisionSandbox = "reprovision_sandbox"
 	WorkflowTypeAppConfigBuild     = "app_config_build"
 	WorkflowTypeAppBranchesRun     = "app_branches_manual_update"
+	WorkflowTypeRunbookRun         = "runbook_run"
 )
 
 // TargetType values for StepRef.TargetType. Matches the actual string
@@ -90,6 +91,9 @@ type WorkflowRef struct {
 	CreatedByEmail string
 	// CreatedAt is the workflow's start time. Zero when unknown.
 	CreatedAt time.Time
+	// RunbookName labels the runbook this workflow is executing. Populated
+	// only for runbook_run workflows.
+	RunbookName string
 }
 
 // StepRef identifies a workflow step. Present only on workflow_step /
