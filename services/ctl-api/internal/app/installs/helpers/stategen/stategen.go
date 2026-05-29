@@ -7,8 +7,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	state "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -28,7 +28,8 @@ type Request struct {
 // fallback) it runs legacy in-band generation.
 func HintOrGenerate(ctx workflow.Context, req Request) error {
 	if req.StateGenV2 {
-		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		cb := callback.New(ctx, req.InstallID)
+		_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:         req.InstallID,
 			OwnerType:       "installs",
 			SignalOwnerID:   req.InstallID,
@@ -42,6 +43,7 @@ func HintOrGenerate(ctx workflow.Context, req Request) error {
 				TriggeredByID:   req.TriggeredByID,
 				TriggeredByType: req.TriggeredByType,
 			},
+			Callback: cb,
 		})
 		if err != nil {
 			if !generics.IsGormErrRecordNotFound(err) {
@@ -49,7 +51,7 @@ func HintOrGenerate(ctx workflow.Context, req Request) error {
 			}
 			// state-manager queue missing — fall through to legacy generation
 		} else {
-			if _, err := queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+			if _, err := callback.Await(ctx, cb); err != nil {
 				return errors.Wrap(err, "unable to await state generation")
 			}
 			return nil

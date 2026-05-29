@@ -8,6 +8,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -18,7 +20,18 @@ const validateUpdateType = handlerTypeUpdate
 
 type ValidateResponse struct{}
 
-func (h *handler) validateHandler(ctx workflow.Context) (*ValidateResponse, error) {
+func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *ValidateResponse, retErr error) {
+	l, _ := log.WorkflowLogger(ctx)
+	defer func() {
+		status := "success"
+		desc := ""
+		if retErr != nil {
+			status = "error"
+			desc = retErr.Error()
+		}
+		callback.Send(ctx, l, cb, callback.Result{Status: status, StatusDescription: desc})
+	}()
+
 	if err := workflow.Await(ctx, func() bool {
 		return h.ready
 	}); err != nil {

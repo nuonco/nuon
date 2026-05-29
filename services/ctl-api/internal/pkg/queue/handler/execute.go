@@ -9,6 +9,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -20,16 +22,29 @@ const executeUpdateType = handlerTypeUpdate
 
 type ExecuteResponse struct{}
 
-func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error) {
+func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *ExecuteResponse, retErr error) {
+	l, _ := log.WorkflowLogger(ctx)
 	defer func() {
 		h.executingCtx = nil
 		h.executingCancel = nil
+
+		status := "success"
+		desc := ""
+		if retErr != nil {
+			status = "error"
+			desc = retErr.Error()
+		}
+		callback.Send(ctx, l, cb, callback.Result{Status: status, StatusDescription: desc})
 	}()
 
 	// Increment execution count to track how many times this signal has been executed.
 	_ = activities.AwaitIncrementQueueSignalExecutionCount(ctx, &activities.IncrementQueueSignalExecutionCountRequest{
 		QueueSignalID: h.queueSignalID,
 	})
+
+	if h.finished {
+		return nil, errors.New("handler already finished (validate may have failed)")
+	}
 
 	if h.canceled {
 		h.setFinished(app.StatusCancelled, "signal was canceled")

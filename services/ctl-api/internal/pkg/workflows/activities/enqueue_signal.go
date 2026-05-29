@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -24,6 +25,9 @@ type EnqueueSignalToOwnerRequest struct {
 	// which entity (e.g. workflow step) triggered this signal execution.
 	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
 	SignalOwnerType string `json:"signal_owner_type,omitempty"`
+
+	// Callback describes where the handler should send a Temporal signal on completion.
+	Callback callback.Ref `json:"callback,omitempty"`
 }
 
 type EnqueueSignalToOwnerResponse struct {
@@ -62,6 +66,7 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 		Signal:    req.Signal,
 		OwnerID:   req.SignalOwnerID,
 		OwnerType: req.SignalOwnerType,
+		Callback:  req.Callback,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")
