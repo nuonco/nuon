@@ -454,6 +454,18 @@ func NewSlackThreadAnchorID() string {
 	return shortid.NewNanoID("sta")
 }
 
+func NewDatadogConnectionID() string {
+	return shortid.NewNanoID("ddc")
+}
+
+func NewDatadogEventSubscriptionID() string {
+	return shortid.NewNanoID("dde")
+}
+
+func NewDatadogManagedMonitorID() string {
+	return shortid.NewNanoID("ddm")
+}
+
 func NewRunbookID() string {
 	return shortid.NewNanoID("rbk")
 }

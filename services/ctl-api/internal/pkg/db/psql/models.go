@@ -33,6 +33,11 @@ func AllModels() []any {
 		&app.SlackChannelSubscription{},
 		&app.SlackThreadAnchor{},
 
+		// datadog
+		&app.DatadogConnection{},
+		&app.DatadogEventSubscription{},
+		&app.DatadogManagedMonitor{},
+
 		// installers
 		&app.Installer{},
 		&app.InstallerApp{},
