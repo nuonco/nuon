@@ -23,6 +23,7 @@ export const RunbookLatestRunTab = () => {
     queryFn: () =>
       getWorkflowSteps({ workflowId: workflowId!, orgId: org!.id }),
     enabled: !!workflowId && !!org?.id,
+    refetchInterval: 20000,
   })
 
   if (!lastRun) {

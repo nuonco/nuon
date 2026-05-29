@@ -43,6 +43,8 @@ const queryClient = new QueryClient({
   },
 })
 
+const basePath = window.__ADMIN_CONFIG__?.basePath || ''
+
 const router = createBrowserRouter([
   {
     element: <AppLayout />,
@@ -80,7 +82,7 @@ const router = createBrowserRouter([
       { path: 'runner-uptime', element: <RunnerUptime /> },
     ],
   },
-])
+], basePath ? { basename: basePath } : undefined)
 
 export const App = () => (
   <ConfigProvider>
