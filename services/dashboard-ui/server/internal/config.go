@@ -23,6 +23,7 @@ func init() {
 	config.RegisterDefault("github_app_name", "nuon-connect")
 	config.RegisterDefault("disable_metrics", true)
 	config.RegisterDefault("service_deployment", "local")
+	config.RegisterDefault("nuon_admin_dashboard_url", "http://localhost:8087")
 }
 
 type Config struct {
