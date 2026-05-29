@@ -114,6 +114,12 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 		c.Data(http.StatusOK, "text/html; charset=utf-8", html)
 	}
 
+	isLocal := h.cfg.ServiceDeployment == "local"
+	assetCacheControl := "public, max-age=31536000, immutable"
+	if isLocal {
+		assetCacheControl = "no-cache, no-store, must-revalidate"
+	}
+
 	var distFileServer http.Handler
 	if hasDistDir {
 		distFileServer = http.FileServer(http.FS(distFS))
@@ -126,12 +132,12 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 				ct = "text/css"
 			}
 
-			if ct != "" && strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
+			if !isLocal && ct != "" && strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") {
 				gzPath := "assets" + fp + ".gz"
 				if _, err := fs.Stat(distFS, gzPath); err == nil {
 					c.Header("Content-Type", ct)
 					c.Header("Content-Encoding", "gzip")
-					c.Header("Cache-Control", "public, max-age=31536000, immutable")
+					c.Header("Cache-Control", assetCacheControl)
 					c.Header("Vary", "Accept-Encoding")
 					gz, _ := fs.ReadFile(distFS, gzPath)
 					c.Data(http.StatusOK, ct, gz)
@@ -143,7 +149,7 @@ func (h *Handler) RegisterRoutes(e *gin.Engine) error {
 			if ct != "" {
 				w = &mimeOverrideWriter{ResponseWriter: w, contentType: ct}
 			}
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			w.Header().Set("Cache-Control", assetCacheControl)
 			distFileServer.ServeHTTP(w, c.Request)
 		})
 	}

@@ -1,3 +1,5 @@
+import { Button } from '@/components/common/Button'
+import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Status } from '@/components/common/Status'
@@ -13,6 +15,8 @@ export interface IActionCard {
   isLoading?: boolean
   error?: string
   hasRun?: boolean
+  canRun?: boolean
+  onRun?: () => void
 }
 
 export const ActionCard = ({
@@ -23,6 +27,8 @@ export const ActionCard = ({
   isLoading,
   error,
   hasRun,
+  canRun,
+  onRun,
 }: IActionCard) => {
   if (isLoading) {
     return (
@@ -47,9 +53,9 @@ export const ActionCard = ({
   const content = (
     <div className="flex w-fit items-center gap-3 rounded-lg border px-3 py-2.5">
       {name && (
-        <Text variant="body" className="font-strong">
-          {name}
-        </Text>
+        canRun && href
+          ? <Link href={href} className="text-sm">{name}</Link>
+          : <Text variant="body" className="font-strong">{name}</Text>
       )}
       {hasRun && triggerType && <ActionTriggerType triggerType={triggerType} size="sm" />}
       {hasRun && status && <Status status={status} variant="badge" />}
@@ -58,10 +64,15 @@ export const ActionCard = ({
           No runs yet
         </Text>
       )}
+      {canRun && onRun && (
+        <Button size="sm" variant="primary" onClick={() => onRun()}>
+          Run <Icon variant="PlayIcon" size={14} />
+        </Button>
+      )}
     </div>
   )
 
-  if (href) {
+  if (href && !canRun) {
     return (
       <Link href={href} variant="ghost" className="flex !p-0 no-underline">
         {content}
