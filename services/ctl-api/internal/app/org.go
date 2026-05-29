@@ -7,7 +7,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
@@ -189,6 +191,11 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureOrgRunner:          true,
 		OrgFeatureOrgSettings:        true,
 		OrgFeatureAppBranches:        true,
+	}
+	cfg := configFromContext(tx.Statement.Context)
+	// default enabled features for internal users.
+	if generics.SliceContains(cfg.Env, []config.Env{config.Development, config.Stage}) {
+		defaultFeatures[OrgFeatureRunbooks] = true
 	}
 
 	for _, feature := range GetFeatures() {
