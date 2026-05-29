@@ -13,9 +13,11 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
@@ -72,6 +74,12 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "unable to get component")
 		return fmt.Errorf("unable to get component: %w", err)
+	}
+
+	// Ensure org is provisioned before building.
+	if err := queueclient.EnsureQueueSignal(ctx, comp.OrgID, "orgs", orgprovision.SignalType); err != nil {
+		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "org provision not ready")
+		return fmt.Errorf("org provision not ready: %w", err)
 	}
 
 	build, err := activities.AwaitGetComponentBuildByID(ctx, s.BuildID)
