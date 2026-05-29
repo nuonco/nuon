@@ -55,6 +55,12 @@ func (o *CreateAppExternalImageComponentConfigReader) ReadResponse(response runt
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppExternalImageComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppExternalImageComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppExternalImageComponentConfigNotFound) GetPayload() *models.Std
 }
 
 func (o *CreateAppExternalImageComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppExternalImageComponentConfigConflict creates a CreateAppExternalImageComponentConfigConflict with default headers values
+func NewCreateAppExternalImageComponentConfigConflict() *CreateAppExternalImageComponentConfigConflict {
+	return &CreateAppExternalImageComponentConfigConflict{}
+}
+
+/*
+CreateAppExternalImageComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppExternalImageComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app external image component config conflict response has a 2xx status code
+func (o *CreateAppExternalImageComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app external image component config conflict response has a 3xx status code
+func (o *CreateAppExternalImageComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app external image component config conflict response has a 4xx status code
+func (o *CreateAppExternalImageComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app external image component config conflict response has a 5xx status code
+func (o *CreateAppExternalImageComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app external image component config conflict response a status code equal to that given
+func (o *CreateAppExternalImageComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app external image component config conflict response
+func (o *CreateAppExternalImageComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppExternalImageComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/configs/external-image][%d] createAppExternalImageComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppExternalImageComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/configs/external-image][%d] createAppExternalImageComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppExternalImageComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppExternalImageComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

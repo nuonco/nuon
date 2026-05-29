@@ -55,6 +55,12 @@ func (o *CreateAppInputConfigReader) ReadResponse(response runtime.ClientRespons
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppInputConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppInputConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppInputConfigNotFound) GetPayload() *models.StderrErrResponse {
 }
 
 func (o *CreateAppInputConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppInputConfigConflict creates a CreateAppInputConfigConflict with default headers values
+func NewCreateAppInputConfigConflict() *CreateAppInputConfigConflict {
+	return &CreateAppInputConfigConflict{}
+}
+
+/*
+CreateAppInputConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppInputConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app input config conflict response has a 2xx status code
+func (o *CreateAppInputConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app input config conflict response has a 3xx status code
+func (o *CreateAppInputConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app input config conflict response has a 4xx status code
+func (o *CreateAppInputConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app input config conflict response has a 5xx status code
+func (o *CreateAppInputConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app input config conflict response a status code equal to that given
+func (o *CreateAppInputConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app input config conflict response
+func (o *CreateAppInputConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppInputConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/input-config][%d] createAppInputConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppInputConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/input-config][%d] createAppInputConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppInputConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppInputConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

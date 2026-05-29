@@ -121,6 +121,7 @@ func (c *CreateTerraformModuleComponentConfigRequest) validateVersion(latestVers
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.TerraformModuleComponentConfig
 // @Router					/v1/apps/{app_id}/components/{component_id}/configs/terraform-module [POST]
@@ -152,6 +153,7 @@ func (s *service) CreateAppTerraformModuleComponentConfig(ctx *gin.Context) {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.TerraformModuleComponentConfig
 // @Router					/v1/components/{component_id}/configs/terraform-module [POST]

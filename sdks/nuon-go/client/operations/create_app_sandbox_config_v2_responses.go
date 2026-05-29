@@ -55,6 +55,12 @@ func (o *CreateAppSandboxConfigV2Reader) ReadResponse(response runtime.ClientRes
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppSandboxConfigV2Conflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppSandboxConfigV2InternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppSandboxConfigV2NotFound) GetPayload() *models.StderrErrRespons
 }
 
 func (o *CreateAppSandboxConfigV2NotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppSandboxConfigV2Conflict creates a CreateAppSandboxConfigV2Conflict with default headers values
+func NewCreateAppSandboxConfigV2Conflict() *CreateAppSandboxConfigV2Conflict {
+	return &CreateAppSandboxConfigV2Conflict{}
+}
+
+/*
+CreateAppSandboxConfigV2Conflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppSandboxConfigV2Conflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app sandbox config v2 conflict response has a 2xx status code
+func (o *CreateAppSandboxConfigV2Conflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app sandbox config v2 conflict response has a 3xx status code
+func (o *CreateAppSandboxConfigV2Conflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app sandbox config v2 conflict response has a 4xx status code
+func (o *CreateAppSandboxConfigV2Conflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app sandbox config v2 conflict response has a 5xx status code
+func (o *CreateAppSandboxConfigV2Conflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app sandbox config v2 conflict response a status code equal to that given
+func (o *CreateAppSandboxConfigV2Conflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app sandbox config v2 conflict response
+func (o *CreateAppSandboxConfigV2Conflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppSandboxConfigV2Conflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/sandbox-configs][%d] createAppSandboxConfigV2Conflict %s", 409, payload)
+}
+
+func (o *CreateAppSandboxConfigV2Conflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/sandbox-configs][%d] createAppSandboxConfigV2Conflict %s", 409, payload)
+}
+
+func (o *CreateAppSandboxConfigV2Conflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppSandboxConfigV2Conflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

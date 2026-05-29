@@ -134,6 +134,7 @@ func (c *CreateKubernetesManifestComponentConfigRequest) Validate(v *validator.V
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.KubernetesManifestComponentConfig
 // @Router					/v1/apps/{app_id}/components/{component_id}/configs/kubernetes-manifest [POST]
@@ -165,6 +166,7 @@ func (s *service) CreateAppKubernetesManifestComponentConfig(ctx *gin.Context) {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.KubernetesManifestComponentConfig
 // @Router					/v1/components/{component_id}/configs/kubernetes-manifest [POST]
