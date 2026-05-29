@@ -54,6 +54,7 @@ type CreateWorkflowStepApprovalResponseResponse struct {
 // @Failure					401	{object}	stderr.ErrResponse
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
+// @Failure					409	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{object}	CreateWorkflowStepApprovalResponseResponse
 // @Router					/v1/workflows/{workflow_id}/steps/{step_id}/approvals/{approval_id}/response [post]

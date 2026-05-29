@@ -55,6 +55,12 @@ func (o *CreateInstallActionRunReader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateInstallActionRunConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateInstallActionRunInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -403,6 +409,76 @@ func (o *CreateInstallActionRunNotFound) GetPayload() *models.StderrErrResponse 
 }
 
 func (o *CreateInstallActionRunNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateInstallActionRunConflict creates a CreateInstallActionRunConflict with default headers values
+func NewCreateInstallActionRunConflict() *CreateInstallActionRunConflict {
+	return &CreateInstallActionRunConflict{}
+}
+
+/*
+CreateInstallActionRunConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateInstallActionRunConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create install action run conflict response has a 2xx status code
+func (o *CreateInstallActionRunConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create install action run conflict response has a 3xx status code
+func (o *CreateInstallActionRunConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create install action run conflict response has a 4xx status code
+func (o *CreateInstallActionRunConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create install action run conflict response has a 5xx status code
+func (o *CreateInstallActionRunConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create install action run conflict response a status code equal to that given
+func (o *CreateInstallActionRunConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create install action run conflict response
+func (o *CreateInstallActionRunConflict) Code() int {
+	return 409
+}
+
+func (o *CreateInstallActionRunConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/runs][%d] createInstallActionRunConflict %s", 409, payload)
+}
+
+func (o *CreateInstallActionRunConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/actions/runs][%d] createInstallActionRunConflict %s", 409, payload)
+}
+
+func (o *CreateInstallActionRunConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateInstallActionRunConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
