@@ -32,6 +32,7 @@ type CreateRunnerJobExecutionOutputsRequest struct {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.RunnerJobExecutionOutputs
 // @Router					/v1/runner-jobs/{runner_job_id}/executions/{runner_job_execution_id}/outputs [POST]

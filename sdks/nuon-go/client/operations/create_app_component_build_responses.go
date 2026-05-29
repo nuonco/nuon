@@ -55,6 +55,12 @@ func (o *CreateAppComponentBuildReader) ReadResponse(response runtime.ClientResp
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppComponentBuildConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppComponentBuildInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppComponentBuildNotFound) GetPayload() *models.StderrErrResponse
 }
 
 func (o *CreateAppComponentBuildNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppComponentBuildConflict creates a CreateAppComponentBuildConflict with default headers values
+func NewCreateAppComponentBuildConflict() *CreateAppComponentBuildConflict {
+	return &CreateAppComponentBuildConflict{}
+}
+
+/*
+CreateAppComponentBuildConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppComponentBuildConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app component build conflict response has a 2xx status code
+func (o *CreateAppComponentBuildConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app component build conflict response has a 3xx status code
+func (o *CreateAppComponentBuildConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app component build conflict response has a 4xx status code
+func (o *CreateAppComponentBuildConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app component build conflict response has a 5xx status code
+func (o *CreateAppComponentBuildConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app component build conflict response a status code equal to that given
+func (o *CreateAppComponentBuildConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app component build conflict response
+func (o *CreateAppComponentBuildConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppComponentBuildConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/builds][%d] createAppComponentBuildConflict %s", 409, payload)
+}
+
+func (o *CreateAppComponentBuildConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/components/{component_id}/builds][%d] createAppComponentBuildConflict %s", 409, payload)
+}
+
+func (o *CreateAppComponentBuildConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppComponentBuildConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

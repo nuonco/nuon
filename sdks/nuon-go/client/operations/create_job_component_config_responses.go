@@ -55,6 +55,12 @@ func (o *CreateJobComponentConfigReader) ReadResponse(response runtime.ClientRes
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateJobComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateJobComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateJobComponentConfigNotFound) GetPayload() *models.StderrErrRespons
 }
 
 func (o *CreateJobComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateJobComponentConfigConflict creates a CreateJobComponentConfigConflict with default headers values
+func NewCreateJobComponentConfigConflict() *CreateJobComponentConfigConflict {
+	return &CreateJobComponentConfigConflict{}
+}
+
+/*
+CreateJobComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateJobComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create job component config conflict response has a 2xx status code
+func (o *CreateJobComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create job component config conflict response has a 3xx status code
+func (o *CreateJobComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create job component config conflict response has a 4xx status code
+func (o *CreateJobComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create job component config conflict response has a 5xx status code
+func (o *CreateJobComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create job component config conflict response a status code equal to that given
+func (o *CreateJobComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create job component config conflict response
+func (o *CreateJobComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateJobComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/job][%d] createJobComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateJobComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/job][%d] createJobComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateJobComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateJobComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
