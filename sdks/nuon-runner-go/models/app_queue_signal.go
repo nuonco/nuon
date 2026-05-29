@@ -19,6 +19,10 @@ import (
 // swagger:model app.QueueSignal
 type AppQueueSignal struct {
 
+	// Callback describes where to send a Temporal signal when this queue signal
+	// completes.
+	Callback *CallbackRef `json:"callback,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -72,6 +76,20 @@ type AppQueueSignal struct {
 
 	// workflow
 	Workflow *SignaldbWorkflowRef `json:"workflow,omitempty"`
+}
+
+// CallbackRef describes where to send a Temporal signal on completion.
+//
+// swagger:model callback.Ref
+type CallbackRef struct {
+	// workflow id
+	WorkflowID string `json:"workflow_id,omitempty"`
+
+	// signal name
+	SignalName string `json:"signal_name,omitempty"`
+
+	// namespace
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // Validate validates this app queue signal

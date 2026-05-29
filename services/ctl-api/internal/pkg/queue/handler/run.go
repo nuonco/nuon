@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/generics"
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/workflowmanager"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -47,64 +47,59 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	l.Debug("handler is ready")
 	h.ready = true
 
-	// Periodically check that the queue signal still exists and hasn't expired.
-	// If deleted or expired, set h.stopped so the Await below unblocks and the
-	// handler workflow terminates cleanly.
-	workflow.Go(ctx, func(gCtx workflow.Context) {
-		for {
-			if err := workflow.Sleep(gCtx, 1*time.Minute); err != nil {
-				return
-			}
-			if h.finished || h.stopped || h.restarted {
-				return
-			}
-			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+	// Start the lifecycle manager to periodically check that the queue signal
+	// still exists and hasn't expired. Sets mgr.Stopped when the entity is
+	// gone or expired, which unblocks the Await below.
+	mgr := workflowmanager.New(
+		workflowmanager.WithCheckInterval(1*time.Minute),
+		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
+			_, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
 			if err != nil {
 				if dbgenerics.IsGormErrRecordNotFound(err) {
 					l.Warn("queue signal deleted, terminating orphaned handler")
-					if h.mw != nil {
-						h.mw.Incr("queue.handler.signal_not_found", metrics.ToTags(map[string]string{
-							"queue_id": h.queueID,
-						}))
-					}
-					h.stopped = true
-					return
+					return false, nil
 				}
-				continue
+				return true, nil // transient error, keep going
 			}
-
-			// If the signal has an expiry and it has passed, mark it as
-			// expired in the DB so callers see a terminal status.
-			if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
-				l.Warn("queue signal expired, terminating handler")
-				if h.mw != nil {
-					h.mw.Incr("queue.handler.signal_expired", metrics.ToTags(map[string]string{
-						"queue_id":    h.queueID,
-						"signal_type": string(qs.Type),
-					}))
-				}
-				_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
-					QueueSignalID:     h.queueSignalID,
-					Status:            app.StatusError,
-					StatusDescription: "signal expired without being executed",
-				})
-				h.stopped = true
-				return
+			return true, nil
+		}),
+		workflowmanager.WithExpiryChecker(func(gCtx workflow.Context) (*time.Time, error) {
+			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+			if err != nil {
+				return nil, err
 			}
-		}
-	})
+			return qs.ExpiresAt, nil
+		}),
+		workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+				QueueSignalID:     h.queueSignalID,
+				Status:            app.StatusError,
+				StatusDescription: "signal expired or deleted",
+			})
+		}),
+	)
+	mgr.Start(ctx)
 
 	// execute the handler and handle a restart or stop
 	if err := workflow.Await(ctx, func() bool {
-		return generics.AnyTrue(h.stopped, h.restarted, h.finished)
+		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, h.finished)
 	}); err != nil {
 		return false, err
 	}
-	if h.restarted {
+	if mgr.Restarted {
 		return false, nil
 	}
-	if h.stopped {
+	if mgr.Stopped {
+		// Entity was deleted or expired. Send callbacks so waiting callers unblock.
+		if h.hasCallbacks() {
+			h.sendCompletionCallbacks(ctx)
+		}
 		return true, nil
+	}
+
+	// Signal completed — send completion callbacks to unblock queue and parent.
+	if h.hasCallbacks() {
+		h.sendCompletionCallbacks(ctx)
 	}
 
 	// Once execution has completed, keep the workflow alive for a cache period

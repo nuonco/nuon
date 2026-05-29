@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
 	componentdeploysyncandplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentdeploysyncandplan"
-	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
@@ -134,6 +134,7 @@ func (s *Signal) deployToInstall(ctx workflow.Context, logger log.Logger, instal
 // deployComponentToInstall enqueues a componentdeploysyncandplan signal to the install's queue
 // and waits for it to complete.
 func (s *Signal) deployComponentToInstall(ctx workflow.Context, logger log.Logger, installID, componentID, installComponentID string) error {
+	cb := callback.New(ctx, installComponentID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   installID,
 		OwnerType: "installs",
@@ -142,6 +143,7 @@ func (s *Signal) deployComponentToInstall(ctx workflow.Context, logger log.Logge
 			InstallComponentID: installComponentID,
 			ComponentID:        componentID,
 		},
+		Callback: cb,
 	})
 	if err != nil {
 		return fmt.Errorf("enqueue failed: %w", err)
@@ -154,7 +156,7 @@ func (s *Signal) deployComponentToInstall(ctx workflow.Context, logger log.Logge
 		"queue_signal_id", enqueueResp.QueueSignalID,
 	)
 
-	_, err = queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
+	_, err = callback.Await(ctx, cb)
 	if err != nil {
 		return fmt.Errorf("deploy failed: %w", err)
 	}
