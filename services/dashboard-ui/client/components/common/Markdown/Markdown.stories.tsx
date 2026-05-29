@@ -49,12 +49,20 @@ function createSeededQueryClient() {
   const mockActions = [
     {
       action_workflow_id: 'action-1',
-      action_workflow: { name: 'deploy-canary' },
+      action_workflow: {
+        id: 'action-1',
+        name: 'deploy-canary',
+        configs: [{ id: 'cfg-a1', steps: [], triggers: [{ type: 'manual' }] }],
+      },
       runs: [{ triggered_by_type: 'manual', status_v2: { status: 'success' } }],
     },
     {
       action_workflow_id: 'action-2',
-      action_workflow: { name: 'rollback' },
+      action_workflow: {
+        id: 'action-2',
+        name: 'rollback',
+        configs: [{ id: 'cfg-a2', steps: [], triggers: [{ type: 'manual' }] }],
+      },
       runs: [{ triggered_by_type: 'manual', status_v2: { status: 'error' } }],
     },
   ]
@@ -69,6 +77,49 @@ function createSeededQueryClient() {
   qc.setQueryData(
     ['install-actions-card', 'org-mock', 'install-mock', undefined, 'action-1'],
     { data: mockActions, pagination: { hasNext: false } }
+  )
+
+  const mockRunbooks = [
+    {
+      id: 'irbk-1',
+      install_id: 'install-mock',
+      runbook_id: 'rbk-1',
+      runbook: {
+        id: 'rbk-1',
+        name: 'restart-service',
+        configs: [{
+          id: 'cfg-1',
+          steps: [
+            { id: 'step-1', name: 'Stop service', idx: 0, type: 'command' },
+            { id: 'step-2', name: 'Clear cache', idx: 1, type: 'command' },
+            { id: 'step-3', name: 'Start service', idx: 2, type: 'command' },
+          ],
+        }],
+      },
+    },
+    {
+      id: 'irbk-2',
+      install_id: 'install-mock',
+      runbook_id: 'rbk-2',
+      runbook: {
+        id: 'rbk-2',
+        name: 'health-check',
+        configs: [{
+          id: 'cfg-2',
+          steps: [
+            { id: 'step-4', name: 'Check endpoints', idx: 0, type: 'command' },
+          ],
+        }],
+      },
+    },
+  ]
+  qc.setQueryData(
+    ['install-runbooks-card', 'org-mock', 'install-mock', 'restart-service', undefined],
+    { data: mockRunbooks, pagination: { hasNext: false } }
+  )
+  qc.setQueryData(
+    ['install-runbooks-card', 'org-mock', 'install-mock', 'health-check', undefined],
+    { data: mockRunbooks, pagination: { hasNext: false } }
   )
 
   qc.setQueryData(['install-stack', 'org-mock', 'install-mock'], {
@@ -98,6 +149,113 @@ const MockInstallProviders = ({ children }: { children: ReactNode }) => {
     </QueryClientProvider>
   )
 }
+
+export const GitHubAlerts = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">GitHub-style alerts</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Blockquotes starting with [!NOTE], [!TIP], [!IMPORTANT], [!WARNING], or [!CAUTION]
+        render as styled alert banners matching the GitHub Flavored Markdown spec.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">All five types</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`> [!NOTE]
+> Highlights information that users should take into account, even when skimming.
+
+> [!TIP]
+> Optional information to help a user be more successful.
+
+> [!IMPORTANT]
+> Crucial information necessary for users to succeed.
+
+> [!WARNING]
+> Critical content demanding immediate user attention due to potential risks.
+
+> [!CAUTION]
+> Negative potential consequences of an action.`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">With rich content</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`> [!WARNING]
+> Do **not** run this command in production without first taking a backup.
+>
+> \`\`\`bash
+> nuon installs destroy --install-id inst_123
+> \`\`\`
+>
+> This action is **irreversible**.
+
+> [!TIP]
+> You can use \`nuon installs list\` to see all your installs before making changes.`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Mixed with regular blockquotes</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`> This is a regular blockquote — it renders normally.
+
+> [!NOTE]
+> This is an alert blockquote — it renders as a banner.
+
+> Another regular blockquote with **bold** and \`code\`.`}
+        />
+      </div>
+    </div>
+  </div>
+)
+
+export const Time = () => (
+  <div className="space-y-6">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Local time rendering</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Use {'<nuon-time>'} to render timestamps in the user's local timezone.
+        Supports the same formats as the Time component.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Formats</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`Relative: <nuon-time time="2026-05-29T10:30:00Z" format="relative"></nuon-time>
+
+Short: <nuon-time time="2026-05-29T10:30:00Z" format="short-datetime"></nuon-time>
+
+Long: <nuon-time time="2026-05-29T10:30:00Z" format="long-datetime"></nuon-time>
+
+Time only: <nuon-time time="2026-05-29T10:30:00Z" format="time-only"></nuon-time>
+
+Default (short-datetime): <nuon-time time="2026-05-29T10:30:00Z"></nuon-time>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Inline usage</h4>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`Last deployed <nuon-time time="2026-05-29T10:30:00Z" format="relative"></nuon-time> by **admin@nuon.co**.
+
+Maintenance window: <nuon-time time="2026-06-01T02:00:00Z" format="long-datetime"></nuon-time> to <nuon-time time="2026-06-01T06:00:00Z" format="long-datetime"></nuon-time>.`}
+        />
+      </div>
+    </div>
+  </div>
+)
 
 export const BasicUsage = () => (
   <div className="space-y-6">
@@ -1379,6 +1537,36 @@ nuon installs deploy --install-id inst_123
 </nuon-panel>`}
           />
         </SurfacesProvider>
+      </div>
+    </div>
+    <div className="space-y-4">
+      <h4 className="text-sm font-medium">Run runbook (requires install context)</h4>
+      <p className="text-xs text-gray-500 dark:text-gray-500">
+        In app mode these degrade to inline code. In install mode they fetch the runbook and show a run button.
+      </p>
+      <div className="p-4 border rounded-lg space-y-4">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">App mode (degraded to inline code):</p>
+          <Markdown
+            mode="app"
+            content={`Run the restart: <nuon-run-runbook name="restart-service"></nuon-run-runbook>`}
+          />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Install mode (renders live card):</p>
+          <MockInstallProviders>
+            <Markdown
+              mode="install"
+              content={`If the service is unresponsive, run the restart runbook:
+
+<nuon-run-runbook name="restart-service"></nuon-run-runbook>
+
+Or run a quick health check:
+
+<nuon-run-runbook name="health-check"></nuon-run-runbook>`}
+            />
+          </MockInstallProviders>
+        </div>
       </div>
     </div>
   </div>
