@@ -64,6 +64,7 @@ const (
 	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
 	OrgFeatureSlack                   OrgFeature = "slack"
 	OrgFeatureRunbooks                OrgFeature = "runbooks"
+	OrgFeatureDatadog                 OrgFeature = "datadog"
 )
 
 type Org struct {
@@ -182,6 +183,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureStateGenV2:              false,
 		OrgFeatureSlack:                   false,
 		OrgFeatureRunbooks:                false,
+		OrgFeatureDatadog:                 false,
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
 		OrgFeatureQueues:             true,
@@ -240,6 +242,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAutoSkipNoop,
 		OrgFeatureSlack,
 		OrgFeatureRunbooks,
+		OrgFeatureDatadog,
 	}
 }
 
@@ -269,6 +272,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
 		OrgFeatureSlack:                   "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
 		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
+		OrgFeatureDatadog:                 "Enable the Datadog integration, including the Datadog link in the dashboard sidebar, multi-tenant DD connections, event subscriptions, and one-click managed monitors",
 	}
 }
 
