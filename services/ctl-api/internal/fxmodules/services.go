@@ -9,6 +9,7 @@ import (
 	appsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/service"
 	authservice "github.com/nuonco/nuon/services/ctl-api/internal/app/auth/service"
 	componentsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/components/service"
+	datadogservice "github.com/nuonco/nuon/services/ctl-api/internal/app/datadog/service"
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
@@ -33,6 +34,7 @@ import (
 var sharedServices = fx.Options(
 	// Shared library providers needed by domain services.
 	SlackLibsModule,
+	DatadogLibsModule,
 	// Infrastructure services (no swagger routes).
 	fx.Provide(api.AsService(docs.New)),
 	fx.Provide(api.AsService(health.New)),
@@ -43,6 +45,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(actionsservice.New)),
 	fx.Provide(api.AsService(appsservice.New)),
 	fx.Provide(api.AsService(componentsservice.New)),
+	fx.Provide(api.AsService(datadogservice.New)),
 	fx.Provide(api.AsService(generalservice.New)),
 	fx.Provide(api.AsService(identityprovidersservice.New)),
 	fx.Provide(api.AsService(installsservice.New)),
