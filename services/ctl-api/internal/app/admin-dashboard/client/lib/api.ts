@@ -4,6 +4,16 @@ export type TAPIError = {
   status?: number
 }
 
+let _basePath = ''
+
+export function setBasePath(path: string) {
+  _basePath = path
+}
+
+export function getBasePath(): string {
+  return _basePath
+}
+
 interface IAPIData {
   path: string
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -17,7 +27,7 @@ export async function api<T>({
   body,
   params,
 }: IAPIData): Promise<T> {
-  let url = `/api/${path}`
+  let url = `${_basePath}/api/${path}`
 
   if (params) {
     const searchParams = new URLSearchParams()
