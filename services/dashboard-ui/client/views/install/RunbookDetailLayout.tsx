@@ -123,8 +123,7 @@ export const RunbookDetailLayout = () => {
               <Text variant="h3" weight="strong">
                 {runbook?.name}
               </Text>
-              <span className="flex flex-wrap items-center gap-4 mt-1">
-                {runbookId ? <ID>{runbookId}</ID> : null}
+              <span className="flex flex-wrap items-center gap-4 mt-1">              
                 {runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
                   <span className="flex flex-wrap gap-1">
                     {Object.keys(runbook.labels)
@@ -142,6 +141,7 @@ export const RunbookDetailLayout = () => {
                   {runbook.description}
                 </Text>
               ) : null}
+              {runbookId ? <ID>{runbookId}</ID> : null}
             </HeadingGroup>
 
             {installRunbook ? (
@@ -157,7 +157,9 @@ export const RunbookDetailLayout = () => {
           <TabNav
             basePath={basePath}
             tabs={[
-              { path: '/', text: 'Latest run' },
+              ...(runs.length > 0
+                ? [{ path: '/', text: 'Latest run' }]
+                : []),
               { path: '/readme', text: 'Readme' },
               {
                 path: '/steps',
