@@ -15,6 +15,7 @@ import (
 
 	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processjob"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
@@ -49,15 +50,15 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 		return w.pollJob(ctx, req)
 	}
 
-	queueSignalID, err := w.queueJob(ctx, req.RunnerID, req.JobID)
+	cb := callback.New(ctx, req.JobID)
+	queueSignalID, err := w.queueJob(ctx, req.RunnerID, req.JobID, cb)
 	if err != nil {
 		return app.RunnerJobStatusUnknown, errors.Wrap(err, "unable to queue job")
 	}
 
 	if queueSignalID != "" {
-		// Queue path: await signal completion via Temporal workflow updates
-		// instead of polling the job status.
-		if _, err := queueclient.AwaitQueueSignal(ctx, queueSignalID); err != nil {
+		// Queue path: await signal completion via callback.
+		if _, err := callback.Await(ctx, cb); err != nil {
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
 	} else {
@@ -85,7 +86,7 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 
 // queueJob dispatches the job for execution. Returns the queue signal ID when the
 // queue path is used (non-empty string), or empty string for the legacy event loop path.
-func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) (string, error) {
+func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb callback.Ref) (string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return "", errors.Wrap(err, "expected a log stream in the context to poll job")
@@ -109,6 +110,7 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string) (stri
 			Signal:    &processjobsignal.Signal{RunnerID: runnerID, JobID: jobID},
 			OwnerID:   jobID,
 			OwnerType: "runner_jobs",
+			Callback:  cb,
 		})
 		if err != nil {
 			return "", errors.Wrap(err, "unable to enqueue job to queue")

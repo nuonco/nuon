@@ -4530,6 +4530,12 @@ export interface components {
     /** @enum {string} */
     "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
     "app.QueueSignal": {
+      /**
+       * @description Callback describes where to send a Temporal signal when this queue signal
+       * completes. When set, the handler signals the parent workflow on completion
+       * instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+       */
+      callback?: components["schemas"]["callback.Ref"];
       created_at?: string;
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
@@ -5349,6 +5355,11 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build" | "runbook_run";
     "blobstore.Blob": Record<string, never>;
+    "callback.Ref": {
+      namespace?: string;
+      signal_name?: string;
+      workflow_id?: string;
+    };
     "cctx.SignalContext": {
       account_id?: string;
       log_stream_id?: string;
