@@ -130,6 +130,8 @@ func TestBuildMonitorRequest_NameAndMessage(t *testing.T) {
 		app.DatadogManagedMonitorPresetFailure,
 		[]string{"@pagerduty-prod", "@slack-oncall"},
 		"acme-prod",
+		"https://app.nuon.co",
+		"org456",
 	)
 	if err != nil {
 		t.Fatalf("buildMonitorRequest returned error: %v", err)
@@ -142,11 +144,19 @@ func TestBuildMonitorRequest_NameAndMessage(t *testing.T) {
 		t.Errorf("monitor name should include display name, got %q", req.Name)
 	}
 
-	// Handles must appear after the descriptive body so DD's fan-out works.
-	bodyIdx := strings.Index(req.Message, "one-click")
+	// Deep link is the whole point of this body — without it the
+	// Slack/PagerDuty alert has no clickable path back to Nuon.
+	wantLink := "https://app.nuon.co/org456/installs/inst123"
+	if !strings.Contains(req.Message, wantLink) {
+		t.Errorf("monitor message must include deep link %q, got %q", wantLink, req.Message)
+	}
+
+	// Handles must appear after the deep links so DD's fan-out picks
+	// them up — DD only routes @-mentions from the tail of the body.
+	linkIdx := strings.Index(req.Message, wantLink)
 	handleIdx := strings.Index(req.Message, "@pagerduty-prod")
-	if bodyIdx == -1 || handleIdx == -1 || handleIdx < bodyIdx {
-		t.Errorf("notify handles must appear at the tail of the message body, got %q", req.Message)
+	if linkIdx == -1 || handleIdx == -1 || handleIdx < linkIdx {
+		t.Errorf("notify handles must appear after deep links, got %q", req.Message)
 	}
 
 	wantTags := map[string]bool{
@@ -165,6 +175,89 @@ func TestBuildMonitorRequest_NameAndMessage(t *testing.T) {
 		if !found {
 			t.Errorf("expected tag %q on managed monitor request, missing", tag)
 		}
+	}
+}
+
+// TestBuildMonitorLinks covers the deep-link generation for every
+// target type. The dashboard URL shape is part of the Nuon ↔ DD
+// contract — drift here means alerts in Slack / PagerDuty / email
+// stop being clickable.
+func TestBuildMonitorLinks(t *testing.T) {
+	const (
+		appURL = "https://app.nuon.co"
+		orgID  = "org456"
+	)
+	cases := []struct {
+		name       string
+		targetType app.DatadogManagedMonitorTargetType
+		targetID   string
+		installID  string
+		want       []string
+	}{
+		{
+			name:       "install always builds an install link",
+			targetType: app.DatadogManagedMonitorTargetTypeInstall,
+			targetID:   "inst123",
+			want: []string{
+				"[Open install in Nuon](https://app.nuon.co/org456/installs/inst123)",
+				"[Org dashboard](https://app.nuon.co/org456)",
+			},
+		},
+		{
+			name:       "action with install scope deep-links to the action page",
+			targetType: app.DatadogManagedMonitorTargetTypeAction,
+			targetID:   "actwfl999",
+			installID:  "inst123",
+			want: []string{
+				"[Open action in Nuon](https://app.nuon.co/org456/installs/inst123/actions/actwfl999)",
+				"[Open install in Nuon](https://app.nuon.co/org456/installs/inst123)",
+				"[Org dashboard](https://app.nuon.co/org456)",
+			},
+		},
+		{
+			name:       "component with install scope deep-links to the component page",
+			targetType: app.DatadogManagedMonitorTargetTypeComponent,
+			targetID:   "cmp456",
+			installID:  "inst123",
+			want: []string{
+				"[Open component in Nuon](https://app.nuon.co/org456/installs/inst123/components/cmp456)",
+				"[Open install in Nuon](https://app.nuon.co/org456/installs/inst123)",
+				"[Org dashboard](https://app.nuon.co/org456)",
+			},
+		},
+		{
+			name:       "workflow without install scope falls back to org dashboard only",
+			targetType: app.DatadogManagedMonitorTargetTypeWorkflow,
+			targetID:   "wf789",
+			want: []string{
+				"[Org dashboard](https://app.nuon.co/org456)",
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := buildMonitorLinks(tc.targetType, tc.targetID, tc.installID, appURL, orgID)
+			if len(got) != len(tc.want) {
+				t.Fatalf("link count mismatch\n  got:  %v\n  want: %v", got, tc.want)
+			}
+			for i, line := range got {
+				if line != tc.want[i] {
+					t.Errorf("line %d mismatch\n  got:  %s\n  want: %s", i, line, tc.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestBuildMonitorLinks_NoConfigReturnsNil ensures the message stays
+// link-free in dev/CI where AppURL or the org context is missing,
+// rather than emitting broken markdown.
+func TestBuildMonitorLinks_NoConfigReturnsNil(t *testing.T) {
+	if got := buildMonitorLinks(app.DatadogManagedMonitorTargetTypeInstall, "inst1", "", "", "org1"); got != nil {
+		t.Errorf("expected nil for empty AppURL, got %v", got)
+	}
+	if got := buildMonitorLinks(app.DatadogManagedMonitorTargetTypeInstall, "inst1", "", "https://app.nuon.co", ""); got != nil {
+		t.Errorf("expected nil for empty orgID, got %v", got)
 	}
 }
 

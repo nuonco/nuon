@@ -31,6 +31,8 @@ func buildMonitorRequest(
 	preset app.DatadogManagedMonitorPreset,
 	notifyHandles []string,
 	displayName string,
+	appURL string,
+	orgID string,
 ) (ddclient.CreateMonitorRequest, error) {
 	query, err := buildMonitorQuery(targetType, targetID, installID, preset)
 	if err != nil {
@@ -42,7 +44,7 @@ func buildMonitorRequest(
 		name = fmt.Sprintf("%s (install %s)", name, installID)
 	}
 
-	message := buildMonitorMessage(targetType, targetID, preset, notifyHandles, displayName)
+	message := buildMonitorMessage(targetType, targetID, installID, preset, notifyHandles, displayName, appURL, orgID)
 
 	tags := []string{
 		"source:nuon",
@@ -168,15 +170,23 @@ func targetIDLabel(targetID, displayName string) string {
 }
 
 // buildMonitorMessage produces the DD monitor body. Keeps Nuon
-// boilerplate first, link to the Nuon resource second, @-handles last —
-// matching DD's recommended message shape (DD only fans out @-mentions
-// from the bottom of the message).
+// boilerplate first, deep links to the Nuon resource(s) second,
+// @-handles last — matching DD's recommended message shape (DD only
+// fans out @-mentions from the bottom of the message).
+//
+// Deep links matter here because the alert lands in Slack / PagerDuty /
+// email; the operator needs a one-click path back to the offending
+// install or action. Without them, "view in Nuon" requires copy-pasting
+// IDs from the alert into the dashboard URL bar.
 func buildMonitorMessage(
 	targetType app.DatadogManagedMonitorTargetType,
 	targetID string,
+	installID string,
 	preset app.DatadogManagedMonitorPreset,
 	notifyHandles []string,
 	displayName string,
+	appURL string,
+	orgID string,
 ) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Nuon-managed alert: %s on %s `%s`",
@@ -184,11 +194,64 @@ func buildMonitorMessage(
 	b.WriteString("\n\n")
 	b.WriteString("Triggered by an event in the Nuon → Datadog event stream. ")
 	b.WriteString("Created via the one-click \"Alert in Datadog\" action.")
+
+	if links := buildMonitorLinks(targetType, targetID, installID, appURL, orgID); len(links) > 0 {
+		b.WriteString("\n\n")
+		b.WriteString(strings.Join(links, "\n"))
+	}
+
 	if len(notifyHandles) > 0 {
 		b.WriteString("\n\n")
 		b.WriteString(strings.Join(cleanHandles(notifyHandles), " "))
 	}
 	return b.String()
+}
+
+// buildMonitorLinks returns the deep-link lines for the alert body.
+//
+// Most-specific link first (the offending resource), then the org
+// dashboard as a fallback. Each link is a full markdown link — DD
+// renders these clickably in Slack / PagerDuty / email when the monitor
+// fires.
+//
+// Component and workflow targets without install scope can only build
+// the org-level link. That's a real product gap (the dashboard groups
+// those resources under installs), and a documented caveat of the
+// monitor-create path: pass install_id whenever possible.
+func buildMonitorLinks(
+	targetType app.DatadogManagedMonitorTargetType,
+	targetID string,
+	installID string,
+	appURL string,
+	orgID string,
+) []string {
+	if appURL == "" || orgID == "" {
+		return nil
+	}
+	base := strings.TrimRight(appURL, "/") + "/" + orgID
+
+	var lines []string
+	switch targetType {
+	case app.DatadogManagedMonitorTargetTypeInstall:
+		lines = append(lines, fmt.Sprintf("[Open install in Nuon](%s/installs/%s)", base, targetID))
+	case app.DatadogManagedMonitorTargetTypeAction:
+		if installID != "" {
+			lines = append(lines, fmt.Sprintf("[Open action in Nuon](%s/installs/%s/actions/%s)", base, installID, targetID))
+			lines = append(lines, fmt.Sprintf("[Open install in Nuon](%s/installs/%s)", base, installID))
+		}
+	case app.DatadogManagedMonitorTargetTypeComponent:
+		if installID != "" {
+			lines = append(lines, fmt.Sprintf("[Open component in Nuon](%s/installs/%s/components/%s)", base, installID, targetID))
+			lines = append(lines, fmt.Sprintf("[Open install in Nuon](%s/installs/%s)", base, installID))
+		}
+	case app.DatadogManagedMonitorTargetTypeWorkflow:
+		if installID != "" {
+			lines = append(lines, fmt.Sprintf("[Open workflow in Nuon](%s/installs/%s/workflows/%s)", base, installID, targetID))
+			lines = append(lines, fmt.Sprintf("[Open install in Nuon](%s/installs/%s)", base, installID))
+		}
+	}
+	lines = append(lines, fmt.Sprintf("[Org dashboard](%s)", base))
+	return lines
 }
 
 // cleanHandles trims whitespace and drops empty entries so a stray

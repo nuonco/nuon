@@ -169,7 +169,7 @@ func (s *service) createManagedMonitor(
 		handles = []string(conn.DefaultNotifyHandles)
 	}
 
-	ddReq, err := buildMonitorRequest(req.TargetType, req.TargetID, installID, req.Preset, handles, req.DisplayName)
+	ddReq, err := buildMonitorRequest(req.TargetType, req.TargetID, installID, req.Preset, handles, req.DisplayName, s.cfg.AppURL, orgID)
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(fmt.Errorf("build monitor request: %w", err))
 	}

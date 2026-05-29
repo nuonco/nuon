@@ -324,11 +324,44 @@ func buildText(e slackrender.Event) string {
 			fmt.Fprintf(&b, "\n```\n%s\n```\n", truncate(e.Approval.Plan, 2048))
 		}
 	}
-	if e.Links != nil && e.Links.Workflow != "" {
-		fmt.Fprintf(&b, "\n[Open in Nuon](%s)\n", e.Links.Workflow)
+	if chips := renderLinkChips(e.Links); chips != "" {
+		fmt.Fprintf(&b, "\n%s\n", chips)
 	}
 	b.WriteString("%%%")
 	return b.String()
+}
+
+// renderLinkChips emits a single Markdown line of deep links, most
+// specific first. Previously only `Workflow` was surfaced, which meant
+// component / install / approval pages were buildable on the Nuon side
+// (the Slack hook uses them) but invisible from the DD event tile.
+// Operators ack'ing from DD now get the same one-click options Slack
+// has.
+func renderLinkChips(links *slackrender.ContextLinks) string {
+	if links == nil {
+		return ""
+	}
+	type chip struct {
+		label, url string
+	}
+	// Most-specific → least-specific. We deliberately skip RespondAPI:
+	// it's a Nuon API endpoint, not a human-facing dashboard URL.
+	candidates := []chip{
+		{"Workflow", links.Workflow},
+		{"Component", links.Component},
+		{"Sandbox", links.Sandbox},
+		{"Install", links.Install},
+		{"Approval", links.Approval},
+		{"Org", links.Org},
+	}
+	parts := make([]string, 0, len(candidates))
+	for _, c := range candidates {
+		if c.url == "" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("[%s in Nuon](%s)", c.label, c.url))
+	}
+	return strings.Join(parts, " · ")
 }
 
 // truncate shortens a string to at most n bytes, suffixing "..." when

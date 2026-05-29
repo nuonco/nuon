@@ -180,6 +180,49 @@ func TestBuild_StartedTransitionIsLowPriority(t *testing.T) {
 	}
 }
 
+// TestBuild_RendersAllAvailableLinks pins the renderer's behavior for
+// `Links`: previously only `Workflow` made it into the DD event text,
+// so an operator opening a DD tile couldn't jump to the install /
+// component / approval pages even though the slack hook had them.
+// All populated fields must now appear as link chips on a single line,
+// most-specific first.
+func TestBuild_RendersAllAvailableLinks(t *testing.T) {
+	e := slackrender.Event{
+		Kind:       slackrender.KindWorkflow,
+		Transition: slackrender.TransitionFailed,
+		Workflow:   slackrender.WorkflowRef{ID: "wf-1"},
+		Outcome:    &slackrender.Outcome{Status: slackrender.TransitionFailed},
+		Links: &slackrender.ContextLinks{
+			Org:       "https://app.nuon.co/org-1",
+			Install:   "https://app.nuon.co/org-1/installs/ins-1",
+			Workflow:  "https://app.nuon.co/org-1/installs/ins-1/workflows/wf-1",
+			Component: "https://app.nuon.co/org-1/installs/ins-1/components/cmp-1",
+			Approval:  "https://app.nuon.co/org-1/installs/ins-1/workflows/wf-1/approvals/app-1",
+		},
+	}
+	got := Build(e, nil, "", "")
+
+	wantChips := []string{
+		"[Workflow in Nuon](https://app.nuon.co/org-1/installs/ins-1/workflows/wf-1)",
+		"[Component in Nuon](https://app.nuon.co/org-1/installs/ins-1/components/cmp-1)",
+		"[Install in Nuon](https://app.nuon.co/org-1/installs/ins-1)",
+		"[Approval in Nuon](https://app.nuon.co/org-1/installs/ins-1/workflows/wf-1/approvals/app-1)",
+		"[Org in Nuon](https://app.nuon.co/org-1)",
+	}
+	for _, chip := range wantChips {
+		if !strings.Contains(got.Text, chip) {
+			t.Errorf("Text missing chip %q\n%s", chip, got.Text)
+		}
+	}
+	// Specificity ordering — workflow must precede install must precede org.
+	wfIdx := strings.Index(got.Text, "Workflow in Nuon")
+	insIdx := strings.Index(got.Text, "Install in Nuon")
+	orgIdx := strings.Index(got.Text, "Org in Nuon")
+	if !(wfIdx < insIdx && insIdx < orgIdx) {
+		t.Errorf("link chips not ordered most-specific first:\n%s", got.Text)
+	}
+}
+
 func TestBuild_DateHappenedFromWorkflowCreatedAt(t *testing.T) {
 	start := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
 	e := slackrender.Event{
