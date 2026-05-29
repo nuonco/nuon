@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router'
 import { useEffect, useState } from 'react'
 import cn from 'classnames'
+import { getBasePath } from '@/lib/admin-api'
 
 const navGroups = [
   {
@@ -117,7 +118,7 @@ export const AppLayout = () => {
                     )
                     if (item.external) {
                       return (
-                        <a key={item.path} href={item.path} target="_blank" rel="noopener noreferrer" className={className}>
+                        <a key={item.path} href={`${getBasePath()}${item.path}`} target="_blank" rel="noopener noreferrer" className={className}>
                           {item.label}
                         </a>
                       )
