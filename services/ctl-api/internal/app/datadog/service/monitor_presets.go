@@ -27,31 +27,40 @@ import (
 func buildMonitorRequest(
 	targetType app.DatadogManagedMonitorTargetType,
 	targetID string,
+	installID string,
 	preset app.DatadogManagedMonitorPreset,
 	notifyHandles []string,
 	displayName string,
 ) (ddclient.CreateMonitorRequest, error) {
-	query, err := buildMonitorQuery(targetType, targetID, preset)
+	query, err := buildMonitorQuery(targetType, targetID, installID, preset)
 	if err != nil {
 		return ddclient.CreateMonitorRequest{}, err
 	}
 
 	name := fmt.Sprintf("[Nuon] %s on %s %s", preset, targetType, targetIDLabel(targetID, displayName))
+	if installID != "" {
+		name = fmt.Sprintf("%s (install %s)", name, installID)
+	}
 
 	message := buildMonitorMessage(targetType, targetID, preset, notifyHandles, displayName)
+
+	tags := []string{
+		"source:nuon",
+		"nuon_managed:true",
+		fmt.Sprintf("nuon_target_type:%s", targetType),
+		fmt.Sprintf("nuon_target_id:%s", targetID),
+		fmt.Sprintf("nuon_preset:%s", preset),
+	}
+	if installID != "" {
+		tags = append(tags, fmt.Sprintf("nuon_install_id:%s", installID))
+	}
 
 	return ddclient.CreateMonitorRequest{
 		Name:    name,
 		Type:    ddclient.MonitorTypeEventV2Alert,
 		Query:   query,
 		Message: message,
-		Tags: []string{
-			"source:nuon",
-			"nuon_managed:true",
-			fmt.Sprintf("nuon_target_type:%s", targetType),
-			fmt.Sprintf("nuon_target_id:%s", targetID),
-			fmt.Sprintf("nuon_preset:%s", preset),
-		},
+		Tags:    tags,
 		Options: ddclient.MonitorOptions{
 			NotifyNoData:     false,
 			IncludeTags:      true,
@@ -72,6 +81,7 @@ func buildMonitorRequest(
 func buildMonitorQuery(
 	targetType app.DatadogManagedMonitorTargetType,
 	targetID string,
+	installID string,
 	preset app.DatadogManagedMonitorPreset,
 ) (string, error) {
 	if targetID == "" {
@@ -87,14 +97,31 @@ func buildMonitorQuery(
 	case app.DatadogManagedMonitorTargetTypeWorkflow:
 		selector = "nuon_workflow_id:" + targetID
 	case app.DatadogManagedMonitorTargetTypeAction:
-		// Action presets need a stable nuon_action_id tag that the
-		// renderer doesn't emit yet — the workflow-run ID changes per
-		// invocation, so reusing nuon_workflow_id here would only ever
-		// match a single run. Tracked separately so we don't ship a
-		// monitor that silently matches nothing.
-		return "", fmt.Errorf("action target type is not yet supported (renderer enrichment pending)")
+		// targetID is the org-level action_workflows.id, which is what
+		// EventTargets.ActionID resolves to and what the DD renderer
+		// stamps as nuon_action_id. The per-invocation
+		// install_action_workflow_runs.id is intentionally not used
+		// here — it'd only ever match a single run. Per-install
+		// scoping rides on the installID parameter below, matching
+		// nuon_install_id from the same renderer pass.
+		selector = "nuon_action_id:" + targetID
+		if installID == "" {
+			// Require install scope on the dashboard's one-click path
+			// for v1 — an org-wide action alert is a fine future
+			// feature, but it should be an explicit opt-in rather
+			// than something users land on by forgetting to pass
+			// install_id.
+			return "", fmt.Errorf("install_id is required for action target monitors")
+		}
 	default:
 		return "", fmt.Errorf("unknown target type %q", targetType)
+	}
+
+	// Optional install scope ANDs nuon_install_id into the query so an
+	// action monitor only fires for one install's invocations. Reuses
+	// the install tag the renderer already stamps — no new tag needed.
+	if installID != "" && targetType != app.DatadogManagedMonitorTargetTypeInstall {
+		selector = selector + " nuon_install_id:" + installID
 	}
 
 	var conditionTag string

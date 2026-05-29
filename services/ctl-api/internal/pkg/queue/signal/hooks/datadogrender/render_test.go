@@ -95,6 +95,26 @@ func TestBuild_ApprovalRequestUsesWarning(t *testing.T) {
 	}
 }
 
+// TestBuild_ActionIDEmitsTag asserts that a populated ActionID (resolved
+// upstream from EventTargets) lands in the intrinsic tag set as
+// nuon_action_id. This is the tag managed monitors for target_type=action
+// key on — silent breakage here would leave one-click action alerts
+// matching nothing.
+func TestBuild_ActionIDEmitsTag(t *testing.T) {
+	e := slackrender.Event{
+		Kind:       slackrender.KindWorkflow,
+		Transition: slackrender.TransitionFailed,
+		ActionID:   "actwfl-1",
+		Workflow: slackrender.WorkflowRef{
+			ID:   "wf-1",
+			Type: slackrender.WorkflowTypeActionWorkflowRun,
+		},
+		Outcome: &slackrender.Outcome{Status: slackrender.TransitionFailed},
+	}
+	got := Build(e, nil, "", "")
+	mustContainTags(t, got.Tags, "nuon_action_id:actwfl-1")
+}
+
 func TestBuild_ParentRefDrivesAggregationKey(t *testing.T) {
 	e := slackrender.Event{
 		Kind:       slackrender.KindWorkflow,

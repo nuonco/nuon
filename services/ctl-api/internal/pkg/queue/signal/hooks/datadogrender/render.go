@@ -94,6 +94,12 @@ func intrinsicTags(e slackrender.Event) []string {
 	if e.Workflow.OwnerType == slackrender.OwnerTypeInstalls && e.Workflow.OwnerID != "" {
 		t = append(t, "nuon_install_id:"+e.Workflow.OwnerID)
 	}
+	if e.ActionID != "" {
+		// Stable across runs — points at action_workflows.id, not the
+		// per-invocation install_action_workflow_runs.id. This is what
+		// "alert if THIS action fails" preset monitors key on.
+		t = append(t, "nuon_action_id:"+e.ActionID)
+	}
 	if e.Step != nil {
 		if e.Step.ID != "" {
 			t = append(t, "nuon_step_id:"+e.Step.ID)

@@ -30,12 +30,18 @@ import (
 // DD. Without it we fall back to the raw target ID, which still works
 // but reads worse in DD's UI.
 type CreateManagedMonitorRequest struct {
-	ConnectionID  string                              `json:"connection_id" validate:"required"`
-	TargetType    app.DatadogManagedMonitorTargetType `json:"target_type" validate:"required,oneof=action install component workflow"`
-	TargetID      string                              `json:"target_id" validate:"required"`
-	Preset        app.DatadogManagedMonitorPreset     `json:"preset" validate:"required,oneof=failure drift"`
-	DisplayName   string                              `json:"display_name,omitempty"`
-	NotifyHandles []string                            `json:"notify_handles,omitempty"`
+	ConnectionID string                              `json:"connection_id" validate:"required"`
+	TargetType   app.DatadogManagedMonitorTargetType `json:"target_type" validate:"required,oneof=action install component workflow"`
+	TargetID     string                              `json:"target_id" validate:"required"`
+	// InstallID is required for target_type=action (the org-level
+	// action_workflows.id needs install qualification) and ignored for
+	// install/component/workflow whose TargetID already carries install
+	// scope. Mirrors how Slack subscriptions express install scoping
+	// via SubscriptionMatch.Installs.
+	InstallID     string                          `json:"install_id,omitempty"`
+	Preset        app.DatadogManagedMonitorPreset `json:"preset" validate:"required,oneof=failure drift"`
+	DisplayName   string                          `json:"display_name,omitempty"`
+	NotifyHandles []string                        `json:"notify_handles,omitempty"`
 }
 
 func (r *CreateManagedMonitorRequest) Validate(v *validator.Validate) error {
@@ -125,16 +131,27 @@ func (s *service) createManagedMonitor(
 		))
 	}
 
-	// Idempotency: if a row already exists for (connection, target, preset)
-	// return it instead of failing — the button is designed to be
-	// "create or no-op", not "create or 409". This mirrors how the Slack
-	// modal handles "channel already subscribed".
+	// Normalize the install scope: action targets must always carry one,
+	// the rest leave it empty so the unique index treats them as a
+	// single global row per (connection, target, preset) — i.e. no
+	// behavior change for install/component/workflow.
+	installID := req.InstallID
+	if req.TargetType != app.DatadogManagedMonitorTargetTypeAction {
+		installID = ""
+	}
+
+	// Idempotency: if a row already exists for
+	// (connection, target_type, target_id, install_id, preset) return
+	// it instead of failing — the button is designed to be "create or
+	// no-op", not "create or 409". This mirrors how the Slack modal
+	// handles "channel already subscribed".
 	var existing app.DatadogManagedMonitor
 	if err := s.db.WithContext(ctx).
 		Where(app.DatadogManagedMonitor{
 			ConnectionID: conn.ID,
 			TargetType:   req.TargetType,
 			TargetID:     req.TargetID,
+			InstallID:    installID,
 			Preset:       req.Preset,
 		}).
 		First(&existing).Error; err == nil {
@@ -152,7 +169,7 @@ func (s *service) createManagedMonitor(
 		handles = []string(conn.DefaultNotifyHandles)
 	}
 
-	ddReq, err := buildMonitorRequest(req.TargetType, req.TargetID, req.Preset, handles, req.DisplayName)
+	ddReq, err := buildMonitorRequest(req.TargetType, req.TargetID, installID, req.Preset, handles, req.DisplayName)
 	if err != nil {
 		return nil, stderr.NewInvalidRequest(fmt.Errorf("build monitor request: %w", err))
 	}
@@ -178,6 +195,7 @@ func (s *service) createManagedMonitor(
 		OrgID:         orgID,
 		TargetType:    req.TargetType,
 		TargetID:      req.TargetID,
+		InstallID:     installID,
 		Preset:        req.Preset,
 		DDMonitorID:   ddMonitor.ID,
 		NotifyHandles: cleanHandles(handles),
@@ -195,6 +213,7 @@ func (s *service) createManagedMonitor(
 					ConnectionID: conn.ID,
 					TargetType:   req.TargetType,
 					TargetID:     req.TargetID,
+					InstallID:    installID,
 					Preset:       req.Preset,
 				}).
 				First(&racer).Error; rErr == nil {

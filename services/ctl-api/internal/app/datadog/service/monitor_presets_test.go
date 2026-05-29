@@ -17,6 +17,7 @@ func TestBuildMonitorQuery_AllSupportedCombos(t *testing.T) {
 		name       string
 		targetType app.DatadogManagedMonitorTargetType
 		targetID   string
+		installID  string
 		preset     app.DatadogManagedMonitorPreset
 		want       string
 	}{
@@ -48,11 +49,37 @@ func TestBuildMonitorQuery_AllSupportedCombos(t *testing.T) {
 			preset:     app.DatadogManagedMonitorPresetDrift,
 			want:       `events("source:nuon nuon_install_id:inst123 nuon_kind:drift").rollup("count").last("5m") >= 1`,
 		},
+		{
+			// Action target = org-level action_workflows.id ANDed with
+			// the install scope. The dashboard's one-click flow on an
+			// install's action page always passes installID so the
+			// resulting monitor only fires for that install's runs of
+			// the action — mirrors install/component/workflow per-
+			// resource targeting semantics.
+			name:       "action failure (install-scoped)",
+			targetType: app.DatadogManagedMonitorTargetTypeAction,
+			targetID:   "actwfl999",
+			installID:  "inst123",
+			preset:     app.DatadogManagedMonitorPresetFailure,
+			want:       `events("source:nuon nuon_action_id:actwfl999 nuon_install_id:inst123 nuon_status:failed").rollup("count").last("5m") >= 1`,
+		},
+		{
+			// install_id supplied for a non-action target narrows the
+			// alert to one install — useful when one customer's
+			// install is flaky on a shared component but org-wide
+			// noise should be suppressed.
+			name:       "component failure scoped to install",
+			targetType: app.DatadogManagedMonitorTargetTypeComponent,
+			targetID:   "cmp456",
+			installID:  "inst123",
+			preset:     app.DatadogManagedMonitorPresetFailure,
+			want:       `events("source:nuon nuon_component_id:cmp456 nuon_install_id:inst123 nuon_status:failed").rollup("count").last("5m") >= 1`,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := buildMonitorQuery(tc.targetType, tc.targetID, tc.preset)
+			got, err := buildMonitorQuery(tc.targetType, tc.targetID, tc.installID, tc.preset)
 			if err != nil {
 				t.Fatalf("buildMonitorQuery returned error: %v", err)
 			}
@@ -63,16 +90,16 @@ func TestBuildMonitorQuery_AllSupportedCombos(t *testing.T) {
 	}
 }
 
-// TestBuildMonitorQuery_UnsupportedAction asserts that the action target
-// type is rejected with a clear error rather than silently shipping a
-// monitor that matches nothing — the renderer doesn't yet emit a stable
-// nuon_action_id tag.
-func TestBuildMonitorQuery_UnsupportedAction(t *testing.T) {
-	_, err := buildMonitorQuery(app.DatadogManagedMonitorTargetTypeAction, "act1", app.DatadogManagedMonitorPresetFailure)
+// TestBuildMonitorQuery_ActionRequiresInstallID guards the v1 contract:
+// the one-click action button must always send install_id. An org-wide
+// action alert would silently match every install's invocations, which
+// reads worse than an explicit error and forces callers to opt in.
+func TestBuildMonitorQuery_ActionRequiresInstallID(t *testing.T) {
+	_, err := buildMonitorQuery(app.DatadogManagedMonitorTargetTypeAction, "actwfl1", "", app.DatadogManagedMonitorPresetFailure)
 	if err == nil {
-		t.Fatal("expected error for action target, got nil")
+		t.Fatal("expected error for action target without install_id, got nil")
 	}
-	if !strings.Contains(err.Error(), "action target type is not yet supported") {
+	if !strings.Contains(err.Error(), "install_id is required") {
 		t.Errorf("unexpected error text: %v", err)
 	}
 }
@@ -81,7 +108,7 @@ func TestBuildMonitorQuery_UnsupportedAction(t *testing.T) {
 // the target ID — without it we'd emit a query that matches every Nuon
 // event of the chosen status, paging on totally unrelated workloads.
 func TestBuildMonitorQuery_EmptyTargetID(t *testing.T) {
-	_, err := buildMonitorQuery(app.DatadogManagedMonitorTargetTypeInstall, "", app.DatadogManagedMonitorPresetFailure)
+	_, err := buildMonitorQuery(app.DatadogManagedMonitorTargetTypeInstall, "", "", app.DatadogManagedMonitorPresetFailure)
 	if err == nil {
 		t.Fatal("expected error for empty target_id, got nil")
 	}
@@ -99,6 +126,7 @@ func TestBuildMonitorRequest_NameAndMessage(t *testing.T) {
 	req, err := buildMonitorRequest(
 		app.DatadogManagedMonitorTargetTypeInstall,
 		"inst123",
+		"",
 		app.DatadogManagedMonitorPresetFailure,
 		[]string{"@pagerduty-prod", "@slack-oncall"},
 		"acme-prod",

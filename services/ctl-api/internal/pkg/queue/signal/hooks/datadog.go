@@ -229,6 +229,13 @@ func (h *DatadogSignalLifecycleHook) publish(ctx context.Context, event signal.S
 	rendered := buildRenderEvent(data)
 
 	targets := EventTargetsFromEvent(ctx, h.db, event, data)
+	// EventTargets is the canonical place where action_workflow_id is
+	// resolved (covering action_workflow_run workflows and parent steps
+	// targeting install_action_workflow_runs). Surface it onto the
+	// renderer event so intrinsicTags emits nuon_action_id without
+	// duplicating the lookup chain in datadogrender.
+	rendered.event.ActionID = targets.ActionID
+
 	labelLoader := newLabelLoader(h.db)
 
 	logger := h.l.With(

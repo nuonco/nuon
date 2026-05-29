@@ -157,6 +157,14 @@ type Event struct {
 	OrgID   string
 	OrgName string
 
+	// ActionID is the resolved org-level action_workflow_id when the
+	// event belongs to an action invocation (workflow type
+	// action_workflow_run or a parent step targeting
+	// install_action_workflow_runs). Empty otherwise. Populated by the
+	// caller from EventTargets, not from a single field on the webhook
+	// payload — see datadog.go publish.
+	ActionID string
+
 	Workflow WorkflowRef
 	Step     *StepRef
 	Parent   *ParentRef

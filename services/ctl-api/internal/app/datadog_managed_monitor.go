@@ -45,8 +45,13 @@ const (
 
 // DatadogManagedMonitor records a DD monitor created by Nuon on behalf of
 // the user via the one-click "Alert on failure in Datadog" button. The
-// (connection_id, target_type, target_id, preset) tuple is unique so the
-// button is idempotent — clicking twice never produces a duplicate.
+// (connection_id, target_type, target_id, install_id, preset) tuple is
+// unique so the button is idempotent — clicking twice on the same
+// (target, install) scope never produces a duplicate. InstallID is the
+// optional install-scope used by action-target monitors (org-level
+// action_workflows.id needs an install qualifier to mirror per-install
+// targeting); empty for install/component/workflow which are already
+// install-scoped by their own targetID.
 //
 // DDMonitorID is DD's int64 monitor ID returned from the Monitors API.
 // Stored as int64 so we can hit DD's update/delete endpoints without
@@ -65,6 +70,12 @@ type DatadogManagedMonitor struct {
 
 	TargetType DatadogManagedMonitorTargetType `json:"target_type,omitzero" gorm:"notnull;uniqueIndex:idx_datadog_managed_monitors_conn_target_preset" temporaljson:"target_type,omitzero,omitempty"`
 	TargetID   string                          `json:"target_id,omitzero" gorm:"notnull;index:idx_datadog_managed_monitors_target;uniqueIndex:idx_datadog_managed_monitors_conn_target_preset" temporaljson:"target_id,omitzero,omitempty"`
+
+	// InstallID is set on action-target monitors to scope the alert to
+	// one install's invocations of that action. Empty for the other
+	// target types (their TargetID already carries install scope) and
+	// for org-wide action monitors if we ever support those.
+	InstallID string `json:"install_id,omitzero" gorm:"default:'';uniqueIndex:idx_datadog_managed_monitors_conn_target_preset" temporaljson:"install_id,omitzero,omitempty"`
 
 	Preset DatadogManagedMonitorPreset `json:"preset,omitzero" gorm:"notnull;uniqueIndex:idx_datadog_managed_monitors_conn_target_preset" temporaljson:"preset,omitzero,omitempty"`
 
