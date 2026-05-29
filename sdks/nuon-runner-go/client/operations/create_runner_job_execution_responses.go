@@ -55,6 +55,12 @@ func (o *CreateRunnerJobExecutionReader) ReadResponse(response runtime.ClientRes
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateRunnerJobExecutionConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateRunnerJobExecutionInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateRunnerJobExecutionNotFound) GetPayload() *models.StderrErrRespons
 }
 
 func (o *CreateRunnerJobExecutionNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunnerJobExecutionConflict creates a CreateRunnerJobExecutionConflict with default headers values
+func NewCreateRunnerJobExecutionConflict() *CreateRunnerJobExecutionConflict {
+	return &CreateRunnerJobExecutionConflict{}
+}
+
+/*
+CreateRunnerJobExecutionConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateRunnerJobExecutionConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runner job execution conflict response has a 2xx status code
+func (o *CreateRunnerJobExecutionConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runner job execution conflict response has a 3xx status code
+func (o *CreateRunnerJobExecutionConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runner job execution conflict response has a 4xx status code
+func (o *CreateRunnerJobExecutionConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runner job execution conflict response has a 5xx status code
+func (o *CreateRunnerJobExecutionConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runner job execution conflict response a status code equal to that given
+func (o *CreateRunnerJobExecutionConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create runner job execution conflict response
+func (o *CreateRunnerJobExecutionConflict) Code() int {
+	return 409
+}
+
+func (o *CreateRunnerJobExecutionConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/runner-jobs/{runner_job_id}/executions][%d] createRunnerJobExecutionConflict %s", 409, payload)
+}
+
+func (o *CreateRunnerJobExecutionConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/runner-jobs/{runner_job_id}/executions][%d] createRunnerJobExecutionConflict %s", 409, payload)
+}
+
+func (o *CreateRunnerJobExecutionConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunnerJobExecutionConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 

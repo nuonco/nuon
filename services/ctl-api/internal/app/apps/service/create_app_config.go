@@ -42,6 +42,7 @@ func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppConfig
 // @Router					/v1/apps/{app_id}/configs [post]
@@ -63,6 +64,7 @@ func (s *service) CreateAppConfigV2(ctx *gin.Context) {
 // @Failure				401	{object}	stderr.ErrResponse
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
+// @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.AppConfig
 // @Router					/v1/apps/{app_id}/config [post]

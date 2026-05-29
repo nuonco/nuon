@@ -55,6 +55,12 @@ func (o *CreateAppSecretsConfigReader) ReadResponse(response runtime.ClientRespo
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateAppSecretsConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateAppSecretsConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateAppSecretsConfigNotFound) GetPayload() *models.StderrErrResponse 
 }
 
 func (o *CreateAppSecretsConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateAppSecretsConfigConflict creates a CreateAppSecretsConfigConflict with default headers values
+func NewCreateAppSecretsConfigConflict() *CreateAppSecretsConfigConflict {
+	return &CreateAppSecretsConfigConflict{}
+}
+
+/*
+CreateAppSecretsConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateAppSecretsConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create app secrets config conflict response has a 2xx status code
+func (o *CreateAppSecretsConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create app secrets config conflict response has a 3xx status code
+func (o *CreateAppSecretsConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create app secrets config conflict response has a 4xx status code
+func (o *CreateAppSecretsConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create app secrets config conflict response has a 5xx status code
+func (o *CreateAppSecretsConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create app secrets config conflict response a status code equal to that given
+func (o *CreateAppSecretsConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create app secrets config conflict response
+func (o *CreateAppSecretsConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateAppSecretsConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/secrets-configs][%d] createAppSecretsConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppSecretsConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/apps/{app_id}/secrets-configs][%d] createAppSecretsConfigConflict %s", 409, payload)
+}
+
+func (o *CreateAppSecretsConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateAppSecretsConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
