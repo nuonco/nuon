@@ -6,6 +6,7 @@ import { ShutdownRunnerControl } from '@/components/runners/management/ShutdownR
 import { ReprovisionSandboxButton } from '@/components/sandbox/management/ReprovisionSandbox'
 import { useInstall } from '@/hooks/use-install'
 import { RunnerProvider } from '@/providers/runner-provider'
+import { RunAdhocActionButton } from '../RunAdhocAction/RunAdhocActionContainer'
 import { AuditHistoryButton } from '../AuditHistory'
 import { DeprovisionButton } from '../Deprovision'
 import { DeprovisionStackButton } from '../DeprovisionStack'
@@ -43,6 +44,7 @@ const InstallManagementDropdownContent = () => {
         <Text variant="label" theme="neutral">
           Controls
         </Text>
+        <RunAdhocActionButton isMenuButton />
         <ReprovisionButton isMenuButton />
         <ReprovisionSandboxButton isMenuButton />
         {install?.runner_id ? (
