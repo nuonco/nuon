@@ -24,6 +24,12 @@ type EnqueueSignalToOwnerRequest struct {
 	// which entity (e.g. workflow step) triggered this signal execution.
 	SignalOwnerID   string `json:"signal_owner_id,omitempty"`
 	SignalOwnerType string `json:"signal_owner_type,omitempty"`
+
+	// Callback fields for signal-based await pattern.
+	// When set, the handler sends a Temporal signal to the parent workflow on completion.
+	CallbackWorkflowID string `json:"callback_workflow_id,omitempty"`
+	CallbackSignalName string `json:"callback_signal_name,omitempty"`
+	CallbackNamespace  string `json:"callback_namespace,omitempty"`
 }
 
 type EnqueueSignalToOwnerResponse struct {
@@ -58,10 +64,13 @@ func (a *Activities) EnqueueSignalToOwner(ctx context.Context, req *EnqueueSigna
 
 	// Enqueue the signal
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &client.EnqueueSignalRequest{
-		QueueID:   queueID,
-		Signal:    req.Signal,
-		OwnerID:   req.SignalOwnerID,
-		OwnerType: req.SignalOwnerType,
+		QueueID:            queueID,
+		Signal:             req.Signal,
+		OwnerID:            req.SignalOwnerID,
+		OwnerType:          req.SignalOwnerType,
+		CallbackWorkflowID: req.CallbackWorkflowID,
+		CallbackSignalName: req.CallbackSignalName,
+		CallbackNamespace:  req.CallbackNamespace,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to enqueue signal")

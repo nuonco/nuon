@@ -62,6 +62,12 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		return errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
 	}
 
+	// Generate a callback signal name so the handler can signal us on completion
+	// instead of us blocking on a heartbeating activity.
+	callbackSignalName := client.CallbackSignalName(step.ID)
+	parentWorkflowID := workflow.GetInfo(ctx).WorkflowExecution.ID
+	parentNamespace := workflow.GetInfo(ctx).Namespace
+
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
@@ -69,12 +75,17 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		Signal:          sig,
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
+
+		CallbackWorkflowID: parentWorkflowID,
+		CallbackSignalName: callbackSignalName,
+		CallbackNamespace:  parentNamespace,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
 	}
 
-	_, err = client.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
+	// Wait for completion via signal channel — zero activity overhead, zero heartbeats.
+	_, err = client.AwaitQueueSignalViaCallback(ctx, callbackSignalName, enqueueResp.QueueSignalID)
 	if err != nil {
 		// If the parent workflow was cancelled, propagate cancellation to the step signal
 		if ctx.Err() != nil {

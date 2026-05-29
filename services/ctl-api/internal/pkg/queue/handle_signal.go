@@ -70,7 +70,8 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		},
 	})
 
-	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
+	var signalErr error
+	signalErr = q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
 		// Persist error status so AwaitSignal callers don't block forever
 		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{

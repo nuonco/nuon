@@ -92,6 +92,15 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	h.queueSignal = queueSignal
 
+	// Load parent callback info from the DB record (set at enqueue time).
+	// This allows the handler to signal the parent workflow on completion
+	// without needing callback fields in the HandlerRequest.
+	if queueSignal.CallbackWorkflowID != "" {
+		h.parentCallbackWorkflowID = queueSignal.CallbackWorkflowID
+		h.parentCallbackSignalName = queueSignal.CallbackSignalName
+		h.parentCallbackNamespace = queueSignal.CallbackNamespace
+	}
+
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,
 		V:             h.v,

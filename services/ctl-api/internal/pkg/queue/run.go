@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/workflowmanager"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -73,9 +74,57 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to start dispatcher")
 	}
 
-	l.Info("starting restart listeners")
-	q.startHintListener(ctx)
-	q.startCANListener(ctx)
+	l.Info("starting lifecycle manager")
+	historyMax := canDefaultHistoryMax
+	if q.cfg != nil && q.cfg.QueueContinueAsNewHistoryMax > 0 {
+		historyMax = q.cfg.QueueContinueAsNewHistoryMax
+	}
+	hintPeriod := canDefaultHintPeriod
+	if q.cfg != nil && q.cfg.QueueContinueAsNewHintPeriod > 0 {
+		hintPeriod = q.cfg.QueueContinueAsNewHintPeriod
+	}
+	mgr := workflowmanager.New(
+		workflowmanager.WithHistoryMax(historyMax),
+		workflowmanager.WithCheckInterval(hintPeriod),
+		workflowmanager.WithMetricsWriter(q.mw),
+		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
+			_, err := activities.AwaitGetQueueByQueueID(gCtx, q.queueID)
+			if err != nil {
+				if generics.IsGormErrRecordNotFound(err) {
+					return false, nil
+				}
+				return true, nil // transient error, keep going
+			}
+			return true, nil
+		}),
+		workflowmanager.WithCANHintChecker(workflowmanager.CANHintCheckerFunc{
+			CheckFn: func(gCtx workflow.Context) (bool, error) {
+				return activities.AwaitCheckRestartHint(gCtx, activities.CheckRestartHintRequest{
+					QueueID: q.queueID,
+				})
+			},
+			ClearFn: func(gCtx workflow.Context) error {
+				return activities.AwaitClearRestartHint(gCtx, activities.ClearRestartHintRequest{
+					QueueID: q.queueID,
+				})
+			},
+		}),
+	)
+	mgr.Start(ctx)
+
+	// Bridge manager state to queue fields.
+	workflow.Go(ctx, func(gCtx workflow.Context) {
+		_ = workflow.Await(gCtx, func() bool {
+			return mgr.Stopped || mgr.Restarted
+		})
+		if mgr.Stopped {
+			q.stopped = true
+		}
+		if mgr.Restarted {
+			q.setStatus(gCtx, l, QueueStatusRestartAccepted)
+			q.restarted = true
+		}
+	})
 
 	q.setStatus(ctx, l, QueueStatusReady)
 	q.ready = true

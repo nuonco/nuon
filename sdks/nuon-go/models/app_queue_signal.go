@@ -19,6 +19,17 @@ import (
 // swagger:model app.QueueSignal
 type AppQueueSignal struct {
 
+	// callback namespace
+	CallbackNamespace string `json:"callback_namespace,omitempty"`
+
+	// callback signal name
+	CallbackSignalName string `json:"callback_signal_name,omitempty"`
+
+	// Callback fields for the signal-based await pattern.
+	// When set, the handler sends a Temporal signal to the parent workflow on completion
+	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+	CallbackWorkflowID string `json:"callback_workflow_id,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 

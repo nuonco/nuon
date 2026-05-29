@@ -50,6 +50,13 @@ type QueueSignal struct {
 	ExecutionCount int `json:"execution_count" gorm:"default:0;not null" temporaljson:"execution_count,omitzero,omitempty"`
 
 	ExpiresAt *time.Time `json:"expires_at,omitempty" gorm:"default:null" temporaljson:"expires_at,omitzero,omitempty"`
+
+	// Callback fields for the signal-based await pattern.
+	// When set, the handler sends a Temporal signal to the parent workflow on completion
+	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+	CallbackWorkflowID string `json:"callback_workflow_id,omitempty" gorm:"type:text;default:null" temporaljson:"callback_workflow_id,omitzero,omitempty"`
+	CallbackSignalName string `json:"callback_signal_name,omitempty" gorm:"type:text;default:null" temporaljson:"callback_signal_name,omitzero,omitempty"`
+	CallbackNamespace  string `json:"callback_namespace,omitempty" gorm:"type:text;default:null" temporaljson:"callback_namespace,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {

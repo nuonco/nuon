@@ -4530,6 +4530,14 @@ export interface components {
     /** @enum {string} */
     "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
     "app.QueueSignal": {
+      callback_namespace?: string;
+      callback_signal_name?: string;
+      /**
+       * @description Callback fields for the signal-based await pattern.
+       * When set, the handler sends a Temporal signal to the parent workflow on completion
+       * instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+       */
+      callback_workflow_id?: string;
       created_at?: string;
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
