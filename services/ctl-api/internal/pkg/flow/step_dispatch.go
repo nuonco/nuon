@@ -5,6 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -62,11 +63,8 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		return errors.Wrapf(err, "unable to mark step %s as queued", step.Name)
 	}
 
-	// Generate a callback signal name so the handler can signal us on completion
-	// instead of us blocking on a heartbeating activity.
-	callbackSignalName := client.CallbackSignalName(step.ID)
-	parentWorkflowID := workflow.GetInfo(ctx).WorkflowExecution.ID
-	parentNamespace := workflow.GetInfo(ctx).Namespace
+	// Create a callback so the handler signals us on completion.
+	cb := callback.New(ctx, step.ID)
 
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
@@ -75,17 +73,14 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 		Signal:          sig,
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
-
-		CallbackWorkflowID: parentWorkflowID,
-		CallbackSignalName: callbackSignalName,
-		CallbackNamespace:  parentNamespace,
+		Callback:        cb,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "unable to enqueue execute-workflow-step signal for step %s", step.Name)
 	}
 
 	// Wait for completion via signal channel — zero activity overhead, zero heartbeats.
-	_, err = client.AwaitQueueSignalViaCallback(ctx, callbackSignalName, enqueueResp.QueueSignalID)
+	_, err = callback.Await(ctx, cb)
 	if err != nil {
 		// If the parent workflow was cancelled, propagate cancellation to the step signal
 		if ctx.Err() != nil {

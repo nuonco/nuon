@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -23,11 +24,8 @@ type EnqueueSignalRequest struct {
 	OwnerType string
 	ExpiresAt *time.Time
 
-	// Callback fields for signal-based await pattern.
-	// When set, the handler sends a Temporal signal to these workflows on completion.
-	CallbackWorkflowID string
-	CallbackSignalName string
-	CallbackNamespace  string
+	// Callback describes where the handler should send a Temporal signal on completion.
+	Callback callback.Ref
 }
 
 // @temporal-gen-v2 activity
@@ -66,9 +64,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 			Namespace:  q.Workflow.Namespace,
 			IDTemplate: q.Workflow.ID + "-handler-%s-" + string(req.Signal.Type()) + "-" + hex.EncodeToString(suffix),
 		},
-		CallbackWorkflowID: req.CallbackWorkflowID,
-		CallbackSignalName: req.CallbackSignalName,
-		CallbackNamespace:  req.CallbackNamespace,
+		Callback: req.Callback,
 	}
 
 	if res := c.db.WithContext(ctx).Create(&queueSignal); res.Error != nil {

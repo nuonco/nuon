@@ -6,7 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
@@ -138,19 +138,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 // as its owner so it shows up in the same place in the dashboard as other
 // step-scoped signals.
 func Dispatch(ctx workflow.Context, sig *Signal) error {
-	resp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+	cb := callback.New(ctx, sig.WorkflowStepID)
+	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         sig.InstallID,
 		OwnerType:       "installs",
 		QueueName:       installSignalsQueueName,
 		Signal:          sig,
 		SignalOwnerID:   sig.WorkflowStepID,
 		SignalOwnerType: installWorkflowStepsOwnerType,
+		Callback:        cb,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to enqueue workflow-step-approval-request signal")
 	}
 
-	if _, err := client.AwaitQueueSignal(ctx, resp.QueueSignalID); err != nil {
+	if _, err := callback.Await(ctx, cb); err != nil {
 		return errors.Wrap(err, "workflow-step-approval-request signal failed")
 	}
 	return nil

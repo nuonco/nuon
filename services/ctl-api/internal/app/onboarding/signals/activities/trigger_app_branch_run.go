@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -21,7 +22,7 @@ type TriggerOnboardingAppBranchRunResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
 // @as-wrapper
-func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranchID, appBranchConfigID string) (*TriggerOnboardingAppBranchRunResponse, error) {
+func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranchID, appBranchConfigID string, cb callback.Ref) (*TriggerOnboardingAppBranchRunResponse, error) {
 	// Load branch with queue
 	var branch app.AppBranch
 	if err := a.db.WithContext(ctx).Preload("Queue").First(&branch, "id = ?", appBranchID).Error; err != nil {
@@ -79,6 +80,7 @@ func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranc
 		Signal: &runsignal.Signal{
 			RunID: run.ID,
 		},
+		Callback: cb,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to enqueue run signal: %w", err)

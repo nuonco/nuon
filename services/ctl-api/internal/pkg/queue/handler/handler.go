@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -30,17 +31,6 @@ func StartHandler(ctx workflow.Context, workflowID string, req HandlerRequest) {
 type HandlerRequest struct {
 	QueueID       string `validate:"required"`
 	QueueSignalID string `validate:"required"`
-
-	// Callback fields for the signal-based await pattern.
-	// When set, the handler sends Temporal signals on completion instead of
-	// relying on the caller's blocking update/activity to detect completion.
-	QueueCallbackWorkflowID string `json:"queue_callback_workflow_id,omitempty"`
-	QueueCallbackSignalName string `json:"queue_callback_signal_name,omitempty"`
-	QueueCallbackNamespace  string `json:"queue_callback_namespace,omitempty"`
-
-	ParentCallbackWorkflowID string `json:"parent_callback_workflow_id,omitempty"`
-	ParentCallbackSignalName string `json:"parent_callback_signal_name,omitempty"`
-	ParentCallbackNamespace  string `json:"parent_callback_namespace,omitempty"`
 }
 
 // @temporal-gen-v2 workflow
@@ -54,14 +44,6 @@ func (w *Workflows) Handler(ctx workflow.Context, req HandlerRequest) error {
 		mw:            w.mw,
 		queueSignalID: req.QueueSignalID,
 		queueID:       req.QueueID,
-
-		queueCallbackWorkflowID: req.QueueCallbackWorkflowID,
-		queueCallbackSignalName: req.QueueCallbackSignalName,
-		queueCallbackNamespace:  req.QueueCallbackNamespace,
-
-		parentCallbackWorkflowID: req.ParentCallbackWorkflowID,
-		parentCallbackSignalName: req.ParentCallbackSignalName,
-		parentCallbackNamespace:  req.ParentCallbackNamespace,
 	}
 
 	finished, err := h.run(ctx)
@@ -98,15 +80,9 @@ type handler struct {
 	executingCtx    workflow.Context
 	executingCancel workflow.CancelFunc
 
-	// Callback info for signal-based await pattern.
-	// When set, completion signals are sent instead of relying on blocking updates.
-	queueCallbackWorkflowID string
-	queueCallbackSignalName string
-	queueCallbackNamespace  string
-
-	parentCallbackWorkflowID string
-	parentCallbackSignalName string
-	parentCallbackNamespace  string
+	// Callback loaded from the QueueSignal DB record during initializeState.
+	// When set, the handler sends a Temporal signal to the parent workflow on completion.
+	callback callback.Ref
 
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal

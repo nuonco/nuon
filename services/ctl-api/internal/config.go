@@ -114,9 +114,6 @@ func init() {
 	// queue continue-as-new hint period: how often the CAN listener checks for restart hints
 	config.RegisterDefault("queue_continue_as_new_hint_period", "1m")
 
-	// queue use callbacks: use signal-based callbacks instead of heartbeating activities
-	config.RegisterDefault("queue_use_callbacks", true)
-
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
 	config.RegisterDefault("process_install_uptime_threshold", "8h")
@@ -383,10 +380,6 @@ type Config struct {
 
 	// Queue continue-as-new history max: trigger CAN when workflow history exceeds this length
 	QueueContinueAsNewHistoryMax int `config:"queue_continue_as_new_history_max"`
-
-	// QueueUseCallbacks enables the signal-based callback pattern for handler completion.
-	// When true, the queue sends completion signals instead of using heartbeating activities.
-	QueueUseCallbacks bool `config:"queue_use_callbacks"`
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`

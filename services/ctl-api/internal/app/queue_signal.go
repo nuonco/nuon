@@ -8,6 +8,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	queuecctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
@@ -51,12 +52,10 @@ type QueueSignal struct {
 
 	ExpiresAt *time.Time `json:"expires_at,omitempty" gorm:"default:null" temporaljson:"expires_at,omitzero,omitempty"`
 
-	// Callback fields for the signal-based await pattern.
-	// When set, the handler sends a Temporal signal to the parent workflow on completion
+	// Callback describes where to send a Temporal signal when this queue signal
+	// completes. When set, the handler signals the parent workflow on completion
 	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
-	CallbackWorkflowID string `json:"callback_workflow_id,omitempty" gorm:"type:text;default:null" temporaljson:"callback_workflow_id,omitzero,omitempty"`
-	CallbackSignalName string `json:"callback_signal_name,omitempty" gorm:"type:text;default:null" temporaljson:"callback_signal_name,omitzero,omitempty"`
-	CallbackNamespace  string `json:"callback_namespace,omitempty" gorm:"type:text;default:null" temporaljson:"callback_namespace,omitzero,omitempty"`
+	Callback callback.Ref `json:"callback" gorm:"type:jsonb;default:null" temporaljson:"callback,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
