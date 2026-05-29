@@ -92,8 +92,21 @@ func (h *handler) initializeState(ctx workflow.Context) error {
 
 	h.queueSignal = queueSignal
 
-	// Load callback info from the DB record (set at enqueue time).
-	h.callback = queueSignal.Callback
+	// Load callbacks from the DB record (set at enqueue time or added later by EnsureSignal).
+	h.callbacks = queueSignal.Callbacks
+	// Backward compat: merge the legacy single Callback if not already in Callbacks.
+	if queueSignal.Callback.IsSet() {
+		found := false
+		for _, cb := range h.callbacks {
+			if cb.WorkflowID == queueSignal.Callback.WorkflowID && cb.SignalName == queueSignal.Callback.SignalName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			h.callbacks = append(h.callbacks, queueSignal.Callback)
+		}
+	}
 
 	signal.ApplyParams(h.sig, &signal.Params{
 		Cfg:           h.cfg,

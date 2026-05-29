@@ -91,16 +91,14 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	}
 	if mgr.Stopped {
 		// Entity was deleted or expired. Send callbacks so waiting callers unblock.
-		if h.hasCallbacks() {
-			h.sendCompletionCallbacks(ctx)
-		}
+		h.sendCompletionCallbacks(ctx)
 		return true, nil
 	}
 
 	// Signal completed — send completion callbacks to unblock queue and parent.
-	if h.hasCallbacks() {
-		h.sendCompletionCallbacks(ctx)
-	}
+	// Always call sendCompletionCallbacks (it reloads from DB) so that callbacks
+	// added dynamically by EnsureSignal after init are picked up.
+	h.sendCompletionCallbacks(ctx)
 
 	// Once execution has completed, keep the workflow alive for a cache period
 	// so that subsequent signals can reuse it via update-with-start.
