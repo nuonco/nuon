@@ -8,7 +8,6 @@ package models
 import (
 	"context"
 	stderrors "errors"
-	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -20,20 +19,12 @@ import (
 // swagger:model app.QueueSignal
 type AppQueueSignal struct {
 
-<<<<<<< HEAD
 	// Callback describes where to send a Temporal signal when this queue signal
 	// completes. When set, the handler signals the parent workflow on completion
 	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
 	Callback struct {
 		CallbackRef
 	} `json:"callback,omitempty"`
-=======
-	// callback
-	Callback *CallbackRef `json:"callback,omitempty"`
->>>>>>> ea6200e7c (feat: improved endpoitn for updating runners)
-
-	// callbacks
-	Callbacks []*CallbackRef `json:"callbacks"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -98,13 +89,6 @@ func (m *AppQueueSignal) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-<<<<<<< HEAD
-=======
-	if err := m.validateCallbacks(formats); err != nil {
-		res = append(res, err)
-	}
-
->>>>>>> ea6200e7c (feat: improved endpoitn for updating runners)
 	if err := m.validateQueue(formats); err != nil {
 		res = append(res, err)
 	}
@@ -136,54 +120,6 @@ func (m *AppQueueSignal) validateCallback(formats strfmt.Registry) error {
 		return nil
 	}
 
-<<<<<<< HEAD
-=======
-	if m.Callback != nil {
-		if err := m.Callback.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("callback")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("callback")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *AppQueueSignal) validateCallbacks(formats strfmt.Registry) error {
-	if swag.IsZero(m.Callbacks) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(m.Callbacks); i++ {
-		if swag.IsZero(m.Callbacks[i]) { // not required
-			continue
-		}
-
-		if m.Callbacks[i] != nil {
-			if err := m.Callbacks[i].Validate(formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("callbacks" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("callbacks" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
-	}
-
->>>>>>> ea6200e7c (feat: improved endpoitn for updating runners)
 	return nil
 }
 
@@ -310,13 +246,6 @@ func (m *AppQueueSignal) ContextValidate(ctx context.Context, formats strfmt.Reg
 		res = append(res, err)
 	}
 
-<<<<<<< HEAD
-=======
-	if err := m.contextValidateCallbacks(ctx, formats); err != nil {
-		res = append(res, err)
-	}
-
->>>>>>> ea6200e7c (feat: improved endpoitn for updating runners)
 	if err := m.contextValidateQueue(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -345,58 +274,6 @@ func (m *AppQueueSignal) ContextValidate(ctx context.Context, formats strfmt.Reg
 
 func (m *AppQueueSignal) contextValidateCallback(ctx context.Context, formats strfmt.Registry) error {
 
-<<<<<<< HEAD
-=======
-	if m.Callback != nil {
-
-		if swag.IsZero(m.Callback) { // not required
-			return nil
-		}
-
-		if err := m.Callback.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("callback")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("callback")
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *AppQueueSignal) contextValidateCallbacks(ctx context.Context, formats strfmt.Registry) error {
-
-	for i := 0; i < len(m.Callbacks); i++ {
-
-		if m.Callbacks[i] != nil {
-
-			if swag.IsZero(m.Callbacks[i]) { // not required
-				return nil
-			}
-
-			if err := m.Callbacks[i].ContextValidate(ctx, formats); err != nil {
-				ve := new(errors.Validation)
-				if stderrors.As(err, &ve) {
-					return ve.ValidateName("callbacks" + "." + strconv.Itoa(i))
-				}
-				ce := new(errors.CompositeError)
-				if stderrors.As(err, &ce) {
-					return ce.ValidateName("callbacks" + "." + strconv.Itoa(i))
-				}
-
-				return err
-			}
-		}
-
-	}
-
->>>>>>> ea6200e7c (feat: improved endpoitn for updating runners)
 	return nil
 }
 
