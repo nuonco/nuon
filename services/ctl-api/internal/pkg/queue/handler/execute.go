@@ -31,6 +31,10 @@ func (h *handler) executeHandler(ctx workflow.Context) (*ExecuteResponse, error)
 		QueueSignalID: h.queueSignalID,
 	})
 
+	if h.finished {
+		return nil, errors.New("handler already finished (validate may have failed)")
+	}
+
 	if h.canceled {
 		h.setFinished(app.StatusCancelled, "signal was canceled")
 		return nil, errors.New("signal was canceled")
