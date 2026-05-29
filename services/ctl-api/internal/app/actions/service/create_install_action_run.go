@@ -33,6 +33,7 @@ func (c *CreateInstallActionWorkflowRunRequest) Validate(v *validator.Validate) 
 // @Failure					401	{object}	stderr.ErrResponse
 // @Failure					403	{object}	stderr.ErrResponse
 // @Failure					404	{object}	stderr.ErrResponse
+// @Failure					409	{object}	stderr.ErrResponse
 // @Failure					500	{object}	stderr.ErrResponse
 // @Success					201	{string}	ok
 // @Router					/v1/installs/{install_id}/actions/runs [post]

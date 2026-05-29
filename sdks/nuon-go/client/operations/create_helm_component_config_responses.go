@@ -55,6 +55,12 @@ func (o *CreateHelmComponentConfigReader) ReadResponse(response runtime.ClientRe
 			return nil, err
 		}
 		return nil, result
+	case 409:
+		result := NewCreateHelmComponentConfigConflict()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	case 500:
 		result := NewCreateHelmComponentConfigInternalServerError()
 		if err := result.readResponse(response, consumer, o.formats); err != nil {
@@ -405,6 +411,76 @@ func (o *CreateHelmComponentConfigNotFound) GetPayload() *models.StderrErrRespon
 }
 
 func (o *CreateHelmComponentConfigNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateHelmComponentConfigConflict creates a CreateHelmComponentConfigConflict with default headers values
+func NewCreateHelmComponentConfigConflict() *CreateHelmComponentConfigConflict {
+	return &CreateHelmComponentConfigConflict{}
+}
+
+/*
+CreateHelmComponentConfigConflict describes a response with status code 409, with default header values.
+
+Conflict
+*/
+type CreateHelmComponentConfigConflict struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create helm component config conflict response has a 2xx status code
+func (o *CreateHelmComponentConfigConflict) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create helm component config conflict response has a 3xx status code
+func (o *CreateHelmComponentConfigConflict) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create helm component config conflict response has a 4xx status code
+func (o *CreateHelmComponentConfigConflict) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create helm component config conflict response has a 5xx status code
+func (o *CreateHelmComponentConfigConflict) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create helm component config conflict response a status code equal to that given
+func (o *CreateHelmComponentConfigConflict) IsCode(code int) bool {
+	return code == 409
+}
+
+// Code gets the status code for the create helm component config conflict response
+func (o *CreateHelmComponentConfigConflict) Code() int {
+	return 409
+}
+
+func (o *CreateHelmComponentConfigConflict) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/helm][%d] createHelmComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateHelmComponentConfigConflict) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/components/{component_id}/configs/helm][%d] createHelmComponentConfigConflict %s", 409, payload)
+}
+
+func (o *CreateHelmComponentConfigConflict) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateHelmComponentConfigConflict) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.StderrErrResponse)
 
