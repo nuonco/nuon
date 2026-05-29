@@ -52,15 +52,7 @@ type QueueSignal struct {
 
 	ExpiresAt *time.Time `json:"expires_at,omitempty" gorm:"default:null" temporaljson:"expires_at,omitzero,omitempty"`
 
-	// Callback describes where to send a Temporal signal when this queue signal
-	// completes. When set, the handler signals the parent workflow on completion
-	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
-	// Deprecated: use Callbacks for new code. Kept for backward compat during migration.
-	Callback callback.Ref `json:"callback" gorm:"type:jsonb;default:null" temporaljson:"callback,omitzero,omitempty"`
-
-	// Callbacks is the multi-callback successor to Callback. It supports multiple
-	// completion targets, enabling patterns like EnsureSignal where callers dynamically
-	// register callbacks on in-flight signals.
+	Callback  callback.Ref  `json:"callback" gorm:"type:jsonb;default:null" temporaljson:"callback,omitzero,omitempty"`
 	Callbacks callback.Refs `json:"callbacks" gorm:"type:jsonb;default:null" temporaljson:"callbacks,omitzero,omitempty"`
 }
 
