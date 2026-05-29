@@ -198,6 +198,12 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
 	}
 
+	// org-wide runner settings
+	orgs := api.Group("/v1/orgs/:org_id")
+	{
+		orgs.PATCH("/runner-settings", s.AdminUpdateOrgRunnerSettings)
+	}
+
 	// runner groups
 	runnerGroups := api.Group("/v1/runner-groups/:runner_group_id")
 	{
