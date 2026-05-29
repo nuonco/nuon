@@ -12,6 +12,7 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/queuebuild"
 	componentdeploysyncandplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/componentdeploysyncandplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -244,6 +245,7 @@ func (s *Signal) dispatchAndAwaitGroup(ctx workflow.Context, group *app.Workflow
 		// uses the step's OwnerID (componentID) and dispatches to its default queue.
 	}
 
+	cb := callback.New(ctx, group.ID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
 		OwnerType:       "app_branches",
@@ -251,12 +253,13 @@ func (s *Signal) dispatchAndAwaitGroup(ctx workflow.Context, group *app.Workflow
 		Signal:          sig,
 		SignalOwnerID:   group.ID,
 		SignalOwnerType: "workflow_step_groups",
+		Callback:        cb,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to enqueue group signal: %w", err)
 	}
 
-	_, err = queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
+	_, err = callback.Await(ctx, cb)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
@@ -337,6 +340,7 @@ func (s *Signal) sandboxBuildForInstall(ctx workflow.Context, l log.Logger, inst
 			continue
 		}
 
+		cb := callback.New(ctx, installComponentID)
 		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 			OwnerID:   installID,
 			OwnerType: "installs",
@@ -346,6 +350,7 @@ func (s *Signal) sandboxBuildForInstall(ctx workflow.Context, l log.Logger, inst
 				ComponentID:        componentID,
 				InstallComponentID: installComponentID,
 			},
+			Callback: cb,
 		})
 		if err != nil {
 			return fmt.Errorf("install %s component %s: enqueue failed: %w", installID, componentID, err)
@@ -357,7 +362,7 @@ func (s *Signal) sandboxBuildForInstall(ctx workflow.Context, l log.Logger, inst
 			"install_component_id", installComponentID,
 			"queue_signal_id", enqueueResp.QueueSignalID)
 
-		if _, err = queueclient.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID); err != nil {
+		if _, err = callback.Await(ctx, cb); err != nil {
 			return fmt.Errorf("install %s component %s: sandbox deploy failed: %w", installID, componentID, err)
 		}
 

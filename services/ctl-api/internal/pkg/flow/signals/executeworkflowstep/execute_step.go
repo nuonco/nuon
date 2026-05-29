@@ -7,8 +7,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -197,6 +197,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		"target_queue", s.TargetQueueName,
 	)
 
+	cb := callback.New(ctx, step.ID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.OwnerID,
 		OwnerType:       s.OwnerType,
@@ -205,6 +206,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		Signal:          sig,
 		SignalOwnerID:   step.ID,
 		SignalOwnerType: "install_workflow_steps",
+		Callback:        cb,
 	})
 	if err != nil {
 		return errors.Wrapf(err, "unable to enqueue signal for step %s", step.Name)
@@ -218,7 +220,7 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		"queue_signal_id", enqueueResp.QueueSignalID,
 	)
 
-	_, err = client.AwaitQueueSignal(ctx, enqueueResp.QueueSignalID)
+	_, err = callback.Await(ctx, cb)
 	if err != nil {
 		return errors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
 	}
