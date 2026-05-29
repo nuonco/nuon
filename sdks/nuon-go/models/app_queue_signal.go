@@ -20,8 +20,11 @@ import (
 type AppQueueSignal struct {
 
 	// Callback describes where to send a Temporal signal when this queue signal
-	// completes.
-	Callback *CallbackRef `json:"callback,omitempty"`
+	// completes. When set, the handler signals the parent workflow on completion
+	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
+	Callback struct {
+		CallbackRef
+	} `json:"callback,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -78,23 +81,13 @@ type AppQueueSignal struct {
 	Workflow *SignaldbWorkflowRef `json:"workflow,omitempty"`
 }
 
-// CallbackRef describes where to send a Temporal signal on completion.
-//
-// swagger:model callback.Ref
-type CallbackRef struct {
-	// workflow id
-	WorkflowID string `json:"workflow_id,omitempty"`
-
-	// signal name
-	SignalName string `json:"signal_name,omitempty"`
-
-	// namespace
-	Namespace string `json:"namespace,omitempty"`
-}
-
 // Validate validates this app queue signal
 func (m *AppQueueSignal) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateCallback(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateQueue(formats); err != nil {
 		res = append(res, err)
@@ -119,6 +112,14 @@ func (m *AppQueueSignal) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppQueueSignal) validateCallback(formats strfmt.Registry) error {
+	if swag.IsZero(m.Callback) { // not required
+		return nil
+	}
+
 	return nil
 }
 
@@ -241,6 +242,10 @@ func (m *AppQueueSignal) validateWorkflow(formats strfmt.Registry) error {
 func (m *AppQueueSignal) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCallback(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateQueue(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -264,6 +269,11 @@ func (m *AppQueueSignal) ContextValidate(ctx context.Context, formats strfmt.Reg
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppQueueSignal) contextValidateCallback(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 
