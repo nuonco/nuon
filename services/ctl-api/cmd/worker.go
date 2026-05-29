@@ -55,14 +55,16 @@ func (c *cli) runWorker(cmd *cobra.Command, _ []string) {
 	profilerOptions := profiles.LoadOptionsFromEnv()
 	providers = append(providers, profiles.Module(profilerOptions))
 
-	// Add worker interceptors and shared workflows. SlackLibsModule supplies
-	// *slackclient.Client to the Slack signal lifecycle hook in
-	// SharedWorkflowsModule; without it the hook's Supports() short-circuits
-	// because SlackParams.SlackClient is optional and resolves to nil.
+	// Add worker interceptors and shared workflows. SlackLibsModule and
+	// DatadogLibsModule supply the per-integration HTTP clients to the
+	// matching signal lifecycle hooks in SharedWorkflowsModule; without
+	// them, the hooks' Supports() short-circuits because their *Params.Client
+	// field is optional and resolves to nil.
 	providers = append(providers,
 		fxmodules.WorkerInterceptorsModule,
 		fxmodules.SharedWorkflowsModule,
 		fxmodules.SlackLibsModule,
+		fxmodules.DatadogLibsModule,
 	)
 
 	// Add namespace-specific worker modules based on flags
