@@ -36,14 +36,14 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process queue: %w", err)
 	}
 
-	// Cron emitter: process health check every minute
+	// Cron emitter: process health check once per hour
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:         q.ID,
 		Name:            fmt.Sprintf("process-%s-health-check", process.ID),
 		Description:     "Periodic process health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "* * * * *",
-		JitterWindow:    time.Second * 30,
+		CronSchedule:    "0 * * * *",
+		JitterWindow:    time.Minute * 30,
 		SignalType:      "process_healthcheck",
 		SignalExpiresIn: 1 * time.Hour,
 		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
