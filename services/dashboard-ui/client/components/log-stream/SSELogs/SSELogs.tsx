@@ -10,7 +10,7 @@ import { LogSeverity } from '../LogSeverity'
 import { LogLineSkeleton } from '../LogLine'
 import { Skeleton } from '@/components/common/Skeleton'
 import { LogFilters } from '../log-filters/LogFilters'
-import { getSeverityTextClasses } from '@/utils/log-stream-utils'
+import { getSeverityRawTextClasses } from '@/utils/log-stream-utils'
 
 export const LogsSkeleton = () => {
   return Array.from({ length: 20 }).map((_, idx) => (
@@ -190,13 +190,24 @@ const RawLogs = ({
 
     {!filteredLogs?.length && isLoading ? <LogsSkeleton /> : null}
 
-    <pre className="pt-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
-      {filteredLogs?.map((logLine) => (
-        <div key={logLine?.id} className={getSeverityTextClasses(logLine.severity_number)}>
-          {logLine.body}
-        </div>
-      ))}
-    </pre>
+    {filteredLogs?.length ? (
+      <pre
+        className={cn(
+          'mt-3 overflow-x-auto rounded-md border p-4',
+          'bg-dark-grey-900 text-cool-grey-300',
+          'font-mono text-xs leading-relaxed whitespace-pre-wrap break-all'
+        )}
+      >
+        {filteredLogs.map((logLine) => (
+          <div
+            key={logLine?.id}
+            className={getSeverityRawTextClasses(logLine.severity_number)}
+          >
+            {logLine.body}
+          </div>
+        ))}
+      </pre>
+    ) : null}
   </div>
 )
 
