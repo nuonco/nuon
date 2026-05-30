@@ -8,7 +8,9 @@ import { BuildDetail } from './BuildDetail'
 import { Actions } from './Actions'
 import { ActionDetail } from './ActionDetail'
 import { Runbooks } from './Runbooks'
-import { RunbookDetail } from './RunbookDetail'
+import { RunbookDetailLayout } from './RunbookDetailLayout'
+import { RunbookReadmeTab } from './runbook-tabs/RunbookReadmeTab'
+import { RunbookStepsTab } from './runbook-tabs/RunbookStepsTab'
 import { Roles } from './Roles'
 import { PoliciesLayout } from './PoliciesLayout'
 import { Policies } from './Policies'
@@ -55,7 +57,11 @@ export const appRoutes: RouteObject[] = [
       { path: ':orgId/apps/:appId/runbooks', element: <Runbooks /> },
       {
         path: ':orgId/apps/:appId/runbooks/:runbookId',
-        element: <RunbookDetail />,
+        element: <RunbookDetailLayout />,
+        children: [
+          { index: true, element: <RunbookReadmeTab /> },
+          { path: 'steps', element: <RunbookStepsTab /> },
+        ],
       },
       { path: ':orgId/apps/:appId/roles', element: <Roles /> },
       {

@@ -7,6 +7,7 @@ import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import type { TRunbook } from '@/lib/ctl-api/apps/runbooks'
 
 export type TRunbookRow = {
@@ -14,6 +15,7 @@ export type TRunbookRow = {
   runbookName: string
   description: ReactNode
   labels: ReactNode
+  lastUpdated: ReactNode
   href: string
 }
 
@@ -48,6 +50,14 @@ export function parseRunbooksToTableData(
         ) : (
           <Icon variant="MinusIcon" />
         ),
+      lastUpdated: runbook.updated_at ? (
+        <Text flex className="gap-2">
+          <Icon variant="CalendarBlankIcon" />
+          <Time time={runbook.updated_at} format="relative" variant="subtext" />
+        </Text>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       href: `${basePath}/runbooks/${runbook.id}`,
     }
   })
@@ -76,6 +86,12 @@ const columns: ColumnDef<TRunbookRow>[] = [
   {
     accessorKey: 'labels',
     header: 'Labels',
+    cell: (info) => info.getValue() as ReactNode,
+    enableSorting: false,
+  },
+  {
+    accessorKey: 'lastUpdated',
+    header: 'Last updated',
     cell: (info) => info.getValue() as ReactNode,
     enableSorting: false,
   },

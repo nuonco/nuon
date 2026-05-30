@@ -11,6 +11,7 @@ import { WorkflowTimeline } from '@/components/workflows/WorkflowTimeline'
 import { ShowDriftScanContainer as ShowDriftScan } from '@/components/workflows/filters/ShowDriftScans'
 import { WorkflowTypeFilter } from '@/components/workflows/filters/WorkflowTypeFilter'
 import { WorkflowSearch } from '@/components/workflows/filters/WorkflowSearch'
+import { RunAdhocActionButton } from '@/components/installs/management/RunAdhocAction'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallWorkflows } from '@/lib'
@@ -68,14 +69,19 @@ export const Workflows = () => {
         install={install}
       />
 
-      <HeadingGroup>
-        <Text variant="base" weight="strong">
-          Workflow history
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          View past and active workflows for this install.
-        </Text>
-      </HeadingGroup>
+      <div className="flex items-start justify-between gap-4">
+        <HeadingGroup>
+          <Text variant="base" weight="strong">
+            Workflow history
+          </Text>
+          <Text variant="subtext" theme="neutral">
+            View past and active workflows for this install.
+          </Text>
+        </HeadingGroup>
+        <div className="shrink-0">
+          <RunAdhocActionButton />
+        </div>
+      </div>
 
       <div className="flex items-center justify-between gap-4">
         <WorkflowSearch />
