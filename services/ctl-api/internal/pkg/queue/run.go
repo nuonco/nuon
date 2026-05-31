@@ -64,14 +64,14 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 		return false, errors.Wrap(err, "unable to setup channels")
 	}
 
-	l.Info("requeuing any remaining signals")
-	if err := q.requeueSignals(ctx); err != nil {
-		return false, errors.Wrap(err, "unable to requeue signals")
-	}
-
 	l.Info("starting dispatcher")
 	if err := q.startDispatcher(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to start dispatcher")
+	}
+
+	l.Info("requeuing any remaining signals")
+	if err := q.requeueSignals(ctx); err != nil {
+		return false, errors.Wrap(err, "unable to requeue signals")
 	}
 
 	l.Info("starting lifecycle manager")
@@ -138,7 +138,10 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 
 	// This sets a drain timeout on the queue, such that once we've decided it needs to be idle, slept, or restarted
 	// how long we will wait for existing in flight signals to finish.
-	maxDrainTimeout := time.Minute * 1
+	maxDrainTimeout := 5 * time.Minute
+	if q.cfg != nil && q.cfg.QueueDrainTimeout > 0 {
+		maxDrainTimeout = q.cfg.QueueDrainTimeout
+	}
 	if _, err := workflow.AwaitWithTimeout(ctx, maxDrainTimeout, func() bool {
 		// Wait until active workers drain before restarting or stopping.
 		return q.activeWorkers == 0
