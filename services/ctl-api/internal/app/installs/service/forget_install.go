@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
@@ -42,6 +43,10 @@ func (s *service) ForgetInstall(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install %s: %w", installID, err))
 		return
+	}
+
+	if err := s.addForgottenByLabels(ctx, installID); err != nil {
+		s.l.Warn("unable to add forgotten-by labels", zap.Error(err))
 	}
 
 	err = s.forgetInstall(ctx, installID)

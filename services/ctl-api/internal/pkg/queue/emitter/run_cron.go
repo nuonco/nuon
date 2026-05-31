@@ -15,7 +15,7 @@ import (
 
 const (
 	cronTickerIDTemplate    = "queue-emitter-cron-%s-%s"
-	cronParentRunDuration   = 1 * time.Hour
+	cronParentRunDuration   = 4 * time.Hour
 	cronParentCheckInterval = 5 * time.Minute
 )
 
@@ -32,7 +32,10 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 		return false, errors.Wrap(err, "failed to ensure cron ticker running")
 	}
 
-	// Parent workflow runs for a duration, then continues-as-new to prevent unbounded history
+	// Parent workflow runs for a duration, then continues-as-new to prevent unbounded history.
+	// Liveness checks (emitter/queue existence) are handled by the workflowmanager.Manager
+	// started in run(), which sets e.stopped/e.restarted. This loop only needs to sleep
+	// and check those flags.
 	runUntil := workflow.Now(ctx).Add(cronParentRunDuration)
 
 	for workflow.Now(ctx).Before(runUntil) {
@@ -40,31 +43,9 @@ func (e *emitterWorkflow) runCronMode(ctx workflow.Context, l *zap.Logger, emitt
 			l.Info("emitter stopped")
 			return true, nil
 		}
-
-		if _, err := e.ensureEmitterActive(ctx); err != nil {
-			return false, err
-		}
-		if e.stopped {
-			l.Info("emitter stopped - queue terminated")
-			return true, nil
-		}
-
-		// Periodically verify the queue still exists.
-		if err := e.ensureQueueActive(ctx); err != nil {
-			return false, err
-		}
-		if e.stopped {
-			l.Info("emitter stopped - queue terminated")
-			return true, nil
-		}
-
-		// periodically ensure the emitter is active
-		if _, err := e.ensureEmitterActive(ctx); err != nil {
-			return false, err
-		}
-		if e.stopped {
-			l.Info("emitter stopped - emitter terminated")
-			return true, nil
+		if e.restarted {
+			l.Info("emitter restarting")
+			return false, nil
 		}
 
 		if err := workflow.Sleep(ctx, cronParentCheckInterval); err != nil {

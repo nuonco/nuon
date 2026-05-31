@@ -59,6 +59,7 @@ func New(params WorkerParams) (*Worker, error) {
 		MaxConcurrentWorkflowTaskPollers:       params.Cfg.TemporalMaxConcurrentWorkflowTaskPollers,
 		Interceptors:                           params.Interceptors,
 		WorkflowPanicPolicy:                    panicPolicy,
+		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 	})
 
 	wkr.RegisterActivity(params.Acts)
