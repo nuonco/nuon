@@ -2,6 +2,7 @@ package appconfigupdated
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -50,12 +51,13 @@ func (s *Signal) reconcileActionCronEmitters(
 
 		name := actionCronEmitterPrefix + iaw.ID
 		if _, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:      queue.ID,
-			Name:         name,
-			Description:  fmt.Sprintf("action cron for install %s, action workflow %s", s.InstallID, iaw.ActionWorkflowID),
-			Mode:         app.QueueEmitterModeCron,
-			CronSchedule: awc.CronTrigger.CronSchedule,
-			SignalType:   executeactionworkflow.SignalType,
+			QueueID:         queue.ID,
+			Name:            name,
+			Description:     fmt.Sprintf("action cron for install %s, action workflow %s", s.InstallID, iaw.ActionWorkflowID),
+			Mode:            app.QueueEmitterModeCron,
+			CronSchedule:    awc.CronTrigger.CronSchedule,
+			SignalExpiresIn: 15 * time.Minute,
+			SignalType:      executeactionworkflow.SignalType,
 			SignalTemplate: &executeactionworkflow.Signal{
 				Signal: &actionworkflowrun.Signal{
 					InstallID:               install.ID,
