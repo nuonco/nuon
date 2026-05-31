@@ -150,6 +150,12 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 			},
 			Option: "WHERE enqueued = false",
 		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "deleted_at"),
+			Columns: []string{
+				"deleted_at",
+			},
+		},
 	}
 }
 
