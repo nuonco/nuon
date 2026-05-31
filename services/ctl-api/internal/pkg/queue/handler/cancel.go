@@ -61,7 +61,7 @@ func (h *handler) cancelHandler(ctx workflow.Context, req *CancelRequest) (*Canc
 	if cancelCallbackInvoked {
 		statusReq.StatusDescription = "cancel-callback-invoked"
 	}
-	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusReq)
+	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusReq)
 
 	dur := workflow.Now(ctx).Sub(start)
 	h.runAfterPhaseSafe(ctx, event, signal.SignalPhaseOutcome{
