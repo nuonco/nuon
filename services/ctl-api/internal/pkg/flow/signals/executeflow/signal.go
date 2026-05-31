@@ -5,8 +5,11 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/metrics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	qsignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -58,6 +61,11 @@ type Signal struct {
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.
 	pauseRequested bool
+
+	// Metrics dependencies injected via SignalWithParams.
+	mw  metrics.Writer
+	v   *validator.Validate
+	tmw tmetrics.Writer
 }
 
 var (
@@ -65,7 +73,13 @@ var (
 	_ qsignal.SignalWithCancel           = (*Signal)(nil)
 	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
+	_ qsignal.SignalWithParams           = (*Signal)(nil)
 )
+
+func (s *Signal) WithParams(p *qsignal.Params) {
+	s.mw = p.MW
+	s.v = p.V
+}
 
 // Cancel is invoked by the queue handler when the signal is cancelled
 // externally (e.g. via clear-queue). It marks the underlying workflow object as
