@@ -66,6 +66,7 @@ func (w *queue) enqueueHandler(ctx workflow.Context, input EnqueueHandlerInput) 
 		WorkflowID: input.WorkflowID,
 		ID:         input.QueueSignalID,
 	}) {
+		delete(w.inFlightSignals, input.QueueSignalID)
 		l.Warn("channel full, signal will be picked up on next requeue cycle",
 			zap.String("signal-id", input.QueueSignalID))
 	}

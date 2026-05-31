@@ -30,7 +30,7 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	// mode-specific loops check.
 	mgr := workflowmanager.New(
 		workflowmanager.WithHistoryMax(emitterCANHistoryMax),
-		workflowmanager.WithCheckInterval(5*time.Minute),
+		workflowmanager.WithCheckInterval(10*time.Minute),
 		workflowmanager.WithMetricsWriter(e.mw),
 		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
 			if _, err := e.ensureEmitterActive(gCtx); err != nil {
