@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
 
 type Params struct {
@@ -29,6 +30,7 @@ type Params struct {
 	Helpers              *helpers.Helpers
 	EndpointAudit        *apiPkg.EndpointAudit
 	RunnerHeartbeatCache *RunnerHeartbeatCache
+	Heartbeater          *heartbeater.Heartbeater
 }
 
 type service struct {
@@ -43,6 +45,7 @@ type service struct {
 	acctClient           *account.Client
 	helpers              *helpers.Helpers
 	runnerHeartbeatCache *RunnerHeartbeatCache
+	heartbeater          *heartbeater.Heartbeater
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -344,6 +347,7 @@ func New(params Params) *service {
 		acctClient:           params.AccountClient,
 		helpers:              params.Helpers,
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
+		heartbeater:          params.Heartbeater,
 	}
 }
 

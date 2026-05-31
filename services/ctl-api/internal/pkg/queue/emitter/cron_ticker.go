@@ -71,6 +71,13 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return nil
 	}
 
+	// Check if the queue has emitter signals disabled
+	if emitter.Queue.DisableEmitterSignals {
+		l.Info("emitter signals disabled on queue, skipping emit",
+			zap.String("queue-id", req.QueueID))
+		return nil
+	}
+
 	if offset := jitterOffset(emitter.ID, emitter.JitterWindow); offset > 0 {
 		if err := workflow.Sleep(ctx, offset); err != nil {
 			return err

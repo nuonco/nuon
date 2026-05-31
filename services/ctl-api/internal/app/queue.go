@@ -38,6 +38,10 @@ type Queue struct {
 
 	Workflow signaldb.WorkflowRef `json:"workflow"`
 
+	// DisableEmitterSignals when true causes emitter-originated signals to be
+	// marked as noop (cancelled) instead of being processed.
+	DisableEmitterSignals bool `json:"disable_emitter_signals" gorm:"default:false;not null" temporaljson:"disable_emitter_signals,omitzero,omitempty"`
+
 	Signals  []QueueSignal  `json:"queue_signal,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"signals,omitzero,omitempty"`
 	Emitters []QueueEmitter `json:"emitters,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"emitters,omitzero,omitempty"`
 }

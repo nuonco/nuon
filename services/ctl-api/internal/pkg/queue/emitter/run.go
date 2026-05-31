@@ -109,6 +109,14 @@ func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.Qu
 }
 
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
+	// Check if the queue has emitter signals disabled
+	if emitter.Queue.DisableEmitterSignals {
+		e.emitSignalMetric(ctx, emitter, "disabled")
+		l.Info("emitter signals disabled on queue, skipping emit",
+			zap.String("queue-id", emitter.QueueID))
+		return nil
+	}
+
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
 		EmitterID: e.emitterID,
