@@ -8,12 +8,8 @@ import (
 
 	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
-<<<<<<< HEAD:services/ctl-api/internal/app/components/signals/v2/configcreated/signal.go
-	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
-	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
-=======
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
->>>>>>> 7162e0c9c (chore: remove and restructure):services/ctl-api/internal/app/components/signals/configcreated/signal.go
+	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
