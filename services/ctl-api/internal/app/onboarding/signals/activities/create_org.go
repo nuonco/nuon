@@ -6,7 +6,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	orgsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -30,17 +29,6 @@ func (a *Activities) createOnboardingOrg(ctx context.Context, accountID, orgName
 	if err != nil {
 		return nil, fmt.Errorf("unable to create org: %w", err)
 	}
-
-	// Set org context so event loop can start (startEventLoop calls signal.GetOrg which needs org in context)
-	ctx = cctx.SetOrgContext(ctx, org)
-
-	// Send v1 event loop signals (matching orgs/service/create_org.go)
-	a.evClient.Send(ctx, org.ID, &orgsignals.Signal{
-		Type: orgsignals.OperationCreated,
-	})
-	a.evClient.Send(ctx, org.ID, &orgsignals.Signal{
-		Type: orgsignals.OperationProvision,
-	})
 
 	return org, nil
 }

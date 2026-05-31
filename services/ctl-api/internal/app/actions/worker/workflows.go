@@ -11,7 +11,6 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
 
@@ -21,7 +20,6 @@ type Params struct {
 	Cfg       *internal.Config
 	V         *validator.Validate
 	MW        metrics.Writer
-	EVClient  teventloop.Client
 	Analytics temporalanalytics.Writer
 	Shared    *workflows.Workflows
 }
@@ -31,14 +29,11 @@ type Workflows struct {
 	v         *validator.Validate
 	acts      activities.Activities
 	mw        tmetrics.Writer
-	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
 }
 
 func (w *Workflows) All() []interface{} {
 	wkflows := w.ListWorkflowFns()
-
-	wkflows = append(wkflows, w.EventLoop)
 
 	return wkflows
 }
@@ -68,7 +63,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	return &Workflows{
 		cfg:       params.Cfg,
 		v:         params.V,
-		evClient:  params.EVClient,
 		mw:        tmw,
 		analytics: params.Analytics,
 	}, nil

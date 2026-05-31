@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 func installSignalStep(ctx workflow.Context, installID, name string, metadata pgtype.Hstore, signal *signals.Signal, planOnly bool, opts ...WorkflowStepOptions) (*app.WorkflowStep, error) {
@@ -67,7 +66,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	executionTyp := app.WorkflowStepExecutionTypeSystem
 	// user signals
 
-	userSignals := []eventloop.SignalType{
+	userSignals := []string{
 		signals.OperationAwaitInstallStackVersionRun,
 	}
 	if generics.SliceContains(signal.Type, userSignals) {
@@ -75,7 +74,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}
 
 	// await approval signals
-	approvalSignals := []eventloop.SignalType{
+	approvalSignals := []string{
 		signals.OperationProvisionSandboxPlan,
 		signals.OperationDeprovisionSandboxPlan,
 		signals.OperationReprovisionSandboxPlan,
@@ -87,7 +86,7 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 	}
 
 	// plan-only-skip signals are signals that should not be executed, when in plan only
-	planOnlySkipSignals := []eventloop.SignalType{
+	planOnlySkipSignals := []string{
 		signals.OperationDeprovisionSandboxApplyPlan,
 		signals.OperationProvisionSandboxApplyPlan,
 		signals.OperationReprovisionSandboxApplyPlan,

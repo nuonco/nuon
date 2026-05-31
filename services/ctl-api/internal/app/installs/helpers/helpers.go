@@ -11,7 +11,6 @@ import (
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -62,7 +61,6 @@ type Params struct {
 	RunbooksHelpers  *runbookshelpers.Helpers
 	AppsHelpers      *appshelpers.Helpers
 	RunnersHelpers   *runnershelpers.Helpers
-	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
 	FeaturesClient   *features.Features
 }
@@ -75,7 +73,6 @@ type Helpers struct {
 	actionsHelpers   *actionshelpers.Helpers
 	runbooksHelpers  *runbookshelpers.Helpers
 	db               *gorm.DB
-	evClient         eventloop.Client
 	queueClient      *queueclient.Client
 	featuresClient   *features.Features
 }
@@ -89,7 +86,6 @@ func New(params Params) *Helpers {
 		runbooksHelpers:  params.RunbooksHelpers,
 		appsHelpers:      params.AppsHelpers,
 		db:               params.DB,
-		evClient:         params.EvClient,
 		queueClient:      params.QueueClient,
 		featuresClient:   params.FeaturesClient,
 	}

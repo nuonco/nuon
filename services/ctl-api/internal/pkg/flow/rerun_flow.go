@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -75,7 +74,7 @@ func (c *WorkflowConductor[SignalType]) updateFlowStatus(
 // Rerun is a workflow that reruns a flow from a specific step.
 // It marks the existing step as discarded and creates a new step with the same parameters.
 // It then executes the flow steps from the newly created step.
-func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req eventloop.EventLoopRequest, inp RerunInput) error {
+func (c *WorkflowConductor[SignalType]) Rerun(ctx workflow.Context, req LegacyRequest, inp RerunInput) error {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

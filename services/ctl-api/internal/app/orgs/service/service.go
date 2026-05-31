@@ -16,7 +16,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -30,7 +29,6 @@ type Params struct {
 	MW              metrics.Writer
 	L               *zap.Logger
 	Cfg             *internal.Config
-	EvClient        eventloop.Client
 	AuthzClient     *authz.Client
 	RunnersHelpers  *runnershelpers.Helpers
 	AcctClient      *account.Client
@@ -51,7 +49,6 @@ type service struct {
 	mw              metrics.Writer
 	cfg             *internal.Config
 	authzClient     *authz.Client
-	evClient        eventloop.Client
 	runnersHelpers  *runnershelpers.Helpers
 	acctClient      *account.Client
 	analyticsClient analytics.Writer
@@ -192,7 +189,6 @@ func New(params Params) *service {
 		db:              params.DB,
 		mw:              params.MW,
 		cfg:             params.Cfg,
-		evClient:        params.EvClient,
 		authzClient:     params.AuthzClient,
 		runnersHelpers:  params.RunnersHelpers,
 		analyticsClient: params.AnalyticsClient,

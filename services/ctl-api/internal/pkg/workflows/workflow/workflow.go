@@ -8,20 +8,17 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
 type Workflows struct {
-	evClient teventloop.Client
-	mw       tmetrics.Writer
-	v        *validator.Validate
+	mw tmetrics.Writer
+	v  *validator.Validate
 }
 
 type Params struct {
 	fx.In
 
 	V             *validator.Validate
-	EVClient      teventloop.Client
 	MetricsWriter metrics.Writer
 }
 
@@ -36,8 +33,7 @@ func New(params Params) (*Workflows, error) {
 	}
 
 	return &Workflows{
-		evClient: params.EVClient,
-		mw:       tmw,
-		v:        params.V,
+		mw: tmw,
+		v:  params.V,
 	}, nil
 }

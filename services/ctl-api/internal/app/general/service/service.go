@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -29,7 +28,6 @@ type service struct {
 	temporalClient temporal.Client
 	authzClient    *authz.Client
 	acctClient     *account.Client
-	evClient       eventloop.Client
 	queueClient    *queueclient.Client
 	generalHelpers *generalhelpers.Helpers
 	codecs         []converter.PayloadCodec
@@ -119,7 +117,6 @@ type Params struct {
 	Cfg            *internal.Config
 	AuthzClient    *authz.Client
 	AcctClient     *account.Client
-	EvClient       eventloop.Client
 	QueueClient    *queueclient.Client
 	GeneralHelpers *generalhelpers.Helpers
 	DB             *gorm.DB `name:"psql"`
@@ -143,7 +140,6 @@ func New(params Params) *service {
 		cfg:            params.Cfg,
 		authzClient:    params.AuthzClient,
 		acctClient:     params.AcctClient,
-		evClient:       params.EvClient,
 		queueClient:    params.QueueClient,
 		generalHelpers: params.GeneralHelpers,
 		codecs: []converter.PayloadCodec{

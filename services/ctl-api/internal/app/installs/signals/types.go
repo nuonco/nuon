@@ -1,26 +1,17 @@
-// Package signals contains legacy signal types preserved for compilation compatibility.
-// The event loop system has been removed; these types remain because existing workflow
-// handlers reference them as parameter and field types.
 package signals
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
-	"go.temporal.io/sdk/workflow"
 )
-
-type SignalType = string
 
 const (
 	TemporalNamespace string = "installs"
+)
 
+// SignalType is a string identifier for signal operations.
+type SignalType = string
+
+const (
 	OperationForget                      SignalType = "forgotten"
 	OperationRestart                     SignalType = "restart"
 	OperationRestartChildren             SignalType = "restart-children"
@@ -45,13 +36,16 @@ const (
 	OperationWorkflowStepApprovalReq     SignalType = "workflow-step-approval-request"
 	OperationWorkflowStepApprovalResp    SignalType = "workflow-step-approval-response"
 	OperationGenerateState               SignalType = "generate-state"
-	OperationExecuteFlow                 SignalType = "execute-workflow"
-	OperationRerunFlow                   SignalType = "rerun-flow"
 
-	OperationExecuteDeployComponentSyncImage     SignalType = "component-sync-image"
-	OperationExecuteDeployComponentSyncAndPlan   SignalType = "component-deploy-sync-and-plan"
-	OperationExecuteDeployComponentApplyPlan     SignalType = "component-deploy-apply-plan"
-	OperationExecuteDeployComponentPlanOnly      SignalType = "component-deploy-plan-only"
+	OperationExecuteFlow SignalType = "execute-workflow"
+	OperationRerunFlow   SignalType = "rerun-flow"
+
+	OperationExecuteDeployComponentSyncImage SignalType = "component-sync-image"
+
+	OperationExecuteDeployComponentSyncAndPlan SignalType = "component-deploy-sync-and-plan"
+	OperationExecuteDeployComponentApplyPlan   SignalType = "component-deploy-apply-plan"
+	OperationExecuteDeployComponentPlanOnly    SignalType = "component-deploy-plan-only"
+
 	OperationExecuteTeardownComponentSyncAndPlan SignalType = "component-teardown-sync-and-plan"
 	OperationExecuteTeardownComponentApplyPlan   SignalType = "component-teardown-apply-plan"
 
@@ -68,26 +62,42 @@ const (
 // AllSignalTypes returns all known signal type strings.
 func AllSignalTypes() []string {
 	return []string{
-		OperationForget, OperationRestart, OperationRestartChildren,
-		OperationSyncActionWorkflowTriggers, OperationActionWorkflowRun,
-		OperationPollDependencies, OperationCreated, OperationUpdated,
-		OperationGenerateInstallStackVersion, OperationProvisionRunner,
-		OperationAwaitInstallStackVersionRun, OperationUpdateInstallStackOutputs,
-		OperationAwaitRunnerHealthy, OperationProvisionSandbox,
-		OperationProvisionDNS, OperationDeprovisionDNS,
-		OperationExecuteActionWorkflow, OperationExecuteDeployComponent,
-		OperationExecuteTeardownComponent, OperationSyncSecrets,
-		OperationWorkflowApproveAll, OperationGenerateState,
-		OperationExecuteFlow, OperationRerunFlow,
+		OperationForget,
+		OperationRestart,
+		OperationRestartChildren,
+		OperationSyncActionWorkflowTriggers,
+		OperationActionWorkflowRun,
+		OperationPollDependencies,
+		OperationCreated,
+		OperationUpdated,
+		OperationGenerateInstallStackVersion,
+		OperationProvisionRunner,
+		OperationAwaitInstallStackVersionRun,
+		OperationUpdateInstallStackOutputs,
+		OperationAwaitRunnerHealthy,
+		OperationProvisionSandbox,
+		OperationProvisionDNS,
+		OperationDeprovisionDNS,
+		OperationExecuteActionWorkflow,
+		OperationExecuteDeployComponent,
+		OperationExecuteTeardownComponent,
+		OperationSyncSecrets,
+		OperationWorkflowApproveAll,
+		OperationGenerateState,
+		OperationExecuteFlow,
+		OperationRerunFlow,
 		OperationExecuteDeployComponentSyncImage,
 		OperationExecuteDeployComponentSyncAndPlan,
 		OperationExecuteDeployComponentApplyPlan,
 		OperationExecuteDeployComponentPlanOnly,
 		OperationExecuteTeardownComponentSyncAndPlan,
 		OperationExecuteTeardownComponentApplyPlan,
-		OperationProvisionSandboxPlan, OperationProvisionSandboxApplyPlan,
-		OperationDeprovisionSandboxPlan, OperationDeprovisionSandboxApplyPlan,
-		OperationReprovisionSandboxPlan, OperationReprovisionSandboxApplyPlan,
+		OperationProvisionSandboxPlan,
+		OperationProvisionSandboxApplyPlan,
+		OperationDeprovisionSandboxPlan,
+		OperationDeprovisionSandboxApplyPlan,
+		OperationReprovisionSandboxPlan,
+		OperationReprovisionSandboxApplyPlan,
 		OperationReprovisionRunner,
 	}
 }
@@ -141,15 +151,7 @@ type RerunConfiguration struct {
 	RePlanStepID  string         `json:"replan_step_id"`
 }
 
-// EventLoopRequest is inlined from the deleted eventloop package.
-type EventLoopRequest struct {
-	ID                 string
-	SandboxMode        bool
-	Version            string
-	RestartCount       int
-	VersionChangeCount int
-}
-
+// Signal contains the details of an install signal operation.
 type Signal struct {
 	Type SignalType `json:"type"`
 
@@ -173,102 +175,44 @@ type Signal struct {
 	RerunConfiguration RerunConfiguration `validate:"required_if=Operation rerun_flow" json:"rerun_configuration"`
 
 	InstallCloudFormationStackVersionID string `json:"install_cloud_formation_stack_version_id"`
-	InstallStackID                      string `json:"install_stack_id"`
-	InstallStackVersionID               string `json:"install_stack_version_id"`
-	SkipInputUpdateWorkflow             bool   `json:"skip_input_update_workflow"`
 
-	// BaseSignal fields inlined
-	CtxPayload      *propagator.Payload `json:"ctx_payload"`
-	SignalListeners []SignalListener    `json:"signal_listeners"`
-	CGroup          string              `json:"cgroup"`
+	InstallStackID        string `json:"install_stack_id"`
+	InstallStackVersionID string `json:"install_stack_version_id"`
+
+	SkipInputUpdateWorkflow bool `json:"skip_input_update_workflow"`
 }
 
-type SignalListener struct {
-	WorkflowID string
-	SignalName string
+// WorkflowID returns the standard event loop workflow ID for the given entity ID.
+func (s *Signal) WorkflowID(id string) string {
+	return "event-loop-" + id
 }
 
-func (s *Signal) WorkflowName() string        { return "EventLoop" }
-func (s *Signal) WorkflowID(id string) string { return "event-loop-" + id }
-func (s *Signal) Namespace() string           { return TemporalNamespace }
-func (s *Signal) Name() string                { return s.Type }
-func (s *Signal) SignalType() SignalType      { return s.Type }
-func (s *Signal) Stop() bool                  { return false }
-func (s *Signal) ConcurrencyGroup() string    { return s.CGroup }
-func (s *Signal) Listeners() []SignalListener { return s.SignalListeners }
-
-func (s *Signal) Restart() bool {
-	return s.Type == OperationRestart
+// WorkflowName returns the canonical workflow name.
+func (s *Signal) WorkflowName() string {
+	return "EventLoop"
 }
 
-func (s *Signal) Start() bool {
-	return s.Type == OperationCreated
+// EventLoopRequest holds the core request fields previously provided by the eventloop package.
+type EventLoopRequest struct {
+	ID          string
+	SandboxMode bool
+
+	Version            string
+	RestartCount       int
+	VersionChangeCount int
 }
 
-func (s *Signal) Validate(v *validator.Validate) error {
-	if err := v.Struct(s); err != nil {
-		return fmt.Errorf("invalid request: %w", err)
-	}
-	return nil
+// RequestSignal is the parameter type for install workflow functions.
+type RequestSignal struct {
+	*Signal
+	EventLoopRequest
+	StartFromStepIdx int
 }
 
-func (s *Signal) PropagateContext(ctx cctx.ValueContext) error {
-	payload, err := propagator.FetchPayload(ctx)
-	if err != nil {
-		return err
-	}
-	s.CtxPayload = payload
-	return nil
-}
-
-func (s *Signal) GetWorkflowContext(ctx workflow.Context) workflow.Context {
-	if s.CtxPayload == nil {
-		return ctx
-	}
-	ctx = cctx.SetAccountIDWorkflowContext(ctx, s.CtxPayload.AccountID)
-	ctx = cctx.SetOrgIDWorkflowContext(ctx, s.CtxPayload.OrgID)
-	ctx = cctx.SetTraceIDWorkflowContext(ctx, s.CtxPayload.TraceID)
-	if s.CtxPayload.LogStream != nil {
-		ctx = cctx.SetLogStreamWorkflowContext(ctx, s.CtxPayload.LogStream)
-	}
-	return ctx
-}
-
-func (s *Signal) GetContext(ctx context.Context) context.Context {
-	if s.CtxPayload == nil {
-		return ctx
-	}
-	ctx = cctx.SetAccountIDContext(ctx, s.CtxPayload.AccountID)
-	ctx = cctx.SetOrgIDContext(ctx, s.CtxPayload.OrgID)
-	ctx = cctx.SetTraceIDContext(ctx, s.CtxPayload.TraceID)
-	if s.CtxPayload.LogStream != nil {
-		ctx = cctx.SetLogStreamContext(ctx, s.CtxPayload.LogStream)
-	}
-	return ctx
-}
-
-func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
-	org, err := cctx.OrgFromContext(ctx)
-	if err == nil {
-		return org, nil
-	}
-	install := app.Install{}
-	res := db.WithContext(ctx).Preload("Org").First(&install, "id = ?", id)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get install: %w", res.Error)
-	}
-	return &install.Org, nil
-}
-
+// NewRequestSignal constructs a RequestSignal from an EventLoopRequest and a Signal.
 func NewRequestSignal(req EventLoopRequest, signal *Signal) RequestSignal {
 	return RequestSignal{
 		Signal:           signal,
 		EventLoopRequest: req,
 	}
-}
-
-type RequestSignal struct {
-	*Signal `validate:"required"`
-	EventLoopRequest
-	StartFromStepIdx int
 }

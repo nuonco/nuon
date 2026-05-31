@@ -16,7 +16,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	policyhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
@@ -38,7 +37,7 @@ const (
 
 // executeFlowStep executes a single step in the flow. It handles the execution of the step, updates the status, and waits for approval if necessary.
 // It returns true if the step needs to be refetched (in case of approval steps), false otherwise.
-func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req eventloop.EventLoopRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
+func (c *WorkflowConductor[DomainSignal]) executeFlowStep(ctx workflow.Context, req LegacyRequest, idx int, step *app.WorkflowStep, flw *app.Workflow) (bool, error) {
 	refetchStepsInfo := false
 
 	l, err := log.WorkflowLogger(ctx)

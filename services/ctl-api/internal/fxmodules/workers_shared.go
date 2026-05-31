@@ -20,7 +20,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -59,7 +58,6 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 
 	fx.Provide(jobactivities.New),
 	fx.Provide(flowactivities.New),
-	fx.Provide(signalsactivities.New),
 	fx.Provide(queueactivities.New),
 	fx.Provide(handleractivities.New),
 	fx.Provide(emitteractivities.New),

@@ -1,3 +1,4 @@
+// Package signals contains legacy signal types preserved for compilation compatibility.
 package signals
 
 import (
@@ -9,57 +10,68 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/propagator"
+	"go.temporal.io/sdk/workflow"
 )
+
+type SignalType = string
+
+const TemporalNamespace string = "components"
 
 const (
-	TemporalNamespace string = "components"
+	OperationCreated             SignalType = "created"
+	OperationRestart             SignalType = "restart"
+	OperationBuild               SignalType = "build"
+	OperationQueueBuild          SignalType = "queue_build"
+	OperationProvision           SignalType = "provision"
+	OperationDelete              SignalType = "delete"
+	OperationPollDependencies    SignalType = "poll_dependencies"
+	OperationConfigCreated       SignalType = "config_created"
+	OperationUpdateComponentType SignalType = "update_component_type"
 )
 
-const (
-	OperationCreated             eventloop.SignalType = "created"
-	OperationRestart             eventloop.SignalType = "restart"
-	OperationBuild               eventloop.SignalType = "build"
-	OperationQueueBuild          eventloop.SignalType = "queue_build"
-	OperationProvision           eventloop.SignalType = "provision"
-	OperationDelete              eventloop.SignalType = "delete"
-	OperationPollDependencies    eventloop.SignalType = "poll_dependencies"
-	OperationConfigCreated       eventloop.SignalType = "config_created"
-	OperationUpdateComponentType eventloop.SignalType = "update_component_type"
-)
-
-type Signal struct {
-	Type eventloop.SignalType `validate:"required"`
-
-	BuildID string `validate:"required_if=Operation build"`
-
-	ComponentType app.ComponentType `validate:"required_if=Operation update_component_type"`
-
-	eventloop.BaseSignal
+type EventLoopRequest struct {
+	ID                 string
+	SandboxMode        bool
+	Version            string
+	RestartCount       int
+	VersionChangeCount int
 }
 
-func NewRequestSignal(req eventloop.EventLoopRequest, signal *Signal) RequestSignal {
-	return RequestSignal{
-		Signal:           signal,
-		EventLoopRequest: req,
-	}
+type SignalListener struct {
+	WorkflowID string
+	SignalName string
+}
+
+type Signal struct {
+	Type          SignalType        `validate:"required"`
+	BuildID       string            `validate:"required_if=Operation build"`
+	ComponentType app.ComponentType `validate:"required_if=Operation update_component_type"`
+
+	CtxPayload      *propagator.Payload `json:"ctx_payload"`
+	SignalListeners []SignalListener    `json:"signal_listeners"`
+	CGroup          string              `json:"cgroup"`
 }
 
 type RequestSignal struct {
 	*Signal
-	eventloop.EventLoopRequest
+	EventLoopRequest
 }
 
-var _ eventloop.Signal = (*Signal)(nil)
-
-func (s *Signal) ConcurrencyGroup() string {
-	switch s.Type {
-	case OperationCreated, OperationProvision, OperationPollDependencies:
-		return string(s.Type)
-	default:
-		return ""
-	}
+func NewRequestSignal(req EventLoopRequest, signal *Signal) RequestSignal {
+	return RequestSignal{Signal: signal, EventLoopRequest: req}
 }
+
+func (s *Signal) WorkflowName() string        { return "EventLoop" }
+func (s *Signal) WorkflowID(id string) string { return "event-loop-" + id }
+func (s *Signal) Namespace() string           { return TemporalNamespace }
+func (s *Signal) Name() string                { return s.Type }
+func (s *Signal) SignalType() SignalType      { return s.Type }
+func (s *Signal) ConcurrencyGroup() string    { return s.CGroup }
+func (s *Signal) Listeners() []SignalListener { return s.SignalListeners }
+func (s *Signal) Stop() bool                  { return s.Type == OperationDelete }
+func (s *Signal) Restart() bool               { return s.Type == OperationRestart }
+func (s *Signal) Start() bool                 { return s.Type == OperationCreated }
 
 func (s *Signal) Validate(v *validator.Validate) error {
 	if err := v.Struct(s); err != nil {
@@ -68,46 +80,33 @@ func (s *Signal) Validate(v *validator.Validate) error {
 	return nil
 }
 
-func (s *Signal) SignalType() eventloop.SignalType {
-	return s.Type
-}
-
-func (s *Signal) Namespace() string {
-	return TemporalNamespace
-}
-
-func (s *Signal) Name() string {
-	return string(s.Type)
-}
-
-func (s *Signal) Stop() bool {
-	switch s.Type {
-	case OperationDelete:
-		return true
-	default:
+func (s *Signal) PropagateContext(ctx cctx.ValueContext) error {
+	payload, err := propagator.FetchPayload(ctx)
+	if err != nil {
+		return err
 	}
-
-	return false
+	s.CtxPayload = payload
+	return nil
 }
 
-func (s *Signal) Restart() bool {
-	switch s.Type {
-	case OperationRestart:
-		return true
-	default:
+func (s *Signal) GetWorkflowContext(ctx workflow.Context) workflow.Context {
+	if s.CtxPayload == nil {
+		return ctx
 	}
-
-	return false
+	ctx = cctx.SetAccountIDWorkflowContext(ctx, s.CtxPayload.AccountID)
+	ctx = cctx.SetOrgIDWorkflowContext(ctx, s.CtxPayload.OrgID)
+	ctx = cctx.SetTraceIDWorkflowContext(ctx, s.CtxPayload.TraceID)
+	return ctx
 }
 
-func (s *Signal) Start() bool {
-	switch s.SignalType() {
-	case OperationCreated:
-		return true
-	default:
+func (s *Signal) GetContext(ctx context.Context) context.Context {
+	if s.CtxPayload == nil {
+		return ctx
 	}
-
-	return false
+	ctx = cctx.SetAccountIDContext(ctx, s.CtxPayload.AccountID)
+	ctx = cctx.SetOrgIDContext(ctx, s.CtxPayload.OrgID)
+	ctx = cctx.SetTraceIDContext(ctx, s.CtxPayload.TraceID)
+	return ctx
 }
 
 func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, error) {
@@ -115,14 +114,10 @@ func (s *Signal) GetOrg(ctx context.Context, id string, db *gorm.DB) (*app.Org, 
 	if err == nil {
 		return org, nil
 	}
-
 	comp := app.Component{}
-	res := db.WithContext(ctx).
-		Preload("Org").
-		First(&comp, "id = ?", id)
+	res := db.WithContext(ctx).Preload("Org").First(&comp, "id = ?", id)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get component: %w", res.Error)
 	}
-
 	return &comp.Org, nil
 }

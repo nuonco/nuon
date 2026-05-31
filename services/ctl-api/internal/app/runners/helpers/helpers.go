@@ -8,7 +8,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -22,7 +21,6 @@ type Params struct {
 	DB             *gorm.DB `name:"psql"`
 	CHDB           *gorm.DB `name:"ch"`
 	L              *zap.Logger
-	EVClient       eventloop.Client
 	AcctClient     *account.Client
 	QueueClient    *queueclient.Client
 	EmitterClient  *emitterclient.Client
@@ -35,7 +33,6 @@ type Helpers struct {
 	db             *gorm.DB
 	chDB           *gorm.DB
 	l              *zap.Logger
-	evClient       eventloop.Client
 	acctClient     *account.Client
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
@@ -49,7 +46,6 @@ func New(params Params) *Helpers {
 		db:             params.DB,
 		chDB:           params.CHDB,
 		l:              params.L,
-		evClient:       params.EVClient,
 		acctClient:     params.AcctClient,
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,

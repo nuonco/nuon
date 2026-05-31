@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 // @temporal-gen-v2 workflow
@@ -23,9 +22,6 @@ func (w *Workflows) DeprovisionRunner(ctx workflow.Context, sreq signals.Request
 		return fmt.Errorf("unable to get install: %w", err)
 	}
 
-	w.evClient.Send(ctx, install.RunnerGroup.Runners[0].ID, &runnersignals.Signal{
-		Type: runnersignals.OperationDeprovision,
-	})
 	if err := w.pollRunner(ctx, install.RunnerGroup.Runners[0].ID); err != nil {
 		return err
 	}

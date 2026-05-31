@@ -11,7 +11,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
 	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -74,33 +73,22 @@ func (s *service) UpdateInstall(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &installupdated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &appconfigupdated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationUpdated,
-		})
+	if err := s.enqueueInstallSignal(ctx, queueID, &installupdated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, queueID, &appconfigupdated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, install)

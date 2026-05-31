@@ -10,7 +10,6 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -20,7 +19,6 @@ type Workflows struct {
 	v      *validator.Validate
 	mw     tmetrics.Writer
 	logger *temporalzap.Logger
-	ev     teventloop.Client
 }
 
 func (w Workflows) All() []any {
@@ -44,7 +42,6 @@ type WorkflowsParams struct {
 	V             *validator.Validate
 	Cfg           *internal.Config
 	MetricsWriter metrics.Writer
-	EVClient      teventloop.Client
 }
 
 func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
@@ -67,7 +64,6 @@ func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
 	return &Workflows{
 		cfg:    params.Cfg,
 		v:      params.V,
-		ev:     params.EVClient,
 		mw:     tmw,
 		logger: tlogger,
 	}, nil

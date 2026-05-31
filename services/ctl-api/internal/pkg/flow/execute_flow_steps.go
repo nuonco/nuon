@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -18,11 +17,11 @@ const (
 
 var FlowCancellationErr = fmt.Errorf("workflow cancelled")
 
-func (c *WorkflowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Workflow) error {
+func (c *WorkflowConductor[DomainSignal]) executeSteps(ctx workflow.Context, req LegacyRequest, flw *app.Workflow) error {
 	return c.executeFlowSteps(ctx, req, flw, 0)
 }
 
-func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context, req eventloop.EventLoopRequest, flw *app.Workflow, startingStepNumber int) error {
+func (c *WorkflowConductor[DomainSignal]) executeFlowSteps(ctx workflow.Context, req LegacyRequest, flw *app.Workflow, startingStepNumber int) error {
 	if flw.Status.Status == app.StatusCancelled {
 		return FlowCancellationErr
 	}

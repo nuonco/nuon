@@ -9,10 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
-func (w *Workflows) startup(ctx workflow.Context, req eventloop.EventLoopRequest) error {
+func (w *Workflows) startup(ctx workflow.Context, req signals.EventLoopRequest) error {
 	sreq := signals.RequestSignal{
 		Signal: &signals.Signal{
 			Type: signals.OperationSyncActionWorkflowTriggers,

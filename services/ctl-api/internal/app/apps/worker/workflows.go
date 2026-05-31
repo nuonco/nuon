@@ -37,7 +37,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	var wkflow ecrrepository.Wkflow
 	wkflows := []any{
-		w.EventLoop,
 		wkflow.ProvisionECRRepository,
 		wkflow.DeprovisionECRRepository,
 		workerplan.CreateSandboxBuildPlan,
@@ -55,7 +54,6 @@ func (w *Workflows) ListWorkflowFns() []any {
 		w.PollDependencies,
 		w.Provision,
 		w.Reprovision,
-		w.SyncCustomStacks,
 		w.UpdateSandbox,
 	}
 }

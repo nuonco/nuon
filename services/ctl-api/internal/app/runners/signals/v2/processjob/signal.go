@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -70,14 +69,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		WorkflowExecutionTimeout: 70 * time.Minute,
 	})
 
-	// RequestSignal uses EventLoopRequest.ID for the runner ID and Signal.JobID for the job ID.
-	req := signals.NewRequestSignal(
-		eventloop.EventLoopRequest{ID: s.RunnerID},
-		&signals.Signal{
-			Type:  signals.OperationProcessJob,
-			JobID: s.JobID,
-		},
-	)
+	req := signals.RequestSignal{
+		ID:    s.RunnerID,
+		Type:  "process_job",
+		JobID: s.JobID,
+	}
 
 	return workflow.ExecuteChildWorkflow(childCtx, "ProcessJob", req).Get(ctx, nil)
 }

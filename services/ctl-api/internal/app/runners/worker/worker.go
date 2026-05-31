@@ -14,7 +14,6 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 
 	// Blank imports to register v2 queue signal types in the catalog.
@@ -51,7 +50,7 @@ type WorkerParams struct {
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient(signals.TemporalNamespace)
+	client, err := params.Tclient.GetNamespaceClient("runners")
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}

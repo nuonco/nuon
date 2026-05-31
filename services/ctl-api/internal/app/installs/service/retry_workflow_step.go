@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -63,18 +62,6 @@ func (s *service) RetryWorkflowStep(ctx *gin.Context) {
 	if workflow.OwnerType != "installs" {
 		ctx.Error(stderr.ErrUser{
 			Err: fmt.Errorf("workflow %s retry not supported for owner type", workflow.ID),
-		})
-		return
-	}
-
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
-		return
-	}
-	if !useQueues {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("retry workflow step requires queues to be enabled"),
 		})
 		return
 	}

@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
@@ -132,11 +131,6 @@ func (w *Workflows) InstallStackVersionRun(ctx workflow.Context, sreq signals.Re
 
 		return errors.Wrap(err, "unable to get install stack run in time")
 	}
-
-	w.evClient.Send(ctx, install.RunnerID, &runnersignals.Signal{
-		Type:                     runnersignals.OperationInstallStackVersionRun,
-		InstallStackVersionRunID: run.ID,
-	})
 
 	// successfully got a run
 	l.Debug("successfully got run", zap.Any("data", run.Data))

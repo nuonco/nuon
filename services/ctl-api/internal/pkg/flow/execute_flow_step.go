@@ -7,13 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
-func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req eventloop.EventLoopRequest, step *app.WorkflowStep) error {
+func (c *WorkflowConductor[DomainSignal]) executeStep(ctx workflow.Context, req LegacyRequest, step *app.WorkflowStep) error {
 	defer func() {
 		c.checkStepCancellation(ctx, step.ID)
 	}()

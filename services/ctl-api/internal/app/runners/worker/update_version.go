@@ -59,13 +59,6 @@ func (w *Workflows) UpdateVersion(ctx workflow.Context, sreq signals.RequestSign
 		zap.String("expected_version", runner.RunnerGroup.Settings.ExpectedVersion),
 		zap.String("api_version", w.cfg.Version),
 	)
-	// We have to send the signal and then return to allow it to be processed.
-	// Waiting for it to complete would deadlock. Not a big deal because
-	// we wouldn't do anything differently even if it failed.
-	w.evClient.Send(ctx, runner.Org.RunnerGroup.Runners[0].ID, &signals.Signal{
-		Type:  signals.OperationProcessJob,
-		JobID: runnerJob.ID,
-	})
 
 	return nil
 }

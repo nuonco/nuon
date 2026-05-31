@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -42,7 +41,7 @@ func NewApprovalPauseErr(stepID string) *ApprovalPauseErr {
 	return &ApprovalPauseErr{StepID: stepID}
 }
 
-func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) (retErr error) {
+func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req LegacyRequest, flowId string, startFromStepIdx int) (retErr error) {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {

@@ -48,14 +48,6 @@ func (w *Workflows) GracefulShutdown(ctx workflow.Context, sreq signals.RequestS
 		return errors.Wrap(err, "unable to create shutdown runner job")
 	}
 
-	// We have to send the signal and then return to allow it to be processed.
-	// Waiting for it to complete would deadlock. Not a big deal because
-	// we wouldn't do anything differently even if it failed.
-	w.evClient.Send(ctx, sreq.ID, &signals.Signal{
-		Type:  signals.OperationProcessJob,
-		JobID: runnerJob.ID,
-	})
-
 	return nil
 }
 

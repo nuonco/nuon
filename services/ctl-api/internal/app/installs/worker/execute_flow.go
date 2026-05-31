@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 )
 
@@ -34,7 +33,7 @@ func (w *Workflows) ExecuteFlow(ctx workflow.Context, sreq signals.RequestSignal
 		ExecFnLegacy: w.getExecuteFlowExecFn(sreq),
 	}
 
-	err := fc.Handle(ctx, sreq.EventLoopRequest, sreq.FlowID, sreq.StartFromStepIdx)
+	err := fc.Handle(ctx, flow.LegacyRequest{ID: sreq.ID, SandboxMode: sreq.SandboxMode}, sreq.FlowID, sreq.StartFromStepIdx)
 	if err != nil {
 		cerr, ok := err.(*flow.ContinueAsNewErr)
 		if ok && cerr != nil {
@@ -65,37 +64,23 @@ func (w *Workflows) getWorkflowStepGenerators(ctx workflow.Context) map[app.Work
 	}
 }
 
-func (w *Workflows) getExecuteFlowExecFn(sreq signals.RequestSignal) func(workflow.Context, eventloop.EventLoopRequest, *signals.Signal, app.WorkflowStep) error {
-	return func(ctx workflow.Context, ereq eventloop.EventLoopRequest, sig *signals.Signal, step app.WorkflowStep) error {
+func (w *Workflows) getExecuteFlowExecFn(sreq signals.RequestSignal) func(workflow.Context, flow.LegacyRequest, *signals.Signal, app.WorkflowStep) error {
+	return func(ctx workflow.Context, ereq flow.LegacyRequest, sig *signals.Signal, step app.WorkflowStep) error {
 		sig.InstallWorkflowID = sreq.FlowID
 		sig.FlowID = sreq.FlowID
 		sig.WorkflowStepID = step.ID
 		sig.WorkflowStepName = step.Name
 		sig.FlowStepID = step.ID
 		sig.FlowStepName = step.Name
-		handlerSreq := signals.NewRequestSignal(ereq, sig)
+		handlerSreq := signals.NewRequestSignal(signals.EventLoopRequest{ID: ereq.ID, SandboxMode: ereq.SandboxMode}, sig)
 
-		// Predict the workflow ID of the underlying object's event loop
-		suffix, err := w.subloopSuffix(ctx, handlerSreq)
-		if err != nil {
-			return err
+		handlers := w.getHandlers()
+		handler, ok := handlers[sig.Type]
+		if !ok {
+			return errors.New(fmt.Sprintf("no handler found for signal %s", sig.Type))
 		}
-
-		if suffix != "" {
-			id := fmt.Sprintf("%s-%s", sreq.ID, suffix)
-			if err := w.evClient.SendAndWait(ctx, id, &handlerSreq); err != nil {
-				return err
-			}
-		} else {
-			// no suffix means a workflow on this loop, so we must invoke the handler directly
-			handlers := w.getHandlers()
-			handler, ok := handlers[sig.Type]
-			if !ok {
-				return errors.New(fmt.Sprintf("no handler found for signal %s", sig.Type))
-			}
-			if err := handler(ctx, handlerSreq); err != nil {
-				return err
-			}
+		if err := handler(ctx, handlerSreq); err != nil {
+			return err
 		}
 		return nil
 	}
