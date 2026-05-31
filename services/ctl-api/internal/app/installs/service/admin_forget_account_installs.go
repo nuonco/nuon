@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
@@ -64,6 +65,10 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 	}
 
 	for _, install := range installs {
+		if err := s.addForgottenByLabels(ctx, install.ID); err != nil {
+			s.l.Warn("unable to add forgotten-by labels", zap.Error(err))
+		}
+
 		err = s.forgetInstall(ctx, install.ID)
 		if err != nil {
 			ctx.Error(err)
