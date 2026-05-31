@@ -1,6 +1,8 @@
 package flow
 
 import (
+	"strconv"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -17,6 +19,7 @@ import (
 // queue and awaits its completion via the group-finished update handler. Returns
 // the group's directive directly so the caller doesn't need to re-fetch from DB.
 func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.WorkflowStepGroup, flw *app.Workflow) (string, error) {
+	groupStart := workflow.Now(ctx)
 	logger := workflow.GetLogger(ctx)
 
 	sig := &executeworkflowstepgroup.Signal{
@@ -68,6 +71,8 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	// If the group has a StepGroupID, use ForwardGroupFinished for resilient
 	// completion tracking. Fall back to callback.Await for backward compat
 	// when no StepGroupID is available (legacy in-flight workflows).
+	groupTags := []string{"group_idx", strconv.Itoa(group.GroupIdx), "workflow_type", string(flw.Type)}
+
 	if group.ID != "" {
 		resp, err := workflowactivities.AwaitForwardGroupFinished(ctx, workflowactivities.ForwardGroupFinishedRequest{
 			StepGroupID: group.ID,
@@ -78,7 +83,13 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 				defer cancelCtxCancel()
 				client.AwaitCancelSignal(cancelCtx, enqueueResp.QueueSignalID)
 			}
+			if cfg.MW != nil {
+				cfg.MW.Timing(ctx, "workflow.step_group.latency", workflow.Now(ctx).Sub(groupStart), append(groupTags, "status", "error")...)
+			}
 			return "", errors.Wrapf(err, "group signal failed for group %d", group.GroupIdx)
+		}
+		if cfg.MW != nil {
+			cfg.MW.Timing(ctx, "workflow.step_group.latency", workflow.Now(ctx).Sub(groupStart), append(groupTags, "status", "success")...)
 		}
 		return resp.Directive, nil
 	}
@@ -91,7 +102,14 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 			defer cancelCtxCancel()
 			client.AwaitCancelSignal(cancelCtx, enqueueResp.QueueSignalID)
 		}
+		if cfg.MW != nil {
+			cfg.MW.Timing(ctx, "workflow.step_group.latency", workflow.Now(ctx).Sub(groupStart), append(groupTags, "status", "error")...)
+		}
 		return "", errors.Wrapf(err, "group signal failed for group %d", group.GroupIdx)
+	}
+
+	if cfg.MW != nil {
+		cfg.MW.Timing(ctx, "workflow.step_group.latency", workflow.Now(ctx).Sub(groupStart), append(groupTags, "status", "success")...)
 	}
 
 	return "", nil
