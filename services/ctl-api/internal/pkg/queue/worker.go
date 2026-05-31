@@ -63,7 +63,7 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 	}
 
 	for {
-		if q.stopped || q.restarted {
+		if q.stopped {
 			return nil
 		}
 
@@ -80,11 +80,11 @@ func (q *queue) dispatcher(ctx workflow.Context) error {
 		// Wait until not paused before dispatching.
 		if q.paused {
 			if err := workflow.Await(ctx, func() bool {
-				return !q.paused || q.stopped || q.restarted
+				return !q.paused || q.stopped
 			}); err != nil {
 				return err
 			}
-			if q.stopped || q.restarted {
+			if q.stopped {
 				return nil
 			}
 		}
