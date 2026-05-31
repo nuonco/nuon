@@ -42,7 +42,7 @@ func NewApprovalPauseErr(stepID string) *ApprovalPauseErr {
 	return &ApprovalPauseErr{StepID: stepID}
 }
 
-func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) error {
+func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventloop.EventLoopRequest, flowId string, startFromStepIdx int) (retErr error) {
 	// generate steps
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -53,6 +53,22 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 	if err != nil {
 		return errors.Wrap(err, "unable to get workflow object")
 	}
+
+	// Emit workflow lifecycle metrics.
+	wfTags := []string{"workflow_type", string(flw.Type), "org_id", flw.OrgID}
+	handleStart := workflow.Now(ctx)
+	defer func() {
+		if c.MW == nil {
+			return
+		}
+		status := "success"
+		if retErr != nil {
+			status = "error"
+		}
+		c.MW.Incr(ctx, "workflow.completed", append(wfTags, "status", status)...)
+		c.MW.Timing(ctx, "workflow.latency", workflow.Now(ctx).Sub(handleStart), append(wfTags, "status", status)...)
+	}()
+
 	if flw.Status.Status == app.StatusCancelled {
 		return errors.New("workflow already cancelled")
 	}
@@ -77,6 +93,11 @@ func (c *WorkflowConductor[SignalType]) Handle(ctx workflow.Context, req eventlo
 	if startFromStepIdx == 0 {
 		if err := activities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, flowId); err != nil {
 			return err
+		}
+
+		if c.MW != nil {
+			c.MW.Incr(ctx, "workflow.started", wfTags...)
+			c.MW.Timing(ctx, "workflow.start_latency", workflow.Now(ctx).Sub(flw.CreatedAt), wfTags...)
 		}
 	}
 

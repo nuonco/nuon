@@ -415,6 +415,14 @@ type Config struct {
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
 	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`
 
+	// Heartbeater configuration — batched ClickHouse writes for runner heartbeats.
+	HeartbeaterFlushInterval time.Duration `config:"heartbeater_flush_interval"`
+	HeartbeaterBatchSize     int           `config:"heartbeater_batch_size"`
+
+	// DisableEmitterSignals when true causes all emitter-originated signals to be
+	// skipped (not emitted and not processed).
+	DisableEmitterSignals bool `config:"disable_emitter_signals"`
+
 	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstep"
@@ -22,11 +23,13 @@ type StepConfig struct {
 	GenerateStepsQueueName string
 	OwnerID                string
 	OwnerType              string
+	MW                     tmetrics.Writer
 }
 
 // DispatchStepSignal enqueues the execute-workflow-step signal to the step queue.
 // The signal runs the full step lifecycle in its own handler workflow.
 func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.WorkflowStep, flw *app.Workflow) error {
+	stepStart := workflow.Now(ctx)
 	logger := workflow.GetLogger(ctx)
 
 	sig := &executeworkflowstep.Signal{
@@ -88,7 +91,16 @@ func DispatchStepSignal(ctx workflow.Context, cfg StepConfig, step *app.Workflow
 			defer cancelCtxCancel()
 			client.AwaitCancelSignal(cancelCtx, enqueueResp.QueueSignalID)
 		}
+		if cfg.MW != nil {
+			cfg.MW.Timing(ctx, "workflow.step.latency", workflow.Now(ctx).Sub(stepStart),
+				"step_name", step.Name, "workflow_type", string(flw.Type), "status", "error")
+		}
 		return errors.Wrapf(err, "execute-workflow-step signal failed for step %s", step.Name)
+	}
+
+	if cfg.MW != nil {
+		cfg.MW.Timing(ctx, "workflow.step.latency", workflow.Now(ctx).Sub(stepStart),
+			"step_name", step.Name, "workflow_type", string(flw.Type), "status", "success")
 	}
 
 	return nil
