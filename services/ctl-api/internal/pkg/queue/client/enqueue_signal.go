@@ -23,6 +23,7 @@ type EnqueueSignalRequest struct {
 	OwnerID   string
 	OwnerType string
 	ExpiresAt *time.Time
+	EmitterID *string
 
 	// Callback describes where the handler should send a Temporal signal on completion.
 	// Deprecated: use Callbacks for new code.
@@ -77,6 +78,7 @@ func (c *Client) EnqueueSignal(ctx context.Context, req *EnqueueSignalRequest) (
 		Type:      req.Signal.Type(),
 		OwnerID:   req.OwnerID,
 		OwnerType: req.OwnerType,
+		EmitterID: req.EmitterID,
 		Status:    status,
 		ExpiresAt: req.ExpiresAt,
 		Workflow: signaldb.WorkflowRef{
