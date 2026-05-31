@@ -15,14 +15,6 @@ func (w *queue) requeueSignals(ctx workflow.Context) error {
 		return err
 	}
 
-	// Reset any in-progress signals from a previous queue run back to queued.
-	// These are stale — their handler workflows ran in a prior execution context.
-	if err := activities.AwaitResetStaleInProgressSignals(ctx, &activities.ResetStaleInProgressSignalsRequest{
-		QueueID: w.queueID,
-	}); err != nil {
-		l.Warn("unable to reset stale in-progress signals", zap.Error(err))
-	}
-
 	// fetching jobs from the queue in the DB
 	l.Info("fetching previous signals from database and requeueing them")
 	queueSignals, err := activities.AwaitGetQueueSignalsByQueueID(ctx, w.queueID)
@@ -36,10 +28,14 @@ func (w *queue) requeueSignals(ctx workflow.Context) error {
 		}
 		l.Info("requeuing signal", zap.String("queue-signal-id", queueSignal.ID), zap.Any("type", queueSignal.Type))
 		w.inFlightSignals[queueSignal.ID] = true
-		w.ch.Send(ctx, QueueRef{
+		if !w.ch.SendAsync(QueueRef{
 			WorkflowID: queueSignal.Workflow.ID,
 			ID:         queueSignal.ID,
-		})
+		}) {
+			l.Warn("channel full during requeue, signal will be retried on next cycle",
+				zap.String("queue-signal-id", queueSignal.ID))
+			delete(w.inFlightSignals, queueSignal.ID)
+		}
 	}
 
 	return nil

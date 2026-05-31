@@ -8,7 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const defaultAwaitTimeout = 30 * time.Minute
+const defaultAwaitTimeout = 5 * time.Minute
 
 // Result is the payload sent by the handler on completion.
 type Result struct {

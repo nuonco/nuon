@@ -100,6 +100,7 @@ func init() {
 	config.RegisterDefault("temporal_disable_registration_aliasing", false)
 	config.RegisterDefault("temporal_sticky_workflow_cache_size", 40000)
 	config.RegisterDefault("temporal_sticky_schedule_to_start_timeout", "5s")
+	config.RegisterDefault("temporal_deadlock_detection_timeout", "2s")
 
 	config.RegisterDefault("action_crons_enabled", false)
 
@@ -113,6 +114,9 @@ func init() {
 
 	// queue continue-as-new hint period: how often the CAN listener checks for restart hints
 	config.RegisterDefault("queue_continue_as_new_hint_period", "1m")
+
+	// queue drain timeout: how long to wait for in-flight signals to complete before restarting/stopping
+	config.RegisterDefault("queue_drain_timeout", "5m")
 
 	// runner process uptime thresholds: how long before auto-shutdown
 	// defaults are short for local dev; prod overrides via config
@@ -218,6 +222,7 @@ type Config struct {
 	TemporalWorkflowFailurePanic          bool          `config:"temporal_workflow_failure_panic"`
 	TemporalDisableRegistrationAliasing   bool          `config:"temporal_disable_registration_aliasing"`
 	TemporalStickyScheduleToStartTimeout  time.Duration `config:"temporal_sticky_schedule_to_start_timeout"`
+	TemporalDeadlockDetectionTimeout      time.Duration `config:"temporal_deadlock_detection_timeout"`
 
 	// github configuration
 	GithubAppID            string `config:"github_app_id" validate:"required"`
@@ -380,6 +385,9 @@ type Config struct {
 
 	// Queue continue-as-new history max: trigger CAN when workflow history exceeds this length
 	QueueContinueAsNewHistoryMax int `config:"queue_continue_as_new_history_max"`
+
+	// Queue drain timeout: how long to wait for in-flight signals before restarting/stopping
+	QueueDrainTimeout time.Duration `config:"queue_drain_timeout"`
 
 	// Action crons
 	ActionCronsEnabled bool `config:"action_crons_enabled"`
