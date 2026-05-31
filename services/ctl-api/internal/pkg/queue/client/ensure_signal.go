@@ -14,9 +14,9 @@ import (
 )
 
 type EnsureSignalRequest struct {
-	OwnerID    string            `json:"owner_id" validate:"required"`
-	OwnerType  string            `json:"owner_type" validate:"required"`
-	SignalType signal.SignalType `json:"signal_type" validate:"required"`
+	OwnerID     string              `json:"owner_id" validate:"required"`
+	OwnerType   string              `json:"owner_type" validate:"required"`
+	SignalTypes []signal.SignalType `json:"signal_types" validate:"required,min=1"`
 
 	// Callback to register on the signal if it is still in flight.
 	Callback callback.Ref `json:"callback"`
@@ -36,18 +36,15 @@ type EnsureSignalResponse struct {
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
 func (c *Client) EnsureSignal(ctx context.Context, req *EnsureSignalRequest) (*EnsureSignalResponse, error) {
-	// Find the latest signal for this owner+type.
+	// Find the latest signal across all requested types for this owner.
 	var qs app.QueueSignal
 	res := c.db.WithContext(ctx).
-		Where(app.QueueSignal{
-			OwnerID:   req.OwnerID,
-			OwnerType: req.OwnerType,
-			Type:      req.SignalType,
-		}).
+		Where("owner_id = ? AND owner_type = ? AND type IN ?",
+			req.OwnerID, req.OwnerType, req.SignalTypes).
 		Order("created_at DESC").
 		First(&qs)
 	if res.Error != nil {
-		return nil, dbgenerics.TemporalGormError(res.Error, "no signal found for owner+type")
+		return nil, dbgenerics.TemporalGormError(res.Error, "no signal found for owner+types")
 	}
 
 	// Already succeeded — nothing to wait for.
