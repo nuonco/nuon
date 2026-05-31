@@ -18,5 +18,6 @@ func (c *WorkflowConductor[DomainSignal]) stepConfig() StepConfig {
 		TargetQueueName: c.StepTargetQueueName,
 		OwnerID:         c.StepOwnerID,
 		OwnerType:       c.StepOwnerType,
+		MW:              c.MW,
 	}
 }
