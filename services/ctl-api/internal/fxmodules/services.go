@@ -26,6 +26,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/docs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
 
 // sharedServices are services needed by public, runner, and internal APIs.
@@ -52,6 +53,7 @@ var sharedServices = fx.Options(
 	// fx.Provide(api.AsService(releasesservice.New)), // removed - releases being deprecated
 	fx.Provide(api.AsService(runbooksservice.New)),
 	fx.Provide(api.AsService(runnerauthservice.New)),
+	fx.Provide(heartbeater.New),
 	fx.Provide(runnersservice.NewRunnerHeartbeatCache),
 	fx.Provide(api.AsService(runnersservice.New)),
 	fx.Provide(api.AsService(slackservice.New)),
