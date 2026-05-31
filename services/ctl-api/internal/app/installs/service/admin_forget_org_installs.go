@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 )
 
 type AdminForgetOrgInstallsRequest struct{}

@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 

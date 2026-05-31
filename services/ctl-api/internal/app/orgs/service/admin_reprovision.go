@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
+	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 )
 
 type ReprovisionOrgRequest struct{}

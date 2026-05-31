@@ -24,7 +24,6 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 			validateFunc: func(tag string) {
 				// Verify at least 2 signals were sent (OperationRestart + OperationPromotion)
 				// Additional signals may be sent during initializeInstallStates
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.GreaterOrEqual(s.T(), len(capturedSignals), 2, "expected at least two signals to be sent")
 
 				// Verify first two signals are the expected types with tag
@@ -57,7 +56,6 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 			expectedStatus: http.StatusCreated, // Note: Handler doesn't validate tag, still succeeds
 			validateFunc: func(tag string) {
 				// Signals should still be sent, just with empty tag
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.GreaterOrEqual(s.T(), len(capturedSignals), 2, "expected at least two signals to be sent")
 			},
 		},
@@ -66,7 +64,6 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/promotion", tc.requestBody)

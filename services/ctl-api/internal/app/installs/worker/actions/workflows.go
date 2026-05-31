@@ -40,10 +40,7 @@ type Workflows struct {
 
 func (w *Workflows) All() []any {
 	return []any{
-		w.ExecuteActionWorkflow,
-		w.ExecuteActionWorkflowRun,
 		w.LifecycleActionWorkflows,
-		w.ActionEventLoop,
 	}
 }
 

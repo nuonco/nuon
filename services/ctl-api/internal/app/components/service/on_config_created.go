@@ -6,8 +6,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	configcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/configcreated"
-	updatecomponenttype "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/updatecomponenttype"
+	configcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/configcreated"
+	updatecomponenttype "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/updatecomponenttype"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

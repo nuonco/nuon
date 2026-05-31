@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/restart"
+	installrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 

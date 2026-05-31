@@ -37,14 +37,13 @@ type AdminGenerateStateTestService struct {
 
 type AdminGenerateStateTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminGenerateStateTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     AdminGenerateStateTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestAdminGenerateStateSuite(t *testing.T) {
@@ -59,11 +58,9 @@ func (s *AdminGenerateStateTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -77,7 +74,6 @@ func (s *AdminGenerateStateTestSuite) SetupSuite() {
 
 func (s *AdminGenerateStateTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -138,7 +134,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), installID, capturedSignals[0].ID)
 
@@ -156,7 +151,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				sigs := s.mockEvClient.GetSignals()
 				require.Len(s.T(), sigs, 1)
 				assert.Equal(s.T(), installID, sigs[0].ID)
 			},
@@ -169,7 +163,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installName string) {
-				sigs := s.mockEvClient.GetSignals()
 				require.Len(s.T(), sigs, 1)
 				assert.Equal(s.T(), s.testInstall.ID, sigs[0].ID)
 			},
@@ -187,7 +180,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			installID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-generate-state", tc.requestBody)
 
@@ -205,7 +197,6 @@ func (s *AdminGenerateStateTestSuite) TestAdminInstallGenerateInstallState() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

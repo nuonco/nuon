@@ -11,7 +11,7 @@ import (
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
+	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"

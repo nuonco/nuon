@@ -37,14 +37,13 @@ type AdminForgetAccountInstallsTestService struct {
 
 type AdminForgetAccountInstallsTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminForgetAccountInstallsTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     AdminForgetAccountInstallsTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestAdminForgetAccountInstallsSuite(t *testing.T) {
@@ -59,11 +58,9 @@ func (s *AdminForgetAccountInstallsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -77,7 +74,6 @@ func (s *AdminForgetAccountInstallsTestSuite) SetupSuite() {
 
 func (s *AdminForgetAccountInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -167,7 +163,6 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			expectedSignal: true,
 			validateFunc: func(req AdminForgetAccountInstallsRequest) {
 				// Verify signals were sent
-				sigs := s.mockEvClient.GetSignals()
 				assert.GreaterOrEqual(s.T(), len(sigs), 1, "expected at least one signal")
 
 				for _, sig := range sigs {
@@ -212,7 +207,6 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			req := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/installs/admin-forget-account-installs", req)
 
@@ -230,7 +224,6 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
 			} else {

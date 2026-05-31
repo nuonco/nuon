@@ -40,13 +40,7 @@ func (w *Workflows) All() []interface{} {
 
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
-	return []any{
-		w.ConfigCreated,
-		w.Created,
-		w.Delete,
-		w.PollDependencies,
-		w.Restart,
-	}
+	return []any{}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

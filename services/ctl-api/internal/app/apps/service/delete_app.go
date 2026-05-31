@@ -10,8 +10,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	appdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/deprovision"
-	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/delete"
+	appdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/deprovision"
+	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/delete"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

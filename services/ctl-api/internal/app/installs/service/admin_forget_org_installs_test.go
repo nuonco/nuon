@@ -38,14 +38,13 @@ type AdminForgetOrgInstallsTestService struct {
 
 type AdminForgetOrgInstallsTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminForgetOrgInstallsTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     AdminForgetOrgInstallsTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestAdminForgetOrgInstallsSuite(t *testing.T) {
@@ -60,11 +59,9 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -78,7 +75,6 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupSuite() {
 
 func (s *AdminForgetOrgInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -156,7 +152,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			expectedSignal: true,
 			validateFunc: func(orgID string) {
 				// Verify signals were sent
-				sigs := s.mockEvClient.GetSignals()
 				assert.GreaterOrEqual(s.T(), len(sigs), 3, "expected at least 3 signals for 3 installs")
 
 				for _, sig := range sigs {
@@ -208,7 +203,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			orgID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/orgs/"+orgID+"/admin-forget-installs", tc.requestBody)
 
@@ -226,7 +220,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
 			} else {

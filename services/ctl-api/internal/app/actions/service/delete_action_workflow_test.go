@@ -50,14 +50,13 @@ type DeleteAppActionTestService struct {
 type DeleteAppActionTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      DeleteAppActionTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service DeleteAppActionTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestDeleteAppActionSuite(t *testing.T) {
@@ -74,13 +73,10 @@ func (s *DeleteAppActionTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -101,7 +97,6 @@ func (s *DeleteAppActionTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -215,7 +210,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			actionIdentifier := tc.setupFunc()
 			rr := s.makeRequest(http.MethodDelete, "/v1/apps/"+s.testApp.ID+"/actions/"+actionIdentifier, nil)
 
@@ -234,7 +228,6 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 			}
 
 			// Verify signal was sent
-			signalsList := s.mockEvClient.GetSignals()
 			require.Len(s.T(), signalsList, 1)
 			sig, ok := signalsList[0].Signal.(*signals.Signal)
 			require.True(s.T(), ok)

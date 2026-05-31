@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/forceshutdown"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forceshutdown"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 

@@ -134,7 +134,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigValidationErr
 
 func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
-		s.mockEvClient.Reset()
 
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeKubernetesManifest)
 
@@ -145,7 +144,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppK8sManifestConfigSignals() {
 		})
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-		capturedSignals := s.mockEvClient.GetSignals()
 		require.Len(s.T(), capturedSignals, 2, "expected 2 signals")
 
 		sig0, ok := capturedSignals[0].Signal.(*signals.Signal)

@@ -77,14 +77,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.POST("/admin-delete-account", s.AdminDeleteAccount)
 		general.POST("/promotion", s.AdminPromotion)
 		general.POST("/slack-auto-link", s.AdminSlackAutoLink)
-		general.POST("/terminate-event-loops", s.AdminTerminateEventLoops)
 		general.GET("/waitlist", s.AdminGetWaitlist)
 
 		// event loop management
 		general.POST("/restart-event-loop", s.RestartGeneralEventLoop)
-
-		// seed and utilities
-		general.POST("/seed", s.Seed)
 
 		// temporal codec
 		general.POST("/temporal-codec/decode", s.TemporalCodecDecode)

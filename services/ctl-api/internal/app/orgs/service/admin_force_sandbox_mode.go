@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/pkg/services/config"
-	orgforcesandboxmode "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_sandbox_mode"
-	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
+	orgforcesandboxmode "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/force_sandbox_mode"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 

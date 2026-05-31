@@ -19,7 +19,7 @@ const (
 	signalTypeWorkflowStepApprovalRequest  signal.SignalType = "workflow-step-approval-request"
 	signalTypeWorkflowStepApprovalResponse signal.SignalType = "workflow-step-approval-response"
 	signalTypeDriftDetected                signal.SignalType = "drift-detected"
-	// signalTypeOnInactive mirrors the runners/signals/v2/oninactive
+	// signalTypeOnInactive mirrors the runners/signals/oninactive
 	// SignalType. The signal fires once per runner-process when its heartbeat
 	// has been quiet long enough (5 min) for processhealthcheck to give up on
 	// it; the classifier maps it onto (runners, inactive) so subscribers can

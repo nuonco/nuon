@@ -64,7 +64,6 @@ type ComponentsServiceTestSuite struct {
 	testAcc           *app.Account
 	testApp           *app.App
 	testAppConfig     *app.AppConfig
-	mockEvClient      *tests.MockEventLoopClient
 	mockTC            *temporal.MockClient
 }
 
@@ -82,7 +81,6 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create mock clients for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	ctrl := gomock.NewController(s.T())
 	s.mockTC = temporal.NewMockClient(ctrl)
 
@@ -95,7 +93,6 @@ func (s *ComponentsServiceTestSuite) SetupSuite() {
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
 			Mocks: &tests.TestMocks{
-				MockEv: s.mockEvClient,
 				MockTC: s.mockTC,
 			},
 			CustomValidator: true,
@@ -116,7 +113,6 @@ func (s *ComponentsServiceTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	s.setupTestData()
 

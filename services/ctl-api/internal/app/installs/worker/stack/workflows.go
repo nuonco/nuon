@@ -44,9 +44,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	return []any{
 		w.GenerateInstallStackVersion,
-		w.InstallStackVersionRun,
-		w.UpdateInstallStackOutputs,
-		w.StackEventLoop,
 	}
 }
 

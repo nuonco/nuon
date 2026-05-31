@@ -27,7 +27,6 @@ func (s *GeneralInternalTestSuite) TestRestartGeneralEventLoop() {
 				assert.Equal(s.T(), string(signals.OperationRestart), resp["type"], "type should be restart")
 
 				// Verify signal was sent
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1, "expected exactly one signal to be sent")
 
 				signal := capturedSignals[0]
@@ -44,7 +43,6 @@ func (s *GeneralInternalTestSuite) TestRestartGeneralEventLoop() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/restart-event-loop", map[string]interface{}{})

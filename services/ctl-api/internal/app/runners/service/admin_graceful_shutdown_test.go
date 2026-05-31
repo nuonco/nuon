@@ -37,12 +37,11 @@ type AdminGracefulShutdownTestService struct {
 
 type AdminGracefulShutdownTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminGracefulShutdownTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service AdminGracefulShutdownTestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAdminGracefulShutdownSuite(t *testing.T) {
@@ -57,12 +56,9 @@ func (s *AdminGracefulShutdownTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -77,7 +73,6 @@ func (s *AdminGracefulShutdownTestSuite) SetupSuite() {
 
 func (s *AdminGracefulShutdownTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -132,7 +127,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 
@@ -148,7 +142,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].ID)
 			},
@@ -161,7 +154,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Handler sends signal directly without validation
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].ID)
 			},
@@ -174,7 +166,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Even with empty ID, signal is sent
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), "", signals[0].ID)
 			},
@@ -183,7 +174,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			rr := s.makeRequest("POST", "/v1/runners/"+tc.runnerID+"/graceful-shutdown", tc.requestBody)
 
 			if rr.Code != tc.expectedCode {
@@ -196,7 +186,6 @@ func (s *AdminGracefulShutdownTestSuite) TestAdminGracefulShutDown() {
 			}
 
 			// Verify signal presence
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

@@ -44,22 +44,7 @@ func (w *Workflows) All() []any {
 
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
-	return []any{
-		w.Created,
-		w.Provision,
-		w.Reprovision,
-		w.Deprovision,
-		w.ForceDeprovision,
-		w.Restart,
-		w.RestartRunners,
-		w.InviteUser,
-		w.InviteAccepted,
-		w.ForceDelete,
-		w.Delete,
-		w.ForceSandboxMode,
-		w.EnableFeatureFlags,
-		w.StageSeed,
-	}
+	return []any{}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

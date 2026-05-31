@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/delete"
+	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/delete"
 )
 
 type AdminDeleteCanaryOrgsRequest struct {

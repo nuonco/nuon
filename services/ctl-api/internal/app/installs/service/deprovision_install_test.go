@@ -20,7 +20,6 @@ func (s *InstallsServiceTestSuite) TestDeprovisionInstallSuccess() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
 	require.Len(s.T(), captured, 1)
 	sig, ok := captured[0].Signal.(*signals.Signal)
 	require.True(s.T(), ok)

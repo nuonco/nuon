@@ -11,8 +11,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
-	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
+	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"

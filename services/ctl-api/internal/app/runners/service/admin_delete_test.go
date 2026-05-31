@@ -46,7 +46,6 @@ type AdminDeleteTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminDeleteSuite(t *testing.T) {
@@ -62,13 +61,10 @@ func (s *AdminDeleteTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -83,7 +79,6 @@ func (s *AdminDeleteTestSuite) SetupSuite() {
 
 func (s *AdminDeleteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset() // CRITICAL: reset before each test
 	s.setupTestData()
 
 	// Create router with internal routes (no org context for admin routes)
@@ -232,7 +227,6 @@ func (s *AdminDeleteTestSuite) TestAdminDeleteRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/delete", AdminDeleteRunnerRequest{})
 
@@ -242,7 +236,6 @@ func (s *AdminDeleteTestSuite) TestAdminDeleteRunner() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			// Verify signal was sent (or not sent)
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.shouldSendSignal {
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)

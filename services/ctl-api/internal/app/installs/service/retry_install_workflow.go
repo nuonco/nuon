@@ -66,7 +66,7 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 		return
 	}
 
-	install_id := ctx.Param("install_id")
+	_ = ctx.Param("install_id")
 
 	var req RetryWorkflowRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {

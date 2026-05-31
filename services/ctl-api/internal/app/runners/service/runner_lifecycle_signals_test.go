@@ -24,7 +24,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -48,7 +47,6 @@ type RunnerLifecycleSignalsTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestRunnerLifecycleSignalsSuite(t *testing.T) {
@@ -64,13 +62,10 @@ func (s *RunnerLifecycleSignalsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -85,7 +80,6 @@ func (s *RunnerLifecycleSignalsTestSuite) SetupSuite() {
 
 func (s *RunnerLifecycleSignalsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Create router with public routes (lifecycle signal endpoints are public)
@@ -156,7 +150,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 	testCases := []struct {
 		name           string
 		path           string
-		expectedSignal eventloop.SignalType
+		expectedSignal string
 	}{
 		{
 			name:           "graceful shutdown",
@@ -187,7 +181,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 
 			// Send empty JSON body
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
@@ -204,7 +197,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 			assert.True(s.T(), response)
 
 			// Verify signal was sent with correct type and runner ID
-			sigs := s.mockEvClient.GetSignals()
 			require.Len(s.T(), sigs, 1)
 			assert.Equal(s.T(), s.testRunner.ID, sigs[0].ID)
 
@@ -244,7 +236,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
 
@@ -253,7 +244,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent
-			sigs := s.mockEvClient.GetSignals()
 			assert.Len(s.T(), sigs, 0, "should not send signal when runner not found")
 		})
 	}
@@ -334,7 +324,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 
 			// Try to access runner from different org (router has s.testOrg context)
 			rr := s.makeRequest("POST", tc.path, map[string]interface{}{})
@@ -344,7 +333,6 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent
-			sigs := s.mockEvClient.GetSignals()
 			assert.Len(s.T(), sigs, 0, "should not send signal for cross-org access")
 		})
 	}
@@ -352,12 +340,10 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 
 func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CorrectRunnerID() {
 	// Verify signals are sent to runner ID, not org ID or runner group ID
-	s.mockEvClient.Reset()
 
 	rr := s.makeRequest("POST", "/v1/runners/"+s.testRunner.ID+"/graceful-shutdown", map[string]interface{}{})
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	sigs := s.mockEvClient.GetSignals()
 	require.Len(s.T(), sigs, 1)
 
 	// Signal ID should be runner ID

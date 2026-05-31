@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	appreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/reprovision"
+	appreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/reprovision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

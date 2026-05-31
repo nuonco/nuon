@@ -20,7 +20,6 @@ func (s *InstallsServiceTestSuite) TestDeleteInstallSuccess() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
 	require.GreaterOrEqual(s.T(), len(captured), 2)
 
 	var signalTypes []string

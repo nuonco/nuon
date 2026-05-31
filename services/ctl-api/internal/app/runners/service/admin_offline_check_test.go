@@ -37,12 +37,11 @@ type AdminOfflineCheckTestService struct {
 
 type AdminOfflineCheckTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminOfflineCheckTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service AdminOfflineCheckTestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAdminOfflineCheckSuite(t *testing.T) {
@@ -57,12 +56,9 @@ func (s *AdminOfflineCheckTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -77,7 +73,6 @@ func (s *AdminOfflineCheckTestSuite) SetupSuite() {
 
 func (s *AdminOfflineCheckTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -132,7 +127,6 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 
@@ -148,7 +142,6 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 			},
@@ -161,7 +154,6 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Handler sends signal directly without validation
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 			},
@@ -174,7 +166,6 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Even with empty ID, signal is sent
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), "", capturedSignals[0].ID)
 			},
@@ -183,7 +174,6 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			rr := s.makeRequest("POST", "/v1/runners/"+tc.runnerID+"/offline-check", tc.requestBody)
 
 			if rr.Code != tc.expectedCode {
@@ -196,7 +186,6 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			}
 
 			// Verify signal presence
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

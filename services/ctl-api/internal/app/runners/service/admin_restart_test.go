@@ -47,7 +47,6 @@ type AdminRestartTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminRestartSuite(t *testing.T) {
@@ -62,12 +61,9 @@ func (s *AdminRestartTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -82,7 +78,6 @@ func (s *AdminRestartTestSuite) SetupSuite() {
 
 func (s *AdminRestartTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -165,7 +160,6 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 
@@ -183,7 +177,6 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].ID)
 			},
@@ -254,7 +247,6 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/restart", tc.requestBody)
 
@@ -272,7 +264,6 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

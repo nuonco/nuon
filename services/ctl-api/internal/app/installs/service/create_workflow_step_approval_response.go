@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalresponse"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalresponse"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"

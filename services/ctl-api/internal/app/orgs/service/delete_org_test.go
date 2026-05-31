@@ -46,13 +46,12 @@ type DeleteOrgTestService struct {
 type DeleteOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      DeleteOrgTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     DeleteOrgTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestDeleteOrgSuite(t *testing.T) {
@@ -69,13 +68,10 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -96,7 +92,6 @@ func (s *DeleteOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -210,7 +205,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			require.NoError(s.T(), err)
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodDelete, "/v1/orgs/current")
@@ -221,7 +215,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/delete"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/delete"
 )
 
 type AdminDeleteRunnerRequest struct{}

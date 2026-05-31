@@ -49,13 +49,12 @@ type AdminDeleteOrgTestService struct {
 type AdminDeleteOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      AdminDeleteOrgTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     AdminDeleteOrgTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestAdminDeleteOrgSuite(t *testing.T) {
@@ -72,13 +71,10 @@ func (s *AdminDeleteOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -99,7 +95,6 @@ func (s *AdminDeleteOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -360,7 +355,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 			org := tc.setupFunc()
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", org.ID), tc.requestBody)
@@ -377,7 +371,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 			assert.True(s.T(), response, "response should be true")
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
@@ -436,7 +429,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", tc.orgID), tc.requestBody)
@@ -447,7 +439,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// Verify no signal was sent
-			signals := s.mockEvClient.GetSignals()
 			assert.Len(s.T(), signals, 0, "no signal should be sent when org not found")
 		})
 	}
@@ -498,7 +489,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgRequestParsing() {
 			})
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request with raw body
 			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-delete", org.ID), bytes.NewBufferString(tc.requestBody))
@@ -562,7 +552,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 			})
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request using name instead of ID
 			requestBody := AdminDeleteOrgRequest{Force: false}
@@ -575,7 +564,6 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 
 			if tc.validateSignal {
 				// Verify signal was sent
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]

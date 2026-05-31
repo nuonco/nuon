@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/delete"
+	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/delete"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )

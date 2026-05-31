@@ -173,7 +173,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigValidationErrors() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
-		s.mockEvClient.Reset()
 
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeHelmChart)
 
@@ -193,7 +192,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppHelmConfigSignals() {
 		})
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-		capturedSignals := s.mockEvClient.GetSignals()
 		require.Len(s.T(), capturedSignals, 2, "expected 2 signals")
 
 		sig0, ok := capturedSignals[0].Signal.(*signals.Signal)

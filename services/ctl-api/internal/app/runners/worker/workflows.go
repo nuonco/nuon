@@ -30,26 +30,7 @@ func (w *Workflows) All() []any {
 	wkflow := runner.NewWorkflow(*w.cfg)
 
 	return []any{
-		w.Created,
-		w.Delete,
-		w.Deprovision,
-		w.FlushOrphanedJobs,
-		w.ForceShutdown,
-		w.GracefulShutdown,
 		w.CronShutdownVM,
-		w.InstallStackVersionRun,
-		w.MngRestart,
-		w.MngShutdown,
-		w.MngUpdate,
-		w.MngVMShutdown,
-		w.OfflineCheck,
-		w.ProcessJob,
-		w.Provision,
-		w.ProvisionServiceAccount,
-		w.Reprovision,
-		w.ReprovisionServiceAccount,
-		w.Restart,
-		w.UpdateVersion,
 		wkflow.ProvisionRunner,
 		wkflow.DeprovisionRunner,
 	}

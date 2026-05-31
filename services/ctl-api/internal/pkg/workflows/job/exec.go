@@ -13,7 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 
-	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processjob"
+	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"

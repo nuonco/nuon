@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	componentrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/restart"
+	componentrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )

@@ -55,23 +55,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	wkflow := installdelegationdns.NewWorkflow(*w.cfg)
 	wkflows := []any{
-		w.AwaitRunnerHealthy,
-		w.Created,
-		w.DeprovisionDNS,
-		w.DeprovisionRunner,
-		w.ExecuteFlow,
-		w.ProvisionDNS,
-		w.SyncSecrets,
-		w.WorkflowApproval,
-		w.Forget,
-		w.PollDependencies,
-		w.ProvisionRunner,
-		w.ReprovisionRunner,
-		w.WorkflowApproveAll,
-		w.RerunFlow,
-		w.Restarted,
-		w.Updated,
-		w.ActionWorkflowTriggers,
 		plan.CreateActionWorkflowRunPlan,
 		plan.CreateSandboxRunPlan,
 		plan.CreateDeployPlan,

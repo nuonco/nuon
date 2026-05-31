@@ -30,7 +30,6 @@ func (s *InstallsServiceTestSuite) TestUpdateInstallName() {
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &resp))
 	assert.Equal(s.T(), "updated-name", resp.Name)
 
-	captured := s.mockEvClient.GetSignals()
 	require.Len(s.T(), captured, 1)
 	sig, ok := captured[0].Signal.(*signals.Signal)
 	require.True(s.T(), ok)

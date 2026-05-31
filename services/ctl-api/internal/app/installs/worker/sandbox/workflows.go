@@ -39,16 +39,7 @@ type Workflows struct {
 }
 
 func (w *Workflows) All() []any {
-	return []any{
-		w.DeprovisionSandboxApplyPlan,
-		w.DeprovisionSandboxPlan,
-		w.ProvisionSandboxApplyPlan,
-		w.ProvisionSandboxPlan,
-		w.ReprovisionSandboxApplyPlan,
-		w.ReprovisionSandboxPlan,
-		w.SandboxEventLoop,
-		w.DriftCheckSandbox,
-	}
+	return []any{}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {

@@ -24,7 +24,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/testworker/seed"
@@ -110,7 +109,6 @@ func (e *FlowTestSuite) SetupSuite() {
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
 		fx.Provide(notifications.New),
-		fx.Provide(eventloop.New),
 		fx.Provide(authz.New),
 		fx.Provide(features.New),
 		fx.Provide(account.New),

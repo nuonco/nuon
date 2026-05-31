@@ -266,7 +266,6 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentNonexistentDependency() 
 
 func (s *ComponentsServiceTestSuite) TestCreateComponentSendsSignals() {
 	// Reset mock
-	s.mockEvClient.Reset()
 
 	reqBody := CreateComponentRequest{
 		Name: "signal_test_component",
@@ -285,7 +284,6 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentSendsSignals() {
 	require.NoError(s.T(), err)
 
 	// Verify 3 signals were sent
-	capturedSignals := s.mockEvClient.GetSignals()
 	require.Len(s.T(), capturedSignals, 3, "expected 3 signals")
 
 	// All signals should target the created component

@@ -47,7 +47,6 @@ type AdminForceDeleteTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminForceDeleteSuite(t *testing.T) {
@@ -62,12 +61,9 @@ func (s *AdminForceDeleteTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -82,7 +78,6 @@ func (s *AdminForceDeleteTestSuite) SetupSuite() {
 
 func (s *AdminForceDeleteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -163,7 +158,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 
@@ -198,7 +192,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].ID)
 			},
@@ -255,7 +248,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Admin routes have no org scoping - can delete any runner
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1)
 				assert.Equal(s.T(), runnerID, signals[0].ID)
 			},
@@ -273,7 +265,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/force-delete", AdminForceDeleteRunnerRequest{})
 
@@ -291,7 +282,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

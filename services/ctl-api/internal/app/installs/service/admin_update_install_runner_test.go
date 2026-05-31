@@ -46,7 +46,6 @@ type AdminUpdateInstallRunnerTestSuite struct {
 	testInstall           *app.Install
 	testRunnerGrp         *app.RunnerGroup
 	testRunnerGrpSettings *app.RunnerGroupSettings
-	mockEvClient          *tests.MockEventLoopClient
 }
 
 func TestAdminUpdateInstallRunnerSuite(t *testing.T) {
@@ -61,11 +60,9 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -79,7 +76,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) SetupSuite() {
 
 func (s *AdminUpdateInstallRunnerTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -170,7 +166,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 				assert.Equal(s.T(), "v2.0.0", settings.ContainerImageTag)
 
 				// Verify signal was sent
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), installID, capturedSignals[0].ID)
 
@@ -221,7 +216,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			installID := tc.setupFunc()
 			rr := s.makeRequest("PATCH", "/v1/installs/"+installID+"/admin-update-runner", tc.requestBody)
 
@@ -239,7 +233,6 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

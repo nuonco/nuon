@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/created"
-	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/polldependencies"
-	provision "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/provision"
+	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
+	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/polldependencies"
+	provision "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/provision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

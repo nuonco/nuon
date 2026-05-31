@@ -46,7 +46,6 @@ type AdminReprovisionTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminReprovisionSuite(t *testing.T) {
@@ -62,13 +61,10 @@ func (s *AdminReprovisionTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -83,7 +79,6 @@ func (s *AdminReprovisionTestSuite) SetupSuite() {
 
 func (s *AdminReprovisionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset() // CRITICAL: reset before each test
 	s.setupTestData()
 
 	// Create router with internal routes (no org context for admin routes)
@@ -205,7 +200,6 @@ func (s *AdminReprovisionTestSuite) TestAdminReprovisionRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/reprovision", AdminReprovisionRunnerRequest{})
 
@@ -215,7 +209,6 @@ func (s *AdminReprovisionTestSuite) TestAdminReprovisionRunner() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			// Verify signal was sent (or not sent)
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.shouldSendSignal {
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)

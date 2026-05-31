@@ -49,13 +49,12 @@ type RestartOrgTestService struct {
 type RestartOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      RestartOrgTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     RestartOrgTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestRestartOrgSuite(t *testing.T) {
@@ -72,13 +71,10 @@ func (s *RestartOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -99,7 +95,6 @@ func (s *RestartOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -239,7 +234,6 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 			org := tc.setupFunc()
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), tc.requestBody)
@@ -262,7 +256,6 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 
 			// Validate signal was sent
 			if tc.validateSignal {
-				signals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
@@ -330,7 +323,6 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 			orgID := tc.setupFunc()
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request with invalid JSON if needed
 			var rr *httptest.ResponseRecorder
@@ -350,7 +342,6 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// Validate no signal was sent for error cases
-			signals := s.mockEvClient.GetSignals()
 			if tc.shouldSendSignal {
 				assert.Greater(s.T(), len(signals), 0, "expected signal to be sent")
 			} else {
@@ -381,7 +372,6 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 		})
 
 		// Reset mock before test
-		s.mockEvClient.Reset()
 
 		// Make request
 		rr := s.makeRequest(http.MethodPost, fmt.Sprintf("/v1/orgs/%s/admin-restart", org.ID), RestartOrgRequest{})
@@ -389,7 +379,6 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
 		// Validate signal details
-		signals := s.mockEvClient.GetSignals()
 		require.Len(s.T(), signals, 1, "expected exactly one signal")
 
 		signal := signals[0]

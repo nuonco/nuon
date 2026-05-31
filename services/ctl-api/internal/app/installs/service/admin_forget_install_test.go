@@ -38,14 +38,13 @@ type AdminForgetInstallTestService struct {
 
 type AdminForgetInstallTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminForgetInstallTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     AdminForgetInstallTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestAdminForgetInstallSuite(t *testing.T) {
@@ -60,11 +59,9 @@ func (s *AdminForgetInstallTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -78,7 +75,6 @@ func (s *AdminForgetInstallTestSuite) SetupSuite() {
 
 func (s *AdminForgetInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -151,7 +147,6 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 				assert.Equal(s.T(), gorm.ErrRecordNotFound, err)
 
 				// Verify signal was sent
-				sigs := s.mockEvClient.GetSignals()
 				require.Len(s.T(), sigs, 1)
 				assert.Equal(s.T(), installID, sigs[0].ID)
 
@@ -192,7 +187,6 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			installID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-forget", tc.requestBody)
 
@@ -210,7 +204,6 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

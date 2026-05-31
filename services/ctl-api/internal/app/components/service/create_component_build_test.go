@@ -139,7 +139,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildNotFound() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSignals() {
 	s.Run("sends OperationBuild signal", func() {
-		s.mockEvClient.Reset()
 
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
 
@@ -153,7 +152,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSignals() {
 		err := json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(s.T(), err)
 
-		capturedSignals := s.mockEvClient.GetSignals()
 		require.Len(s.T(), capturedSignals, 1, "expected 1 signal")
 
 		assert.Equal(s.T(), cmp.ID, capturedSignals[0].ID, "signal should target the component")

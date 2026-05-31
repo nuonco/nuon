@@ -23,7 +23,6 @@ func (s *InstallsServiceTestSuite) TestTeardownInstallComponentsSuccess() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
 	var found bool
 	for _, c := range captured {
 		if sig, ok := c.Signal.(*signals.Signal); ok && sig.Type == signals.OperationExecuteFlow {

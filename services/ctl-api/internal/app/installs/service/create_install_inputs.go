@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
+	installupdated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )

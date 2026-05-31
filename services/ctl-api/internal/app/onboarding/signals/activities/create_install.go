@@ -6,9 +6,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
-	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/created"
-	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/polldependencies"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
+	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/created"
+	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"

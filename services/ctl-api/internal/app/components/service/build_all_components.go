@@ -10,7 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"

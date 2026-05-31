@@ -45,7 +45,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSuccess() {
 
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 	s.Run("sends OperationBuild signal for each component", func() {
-		s.mockEvClient.Reset()
 
 		path := fmt.Sprintf("/v1/apps/%s/components/build-all", s.testApp.ID)
 		rr := s.makeRequest(http.MethodPost, path, nil)
@@ -55,7 +54,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 		err := json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(s.T(), err)
 
-		capturedSignals := s.mockEvClient.GetSignals()
 		require.Len(s.T(), capturedSignals, 6, "expected 6 signals")
 
 		// Each signal should be OperationBuild with a unique BuildID

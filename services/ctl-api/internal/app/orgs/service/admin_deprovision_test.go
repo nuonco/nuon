@@ -28,7 +28,6 @@ import (
 	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -52,12 +51,11 @@ type AdminDeprovisionOrgTestService struct {
 type AdminDeprovisionOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      AdminDeprovisionOrgTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service AdminDeprovisionOrgTestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAdminDeprovisionOrgSuite(t *testing.T) {
@@ -74,13 +72,10 @@ func (s *AdminDeprovisionOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -101,7 +96,6 @@ func (s *AdminDeprovisionOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	// AdminDeprovisionOrg is an admin endpoint, no org context needed
@@ -154,7 +148,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 		requestBody    interface{}
 		expectedCode   int
 		validateSignal bool
-		expectedType   eventloop.SignalType
+		expectedType   string
 	}{
 		{
 			name: "successfully sends deprovision signal with force=false",
@@ -325,7 +319,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			org := tc.setupFunc()
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
@@ -337,7 +330,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrg() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
@@ -370,7 +362,7 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 	testCases := []struct {
 		name         string
 		force        bool
-		expectedType eventloop.SignalType
+		expectedType string
 	}{
 		{
 			name:         "force=false sends OperationDeprovision",
@@ -406,7 +398,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			})
 
 			// Reset mock
-			s.mockEvClient.Reset()
 
 			// Make request
 			path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)
@@ -416,7 +407,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgSignalTypes() {
 			require.Equal(s.T(), http.StatusOK, rr.Code)
 
 			// Validate signal type
-			signals := s.mockEvClient.GetSignals()
 			require.Len(s.T(), signals, 1)
 
 			orgSignal, ok := signals[0].Signal.(*sigs.Signal)
@@ -451,7 +441,6 @@ func (s *AdminDeprovisionOrgTestSuite) TestAdminDeprovisionOrgDoesNotModifyDatab
 	originalUpdatedAt := org.UpdatedAt
 
 	// Reset mock
-	s.mockEvClient.Reset()
 
 	// Make deprovision request
 	path := fmt.Sprintf("/v1/orgs/%s/admin-deprovision", org.ID)

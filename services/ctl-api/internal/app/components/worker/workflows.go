@@ -21,13 +21,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	return []any{
 		w.Build,
-		w.Created,
-		w.Delete,
-		w.PollDependencies,
-		w.Provision,
-		w.QueueBuild,
-		w.Restarted,
-		w.UpdateComponentType,
 		plan.CreateComponentBuildPlan,
 	}
 }

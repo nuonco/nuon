@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
-	generatestatev2 "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	generatestatev2 "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/generatestate"
 )
 
 // @ID						AdminInstallGenerateInstallState

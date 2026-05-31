@@ -48,7 +48,6 @@ type AdminUpdateSettingsTestSuite struct {
 	testRunner        *app.Runner
 	testRunnerGrp     *app.RunnerGroup
 	testRunnerGrpSett *app.RunnerGroupSettings
-	mockEvClient      *tests.MockEventLoopClient
 }
 
 func TestAdminUpdateSettingsSuite(t *testing.T) {
@@ -63,12 +62,9 @@ func (s *AdminUpdateSettingsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -83,7 +79,6 @@ func (s *AdminUpdateSettingsTestSuite) SetupSuite() {
 
 func (s *AdminUpdateSettingsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -208,7 +203,6 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 				assert.Equal(s.T(), "v2.0.0", settings.ContainerImageTag)
 
 				// Verify restart signal sent
-				capturedSignals := s.mockEvClient.GetSignals()
 				require.Len(s.T(), capturedSignals, 1)
 				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
 
@@ -339,7 +333,6 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("PATCH", "/v1/runners/"+runnerID+"/settings", tc.requestBody)
 
@@ -357,7 +350,6 @@ func (s *AdminUpdateSettingsTestSuite) TestAdminUpdateRunnerSettings() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.expectedSignal {
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {

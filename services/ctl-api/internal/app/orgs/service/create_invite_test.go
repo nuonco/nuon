@@ -49,13 +49,12 @@ type CreateOrgInviteTestService struct {
 type CreateOrgInviteTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      CreateOrgInviteTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     CreateOrgInviteTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestCreateOrgInviteSuite(t *testing.T) {
@@ -72,13 +71,10 @@ func (s *CreateOrgInviteTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -99,7 +95,6 @@ func (s *CreateOrgInviteTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -338,7 +333,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Setup test data
 			reqBody := tc.setupFunc()
@@ -367,7 +361,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 			}
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 

@@ -24,7 +24,6 @@ type Workflows struct {
 func (w Workflows) All() []any {
 	wkflows := []any{
 		w.Metrics,
-		w.Seed,
 	}
 	return wkflows
 }
@@ -32,7 +31,7 @@ func (w Workflows) All() []any {
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
 	return []any{
-		w.Seed,
+		w.Metrics,
 	}
 }
 

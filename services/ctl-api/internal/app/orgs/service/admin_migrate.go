@@ -13,8 +13,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
-	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
+	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -93,7 +93,7 @@ func (s *service) adminMigrateOrg(ctx context.Context, org *app.Org) error {
 	}
 
 	// create org runner group
-	rg, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, org)
+	_, err := s.runnersHelpers.CreateOrgRunnerGroup(ctx, org)
 	if err != nil {
 		return errors.Wrap(err, "unable to create org runner group")
 	}

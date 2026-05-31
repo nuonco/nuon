@@ -19,7 +19,6 @@ import (
 func (s *ComponentsServiceTestSuite) TestDeleteAppComponentSuccess() {
 	s.Run("deletes component and sends signal", func() {
 		// Reset mock
-		s.mockEvClient.Reset()
 
 		// Create a component that is NOT in the current app config's ComponentIDs.
 		// The delete endpoint rejects components that are part of the active config,
@@ -48,7 +47,6 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentSuccess() {
 		assert.Equal(s.T(), "delete has been queued and waiting", dbComp.StatusDescription)
 
 		// Verify OperationDelete signal was sent
-		capturedSignals := s.mockEvClient.GetSignals()
 		require.Len(s.T(), capturedSignals, 1, "expected 1 signal")
 
 		assert.Equal(s.T(), comp.ID, capturedSignals[0].ID, "signal should target the deleted component")
@@ -79,7 +77,6 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentRejectsActiveConfigCo
 func (s *ComponentsServiceTestSuite) TestDeleteAppComponentNotFound() {
 	s.Run("nonexistent component id", func() {
 		// Reset mock
-		s.mockEvClient.Reset()
 
 		path := fmt.Sprintf("/v1/apps/%s/components/%s", s.testApp.ID, "cmp_nonexistent00000000000")
 		rr := s.makeRequest(http.MethodDelete, path, nil)
@@ -90,7 +87,6 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentNotFound() {
 		require.Equal(s.T(), http.StatusNotFound, rr.Code)
 
 		// Verify no signal was sent
-		capturedSignals := s.mockEvClient.GetSignals()
 		assert.Len(s.T(), capturedSignals, 0, "should not send signal when component not found")
 	})
 }
