@@ -36,8 +36,9 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 			zap.Time("scheduled-at", *emitter.ScheduledAt),
 		)
 
-		// Wait until the scheduled time, periodically checking that the
-		// emitter and queue still exist so we don't linger after deletion.
+		// Wait until the scheduled time. Liveness checks (emitter/queue
+		// existence) are handled by the workflowmanager.Manager started
+		// in run(), which sets e.stopped/e.restarted.
 		timerFuture := workflow.NewTimer(ctx, waitDuration)
 		var timerFired bool
 
@@ -55,27 +56,9 @@ func (e *emitterWorkflow) runScheduledMode(ctx workflow.Context, l *zap.Logger, 
 				l.Info("emitter stopped while waiting")
 				return true, nil
 			}
-
-			if !timerFired {
-				if _, err := e.ensureEmitterActive(ctx); err != nil {
-					return false, err
-				}
-				if e.stopped {
-					l.Info("emitter deleted while waiting")
-					return true, nil
-				}
-
-				if err := e.ensureQueueActive(ctx); err != nil {
-					return false, err
-				}
-				if e.stopped {
-					l.Info("queue terminated while waiting")
-					return true, nil
-				}
-				if e.restarted {
-					l.Info("queue restarted while waiting")
-					return false, nil
-				}
+			if e.restarted {
+				l.Info("emitter restarting while waiting")
+				return false, nil
 			}
 		}
 	}

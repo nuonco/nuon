@@ -65,6 +65,7 @@ func New(params WorkerParams) (*Worker, error) {
 		StickyScheduleToStartTimeout:           params.Cfg.TemporalStickyScheduleToStartTimeout,
 		Interceptors:                           params.Interceptors,
 		WorkflowPanicPolicy:                    panicPolicy,
+		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 		DisableRegistrationAliasing:            params.Cfg.TemporalDisableRegistrationAliasing,
 	})
 
