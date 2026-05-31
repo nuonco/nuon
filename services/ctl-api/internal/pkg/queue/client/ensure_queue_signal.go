@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -27,6 +28,9 @@ func EnsureQueueSignal(ctx workflow.Context, ownerID, ownerType string, signalTy
 		Callback:   cbRef,
 	})
 	if err != nil {
+		if dbgenerics.IsGormErrRecordNotFound(err) {
+			return nil
+		}
 		return fmt.Errorf("ensure signal %s for %s/%s: %w", signalType, ownerType, ownerID, err)
 	}
 
