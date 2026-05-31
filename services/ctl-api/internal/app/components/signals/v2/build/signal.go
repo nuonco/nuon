@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
+	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/reprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
@@ -77,7 +78,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Ensure org is provisioned before building.
-	if err := queueclient.EnsureQueueSignal(ctx, comp.OrgID, "orgs", orgprovision.SignalType); err != nil {
+	if err := queueclient.EnsureQueueSignal(ctx, comp.OrgID, "orgs", orgprovision.SignalType, orgreprovision.SignalType); err != nil {
 		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "org provision not ready")
 		return fmt.Errorf("org provision not ready: %w", err)
 	}
