@@ -2,6 +2,7 @@ package appconfigupdated
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
@@ -47,12 +48,13 @@ func (s *Signal) reconcileDriftEmitters(
 
 		name := driftEmitterPrefix + ic.ID
 		if _, err := emitterclient.AwaitCreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-			QueueID:      queue.ID,
-			Name:         name,
-			Description:  fmt.Sprintf("drift check for install %s, component %s", s.InstallID, ic.ComponentID),
-			Mode:         app.QueueEmitterModeCron,
-			CronSchedule: ccc.DriftSchedule,
-			SignalType:   driftcheck.SignalType,
+			QueueID:         queue.ID,
+			Name:            name,
+			Description:     fmt.Sprintf("drift check for install %s, component %s", s.InstallID, ic.ComponentID),
+			Mode:            app.QueueEmitterModeCron,
+			CronSchedule:    ccc.DriftSchedule,
+			SignalExpiresIn: 15 * time.Minute,
+			SignalType:      driftcheck.SignalType,
 			SignalTemplate: &driftcheck.Signal{
 				InstallID:          install.ID,
 				InstallComponentID: ic.ID,
