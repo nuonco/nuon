@@ -71,9 +71,9 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		return nil
 	}
 
-	// Check if the queue has emitter signals disabled
-	if emitter.Queue.DisableEmitterSignals {
-		l.Info("emitter signals disabled on queue, skipping emit",
+	// Check if emitter signals are globally disabled
+	if w.cfg.DisableEmitterSignals {
+		l.Info("emitter signals disabled globally, skipping emit",
 			zap.String("queue-id", req.QueueID))
 		return nil
 	}

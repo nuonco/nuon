@@ -112,6 +112,7 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 		Signal:    emitter.SignalTemplate.Signal,
 		OwnerID:   queue.OwnerID,
 		OwnerType: queue.OwnerType,
+		EmitterID: &req.EmitterID,
 	}
 	if emitter.SignalExpiresIn > 0 {
 		expiresAt := time.Now().Add(emitter.SignalExpiresIn)

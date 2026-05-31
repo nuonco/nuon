@@ -109,10 +109,10 @@ func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.Qu
 }
 
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
-	// Check if the queue has emitter signals disabled
-	if emitter.Queue.DisableEmitterSignals {
+	// Check if emitter signals are globally disabled
+	if e.cfg.DisableEmitterSignals {
 		e.emitSignalMetric(ctx, emitter, "disabled")
-		l.Info("emitter signals disabled on queue, skipping emit",
+		l.Info("emitter signals disabled globally, skipping emit",
 			zap.String("queue-id", emitter.QueueID))
 		return nil
 	}

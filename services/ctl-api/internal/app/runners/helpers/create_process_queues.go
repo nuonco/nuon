@@ -42,8 +42,8 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		Name:            fmt.Sprintf("process-%s-health-check", process.ID),
 		Description:     "Periodic process health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "0 * * * *",
-		JitterWindow:    time.Minute * 30,
+		CronSchedule:    "* * * * *",
+		JitterWindow:    time.Second * 30,
 		SignalType:      "process_healthcheck",
 		SignalExpiresIn: 5 * time.Minute,
 		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
