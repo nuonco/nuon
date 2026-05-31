@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 	flowdirective "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
@@ -17,7 +18,30 @@ import (
 // executeFlow runs the workflow conductor with run-based execution.
 // Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
 // The flow pauses at approval points and errors, waiting for update handlers to resume.
-func (s *Signal) executeFlow(ctx workflow.Context) error {
+func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
+	// Initialize temporal metrics writer if the underlying metrics writer was injected.
+	if s.mw != nil && s.v != nil {
+		tmw, err := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
+		if err == nil {
+			s.tmw = tmw
+		}
+	}
+
+	// Emit workflow completion metrics on exit.
+	flowStart := workflow.Now(ctx)
+	defer func() {
+		if s.tmw == nil {
+			return
+		}
+		wfTags := []string{"workflow_type", s.WorkflowType, "org_id", s.OrgID}
+		status := "success"
+		if retErr != nil {
+			status = "error"
+		}
+		s.tmw.Incr(ctx, "workflow.completed", append(wfTags, "status", status)...)
+		s.tmw.Timing(ctx, "workflow.latency", workflow.Now(ctx).Sub(flowStart), append(wfTags, "status", status)...)
+	}()
+
 	// Create and execute the initial run
 	run, err := s.createRun(ctx, app.WorkflowRunTypeInitial, "", 0)
 	if err != nil {
@@ -156,6 +180,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	if err != nil {
 		return errors.Wrap(err, "unable to get workflow object")
 	}
+
+	// Build metric tags from the workflow for lifecycle metrics.
+	wfTags := []string{"workflow_type", s.WorkflowType, "org_id", s.OrgID}
+
 	if flw.Status.Status == app.StatusCancelled {
 		return errors.New("workflow already cancelled")
 	}
@@ -188,6 +216,12 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	if startFromGroupIdx == 0 {
 		if err := workflowactivities.AwaitPkgWorkflowsFlowUpdateFlowStartedAtByID(ctx, s.WorkflowID); err != nil {
 			return err
+		}
+
+		// Emit workflow lifecycle metrics on first execution.
+		if s.tmw != nil {
+			s.tmw.Incr(ctx, "workflow.started", wfTags...)
+			s.tmw.Timing(ctx, "workflow.start_latency", workflow.Now(ctx).Sub(flw.CreatedAt), wfTags...)
 		}
 	}
 
@@ -653,6 +687,7 @@ func (s *Signal) stepConfig() flow.StepConfig {
 		GenerateStepsQueueName: s.GenerateStepsQueueName,
 		OwnerID:                s.OwnerID,
 		OwnerType:              s.OwnerType,
+		MW:                     s.tmw,
 	}
 }
 
