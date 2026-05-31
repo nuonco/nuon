@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -11,27 +13,34 @@ import (
 )
 
 // EnsureQueueSignal is a workflow-level helper that checks whether the latest
-// signal of a given type for an owner has completed. If it has, it returns
-// immediately. If it is still in flight, it registers a callback and blocks
-// until the signal completes (or times out).
+// signal of any of the given types for an owner has completed. If it has, it
+// returns immediately. If it is still in flight, it registers a callback and
+// blocks until the signal completes (or times out).
 //
 // This enables dependent signals to wait for prerequisites without polling,
-// e.g. a component-build signal waiting for org-provision to finish.
-func EnsureQueueSignal(ctx workflow.Context, ownerID, ownerType string, signalType signal.SignalType) error {
-	cbID := fmt.Sprintf("ensure-%s-%s-%s", ownerType, ownerID, signalType)
+// e.g. a component-build signal waiting for org-provision or org-reprovision
+// (whichever is most recent) to finish.
+func EnsureQueueSignal(ctx workflow.Context, ownerID, ownerType string, signalTypes ...signal.SignalType) error {
+	// Build a deterministic callback ID by sorting the signal types.
+	sorted := make([]string, len(signalTypes))
+	for i, st := range signalTypes {
+		sorted[i] = string(st)
+	}
+	sort.Strings(sorted)
+	cbID := fmt.Sprintf("ensure-%s-%s-%s", ownerType, ownerID, strings.Join(sorted, "+"))
 	cbRef := callback.New(ctx, cbID)
 
 	resp, err := AwaitEnsureSignal(ctx, &EnsureSignalRequest{
-		OwnerID:    ownerID,
-		OwnerType:  ownerType,
-		SignalType: signalType,
-		Callback:   cbRef,
+		OwnerID:     ownerID,
+		OwnerType:   ownerType,
+		SignalTypes: signalTypes,
+		Callback:    cbRef,
 	})
 	if err != nil {
 		if dbgenerics.IsGormErrRecordNotFound(err) {
 			return nil
 		}
-		return fmt.Errorf("ensure signal %s for %s/%s: %w", signalType, ownerType, ownerID, err)
+		return fmt.Errorf("ensure signal %v for %s/%s: %w", signalTypes, ownerType, ownerID, err)
 	}
 
 	if resp.AlreadyComplete {
@@ -40,7 +49,7 @@ func EnsureQueueSignal(ctx workflow.Context, ownerID, ownerType string, signalTy
 
 	// Block until the handler sends a completion callback.
 	if _, err := callback.Await(ctx, cbRef); err != nil {
-		return fmt.Errorf("ensure signal %s for %s/%s failed while awaiting: %w", signalType, ownerType, ownerID, err)
+		return fmt.Errorf("ensure signal %v for %s/%s failed while awaiting: %w", signalTypes, ownerType, ownerID, err)
 	}
 
 	return nil
