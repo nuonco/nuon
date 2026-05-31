@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
@@ -46,7 +47,7 @@ func (c *Client) EnsureSignal(ctx context.Context, req *EnsureSignalRequest) (*E
 		Order("created_at DESC").
 		First(&qs)
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "no signal found for owner+type")
+		return nil, dbgenerics.TemporalGormError(res.Error, "no signal found for owner+type")
 	}
 
 	// Already succeeded — nothing to wait for.
