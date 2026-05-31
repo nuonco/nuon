@@ -50,10 +50,13 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Start the lifecycle manager to periodically check that the queue signal
 	// still exists and hasn't expired. Sets mgr.Stopped when the entity is
 	// gone or expired, which unblocks the Await below.
+	//
+	// The alive checker combines both existence and expiry checks in a single
+	// DB query to avoid redundant round-trips.
 	mgr := workflowmanager.New(
-		workflowmanager.WithCheckInterval(1*time.Minute),
+		workflowmanager.WithCheckInterval(3*time.Minute),
 		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
-			_, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
 			if err != nil {
 				if dbgenerics.IsGormErrRecordNotFound(err) {
 					l.Warn("queue signal deleted, terminating orphaned handler")
@@ -61,14 +64,12 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 				}
 				return true, nil // transient error, keep going
 			}
-			return true, nil
-		}),
-		workflowmanager.WithExpiryChecker(func(gCtx workflow.Context) (*time.Time, error) {
-			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
-			if err != nil {
-				return nil, err
+			// Check expiry in the same call to avoid a second DB query.
+			if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
+				l.Warn("queue signal expired, stopping handler")
+				return false, nil
 			}
-			return qs.ExpiresAt, nil
+			return true, nil
 		}),
 		workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
 			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
