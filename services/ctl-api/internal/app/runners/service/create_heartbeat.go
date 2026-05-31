@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
@@ -104,11 +105,15 @@ func (s *service) CreateRunnerHeartBeat(ctx *gin.Context) {
 }
 
 func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, req CreateRunnerHeartBeatRequest) (*app.RunnerHeartBeat, error) {
+	now := time.Now()
 	runnerHeartBeat := app.RunnerHeartBeat{
+		ID:        domains.NewRunnerHeartBeatID(),
 		RunnerID:  runnerID,
 		ProcessID: req.ProcessID,
 		AliveTime: req.AliveTime,
 		Version:   req.Version,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 	// if we do not receive a value, set a default
 	if req.Process != "" {
@@ -117,12 +122,10 @@ func (s *service) createRunnerHeartBeat(ctx context.Context, runnerID string, re
 		runnerHeartBeat.Process = app.RunnerProcessTypeUnknown
 	}
 
-	res := s.chDB.
-		WithContext(ctx).
-		Create(&runnerHeartBeat)
-	if res.Error != nil {
-		return nil, fmt.Errorf("unable to create runner heart beat: %w", res.Error)
-	}
+	// Compute StartedAt so the returned object is complete.
+	runnerHeartBeat.StartedAt = now.Add(-1 * req.AliveTime)
+
+	s.heartbeater.Send(runnerHeartBeat)
 
 	return &runnerHeartBeat, nil
 }

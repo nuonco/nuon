@@ -107,7 +107,6 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/forcedelete"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/forceshutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/gracefulshutdown"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/installstackversionrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/mngrestart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/mngshutdown"

@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -53,32 +54,40 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	//
 	// The alive checker combines both existence and expiry checks in a single
 	// DB query to avoid redundant round-trips.
-	mgr := workflowmanager.New(
-		workflowmanager.WithCheckInterval(3*time.Minute),
-		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
-			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
-			if err != nil {
-				if dbgenerics.IsGormErrRecordNotFound(err) {
-					l.Warn("queue signal deleted, terminating orphaned handler")
-					return false, nil
-				}
-				return true, nil // transient error, keep going
-			}
-			// Check expiry in the same call to avoid a second DB query.
-			if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
-				l.Warn("queue signal expired, stopping handler")
+	var mgrOpts []workflowmanager.Option
+	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(3*time.Minute))
+
+	// Create a temporal metrics writer for workflow size reporting.
+	if h.mw != nil && h.v != nil {
+		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {
+			mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
+		}
+	}
+
+	mgrOpts = append(mgrOpts, workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
+		qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+		if err != nil {
+			if dbgenerics.IsGormErrRecordNotFound(err) {
+				l.Warn("queue signal deleted, terminating orphaned handler")
 				return false, nil
 			}
-			return true, nil
-		}),
-		workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
-			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
-				QueueSignalID:     h.queueSignalID,
-				Status:            app.StatusError,
-				StatusDescription: "signal expired or deleted",
-			})
-		}),
-	)
+			return true, nil // transient error, keep going
+		}
+		// Check expiry in the same call to avoid a second DB query.
+		if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
+			l.Warn("queue signal expired, stopping handler")
+			return false, nil
+		}
+		return true, nil
+	}))
+	mgrOpts = append(mgrOpts, workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     h.queueSignalID,
+			Status:            app.StatusError,
+			StatusDescription: "signal expired or deleted",
+		})
+	}))
+	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
 	// execute the handler and handle a restart or stop
