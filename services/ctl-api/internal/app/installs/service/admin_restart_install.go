@@ -18,7 +18,7 @@ import (
 type RestartInstallRequest struct{}
 
 // @ID						AdminRestartInstall
-// @Summary				restart an installs event loop
+// @Summary				restart an install
 // @Description.markdown	restart_install.md
 // @Param					install_id	path	string					true	"install ID"
 // @Param					req			body	RestartInstallRequest	true	"Input"

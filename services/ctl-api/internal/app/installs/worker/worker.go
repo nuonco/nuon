@@ -73,7 +73,6 @@ func New(params WorkerParams) (*Worker, error) {
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(installdelegationdns.NewActivities(params.V, params.Cfg))
 
-	// register state workflows (legacy event-loop system)
 	wkr.RegisterWorkflow(params.StateWorkflows.GenerateState)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
