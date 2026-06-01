@@ -57,12 +57,10 @@ func (p PulumiComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Default("0").
 		Example("3").
 		Example("5").
-		Field("skip_noops").Short("skip deploys that produce no changes").
-		Long("When true, a deploy whose plan contains no changes (a no-op) is skipped instead of being executed or sent for approval. Defaults to false").
+		Field("skip_noops").Short("Skip the deploy step when the plan has no changes (a no-op). Defaults to false").
 		Default("false").
 		Example("true").
-		Field("auto_approve_on_policies_passing").Short("auto-approve the deploy when policy checks pass").
-		Long("When true, a deploy is automatically approved once all of its policy checks pass; deploys that fail policy still require manual approval. Defaults to false").
+		Field("auto_approve_on_policies_passing").Short("Auto-approve the deploy when all policy checks pass. Defaults to false").
 		Default("false").
 		Example("true")
 }
