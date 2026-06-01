@@ -81,6 +81,9 @@ type AppRunnerConfig struct {
 
 	// takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent.
 	InitScriptURL string `json:"init_script,omitzero" gorm:"default null" temporaljson:"init_script,omitzero,omitempty" features:"get,omitzero"`
+
+	// InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform.
+	InstanceType string `json:"instance_type,omitzero" gorm:"default null" temporaljson:"instance_type,omitzero,omitempty"`
 }
 
 func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {
