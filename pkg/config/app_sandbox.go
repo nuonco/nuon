@@ -60,7 +60,15 @@ func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Maximum number of automatic retry attempts for failed sandbox provision, reprovision, and deprovision applies. Set to 0 to disable auto-retry. Default: 0 (disabled)").
 		Default("0").
 		Example("3").
-		Example("5")
+		Example("5").
+		Field("skip_noops").Short("skip sandbox applies that produce no changes").
+		Long("When true, a sandbox apply whose plan contains no changes (a no-op) is skipped instead of being executed or sent for approval. Defaults to false").
+		Default("false").
+		Example("true").
+		Field("auto_approve_on_policies_passing").Short("auto-approve the sandbox apply when policy checks pass").
+		Long("When true, a sandbox apply is automatically approved once all of its policy checks pass; applies that fail policy still require manual approval. Defaults to false").
+		Default("false").
+		Example("true")
 }
 
 func (a *AppSandboxConfig) parse() error {
