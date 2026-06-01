@@ -48,6 +48,11 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		sandboxMode = install.SandboxMode.Bool
 	}
 
+	instanceType := install.AppRunnerConfig.InstanceType
+	if instanceType == "" {
+		instanceType = app.DefaultInstanceTypeForPlatform(install.AppRunnerConfig.CloudPlatform)
+	}
+
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
@@ -76,7 +81,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			EnableMetrics:   false,
 			EnableSentry:    true,
 			Groups:          groups,
-			AWSInstanceType: "t3a.medium",
+			AWSInstanceType: instanceType,
 			Metadata: pgtype.Hstore(map[string]*string{
 				"org.id":          generics.ToPtr(install.OrgID),
 				"org.name":        generics.ToPtr(install.Org.Name),
