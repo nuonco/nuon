@@ -1,10 +1,38 @@
 ---
-title: '035 - Cancel workflows, trace timeline, and Slack'
-description: 'Cancel in-flight workflows, view runs as a trace timeline, subscribe to drift detection events over webhooks and the new Slack app, and more.'
+title: '035 - Runbooks and rendered READMEs'
+description: 'Define and run multi-step runbooks against installs, fetch install READMEs rendered with live template values, plus deploy controls, webhook event filters, and more.'
 boost: 0.3
 ---
 
 _May 21, 2026_
+
+## Runbooks
+
+Runbooks let you define a named, ordered sequence of steps and run it against an install on demand — version upgrades, database migrations, recovery procedures, and other multi-step operations that used to be run by hand.
+
+Define runbooks as TOML files in a `runbooks/` directory in your app config. Each step is either a **deploy** (deploy a component, optionally with its dependencies) or an **action** (run an existing action, or an inline ad-hoc command):
+
+```toml
+name = "v2.3-update"
+
+[[steps]]
+name           = "migrate-db"
+type           = "action"
+action_name    = "database-migration"
+
+[[steps]]
+name           = "deploy-api"
+type           = "deploy"
+component_name = "api-server"
+```
+
+Trigger and watch runs from the new **Runbooks** tab in the dashboard, or from the CLI with `nuon runbooks --install-id <id>`. See the [Runbooks guide](/guides/runbooks) for the full configuration reference.
+
+## Rendered READMEs
+
+An install's README can now be fetched **fully rendered with that install's live template values** through the API, so the documentation a customer sees reflects their actual deployment — real URLs, IDs, and outputs rather than `{{ ... }}` placeholders.
+
+READMEs are authored as Markdown on the app (the `readme` field in `metadata.toml`) and on individual [runbooks](/guides/runbooks), and support Go templating plus external file sources (HTTP(S), git, or local paths). See [Using READMEs](/guides/using-readmes).
 
 ## Sandbox auto-retries
 
