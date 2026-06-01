@@ -3,7 +3,7 @@ package executeflow
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appworkflows "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/workflows"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateworkflowsteps"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
 	v2workflows "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/workflows/v2"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow"
 )

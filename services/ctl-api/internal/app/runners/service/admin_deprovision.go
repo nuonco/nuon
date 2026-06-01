@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/deprovision"
 )
 
 type AdminDeprovisionRunnerRequest struct{}
@@ -30,8 +30,10 @@ func (s *service) AdminDeprovisionRunner(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type: signals.OperationDeprovision,
-	})
+	if err := s.helpers.EnqueueRunnerSignal(ctx, runner.ID, &deprovision.Signal{RunnerID: runner.ID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue deprovision signal: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }

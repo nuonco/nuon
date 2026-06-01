@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 func (s *InstallsServiceTestSuite) TestForgetInstallSuccess() {
@@ -20,11 +20,9 @@ func (s *InstallsServiceTestSuite) TestForgetInstallSuccess() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
+	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.Len(s.T(), captured, 1)
-	sig, ok := captured[0].Signal.(*signals.Signal)
-	require.True(s.T(), ok)
-	assert.Equal(s.T(), signals.OperationForget, sig.Type)
+	assert.Equal(s.T(), "forgotten", string(captured[0].Type))
 
 	// Verify the install is gone
 	getPath := fmt.Sprintf("/v1/installs/%s", install.ID)

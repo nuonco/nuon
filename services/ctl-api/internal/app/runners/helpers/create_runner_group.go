@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -107,9 +106,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		}
 	}
 
-	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
+	// Legacy evClient.Send removed — event loop system has been removed.
 
 	return &runnerGroup, nil
 }
@@ -209,8 +206,5 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		return nil, fmt.Errorf("unable to create runner queues: %w", err)
 	}
 
-	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
 	return &runnerGroup, nil
 }

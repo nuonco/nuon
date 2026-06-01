@@ -8,7 +8,6 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {
@@ -16,15 +15,13 @@ type Params struct {
 
 	L           *zap.Logger
 	DB          *gorm.DB `name:"psql"`
-	EvClient    eventloop.Client
 	AuthzClient *authz.Client
 }
 
 type middleware struct {
-	l        *zap.Logger
-	db       *gorm.DB
-	evClient eventloop.Client
-	authz    *authz.Client
+	l     *zap.Logger
+	db    *gorm.DB
+	authz *authz.Client
 }
 
 func (m middleware) Name() string {
@@ -57,9 +54,8 @@ func (m middleware) Handler() gin.HandlerFunc {
 
 func New(params Params) *middleware {
 	return &middleware{
-		l:        params.L,
-		db:       params.DB,
-		evClient: params.EvClient,
-		authz:    params.AuthzClient,
+		l:     params.L,
+		db:    params.DB,
+		authz: params.AuthzClient,
 	}
 }

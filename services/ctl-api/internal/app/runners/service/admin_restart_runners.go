@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"go.uber.org/zap"
 )
@@ -86,10 +86,10 @@ func (s *service) bulkRestartRunners(ctx context.Context, req AdminRestartRunner
 				})
 			}
 
-			s.evClient.Send(ctx, runner.ID, &signals.Signal{
-				Type:  signals.OperationProcessJob,
-				JobID: job.ID,
-			})
+			if err := s.helpers.EnqueueRunnerSignal(ctx, runner.ID, &processjob.Signal{RunnerID: runner.ID, JobID: job.ID}); err != nil {
+				s.l.Error("unable to enqueue process-job signal", zap.String("runner_id", runner.ID), zap.Error(err))
+				continue
+			}
 		}
 
 		offset += batchSize

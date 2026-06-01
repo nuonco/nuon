@@ -7,8 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
@@ -49,42 +48,27 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &forgotten.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:              signals.OperationExecuteFlow,
-			InstallWorkflowID: workflow.ID,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationForget,
-		})
+	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &forgotten.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, app.WorkflowResponse{WorkflowID: workflow.ID})

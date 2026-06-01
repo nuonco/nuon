@@ -9,9 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
-	inlinebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/inlinebuild"
+	inlinebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/inlinebuild"
 )
 
 // AppConfigBuild builds the workflow steps for an app config build.

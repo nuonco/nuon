@@ -6,9 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
-	appreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/reprovision"
+	appreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/reprovision"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -34,30 +32,19 @@ func (s *service) AdminReprovisionApp(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to check features: %w", err))
+		ctx.Error(fmt.Errorf("unable to get app queue: %w", err))
 		return
 	}
-	if useQueues {
-		q, err := s.queueClient.GetQueueByOwner(ctx, appID, "apps")
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get app queue: %w", err))
-			return
-		}
-		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-			QueueID:   q.ID,
-			OwnerID:   appID,
-			OwnerType: "apps",
-			Signal:    &appreprovision.Signal{AppID: appID},
-		}); err != nil {
-			ctx.Error(fmt.Errorf("unable to enqueue app reprovision signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, appID, &signals.Signal{
-			Type: signals.OperationReprovision,
-		})
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   q.ID,
+		OwnerID:   appID,
+		OwnerType: "apps",
+		Signal:    &appreprovision.Signal{AppID: appID},
+	}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue app reprovision signal: %w", err))
+		return
 	}
 	ctx.JSON(http.StatusOK, true)
 }

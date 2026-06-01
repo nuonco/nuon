@@ -11,7 +11,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -157,28 +156,16 @@ func (s *service) CreateAdHocAction(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	queueID, err := s.getInstallActionWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		queueID, err := s.getInstallActionWorkflowsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:              signals.OperationExecuteFlow,
-			InstallWorkflowID: workflow.ID,
-		})
+	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusCreated, CreateAdHocActionResponse{

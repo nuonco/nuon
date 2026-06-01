@@ -37,7 +37,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	var wkflow ecrrepository.Wkflow
 	wkflows := []any{
-		w.EventLoop,
 		wkflow.ProvisionECRRepository,
 		wkflow.DeprovisionECRRepository,
 		workerplan.CreateSandboxBuildPlan,
@@ -48,16 +47,7 @@ func (w *Workflows) All() []any {
 
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
-	return []any{
-		w.BuildSandbox,
-		w.Created,
-		w.Deprovision,
-		w.PollDependencies,
-		w.Provision,
-		w.Reprovision,
-		w.SyncCustomStacks,
-		w.UpdateSandbox,
-	}
+	return []any{}
 }
 
 type Params struct {

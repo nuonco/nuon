@@ -2,12 +2,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forceshutdown"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -33,9 +34,10 @@ func (s *service) AdminForceShutDown(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type: signals.OperationForceShutdown,
-	})
+	if err := s.helpers.EnqueueRunnerSignal(ctx, runnerID, &forceshutdown.Signal{RunnerID: runnerID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue force-shutdown signal: %w", err))
+		return
+	}
 
 	ctx.JSON(http.StatusCreated, true)
 }

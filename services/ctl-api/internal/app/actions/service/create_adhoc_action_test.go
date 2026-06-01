@@ -25,9 +25,9 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -48,14 +48,13 @@ type CreateAdHocActionTestService struct {
 
 type CreateAdHocActionTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      CreateAdHocActionTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service CreateAdHocActionTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestCreateAdHocActionSuite(t *testing.T) {
@@ -69,12 +68,9 @@ func TestCreateAdHocActionSuite(t *testing.T) {
 func (s *CreateAdHocActionTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -89,7 +85,6 @@ func (s *CreateAdHocActionTestSuite) SetupSuite() {
 func (s *CreateAdHocActionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-	s.mockEvClient.Reset()
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,
@@ -176,12 +171,9 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocAction() {
 				require.NoError(s.T(), res.Error)
 				require.Len(s.T(), run.Steps, 1)
 
-				evSignals := s.mockEvClient.GetSignals()
+				evSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), evSignals, 1)
-				assert.Equal(s.T(), installID, evSignals[0].ID)
-				sig, ok := evSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationExecuteFlow, sig.Type)
+				assert.Equal(s.T(), executeflow.SignalType, evSignals[0].Type)
 			},
 		},
 		{
@@ -279,7 +271,6 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocAction() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 
 			installID := tc.setupFunc()
 			req := tc.requestFunc()
