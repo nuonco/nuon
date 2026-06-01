@@ -22,7 +22,7 @@ type CreateAppSandboxConfigRequest struct {
 	vcshelpers.VCSConfigRequest
 
 	TerraformVersion             string  `json:"terraform_version" validate:"required"`
-	DriftSchedule                *string `json:"drift_schedule,omitempty"`
+	DriftSchedule                *string `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
 	AutoApproveOnPoliciesPassing *bool   `json:"auto_approve_on_policies_passing,omitempty"`
