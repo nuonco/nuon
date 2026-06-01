@@ -37,7 +37,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	// No business logic - the restart signal just validates the runner exists.
-	// This triggers a restart of the runner's event loop (handled by queue system).
 	// Health check workflow will be triggered via queue emitter in a later phase.
 	return nil
 }

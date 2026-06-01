@@ -21,7 +21,7 @@ import (
 type RunnerJobStatus string
 
 const (
-	// all jobs are set as queued to start, and the event loop should update them to available.
+	// all jobs are set as queued to start, and the queue handler updates them to available.
 	RunnerJobStatusQueued RunnerJobStatus = "queued"
 	// the runner queries jobs that are available, to find something to work on
 	RunnerJobStatusAvailable RunnerJobStatus = "available"

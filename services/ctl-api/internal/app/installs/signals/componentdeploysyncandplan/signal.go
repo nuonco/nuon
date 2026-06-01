@@ -543,7 +543,7 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		RunnerID: install.RunnerID,
 		JobID:    runnerJob.ID,
 	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "plan job failed"))

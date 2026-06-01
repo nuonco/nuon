@@ -31,7 +31,7 @@ func (s *ProvisionRunnerSignalTestSuite) TestProvisionRunnerSignalExecutesSucces
 	// Steps:
 	// 1. Create test install with runner
 	// 2. Enqueue provision-runner signal
-	// 3. Verify signal was sent to runner's event loop/queue
+	// 3. Verify signal was sent to runner's queue
 	require.True(s.T(), true, "placeholder test")
 }
 
