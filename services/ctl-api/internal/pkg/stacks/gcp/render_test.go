@@ -170,6 +170,26 @@ func TestRenderGCPAccountInjection(t *testing.T) {
 	})
 }
 
+func TestRenderMachineType(t *testing.T) {
+	t.Run("with instance type set", func(t *testing.T) {
+		inp := testInput()
+		inp.Settings.AWSInstanceType = "e2-medium"
+		out, _, err := Render(inp)
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+		assert.Contains(t, tfvars, `runner_machine_type      = "e2-medium"`)
+	})
+
+	t.Run("without instance type", func(t *testing.T) {
+		out, _, err := Render(testInput())
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+		assert.NotContains(t, tfvars, "runner_machine_type")
+	})
+}
+
 func TestRenderPermissions(t *testing.T) {
 	t.Run("without break glass", func(t *testing.T) {
 		out, _, err := Render(testInput())

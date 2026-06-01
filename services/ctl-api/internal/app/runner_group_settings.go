@@ -18,9 +18,24 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
+// Default runner machine/instance types per cloud platform.
 const (
-	DefaultAWSInstanceType = "t3a.medium"
+	DefaultAWSInstanceType   = "t3a.medium"
+	DefaultGCPInstanceType   = "e2-medium"
+	DefaultAzureInstanceType = "Standard_B2s"
 )
+
+// DefaultInstanceTypeForPlatform returns the default runner machine/instance type for a cloud platform.
+func DefaultInstanceTypeForPlatform(platform CloudPlatform) string {
+	switch platform {
+	case CloudPlatformGCP:
+		return DefaultGCPInstanceType
+	case CloudPlatformAzure:
+		return DefaultAzureInstanceType
+	default:
+		return DefaultAWSInstanceType
+	}
+}
 
 type RunnerAWSAuthMethod string
 
