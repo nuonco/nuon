@@ -3,7 +3,7 @@
     {
       "id": "runbooks-readmes-035",
       "title": "Runbooks and rendered READMEs",
-      "date": "May 21, 2026",
+      "date": "June 1, 2026",
       "description": "Define and run multi-step runbooks against installs, and fetch install READMEs rendered with live values.",
       "ctaText": "Learn more",
       "ctaUrl": "https://docs.nuon.co/updates/035-runbooks-and-readmes",
