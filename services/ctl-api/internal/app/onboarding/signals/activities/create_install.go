@@ -51,7 +51,6 @@ type CreateOnboardingInstallResponse struct {
 // @as-wrapper
 func (a *Activities) createOnboardingInstall(ctx context.Context, input *CreateOnboardingInstallInput) (*CreateOnboardingInstallResponse, error) {
 	// Load org from onboarding — needed for GORM BeforeCreate hooks (OrgID)
-	// and event loop startup (startEventLoop calls signal.GetOrg which needs org in context)
 	var onboarding app.Onboarding
 	if err := a.db.WithContext(ctx).First(&onboarding, "id = ?", input.OnboardingID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get onboarding: %w", err)

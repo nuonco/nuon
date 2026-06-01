@@ -38,7 +38,7 @@ func (e *EnqueueTestSuite) TestAwaitReadyOK() {
 	require.Nil(e.T(), err)
 	require.NotNil(e.T(), queue)
 
-	// wait for the event loop to be ready
+	// wait for the queue to be ready
 	err = e.service.Client.QueueReady(ctx, queue.ID)
 	require.Nil(e.T(), err)
 }

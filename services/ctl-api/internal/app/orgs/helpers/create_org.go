@@ -42,7 +42,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 	org := app.Org{
 		Name:                params.Name,
 		Status:              "queued",
-		StatusDescription:   "waiting for event loop to start and provision org",
+		StatusDescription:   "waiting for queue to provision org",
 		SandboxMode:         params.UseSandboxMode,
 		OrgType:             orgTyp,
 		NotificationsConfig: notificationsCfg,

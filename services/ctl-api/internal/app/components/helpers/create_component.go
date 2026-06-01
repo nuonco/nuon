@@ -24,7 +24,7 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 		VarName:           params.VarName,
 		Labeled:           labels.Labeled{Labels: labels.Labels(params.Labels)},
 		Status:            "queued",
-		StatusDescription: "waiting for event loop to start for component",
+		StatusDescription: "waiting for queue to provision component",
 	}
 	res := h.db.WithContext(ctx).Create(&component)
 	if res.Error != nil {
