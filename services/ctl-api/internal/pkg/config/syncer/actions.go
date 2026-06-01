@@ -16,6 +16,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
 )
 
 // ensureAction creates an action workflow if it doesn't exist, using the shared helpers
@@ -100,6 +101,12 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	// Build triggers
 	triggers := make([]app.ActionWorkflowTriggerConfig, 0, len(action.Triggers))
 	for _, trigger := range action.Triggers {
+		if err := validation.ValidateCronSchedule(trigger.CronSchedule); err != nil {
+			return sync.SyncErr{
+				Resource:    fmt.Sprintf("action-%s", action.Name),
+				Description: err.Error(),
+			}
+		}
 		triggers = append(triggers, app.ActionWorkflowTriggerConfig{
 			Index:        int(trigger.Index),
 			Type:         app.ActionWorkflowTriggerType(trigger.Type),
