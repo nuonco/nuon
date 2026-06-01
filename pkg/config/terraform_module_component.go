@@ -77,6 +77,12 @@ func (t TerraformModuleComponentConfig) JSONSchemaExtend(schema *jsonschema.Sche
 		Default("0").
 		Example("3").
 		Example("5").
+		Field("skip_noops").Short("Skip the deploy step when the plan has no changes (a no-op). Defaults to false").
+		Default("false").
+		Example("true").
+		Field("auto_approve_on_policies_passing").Short("Auto-approve the deploy when all policy checks pass. Defaults to false").
+		Default("false").
+		Example("true").
 		Field("var").Short("deprecated: use vars map instead").
 		Long("Deprecated: Array of name/value pairs for Terraform variables. Use the vars map instead").
 		Field("env_var").Short("deprecated: use env_vars map instead").

@@ -54,7 +54,13 @@ func (d DockerBuildComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) 
 		Long("Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled)").
 		Default("0").
 		Example("3").
-		Example("5")
+		Example("5").
+		Field("skip_noops").Short("Skip the deploy step when the plan has no changes (a no-op). Defaults to false").
+		Default("false").
+		Example("true").
+		Field("auto_approve_on_policies_passing").Short("Auto-approve the deploy when all policy checks pass. Defaults to false").
+		Default("false").
+		Example("true")
 }
 
 func (t *DockerBuildComponentConfig) Validate() error {
