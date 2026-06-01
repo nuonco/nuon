@@ -26,14 +26,14 @@ type ServiceCreateAppRunnerConfigRequest struct {
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
 
-	// instance type
-	InstanceType string `json:"instance_type,omitempty"`
-
 	// helm driver
 	HelmDriver AppAppRunnerConfigHelmDriverType `json:"helm_driver,omitempty"`
 
 	// init script url
 	InitScriptURL string `json:"init_script_url,omitempty"`
+
+	// instance type
+	InstanceType string `json:"instance_type,omitempty"`
 
 	// type
 	// Required: true

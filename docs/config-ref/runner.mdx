@@ -15,6 +15,7 @@ title: 'Runner'
 | **`env_vars`**<br/>object | environment variables Map of environment variables to pass to the runner as key-value pairs | **Optional** | `"DEBUG=true"`, `"LOG_LEVEL=info"` |
 | **`helm_driver`**<br/>string | Helm driver configuration Specifies the backend driver for Helm operations (e.g., 'configmap', 'secret') | **Optional** | `"configmap"`, `"secret"` |
 | **`init_script_url`**<br/>string | initialization script URL URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, g... | **Optional** | `"https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh"` |
+| **`instance_type`**<br/>string | machine/instance type for the install runner Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (e.g. an EC2 instance type for aws). Defaults ... | **Optional** | `"t3a.medium"`, `"t3.large"` |
 | **`env_var`**<br/>[array](#env_var) | deprecated: use env_vars map instead Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead | **Optional** | - |
 
 ### `env_var`
