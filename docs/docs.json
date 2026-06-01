@@ -143,8 +143,6 @@
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
               "guides/using-variables",
-              "guides/using-readmes",
-              "guides/runbooks",
               "guides/vcs",
               {
                 "group": "Components",
@@ -195,6 +193,8 @@
             "group": "Advanced",
             "boost": 2,
             "pages": [
+              "guides/using-readmes",
+              "guides/runbooks",
               "guides/custom-nested-stacks",
               "guides/customizing-terraform-stack-templates",
               "guides/cli-extensions",
