@@ -24,8 +24,13 @@ import (
 const SignalType signal.SignalType = "process_job"
 
 const (
-	defaultJobPollPeriod       = time.Second
-	defaultAvailablePollPeriod = time.Second
+	// Poll periods are deliberately coarse to keep the handler workflow's
+	// history small over long-running jobs. A 1s cadence generated ~25 history
+	// events/sec (4 activities/tick), reaching Temporal's history limits in
+	// minutes; these values keep a multi-hour job well within them while adding
+	// only single-digit-second latency to status/cancellation detection.
+	defaultJobPollPeriod       = 15 * time.Second
+	defaultAvailablePollPeriod = 5 * time.Second
 )
 
 type Signal struct {

@@ -57,6 +57,14 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	var mgrOpts []workflowmanager.Option
 	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(3*time.Minute))
 
+	// Never continue-as-new while a phase (validate/execute) is in flight:
+	// continue-as-new drops the in-flight update, which the successor run would
+	// misread as a mid-execute crash and fail the signal even though the work
+	// is still alive.
+	mgrOpts = append(mgrOpts, workflowmanager.WithDeferRestart(func() bool {
+		return h.validating || h.executing
+	}))
+
 	// Create a temporal metrics writer for workflow size reporting.
 	if h.mw != nil && h.v != nil {
 		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {

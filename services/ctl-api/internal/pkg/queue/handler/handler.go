@@ -71,6 +71,13 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
+	// validating/executing are true while their respective update handlers are
+	// in flight. The lifecycle manager defers continue-as-new while either is
+	// set so a phase is never orphaned mid-flight (which a successor run would
+	// misread as a crash via the started-but-not-finished markers in state.go).
+	validating bool
+	executing  bool
+
 	// finishedStatus and finishedErr capture the terminal outcome so the
 	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
 	finishedStatus app.Status
