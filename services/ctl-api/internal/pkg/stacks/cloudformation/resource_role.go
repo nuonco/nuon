@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"strconv"
 
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
@@ -166,7 +167,7 @@ func (a *Templates) getRolePolicy(role app.AppAWSIAMRoleConfig, policy app.AppAW
 func (a *Templates) getRoleParameters(role app.AppAWSIAMRoleConfig, defaultValue bool) cloudformation.Parameter {
 	return cloudformation.Parameter{
 		Type:    "String",
-		Default: defaultValue,
+		Default: strconv.FormatBool(defaultValue),
 		AllowedValues: []any{
 			"true",
 			"false",
