@@ -32,6 +32,9 @@ type ServiceCreateAppRunnerConfigRequest struct {
 	// init script url
 	InitScriptURL string `json:"init_script_url,omitempty"`
 
+	// instance type
+	InstanceType string `json:"instance_type,omitempty"`
+
 	// type
 	// Required: true
 	Type *AppAppRunnerType `json:"type"`
