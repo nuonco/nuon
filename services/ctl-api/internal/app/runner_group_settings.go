@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
+// Default runner machine/instance types per cloud platform.
 const (
 	DefaultAWSInstanceType   = "t3a.medium"
 	DefaultGCPInstanceType   = "e2-medium"
