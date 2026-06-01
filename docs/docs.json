@@ -279,6 +279,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/035-cancel-workflows-trace-view-and-slack",
           "updates/034-aws-terraform-install-stack",
           "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
