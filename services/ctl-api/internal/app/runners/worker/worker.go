@@ -14,18 +14,18 @@ import (
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
 
 	// Blank imports to register v2 queue signal types in the catalog.
 	// The queue handler workflow (registered via SharedWorkflows) deserializes signals by type;
 	// importing these packages runs their init() which calls catalog.Register().
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/oninactive"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processhealthcheck"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processinit"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processshutdown"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/triggershutdown"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/updatetag"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/oninactive"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processhealthcheck"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processinit"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processshutdown"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/triggershutdown"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updatetag"
 	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
 )
@@ -51,7 +51,7 @@ type WorkerParams struct {
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient(signals.TemporalNamespace)
+	client, err := params.Tclient.GetNamespaceClient("runners")
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}

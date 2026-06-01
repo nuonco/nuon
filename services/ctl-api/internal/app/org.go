@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/types"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
@@ -210,21 +209,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 
 	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	return nil
-}
-
-func (o *Org) EventLoops() []bulk.EventLoop {
-	evs := make([]bulk.EventLoop, 0)
-	evs = append(evs, bulk.EventLoop{
-		Namespace: "orgs",
-		ID:        o.ID,
-	})
-	evs = append(evs, o.RunnerGroup.EventLoops()...)
-
-	for _, app := range o.Apps {
-		evs = append(evs, app.EventLoops()...)
-	}
-
-	return evs
 }
 
 // active feature flags for an orgs

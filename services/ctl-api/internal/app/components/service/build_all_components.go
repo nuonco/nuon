@@ -10,8 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
-	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/build"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -79,12 +78,6 @@ func (s *service) BuildAllComponents(ctx *gin.Context) {
 		offset += limit
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to check features: %w", err))
-		return
-	}
-
 	var blds []*app.ComponentBuild
 
 	for _, c := range comp {
@@ -94,30 +87,23 @@ func (s *service) BuildAllComponents(ctx *gin.Context) {
 			return
 		}
 
-		if useQueues {
-			q, err := s.queueClient.GetQueueByOwner(ctx, c.ID, "components")
-			if err != nil {
-				ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
-				return
-			}
+		q, err := s.queueClient.GetQueueByOwner(ctx, c.ID, "components")
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to get component queue: %w", err))
+			return
+		}
 
-			if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-				QueueID:   q.ID,
-				OwnerID:   bld.ID,
-				OwnerType: "component_builds",
-				Signal: &buildsignal.Signal{
-					ComponentID: c.ID,
-					BuildID:     bld.ID,
-				},
-			}); err != nil {
-				ctx.Error(fmt.Errorf("unable to enqueue build signal: %w", err))
-				return
-			}
-		} else {
-			s.evClient.Send(ctx, c.ID, &signals.Signal{
-				Type:    signals.OperationBuild,
-				BuildID: bld.ID,
-			})
+		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+			QueueID:   q.ID,
+			OwnerID:   bld.ID,
+			OwnerType: "component_builds",
+			Signal: &buildsignal.Signal{
+				ComponentID: c.ID,
+				BuildID:     bld.ID,
+			},
+		}); err != nil {
+			ctx.Error(fmt.Errorf("unable to enqueue build signal: %w", err))
+			return
 		}
 
 		blds = append(blds, bld)

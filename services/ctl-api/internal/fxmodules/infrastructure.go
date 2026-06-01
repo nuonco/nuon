@@ -19,8 +19,6 @@ import (
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
@@ -140,8 +138,6 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(propagator.New),
 	fx.Provide(validator.New),
 	fx.Provide(notifications.New),
-	fx.Provide(eventloop.New),
-	fx.Provide(teventloop.New),
 	fx.Provide(terraform.New),
 	fx.Provide(authz.New),
 	fx.Provide(features.New),

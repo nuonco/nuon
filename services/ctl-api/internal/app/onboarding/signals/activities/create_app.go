@@ -6,7 +6,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	appsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -65,17 +64,6 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 	if err := a.appsHelpers.CreateAppSandboxQueue(ctx, newApp.ID); err != nil {
 		return nil, fmt.Errorf("unable to create app sandbox queue: %w", err)
 	}
-
-	// Send v1 event loop signals (matching apps/service/create_app.go)
-	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
-		Type: appsignals.OperationCreated,
-	})
-	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
-		Type: appsignals.OperationPollDependencies,
-	})
-	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
-		Type: appsignals.OperationProvision,
-	})
 
 	resp := &CreateOnboardingAppResponse{
 		AppID: newApp.ID,

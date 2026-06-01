@@ -15,7 +15,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
@@ -245,21 +244,4 @@ func compositeComponentStatusDescription(componentStatuses pgtype.Hstore) string
 
 	// if any components have not yet succeeded or failed
 	return "Waiting on components"
-}
-
-func (i *Install) EventLoops() []bulk.EventLoop {
-	evs := make([]bulk.EventLoop, 0)
-	evs = append(evs, bulk.EventLoop{
-		Namespace: "installs",
-		ID:        i.ID,
-	})
-
-	for _, runner := range i.RunnerGroup.Runners {
-		evs = append(evs, bulk.EventLoop{
-			Namespace: "runners",
-			ID:        runner.ID,
-		})
-	}
-
-	return evs
 }

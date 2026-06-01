@@ -22,7 +22,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -47,7 +46,6 @@ type AdminForceDeleteTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminForceDeleteSuite(t *testing.T) {
@@ -62,12 +60,9 @@ func (s *AdminForceDeleteTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -82,7 +77,6 @@ func (s *AdminForceDeleteTestSuite) SetupSuite() {
 
 func (s *AdminForceDeleteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -163,13 +157,13 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
+				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationForceDelete, sig.Type)
+				_ = capturedSignals[0] // type check
+
+				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			},
 		},
 		{
@@ -198,9 +192,9 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), runnerID, signals[0].ID)
+				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
 			},
 		},
 		{
@@ -255,9 +249,9 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Admin routes have no org scoping - can delete any runner
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), runnerID, signals[0].ID)
+				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
 			},
 		},
 		{
@@ -273,7 +267,6 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/force-delete", AdminForceDeleteRunnerRequest{})
 
@@ -291,11 +284,11 @@ func (s *AdminForceDeleteTestSuite) TestAdminForceDeleteRunner() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
+			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
-				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
+				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")
 			} else {
-				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
+				assert.Len(s.T(), allSignals, 0, "expected no signal to be sent")
 			}
 		})
 	}

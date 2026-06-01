@@ -26,7 +26,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -43,7 +42,6 @@ type GeneralTemporalTestDeps struct {
 	Cfg               *internal.Config
 	AuthzClient       *authz.Client
 	AcctClient        *account.Client
-	EvClient          eventloop.Client
 	GzipCodec         converter.PayloadCodec `name:"gzip"`
 	LargePayloadCodec converter.PayloadCodec `name:"largepayload"`
 	Seeder            *testseed.Seeder
@@ -85,7 +83,6 @@ func (s *GeneralTemporalTestSuite) SetupSuite() {
 			T: s.T(),
 			Mocks: &tests.TestMocks{
 				MockTC: s.mockTC,
-				MockEv: tests.NewMockEventLoopClient(),
 			},
 			CustomValidator: true,
 		}),
@@ -113,7 +110,6 @@ func (s *GeneralTemporalTestSuite) SetupTest() {
 		temporalClient: s.mockTC,
 		authzClient:    s.deps.AuthzClient,
 		acctClient:     s.deps.AcctClient,
-		evClient:       s.deps.EvClient,
 		codecs: []converter.PayloadCodec{
 			s.deps.GzipCodec,
 			s.deps.LargePayloadCodec,

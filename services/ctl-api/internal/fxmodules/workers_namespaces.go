@@ -6,7 +6,7 @@ import (
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 	actionsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker"
 	actionsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
-	appbranchesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	appbranchesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	appsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"

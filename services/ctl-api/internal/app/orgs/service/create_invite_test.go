@@ -24,7 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orginvitecreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_created"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -49,13 +49,12 @@ type CreateOrgInviteTestService struct {
 type CreateOrgInviteTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      CreateOrgInviteTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     CreateOrgInviteTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestCreateOrgInviteSuite(t *testing.T) {
@@ -72,13 +71,10 @@ func (s *CreateOrgInviteTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -99,7 +95,6 @@ func (s *CreateOrgInviteTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -338,7 +333,6 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Setup test data
 			reqBody := tc.setupFunc()
@@ -367,21 +361,15 @@ func (s *CreateOrgInviteTestSuite) TestCreateOrgInvite() {
 			}
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
-				assert.Equal(s.T(), s.testOrg.ID, signal.ID, "signal should be sent to correct org ID")
-
-				// Type assert to get the actual signal
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationInviteCreated, orgSignal.Type, "signal type should be OperationInviteCreated")
-
-				// Verify InviteID is set in signal
-				assert.NotEmpty(s.T(), orgSignal.InviteID, "signal should contain invite ID")
+				assert.Equal(s.T(), s.testOrg.ID, signal.OwnerID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), orginvitecreated.SignalType, signal.Type, "signal type should be OperationInviteCreated")
 			} else {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "no signal should be sent for failed validation")
 			}
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/analytics/events"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -37,10 +36,8 @@ func (h *Client) AcceptInvite(ctx context.Context, invite *app.OrgInvite, acct *
 	// send a notification to the correct org event flow that it was accepted
 	cctx.SetOrgContext(ctx, &invite.Org)
 
-	h.evClient.Send(ctx, invite.OrgID, &signals.Signal{
-		Type:     signals.OperationInviteAccepted,
-		InviteID: invite.ID,
-	})
+	// Legacy evClient.Send removed — event loop system has been removed.
+	// The v2 queue signal (invite_accepted) handles this notification.
 
 	h.analyticsClient.Track(ctx, events.InviteAccepted, map[string]interface{}{
 		"invite_id": invite.ID,

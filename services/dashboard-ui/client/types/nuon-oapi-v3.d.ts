@@ -2345,10 +2345,6 @@ export interface paths {
      */
     get: operations["GetRunnerLatestHeartBeat"];
   };
-  "/v1/runners/{runner_id}/mng/fetch-token": {
-    /** fetch authentication token for an install runner via the mng process */
-    post: operations["FetchRunnerTokenMng"];
-  };
   "/v1/runners/{runner_id}/mng/restart": {
     /** restart the runner install process via the mng process */
     post: operations["RestartRunnerInstall"];
@@ -6837,7 +6833,6 @@ export interface components {
       status_message?: string;
       trace_id?: string;
     };
-    "service.MngFetchTokenRequest": Record<string, never>;
     "service.MngRestartRequest": Record<string, never>;
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
@@ -24165,59 +24160,6 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.RunnerHeartBeat"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
-  /** fetch authentication token for an install runner via the mng process */
-  FetchRunnerTokenMng: {
-    parameters: {
-      path: {
-        /** @description runner ID */
-        runner_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.MngFetchTokenRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */

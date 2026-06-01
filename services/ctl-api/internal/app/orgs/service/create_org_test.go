@@ -19,7 +19,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
@@ -28,12 +29,11 @@ import (
 type CreateOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      TestService
-	router       *gin.Engine
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     TestService
+	router      *gin.Engine
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestCreateOrgSuite(t *testing.T) {
@@ -50,13 +50,10 @@ func (s *CreateOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -77,7 +74,6 @@ func (s *CreateOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -210,7 +206,6 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/orgs", tc.request)
@@ -241,28 +236,21 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 
 			// Validate signals were sent
 			if tc.validateSignal {
-				signals := s.mockEvClient.GetSignals()
-				// 3 signals total: OperationCreated (runner), OperationCreated (org), OperationProvision (org)
-				// Order: runner creation happens first in CreateOrgRunnerGroup, then org signals
-				require.Len(s.T(), signals, 3, "expected runner and org signals")
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
+				require.GreaterOrEqual(s.T(), len(signals), 2, "expected at least org created and provision signals")
 
-				// Find org signals (skip runner signal at index 0)
-				var orgCreatedSignal, orgProvisionSignal *sigs.Signal
-				for _, sig := range signals {
-					if sig.ID == response.ID {
-						if s, ok := sig.Signal.(*sigs.Signal); ok {
-							if s.Type == sigs.OperationCreated {
-								orgCreatedSignal = s
-							} else if s.Type == sigs.OperationProvision {
-								orgProvisionSignal = s
-							}
-						}
+				foundCreated := false
+				foundProvision := false
+				for _, qs := range signals {
+					if qs.Type == orgcreated.SignalType {
+						foundCreated = true
+					} else if qs.Type == orgprovision.SignalType {
+						foundProvision = true
 					}
 				}
 
-				// Verify both org signals were sent
-				require.NotNil(s.T(), orgCreatedSignal, "expected OperationCreated signal for org")
-				require.NotNil(s.T(), orgProvisionSignal, "expected OperationProvision signal for org")
+				assert.True(s.T(), foundCreated, "expected org-created signal")
+				assert.True(s.T(), foundProvision, "expected org-provision signal")
 			}
 		})
 	}
@@ -291,7 +279,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgValidation() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// No signals should be sent on validation failure
-			signals := s.mockEvClient.GetSignals()
+			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), signals, 0)
 		})
 	}
@@ -346,7 +334,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRunnerGroup() {
 	}
 
 	// Reset mock
-	s.mockEvClient.Reset()
 
 	// Make request
 	rr := s.makeRequest(http.MethodPost, "/v1/orgs", request)
@@ -374,7 +361,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgCreatesRoles() {
 	}
 
 	// Reset mock
-	s.mockEvClient.Reset()
 
 	// Make request with account context
 	ctx := context.Background()
@@ -443,7 +429,6 @@ func (s *CreateOrgTestSuite) TestCreateOrgIntegrationAccountType() {
 	req.Header.Set("Content-Type", "application/json")
 
 	// Reset mock
-	s.mockEvClient.Reset()
 
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)

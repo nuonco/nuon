@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {
@@ -16,7 +15,6 @@ type Params struct {
 	Cfg             *internal.Config
 	DB              *gorm.DB `name:"psql"`
 	V               *validator.Validate
-	EvClient        eventloop.Client
 	AnalyticsClient analytics.Writer
 }
 
@@ -24,7 +22,6 @@ type Client struct {
 	cfg             *internal.Config
 	db              *gorm.DB
 	v               *validator.Validate
-	evClient        eventloop.Client
 	analyticsClient analytics.Writer
 }
 
@@ -33,7 +30,6 @@ func New(params Params) *Client {
 		v:               params.V,
 		cfg:             params.Cfg,
 		db:              params.DB,
-		evClient:        params.EvClient,
 		analyticsClient: params.AnalyticsClient,
 	}
 }
