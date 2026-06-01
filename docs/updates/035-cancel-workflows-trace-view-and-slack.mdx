@@ -30,14 +30,6 @@ Drift checks now emit a dedicated `drift.detected` event whenever a plan-only ch
 
 A new install-scoped sandbox drift cron complements the existing per-component drift check, so sandbox infrastructure is now polled on the same schedule as your app components.
 
-## Slack app
-
-Nuon now ships with a first-class Slack integration. Connect a workspace to your org and subscribe channels to workflow, approval, runner, and drift events — the same event taxonomy that powers webhooks, delivered as readable Slack messages.
-
-{/* TODO: add screenshot of Slack notifications */}
-
-New orgs are auto-linked to a configured workspace at creation time, so customers get notifications out of the box.
-
 ## Component dependency graph
 
 Installs now render a full dependency graph of their [components](/concepts/components), including transitive dependencies. Use it to understand blast radius before approving a deploy, or to debug why a component is waiting.
