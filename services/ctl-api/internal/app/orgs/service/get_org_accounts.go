@@ -54,9 +54,16 @@ func (s *service) getOrgAccounts(ctx *gin.Context, orgID string) ([]app.Account,
 	}
 
 	accounts := []app.Account{}
+
+	// Drive from the org's membership (indexed account_roles.org_id) rather than
+	// scanning the accounts table via an IN-subquery + LIMIT.
 	tx := s.db.WithContext(ctx).
-		Where("accounts.id IN (SELECT account_roles.account_id FROM account_roles JOIN roles ON roles.id = account_roles.role_id AND roles.deleted_at = 0 WHERE roles.org_id = ? AND account_roles.deleted_at = 0)", orgID).
-		Where("accounts.account_type != ?", app.AccountTypeService)
+		Model(&app.Account{}).
+		Joins("JOIN account_roles ON account_roles.account_id = accounts.id AND account_roles.org_id = ? AND account_roles.deleted_at = 0", orgID).
+		Where("accounts.account_type != ?", app.AccountTypeService).
+		Group("accounts.id").
+		Order("accounts.email").
+		Order("accounts.id")
 
 	if !strings.HasSuffix(acct.Email, "nuon.co") {
 		tx = tx.Where("accounts.email NOT LIKE ?", "%nuon.co")
