@@ -32,6 +32,15 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		}
 	}
 
+	if cfg.Sandbox.DriftSchedule != nil {
+		if err := validation.ValidateCronSchedule(*cfg.Sandbox.DriftSchedule); err != nil {
+			return sync.SyncErr{
+				Resource:    "app-sandbox",
+				Description: err.Error(),
+			}
+		}
+	}
+
 	// Get the app with preloaded org and VCS connections
 	var parentApp app.App
 	res := db.WithContext(ctx).

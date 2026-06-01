@@ -11,7 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -33,7 +32,7 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
 	AutoApproveOnPoliciesPassing *bool   `json:"auto_approve_on_policies_passing,omitempty"`
-	DriftSchedule                *string `json:"drift_schedule,omitempty"`
+	DriftSchedule                *string `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize *KustomizeConfigRequest `json:"kustomize,omitempty"`
@@ -260,12 +259,7 @@ func (s *service) createKubernetesManifestComponentConfig(
 	}
 
 	if req.DriftSchedule != nil {
-		_, err := cron.ParseStandard(*req.DriftSchedule)
-		if err != nil {
-			return nil, fmt.Errorf("invalid drift schedule: must be a valid cron expression: %s . Error: %s", *req.DriftSchedule, err.Error())
-		}
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule
-
 	}
 
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
