@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/robfig/cron"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -37,7 +36,7 @@ type CreateTerraformModuleComponentConfigRequest struct {
 	Dependencies   []string                      `json:"dependencies"`
 	References     []string                      `json:"references"`
 	Checksum       string                        `json:"checksum"`
-	DriftSchedule  *string                       `json:"drift_schedule,omitempty"`
+	DriftSchedule  *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 }
 
@@ -249,10 +248,6 @@ func (s *service) createTerraformModuleComponentConfig(ctx context.Context, cmpI
 		OperationRoles:                 operationRoles,
 	}
 	if req.DriftSchedule != nil {
-		_, err := cron.ParseStandard(*req.DriftSchedule)
-		if err != nil {
-			return nil, fmt.Errorf("invalid drift schedule: must be a valid cron expression: %s . Error: %s", *req.DriftSchedule, err.Error())
-		}
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule
 	}
 	if res := s.db.WithContext(ctx).Create(&componentConfigConnection); res.Error != nil {
