@@ -38,12 +38,11 @@ type AdminRestartRunnersTestService struct {
 
 type AdminRestartRunnersTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminRestartRunnersTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service AdminRestartRunnersTestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAdminRestartRunnersSuite(t *testing.T) {
@@ -58,13 +57,9 @@ func (s *AdminRestartRunnersTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -80,7 +75,6 @@ func (s *AdminRestartRunnersTestSuite) SetupSuite() {
 
 func (s *AdminRestartRunnersTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -143,7 +137,7 @@ func (s *AdminRestartRunnersTestSuite) TestAdminRestartRunners() {
 			requestBody:  AdminRestartRunnersRequest{},
 			expectedCode: http.StatusOK,
 			validateFunc: func(runnerIDs []string) {
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0)
 			},
 		},
@@ -198,7 +192,7 @@ func (s *AdminRestartRunnersTestSuite) TestAdminRestartRunners() {
 			expectedCode: http.StatusOK,
 			validateFunc: func(runnerIDs []string) {
 				// Handler correctly finds runners for non-sandbox orgs and sends restart signals
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 2, "should send restart signal for each runner")
 			},
 		},

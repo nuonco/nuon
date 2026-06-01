@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // ---------------------------------------------------------------------------
@@ -45,7 +46,6 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSuccess() {
 
 func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 	s.Run("sends OperationBuild signal for each component", func() {
-		s.mockEvClient.Reset()
 
 		path := fmt.Sprintf("/v1/apps/%s/components/build-all", s.testApp.ID)
 		rr := s.makeRequest(http.MethodPost, path, nil)
@@ -55,15 +55,15 @@ func (s *ComponentsServiceTestSuite) TestBuildAllComponentsSignals() {
 		err := json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(s.T(), err)
 
-		capturedSignals := s.mockEvClient.GetSignals()
+		capturedSignals := tests.GetQueueSignals(s.T(), s.deps.DB)
 		require.Len(s.T(), capturedSignals, 6, "expected 6 signals")
 
-		// Each signal should be OperationBuild with a unique BuildID
+		// Each signal should be a build signal with a unique BuildID
 		buildIDs := map[string]bool{}
-		for _, captured := range capturedSignals {
-			sig, ok := captured.Signal.(*signals.Signal)
-			require.True(s.T(), ok, "signal should be *signals.Signal")
-			assert.Equal(s.T(), signals.OperationBuild, sig.Type)
+		for _, qs := range capturedSignals {
+			assert.Equal(s.T(), buildsignal.SignalType, qs.Type, "signal should be component-build")
+			sig, ok := qs.Signal.Signal.(*buildsignal.Signal)
+			require.True(s.T(), ok, "signal should be *buildsignal.Signal")
 			assert.NotEmpty(s.T(), sig.BuildID)
 			buildIDs[sig.BuildID] = true
 		}

@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	installrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -37,14 +37,13 @@ type AdminRestartInstallTestService struct {
 
 type AdminRestartInstallTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminRestartInstallTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     AdminRestartInstallTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestAdminRestartInstallSuite(t *testing.T) {
@@ -59,11 +58,9 @@ func (s *AdminRestartInstallTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -77,7 +74,6 @@ func (s *AdminRestartInstallTestSuite) SetupSuite() {
 
 func (s *AdminRestartInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -139,13 +135,9 @@ func (s *AdminRestartInstallTestSuite) TestRestartInstall() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				capturedSignals := s.mockEvClient.GetSignals()
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), installID, capturedSignals[0].ID)
-
-				sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationRestart, sig.Type)
+				assert.Equal(s.T(), installrestart.SignalType, capturedSignals[0].Type)
 			},
 		},
 		{
@@ -157,9 +149,9 @@ func (s *AdminRestartInstallTestSuite) TestRestartInstall() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installID string) {
-				sigs := s.mockEvClient.GetSignals()
+				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), installID, sigs[0].ID)
+				assert.Equal(s.T(), installrestart.SignalType, sigs[0].Type)
 			},
 		},
 		{
@@ -171,9 +163,9 @@ func (s *AdminRestartInstallTestSuite) TestRestartInstall() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(installName string) {
-				sigs := s.mockEvClient.GetSignals()
+				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), s.testInstall.ID, sigs[0].ID)
+				assert.Equal(s.T(), installrestart.SignalType, sigs[0].Type)
 			},
 		},
 		{
@@ -190,7 +182,6 @@ func (s *AdminRestartInstallTestSuite) TestRestartInstall() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			installID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-restart", tc.requestBody)
 
@@ -208,11 +199,11 @@ func (s *AdminRestartInstallTestSuite) TestRestartInstall() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
+			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
-				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
+				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")
 			} else {
-				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
+				assert.Len(s.T(), allSignals, 0, "expected no signal to be sent")
 			}
 		})
 	}

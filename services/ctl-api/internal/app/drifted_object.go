@@ -6,7 +6,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type DriftedObject struct {
@@ -51,9 +50,5 @@ func (d *DriftedObject) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (d *DriftedObject) AfterQuery(tx *gorm.DB) error {
-	return nil
-}
-
-func (d *DriftedObject) EventLoops() []bulk.EventLoop {
 	return nil
 }

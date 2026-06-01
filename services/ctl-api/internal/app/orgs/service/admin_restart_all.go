@@ -8,8 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -40,25 +39,14 @@ func (s *service) RestartAllOrgs(ctx *gin.Context) {
 	}
 
 	for _, org := range orgs {
-		useQueues, err := s.useOrgQueues(ctx, org.ID)
+		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 		if err != nil {
-			ctx.Error(fmt.Errorf("checking features for org %s: %w", org.ID, err))
+			ctx.Error(fmt.Errorf("unable to get org signals queue for org %s: %w", org.ID, err))
 			return
 		}
-		if useQueues {
-			queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
-			if err != nil {
-				ctx.Error(fmt.Errorf("unable to get org signals queue for org %s: %w", org.ID, err))
-				return
-			}
-			if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
-				ctx.Error(fmt.Errorf("enqueue signal for org %s: %w", org.ID, err))
-				return
-			}
-		} else {
-			s.evClient.Send(ctx, org.ID, &sigs.Signal{
-				Type: sigs.OperationRestart,
-			})
+		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal for org %s: %w", org.ID, err))
+			return
 		}
 	}
 

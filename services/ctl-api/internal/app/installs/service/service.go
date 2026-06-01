@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/replica"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -39,7 +38,6 @@ type Params struct {
 	RunnersHelpers   *runnershelpers.Helpers
 	ActionsHelpers   *actionshelpers.Helpers
 	FeaturesClient   *features.Features
-	EvClient         eventloop.Client
 	QueueClient      *queueclient.Client
 	FlowsClient      *flowclient.Client
 	EndpointAudit    *api.EndpointAudit
@@ -59,7 +57,6 @@ type service struct {
 	runnersHelpers   *runnershelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
 	featuresClient   *features.Features
-	evClient         eventloop.Client
 	queueClient      *queueclient.Client
 	flowsClient      *flowclient.Client
 }
@@ -342,7 +339,6 @@ func New(params Params) *service {
 		componentHelpers: params.ComponentHelpers,
 		helpers:          params.Helpers,
 		accountsHelpers:  params.AccountsHelpers,
-		evClient:         params.EvClient,
 		queueClient:      params.QueueClient,
 		appsHelpers:      params.AppsHelpers,
 		runnersHelpers:   params.RunnersHelpers,

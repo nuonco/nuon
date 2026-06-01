@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type WriteEventRequest struct {
@@ -12,8 +11,8 @@ type WriteEventRequest struct {
 	InstallID    string
 	SandboxRunID string
 
-	Operation       eventloop.SignalType `validate:"required"`
-	OperationStatus app.OperationStatus  `validate:"required"`
+	Operation       string              `validate:"required"`
+	OperationStatus app.OperationStatus `validate:"required"`
 }
 
 // @temporal-gen-v2 activity

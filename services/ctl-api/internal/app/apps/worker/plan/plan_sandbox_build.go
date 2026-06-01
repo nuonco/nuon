@@ -6,7 +6,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 )
 
 func (p *Planner) createSandboxBuildPlan(ctx workflow.Context, req *CreateSandboxBuildPlanRequest) (*plantypes.BuildPlan, error) {

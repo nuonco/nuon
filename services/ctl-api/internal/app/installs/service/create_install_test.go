@@ -10,7 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
@@ -39,19 +39,17 @@ func (s *InstallsServiceTestSuite) TestCreateInstallV2Success() {
 	assert.Equal(s.T(), "my-install", install.Name)
 	assert.Equal(s.T(), s.testApp.ID, install.AppID)
 
-	captured := s.mockEvClient.GetSignals()
+	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.GreaterOrEqual(s.T(), len(captured), 4)
 
 	var signalTypes []string
 	for _, c := range captured {
-		if sig, ok := c.Signal.(*signals.Signal); ok {
-			signalTypes = append(signalTypes, string(sig.Type))
-		}
+		signalTypes = append(signalTypes, string(c.Type))
 	}
-	assert.Contains(s.T(), signalTypes, string(signals.OperationCreated))
-	assert.Contains(s.T(), signalTypes, string(signals.OperationPollDependencies))
-	assert.Contains(s.T(), signalTypes, string(signals.OperationSyncActionWorkflowTriggers))
-	assert.Contains(s.T(), signalTypes, string(signals.OperationExecuteFlow))
+	assert.Contains(s.T(), signalTypes, "install-created")
+	assert.Contains(s.T(), signalTypes, "poll-dependencies")
+	assert.Contains(s.T(), signalTypes, "install-action-workflow-run")
+	assert.Contains(s.T(), signalTypes, "execute-workflow")
 }
 
 func (s *InstallsServiceTestSuite) TestCreateInstallV2WithInputs() {

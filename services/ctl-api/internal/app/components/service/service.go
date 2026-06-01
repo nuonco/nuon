@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
@@ -30,7 +29,6 @@ type Params struct {
 	Helpers        *helpers.Helpers
 	VcsHelpers     *vcshelpers.Helpers
 	AppsHelpers    *appshelpers.Helpers
-	EvClient       eventloop.Client
 	TfClient       terraform.Client
 	QueueClient    *queueclient.Client
 	FeaturesClient *features.Features
@@ -47,7 +45,6 @@ type service struct {
 	helpers        *helpers.Helpers
 	vcsHelpers     *vcshelpers.Helpers
 	appsHelpers    *appshelpers.Helpers
-	evClient       eventloop.Client
 	tfClient       terraform.Client
 	queueClient    *queueclient.Client
 	featuresClient *features.Features
@@ -198,7 +195,6 @@ func New(params Params) *service {
 		helpers:        params.Helpers,
 		vcsHelpers:     params.VcsHelpers,
 		appsHelpers:    params.AppsHelpers,
-		evClient:       params.EvClient,
 		tfClient:       params.TfClient,
 		queueClient:    params.QueueClient,
 		featuresClient: params.FeaturesClient,

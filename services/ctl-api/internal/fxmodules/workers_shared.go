@@ -20,13 +20,12 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
-	signalsactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/signals/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowsflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 
 	// Register signal types in catalog (blank imports trigger init())
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_app"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_install"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/create_org"
@@ -34,13 +33,13 @@ import (
 	onboardingactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/signals/activities"
 
 	// Register install queue signals
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generateworkflowsteps"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 
 	// Register VCS queue signals
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 )
 
 // WorkerInterceptorsModule provides interceptors for temporal workers.
@@ -59,7 +58,6 @@ var SharedWorkflowsModule = fx.Module("shared-workflows",
 
 	fx.Provide(jobactivities.New),
 	fx.Provide(flowactivities.New),
-	fx.Provide(signalsactivities.New),
 	fx.Provide(queueactivities.New),
 	fx.Provide(handleractivities.New),
 	fx.Provide(emitteractivities.New),

@@ -2,21 +2,16 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.temporal.io/api/serviceerror"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	pkgerrors "github.com/pkg/errors"
 )
@@ -114,37 +109,12 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 		return nil
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-	if err != nil {
-		return fmt.Errorf("checking features: %w", err)
-	}
-
-	if useQueues {
-		if _, err := s.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
-			InstallWorkflowID: wf.ID,
-		}); err != nil {
-			s.l.Warn("failed to cancel workflow via queues",
-				zap.String("workflow_id", wf.ID),
-				zap.Error(err))
-		}
-	} else {
-		id := worker.ExecuteWorkflowIDCallback(signals.RequestSignal{
-			EventLoopRequest: eventloop.EventLoopRequest{
-				ID: wf.OwnerID,
-			},
-			Signal: &signals.Signal{
-				InstallWorkflowID: wf.ID,
-			},
-		})
-		err = s.evClient.Cancel(ctx, signals.TemporalNamespace, id)
-		if err != nil {
-			var notFoundErr *serviceerror.NotFound
-			if errors.As(err, &notFoundErr) {
-				s.l.Warn("workflow canceled but not found in temporal", zap.String("workflow_id", id), zap.Error(err))
-			} else {
-				return fmt.Errorf("unable to cancel workflow in temporal: %w", err)
-			}
-		}
+	if _, err := s.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
+		InstallWorkflowID: wf.ID,
+	}); err != nil {
+		s.l.Warn("failed to cancel workflow via queues",
+			zap.String("workflow_id", wf.ID),
+			zap.Error(err))
 	}
 
 	return nil

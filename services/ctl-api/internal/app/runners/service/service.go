@@ -12,7 +12,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
 
@@ -25,7 +24,6 @@ type Params struct {
 	CHDB                 *gorm.DB `name:"ch"`
 	MW                   metrics.Writer
 	L                    *zap.Logger
-	EvClient             eventloop.Client
 	AccountClient        *account.Client
 	Helpers              *helpers.Helpers
 	EndpointAudit        *apiPkg.EndpointAudit
@@ -41,7 +39,6 @@ type service struct {
 	chDB                 *gorm.DB
 	mw                   metrics.Writer
 	cfg                  *internal.Config
-	evClient             eventloop.Client
 	acctClient           *account.Client
 	helpers              *helpers.Helpers
 	runnerHeartbeatCache *RunnerHeartbeatCache
@@ -78,7 +75,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/mng/shutdown", s.MngShutDown)
 	api.POST("/v1/runners/:runner_id/mng/update", s.MngUpdate)
 	api.POST("/v1/runners/:runner_id/mng/restart", s.MngRestart)
-	api.POST("/v1/runners/:runner_id/mng/fetch-token", s.MngFetchToken)
 	api.POST("/v1/runners/:runner_id/prune-tokens", s.PruneTokens)
 
 	// settings
@@ -344,7 +340,6 @@ func New(params Params) *service {
 		db:                   params.DB,
 		chDB:                 params.CHDB,
 		mw:                   params.MW,
-		evClient:             params.EvClient,
 		acctClient:           params.AccountClient,
 		helpers:              params.Helpers,
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
