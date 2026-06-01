@@ -76,6 +76,55 @@ func TestGetKubernetesSecret_ReturnsSecretWhenARNPresent(t *testing.T) {
 	assert.Equal(t, "default", secret.Namespace)
 }
 
+func TestGetKubernetesSecret_EmitsV2Targets(t *testing.T) {
+	p := &Planner{}
+
+	secret, ok, err := p.getKubernetesSecret(
+		app.InstallStackOutputs{
+			Data: pgtype.Hstore{
+				"db_arn": ptr("arn:aws:secretsmanager:us-west-2:123:secret:db"),
+			},
+		},
+		app.AppSecretConfig{
+			Name: "db",
+			KubernetesSyncTargets: []app.AppSecretKubernetesSyncTarget{
+				{Namespaces: []string{"cloudprem", "datadog"}, Name: "datadog", Key: "api-key"},
+				{Namespaces: []string{"datadog"}, Name: "datadog", Key: "app-key"},
+			},
+		},
+	)
+
+	require.NoError(t, err)
+	assert.True(t, ok)
+	require.Len(t, secret.Targets, 2)
+	assert.Equal(t, []string{"cloudprem", "datadog"}, secret.Targets[0].Namespaces)
+	assert.Equal(t, "datadog", secret.Targets[0].Name)
+	assert.Equal(t, "api-key", secret.Targets[0].Key)
+	assert.Equal(t, "app-key", secret.Targets[1].Key)
+}
+
+func TestGetKubernetesSecret_NoTargetsLeavesV2Nil(t *testing.T) {
+	p := &Planner{}
+
+	secret, ok, err := p.getKubernetesSecret(
+		app.InstallStackOutputs{
+			Data: pgtype.Hstore{
+				"db_arn": ptr("arn:aws:secretsmanager:us-west-2:123:secret:db"),
+			},
+		},
+		app.AppSecretConfig{
+			Name:                      "db",
+			KubernetesSecretName:      "app-db",
+			KubernetesSecretKey:       "password",
+			KubernetesSecretNamespace: "default",
+		},
+	)
+
+	require.NoError(t, err)
+	assert.True(t, ok)
+	assert.Nil(t, secret.Targets)
+}
+
 func ptr(v string) *string {
 	return &v
 }

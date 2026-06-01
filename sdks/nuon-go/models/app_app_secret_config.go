@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -65,6 +68,10 @@ type AppAppSecretConfig struct {
 	// for syncing into kubernetes
 	KubernetesSync bool `json:"kubernetes_sync,omitempty"`
 
+	// kubernetes sync v2: when present, the secret syncs to each of these targets (namespaces x name x key). The
+	// single-valued Kubernetes* fields above remain for backwards compatibility.
+	KubernetesSyncTargets []*AppAppSecretKubernetesSyncTarget `json:"kubernetes_sync_targets"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
@@ -80,11 +87,88 @@ type AppAppSecretConfig struct {
 
 // Validate validates this app app secret config
 func (m *AppAppSecretConfig) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateKubernetesSyncTargets(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app app secret config based on context it is used
+func (m *AppAppSecretConfig) validateKubernetesSyncTargets(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesSyncTargets) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.KubernetesSyncTargets); i++ {
+		if swag.IsZero(m.KubernetesSyncTargets[i]) { // not required
+			continue
+		}
+
+		if m.KubernetesSyncTargets[i] != nil {
+			if err := m.KubernetesSyncTargets[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app app secret config based on the context it is used
 func (m *AppAppSecretConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateKubernetesSyncTargets(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppAppSecretConfig) contextValidateKubernetesSyncTargets(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.KubernetesSyncTargets); i++ {
+
+		if m.KubernetesSyncTargets[i] != nil {
+
+			if swag.IsZero(m.KubernetesSyncTargets[i]) { // not required
+				return nil
+			}
+
+			if err := m.KubernetesSyncTargets[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
