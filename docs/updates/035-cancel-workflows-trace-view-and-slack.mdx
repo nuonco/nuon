@@ -66,37 +66,6 @@ auto_approve_on_policies_passing = true
 
 Org [webhooks](/guides/webhooks) now accept a structured `interests` filter so each subscription can opt into a subset of events — by resource (workflow, step, approval, runner), operation, outcome, or approval state — instead of receiving every lifecycle event. Existing subscriptions default to `all_events: true` and continue to behave exactly as before.
 
-## Runner authentication on AWS
-
-[Runners on AWS](/architecture/runner-auth) now default to instance identity document (IID) authentication. New runners pick it up automatically; existing runners are unaffected. This aligns AWS with the zero-trust auth posture already used on GCP and Azure.
-
-## Updates
-
-- **Policy reports** redesigned for faster scanning of evaluations across installs.
-- **Install navbar** updated with clearer sections and quicker access to runner, components, and workflows.
-- **App branches** UI is now generally available behind a feature flag, with a refreshed design.
-- **Architecture diagram export** — download a PNG of the install's architecture diagram from the dashboard.
-- **Search installs by runner ID** from the installs list and via the API.
-- **State download and copy** — pull component state directly from the workflow step panel.
-- **Diff rendering** handles long lines and overflow more gracefully; overflow highlights are clearer.
-- **Workflow badges** refreshed with new statuses and consistent colors across the dashboard.
-- **Live updates** — the workflow detail, log viewer, timeline, resource pages, and org status bar now stream over SSE instead of polling.
-- **Keyboard shortcuts** for common dashboard navigation actions.
-- **Onboarding** flow now validates org details before provisioning.
-- **Plan approvals** are now delivered as queue signals, improving reliability when a runner is briefly unavailable.
-
-## Bug fixes
-
-- Fixed an auto-approval bug where plan-only mode could incorrectly auto-approve plans.
-- Fixed the action run cancel button on the workflow detail page.
-- Fixed missing install inputs when no vendor inputs were defined.
-- Fixed Terraform provider mirror builds for orgs that also use `docker_build` components.
-- Fixed `nuon orgs connect-github` CLI callback path so the GitHub App flow completes correctly.
-- Fixed `nuon ext list` to include locally-installed extensions; removed the `NUON_PREVIEW` requirement for `nuon ext`.
-- Fixed log panel "copy link" and SSE log loading on already-closed streams.
-- Fixed VM shutdown, signal re-enqueue, and "approve all" edge cases.
-- Fixed `time.Duration` fields in the API and SDK to serialize as documented.
-
 ## Nuon CLI
 
 - New `nuon-ext-replay-stack` extension for replaying install stack runs from the CLI.
