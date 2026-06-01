@@ -24,7 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/delete"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -372,21 +372,24 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrg() {
 
 			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
-				assert.Equal(s.T(), org.ID, signal.ID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
 				// Type assert to get the actual signal
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationDelete, orgSignal.Type, "signal type should be OperationDelete")
+				_ = signal // type check via .Type
+
+				assert.Equal(s.T(), orgdelete.SignalType, signal.Type, "signal type should be OperationDelete")
 
 				// Verify force flag if applicable
 				if tc.checkForceFlag {
-					assert.Equal(s.T(), tc.expectedForce, orgSignal.ForceDelete, "ForceDelete flag should match request")
+					sig, _ := signal.Signal.Signal.(*orgdelete.Signal)
+					assert.Equal(s.T(), tc.expectedForce, sig.ForceDelete, "ForceDelete flag should match request")
 				}
 			} else {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "no signal should be sent for integration org")
 			}
 
@@ -439,6 +442,7 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgNotFound() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// Verify no signal was sent
+			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), signals, 0, "no signal should be sent when org not found")
 		})
 	}
@@ -564,14 +568,15 @@ func (s *AdminDeleteOrgTestSuite) TestAdminDeleteOrgByName() {
 
 			if tc.validateSignal {
 				// Verify signal was sent
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
-				assert.Equal(s.T(), org.ID, signal.ID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationDelete, orgSignal.Type, "signal type should be OperationDelete")
+				_ = signal // type check via .Type
+
+				assert.Equal(s.T(), orgdelete.SignalType, signal.Type, "signal type should be OperationDelete")
 			}
 		})
 	}

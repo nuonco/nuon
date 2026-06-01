@@ -238,8 +238,9 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			expectedCode: http.StatusOK,
 			expectSignal: true,
 			validateFunc: func(settings *app.RunnerGroupSettings) {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "should send restart signal when image tag changes")
-				assert.Equal(s.T(), s.testRunner.ID, signals[0].ID)
+				assert.Equal(s.T(), s.testRunner.ID, signals[0].OwnerID)
 			},
 		},
 		{
@@ -252,6 +253,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			expectedCode: http.StatusOK,
 			expectSignal: false,
 			validateFunc: func(settings *app.RunnerGroupSettings) {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "should not send signal when only API URL changes")
 			},
 		},
@@ -457,6 +459,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			}
 
 			// Verify signal expectations
+			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectSignal {
 				assert.NotEmpty(s.T(), signals, "expected signal to be sent")
 			} else if !tc.expectedError {

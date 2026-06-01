@@ -175,6 +175,7 @@ func (s *AdminCreateHealthCheckJobTestSuite) TestAdminCreateHealthCheckJob() {
 				assert.Equal(s.T(), "runners", logStream.OwnerType)
 				assert.True(s.T(), logStream.Open)
 
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "health check jobs do not send signals")
 			},
 		},

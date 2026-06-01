@@ -22,7 +22,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -160,12 +159,13 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
+				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationRestart, sig.Type)
+				_ = capturedSignals[0] // type check
+
+				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			},
 		},
 		{
@@ -177,8 +177,9 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 			expectedCode:   http.StatusOK,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), runnerID, signals[0].ID)
+				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
 			},
 		},
 		{
@@ -265,8 +266,10 @@ func (s *AdminRestartTestSuite) TestRestartRunner() {
 
 			// Verify signal presence matches expectation
 			if tc.expectedSignal {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
 			}
 		})

@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -163,12 +163,11 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			expectedSignal: true,
 			validateFunc: func(req AdminForgetAccountInstallsRequest) {
 				// Verify signals were sent
+				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.GreaterOrEqual(s.T(), len(sigs), 1, "expected at least one signal")
 
-				for _, sig := range sigs {
-					evSig, ok := sig.Signal.(*signals.Signal)
-					require.True(s.T(), ok)
-					assert.Equal(s.T(), signals.OperationForget, evSig.Type)
+				for _, qs := range sigs {
+					assert.Equal(s.T(), forgotten.SignalType, qs.Type)
 				}
 			},
 		},
@@ -224,6 +223,7 @@ func (s *AdminForgetAccountInstallsTestSuite) TestForgetAccountInstalls() {
 			}
 
 			// Verify signal presence matches expectation
+			capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
 			} else {

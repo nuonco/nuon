@@ -328,8 +328,9 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			require.NoError(s.T(), err)
 
 			// Verify signal was sent
-			require.Len(s.T(), signals, 1)
-			assert.Equal(s.T(), actionID, signals[0].ID)
+			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+			require.Len(s.T(), queueSignals, 1)
+			assert.Equal(s.T(), actionID, queueSignals[0].OwnerID)
 
 			// Verify database state
 			var dbConfig app.ActionWorkflowConfig

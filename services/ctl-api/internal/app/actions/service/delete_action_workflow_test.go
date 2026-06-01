@@ -22,7 +22,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
@@ -227,11 +226,9 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 				tc.validateFunc(actionIdentifier)
 			}
 
-			// Verify signal was sent
-			require.Len(s.T(), signalsList, 1)
-			sig, ok := signalsList[0].Signal.(*signals.Signal)
-			require.True(s.T(), ok)
-			assert.Equal(s.T(), signals.OperationDelete, sig.Type)
+			// Legacy evClient.Send removed - no signal is sent anymore
+			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+			assert.Len(s.T(), queueSignals, 0, "delete action workflow no longer sends signals")
 		})
 	}
 }

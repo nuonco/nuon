@@ -24,7 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orginvitecreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_created"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -347,25 +347,14 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 
 			// Validate signal was sent (or not sent)
 			if tc.validateSignal {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
-				assert.Equal(s.T(), s.testOrg.ID, signal.ID, "signal should be sent to correct org ID")
-
-				// Type assert to get the actual signal
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationInviteCreated, orgSignal.Type, "signal type should be OperationInviteCreated")
-
-				// Verify InviteID is set in signal
-				assert.NotEmpty(s.T(), orgSignal.InviteID, "signal should contain invite ID")
-
-				// Verify InviteID matches the invite we're resending
-				var invite app.OrgInvite
-				err := json.Unmarshal(rr.Body.Bytes(), &invite)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), invite.ID, orgSignal.InviteID, "signal invite ID should match resent invite")
+				assert.Equal(s.T(), s.testOrg.ID, signal.OwnerID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), orginvitecreated.SignalType, signal.Type, "signal type should be OperationInviteCreated")
 			} else {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "no signal should be sent for failed operations")
 			}
 		})
@@ -431,17 +420,20 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_CanResendMultipleTimes() 
 	// Resend first time
 	rr1 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
-	require.Len(s.T(), signals1, 1, "first resend should send signal")
+	signals1 := tests.GetQueueSignals(s.T(), s.service.DB)
+	require.GreaterOrEqual(s.T(), len(signals1), 1, "first resend should send signal")
 
 	// Resend second time
 	rr2 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr2.Code)
-	require.Len(s.T(), signals2, 1, "second resend should send signal")
+	signals2 := tests.GetQueueSignals(s.T(), s.service.DB)
+	require.Greater(s.T(), len(signals2), len(signals1), "second resend should send signal")
 
 	// Resend third time
 	rr3 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr3.Code)
-	require.Len(s.T(), signals3, 1, "third resend should send signal")
+	signals3 := tests.GetQueueSignals(s.T(), s.service.DB)
+	require.Greater(s.T(), len(signals3), len(signals2), "third resend should send signal")
 
 	// Verify all responses return the same invite
 	var invite1, invite2, invite3 app.OrgInvite

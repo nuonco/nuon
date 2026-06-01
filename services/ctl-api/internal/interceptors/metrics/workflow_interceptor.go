@@ -49,6 +49,7 @@ func (a *wfInterceptor) ExecuteWorkflow(
 		}
 
 		a.mw.Timing("temporal_workflow.latency", time.Since(startTS), metrics.ToTags(tags))
+		a.mw.Incr("temporal_workflow.count", metrics.ToTags(tags))
 
 		if rec != nil {
 			panic(rec)

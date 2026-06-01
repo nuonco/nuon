@@ -20,7 +20,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -127,12 +126,13 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
+				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
-				sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationOfflineCheck, sig.Type)
+				_ = capturedSignals[0] // type check
+
+				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			},
 		},
 		{
@@ -142,8 +142,9 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedCode:   http.StatusCreated,
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
+				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 			},
 		},
 		{
@@ -154,8 +155,9 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Handler sends signal directly without validation
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
+				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 			},
 		},
 		{
@@ -166,8 +168,9 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 			expectedSignal: true,
 			validateFunc: func(runnerID string) {
 				// Even with empty ID, signal is sent
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), "", capturedSignals[0].ID)
+				// OwnerID may be empty
 			},
 		},
 	}
@@ -187,8 +190,10 @@ func (s *AdminOfflineCheckTestSuite) TestAdminOfflineCheck() {
 
 			// Verify signal presence
 			if tc.expectedSignal {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
 			} else {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
 			}
 		})

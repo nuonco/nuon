@@ -25,9 +25,9 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	comphelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installhelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -171,11 +171,9 @@ func (s *CreateAdHocActionTestSuite) TestCreateAdHocAction() {
 				require.NoError(s.T(), res.Error)
 				require.Len(s.T(), run.Steps, 1)
 
+				evSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), evSignals, 1)
-				assert.Equal(s.T(), installID, evSignals[0].ID)
-				sig, ok := evSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationExecuteFlow, sig.Type)
+				assert.Equal(s.T(), executeflow.SignalType, evSignals[0].Type)
 			},
 		},
 		{

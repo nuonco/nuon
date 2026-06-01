@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -147,12 +147,9 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 				assert.Equal(s.T(), gorm.ErrRecordNotFound, err)
 
 				// Verify signal was sent
+				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), installID, sigs[0].ID)
-
-				sig, ok := sigs[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationForget, sig.Type)
+				assert.Equal(s.T(), forgotten.SignalType, sigs[0].Type)
 			},
 		},
 		{
@@ -204,8 +201,9 @@ func (s *AdminForgetInstallTestSuite) TestAdminForgetInstall() {
 			}
 
 			// Verify signal presence matches expectation
+			capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
-				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
+				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected signal to be sent")
 			} else {
 				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
 			}

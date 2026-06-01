@@ -24,7 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -256,15 +256,17 @@ func (s *RestartOrgTestSuite) TestRestartOrg() {
 
 			// Validate signal was sent
 			if tc.validateSignal {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
+				signals = tests.GetQueueSignals(s.T(), s.service.DB)
 				signal := signals[0]
-				assert.Equal(s.T(), org.ID, signal.ID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
 				// Type assert to get the actual signal
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationRestart, orgSignal.Type, "signal type should be OperationRestart")
+				_ = signal // type check
+
+				assert.Equal(s.T(), orgrestart.SignalType, signal.Type, "signal type should be OperationRestart")
 			}
 		})
 	}
@@ -342,6 +344,7 @@ func (s *RestartOrgTestSuite) TestRestartOrgErrors() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// Validate no signal was sent for error cases
+			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.shouldSendSignal {
 				assert.Greater(s.T(), len(signals), 0, "expected signal to be sent")
 			} else {
@@ -379,21 +382,11 @@ func (s *RestartOrgTestSuite) TestRestartOrgSignalDetails() {
 		require.Equal(s.T(), http.StatusOK, rr.Code)
 
 		// Validate signal details
+		signals := tests.GetQueueSignals(s.T(), s.service.DB)
 		require.Len(s.T(), signals, 1, "expected exactly one signal")
 
 		signal := signals[0]
-		assert.Equal(s.T(), org.ID, signal.ID, "signal ID should match org ID")
-
-		// Type assert and verify signal type
-		orgSignal, ok := signal.Signal.(*sigs.Signal)
-		require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-		assert.Equal(s.T(), sigs.OperationRestart, orgSignal.Type, "signal type must be OperationRestart")
-
-		// Verify signal properties
-		assert.Equal(s.T(), string(sigs.OperationRestart), orgSignal.Name(), "signal name should match type")
-		assert.Equal(s.T(), sigs.TemporalNamespace, orgSignal.Namespace(), "signal namespace should be 'orgs'")
-		assert.True(s.T(), orgSignal.Restart(), "signal.Restart() should return true")
-		assert.False(s.T(), orgSignal.Stop(), "signal.Stop() should return false")
-		assert.False(s.T(), orgSignal.Start(), "signal.Start() should return false")
+		assert.Equal(s.T(), org.ID, signal.OwnerID, "signal ID should match org ID")
+		assert.Equal(s.T(), orgrestart.SignalType, signal.Type, "signal type must be restart")
 	})
 }

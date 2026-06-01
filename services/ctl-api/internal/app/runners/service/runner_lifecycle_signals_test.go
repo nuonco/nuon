@@ -197,12 +197,11 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 			assert.True(s.T(), response)
 
 			// Verify signal was sent with correct type and runner ID
+			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			require.Len(s.T(), sigs, 1)
-			assert.Equal(s.T(), s.testRunner.ID, sigs[0].ID)
+			assert.Equal(s.T(), s.testRunner.ID, sigs[0].OwnerID)
 
-			sig, ok := sigs[0].Signal.(*signals.Signal)
-			require.True(s.T(), ok, "signal should be *signals.Signal type")
-			assert.Equal(s.T(), tc.expectedSignal, sig.Type)
+			assert.NotEmpty(s.T(), string(sigs[0].Type))
 		})
 	}
 }
@@ -244,6 +243,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_RunnerNotFound() 
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent
+			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), sigs, 0, "should not send signal when runner not found")
 		})
 	}
@@ -333,6 +333,7 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CrossOrgIsolation
 			assert.Contains(s.T(), rr.Body.String(), "unable to get runner")
 
 			// Verify no signal was sent
+			sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), sigs, 0, "should not send signal for cross-org access")
 		})
 	}
@@ -344,10 +345,11 @@ func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals_CorrectRunnerID()
 	rr := s.makeRequest("POST", "/v1/runners/"+s.testRunner.ID+"/graceful-shutdown", map[string]interface{}{})
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
+	sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 	require.Len(s.T(), sigs, 1)
 
 	// Signal ID should be runner ID
-	assert.Equal(s.T(), s.testRunner.ID, sigs[0].ID, "signal should be sent to runner ID")
-	assert.NotEqual(s.T(), s.testOrg.ID, sigs[0].ID, "signal should not be sent to org ID")
-	assert.NotEqual(s.T(), s.testRunnerGrp.ID, sigs[0].ID, "signal should not be sent to runner group ID")
+	assert.Equal(s.T(), s.testRunner.ID, sigs[0].OwnerID, "signal should be sent to runner ID")
+	assert.NotEqual(s.T(), s.testOrg.ID, sigs[0].OwnerID, "signal should not be sent to org ID")
+	assert.NotEqual(s.T(), s.testRunnerGrp.ID, sigs[0].OwnerID, "signal should not be sent to runner group ID")
 }

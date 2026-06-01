@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionrunner"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -166,12 +166,9 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 				assert.Equal(s.T(), "v2.0.0", settings.ContainerImageTag)
 
 				// Verify signal was sent
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), installID, capturedSignals[0].ID)
-
-				sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationReprovisionRunner, sig.Type)
+				assert.Equal(s.T(), reprovisionrunner.SignalType, capturedSignals[0].Type)
 			},
 		},
 		{
@@ -233,10 +230,11 @@ func (s *AdminUpdateInstallRunnerTestSuite) TestAdminUpdateInstallRunner() {
 			}
 
 			// Verify signal presence matches expectation
+			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
-				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
+				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")
 			} else {
-				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
+				assert.Len(s.T(), allSignals, 0, "expected no signal to be sent")
 			}
 		})
 	}

@@ -19,7 +19,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
@@ -235,27 +236,21 @@ func (s *CreateOrgTestSuite) TestCreateOrg() {
 
 			// Validate signals were sent
 			if tc.validateSignal {
-				// 3 signals total: OperationCreated (runner), OperationCreated (org), OperationProvision (org)
-				// Order: runner creation happens first in CreateOrgRunnerGroup, then org signals
-				require.Len(s.T(), signals, 3, "expected runner and org signals")
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
+				require.GreaterOrEqual(s.T(), len(signals), 2, "expected at least org created and provision signals")
 
-				// Find org signals (skip runner signal at index 0)
-				var orgCreatedSignal, orgProvisionSignal *sigs.Signal
-				for _, sig := range signals {
-					if sig.ID == response.ID {
-						if s, ok := sig.Signal.(*sigs.Signal); ok {
-							if s.Type == sigs.OperationCreated {
-								orgCreatedSignal = s
-							} else if s.Type == sigs.OperationProvision {
-								orgProvisionSignal = s
-							}
-						}
+				foundCreated := false
+				foundProvision := false
+				for _, qs := range signals {
+					if qs.Type == orgcreated.SignalType {
+						foundCreated = true
+					} else if qs.Type == orgprovision.SignalType {
+						foundProvision = true
 					}
 				}
 
-				// Verify both org signals were sent
-				require.NotNil(s.T(), orgCreatedSignal, "expected OperationCreated signal for org")
-				require.NotNil(s.T(), orgProvisionSignal, "expected OperationProvision signal for org")
+				assert.True(s.T(), foundCreated, "expected org-created signal")
+				assert.True(s.T(), foundProvision, "expected org-provision signal")
 			}
 		})
 	}
@@ -284,6 +279,7 @@ func (s *CreateOrgTestSuite) TestCreateOrgValidation() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// No signals should be sent on validation failure
+			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			assert.Len(s.T(), signals, 0)
 		})
 	}

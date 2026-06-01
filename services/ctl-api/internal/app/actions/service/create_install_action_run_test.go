@@ -174,8 +174,9 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 				assert.Equal(s.T(), app.WorkflowTypeActionWorkflowRun, workflows[0].Type)
 
 				// Verify signal was sent
-				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), installID, signals[0].ID)
+				queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				require.Len(s.T(), queueSignals, 1)
+				assert.Equal(s.T(), installID, queueSignals[0].OwnerID)
 			},
 		},
 		{

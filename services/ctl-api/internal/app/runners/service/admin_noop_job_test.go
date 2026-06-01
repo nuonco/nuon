@@ -175,8 +175,9 @@ func (s *AdminNoopJobTestSuite) TestAdminCreateNoopJob() {
 				assert.Equal(s.T(), "runners", logStream.OwnerType)
 				assert.True(s.T(), logStream.Open)
 
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), runnerID, signals[0].ID)
+				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
 			},
 		},
 		{

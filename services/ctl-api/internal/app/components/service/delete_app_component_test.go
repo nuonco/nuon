@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/delete"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // ---------------------------------------------------------------------------
@@ -47,14 +48,11 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentSuccess() {
 		assert.Equal(s.T(), "delete has been queued and waiting", dbComp.StatusDescription)
 
 		// Verify OperationDelete signal was sent
+		capturedSignals := tests.GetQueueSignalsByOwner(s.T(), s.deps.DB, comp.ID)
 		require.Len(s.T(), capturedSignals, 1, "expected 1 signal")
 
-		assert.Equal(s.T(), comp.ID, capturedSignals[0].ID, "signal should target the deleted component")
-
-		// Type assert and verify signal type
-		sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-		require.True(s.T(), ok, "signal should be *signals.Signal")
-		assert.Equal(s.T(), signals.OperationDelete, sig.Type)
+		assert.Equal(s.T(), comp.ID, capturedSignals[0].OwnerID, "signal should target the deleted component")
+		assert.Equal(s.T(), componentdelete.SignalType, capturedSignals[0].Type)
 	})
 }
 
@@ -87,6 +85,7 @@ func (s *ComponentsServiceTestSuite) TestDeleteAppComponentNotFound() {
 		require.Equal(s.T(), http.StatusNotFound, rr.Code)
 
 		// Verify no signal was sent
+		capturedSignals := tests.GetQueueSignalsByOwner(s.T(), s.deps.DB, "cmp_nonexistent00000000000")
 		assert.Len(s.T(), capturedSignals, 0, "should not send signal when component not found")
 	})
 }
