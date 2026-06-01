@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 func (h *Helpers) getInstallRun(ctx context.Context, runID string) (*app.InstallSandboxRun, error) {
@@ -52,7 +51,7 @@ func (h *Helpers) getInstall(ctx context.Context, installID string) (*app.Instal
 
 func (h *Helpers) WriteDeployEvent(ctx context.Context,
 	deployID string,
-	op eventloop.SignalType,
+	op string,
 	status app.OperationStatus,
 ) error {
 	deploy, err := h.getInstallDeploy(ctx, deployID)
@@ -69,7 +68,7 @@ func (h *Helpers) WriteDeployEvent(ctx context.Context,
 		OrgID:           deploy.OrgID,
 		CreatedByID:     deploy.CreatedByID,
 		InstallID:       deploy.InstallID,
-		Operation:       string(op),
+		Operation:       op,
 		OperationStatus: status,
 		Payload:         byts,
 	}
@@ -84,7 +83,7 @@ func (h *Helpers) WriteDeployEvent(ctx context.Context,
 
 func (h *Helpers) WriteInstallEvent(ctx context.Context,
 	installID string,
-	op eventloop.SignalType,
+	op string,
 	status app.OperationStatus,
 ) error {
 	install, err := h.getInstall(ctx, installID)
@@ -101,7 +100,7 @@ func (h *Helpers) WriteInstallEvent(ctx context.Context,
 		OrgID:           install.OrgID,
 		CreatedByID:     install.CreatedByID,
 		InstallID:       installID,
-		Operation:       string(op),
+		Operation:       op,
 		OperationStatus: status,
 		Payload:         byts,
 	}
@@ -116,7 +115,7 @@ func (h *Helpers) WriteInstallEvent(ctx context.Context,
 
 func (h *Helpers) WriteRunEvent(ctx context.Context,
 	runID string,
-	op eventloop.SignalType,
+	op string,
 	status app.OperationStatus,
 ) error {
 	run, err := h.getInstallRun(ctx, runID)
@@ -132,7 +131,7 @@ func (h *Helpers) WriteRunEvent(ctx context.Context,
 	ev := &app.InstallEvent{
 		OrgID:           run.OrgID,
 		CreatedByID:     run.CreatedByID,
-		Operation:       string(op),
+		Operation:       op,
 		InstallID:       run.InstallID,
 		OperationStatus: status,
 		Payload:         byts,

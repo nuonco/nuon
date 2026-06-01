@@ -27,12 +27,11 @@ import (
 type AppCRUDTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      TestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service TestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAppCRUDSuite(t *testing.T) {
@@ -49,13 +48,10 @@ func (s *AppCRUDTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -73,7 +69,6 @@ func (s *AppCRUDTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,

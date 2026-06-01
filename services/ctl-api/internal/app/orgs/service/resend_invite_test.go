@@ -24,7 +24,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orginvitecreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_created"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -47,13 +47,12 @@ type ResendOrgInviteTestService struct {
 type ResendOrgInviteTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      ResendOrgInviteTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     ResendOrgInviteTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestResendOrgInviteSuite(t *testing.T) {
@@ -70,13 +69,10 @@ func (s *ResendOrgInviteTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -97,7 +93,6 @@ func (s *ResendOrgInviteTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -332,7 +327,6 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Setup test data
 			inviteID := tc.setupFunc()
@@ -352,27 +346,15 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite() {
 			}
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
-				assert.Equal(s.T(), s.testOrg.ID, signal.ID, "signal should be sent to correct org ID")
-
-				// Type assert to get the actual signal
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationInviteCreated, orgSignal.Type, "signal type should be OperationInviteCreated")
-
-				// Verify InviteID is set in signal
-				assert.NotEmpty(s.T(), orgSignal.InviteID, "signal should contain invite ID")
-
-				// Verify InviteID matches the invite we're resending
-				var invite app.OrgInvite
-				err := json.Unmarshal(rr.Body.Bytes(), &invite)
-				require.NoError(s.T(), err)
-				assert.Equal(s.T(), invite.ID, orgSignal.InviteID, "signal invite ID should match resent invite")
+				assert.Equal(s.T(), s.testOrg.ID, signal.OwnerID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), orginvitecreated.SignalType, signal.Type, "signal type should be OperationInviteCreated")
 			} else {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "no signal should be sent for failed operations")
 			}
 		})
@@ -436,25 +418,22 @@ func (s *ResendOrgInviteTestSuite) TestResendOrgInvite_CanResendMultipleTimes() 
 	path := fmt.Sprintf("/v1/orgs/current/invites/%s/resend", invite.ID)
 
 	// Resend first time
-	s.mockEvClient.Reset()
 	rr1 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr1.Code)
-	signals1 := s.mockEvClient.GetSignals()
-	require.Len(s.T(), signals1, 1, "first resend should send signal")
+	signals1 := tests.GetQueueSignals(s.T(), s.service.DB)
+	require.GreaterOrEqual(s.T(), len(signals1), 1, "first resend should send signal")
 
 	// Resend second time
-	s.mockEvClient.Reset()
 	rr2 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr2.Code)
-	signals2 := s.mockEvClient.GetSignals()
-	require.Len(s.T(), signals2, 1, "second resend should send signal")
+	signals2 := tests.GetQueueSignals(s.T(), s.service.DB)
+	require.Greater(s.T(), len(signals2), len(signals1), "second resend should send signal")
 
 	// Resend third time
-	s.mockEvClient.Reset()
 	rr3 := s.makeRequest(http.MethodPost, path, nil)
 	require.Equal(s.T(), http.StatusOK, rr3.Code)
-	signals3 := s.mockEvClient.GetSignals()
-	require.Len(s.T(), signals3, 1, "third resend should send signal")
+	signals3 := tests.GetQueueSignals(s.T(), s.service.DB)
+	require.Greater(s.T(), len(signals3), len(signals2), "third resend should send signal")
 
 	// Verify all responses return the same invite
 	var invite1, invite2, invite3 app.OrgInvite

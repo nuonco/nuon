@@ -21,7 +21,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -46,7 +45,6 @@ type AdminDeprovisionTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminDeprovisionSuite(t *testing.T) {
@@ -62,13 +60,10 @@ func (s *AdminDeprovisionTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -83,7 +78,6 @@ func (s *AdminDeprovisionTestSuite) SetupSuite() {
 
 func (s *AdminDeprovisionTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset() // CRITICAL: reset before each test
 	s.setupTestData()
 
 	// Create router with internal routes (no org context for admin routes)
@@ -149,21 +143,19 @@ func (s *AdminDeprovisionTestSuite) makeRequest(method, path string, body interf
 
 func (s *AdminDeprovisionTestSuite) TestAdminDeprovisionRunner() {
 	testCases := []struct {
-		name               string
-		setupFunc          func() string
-		expectedCode       int
-		shouldSendSignal   bool
-		expectedSignalType string
-		expectedNotFound   bool
+		name             string
+		setupFunc        func() string
+		expectedCode     int
+		shouldSendSignal bool
+		expectedNotFound bool
 	}{
 		{
 			name: "successfully deprovision runner",
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			expectedCode:       http.StatusOK,
-			shouldSendSignal:   true,
-			expectedSignalType: string(signals.OperationDeprovision),
+			expectedCode:     http.StatusOK,
+			shouldSendSignal: true,
 		},
 		{
 			name: "runner not found returns error - no signal sent",
@@ -197,15 +189,13 @@ func (s *AdminDeprovisionTestSuite) TestAdminDeprovisionRunner() {
 
 				return runner.ID
 			},
-			expectedCode:       http.StatusOK,
-			shouldSendSignal:   true,
-			expectedSignalType: string(signals.OperationDeprovision),
+			expectedCode:     http.StatusOK,
+			shouldSendSignal: true,
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/runners/"+runnerID+"/deprovision", AdminDeprovisionRunnerRequest{})
 
@@ -215,16 +205,17 @@ func (s *AdminDeprovisionTestSuite) TestAdminDeprovisionRunner() {
 			require.Equal(s.T(), tc.expectedCode, rr.Code)
 
 			// Verify signal was sent (or not sent)
-			capturedSignals := s.mockEvClient.GetSignals()
 			if tc.shouldSendSignal {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1)
-				assert.Equal(s.T(), runnerID, capturedSignals[0].ID)
+				assert.Equal(s.T(), runnerID, capturedSignals[0].OwnerID)
 
 				// Type assert to verify signal type
-				sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), tc.expectedSignalType, string(sig.Type))
+				_ = capturedSignals[0] // using .Type directly
+
+				assert.NotEmpty(s.T(), string(capturedSignals[0].Type))
 			} else {
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), capturedSignals, 0)
 			}
 

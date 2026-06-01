@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/patcher"
@@ -138,9 +138,9 @@ func (s *service) updateRunnerSettings(ctx context.Context, runnerID, orgID stri
 	}
 
 	if req.ContainerImageTag != "" {
-		s.evClient.Send(ctx, runnerID, &signals.Signal{
-			Type: signals.OperationRestart,
-		})
+		if err := s.helpers.EnqueueRunnerSignal(ctx, runnerID, &restart.Signal{RunnerID: runnerID}); err != nil {
+			return nil, fmt.Errorf("unable to enqueue restart signal: %w", err)
+		}
 	}
 
 	return &obj, nil

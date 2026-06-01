@@ -11,7 +11,6 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {
@@ -19,7 +18,6 @@ type Params struct {
 
 	DB *gorm.DB `name:"psql"`
 
-	EvClient        eventloop.Client
 	AcctClient      *account.Client
 	Cfg             *internal.Config
 	RunnersHelpers  *runnershelpers.Helpers
@@ -35,7 +33,6 @@ type Activities struct {
 	installsHelpers *installshelpers.Helpers
 	vcsHelpers      *vcshelpers.Helpers
 	helpers         *helpers.Helpers
-	evClient        eventloop.Client
 	acctClient      *account.Client
 }
 
@@ -43,7 +40,6 @@ func New(params Params) *Activities {
 	return &Activities{
 		db:              params.DB,
 		cfg:             params.Cfg,
-		evClient:        params.EvClient,
 		acctClient:      params.AcctClient,
 		runnersHelpers:  params.RunnersHelpers,
 		installsHelpers: params.InstallsHelpers,

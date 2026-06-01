@@ -49,14 +49,13 @@ type UpdateAppActionDeprecatedTestService struct {
 type UpdateAppActionDeprecatedTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      UpdateAppActionDeprecatedTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service UpdateAppActionDeprecatedTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestUpdateAppActionDeprecatedSuite(t *testing.T) {
@@ -73,13 +72,10 @@ func (s *UpdateAppActionDeprecatedTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -100,7 +96,6 @@ func (s *UpdateAppActionDeprecatedTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{

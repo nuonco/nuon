@@ -8,7 +8,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -16,7 +15,6 @@ import (
 // namespace, and for all jobs. Thus, it has it's own activities, and other components to allow it to work more
 // effectively.
 type Workflows struct {
-	evClient    teventloop.Client
 	mw          tmetrics.Writer
 	queueClient *queueclient.Client
 }
@@ -25,7 +23,6 @@ type Params struct {
 	fx.In
 
 	V             *validator.Validate
-	EVClient      teventloop.Client
 	MetricsWriter metrics.Writer
 	QueueClient   *queueclient.Client
 }
@@ -41,7 +38,6 @@ func New(params Params) (*Workflows, error) {
 	}
 
 	return &Workflows{
-		evClient:    params.EVClient,
 		mw:          tmw,
 		queueClient: params.QueueClient,
 	}, nil

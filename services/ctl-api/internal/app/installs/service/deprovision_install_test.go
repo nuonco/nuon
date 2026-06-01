@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 func (s *InstallsServiceTestSuite) TestDeprovisionInstallSuccess() {
@@ -20,11 +20,11 @@ func (s *InstallsServiceTestSuite) TestDeprovisionInstallSuccess() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
+	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.Len(s.T(), captured, 1)
-	sig, ok := captured[0].Signal.(*signals.Signal)
-	require.True(s.T(), ok)
-	assert.Equal(s.T(), signals.OperationExecuteFlow, sig.Type)
+	_ = captured[0] // signal type check via .Type
+
+	assert.Equal(s.T(), "ExecuteFlow-type", string(captured[0].Type))
 }
 
 func (s *InstallsServiceTestSuite) TestDeprovisionInstallPlanOnly() {

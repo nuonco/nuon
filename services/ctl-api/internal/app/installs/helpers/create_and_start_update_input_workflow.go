@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 )
 
 func (h *Helpers) CreateAndStartInputUpdateWorkflow(
@@ -40,18 +39,8 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 		return nil, err
 	}
 
-	// Legacy fallback: signal the legacy event loop. Callers in queue mode
-	// must send their own queue signals (see update_install_input.go).
-	// This helper cannot import v2 signal packages due to an import cycle:
-	// helpers -> v2 -> worker/activities -> helpers.
-	h.evClient.Send(ctx, installID, &signals.Signal{
-		Type:              signals.OperationUpdated,
-		InstallWorkflowID: workflow.ID,
-	})
-	h.evClient.Send(ctx, installID, &signals.Signal{
-		Type:              signals.OperationExecuteFlow,
-		InstallWorkflowID: workflow.ID,
-	})
+	// Legacy evClient.Send calls removed — event loop system has been removed.
+	// Callers in queue mode send their own queue signals (see update_install_input.go).
 
 	return workflow, nil
 }

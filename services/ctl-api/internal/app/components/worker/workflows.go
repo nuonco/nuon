@@ -10,27 +10,17 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
 type Workflows struct {
-	cfg      *internal.Config
-	v        *validator.Validate
-	mw       tmetrics.Writer
-	evClient teventloop.Client
+	cfg *internal.Config
+	v   *validator.Validate
+	mw  tmetrics.Writer
 }
 
 func (w *Workflows) All() []any {
 	return []any{
 		w.Build,
-		w.Created,
-		w.Delete,
-		w.PollDependencies,
-		w.Provision,
-		w.QueueBuild,
-		w.Restarted,
-		w.UpdateComponentType,
-		w.EventLoop,
 		plan.CreateComponentBuildPlan,
 	}
 }
@@ -41,7 +31,6 @@ type WorkflowsParams struct {
 	V             *validator.Validate
 	Cfg           *internal.Config
 	MetricsWriter metrics.Writer
-	EvClient      teventloop.Client
 }
 
 func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
@@ -55,9 +44,8 @@ func NewWorkflows(params WorkflowsParams) (*Workflows, error) {
 		return nil, fmt.Errorf("unable to create temporal metrics writer: %w", err)
 	}
 	return &Workflows{
-		cfg:      params.Cfg,
-		v:        params.V,
-		mw:       tmw,
-		evClient: params.EvClient,
+		cfg: params.Cfg,
+		v:   params.V,
+		mw:  tmw,
 	}, nil
 }
