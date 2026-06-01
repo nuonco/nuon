@@ -48,8 +48,6 @@ func (s *service) DeleteAppAction(ctx *gin.Context) {
 		return
 	}
 
-	// Legacy evClient.Send removed — event loop system has been removed.
-
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
@@ -89,8 +87,6 @@ func (s *service) DeleteActionWorkflow(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-
-	// Legacy evClient.Send removed — event loop system has been removed.
 
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

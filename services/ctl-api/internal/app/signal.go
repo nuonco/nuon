@@ -8,8 +8,6 @@ import (
 )
 
 type Signal struct {
-	EventLoopID string `json:"event_loop_id,omitzero" temporaljson:"event_loop_id,omitzero,omitempty"`
-
 	Namespace  string `json:"namespace,omitzero" temporaljson:"namespace,omitzero,omitempty"`
 	Type       string `json:"type,omitzero" temporaljson:"type,omitzero,omitempty"`
 	SignalJSON []byte `json:"json,omitzero" temporaljson:"signal_json,omitzero,omitempty"`

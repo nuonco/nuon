@@ -48,7 +48,7 @@ func buildAdminAPILink(ctx context.Context, pieces ...string) string {
 	return ""
 }
 
-func eventLoopLink(ctx context.Context, namespace, id string) string {
+func queueLink(ctx context.Context, namespace, id string) string {
 	cfg := configFromContext(ctx)
 	if cfg == nil {
 		return ""
@@ -58,7 +58,7 @@ func eventLoopLink(ctx context.Context, namespace, id string) string {
 		"namespaces",
 		namespace,
 		"workflows",
-		"event-loop-"+id)
+		"queue-signal-"+id)
 	if err == nil {
 		return link
 	}
@@ -66,7 +66,7 @@ func eventLoopLink(ctx context.Context, namespace, id string) string {
 	return ""
 }
 
-func eventLoopSignalLink(ctx context.Context, namespace, id string, sig string) string {
+func queueSignalLink(ctx context.Context, namespace, id string, sig string) string {
 	cfg := configFromContext(ctx)
 	if cfg == nil {
 		return ""

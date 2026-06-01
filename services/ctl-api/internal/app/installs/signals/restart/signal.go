@@ -48,7 +48,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
-	// Restart signal - currently a no-op (copied from worker/restarted.go)
-	// The restart logic is handled by the event loop infrastructure
+	// Restart signal - currently a no-op
 	return nil
 }
