@@ -5,6 +5,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/require"
+
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 // decodeAppSecret decodes a raw map (as produced by the TOML decoder) into an AppSecret using the same decoder config
@@ -42,8 +44,14 @@ func TestKubernetesSyncTarget_NamespaceDecoding(t *testing.T) {
 
 func TestAppSecret_KubernetesSyncEnabled(t *testing.T) {
 	require.False(t, (&AppSecret{}).KubernetesSyncEnabled())
-	require.True(t, (&AppSecret{KubernetesSync: true}).KubernetesSyncEnabled())
+	require.False(t, (&AppSecret{KubernetesSync: generics.ToPtr(false)}).KubernetesSyncEnabled())
+	require.True(t, (&AppSecret{KubernetesSync: generics.ToPtr(true)}).KubernetesSyncEnabled())
 	require.True(t, (&AppSecret{
+		KubernetesSyncTargets: []*KubernetesSyncTarget{{Namespaces: []string{"ns"}, Name: "n", Key: "k"}},
+	}).KubernetesSyncEnabled())
+	// targets present + explicit false -> still enabled (targets win)
+	require.True(t, (&AppSecret{
+		KubernetesSync:        generics.ToPtr(false),
 		KubernetesSyncTargets: []*KubernetesSyncTarget{{Namespaces: []string{"ns"}, Name: "n", Key: "k"}},
 	}).KubernetesSyncEnabled())
 }
@@ -73,13 +81,13 @@ func TestAppSecret_Validate_Targets(t *testing.T) {
 
 	t.Run("legacy single-target still requires name and namespace", func(t *testing.T) {
 		s := base()
-		s.KubernetesSync = true
+		s.KubernetesSync = generics.ToPtr(true)
 		require.Error(t, s.Validate())
 	})
 
 	t.Run("legacy requirement skipped when targets present", func(t *testing.T) {
 		s := base()
-		s.KubernetesSync = true // explicitly on, but using targets
+		s.KubernetesSync = generics.ToPtr(true) // explicitly on, but using targets
 		s.KubernetesSyncTargets = []*KubernetesSyncTarget{{Namespaces: []string{"ns"}, Name: "n", Key: "k"}}
 		require.NoError(t, s.Validate())
 	})
@@ -142,5 +150,38 @@ func TestSecretsConfig_Validate_Collision(t *testing.T) {
 			}},
 		}}
 		require.Error(t, cfg.Validate())
+	})
+}
+
+func TestSecretsConfig_Validate_ExplicitDisableWarning(t *testing.T) {
+	t.Run("explicit kubernetes_sync=false with targets warns but does not error", func(t *testing.T) {
+		cfg := &SecretsConfig{Secrets: []*AppSecret{
+			{Name: "a", Description: "d", KubernetesSync: generics.ToPtr(false), KubernetesSyncTargets: []*KubernetesSyncTarget{
+				{Namespaces: []string{"datadog"}, Name: "datadog", Key: "api-key"},
+			}},
+		}}
+		err := cfg.Validate()
+		require.Error(t, err)
+		require.True(t, IsWarningErr(err))
+	})
+
+	t.Run("omitted kubernetes_sync with targets does not warn", func(t *testing.T) {
+		cfg := &SecretsConfig{Secrets: []*AppSecret{
+			{Name: "a", Description: "d", KubernetesSyncTargets: []*KubernetesSyncTarget{
+				{Namespaces: []string{"datadog"}, Name: "datadog", Key: "api-key"},
+			}},
+		}}
+		require.NoError(t, cfg.Validate())
+	})
+
+	t.Run("hard error takes precedence over warning", func(t *testing.T) {
+		cfg := &SecretsConfig{Secrets: []*AppSecret{
+			{Name: "a", Description: "d", KubernetesSync: generics.ToPtr(false), KubernetesSyncTargets: []*KubernetesSyncTarget{
+				{Namespaces: []string{"bad_name_"}, Name: "datadog", Key: "api-key"},
+			}},
+		}}
+		err := cfg.Validate()
+		require.Error(t, err)
+		require.False(t, IsWarningErr(err))
 	})
 }

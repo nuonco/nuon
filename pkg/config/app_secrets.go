@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -42,6 +43,7 @@ func (a *SecretsConfig) Validate() error {
 	// secrets writing the same key of the same Kubernetes secret (which would clobber one another). Comparison uses the
 	// raw, unrendered values; collisions that only differ after templating are not detected here.
 	seen := make(map[string]string)
+	var warnings []string
 
 	for _, secret := range a.Secrets {
 		if err := secret.Validate(); err != nil {
@@ -55,6 +57,19 @@ func (a *SecretsConfig) Validate() error {
 				}
 			}
 			seen[dst] = secret.Name
+		}
+
+		if secret.kubernetesSyncExplicitlyDisabled() {
+			warnings = append(warnings, fmt.Sprintf("[secrets:%s] kubernetes_sync is set to false but kubernetes_sync_targets are defined; sync will be enabled because targets take precedence", secret.Name))
+		}
+	}
+
+	// Warnings are only surfaced once all hard validation has passed, so a real error always takes precedence. Each
+	// warning is on its own line so multiple warnings render legibly.
+	if len(warnings) > 0 {
+		return ErrConfig{
+			Description: strings.Join(warnings, "\n"),
+			Warning:     true,
 		}
 	}
 
@@ -71,8 +86,9 @@ type AppSecret struct {
 	Format       string `mapstructure:"format,omitempty" toml:"format,omitempty"`
 	Default      string `mapstructure:"default,omitempty" toml:"default,omitempty"`
 
-	// optional fields
-	KubernetesSync            bool   `mapstructure:"kubernetes_sync,omitempty" toml:"kubernetes_sync,omitempty"`
+	// optional fields. KubernetesSync is a pointer so we can distinguish "omitted" (nil) from an explicit
+	// "kubernetes_sync = false", which lets us warn when sync is explicitly disabled but v2 targets are present.
+	KubernetesSync            *bool  `mapstructure:"kubernetes_sync,omitempty" toml:"kubernetes_sync,omitempty"`
 	KubernetesSecretNamespace string `mapstructure:"kubernetes_secret_namespace,omitempty" toml:"kubernetes_secret_namespace,omitempty"`
 	KubernetesSecretName      string `mapstructure:"kubernetes_secret_name,omitempty" toml:"kubernetes_secret_name,omitempty"`
 
@@ -160,7 +176,7 @@ func (a *AppSecret) Validate() error {
 
 	// Legacy single-target requirement only applies when no v2 targets are configured. When targets are present they
 	// supersede the single-valued kubernetes_secret_* fields.
-	if a.KubernetesSync && len(a.KubernetesSyncTargets) == 0 {
+	if a.KubernetesSync != nil && *a.KubernetesSync && len(a.KubernetesSyncTargets) == 0 {
 		if a.KubernetesSecretName == "" {
 			return ErrConfig{
 				Description: "kubernetes_secret_name must be set when kubernetes_sync is true",
@@ -223,7 +239,13 @@ func (a *AppSecret) Validate() error {
 // KubernetesSyncEnabled reports whether the secret should be synced to Kubernetes. Sync is enabled either by the legacy
 // kubernetes_sync flag or by the presence of one or more kubernetes_sync_targets.
 func (a *AppSecret) KubernetesSyncEnabled() bool {
-	return a.KubernetesSync || len(a.KubernetesSyncTargets) > 0
+	return (a.KubernetesSync != nil && *a.KubernetesSync) || len(a.KubernetesSyncTargets) > 0
+}
+
+// kubernetesSyncExplicitlyDisabled reports whether the secret sets kubernetes_sync = false while also defining v2
+// targets. This is a contradiction we warn (but do not error) on: targets take precedence and sync stays enabled.
+func (a *AppSecret) kubernetesSyncExplicitlyDisabled() bool {
+	return a.KubernetesSync != nil && !*a.KubernetesSync && len(a.KubernetesSyncTargets) > 0
 }
 
 // kubernetesDestinations returns the set of Kubernetes destinations this secret writes to, each as a
@@ -241,7 +263,7 @@ func (a *AppSecret) kubernetesDestinations() []string {
 		}
 	}
 
-	if a.KubernetesSync && len(a.KubernetesSyncTargets) == 0 {
+	if a.KubernetesSync != nil && *a.KubernetesSync && len(a.KubernetesSyncTargets) == 0 {
 		dsts = append(dsts, a.KubernetesSecretNamespace+"/"+a.KubernetesSecretName+"/value")
 	}
 
