@@ -44,6 +44,8 @@ func (c CreateAppSecretsConfigRequest) getSecrets(appID, appConfigID string) []a
 			KubernetesSync:            secr.KubernetesSync,
 			KubernetesSecretNamespace: secr.KubernetesSecretNamespace,
 			KubernetesSecretName:      secr.KubernetesSecretName,
+
+			KubernetesSyncTargets: secr.getKubernetesSyncTargets(appID),
 		})
 	}
 	return objs
@@ -62,6 +64,26 @@ type AppSecretConfig struct {
 	KubernetesSync            bool   `json:"kubernetes_sync"`
 	KubernetesSecretNamespace string `json:"kubernetes_secret_namespace"`
 	KubernetesSecretName      string `json:"kubernetes_secret_name" validate:"omitempty,hostname_rfc1123"`
+
+	KubernetesSyncTargets []KubernetesSyncTarget `json:"kubernetes_sync_targets" validate:"dive"`
+}
+
+type KubernetesSyncTarget struct {
+	Namespaces []string `json:"namespaces" validate:"required,min=1,dive,hostname_rfc1123"`
+	Name       string   `json:"name" validate:"required,hostname_rfc1123"`
+	Key        string   `json:"key" validate:"required"`
+}
+
+func (c AppSecretConfig) getKubernetesSyncTargets(appID string) []app.AppSecretKubernetesSyncTarget {
+	targets := make([]app.AppSecretKubernetesSyncTarget, 0, len(c.KubernetesSyncTargets))
+	for _, t := range c.KubernetesSyncTargets {
+		targets = append(targets, app.AppSecretKubernetesSyncTarget{
+			Namespaces: t.Namespaces,
+			Name:       t.Name,
+			Key:        t.Key,
+		})
+	}
+	return targets
 }
 
 // @ID						CreateAppSecretsConfig
