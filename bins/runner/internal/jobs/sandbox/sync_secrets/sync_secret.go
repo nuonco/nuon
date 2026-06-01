@@ -3,6 +3,7 @@ package terraform
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -27,7 +28,25 @@ import (
 	"github.com/nuonco/nuon/pkg/types/outputs"
 )
 
+// execSyncSecret resolves the shared source value once, then dispatches to the v1 (single destination) or v2
+// (multiple targets, each fanning out across namespaces) sync path.
 func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) error {
+	val, ts, exists, err := p.fetchSecretValue(ctx, secr)
+	if err != nil {
+		return err
+	}
+
+	if len(secr.Targets) > 0 {
+		return p.execSyncSecretV2(ctx, secr, val, ts, exists)
+	}
+
+	return p.execSyncSecretV1(ctx, secr, val, ts, exists)
+}
+
+// fetchSecretValue resolves the secret value from the cloud provider source shared across all destinations, applying
+// base64 decoding when configured. exists is false when the source resolves to an empty value (an optional secret
+// that was never populated), in which case the runner records the output but skips the Kubernetes upsert.
+func (p *handler) fetchSecretValue(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, bool, error) {
 	var val string
 	var ts *time.Time
 
@@ -41,26 +60,58 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 	}
 
 	exists := val != ""
-
-	if exists {
-		if secr.Format == "base64" {
-			decoded, err := base64.StdEncoding.DecodeString(val)
-			if err != nil {
-				return errors.Wrap(err, "unable to decode base64 secret value")
-			}
-			val = strings.TrimSpace(string(decoded))
+	if exists && secr.Format == "base64" {
+		decoded, err := base64.StdEncoding.DecodeString(val)
+		if err != nil {
+			return "", nil, false, errors.Wrap(err, "unable to decode base64 secret value")
 		}
+		val = strings.TrimSpace(string(decoded))
+	}
 
-		if err := p.upsertSecret(ctx, secr, val); err != nil {
+	return val, ts, exists, nil
+}
+
+// execSyncSecretV1 is the legacy single-destination path: it upserts one Kubernetes secret using the v1 namespace /
+// name / key fields and records a single output.
+func (p *handler) execSyncSecretV1(ctx context.Context, secr plantypes.KubernetesSecretSync, val string, ts *time.Time, exists bool) error {
+	if exists {
+		if err := p.upsertSecret(ctx, secr.Namespace, secr.Name, secr.KeyName, val); err != nil {
 			return err
 		}
 	}
 
+	p.recordOutput(secr, secr.Namespace, secr.Name, secr.KeyName, val, ts, exists)
+
+	return nil
+}
+
+// execSyncSecretV2 fans the shared source value out across every target × namespace, upserting one Kubernetes secret
+// per destination and recording one output per destination.
+func (p *handler) execSyncSecretV2(ctx context.Context, secr plantypes.KubernetesSecretSync, val string, ts *time.Time, exists bool) error {
+	for _, target := range secr.Targets {
+		for _, namespace := range target.Namespaces {
+			if exists {
+				if err := p.upsertSecret(ctx, namespace, target.Name, target.Key, val); err != nil {
+					return err
+				}
+			}
+
+			p.recordOutput(secr, namespace, target.Name, target.Key, val, ts, exists)
+		}
+	}
+
+	return nil
+}
+
+// recordOutput writes a per-destination output keyed uniquely by source secret name and Kubernetes destination, so v2
+// destinations that share a name (across namespaces, or same namespace/name with different keys) don't overwrite each
+// other in the output map.
+func (p *handler) recordOutput(secr plantypes.KubernetesSecretSync, namespace, name, key, val string, ts *time.Time, exists bool) {
 	output := outputs.SecretSyncOutput{
-		Name:                secr.Name,
-		KubernetesNamespace: secr.Namespace,
-		KubernetesName:      secr.Name,
-		KubernetesKey:       secr.KeyName,
+		Name:                secr.SecretName,
+		KubernetesNamespace: namespace,
+		KubernetesName:      name,
+		KubernetesKey:       key,
 		Exists:              exists,
 		Timestamp:           ts,
 		Length:              len(val),
@@ -74,9 +125,7 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 		output.ARN = secr.SecretARN
 	}
 
-	p.state.outputs[secr.Name] = output
-
-	return nil
+	p.state.outputs[fmt.Sprintf("%s/%s/%s/%s", secr.SecretName, namespace, name, key)] = output
 }
 
 func (p *handler) fetchAWSSecret(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, error) {
@@ -174,12 +223,12 @@ func (p *handler) fetchAzureSecret(ctx context.Context, secr plantypes.Kubernete
 	return val, ts, nil
 }
 
-func (p *handler) upsertSecret(ctx context.Context, secr plantypes.KubernetesSecretSync, val string) error {
+func (p *handler) upsertSecret(ctx context.Context, namespace, name, key, val string) error {
 	secrMgr, err := secret.New(p.v,
 		secret.WithCluster(p.state.plan.ClusterInfo),
-		secret.WithName(secr.Name),
-		secret.WithNamespace(secr.Namespace),
-		secret.WithKey(secr.KeyName),
+		secret.WithName(name),
+		secret.WithNamespace(namespace),
+		secret.WithKey(key),
 	)
 	if err != nil {
 		return errors.Wrap(err, "unable to create secret manager")
