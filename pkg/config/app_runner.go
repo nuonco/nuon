@@ -20,6 +20,9 @@ type AppRunnerConfig struct {
 
 	InitScriptURL string `mapstructure:"init_script_url" toml:"init_script_url"`
 
+	// InstanceType sets the cloud machine/instance type for the install runner host.
+	InstanceType string `mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
+
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }
@@ -42,6 +45,10 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("init_script_url").Short("initialization script URL").
 		Long("URL to a script that runs during runner initialization. Supports HTTP(S), git, file, and relative paths (./). Examples: https://example.com/script.sh, ./scripts/init.sh, git::https://github.com/org/repo//script.sh, file:///path/to/script.sh").
 		Example("https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/aws/init-mng-v2.sh").
+		Field("instance_type").Short("machine/instance type for the install runner").
+		Long("Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (e.g. an EC2 instance type for aws). Defaults to the platform default when unset").
+		Example("t3a.medium").
+		Example("t3.large").
 		Field("env_var").Short("deprecated: use env_vars map instead").
 		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")
 }
