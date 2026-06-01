@@ -49,8 +49,6 @@ func NewEnv(ctx context.Context) (*DevTestEnv, error) {
 
 type ClientBits struct {
 	Client client.Client
-	// TClient  temporalclient.Client
-	// EVClient eventloop.Client
 	Worker worker.Worker
 }
 

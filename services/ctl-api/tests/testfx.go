@@ -84,9 +84,7 @@ func CtlApiFXOptionsWithValidator(t testing.TB) []fx.Option {
 //
 // Usage:
 //
-//	mockEv := tests.NewMockEventLoopClient()
 //	opts := tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-//	    Mocks: &tests.TestMocks{MockEv: mockEv},
 //	    CustomValidator: true,
 //	})
 //	app := fxtest.New(t, append(opts, fx.Provide(MyService), fx.Populate(&svc))...)

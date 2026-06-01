@@ -132,8 +132,6 @@ func (s *componentsSuite) TestDeleteComponent() {
 
 		_, err = s.apiClient.GetComponent(s.ctx, comp.ID)
 		require.NoError(t, err)
-		// NOTE: the event loops delete the component, and change status. Do not test for that here, since it is
-		// indeterministic.
 	})
 
 	s.T().Run("errors on not found", func(t *testing.T) {

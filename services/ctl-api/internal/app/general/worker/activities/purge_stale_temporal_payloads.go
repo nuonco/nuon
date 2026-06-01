@@ -24,6 +24,6 @@ func (a *Activities) PurgeStaleTemporalPayloads(ctx context.Context, req PurgeSt
 		return res.Error
 	}
 
-	a.mw.Count("event_loop.general.purge_stale_data", int64(res.RowsAffected), []string{})
+	a.mw.Count("general.purge_stale_data", int64(res.RowsAffected), []string{})
 	return nil
 }

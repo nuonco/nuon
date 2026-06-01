@@ -198,7 +198,7 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 		RunnerID: comp.Org.RunnerGroup.Runners[0].ID,
 		JobID:    runnerJob.ID,
 	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", comp.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", comp.ID, runnerJob.ID),
 	})
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, fmt.Sprintf("build failed: %s", signal.HumanError(err)))

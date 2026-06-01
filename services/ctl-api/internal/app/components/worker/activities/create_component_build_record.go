@@ -19,8 +19,8 @@ type CreateComponentBuildRecordRequest struct {
 	VCSConnectionCommitID *string
 }
 
-// CreateComponentBuildRecord creates a component build record without dispatching to the
-// event loop. Used by queue signals that handle build execution themselves.
+// CreateComponentBuildRecord creates a component build record. Used by queue signals
+// that handle build execution themselves.
 //
 // @temporal-gen-v2 activity
 func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateComponentBuildRecordRequest) (*app.ComponentBuild, error) {

@@ -61,7 +61,6 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
 	} else {
-		// Legacy event loop path: poll job status.
 		if _, err := w.pollJob(ctx, req); err != nil {
 			return app.RunnerJobStatus(""), err
 		}
@@ -84,7 +83,7 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 }
 
 // queueJob dispatches the job for execution. Returns the queue signal ID when the
-// queue path is used (non-empty string), or empty string for the legacy event loop path.
+// queue path is used (non-empty string), or empty string for the poll path.
 func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb callback.Ref) (string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -92,8 +91,7 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb ca
 	}
 
 	// Check if this runner uses queue-based job dispatch (parallel-runner-jobs feature flag).
-	// If a per-job-group queue exists, enqueue the processjob signal directly and skip the
-	// legacy event loop path entirely.
+	// If a per-job-group queue exists, enqueue the processjob signal directly.
 	queueResp, err := activities.AwaitPkgWorkflowsJobGetRunnerJobGroupQueue(ctx, &activities.GetRunnerJobGroupQueueRequest{
 		RunnerID: runnerID,
 		JobID:    jobID,
@@ -117,9 +115,7 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb ca
 		return enqueueResp.ID, nil
 	}
 
-	// Legacy event loop path removed — event loop system has been removed.
-	// If no queue exists for this runner, the job cannot be dispatched.
-	return "", errors.New("no job-group queue found for runner; legacy event loop path has been removed")
+	return "", errors.New("no job-group queue found for runner")
 }
 
 func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
@@ -173,8 +169,7 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 	})
 
 	for {
-		// if the job is already timed out, there is no reason to continue. In some reasons, if a job fails and
-		// is not updated by it's event loop, then this would catch that.
+		// if the job is already timed out, there is no reason to continue.
 		now := workflow.Now(dctx)
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			return app.RunnerJobStatusTimedOut, temporal.NewNonRetryableApplicationError("overall timeout reached", "api", fmt.Errorf("timeout"))

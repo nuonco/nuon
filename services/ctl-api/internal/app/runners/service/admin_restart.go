@@ -15,7 +15,7 @@ import (
 type RestartRunnerRequest struct{}
 
 // @ID						AdminRestartRunner
-// @Summary				restart a runner event loop
+// @Summary				restart a runner
 // @Description.markdown	restart_runner.md
 // @Param					runner_id	path	string					true	"runner ID"
 // @Param					req			body	RestartRunnerRequest	true	"Input"

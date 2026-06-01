@@ -95,7 +95,7 @@ func (s *service) createApp(ctx context.Context, acct *app.Account, org *app.Org
 		Name:              req.Name,
 		Description:       generics.NewNullString(req.Description),
 		Status:            "queued",
-		StatusDescription: "waiting for event loop to start and provision app",
+		StatusDescription: "waiting for queue to provision app",
 		DisplayName:       generics.NewNullString(req.DisplayName),
 	}
 	newApp.NotificationsConfig = app.NotificationsConfig{

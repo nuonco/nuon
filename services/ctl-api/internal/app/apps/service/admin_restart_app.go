@@ -17,7 +17,7 @@ import (
 type RestartAppRequest struct{}
 
 // @ID						AdminRestartApp
-// @Summary				restart an apps event loop
+// @Summary				restart an app
 // @Description.markdown	restart_app.md
 // @Param					app_id	path	string				true	"app ID"
 // @Param					req		body	RestartAppRequest	true	"Input"
