@@ -40,16 +40,12 @@ func (a *Activities) TerminateNamespaceWorkflows(ctx context.Context, req Termin
 		}
 
 		for _, wf := range wfs.Executions {
-			if !eventLoopRegex.MatchString(wf.Execution.WorkflowId) {
-				continue
-			}
-
 			cnt += 1
 			l.Info("terminating workflow",
 				zap.String("workflow-id", wf.Execution.WorkflowId),
 			)
 
-			if err := client.TerminateWorkflow(ctx, wf.Execution.WorkflowId, "", "terminating from general event loop"); err != nil {
+			if err := client.TerminateWorkflow(ctx, wf.Execution.WorkflowId, "", "terminating from general workflow"); err != nil {
 				l.Error("unable to terminate workflow", zap.Error(err))
 			}
 		}

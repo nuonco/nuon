@@ -18,7 +18,7 @@ type CreateOnboardingAppResponse struct {
 // @start-to-close-timeout 5m
 // @as-wrapper
 func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName string, createBranch bool) (*CreateOnboardingAppResponse, error) {
-	// Load org for context — needed for event loop startup (startEventLoop calls signal.GetOrg)
+	// Load org for context — needed for GORM BeforeCreate hooks (OrgID)
 	var org app.Org
 	if err := a.db.WithContext(ctx).First(&org, "id = ?", orgID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get org: %w", err)
@@ -48,7 +48,7 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		OrgID:             orgID,
 		Name:              appName,
 		Status:            "queued",
-		StatusDescription: "waiting for event loop to start and provision app",
+		StatusDescription: "waiting for queue to provision app",
 		DisplayName:       generics.NewNullString(appName),
 		NotificationsConfig: app.NotificationsConfig{
 			EnableSlackNotifications: true,
