@@ -15,7 +15,7 @@ title: 'Docker Build'
 | **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
 | **`dockerfile`**<br/>string | path to the Dockerfile Path to the Dockerfile to build. Supports external file sources: HTTP(S) URLs (https://example.com/Dockerfile), git repositories (git::https://github.com/org/repo//Dockerfile... | **✅ Required** | `"Dockerfile"`, `"docker/Dockerfile.prod"`, `"https://github.com/myorg/myrepo/raw/main/Dockerfile"` |
 | **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |
-| **`labels`**<br/>object | - | **Optional** | - |
+| **`labels`**<br/>object | Key/value labels used to organize and filter components. Metadata only; does not affect deployment | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
 | **`env_vars`**<br/>object | build environment variables Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating | **Optional** | `"GOLANG_VERSION"`, `"NODE_ENV"` |
@@ -24,8 +24,8 @@ title: 'Docker Build'
 | **`build_timeout`**<br/>string | build operation timeout Duration string for Docker build operations (e.g., "30m", "1h"). Default: 60m. Max: 1h | **Optional**<br/>Default: `"60m"` | `"30m"`, `"1h"` |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
 | **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on deploy failure Maximum number of automatic retry attempts for failed deployments. Set to 0 to disable auto-retry. Default: 0 (disabled) | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
-| **`skip_noops`**<br/>boolean | - | **Optional** | - |
-| **`auto_approve_on_policies_passing`**<br/>boolean | - | **Optional** | - |
+| **`skip_noops`**<br/>boolean | Skip the deploy step when the plan has no changes (a no-op). Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |
+| **`auto_approve_on_policies_passing`**<br/>boolean | Auto-approve the deploy when all policy checks pass. Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |
 
 ### `operation_roles`
 
