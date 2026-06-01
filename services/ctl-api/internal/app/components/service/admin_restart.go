@@ -18,7 +18,7 @@ import (
 type RestartComponentRequest struct{}
 
 // @ID						AdminRestartComponent
-// @Summary				restart an components event loop
+// @Summary				restart a component
 // @Description.markdown	restart_component.md
 // @Param					component_id	path	string					true	"component ID"
 // @Param					req				body	RestartComponentRequest	true	"Input"

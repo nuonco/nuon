@@ -106,8 +106,6 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		}
 	}
 
-	// Legacy evClient.Send removed — event loop system has been removed.
-
 	return &runnerGroup, nil
 }
 

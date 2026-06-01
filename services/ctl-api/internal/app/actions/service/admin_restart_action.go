@@ -16,7 +16,7 @@ import (
 type RestartActionWorkflowRequest struct{}
 
 // @ID						AdminRestartActionWorkflow
-// @Summary				restart an action workflow event loop
+// @Summary				restart an action workflow
 // @Description.markdown	restart_action_workflow.md
 // @Param					action_workflow_id	path	string							true	"action ID"
 // @Param					req					body	RestartActionWorkflowRequest	true	"Input"
@@ -41,7 +41,6 @@ func (s *service) RestartAction(ctx *gin.Context) {
 		return
 	}
 
-	// Legacy evClient.Send removed — event loop system has been removed.
 	ctx.JSON(http.StatusOK, true)
 }
 

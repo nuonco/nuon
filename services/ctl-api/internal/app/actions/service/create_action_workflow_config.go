@@ -74,8 +74,6 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
-	// Legacy evClient.Send removed — event loop system has been removed.
-
 	ctx.JSON(http.StatusCreated, awc)
 }
 
@@ -265,8 +263,6 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
-
-	// Legacy evClient.Send removed — event loop system has been removed.
 
 	ctx.JSON(http.StatusCreated, awc)
 }
