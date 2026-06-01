@@ -20,8 +20,8 @@ title: 'Sandbox'
 | **`var_file`**<br/>[array](#var_file) | Terraform variable files Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git rep... | **Optional** | - |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of sandbox operations to IAM role names. Allows using different roles for different operations (provision, deprovision, reprovision). Roles must be defin... | **Optional** | - |
 | **`max_auto_retries`**<br/>integer | maximum automatic retry attempts on sandbox apply failure Maximum number of automatic retry attempts for failed sandbox provision, reprovision, and deprovision applies. Set to 0 to disable auto-ret... | **Optional**<br/>Default: `"0"` | `"3"`, `"5"` |
-| **`skip_noops`**<br/>boolean | - | **Optional** | - |
-| **`auto_approve_on_policies_passing`**<br/>boolean | - | **Optional** | - |
+| **`skip_noops`**<br/>boolean | Skip the sandbox apply when the plan has no changes (a no-op). Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |
+| **`auto_approve_on_policies_passing`**<br/>boolean | Auto-approve the sandbox apply when all policy checks pass. Defaults to false | **Optional**<br/>Default: `"false"` | `"true"` |
 
 ### `connected_repo`
 
