@@ -7,7 +7,8 @@ import (
 // secrets config
 func PreloadAppSecretsConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("SecretsConfig").
-		Preload("SecretsConfig.Secrets")
+		Preload("SecretsConfig.Secrets").
+		Preload("SecretsConfig.Secrets.KubernetesSyncTargets")
 }
 
 // break glass config

@@ -13,13 +13,24 @@ type KubernetesSecretSync struct {
 	AzureKeyVaultSecretID string `json:"azure_key_vault_secret_id"` // https://{vault-name}.vault.azure.net/secrets/{secret-name}
 	SecretName            string `json:"secret_name"`               // the name of the secret from the config
 
+	// v1 destination (single). Used when Targets is empty.
 	Namespace string `json:"namespace"`
 	Name      string `json:"name"`
 	KeyName   string `json:"key_name"`
 
+	// v2 destinations: when len(Targets) > 0 the runner uses the v2 path and fans the shared source out across each
+	// target's namespaces. The v1 fields above are ignored in that case.
+	Targets []KubernetesSecretSyncTarget `json:"targets,omitempty"`
+
 	// NOTE(jm): this should probably come from the app config, but for now we just use string parsing to avoid
 	// updating the runner job and save time.
 	Format string `json:"format"`
+}
+
+type KubernetesSecretSyncTarget struct {
+	Namespaces []string `json:"namespaces"`
+	Name       string   `json:"name"`
+	Key        string   `json:"key"`
 }
 
 type SyncSecretsPlan struct {
