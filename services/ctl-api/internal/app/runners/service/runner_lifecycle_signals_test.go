@@ -22,7 +22,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -148,34 +147,28 @@ func (s *RunnerLifecycleSignalsTestSuite) makeRequest(method, path string, body 
 
 func (s *RunnerLifecycleSignalsTestSuite) TestLifecycleSignals() {
 	testCases := []struct {
-		name           string
-		path           string
-		expectedSignal string
+		name string
+		path string
 	}{
 		{
-			name:           "graceful shutdown",
-			path:           "/v1/runners/" + s.testRunner.ID + "/graceful-shutdown",
-			expectedSignal: signals.OperationGracefulShutdown,
+			name: "graceful shutdown",
+			path: "/v1/runners/" + s.testRunner.ID + "/graceful-shutdown",
 		},
 		{
-			name:           "force shutdown",
-			path:           "/v1/runners/" + s.testRunner.ID + "/force-shutdown",
-			expectedSignal: signals.OperationForceShutdown,
+			name: "force shutdown",
+			path: "/v1/runners/" + s.testRunner.ID + "/force-shutdown",
 		},
 		{
-			name:           "mng shutdown",
-			path:           "/v1/runners/" + s.testRunner.ID + "/mng/shutdown",
-			expectedSignal: signals.OperationMngShutDown,
+			name: "mng shutdown",
+			path: "/v1/runners/" + s.testRunner.ID + "/mng/shutdown",
 		},
 		{
-			name:           "mng shutdown vm",
-			path:           "/v1/runners/" + s.testRunner.ID + "/mng/shutdown-vm",
-			expectedSignal: signals.OperationMngVMShutDown,
+			name: "mng shutdown vm",
+			path: "/v1/runners/" + s.testRunner.ID + "/mng/shutdown-vm",
 		},
 		{
-			name:           "mng update",
-			path:           "/v1/runners/" + s.testRunner.ID + "/mng/update",
-			expectedSignal: signals.OperationMngUpdate,
+			name: "mng update",
+			path: "/v1/runners/" + s.testRunner.ID + "/mng/update",
 		},
 	}
 

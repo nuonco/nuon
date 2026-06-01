@@ -21,7 +21,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -144,21 +143,19 @@ func (s *AdminDeprovisionTestSuite) makeRequest(method, path string, body interf
 
 func (s *AdminDeprovisionTestSuite) TestAdminDeprovisionRunner() {
 	testCases := []struct {
-		name               string
-		setupFunc          func() string
-		expectedCode       int
-		shouldSendSignal   bool
-		expectedSignalType string
-		expectedNotFound   bool
+		name             string
+		setupFunc        func() string
+		expectedCode     int
+		shouldSendSignal bool
+		expectedNotFound bool
 	}{
 		{
 			name: "successfully deprovision runner",
 			setupFunc: func() string {
 				return s.testRunner.ID
 			},
-			expectedCode:       http.StatusOK,
-			shouldSendSignal:   true,
-			expectedSignalType: string(signals.OperationDeprovision),
+			expectedCode:     http.StatusOK,
+			shouldSendSignal: true,
 		},
 		{
 			name: "runner not found returns error - no signal sent",
@@ -192,9 +189,8 @@ func (s *AdminDeprovisionTestSuite) TestAdminDeprovisionRunner() {
 
 				return runner.ID
 			},
-			expectedCode:       http.StatusOK,
-			shouldSendSignal:   true,
-			expectedSignalType: string(signals.OperationDeprovision),
+			expectedCode:     http.StatusOK,
+			shouldSendSignal: true,
 		},
 	}
 
