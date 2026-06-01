@@ -39,8 +39,5 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 		return nil, err
 	}
 
-	// Legacy evClient.Send calls removed — event loop system has been removed.
-	// Callers in queue mode send their own queue signals (see update_install_input.go).
-
 	return workflow, nil
 }

@@ -71,8 +71,6 @@ func (s *DeleteAppActionTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create fake event loop client for testing
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
@@ -226,9 +224,8 @@ func (s *DeleteAppActionTestSuite) TestDeleteAppActionSuccess() {
 				tc.validateFunc(actionIdentifier)
 			}
 
-			// Legacy evClient.Send removed - no signal is sent anymore
 			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
-			assert.Len(s.T(), queueSignals, 0, "delete action workflow no longer sends signals")
+			assert.Len(s.T(), queueSignals, 0, "delete action workflow does not send signals")
 		})
 	}
 }

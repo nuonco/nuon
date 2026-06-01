@@ -56,7 +56,7 @@ func BuildComponent(appID string) *app.Component {
 		AppID:             appID,
 		CreatedByID:       acct.ID,
 		Status:            "queued",
-		StatusDescription: "waiting for event loop to start for component",
+		StatusDescription: "waiting for queue to provision component",
 	}
 }
 
@@ -69,7 +69,7 @@ func (s *Seeder) CreateComponent(ctx context.Context, t *testing.T, appID string
 		AppID:             appID,
 		Type:              componentType,
 		Status:            "queued",
-		StatusDescription: "waiting for event loop to start for component",
+		StatusDescription: "waiting for queue to provision component",
 	}
 	res := s.db.WithContext(ctx).Create(c)
 	require.NoError(t, res.Error)
