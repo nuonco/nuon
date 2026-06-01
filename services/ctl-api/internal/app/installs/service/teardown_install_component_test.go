@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 func (s *InstallsServiceTestSuite) TestTeardownInstallComponentSuccess() {
@@ -23,10 +23,10 @@ func (s *InstallsServiceTestSuite) TestTeardownInstallComponentSuccess() {
 	}
 	require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
 	var found bool
+	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	for _, c := range captured {
-		if sig, ok := c.Signal.(*signals.Signal); ok && sig.Type == signals.OperationExecuteFlow {
+		if string(c.Type) == "execute-workflow" {
 			found = true
 			break
 		}

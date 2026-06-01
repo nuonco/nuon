@@ -49,14 +49,13 @@ type GetInstallActionWorkflowRunTestService struct {
 
 type GetInstallActionWorkflowRunTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      GetInstallActionWorkflowRunTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service GetInstallActionWorkflowRunTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestGetInstallActionWorkflowRunSuite(t *testing.T) {
@@ -70,12 +69,9 @@ func TestGetInstallActionWorkflowRunSuite(t *testing.T) {
 func (s *GetInstallActionWorkflowRunTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -90,7 +86,6 @@ func (s *GetInstallActionWorkflowRunTestSuite) SetupSuite() {
 func (s *GetInstallActionWorkflowRunTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-	s.mockEvClient.Reset()
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,
 		DB:      s.service.DB,

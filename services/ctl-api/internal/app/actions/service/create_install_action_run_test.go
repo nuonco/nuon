@@ -52,14 +52,13 @@ type CreateInstallActionRunTestService struct {
 type CreateInstallActionRunTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      CreateInstallActionRunTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service CreateInstallActionRunTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestCreateInstallActionRunSuite(t *testing.T) {
@@ -76,13 +75,10 @@ func (s *CreateInstallActionRunTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -103,7 +99,6 @@ func (s *CreateInstallActionRunTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -179,9 +174,9 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 				assert.Equal(s.T(), app.WorkflowTypeActionWorkflowRun, workflows[0].Type)
 
 				// Verify signal was sent
-				signals := s.mockEvClient.GetSignals()
-				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), installID, signals[0].ID)
+				queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				require.Len(s.T(), queueSignals, 1)
+				assert.Equal(s.T(), installID, queueSignals[0].OwnerID)
 			},
 		},
 		{
@@ -223,7 +218,6 @@ func (s *CreateInstallActionRunTestSuite) TestCreateActionRunSuccess() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock at the start of each test case
-			s.mockEvClient.Reset()
 
 			installID, configID := tc.setupFunc()
 

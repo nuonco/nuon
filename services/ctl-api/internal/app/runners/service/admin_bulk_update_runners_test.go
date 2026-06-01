@@ -38,12 +38,11 @@ type AdminBulkUpdateRunnersTestService struct {
 
 type AdminBulkUpdateRunnersTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminBulkUpdateRunnersTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service AdminBulkUpdateRunnersTestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAdminBulkUpdateRunnersSuite(t *testing.T) {
@@ -58,13 +57,9 @@ func (s *AdminBulkUpdateRunnersTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -80,7 +75,6 @@ func (s *AdminBulkUpdateRunnersTestSuite) SetupSuite() {
 
 func (s *AdminBulkUpdateRunnersTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{

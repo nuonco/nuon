@@ -19,7 +19,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {
@@ -32,7 +31,6 @@ type Params struct {
 	AcctClient      *account.Client
 	AccountsHelpers *accountshelpers.Helpers
 	RunnersHelpers  *runnershelpers.Helpers
-	EvClient        eventloop.Client
 }
 
 type middleware struct {
@@ -43,7 +41,6 @@ type middleware struct {
 	acctClient      *account.Client
 	accountsHelpers *accountshelpers.Helpers
 	runnersHelpers  *runnershelpers.Helpers
-	evClient        eventloop.Client
 }
 
 func (m *middleware) Handler() gin.HandlerFunc {
@@ -162,7 +159,6 @@ func New(params Params) *middleware {
 		acctClient:      params.AcctClient,
 		accountsHelpers: params.AccountsHelpers,
 		runnersHelpers:  params.RunnersHelpers,
-		evClient:        params.EvClient,
 	}
 }
 

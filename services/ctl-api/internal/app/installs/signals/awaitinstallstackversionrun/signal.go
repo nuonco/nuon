@@ -1,0 +1,228 @@
+package awaitinstallstackversionrun
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+
+	runnersignalsv2 "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/installstackversionrun"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+)
+
+const SignalType signal.SignalType = "await-install-stack-version-run"
+
+type Signal struct {
+	InstallStackID string
+	WorkflowStepID string
+
+	versionID string
+}
+
+const maxTimeout = 180 * 24 * time.Hour // 180 days
+
+var _ signal.Signal = &Signal{}
+var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithAutoRetry = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
+var _ signal.SignalWithTimeout = (*Signal)(nil)
+
+func (s *Signal) AutoRetry() bool { return true }
+
+func (s *Signal) Timeout() time.Duration { return maxTimeout }
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	if s.versionID != "" {
+		statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(cancelCtx, statusactivities.UpdateStatusRequest{
+			ID:     s.versionID,
+			Status: app.NewCompositeTemporalStatus(cancelCtx, app.StatusCancelled),
+		})
+	}
+	return nil
+}
+
+func (s *Signal) Type() signal.SignalType {
+	return SignalType
+}
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.WorkflowStepID = stepID
+}
+
+func (s *Signal) Validate(ctx workflow.Context) error {
+	if s.InstallStackID == "" {
+		return fmt.Errorf("install stack id is required")
+	}
+
+	// Validate install stack exists
+	_, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+	if err != nil {
+		return fmt.Errorf("unable to get install for stack: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Signal) Execute(ctx workflow.Context) error {
+	l := workflow.GetLogger(ctx)
+
+	install, err := activities.AwaitGetInstallForStackByStackID(ctx, s.InstallStackID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install")
+	}
+
+	region := ""
+	switch {
+	case install.AWSAccount != nil:
+		region = install.AWSAccount.Region
+	case install.AzureAccount != nil:
+		region = install.AzureAccount.Location
+	}
+
+	version, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get install version")
+	}
+	s.versionID = version.ID
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get app config")
+	}
+
+	if s.WorkflowStepID != "" {
+		if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
+			StepID:         s.WorkflowStepID,
+			StepTargetID:   version.ID,
+			StepTargetType: "install_stack_versions",
+		}); err != nil {
+			return errors.Wrap(err, "unable to update stack version")
+		}
+	}
+
+	if install.SandboxMode.Bool {
+		l.Info("sandbox mode org")
+		workflow.Sleep(ctx, time.Second*5)
+
+		installState, err := activities.AwaitGetInstallStateByInstallID(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install state for sandbox")
+		}
+		stateMap, err := installState.WorkflowSafeAsMap(ctx)
+		if err != nil {
+			return errors.Wrap(err, "unable to convert install state to map")
+		}
+
+		data := helpers.GetFakeSandboxStackData(appCfg, region, stateMap)
+
+		// Fire phone home HTTP call to exercise the full production code path
+		if err := activities.AwaitFireSandboxPhoneHome(ctx, &activities.FireSandboxPhoneHomeRequest{
+			InstallID:   install.ID,
+			PhoneHomeID: version.PhoneHomeID,
+			Data:        data,
+		}); err != nil {
+			return errors.Wrap(err, "unable to fire sandbox phone home")
+		}
+	}
+
+	// Not sandbox mode - poll for stack version run
+	v := validator.New()
+	var run *app.InstallStackVersionRun
+	if err := poll.Poll(ctx, v, poll.PollOpts{
+		MaxTS:           workflow.Now(ctx).Add(maxTimeout),
+		InitialInterval: time.Second * 15,
+		MaxInterval:     time.Minute * 15,
+		BackoffFactor:   1.15,
+		PostAttemptHook: func(ctx workflow.Context, dur time.Duration) error {
+			l := workflow.GetLogger(ctx)
+			l.Debug("checking install stack status again in "+dur.String(), zap.Duration("duration", dur))
+			return nil
+		},
+		Fn: func(ctx workflow.Context) error {
+			run, err = activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
+			return err
+		},
+	}); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+				ID: version.ID,
+				Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusExpired, map[string]any{
+					"err_message": "install stack was not applied before expiring",
+				}),
+			})
+
+			if s.WorkflowStepID != "" {
+				if statusErr := statusactivities.AwaitPkgStatusUpdateInstallWorkflowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.WorkflowStepID,
+					Status: app.CompositeStatus{
+						Status: app.StatusError,
+						Metadata: map[string]any{
+							"err_step_message": "Stack was not applied within 180 days and expired. Please reprovision install.",
+						},
+					},
+				}); statusErr != nil {
+					return status.WrapStatusErr(err, statusErr)
+				}
+			}
+
+			return errors.Wrap(err, "stack was not applied before expiring")
+		}
+
+		return errors.Wrap(err, "unable to get install stack run in time")
+	}
+
+	// Send signal to runner using cross-namespace signal sending
+	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+		OwnerID:   install.RunnerID,
+		OwnerType: "runners",
+		Signal: &runnersignalsv2.Signal{
+			RunnerID:                 install.RunnerID,
+			InstallStackVersionRunID: run.ID,
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to enqueue signal to runner")
+	}
+
+	// successfully got a run
+	l.Debug("successfully got run", zap.Any("data", run.Data))
+	if err := statusactivities.AwaitPkgStatusUpdateInstallStackVersionStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID:     version.ID,
+		Status: app.NewCompositeTemporalStatus(ctx, app.InstallStackVersionStatusActive),
+	}); err != nil {
+		return errors.Wrap(err, "unable to update status")
+	}
+
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	if err := stategen.HintOrGenerate(ctx, stategen.Request{
+		StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
+		InstallID:       install.ID,
+		Targets:         statemanager.TargetsForHint(statemanager.HintStackRunCompleted, ""),
+		ForceAll:        true,
+		TriggeredByID:   run.ID,
+		TriggeredByType: "install_stack_version_runs",
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}

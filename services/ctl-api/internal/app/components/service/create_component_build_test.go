@@ -11,7 +11,8 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	buildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/build"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // ---------------------------------------------------------------------------
@@ -139,7 +140,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildNotFound() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSignals() {
 	s.Run("sends OperationBuild signal", func() {
-		s.mockEvClient.Reset()
 
 		cmp := s.getSeededComponent(app.ComponentTypeHelmChart)
 
@@ -153,14 +153,14 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildSignals() {
 		err := json.Unmarshal(rr.Body.Bytes(), &response)
 		require.NoError(s.T(), err)
 
-		capturedSignals := s.mockEvClient.GetSignals()
+		capturedSignals := tests.GetQueueSignals(s.T(), s.deps.DB)
 		require.Len(s.T(), capturedSignals, 1, "expected 1 signal")
 
-		assert.Equal(s.T(), cmp.ID, capturedSignals[0].ID, "signal should target the component")
-
-		sig, ok := capturedSignals[0].Signal.(*signals.Signal)
-		require.True(s.T(), ok, "signal should be *signals.Signal")
-		assert.Equal(s.T(), signals.OperationBuild, sig.Type)
+		qs := capturedSignals[0]
+		assert.Equal(s.T(), buildsignal.SignalType, qs.Type, "signal should be component-build")
+		sig, ok := qs.Signal.Signal.(*buildsignal.Signal)
+		require.True(s.T(), ok, "signal should be *buildsignal.Signal")
+		assert.Equal(s.T(), cmp.ID, sig.ComponentID, "signal should target the component")
 		assert.Equal(s.T(), response.ID, sig.BuildID)
 	})
 }

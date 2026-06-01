@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalresponse"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalresponse"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -120,22 +120,19 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 		return
 	}
 
-	// If queues are enabled, reactively unblock the step via the appropriate update.
-	useQueues, _ := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-	if useQueues {
-		if req.ResponseType == app.WorkflowStepApprovalResponseTypeRetryPlan {
-			// Retry is handled by the step-group (which clones and re-dispatches),
-			// not by the approval flow inside the step signal.
-			if _, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
-				InstallWorkflowID: workflowID,
-				StepID:            stepID,
-			}); err != nil {
-				s.l.Warn("failed to send retry-step update for approval retry", zap.Error(err))
-			}
-		} else {
-			if err := s.dispatchApprovalResponseSignal(ctx, workflowID, stepID, approval.ID, wfsaResponse.ID, req.ResponseType); err != nil {
-				s.l.Warn("failed to dispatch workflow-step-approval-response signal", zap.Error(err))
-			}
+	// Reactively unblock the step via the appropriate update.
+	if req.ResponseType == app.WorkflowStepApprovalResponseTypeRetryPlan {
+		// Retry is handled by the step-group (which clones and re-dispatches),
+		// not by the approval flow inside the step signal.
+		if _, err := s.flowsClient.RetryStep(ctx, &flowclient.RetryStepRequest{
+			InstallWorkflowID: workflowID,
+			StepID:            stepID,
+		}); err != nil {
+			s.l.Warn("failed to send retry-step update for approval retry", zap.Error(err))
+		}
+	} else {
+		if err := s.dispatchApprovalResponseSignal(ctx, workflowID, stepID, approval.ID, wfsaResponse.ID, req.ResponseType); err != nil {
+			s.l.Warn("failed to dispatch workflow-step-approval-response signal", zap.Error(err))
 		}
 	}
 

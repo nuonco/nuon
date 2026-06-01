@@ -2,12 +2,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/offlinecheck"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -33,9 +34,10 @@ func (s *service) AdminOfflineCheck(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runnerID, &signals.Signal{
-		Type: signals.OperationOfflineCheck,
-	})
+	if err := s.helpers.EnqueueRunnerSignal(ctx, runnerID, &offlinecheck.Signal{RunnerID: runnerID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue offline-check signal: %w", err))
+		return
+	}
 
 	ctx.JSON(http.StatusCreated, true)
 }

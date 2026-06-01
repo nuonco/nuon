@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -36,15 +35,13 @@ func (s *service) RestartAction(ctx *gin.Context) {
 		return
 	}
 
-	actionWorkflow, err := s.getActionWorkflow(ctx, actionWorkflowID)
+	_, err := s.getActionWorkflow(ctx, actionWorkflowID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
 
-	s.evClient.Send(ctx, actionWorkflow.ID, &signals.Signal{
-		Type: signals.OperationRestart,
-	})
+	// Legacy evClient.Send removed — event loop system has been removed.
 	ctx.JSON(http.StatusOK, true)
 }
 

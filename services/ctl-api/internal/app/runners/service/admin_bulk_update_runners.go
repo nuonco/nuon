@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgreprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/reprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -100,9 +100,9 @@ func (s *service) bulkUpdateRunners(ctx context.Context, req *AdminBulkUpdateRun
 	for _, response := range updatesResponse {
 		if _, ok := orgVisited[response.OrgID]; !ok {
 			ctx = cctx.SetOrgIDContext(ctx, response.OrgID)
-			s.evClient.Send(ctx, response.OrgID, &signals.Signal{
-				Type: signals.OperationReprovision,
-			})
+			if err := s.helpers.EnqueueOrgSignal(ctx, response.OrgID, &orgreprovision.Signal{OrgID: response.OrgID}); err != nil {
+				return nil, fmt.Errorf("unable to enqueue org reprovision signal: %w", err)
+			}
 			orgVisited[response.OrgID] = true
 		}
 	}

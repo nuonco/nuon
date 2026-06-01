@@ -9,7 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	configcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/configcreated"
+	updatecomptype "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/updatecomponenttype"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // ---------------------------------------------------------------------------
@@ -117,7 +119,6 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigValidationErrors() {
 
 func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSignals() {
 	s.Run("sends OperationConfigCreated and OperationUpdateComponentType signals", func() {
-		s.mockEvClient.Reset()
 
 		comp := s.deps.Seeder.CreateComponent(s.ctx, s.T(), s.testApp.ID, app.ComponentTypeJob)
 
@@ -129,16 +130,14 @@ func (s *ComponentsServiceTestSuite) TestCreateAppJobConfigSignals() {
 		})
 		require.Equal(s.T(), http.StatusCreated, rr.Code)
 
-		capturedSignals := s.mockEvClient.GetSignals()
+		capturedSignals := tests.GetQueueSignals(s.T(), s.deps.DB)
 		require.Len(s.T(), capturedSignals, 2, "expected 2 signals")
 
-		sig0, ok := capturedSignals[0].Signal.(*signals.Signal)
-		require.True(s.T(), ok)
-		assert.Equal(s.T(), signals.OperationConfigCreated, sig0.Type)
+		assert.Equal(s.T(), configcreated.SignalType, capturedSignals[0].Type)
 
-		sig1, ok := capturedSignals[1].Signal.(*signals.Signal)
+		assert.Equal(s.T(), updatecomptype.SignalType, capturedSignals[1].Type)
+		sig1, ok := capturedSignals[1].Signal.Signal.(*updatecomptype.Signal)
 		require.True(s.T(), ok)
-		assert.Equal(s.T(), signals.OperationUpdateComponentType, sig1.Type)
 		assert.Equal(s.T(), app.ComponentTypeJob, sig1.ComponentType)
 	})
 }

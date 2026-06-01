@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovision"
 )
 
 type AdminReprovisionRunnerRequest struct{}
@@ -31,8 +31,10 @@ func (s *service) AdminReprovisionRunner(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type: signals.OperationReprovision,
-	})
+	if err := s.helpers.EnqueueRunnerSignal(ctx, runner.ID, &reprovision.Signal{RunnerID: runner.ID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue reprovision signal: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }
