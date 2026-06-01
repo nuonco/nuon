@@ -20,6 +20,8 @@ func FormatValidationError(err error) error {
 				fieldErr = fmt.Sprintf("%s: Name must contain only lowercase letters, numbers, underscores, dots, and curly braces (for interpolation)", e.Field())
 			case "entity_name":
 				fieldErr = fmt.Sprintf("%s: Name must contain only lowercase letters, numbers, underscores, and hyphens", e.Field())
+			case "cron_schedule":
+				fieldErr = fmt.Sprintf("%s: must be a valid cron expression that fires no more often than every %s", e.Field(), MinCronInterval)
 			default:
 				fieldErr = fmt.Sprintf("%s: %s", e.Field(), e.Error())
 			}
