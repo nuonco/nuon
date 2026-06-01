@@ -57,7 +57,8 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 
 	secrets := make([]plantypes.KubernetesSecretSync, 0)
 	for _, cfg := range appCfg.SecretsConfig.Secrets {
-		if !cfg.KubernetesSync {
+		// v2 targets imply sync is enabled even when the legacy kubernetes_sync flag is unset/false.
+		if !cfg.KubernetesSync && len(cfg.KubernetesSyncTargets) == 0 {
 			continue
 		}
 
@@ -152,6 +153,7 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 		Name:       cfg.KubernetesSecretName,
 		KeyName:    cfg.KubernetesSecretKey,
 		Format:     string(cfg.Format),
+		Targets:    kubernetesSyncTargets(cfg.KubernetesSyncTargets),
 	}
 
 	switch {
@@ -188,4 +190,23 @@ func (p *Planner) getKubernetesSecret(stack app.InstallStackOutputs, cfg app.App
 	}
 
 	return sync, true, nil
+}
+
+// kubernetesSyncTargets maps the model's v2 sync targets onto the plan type the runner consumes. Returns nil when no
+// targets are configured so the runner falls back to the v1 single-destination path.
+func kubernetesSyncTargets(targets []app.AppSecretKubernetesSyncTarget) []plantypes.KubernetesSecretSyncTarget {
+	if len(targets) == 0 {
+		return nil
+	}
+
+	out := make([]plantypes.KubernetesSecretSyncTarget, 0, len(targets))
+	for _, t := range targets {
+		out = append(out, plantypes.KubernetesSecretSyncTarget{
+			Namespaces: []string(t.Namespaces),
+			Name:       t.Name,
+			Key:        t.Key,
+		})
+	}
+
+	return out
 }

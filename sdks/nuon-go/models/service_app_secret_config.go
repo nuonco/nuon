@@ -7,6 +7,8 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -45,6 +47,9 @@ type ServiceAppSecretConfig struct {
 	// kubernetes sync
 	KubernetesSync bool `json:"kubernetes_sync,omitempty"`
 
+	// kubernetes sync targets
+	KubernetesSyncTargets []*ServiceKubernetesSyncTarget `json:"kubernetes_sync_targets"`
+
 	// name
 	// Required: true
 	Name *string `json:"name"`
@@ -62,6 +67,10 @@ func (m *ServiceAppSecretConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDisplayName(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubernetesSyncTargets(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -93,6 +102,36 @@ func (m *ServiceAppSecretConfig) validateDisplayName(formats strfmt.Registry) er
 	return nil
 }
 
+func (m *ServiceAppSecretConfig) validateKubernetesSyncTargets(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesSyncTargets) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.KubernetesSyncTargets); i++ {
+		if swag.IsZero(m.KubernetesSyncTargets[i]) { // not required
+			continue
+		}
+
+		if m.KubernetesSyncTargets[i] != nil {
+			if err := m.KubernetesSyncTargets[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
 func (m *ServiceAppSecretConfig) validateName(formats strfmt.Registry) error {
 
 	if err := validate.Required("name", "body", m.Name); err != nil {
@@ -102,8 +141,46 @@ func (m *ServiceAppSecretConfig) validateName(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this service app secret config based on context it is used
+// ContextValidate validate this service app secret config based on the context it is used
 func (m *ServiceAppSecretConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateKubernetesSyncTargets(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceAppSecretConfig) contextValidateKubernetesSyncTargets(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.KubernetesSyncTargets); i++ {
+
+		if m.KubernetesSyncTargets[i] != nil {
+
+			if swag.IsZero(m.KubernetesSyncTargets[i]) { // not required
+				return nil
+			}
+
+			if err := m.KubernetesSyncTargets[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("kubernetes_sync_targets" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
