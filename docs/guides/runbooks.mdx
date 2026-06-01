@@ -5,9 +5,9 @@ icon: "list-checks"
 keywords: ["runbooks", "runbook", "runbook TOML", "configure runbooks", "runbook steps", "deploy step", "action step", "operational procedures", "version upgrade", "database migration", "nuon runbooks"]
 ---
 
-Runbooks turn a multi-step operational procedure into a single, repeatable artifact you run against an install on demand — much like a notebook turns an analysis into ordered, re-runnable cells. Instead of performing version upgrades, database migrations, data backfills, or recovery steps by hand each time, you define the sequence once and run it consistently across every install.
+Runbooks turn a multi-step operational procedure into a single, repeatable artifact you run against an install on demand, much like a notebook turns an analysis into ordered, re-runnable cells. Instead of performing version upgrades, database migrations, data backfills, or recovery steps by hand each time, you define the sequence once and run it consistently across every install.
 
-Each step is either a **deploy** (deploy a component) or an **action** (run an [action](/guides/actions), or an inline ad-hoc command). Steps run in order, and every run is recorded in the install's workflow history — its steps, logs, and outcome — so you have a durable, auditable record of what ran, when, and against which install.
+Each step is either a **deploy** (deploy a component) or an **action** (run an [action](/guides/actions), or an inline ad-hoc command). Steps run in order, and every run is recorded in the install's workflow history (its steps, logs, and outcome), so you have a durable, auditable record of what ran, when, and against which install.
 
 ## Where runbooks live
 
@@ -76,7 +76,7 @@ timeout = "5m"
 | `timeout` | string | No | Maximum execution time for an inline action step (Go duration, e.g. `30s`, `5m`). |
 | `role` | string | No | IAM role to assume when executing an inline action step. |
 
-An action step uses **either** `action_name` (to run a previously defined action) **or** the inline fields (`command` / `inline_contents`) to define an ad-hoc action — not both.
+An action step uses **either** `action_name` (to run a previously defined action) **or** the inline fields (`command` / `inline_contents`) to define an ad-hoc action, not both.
 
 ## Running a runbook
 

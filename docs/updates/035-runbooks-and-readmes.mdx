@@ -8,7 +8,7 @@ _May 21, 2026_
 
 ## Runbooks
 
-Runbooks let you define a named, ordered sequence of steps and run it against an install on demand — version upgrades, database migrations, recovery procedures, and other multi-step operations that used to be run by hand.
+Runbooks let you define a named, ordered sequence of steps and run it against an install on demand: version upgrades, database migrations, recovery procedures, and other multi-step operations that used to be run by hand.
 
 Define runbooks as TOML files in a `runbooks/` directory in your app config. Each step is either a **deploy** (deploy a component, optionally with its dependencies) or an **action** (run an existing action, or an inline ad-hoc command):
 
@@ -30,7 +30,7 @@ Trigger and watch runs from the new **Runbooks** tab in the dashboard, or from t
 
 ## Rendered READMEs
 
-An install's README can now be fetched **fully rendered for that install** through the API. The README's Go template expressions are evaluated against the install's live values, so the API returns the resolved documentation — real URLs, IDs, and outputs — instead of the raw template source.
+An install's README can now be fetched **fully rendered for that install** through the API. The README's Go template expressions are evaluated against the install's live values, so the API returns the resolved documentation (real URLs, IDs, and outputs) instead of the raw template source.
 
 READMEs are authored as Markdown on the app (the `readme` field in `metadata.toml`) and on individual [runbooks](/guides/runbooks), and support Go templating (e.g. `{{ .nuon.install.outputs.* }}`) plus external file sources (HTTP(S), git, or local paths). See [Using READMEs](/guides/using-readmes).
 
@@ -42,8 +42,8 @@ READMEs are authored as Markdown on the app (the `readme` field in `metadata.tom
 
 [Components](/concepts/components) and [sandboxes](/concepts/sandboxes) gained two new deploy-control fields in their config:
 
-- `skip_noops` — when a plan comes back with no changes, skip the deploy step entirely instead of running (or waiting on approval for) a no-op.
-- `auto_approve_on_policies_passing` — automatically approve a deploy when its policy checks pass, so only deploys that fail policy require manual sign-off.
+- `skip_noops`: when a plan comes back with no changes, skip the deploy step entirely instead of running (or waiting on approval for) a no-op.
+- `auto_approve_on_policies_passing`: automatically approve a deploy when its policy checks pass, so only deploys that fail policy require manual sign-off.
 
 Both default to off and can be set on a [Helm](/config-ref/helm), [Terraform](/config-ref/terraform), [Docker build](/config-ref/docker-build), or [Kubernetes manifest](/config-ref/kubernetes-manifest) component, or on the [sandbox](/config-ref/sandbox).
 
@@ -54,13 +54,13 @@ auto_approve_on_policies_passing = true
 
 ## Per-webhook event filters
 
-Org [webhooks](/guides/webhooks) now accept a structured `interests` filter so each subscription can opt into a subset of events — by resource (workflow, step, approval, runner), operation, outcome, or approval state — instead of receiving every lifecycle event. Existing subscriptions default to `all_events: true` and continue to behave exactly as before.
+Org [webhooks](/guides/webhooks) now accept a structured `interests` filter so each subscription can opt into a subset of events, scoped by resource (workflow, step, approval, runner), operation, outcome, or approval state, instead of receiving every lifecycle event. Existing subscriptions default to `all_events: true` and continue to behave exactly as before.
 
 ## Nuon CLI
 
-- New **`nuon-ext-replay-stack`** [CLI extension](/guides/cli-extensions) — a recovery tool for an install stuck at the **awaiting phone-home** step. If an install stack's phone-home payload was received but the stack version never activated, reprovision the install and run the extension to replay the stored payload to the new phone-home URL, letting the install complete.
+- New **`nuon-ext-replay-stack`** [CLI extension](/guides/cli-extensions): a recovery tool for an install stuck at the **awaiting phone-home** step. If an install stack's phone-home payload was received but the stack version never activated, reprovision the install and run the extension to replay the stored payload to the new phone-home URL, letting the install complete.
 
 ## API
 
-- `POST /v1/installs/{install_id}/workflows/cancel` — cancel active workflows for an install.
+- `POST /v1/installs/{install_id}/workflows/cancel`: cancel active workflows for an install.
 - Active workflows and pending approvals are now excluded from responses for deleted installs.
