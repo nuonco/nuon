@@ -197,6 +197,7 @@ func (c Component) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("List of other components that must be deployed before this component. Automatically extracted from template references").
 		Example("database").
 		Example("infrastructure").
+		Field("labels").Short("Key/value labels used to organize and filter components. Metadata only; does not affect deployment").
 		Field("operation_roles").Short("operation-specific IAM role assignments").
 		Long("Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined in the CloudFormation stack deployed to the customer's AWS account. If not specified, default roles are used based on operation type").
 		Field("helm_chart").Short("helm chart component configuration").OneOfRequired("helm_chart").
