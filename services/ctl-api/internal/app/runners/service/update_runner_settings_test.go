@@ -45,7 +45,6 @@ type UpdateRunnerSettingsTestSuite struct {
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
 	testSettings  *app.RunnerGroupSettings
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestUpdateRunnerSettingsSuite(t *testing.T) {
@@ -61,13 +60,10 @@ func (s *UpdateRunnerSettingsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create and inject mock EventLoop client
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -82,7 +78,6 @@ func (s *UpdateRunnerSettingsTestSuite) SetupSuite() {
 
 func (s *UpdateRunnerSettingsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Create router with public routes (UpdateRunnerSettings is in RegisterPublicRoutes)
@@ -243,9 +238,9 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			expectedCode: http.StatusOK,
 			expectSignal: true,
 			validateFunc: func(settings *app.RunnerGroupSettings) {
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "should send restart signal when image tag changes")
-				assert.Equal(s.T(), s.testRunner.ID, signals[0].ID)
+				assert.Equal(s.T(), s.testRunner.ID, signals[0].OwnerID)
 			},
 		},
 		{
@@ -258,7 +253,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			expectedCode: http.StatusOK,
 			expectSignal: false,
 			validateFunc: func(settings *app.RunnerGroupSettings) {
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "should not send signal when only API URL changes")
 			},
 		},
@@ -443,7 +438,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			runnerID, req := tc.setupFunc()
 			rr := s.makeRequest("PATCH", "/v1/runners/"+runnerID+"/settings", req)
 
@@ -465,7 +459,7 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettings() {
 			}
 
 			// Verify signal expectations
-			signals := s.mockEvClient.GetSignals()
+			signals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectSignal {
 				assert.NotEmpty(s.T(), signals, "expected signal to be sent")
 			} else if !tc.expectedError {
@@ -514,7 +508,6 @@ func (s *UpdateRunnerSettingsTestSuite) TestUpdateRunnerSettingsValidAWSMaxInsta
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			req := UpdateRunnerSettingsRequest{
 				AWSMaxInstanceLifetime: &tc.lifetime,
 			}

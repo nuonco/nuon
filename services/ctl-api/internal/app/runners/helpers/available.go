@@ -7,7 +7,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 )
 
 func (s *Helpers) MarkJobAvailable(ctx context.Context, runnerJobID string) error {
@@ -30,15 +29,10 @@ func (s *Helpers) MarkJobAvailable(ctx context.Context, runnerJobID string) erro
 }
 
 func (s *Helpers) QueueJob(ctx context.Context, runnerJobID string) error {
-	job, err := s.getJob(ctx, runnerJobID)
+	_, err := s.getJob(ctx, runnerJobID)
 	if err != nil {
 		return fmt.Errorf("unable to get runner job: %w", err)
 	}
-
-	s.evClient.Send(ctx, job.RunnerID, &signals.Signal{
-		Type:  signals.OperationProcessJob,
-		JobID: runnerJobID,
-	})
 
 	return nil
 }

@@ -73,7 +73,6 @@ func (s *VCSServiceTestSuite) SetupSuite() {
 			T: s.T(),
 			Mocks: &tests.TestMocks{
 				MockGH: s.mockGH,
-				MockEv: tests.NewMockEventLoopClient(),
 			},
 			CustomValidator: true,
 		}),

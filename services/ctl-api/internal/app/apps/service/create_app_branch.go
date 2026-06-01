@@ -38,7 +38,7 @@ func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
 // @Success				201	{object}	app.AppBranch
 // @Router					/v1/apps/{app_id}/branches [post]
 func (s *service) CreateAppBranch(ctx *gin.Context) {
-	enabled, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	enabled, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to check features: %w", err))
 		return

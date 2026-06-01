@@ -6,10 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
-	generatestatev2 "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	generatestatev2 "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/generatestate"
 )
 
 // @ID						AdminInstallGenerateInstallState
@@ -34,27 +32,16 @@ func (s *service) AdminInstallGenerateInstallState(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &generatestate.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationGenerateState,
-		})
+	if err := s.enqueueInstallSignal(ctx, queueID, &generatestate.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, true)

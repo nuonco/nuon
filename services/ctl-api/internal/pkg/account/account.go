@@ -8,7 +8,6 @@ import (
 	"github.com/nuonco/nuon/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 )
 
 type Params struct {
@@ -19,7 +18,6 @@ type Params struct {
 	DB              *gorm.DB `name:"psql"`
 	V               *validator.Validate
 	AuthzClient     *authz.Client
-	EvClient        eventloop.Client
 }
 
 type Client struct {
@@ -28,7 +26,6 @@ type Client struct {
 	v               *validator.Validate
 	analyticsClient analytics.Writer
 	authzClient     *authz.Client
-	evClient        eventloop.Client
 }
 
 func New(params Params) *Client {
@@ -38,6 +35,5 @@ func New(params Params) *Client {
 		db:              params.DB,
 		analyticsClient: params.AnalyticsClient,
 		authzClient:     params.AuthzClient,
-		evClient:        params.EvClient,
 	}
 }

@@ -8,8 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	orgdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/deprovision"
+	orgdeprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/deprovision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -45,29 +44,14 @@ func (s *service) AdminDeprovisionOrg(ctx *gin.Context) {
 	// App deletion is handled by the deprovision signal automatically.
 	// The signal will fail if any apps still have installs that need to be forgotten first.
 
-	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-	if useQueues {
-		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
-			return
-		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgdeprovision.Signal{OrgID: org.ID, Force: req.Force}, org.ID); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		sigTyp := sigs.OperationDeprovision
-		if req.Force {
-			sigTyp = sigs.OperationForceDeprovision
-		}
-		s.evClient.Send(ctx, org.ID, &sigs.Signal{
-			Type: sigTyp,
-		})
+	if err := s.enqueueOrgSignal(ctx, queueID, &orgdeprovision.Signal{OrgID: org.ID, Force: req.Force}, org.ID); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, true)

@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -50,10 +50,10 @@ func (s *service) AdminCreateInstallRunnerqShutDownJob(ctx *gin.Context) {
 			return
 		}
 
-		s.evClient.Send(ctx, runner.ID, &signals.Signal{
-			Type:  signals.OperationProcessJob,
-			JobID: job.ID,
-		})
+		if err := s.helpers.EnqueueRunnerSignal(ctx, runner.ID, &processjob.Signal{RunnerID: runner.ID, JobID: job.ID}); err != nil {
+			ctx.Error(fmt.Errorf("unable to enqueue process-job signal: %w", err))
+			return
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, true)

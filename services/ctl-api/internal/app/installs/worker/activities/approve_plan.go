@@ -23,7 +23,7 @@ type ApprovePlanResponse struct{}
 // approveStepArgs mirrors executeflow.ApproveStepRequest. It is duplicated here
 // (rather than imported) to avoid an import cycle:
 //
-//	installs/worker/activities -> flow/signals/executeflow -> installs/signals/v2/...
+//	installs/worker/activities -> flow/signals/executeflow -> installs/signals/...
 //	  -> installs/worker/activities
 //
 // The wire format must stay in sync with executeflow.ApproveStepRequest.
