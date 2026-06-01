@@ -36,12 +36,11 @@ type AdminCreateInstallRunnerShutdownJobTestService struct {
 
 type AdminCreateInstallRunnerShutdownJobTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminCreateInstallRunnerShutdownJobTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service AdminCreateInstallRunnerShutdownJobTestService
+	router  *gin.Engine
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestAdminCreateInstallRunnerShutdownJobSuite(t *testing.T) {
@@ -56,13 +55,9 @@ func (s *AdminCreateInstallRunnerShutdownJobTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -78,7 +73,6 @@ func (s *AdminCreateInstallRunnerShutdownJobTestSuite) SetupSuite() {
 
 func (s *AdminCreateInstallRunnerShutdownJobTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{

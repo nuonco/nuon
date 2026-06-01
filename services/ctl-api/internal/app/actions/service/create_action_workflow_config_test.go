@@ -52,14 +52,13 @@ type CreateAppActionConfigTestService struct {
 type CreateAppActionConfigTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      CreateAppActionConfigTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service CreateAppActionConfigTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestCreateAppActionConfigSuite(t *testing.T) {
@@ -76,13 +75,10 @@ func (s *CreateAppActionConfigTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -103,7 +99,6 @@ func (s *CreateAppActionConfigTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -316,7 +311,6 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock at the start of each test case
-			s.mockEvClient.Reset()
 
 			actionID, appConfigID, componentID := tc.setupFunc()
 
@@ -334,9 +328,9 @@ func (s *CreateAppActionConfigTestSuite) TestCreateActionConfigSuccess() {
 			require.NoError(s.T(), err)
 
 			// Verify signal was sent
-			signals := s.mockEvClient.GetSignals()
-			require.Len(s.T(), signals, 1)
-			assert.Equal(s.T(), actionID, signals[0].ID)
+			queueSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+			require.Len(s.T(), queueSignals, 1)
+			assert.Equal(s.T(), actionID, queueSignals[0].OwnerID)
 
 			// Verify database state
 			var dbConfig app.ActionWorkflowConfig

@@ -45,7 +45,6 @@ type AdminCreateHealthCheckJobTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminCreateHealthCheckJobSuite(t *testing.T) {
@@ -60,13 +59,9 @@ func (s *AdminCreateHealthCheckJobTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -82,7 +77,6 @@ func (s *AdminCreateHealthCheckJobTestSuite) SetupSuite() {
 
 func (s *AdminCreateHealthCheckJobTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -181,7 +175,7 @@ func (s *AdminCreateHealthCheckJobTestSuite) TestAdminCreateHealthCheckJob() {
 				assert.Equal(s.T(), "runners", logStream.OwnerType)
 				assert.True(s.T(), logStream.Open)
 
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "health check jobs do not send signals")
 			},
 		},

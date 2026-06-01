@@ -10,8 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/created"
-	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
+	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"

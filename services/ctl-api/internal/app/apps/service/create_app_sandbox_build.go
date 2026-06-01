@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	sandboxbuildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/sandboxbuild"
+	sandboxbuildsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/sandboxbuild"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

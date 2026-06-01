@@ -156,8 +156,6 @@ func (s *service) approveStuckSteps(ctx *gin.Context, workflowID string) {
 		return
 	}
 
-	useQueues, _ := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-
 	for _, step := range steps {
 		if step.Approval == nil || step.Approval.Response != nil {
 			continue
@@ -174,12 +172,10 @@ func (s *service) approveStuckSteps(ctx *gin.Context, workflowID string) {
 			continue
 		}
 
-		if useQueues {
-			if err := s.dispatchApprovalResponseSignal(ctx, workflowID, step.ID, step.Approval.ID, resp.ID, app.WorkflowStepApprovalResponseTypeApprove); err != nil {
-				s.l.Warn("failed to dispatch approval response signal for stuck step",
-					zap.String("step_id", step.ID),
-					zap.Error(err))
-			}
+		if err := s.dispatchApprovalResponseSignal(ctx, workflowID, step.ID, step.Approval.ID, resp.ID, app.WorkflowStepApprovalResponseTypeApprove); err != nil {
+			s.l.Warn("failed to dispatch approval response signal for stuck step",
+				zap.String("step_id", step.ID),
+				zap.Error(err))
 		}
 	}
 }

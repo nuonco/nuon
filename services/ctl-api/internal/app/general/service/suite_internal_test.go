@@ -42,13 +42,12 @@ type GeneralInternalTestDeps struct {
 type GeneralInternalTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      GeneralInternalTestDeps
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service GeneralInternalTestDeps
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestGeneralInternalTestSuite(t *testing.T) {
@@ -65,12 +64,10 @@ func (s *GeneralInternalTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		// Service under test
@@ -90,7 +87,6 @@ func (s *GeneralInternalTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{

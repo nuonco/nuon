@@ -11,8 +11,7 @@ import (
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updateinstallstackoutputs"
+	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -147,30 +146,19 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		// The phone-home endpoint is unauthenticated (called from the AWS
 		// Lambda or the Terraform local-exec), so no middleware sets the
 		// org or account on the context. Derive both from the stack version
-		// we just looked up: the org for the feature client, the account so
-		// the queue_signals INSERT's `created_by_id` NOT NULL constraint is
-		// satisfied (the BeforeCreate hook reads from context).
+		// we just looked up so the queue_signals INSERT's `created_by_id`
+		// NOT NULL constraint is satisfied (the BeforeCreate hook reads
+		// from context).
 		ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
 		ctx = cctx.SetAccountIDContext(ctx, stackVersion.CreatedByID)
-		useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+		queueID, err := s.getInstallSignalsQueueID(ctx, installID)
 		if err != nil {
-			return fmt.Errorf("checking features: %w", err)
+			return err
 		}
-		if useQueues {
-			queueID, err := s.getInstallSignalsQueueID(ctx, installID)
-			if err != nil {
-				return err
-			}
-			if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
-				InstallStackID: stackVersion.InstallStackID,
-			}, "", ""); err != nil {
-				return fmt.Errorf("enqueue signal: %w", err)
-			}
-		} else {
-			s.evClient.Send(ctx, installID, &signals.Signal{
-				Type:           signals.OperationUpdateInstallStackOutputs,
-				InstallStackID: stackVersion.InstallStackID,
-			})
+		if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
+			InstallStackID: stackVersion.InstallStackID,
+		}, "", ""); err != nil {
+			return fmt.Errorf("enqueue signal: %w", err)
 		}
 	}
 

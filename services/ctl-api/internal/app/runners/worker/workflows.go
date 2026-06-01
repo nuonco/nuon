@@ -9,16 +9,13 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	runner "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/kuberunner"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 )
 
 type Workflows struct {
-	cfg      *internal.Config
-	v        *validator.Validate
-	mw       tmetrics.Writer
-	evClient teventloop.Client
+	cfg *internal.Config
+	v   *validator.Validate
+	mw  tmetrics.Writer
 }
 
 type WorkflowParams struct {
@@ -27,35 +24,13 @@ type WorkflowParams struct {
 	V             *validator.Validate
 	Cfg           *internal.Config
 	MetricsWriter metrics.Writer
-	EvClient      teventloop.Client
 }
 
 func (w *Workflows) All() []any {
 	wkflow := runner.NewWorkflow(*w.cfg)
 
 	return []any{
-		w.Created,
-		w.Delete,
-		w.Deprovision,
-		w.FlushOrphanedJobs,
-		w.ForceShutdown,
-		w.GracefulShutdown,
 		w.CronShutdownVM,
-		w.InstallStackVersionRun,
-		w.MngFetchToken,
-		w.MngRestart,
-		w.MngShutdown,
-		w.MngUpdate,
-		w.MngVMShutdown,
-		w.OfflineCheck,
-		w.ProcessJob,
-		w.Provision,
-		w.ProvisionServiceAccount,
-		w.Reprovision,
-		w.ReprovisionServiceAccount,
-		w.Restart,
-		w.UpdateVersion,
-		w.EventLoop,
 		wkflow.ProvisionRunner,
 		wkflow.DeprovisionRunner,
 	}
@@ -65,16 +40,15 @@ func NewWorkflows(params WorkflowParams) (*Workflows, error) {
 	tmw, err := tmetrics.New(params.V,
 		tmetrics.WithMetricsWriter(params.MetricsWriter),
 		tmetrics.WithTags(map[string]string{
-			"namespace": signals.TemporalNamespace,
+			"namespace": "runners",
 			"context":   "worker",
 		}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create temporal metrics writer: %w", err)
 	}
 	return &Workflows{
-		cfg:      params.Cfg,
-		v:        params.V,
-		mw:       tmw,
-		evClient: params.EvClient,
+		cfg: params.Cfg,
+		v:   params.V,
+		mw:  tmw,
 	}, nil
 }

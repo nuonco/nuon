@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode"
 	sbtemplates "github.com/nuonco/nuon/services/ctl-api/internal/pkg/sandboxmode/templates"
 )
@@ -41,7 +40,7 @@ func (s *service) SandboxMode(c *gin.Context) {
 		"runner_job_configs":             runnerJobConfigs,
 		"signal_configs":                 signalConfigs,
 		"stack_config":                   stackConfig,
-		"all_signal_types":               signals.AllSignalTypes(),
+		"all_signal_types":               []string{},
 		"all_runner_job_types":           sandboxmode.AllRunnerJobTypes(),
 		"all_runner_job_operation_types": sandboxmode.AllRunnerJobOperationTypes(),
 		"templates":                      sbtemplates.AllTemplates(),
@@ -109,7 +108,7 @@ func (s *service) SandboxModeSignalsTable(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"configs":          configs,
-		"all_signal_types": signals.AllSignalTypes(),
+		"all_signal_types": []string{},
 	})
 }
 
@@ -123,7 +122,7 @@ func (s *service) SandboxModeSignalRows(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"configs":          configs,
-		"all_signal_types": signals.AllSignalTypes(),
+		"all_signal_types": []string{},
 	})
 }
 

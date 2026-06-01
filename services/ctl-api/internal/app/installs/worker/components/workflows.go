@@ -12,7 +12,6 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/actions"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
@@ -27,7 +26,6 @@ type Params struct {
 	DB        *gorm.DB `name:"psql"`
 	V         *validator.Validate
 	MW        metrics.Writer
-	EVClient  teventloop.Client
 	Analytics temporalanalytics.Writer
 	Templates *cloudformation.Templates
 	// FIXME(sdboyer) remove ASAP, once lifecycle workflows are deprecated
@@ -38,22 +36,13 @@ type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
 	mw        tmetrics.Writer
-	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
 	templates *cloudformation.Templates
 	db        *gorm.DB
 }
 
 func (w *Workflows) All() []any {
-	return []any{
-		w.ExecuteDeployComponentApplyPlan,
-		w.ExecuteDeployComponentSyncAndPlan,
-		w.ExecuteDeployComponentSyncImage,
-		w.ExecuteTeardownComponentApplyPlan,
-		w.ExecuteTeardownComponentSyncAndPlan,
-		w.ComponentEventLoop,
-		w.DriftCheck,
-	}
+	return []any{}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
@@ -71,7 +60,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	return &Workflows{
 		cfg:       params.Cfg,
 		v:         params.V,
-		evClient:  params.EVClient,
 		mw:        tmw,
 		analytics: params.Analytics,
 		templates: params.Templates,

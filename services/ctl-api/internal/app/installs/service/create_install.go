@@ -10,10 +10,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/appconfigupdated"
-	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/created"
-	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/polldependencies"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
+	installscreated "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/created"
+	polldependencies "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -94,62 +93,41 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
-	// Send signals: v2 queues or legacy event loop
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	// Send signals via queues
+	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		// reconcile cron/drift emitters from app config triggers
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationCreated,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationPollDependencies,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:              signals.OperationExecuteFlow,
-			InstallWorkflowID: workflow.ID,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationSyncActionWorkflowTriggers,
-		})
+	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	// reconcile cron/drift emitters from app config triggers
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
+		return
 	}
 
 	// Update user journey step for first install creation
@@ -241,62 +219,41 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	// Send signals: v2 queues or legacy event loop
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	// Send signals via queues
+	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		// reconcile cron/drift emitters from app config triggers
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationCreated,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationPollDependencies,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type:              signals.OperationExecuteFlow,
-			InstallWorkflowID: workflow.ID,
-		})
-		s.evClient.Send(ctx, install.ID, &signals.Signal{
-			Type: signals.OperationSyncActionWorkflowTriggers,
-		})
+	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &installscreated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &polldependencies.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	// reconcile cron/drift emitters from app config triggers
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &appconfigupdated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue reconcile-emitters signal: %w", err))
+		return
 	}
 
 	// Update user journey step for first install creation

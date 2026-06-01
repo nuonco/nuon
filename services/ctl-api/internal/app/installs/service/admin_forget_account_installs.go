@@ -11,8 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
-	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/forgotten"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -58,12 +57,6 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
-		return
-	}
-
 	for _, install := range installs {
 		if err := s.addForgottenByLabels(ctx, install.ID); err != nil {
 			s.l.Warn("unable to add forgotten-by labels", zap.Error(err))
@@ -75,22 +68,16 @@ func (s *service) ForgetAccountInstalls(ctx *gin.Context) {
 			return
 		}
 
-		if useQueues {
-			queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-			if err != nil {
-				ctx.Error(err)
-				return
-			}
-			if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
-				InstallID: install.ID,
-			}, "", ""); err != nil {
-				ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-				return
-			}
-		} else {
-			s.evClient.Send(ctx, install.ID, &signals.Signal{
-				Type: signals.OperationForget,
-			})
+		queueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
+		if err != nil {
+			ctx.Error(err)
+			return
+		}
+		if err := s.enqueueInstallSignal(ctx, queueID, &forgotten.Signal{
+			InstallID: install.ID,
+		}, "", ""); err != nil {
+			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+			return
 		}
 	}
 

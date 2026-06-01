@@ -35,10 +35,3 @@ func (s *service) enqueueOrgSignal(ctx context.Context, queueID string, sig sign
 	})
 	return err
 }
-
-// useOrgQueues checks if the org has the queues feature flag enabled.
-// Uses OrgHasFeature with explicit orgID so it works in admin endpoints
-// that don't have org context set.
-func (s *service) useOrgQueues(ctx context.Context, orgID string) (bool, error) {
-	return s.features.OrgHasFeature(ctx, orgID, app.OrgFeatureQueues)
-}

@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,19 +25,14 @@ func (s *GeneralInternalTestSuite) TestRestartGeneralEventLoop() {
 				err := json.Unmarshal([]byte(respBody), &resp)
 				require.NoError(s.T(), err)
 				assert.Equal(s.T(), "ok", resp["status"], "status should be ok")
-				assert.Equal(s.T(), string(signals.OperationRestart), resp["type"], "type should be restart")
+				assert.Equal(s.T(), string(promotion.SignalType), resp["type"], "type should be promotion")
 
 				// Verify signal was sent
-				capturedSignals := s.mockEvClient.GetSignals()
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), capturedSignals, 1, "expected exactly one signal to be sent")
 
-				signal := capturedSignals[0]
-				assert.Equal(s.T(), "general", signal.ID, "signal should be sent to 'general' ID")
-
-				// Type assert to get the actual signal
-				genSignal, ok := signal.Signal.(*signals.Signal)
-				require.True(s.T(), ok, "signal should be of type *signals.Signal")
-				assert.Equal(s.T(), signals.OperationRestart, genSignal.Type, "signal type should be OperationRestart")
+				qs := capturedSignals[0]
+				assert.Equal(s.T(), promotion.SignalType, qs.Type, "signal type should be promotion")
 			},
 		},
 	}
@@ -44,7 +40,6 @@ func (s *GeneralInternalTestSuite) TestRestartGeneralEventLoop() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/restart-event-loop", map[string]interface{}{})

@@ -5,7 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/driftdetected"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/driftdetected"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
