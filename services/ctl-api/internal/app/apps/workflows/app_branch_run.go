@@ -7,12 +7,12 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
-	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/appconfig"
-	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/builds"
-	deploygrouptoqueue "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/deploygrouptoqueue"
-	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/fetchcommit"
-	sandboxbuild "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/sandboxbuild"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
+	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
+	deploygrouptoqueue "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/deploygrouptoqueue"
+	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
+	sandboxbuild "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 )
 
 // AppBranchRun builds the workflow steps for an app branch run

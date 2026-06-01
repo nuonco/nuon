@@ -16,7 +16,6 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
@@ -32,7 +31,6 @@ type Params struct {
 	VCSHelpers        *vcshelpers.Helpers
 	Helpers           *helpers.Helpers
 	ActionHelpers     *actionhelper.Helpers
-	EvClient          eventloop.Client
 	AcctClient        *account.Client
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
@@ -53,7 +51,6 @@ type Activities struct {
 	runnersHelpers    *runnershelpers.Helpers
 	helpers           *helpers.Helpers
 	actionHelpers     *actionhelper.Helpers
-	evClient          eventloop.Client
 	acctClient        *account.Client
 	authzClient       *authz.Client
 	vcsHelpers        *vcshelpers.Helpers
@@ -73,7 +70,6 @@ func New(params Params) *Activities {
 		runnersHelpers:    params.RunnersHelpers,
 		actionHelpers:     params.ActionHelpers,
 		helpers:           params.Helpers,
-		evClient:          params.EvClient,
 		acctClient:        params.AcctClient,
 		authzClient:       params.AuthzClient,
 		vcsHelpers:        params.VCSHelpers,

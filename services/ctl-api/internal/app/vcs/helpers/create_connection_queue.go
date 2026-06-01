@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )

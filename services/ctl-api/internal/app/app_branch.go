@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type AppBranch struct {
@@ -32,26 +31,6 @@ type AppBranch struct {
 	Configs []AppBranchConfig `json:"configs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"configs,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
-}
-
-func (a *AppBranch) EventLoops() []bulk.EventLoop {
-	evs := make([]bulk.EventLoop, 0)
-
-	// Add the app branch event loop
-	evs = append(evs, bulk.EventLoop{
-		Namespace: "apps",
-		ID:        a.ID,
-	})
-
-	// Add the queue workflow event loop if queue exists
-	if a.Queue.ID != "" && a.Queue.Workflow.ID != "" {
-		evs = append(evs, bulk.EventLoop{
-			Namespace: a.Queue.Workflow.Namespace,
-			ID:        a.Queue.Workflow.ID,
-		})
-	}
-
-	return evs
 }
 
 func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {

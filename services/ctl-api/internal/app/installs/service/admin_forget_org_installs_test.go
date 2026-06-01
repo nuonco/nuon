@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -38,14 +38,13 @@ type AdminForgetOrgInstallsTestService struct {
 
 type AdminForgetOrgInstallsTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      AdminForgetOrgInstallsTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     AdminForgetOrgInstallsTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestAdminForgetOrgInstallsSuite(t *testing.T) {
@@ -60,11 +59,9 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -78,7 +75,6 @@ func (s *AdminForgetOrgInstallsTestSuite) SetupSuite() {
 
 func (s *AdminForgetOrgInstallsTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// Admin routes do NOT use TestOrg/TestAcc context
@@ -156,13 +152,11 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			expectedSignal: true,
 			validateFunc: func(orgID string) {
 				// Verify signals were sent
-				sigs := s.mockEvClient.GetSignals()
+				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.GreaterOrEqual(s.T(), len(sigs), 3, "expected at least 3 signals for 3 installs")
 
-				for _, sig := range sigs {
-					evSig, ok := sig.Signal.(*signals.Signal)
-					require.True(s.T(), ok)
-					assert.Equal(s.T(), signals.OperationForget, evSig.Type)
+				for _, qs := range sigs {
+					assert.Equal(s.T(), forgotten.SignalType, qs.Type)
 				}
 			},
 		},
@@ -208,7 +202,6 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			orgID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/orgs/"+orgID+"/admin-forget-installs", tc.requestBody)
 
@@ -226,7 +219,7 @@ func (s *AdminForgetOrgInstallsTestSuite) TestForgetOrgInstalls() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
+			capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
 				assert.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
 			} else {

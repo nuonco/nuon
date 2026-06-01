@@ -5,7 +5,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	workerstate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"

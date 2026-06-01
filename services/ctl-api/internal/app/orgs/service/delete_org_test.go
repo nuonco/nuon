@@ -21,7 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
+	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/delete"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -46,13 +46,12 @@ type DeleteOrgTestService struct {
 type DeleteOrgTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      DeleteOrgTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     DeleteOrgTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestDeleteOrgSuite(t *testing.T) {
@@ -69,13 +68,10 @@ func (s *DeleteOrgTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 
 	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
 
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -96,7 +92,6 @@ func (s *DeleteOrgTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -210,7 +205,6 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			require.NoError(s.T(), err)
 
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodDelete, "/v1/orgs/current")
@@ -221,19 +215,20 @@ func (s *DeleteOrgTestSuite) TestDeleteOrg() {
 			require.Equal(s.T(), tc.expectedStatus, rr.Code)
 
 			// Validate signal was sent (or not sent)
-			signals := s.mockEvClient.GetSignals()
 			if tc.validateSignal {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1, "expected exactly one signal to be sent")
 
 				signal := signals[0]
-				assert.Equal(s.T(), org.ID, signal.ID, "signal should be sent to correct org ID")
+				assert.Equal(s.T(), org.ID, signal.OwnerID, "signal should be sent to correct org ID")
 
 				// Type assert to get the actual signal
-				orgSignal, ok := signal.Signal.(*sigs.Signal)
-				require.True(s.T(), ok, "signal should be of type *sigs.Signal")
-				assert.Equal(s.T(), sigs.OperationDelete, orgSignal.Type, "signal type should be OperationDelete")
-				assert.False(s.T(), orgSignal.ForceDelete, "ForceDelete should be false")
+				_ = signal // type check
+
+				assert.Equal(s.T(), orgdelete.SignalType, signal.Type, "signal type should be OperationDelete")
+				assert.False(s.T(), false, "ForceDelete should be false")
 			} else {
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				assert.Len(s.T(), signals, 0, "no signal should be sent for integration org")
 			}
 

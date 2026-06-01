@@ -13,8 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
-	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processjob"
+	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -118,14 +117,9 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb ca
 		return enqueueResp.ID, nil
 	}
 
-	// Legacy path: dispatch through the runner event loop.
-	l.Info("queueing job on runner event loop", zap.String("runner-id", runnerID))
-	j.evClient.Send(ctx, runnerID, &runnersignals.Signal{
-		Type:  runnersignals.OperationProcessJob,
-		JobID: jobID,
-	})
-
-	return "", nil
+	// Legacy event loop path removed — event loop system has been removed.
+	// If no queue exists for this runner, the job cannot be dispatched.
+	return "", errors.New("no job-group queue found for runner; legacy event loop path has been removed")
 }
 
 func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {

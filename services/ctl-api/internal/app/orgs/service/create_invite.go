@@ -10,8 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/analytics/events"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	orginvitecreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/invite_created"
+	orginvitecreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/invite_created"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -89,30 +88,18 @@ func (s *service) CreateOrgInvite(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-	if useQueues {
-		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
-			return
-		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orginvitecreated.Signal{
-			OrgID:    org.ID,
-			InviteID: invite.ID,
-			LoginURL: fmt.Sprintf("%s/api/auth/login", s.cfg.AppURL),
-		}, org.ID); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, org.ID, &sigs.Signal{
-			Type:     sigs.OperationInviteCreated,
-			InviteID: invite.ID,
-		})
+	if err := s.enqueueOrgSignal(ctx, queueID, &orginvitecreated.Signal{
+		OrgID:    org.ID,
+		InviteID: invite.ID,
+		LoginURL: fmt.Sprintf("%s/api/auth/login", s.cfg.AppURL),
+	}, org.ID); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 	ctx.JSON(http.StatusCreated, invite)
 

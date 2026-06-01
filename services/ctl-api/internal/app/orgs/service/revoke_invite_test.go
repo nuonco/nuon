@@ -45,13 +45,12 @@ type RevokeOrgInviteTestService struct {
 type RevokeOrgInviteTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      RevokeOrgInviteTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
-	orgsService  *service
+	app         *fxtest.App
+	service     RevokeOrgInviteTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	orgsService *service
 }
 
 func TestRevokeOrgInviteSuite(t *testing.T) {
@@ -67,12 +66,9 @@ func (s *RevokeOrgInviteTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -88,7 +84,6 @@ func (s *RevokeOrgInviteTestSuite) SetupSuite() {
 func (s *RevokeOrgInviteTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-	s.mockEvClient.Reset()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,

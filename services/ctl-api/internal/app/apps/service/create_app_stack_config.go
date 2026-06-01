@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -123,13 +122,6 @@ func (s *service) createAppStackConfig(ctx context.Context, appID string, req *C
 		Create(&appCloudFormationStackConfig)
 	if res.Error != nil {
 		return nil, res.Error
-	}
-
-	if len(appCloudFormationStackConfig.CustomNestedStacks) > 0 {
-		s.evClient.Send(ctx, appID, &signals.Signal{
-			Type:             signals.OperationSyncCustomStacks,
-			AppStackConfigID: appCloudFormationStackConfig.ID,
-		})
 	}
 
 	return &appCloudFormationStackConfig, nil

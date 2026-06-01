@@ -11,7 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	terminateworkflows "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/terminate_workflows"
+	terminateworkflows "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/terminate_workflows"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

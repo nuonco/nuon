@@ -74,7 +74,7 @@ const (
 //
 // signalTypeWorkflowStepApprovalRequest / signalTypeWorkflowStepApprovalResponse
 // mirror the SignalTypes defined in
-// services/ctl-api/internal/app/installs/signals/v2/workflowstepapproval{request,response}.
+// services/ctl-api/internal/app/installs/signals/workflowstepapproval{request,response}.
 // Duplicated as string constants for the same reason — to avoid pulling the
 // installs/signals tree into the queue/signal/hooks package.
 const (

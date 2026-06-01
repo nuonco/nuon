@@ -11,7 +11,6 @@ import (
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	orgiam "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/iam"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 )
 
@@ -21,7 +20,6 @@ type Params struct {
 	Cfg       *internal.Config
 	V         *validator.Validate
 	MW        metrics.Writer
-	EVClient  teventloop.Client
 	Analytics temporalanalytics.Writer
 	Features  *features.Features
 }
@@ -30,7 +28,6 @@ type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
 	mw        tmetrics.Writer
-	ev        teventloop.Client
 	analytics temporalanalytics.Writer
 	features  *features.Features
 }
@@ -38,7 +35,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	wkflow := orgiam.NewWorkflow(*w.cfg)
 	wkflows := []any{
-		w.EventLoop,
 		wkflow.ProvisionIAM,
 		wkflow.DeprovisionIAM,
 	}
@@ -48,22 +44,7 @@ func (w *Workflows) All() []any {
 
 // ListWorkflowFns returns the list of workflow functions for registration
 func (w *Workflows) ListWorkflowFns() []any {
-	return []any{
-		w.Created,
-		w.Provision,
-		w.Reprovision,
-		w.Deprovision,
-		w.ForceDeprovision,
-		w.Restart,
-		w.RestartRunners,
-		w.InviteUser,
-		w.InviteAccepted,
-		w.ForceDelete,
-		w.Delete,
-		w.ForceSandboxMode,
-		w.EnableFeatureFlags,
-		w.StageSeed,
-	}
+	return []any{}
 }
 
 func NewWorkflows(params Params) (*Workflows, error) {
@@ -81,7 +62,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 		cfg:       params.Cfg,
 		v:         params.V,
 		mw:        tmw,
-		ev:        params.EVClient,
 		analytics: params.Analytics,
 		features:  params.Features,
 	}, nil

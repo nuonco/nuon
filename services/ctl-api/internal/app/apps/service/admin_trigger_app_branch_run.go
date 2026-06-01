@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
-	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/run"
+	runsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

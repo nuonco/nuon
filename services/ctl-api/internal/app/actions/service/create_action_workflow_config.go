@@ -14,7 +14,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -75,11 +74,7 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, awID, &signals.Signal{
-		Type: signals.OperationConfigCreated,
-
-		ConfigID: awc.ID,
-	})
+	// Legacy evClient.Send removed — event loop system has been removed.
 
 	ctx.JSON(http.StatusCreated, awc)
 }
@@ -271,11 +266,7 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, awID, &signals.Signal{
-		Type: signals.OperationConfigCreated,
-
-		ConfigID: awc.ID,
-	})
+	// Legacy evClient.Send removed — event loop system has been removed.
 
 	ctx.JSON(http.StatusCreated, awc)
 }

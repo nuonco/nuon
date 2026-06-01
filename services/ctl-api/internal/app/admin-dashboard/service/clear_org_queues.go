@@ -8,7 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	clearorgqueues "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/clear_org_queues"
+	clearorgqueues "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/clear_org_queues"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

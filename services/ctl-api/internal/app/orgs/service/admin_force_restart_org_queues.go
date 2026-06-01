@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	orgforcerestartqueues "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_restart_queues"
+	orgforcerestartqueues "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/force_restart_queues"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"

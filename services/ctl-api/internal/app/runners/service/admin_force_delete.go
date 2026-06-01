@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/forcedelete"
 )
 
 type AdminForceDeleteRunnerRequest struct{}
@@ -30,8 +30,10 @@ func (s *service) AdminForceDeleteRunner(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type: signals.OperationForceDelete,
-	})
+	if err := s.helpers.EnqueueRunnerSignal(ctx, runner.ID, &forcedelete.Signal{RunnerID: runner.ID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue force-delete signal: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }

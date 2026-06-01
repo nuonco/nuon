@@ -9,9 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/pkg/services/config"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	orgforcesandboxmode "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/force_sandbox_mode"
-	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/restart"
+	orgforcesandboxmode "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/force_sandbox_mode"
+	orgrestart "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -47,32 +46,18 @@ func (s *service) AdminForceSandboxMode(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-	if useQueues {
-		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
-			return
-		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgforcesandboxmode.Signal{OrgID: org.ID}, org.ID); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, org.ID, &sigs.Signal{
-			Type: sigs.OperationRestart,
-		})
-		s.evClient.Send(ctx, org.ID, &sigs.Signal{
-			Type: sigs.OperationForceSandboxMode,
-		})
+	if err := s.enqueueOrgSignal(ctx, queueID, &orgrestart.Signal{OrgID: org.ID}, org.ID); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueOrgSignal(ctx, queueID, &orgforcesandboxmode.Signal{OrgID: org.ID}, org.ID); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 	ctx.JSON(http.StatusOK, true)
 }
