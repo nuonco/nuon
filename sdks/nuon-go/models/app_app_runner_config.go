@@ -49,6 +49,9 @@ type AppAppRunnerConfig struct {
 	// takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent.
 	InitScript string `json:"init_script,omitempty"`
 
+	// InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform.
+	InstanceType string `json:"instance_type,omitempty"`
+
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 

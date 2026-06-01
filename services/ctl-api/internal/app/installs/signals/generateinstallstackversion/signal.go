@@ -140,6 +140,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get runner")
 	}
 
+	// instance type comes from the latest synced runner config so reprovision picks up changes
+	instanceType := cfg.RunnerConfig.InstanceType
+	if instanceType == "" {
+		instanceType = app.DefaultInstanceTypeForPlatform(cfg.RunnerConfig.CloudPlatform)
+	}
+	runner.RunnerGroup.Settings.AWSInstanceType = instanceType
+
 	// need to generate a token
 	region := ""
 	switch {
