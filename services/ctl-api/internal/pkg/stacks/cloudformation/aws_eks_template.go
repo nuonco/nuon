@@ -30,7 +30,7 @@ func (t *Templates) getAWSTemplate(inp *stacks.TemplateInput) (*cloudformation.T
 
 	// Top-level Runner parameters: exposed on the parent stack so customers can
 	// override the defaults; the runner ASG nested stack references these.
-	runnerParams := t.getRunnerParameters()
+	runnerParams := t.getRunnerParameters(inp)
 	maps.Copy(tmpl.Parameters, runnerParams)
 
 	// When using local runners (dev mode), skip the ASG and runner-EC2-specific
