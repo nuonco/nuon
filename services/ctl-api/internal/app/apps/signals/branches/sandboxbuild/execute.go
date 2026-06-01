@@ -150,7 +150,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
 		RunnerID:   runner.ID,
 		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", build.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
 	})
 	if err != nil {
 		s.updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "sandbox build job failed")

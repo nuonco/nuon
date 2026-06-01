@@ -334,12 +334,12 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		return fmt.Errorf("unable to record install role usage: %w", err)
 	}
 
-	l.Info("queued job and waiting on it to be picked up by runner event loop")
+	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:    runnerJob.ID,
 		RunnerID: install.RunnerID,
 	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, job.JobErrorMessage(err, "reprovision apply job failed"))

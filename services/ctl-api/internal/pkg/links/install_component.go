@@ -20,8 +20,8 @@ func InstallComponentLinks(ctx context.Context, installID string, compID string)
 
 func InstallComponentEmployeeLinks(ctx context.Context, installID, componentID string) map[string]any {
 	return map[string]any{
-		"event_loop_ui": eventLoopLink(ctx, "installs", installID),
-		"signal_ui":     eventLoopLink(ctx, "installs", installID),
+		"queue_ui":      queueLink(ctx, "installs", installID),
+		"signal_ui":     queueLink(ctx, "installs", installID),
 		"admin_restart": buildAdminAPILink(ctx, "v1", "installs", installID, "components", componentID, "admin-restart"),
 	}
 }

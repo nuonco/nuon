@@ -83,7 +83,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	cctx.SetOrgGinContext(ctx, newOrg)
 
 	// Always use v2 queue signals for org creation — the org was just created
-	// so feature flags won't be set yet (race condition with v1 event loop).
+	// so feature flags won't be set yet.
 	signalsQueueID, err := s.getOrgSignalsQueueID(ctx, newOrg.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
