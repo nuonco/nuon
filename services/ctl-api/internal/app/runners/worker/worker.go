@@ -22,6 +22,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/oninactive"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processhealthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processinit"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processshutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/triggershutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updatetag"

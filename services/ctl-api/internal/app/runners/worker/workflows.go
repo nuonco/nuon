@@ -31,6 +31,7 @@ func (w *Workflows) All() []any {
 
 	return []any{
 		w.CronShutdownVM,
+		w.ProcessJob,
 		wkflow.ProvisionRunner,
 		wkflow.DeprovisionRunner,
 	}
