@@ -77,6 +77,11 @@ func (s *service) CreateApp(ctx *gin.Context) {
 		return
 	}
 
+	if err := s.onAppCreated(ctx, app.ID); err != nil {
+		ctx.Error(fmt.Errorf("unable to dispatch app created signals: %w", err))
+		return
+	}
+
 	// Update user journey for first app creation
 	if err := s.accountsHelpers.UpdateUserJourneyStepForFirstAppCreate(ctx, user.ID, app.ID); err != nil {
 		// Log error but don't fail app creation
