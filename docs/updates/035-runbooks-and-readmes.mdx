@@ -30,9 +30,9 @@ Trigger and watch runs from the new **Runbooks** tab in the dashboard, or from t
 
 ## Rendered READMEs
 
-An install's README can now be fetched **fully rendered with that install's live template values** through the API, so the documentation a customer sees reflects their actual deployment — real URLs, IDs, and outputs rather than `{{ ... }}` placeholders.
+An install's README can now be fetched **fully rendered for that install** through the API. The README's Go template expressions are evaluated against the install's live values, so the API returns the resolved documentation — real URLs, IDs, and outputs — instead of the raw template source.
 
-READMEs are authored as Markdown on the app (the `readme` field in `metadata.toml`) and on individual [runbooks](/guides/runbooks), and support Go templating plus external file sources (HTTP(S), git, or local paths). See [Using READMEs](/guides/using-readmes).
+READMEs are authored as Markdown on the app (the `readme` field in `metadata.toml`) and on individual [runbooks](/guides/runbooks), and support Go templating (e.g. `{{ .nuon.install.outputs.* }}`) plus external file sources (HTTP(S), git, or local paths). See [Using READMEs](/guides/using-readmes).
 
 ## Sandbox auto-retries
 
