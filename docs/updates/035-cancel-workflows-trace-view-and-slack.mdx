@@ -6,36 +6,6 @@ boost: 0.3
 
 _May 21, 2026_
 
-## Cancel active workflows
-
-You can now cancel in-flight [workflows](/concepts/workflows) directly from the dashboard. Stuck deploys, runaway sandboxes, and approval-blocked flows no longer require a wait or a support ticket — open the workflow and hit cancel.
-
-{/* TODO: add screenshot of cancel workflow UI */}
-
-A new `POST /v1/installs/{install_id}/workflows/cancel` API endpoint backs the same behavior for scripted use.
-
-## Trace timeline view
-
-The workflow detail page now renders as a split trace view — a fixed step tree on the left and a timeline bar chart on the right — so you can see at a glance where time was spent across a run.
-
-{/* TODO: add screenshot of trace timeline view */}
-
-- Indent guides make parent/child relationships obvious in deeply nested flows.
-- Log filters are consolidated into a severity dropdown plus a combined filter, with a new tool filter for narrowing to a specific integration.
-- System logs are included by default, and trace logs stream live over SSE.
-
-## Drift detection notifications
-
-Drift checks now emit a dedicated `drift.detected` event whenever a plan-only check finds non-no-op changes. Subscribe webhook or Slack consumers to the new event to get notified the moment drift appears — independently of any deploy outcome. See [Webhooks](/guides/webhooks) for the event payload.
-
-A new install-scoped sandbox drift cron complements the existing per-component drift check, so sandbox infrastructure is now polled on the same schedule as your app components.
-
-## Component dependency graph
-
-Installs now render a full dependency graph of their [components](/concepts/components), including transitive dependencies. Use it to understand blast radius before approving a deploy, or to debug why a component is waiting.
-
-{/* TODO: add screenshot of component dep graph */}
-
 ## Sandbox auto-retries
 
 [Sandboxes](/concepts/sandboxes) now support `max_auto_retries` in their config, matching the behavior already available on components. Transient sandbox failures self-heal without manual re-runs, and a configurable cap prevents genuinely broken sandboxes from looping forever.
@@ -60,7 +30,7 @@ Org [webhooks](/guides/webhooks) now accept a structured `interests` filter so e
 
 ## Nuon CLI
 
-- New `nuon-ext-replay-stack` extension for replaying install stack runs from the CLI.
+- New **`nuon-ext-replay-stack`** [CLI extension](/guides/cli-extensions) — a recovery tool for an install stuck at the **awaiting phone-home** step. If an install stack's phone-home payload was received but the stack version never activated, reprovision the install and run the extension to replay the stored payload to the new phone-home URL, letting the install complete.
 
 ## API
 
