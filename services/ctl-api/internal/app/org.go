@@ -234,6 +234,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureAutoSkipNoop,
 		OrgFeatureSlack,
 		OrgFeatureRunbooks,
+		OrgFeaturePulumiSandbox,
 	}
 }
 
@@ -263,6 +264,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureAutoSkipNoop:            "Automatically skip noop plans without requiring approval, overriding per-component skip_noops settings",
 		OrgFeatureSlack:                   "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
 		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
+		OrgFeaturePulumiSandbox:           "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
 	}
 }
 
