@@ -173,9 +173,10 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 		return
 	}
 
-	eventText := fmt.Sprintf("Slow query identified for table %s and endpoint %s\n\nPrepared SQL: %s\nVars: %v\n",
+	eventText := fmt.Sprintf("Slow query identified for table %s and endpoint %s (latency: %dms)\n\nPrepared SQL: %s\nVars: %v\n",
 		tableName,
 		metricCtx.Endpoint,
+		dur.Milliseconds(),
 		tx.Statement.SQL.String(),
 		tx.Statement.Vars,
 	)
@@ -184,7 +185,7 @@ func (m *metricsWriterPlugin) afterAll(tx *gorm.DB, operationType OperationType)
 	}
 
 	m.metricsWriter.Event(&statsd.Event{
-		Title: "Slow query" + metricCtx.Endpoint,
+		Title: fmt.Sprintf("Slow query: %s (%dms)", metricCtx.Endpoint, dur.Milliseconds()),
 		Text:  eventText,
 		Tags:  tags,
 	})
