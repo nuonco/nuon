@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	slackautolink "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/v2/slack_auto_link"
+	slackautolink "github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/slack_auto_link"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 

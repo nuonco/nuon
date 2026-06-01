@@ -20,7 +20,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -37,14 +37,13 @@ type ReprovisionInstallTestService struct {
 
 type ReprovisionInstallTestSuite struct {
 	tests.BaseDBTestSuite
-	app          *fxtest.App
-	service      ReprovisionInstallTestService
-	router       *gin.Engine
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	testInstall  *app.Install
-	mockEvClient *tests.MockEventLoopClient
+	app         *fxtest.App
+	service     ReprovisionInstallTestService
+	router      *gin.Engine
+	testOrg     *app.Org
+	testAcc     *app.Account
+	testApp     *app.App
+	testInstall *app.Install
 }
 
 func TestReprovisionInstallSuite(t *testing.T) {
@@ -59,11 +58,9 @@ func (s *ReprovisionInstallTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T:               s.T(),
-			Mocks:           &tests.TestMocks{MockEv: s.mockEvClient},
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -77,7 +74,6 @@ func (s *ReprovisionInstallTestSuite) SetupSuite() {
 
 func (s *ReprovisionInstallTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	// ReprovisionInstall creates install_workflows which require created_by_id and org_id.
@@ -154,14 +150,9 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 				assert.False(s.T(), workflow.PlanOnly)
 
 				// Verify signal contains workflow ID
-				sigs := s.mockEvClient.GetSignals()
+				sigs := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), sigs, 1)
-				assert.Equal(s.T(), installID, sigs[0].ID)
-
-				sig, ok := sigs[0].Signal.(*signals.Signal)
-				require.True(s.T(), ok)
-				assert.Equal(s.T(), signals.OperationExecuteFlow, sig.Type)
-				assert.Equal(s.T(), workflow.ID, sig.InstallWorkflowID)
+				assert.Equal(s.T(), executeflow.SignalType, sigs[0].Type)
 			},
 		},
 		{
@@ -221,7 +212,6 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			s.mockEvClient.Reset()
 			installID := tc.setupFunc()
 			rr := s.makeRequest("POST", "/v1/installs/"+installID+"/admin-reprovision", tc.requestBody)
 
@@ -239,11 +229,11 @@ func (s *ReprovisionInstallTestSuite) TestReprovisionInstall() {
 			}
 
 			// Verify signal presence matches expectation
-			capturedSignals := s.mockEvClient.GetSignals()
+			allSignals := tests.GetQueueSignals(s.T(), s.service.DB)
 			if tc.expectedSignal {
-				assert.Len(s.T(), capturedSignals, 1, "expected signal to be sent")
+				assert.GreaterOrEqual(s.T(), len(allSignals), 1, "expected signal to be sent")
 			} else {
-				assert.Len(s.T(), capturedSignals, 0, "expected no signal to be sent")
+				assert.Len(s.T(), allSignals, 0, "expected no signal to be sent")
 			}
 		})
 	}

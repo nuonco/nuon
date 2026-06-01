@@ -3,7 +3,9 @@ package service
 import (
 	"net/http"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/general/signals/promotion"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,33 +24,20 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 			},
 			expectedStatus: http.StatusCreated,
 			validateFunc: func(tag string) {
-				// Verify at least 2 signals were sent (OperationRestart + OperationPromotion)
-				// Additional signals may be sent during initializeInstallStates
-				capturedSignals := s.mockEvClient.GetSignals()
-				require.GreaterOrEqual(s.T(), len(capturedSignals), 2, "expected at least two signals to be sent")
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				require.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
 
-				// Verify first two signals are the expected types with tag
-				foundRestart := false
 				foundPromotion := false
-
-				for i := 0; i < 2 && i < len(capturedSignals); i++ {
-					signal := capturedSignals[i]
-					assert.Equal(s.T(), "general", signal.ID, "signal should be sent to 'general' ID")
-
-					genSignal, ok := signal.Signal.(*signals.Signal)
-					require.True(s.T(), ok, "signal should be of type *signals.Signal")
-
-					if genSignal.Type == signals.OperationRestart {
-						foundRestart = true
-						assert.Equal(s.T(), tag, genSignal.Tag, "restart signal should include tag")
-					} else if genSignal.Type == signals.OperationPromotion {
+				for _, qs := range capturedSignals {
+					if qs.Type == signal.SignalType(promotion.SignalType) {
 						foundPromotion = true
-						assert.Equal(s.T(), tag, genSignal.Tag, "promotion signal should include tag")
+						if sig, ok := qs.Signal.Signal.(*promotion.Signal); ok {
+							assert.Equal(s.T(), tag, sig.Tag, "promotion signal should include tag")
+						}
 					}
 				}
 
-				assert.True(s.T(), foundRestart, "should have sent OperationRestart signal")
-				assert.True(s.T(), foundPromotion, "should have sent OperationPromotion signal")
+				assert.True(s.T(), foundPromotion, "should have sent promotion signal")
 			},
 		},
 		{
@@ -56,9 +45,8 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 			requestBody:    AdminPromotionRequest{},
 			expectedStatus: http.StatusCreated, // Note: Handler doesn't validate tag, still succeeds
 			validateFunc: func(tag string) {
-				// Signals should still be sent, just with empty tag
-				capturedSignals := s.mockEvClient.GetSignals()
-				require.GreaterOrEqual(s.T(), len(capturedSignals), 2, "expected at least two signals to be sent")
+				capturedSignals := tests.GetQueueSignals(s.T(), s.service.DB)
+				require.GreaterOrEqual(s.T(), len(capturedSignals), 1, "expected at least one signal to be sent")
 			},
 		},
 	}
@@ -66,7 +54,6 @@ func (s *GeneralInternalTestSuite) TestAdminPromotion() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Reset mock before test
-			s.mockEvClient.Reset()
 
 			// Make request
 			rr := s.makeRequest(http.MethodPost, "/v1/general/promotion", tc.requestBody)

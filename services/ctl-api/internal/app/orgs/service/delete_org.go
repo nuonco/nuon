@@ -7,8 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
-	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/delete"
+	orgdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/delete"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -62,26 +61,14 @@ func (s *service) DeleteOrg(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.useOrgQueues(ctx, org.ID)
+	queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-	if useQueues {
-		queueID, err := s.getOrgSignalsQueueID(ctx, org.ID)
-		if err != nil {
-			ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
-			return
-		}
-		if err := s.enqueueOrgSignal(ctx, queueID, &orgdelete.Signal{OrgID: org.ID}, org.ID); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, org.ID, &sigs.Signal{
-			Type:        sigs.OperationDelete,
-			ForceDelete: false,
-		})
+	if err := s.enqueueOrgSignal(ctx, queueID, &orgdelete.Signal{OrgID: org.ID}, org.ID); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})

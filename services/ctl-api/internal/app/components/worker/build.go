@@ -8,17 +8,22 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 )
 
+type BuildRequest struct {
+	ID          string `json:"id"`
+	BuildID     string `json:"build_id"`
+	SandboxMode bool   `json:"sandbox_mode"`
+}
+
 // @temporal-gen-v2 workflow
 // @execution-timeout 60m
 // @task-timeout 30m
-func (w *Workflows) Build(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) Build(ctx workflow.Context, sreq BuildRequest) error {
 	w.updateBuildStatus(ctx, sreq.BuildID, app.ComponentBuildStatusPlanning, "creating build plan")
 
 	logStream, err := activities.AwaitCreateLogStreamByBuildID(ctx, sreq.BuildID)

@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/sandbox"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/stack"
-	teventloop "github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/temporal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
 
@@ -29,7 +28,6 @@ type Params struct {
 	DB                  *gorm.DB `name:"psql"`
 	V                   *validator.Validate
 	MW                  metrics.Writer
-	EVClient            teventloop.Client
 	Analytics           temporalanalytics.Writer
 	Templates           *cloudformation.Templates
 	SandboxWorkflows    *sandbox.Workflows
@@ -43,7 +41,6 @@ type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate
 	mw        tmetrics.Writer
-	evClient  teventloop.Client
 	analytics temporalanalytics.Writer
 	templates *cloudformation.Templates
 	db        *gorm.DB
@@ -58,24 +55,6 @@ type Workflows struct {
 func (w *Workflows) All() []any {
 	wkflow := installdelegationdns.NewWorkflow(*w.cfg)
 	wkflows := []any{
-		w.AwaitRunnerHealthy,
-		w.Created,
-		w.DeprovisionDNS,
-		w.DeprovisionRunner,
-		w.ExecuteFlow,
-		w.ProvisionDNS,
-		w.SyncSecrets,
-		w.WorkflowApproval,
-		w.Forget,
-		w.PollDependencies,
-		w.ProvisionRunner,
-		w.ReprovisionRunner,
-		w.WorkflowApproveAll,
-		w.RerunFlow,
-		w.Restarted,
-		w.Updated,
-		w.EventLoop,
-		w.ActionWorkflowTriggers,
 		plan.CreateActionWorkflowRunPlan,
 		plan.CreateSandboxRunPlan,
 		plan.CreateDeployPlan,
@@ -104,7 +83,6 @@ func NewWorkflows(params Params) (*Workflows, error) {
 	return &Workflows{
 		cfg:             params.Cfg,
 		v:               params.V,
-		evClient:        params.EVClient,
 		mw:              tmw,
 		analytics:       params.Analytics,
 		templates:       params.Templates,

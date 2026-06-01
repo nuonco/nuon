@@ -81,24 +81,11 @@ func (s *service) CancelWorkflowStep(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
-	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
-		return
-	}
-
-	if useQueues {
-		if _, err := s.flowsClient.CancelStep(ctx, &flowclient.CancelStepRequest{
-			InstallWorkflowID: workflow.ID,
-			StepID:            step.ID,
-		}); err != nil {
-			ctx.Error(fmt.Errorf("cancel step: %w", err))
-			return
-		}
-	} else {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("cancel step is only supported for queue-based workflows"),
-		})
+	if _, err := s.flowsClient.CancelStep(ctx, &flowclient.CancelStepRequest{
+		InstallWorkflowID: workflow.ID,
+		StepID:            step.ID,
+	}); err != nil {
+		ctx.Error(fmt.Errorf("cancel step: %w", err))
 		return
 	}
 

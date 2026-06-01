@@ -64,6 +64,7 @@ func (a *actInterceptor) ExecuteActivity(
 		}
 
 		a.mw.Timing("temporal_activity.latency", time.Since(startTS), metrics.ToTags(tags))
+		a.mw.Incr("temporal_activity.count", metrics.ToTags(tags))
 
 		if rec != nil {
 			panic(rec)

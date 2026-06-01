@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -27,7 +26,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   signals.TemporalNamespace,
+		Namespace:   "runners",
 		Name:        fmt.Sprintf("runner-process-%s", process.ID),
 		MaxInFlight: 1,
 		MaxDepth:    10,

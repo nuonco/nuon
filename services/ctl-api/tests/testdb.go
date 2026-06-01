@@ -211,7 +211,6 @@ func runMigrator(ctx context.Context, db *gorm.DB) error {
 		DB:              db,
 		V:               v,
 		AuthzClient:     nil, // Not needed for test migrations
-		EvClient:        nil, // Not needed for test migrations
 	})
 
 	psqlMigs := psqlmigrations.New(psqlmigrations.Params{
