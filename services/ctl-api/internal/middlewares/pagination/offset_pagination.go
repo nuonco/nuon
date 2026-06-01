@@ -1,10 +1,12 @@
 package pagination
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/pagination"
 	"go.uber.org/fx"
@@ -49,10 +51,14 @@ func (m middleware) Handler() gin.HandlerFunc {
 		if limitParam := ctx.Query("limit"); limitParam != "" {
 			if parsedLimit, err := strconv.Atoi(limitParam); err == nil {
 				if parsedLimit > maxLimit {
-					limit = maxLimit
-				} else {
-					limit = parsedLimit
+					ctx.Error(stderr.ErrUser{
+						Err:         fmt.Errorf("limit %d exceeds the maximum allowed limit of %d", parsedLimit, maxLimit),
+						Description: fmt.Sprintf("the limit query parameter cannot exceed %d", maxLimit),
+					})
+					ctx.Abort()
+					return
 				}
+				limit = parsedLimit
 			}
 		}
 
