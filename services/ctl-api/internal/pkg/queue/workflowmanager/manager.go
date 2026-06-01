@@ -90,12 +90,9 @@ func WithOnStopped(fn func(ctx workflow.Context)) Option {
 	return func(o *options) { o.onStopped = fn }
 }
 
-// WithDeferRestart provides a predicate that, when it returns true, prevents the
-// manager from triggering a continue-as-new (restart). Stop decisions (entity
-// deleted or expired) are still honored. Continue-as-new abandons in-flight
-// workflow updates, so a restart during an in-flight phase (validate/execute)
-// would orphan that phase and be misread as a crash; deferring until the phase
-// completes keeps "a phase never spans a continue-as-new" invariant true.
+// WithDeferRestart holds off continue-as-new while fn returns true. Stop
+// decisions are still honored. Continue-as-new abandons in-flight updates, so
+// restarting mid-phase would orphan it and be misread as a crash.
 func WithDeferRestart(fn func() bool) Option {
 	return func(o *options) { o.deferRestart = fn }
 }
@@ -225,8 +222,6 @@ func (m *Manager) run(ctx workflow.Context) {
 	}
 }
 
-// restartDeferred reports whether a continue-as-new should currently be held
-// off because an in-flight phase would be orphaned by it.
 func (m *Manager) restartDeferred() bool {
 	return m.opts.deferRestart != nil && m.opts.deferRestart()
 }

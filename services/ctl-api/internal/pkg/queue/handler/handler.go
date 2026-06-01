@@ -71,10 +71,7 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
-	// validating/executing are true while their respective update handlers are
-	// in flight. The lifecycle manager defers continue-as-new while either is
-	// set so a phase is never orphaned mid-flight (which a successor run would
-	// misread as a crash via the started-but-not-finished markers in state.go).
+	// in-flight phase flags; manager defers continue-as-new while either is set.
 	validating bool
 	executing  bool
 
