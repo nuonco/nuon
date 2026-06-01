@@ -12,6 +12,7 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -21,7 +22,10 @@ import (
 type CreateAppSandboxConfigRequest struct {
 	vcshelpers.VCSConfigRequest
 
-	TerraformVersion             string  `json:"terraform_version" validate:"required"`
+	Type                         string  `json:"type,omitempty"`
+	TerraformVersion             string  `json:"terraform_version,omitempty"`
+	Runtime                      string  `json:"runtime,omitempty"`
+	PulumiVersion                string  `json:"pulumi_version,omitempty"`
 	DriftSchedule                *string `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
@@ -30,6 +34,7 @@ type CreateAppSandboxConfigRequest struct {
 	VariablesFiles []string           `json:"variables_files,omitempty"`
 	Variables      map[string]*string `json:"variables" validate:"required"`
 	EnvVars        map[string]*string `json:"env_vars" validate:"required"`
+	PulumiConfig   map[string]*string `json:"pulumi_config,omitempty"`
 
 	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
 
@@ -41,6 +46,27 @@ type CreateAppSandboxConfigRequest struct {
 func (c *CreateAppSandboxConfigRequest) Validate(v *validator.Validate) error {
 	if err := v.Struct(c); err != nil {
 		return validatorPkg.FormatValidationError(err)
+	}
+
+	sandboxType := c.Type
+	if sandboxType == "" {
+		sandboxType = config.AppSandboxTypeTerraform
+	}
+
+	switch sandboxType {
+	case config.AppSandboxTypeTerraform:
+		if c.TerraformVersion == "" {
+			return fmt.Errorf("terraform_version is required when type=terraform")
+		}
+	case config.AppSandboxTypePulumi:
+		if c.Runtime == "" {
+			return fmt.Errorf("runtime is required when type=pulumi")
+		}
+		if !slices.Contains(config.ValidPulumiRuntimes, c.Runtime) {
+			return fmt.Errorf("invalid pulumi runtime: %s. Valid runtimes: %v", c.Runtime, config.ValidPulumiRuntimes)
+		}
+	default:
+		return fmt.Errorf("invalid sandbox type: %s. Valid types: terraform, pulumi", sandboxType)
 	}
 
 	if c.OperationRoles != nil {
@@ -154,6 +180,20 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		return nil, fmt.Errorf("unable to get app sandbox: %w", res.Error)
 	}
 
+	sandboxType := req.Type
+	if sandboxType == "" {
+		sandboxType = config.AppSandboxTypeTerraform
+	}
+	if sandboxType == config.AppSandboxTypePulumi {
+		enabled, err := s.featuresClient.OrgHasFeature(ctx, parentApp.OrgID, app.OrgFeaturePulumiSandbox)
+		if err != nil {
+			return nil, fmt.Errorf("unable to check pulumi-sandbox feature flag: %w", err)
+		}
+		if !enabled {
+			return nil, stderr.NewInvalidRequest(fmt.Errorf("pulumi sandboxes are not enabled for this organization"))
+		}
+	}
+
 	// Build VCS configs
 	githubVCSConfig, err := s.vcsHelpers.BuildConnectedGithubVCSConfig(ctx, req.ConnectedGithubVCSConfig, parentApp.Org)
 	if err != nil {
@@ -178,7 +218,11 @@ func (s *service) createAppSandboxConfig(ctx context.Context, appID string, req 
 		Variables:                    pgtype.Hstore(req.Variables),
 		EnvVars:                      pgtype.Hstore(req.EnvVars),
 		VariablesFiles:               pq.StringArray(req.VariablesFiles),
+		Type:                         sandboxType,
 		TerraformVersion:             req.TerraformVersion,
+		Runtime:                      req.Runtime,
+		PulumiVersion:                req.PulumiVersion,
+		PulumiConfig:                 pgtype.Hstore(req.PulumiConfig),
 		References:                   pq.StringArray(req.References),
 		OperationRoles:               operationRoles,
 		MaxAutoRetries:               req.MaxAutoRetries,

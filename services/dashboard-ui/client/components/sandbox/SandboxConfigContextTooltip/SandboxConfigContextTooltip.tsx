@@ -39,8 +39,33 @@ function getSandboxConfigItems(
   addModal: (modal: React.ReactNode) => string
 ): TContextTooltipItem[] {
   const items: TContextTooltipItem[] = []
+  const isPulumi = config?.type === 'pulumi'
 
-  if (config?.terraform_version) {
+  if (isPulumi) {
+    items.push({
+      id: `config-type`,
+      title: 'Type',
+      subtitle: 'Pulumi',
+    })
+
+    if (config?.runtime) {
+      items.push({
+        id: `config-runtime`,
+        title: 'Runtime',
+        subtitle: config.runtime,
+      })
+    }
+
+    if (config?.pulumi_version) {
+      items.push({
+        id: `config-pulumi-version`,
+        title: 'Pulumi version',
+        subtitle: config.pulumi_version,
+      })
+    }
+  }
+
+  if (!isPulumi && config?.terraform_version) {
     items.push({
       id: `config-terraform-version`,
       title: 'Terraform version',

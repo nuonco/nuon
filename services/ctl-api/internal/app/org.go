@@ -65,6 +65,7 @@ const (
 	OrgFeatureAutoSkipNoop            OrgFeature = "auto-skip-noop"
 	OrgFeatureSlack                   OrgFeature = "slack"
 	OrgFeatureRunbooks                OrgFeature = "runbooks"
+	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
 )
 
 type Org struct {
@@ -183,6 +184,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureStateGenV2:              false,
 		OrgFeatureSlack:                   false,
 		OrgFeatureRunbooks:                false,
+		OrgFeaturePulumiSandbox:           false,
+
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
 		OrgFeatureQueues:             true,

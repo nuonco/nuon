@@ -299,6 +299,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
+		JobType:   install.AppSandboxConfig.JobType(),
 		Op:        op,
 		Metadata: map[string]string{
 			"install_id":       install.ID,

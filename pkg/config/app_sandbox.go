@@ -14,7 +14,11 @@ import (
 type AppSandboxConfig struct {
 	Source string `mapstructure:"source,omitempty" toml:"source,omitempty"`
 
-	TerraformVersion string               `mapstructure:"terraform_version" toml:"terraform_version" jsonschema:"required"`
+	Type             string               `mapstructure:"type,omitempty" toml:"type,omitempty"`
+	TerraformVersion string               `mapstructure:"terraform_version,omitempty" toml:"terraform_version,omitempty"`
+	Runtime          string               `mapstructure:"runtime,omitempty" toml:"runtime,omitempty"`
+	PulumiVersion    string               `mapstructure:"pulumi_version,omitempty" toml:"pulumi_version,omitempty"`
+	PulumiConfig     map[string]string    `mapstructure:"pulumi_config,omitempty" toml:"pulumi_config,omitempty"`
 	ConnectedRepo    *ConnectedRepoConfig `mapstructure:"connected_repo,omitempty" toml:"connected_repo,omitempty" jsonschema:"oneof_required=connected_repo"`
 	PublicRepo       *PublicRepoConfig    `mapstructure:"public_repo,omitempty" toml:"public_repo,omitempty" jsonschema:"oneof_required=public_repo"`
 	DriftSchedule    *string              `mapstructure:"drift_schedule,omitempty" toml:"drift_schedule,omitempty"`
@@ -31,15 +35,36 @@ type AppSandboxConfig struct {
 	References []refs.Ref `mapstructure:"-" jsonschema:"-" nuonhash:"-"`
 }
 
+const (
+	AppSandboxTypeTerraform = "terraform"
+	AppSandboxTypePulumi    = "pulumi"
+)
+
+var ValidPulumiRuntimes = []string{"go", "nodejs", "python"}
+
 func (a AppSandboxConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("source").Short("external configuration source").
 		Long("Path to an external file containing sandbox configuration (YAML, JSON, or TOML)").
-		Field("terraform_version").Short("Terraform version").Required().
-		Long("Version of Terraform to use for deployments").
+		Field("type").Short("sandbox IaC type").
+		Long("IaC type for this sandbox: 'terraform' (default) or 'pulumi'. 'pulumi' requires the pulumi-sandbox feature flag").
+		Example("terraform").
+		Example("pulumi").
+		Field("terraform_version").Short("Terraform version").
+		Long("Version of Terraform to use for deployments. Required when type=terraform").
 		Example("1.5.0").
 		Example("1.6.0").
 		Example("latest").
+		Field("runtime").Short("Pulumi runtime").
+		Long("The Pulumi runtime to use for the program (go, nodejs, python). Required when type=pulumi").
+		Example("go").
+		Example("nodejs").
+		Example("python").
+		Field("pulumi_version").Short("Pulumi version").
+		Long("Version of the Pulumi CLI to use. If not specified, uses the latest version").
+		Example("3.100.0").
+		Field("pulumi_config").Short("Pulumi stack config").
+		Long("Map of Pulumi stack configuration values as key-value pairs. Keys use the format 'namespace:key' (e.g., 'gcp:project'). Supports templating").
 		Field("connected_repo").Short("connected repository configuration").
 		Long("Configuration for a private repository connected to the Nuon platform").
 		Field("public_repo").Short("public repository configuration").

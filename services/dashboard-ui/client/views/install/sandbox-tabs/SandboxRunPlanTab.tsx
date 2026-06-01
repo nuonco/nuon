@@ -1,6 +1,7 @@
 import { useOutletContext } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Plan } from '@/components/approvals/Plan'
+import { PulumiDiff } from '@/components/approvals/plan-diffs/pulumi/PulumiDiff'
 import { TerraformDiff } from '@/components/approvals/plan-diffs/terraform/TerraformDiff'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -12,6 +13,8 @@ import type { TSandboxRunOutletContext } from './types'
 const SandboxRunPlanFallback = () => {
   const { sandboxRun } = useSandboxRun()
   const { org } = useOrg()
+
+  const isPulumi = sandboxRun?.app_sandbox_config?.type === 'pulumi'
 
   const applyJob = sandboxRun?.runner_jobs?.find(
     (j) => j.operation === 'apply-plan'
@@ -38,6 +41,11 @@ const SandboxRunPlanFallback = () => {
   }
 
   const parsed = typeof planDisplay === 'string' ? JSON.parse(planDisplay) : planDisplay
+
+  if (isPulumi) {
+    return <PulumiDiff plan={parsed} />
+  }
+
   return <TerraformDiff plan={parsed} />
 }
 
