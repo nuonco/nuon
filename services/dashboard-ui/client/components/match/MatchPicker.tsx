@@ -85,7 +85,7 @@ export const MatchPicker = ({
   // navigates into the components/actions branch.
   const appsQuery = useQuery({
     queryKey: ['match-picker-apps', org.id],
-    queryFn: () => getApps({ orgId: org.id, limit: 250 }),
+    queryFn: () => getApps({ orgId: org.id, limit: 100 }),
     enabled: mode === 'specific' && needsApp,
   })
   const appOptions = useMemo(
