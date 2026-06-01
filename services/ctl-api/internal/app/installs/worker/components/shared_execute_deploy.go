@@ -116,7 +116,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   install.RunnerID,
 		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")

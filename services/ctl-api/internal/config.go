@@ -124,8 +124,8 @@ func init() {
 	config.RegisterDefault("process_mng_uptime_threshold", "168h")
 	config.RegisterDefault("process_build_uptime_threshold", "8h")
 
-	config.RegisterDefault("event_loop_general_purge_stale_data_cron", "0 6 * * *")
-	config.RegisterDefault("event_loop_general_purge_stale_data_duration_ago", "168h")
+	config.RegisterDefault("general_purge_stale_data_cron", "0 6 * * *")
+	config.RegisterDefault("general_purge_stale_data_duration_ago", "168h")
 
 	// Slack auto-link: empty TeamID or empty OrgLabelKey disables the feature.
 	config.RegisterDefault("slack_auto_link_team_id", "")
@@ -394,8 +394,8 @@ type Config struct {
 
 	MinCLIVersion string `config:"min_cli_version"`
 
-	EventLoopGeneralPurgeStaleDataCron        string        `config:"event_loop_general_purge_stale_data_cron"`
-	EventLoopGeneralPurgeStaleDataDurationAgo time.Duration `config:"event_loop_general_purge_stale_data_duration_ago" validate:"required"`
+	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
+	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`
 
 	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
 	// ChannelID is optional and seeds a default org-wide subscription per link.

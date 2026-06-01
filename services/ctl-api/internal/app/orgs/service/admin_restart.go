@@ -15,7 +15,7 @@ import (
 type RestartOrgRequest struct{}
 
 // @ID						AdminRestartOrg
-// @Summary				restart an orgs event loop
+// @Summary				restart an org
 // @Description.markdown	restart_org.md
 // @Param					org_id	path	string				true	"org ID"
 // @Param					req		body	RestartOrgRequest	true	"Input"

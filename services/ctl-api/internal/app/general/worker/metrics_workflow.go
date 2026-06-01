@@ -258,18 +258,8 @@ func (w *Workflows) temporalNamespaceMetrics(ctx workflow.Context, ns string) er
 		return errors.Wrap(err, "unable to get metrics")
 	}
 
-	w.mw.Gauge(ctx, "eventloops.count",
-		float64(m.EventLoops),
-		metrics.ToTags(defaultTags)...)
-
 	w.mw.Gauge(ctx, "workflows.count",
 		float64(m.AllWorkflows),
-		metrics.ToTags(generics.MergeMap(map[string]string{
-			"workflow_type": "event_loop",
-		}, defaultTags))...)
-
-	w.mw.Gauge(ctx, "eventloops.expected_count",
-		float64(m.ExpectedEventLoops),
 		metrics.ToTags(defaultTags)...)
 
 	return nil

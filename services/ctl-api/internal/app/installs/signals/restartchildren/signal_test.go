@@ -28,7 +28,7 @@ func (s *RestartChildrenSignalTestSuite) TearDownSuite() {
 
 func (s *RestartChildrenSignalTestSuite) TestRestartChildrenSignalExecutesSuccessfully() {
 	// TODO: Implement test when seed tooling is ready
-	// This signal restarts child event loops (components, sandbox, stack, actions)
+	// This signal restarts child signals (components, sandbox, stack, actions)
 	require.True(s.T(), true, "placeholder test")
 }
 

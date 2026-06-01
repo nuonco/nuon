@@ -37,7 +37,5 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	// Restart children signal - currently a no-op
-	// The restart children logic is handled by the event loop infrastructure
-	// which restarts child event loops (components, sandbox, stack, actions)
 	return nil
 }
