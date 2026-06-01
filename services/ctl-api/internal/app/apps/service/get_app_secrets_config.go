@@ -55,6 +55,7 @@ func (s *service) getAppSecretsConfig(ctx context.Context, appID, appSecretsConf
 			ID:    appSecretsConfigID,
 		}).
 		Preload("Secrets").
+		Preload("Secrets.KubernetesSyncTargets").
 		First(&appSecretsCfg)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get app secrets config")

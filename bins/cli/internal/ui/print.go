@@ -65,12 +65,17 @@ func PrintError(err error) error {
 
 	var cfgErr config.ErrConfig
 	if errors.As(err, &cfgErr) {
-		msg := fmt.Sprintf("%s %s", cfgErr.Description, cfgErr.Error())
 		if cfgErr.Warning {
-			fmt.Println(bubbles.WarningStyle.Render(msg))
+			// Warnings carry their (possibly multi-line) human message in Description; render it as-is.
+			wmsg := cfgErr.Description
+			if wmsg == "" {
+				wmsg = cfgErr.Error()
+			}
+			fmt.Println(bubbles.WarningStyle.Render(wmsg))
 			return cfgErr
 		}
 
+		msg := fmt.Sprintf("%s %s", cfgErr.Description, cfgErr.Error())
 		fmt.Println(bubbles.ErrorStyle.Render(msg))
 		return cfgErr
 	}
