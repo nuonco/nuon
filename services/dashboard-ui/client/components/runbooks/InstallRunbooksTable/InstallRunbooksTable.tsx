@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
@@ -38,46 +38,41 @@ export function parseInstallRunbooksToTableData(
       runbookId: ir.runbook_id ?? ir.id,
       runbookName: runbook?.name ?? '',
       description: runbook?.description ? (
-        <Text variant="subtext" theme="neutral">
-          {runbook.description}
-        </Text>
-      ) : (
-        <Icon variant="MinusIcon" />
-      ),
+        <div className="max-w-[250px] line-clamp-2">
+          <Text variant="subtext" theme="neutral">
+            {runbook.description}
+          </Text>
+        </div>
+      ) : null,
       labels:
         runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
           <span className="flex flex-wrap gap-1">
             {Object.keys(runbook.labels)
               .sort()
               .map((k) => (
-                <Badge key={k} variant="code" size="sm" theme="neutral">
-                  {k}: {runbook.labels[k]}
-                </Badge>
+                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" />
               ))}
           </span>
         ) : (
           <Icon variant="MinusIcon" />
         ),
       lastUpdated: runbook?.updated_at ? (
-        <Text flex className="gap-2">
+        <Text flex nowrap className="gap-2">
           <Icon variant="CalendarBlankIcon" />
-          <Time time={runbook.updated_at} format="relative" variant="subtext" />
+          <Time time={runbook.updated_at} format="relative" variant="subtext" nowrap />
         </Text>
-      ) : (
-        <Icon variant="MinusIcon" />
-      ),
+      ) : null,
       lastRun: ir.runs?.[0] ? (
-        <Text flex className="gap-2">
+        <Text flex nowrap className="gap-2">
           <Icon variant="CalendarBlankIcon" />
           <Time
             time={ir.runs[0].created_at}
             format="relative"
             variant="subtext"
+            nowrap
           />
         </Text>
-      ) : (
-        <Icon variant="MinusIcon" />
-      ),
+      ) : null,
       href: `${basePath}/runbooks/${ir.runbook_id ?? ir.id}`,
       latestRunHref: (() => {
         const latestRun = ir.runs?.[0]
