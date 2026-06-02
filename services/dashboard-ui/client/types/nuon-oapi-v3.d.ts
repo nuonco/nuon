@@ -2308,6 +2308,7 @@ export interface paths {
   "/v1/runners/{runner_id}/force-shutdown": {
     /**
      * force shut down a runner
+     * @deprecated
      * @description Force shutdown a runner.
      *
      * This will result in jobs being lost/cancelled if they are in-flight.
@@ -2345,20 +2346,22 @@ export interface paths {
      */
     get: operations["GetRunnerLatestHeartBeat"];
   };
-  "/v1/runners/{runner_id}/mng/fetch-token": {
-    /** fetch authentication token for an install runner via the mng process */
-    post: operations["FetchRunnerTokenMng"];
-  };
   "/v1/runners/{runner_id}/mng/restart": {
     /** restart the runner install process via the mng process */
     post: operations["RestartRunnerInstall"];
   };
   "/v1/runners/{runner_id}/mng/shutdown": {
-    /** shut down an install runner's mng process. does not shut down the install runner process. */
+    /**
+     * shut down an install runner's mng process. does not shut down the install runner process.
+     * @deprecated
+     */
     post: operations["ShutDownRunnerMng"];
   };
   "/v1/runners/{runner_id}/mng/shutdown-vm": {
-    /** shut down an install runner VM */
+    /**
+     * shut down an install runner VM
+     * @deprecated
+     */
     post: operations["MngVMShutDown"];
   };
   "/v1/runners/{runner_id}/mng/update": {
@@ -3245,6 +3248,8 @@ export interface components {
       id?: string;
       /** @description takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent. */
       init_script?: string;
+      /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
+      instance_type?: string;
       org_id?: string;
       updated_at?: string;
     };
@@ -3292,10 +3297,16 @@ export interface components {
       };
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      pulumi_config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      runtime?: string;
       skip_noops?: boolean;
       terraform_version?: string;
+      type?: string;
       updated_at?: string;
       variables?: {
         [key: string]: string;
@@ -3331,9 +3342,25 @@ export interface components {
       kubernetes_secret_namespace?: string;
       /** @description for syncing into kubernetes */
       kubernetes_sync?: boolean;
+      /**
+       * @description kubernetes sync v2: when present, the secret syncs to each of these targets (namespaces x name x key). The
+       * single-valued Kubernetes* fields above remain for backwards compatibility.
+       */
+      kubernetes_sync_targets?: components["schemas"]["app.AppSecretKubernetesSyncTarget"][];
       name?: string;
       org_id?: string;
       required?: boolean;
+      updated_at?: string;
+    };
+    "app.AppSecretKubernetesSyncTarget": {
+      app_secret_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      key?: string;
+      name?: string;
+      namespaces?: string[];
+      org_id?: string;
       updated_at?: string;
     };
     "app.AppSecretsConfig": {
@@ -4530,12 +4557,8 @@ export interface components {
     /** @enum {string} */
     "app.QueueEmitterMode": "cron" | "scheduled" | "fire_once";
     "app.QueueSignal": {
-      /**
-       * @description Callback describes where to send a Temporal signal when this queue signal
-       * completes. When set, the handler signals the parent workflow on completion
-       * instead of requiring the parent to block on a heartbeating AwaitSignal activity.
-       */
       callback?: components["schemas"]["callback.Ref"];
+      callbacks?: components["schemas"]["callback.Ref"][];
       created_at?: string;
       created_by_id?: string;
       /** @description Optional: if this signal was emitted by an emitter */
@@ -5841,10 +5864,21 @@ export interface components {
       gcp_secret_name?: string;
       key_name?: string;
       name?: string;
+      /** @description v1 destination (single). Used when Targets is empty. */
       namespace?: string;
       secret_arn?: string;
       /** @description the name of the secret from the config */
       secret_name?: string;
+      /**
+       * @description v2 destinations: when len(Targets) > 0 the runner uses the v2 path and fans the shared source out across each
+       * target's namespaces. The v1 fields above are ignored in that case.
+       */
+      targets?: components["schemas"]["plantypes.KubernetesSecretSyncTarget"][];
+    };
+    "plantypes.KubernetesSecretSyncTarget": {
+      key?: string;
+      name?: string;
+      namespaces?: string[];
     };
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
@@ -5862,6 +5896,16 @@ export interface components {
       tag?: string;
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
+    };
+    "plantypes.PulumiBackend": {
+      config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
+      runtime: string;
+      stack_name: string;
+      update_plans?: boolean;
+      workspace_id: string;
     };
     "plantypes.PulumiBuildPlan": {
       labels?: {
@@ -5886,12 +5930,14 @@ export interface components {
       runtime?: string;
       stack_name?: string;
       state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      update_plans?: boolean;
       /** @description Reuse workspace concept for state storage */
       workspace_id?: string;
     };
     "plantypes.PulumiSandboxMode": {
       plan_contents?: string;
       plan_display_contents?: string;
+      workspace_id?: string;
     };
     "plantypes.SandboxMode": {
       enabled?: boolean;
@@ -5924,6 +5970,7 @@ export interface components {
       policies?: {
         [key: string]: string;
       };
+      pulumi_backend?: components["schemas"]["plantypes.PulumiBackend"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
       terraform_backend?: components["schemas"]["plantypes.TerraformBackend"];
@@ -6101,6 +6148,7 @@ export interface components {
       kubernetes_secret_name?: string;
       kubernetes_secret_namespace?: string;
       kubernetes_sync?: boolean;
+      kubernetes_sync_targets?: components["schemas"]["service.KubernetesSyncTarget"][];
       name: string;
       required?: boolean;
     };
@@ -6321,6 +6369,7 @@ export interface components {
       };
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
       init_script_url?: string;
+      instance_type?: string;
       type: components["schemas"]["app.AppRunnerType"];
     };
     "service.CreateAppSandboxConfigRequest": {
@@ -6336,9 +6385,15 @@ export interface components {
         [key: string]: string;
       };
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      pulumi_config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
       references?: string[];
+      runtime?: string;
       skip_noops?: boolean;
-      terraform_version: string;
+      terraform_version?: string;
+      type?: string;
       variables: {
         [key: string]: string;
       };
@@ -6800,6 +6855,11 @@ export interface components {
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
     };
+    "service.KubernetesSyncTarget": {
+      key: string;
+      name: string;
+      namespaces: string[];
+    };
     "service.KustomizeConfigRequest": {
       enable_helm?: boolean;
       load_restrictor?: string;
@@ -6841,7 +6901,6 @@ export interface components {
       status_message?: string;
       trace_id?: string;
     };
-    "service.MngFetchTokenRequest": Record<string, never>;
     "service.MngRestartRequest": Record<string, never>;
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
@@ -8014,6 +8073,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -8167,6 +8232,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -8447,6 +8518,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -8615,6 +8692,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -8974,6 +9057,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -9253,6 +9342,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -9485,6 +9580,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -9704,6 +9805,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -9930,6 +10037,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -10240,6 +10353,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -10464,6 +10583,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -10518,6 +10643,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -10580,6 +10711,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -10638,6 +10775,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -10692,6 +10835,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -10803,6 +10952,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -10857,6 +11012,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -11190,6 +11351,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -11538,6 +11705,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -11867,6 +12040,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -12142,6 +12321,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -12456,6 +12641,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -12557,6 +12748,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -12720,6 +12917,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -13331,6 +13534,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -13434,6 +13643,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -13548,6 +13763,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -13690,6 +13911,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -13788,6 +14015,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -13963,6 +14196,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -14012,6 +14251,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -14172,6 +14417,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -14712,6 +14963,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -14932,6 +15189,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -14985,6 +15248,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -15046,6 +15315,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -15103,6 +15378,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -15156,6 +15437,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -15267,6 +15554,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -15320,6 +15613,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -16134,6 +16433,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -16651,6 +16956,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -17038,6 +17349,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -17212,6 +17529,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -18066,6 +18389,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -18438,6 +18767,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -18608,6 +18943,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -19245,6 +19586,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -20133,6 +20480,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -20849,6 +21202,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -21219,6 +21578,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -21596,6 +21961,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -21884,6 +22255,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -23604,6 +23981,7 @@ export interface operations {
   };
   /**
    * force shut down a runner
+   * @deprecated
    * @description Force shutdown a runner.
    *
    * This will result in jobs being lost/cancelled if they are in-flight.
@@ -23885,59 +24263,6 @@ export interface operations {
       };
     };
   };
-  /** fetch authentication token for an install runner via the mng process */
-  FetchRunnerTokenMng: {
-    parameters: {
-      path: {
-        /** @description runner ID */
-        runner_id: string;
-      };
-    };
-    /** @description Input */
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["service.MngFetchTokenRequest"];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        content: {
-          "application/json": components["schemas"]["app.EmptyResponse"];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-      /** @description Internal Server Error */
-      500: {
-        content: {
-          "application/json": components["schemas"]["stderr.ErrResponse"];
-        };
-      };
-    };
-  };
   /** restart the runner install process via the mng process */
   RestartRunnerInstall: {
     parameters: {
@@ -23991,7 +24316,10 @@ export interface operations {
       };
     };
   };
-  /** shut down an install runner's mng process. does not shut down the install runner process. */
+  /**
+   * shut down an install runner's mng process. does not shut down the install runner process.
+   * @deprecated
+   */
   ShutDownRunnerMng: {
     parameters: {
       path: {
@@ -24044,7 +24372,10 @@ export interface operations {
       };
     };
   };
-  /** shut down an install runner VM */
+  /**
+   * shut down an install runner VM
+   * @deprecated
+   */
   MngVMShutDown: {
     parameters: {
       path: {
@@ -24772,6 +25103,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -24862,6 +25199,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -25506,6 +25849,12 @@ export interface operations {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
+      /** @description Conflict */
+      409: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
       /** @description Internal Server Error */
       500: {
         content: {
@@ -25606,6 +25955,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
@@ -26599,6 +26954,12 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
@@ -25,10 +24,15 @@ const (
 	DefaultGCPRunnerInitScript   string = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 )
 
+type GenerateInstallStackVersionRequest struct {
+	ID             string `json:"id"`
+	WorkflowStepID string `json:"workflow_step_id"`
+}
+
 // @temporal-gen-v2 workflow
 // @execution-timeout 5m
 // @task-timeout 1m
-func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signals.RequestSignal) error {
+func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq GenerateInstallStackVersionRequest) error {
 	install, err := activities.AwaitGetInstallForStackByStackID(ctx, sreq.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
@@ -98,6 +102,13 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq signa
 	if err != nil {
 		return errors.Wrap(err, "unable to get runner")
 	}
+
+	// instance type comes from the latest synced runner config so reprovision picks up changes
+	instanceType := cfg.RunnerConfig.InstanceType
+	if instanceType == "" {
+		instanceType = app.DefaultInstanceTypeForPlatform(cfg.RunnerConfig.CloudPlatform)
+	}
+	runner.RunnerGroup.Settings.AWSInstanceType = instanceType
 
 	// need to generate a token
 	region := ""

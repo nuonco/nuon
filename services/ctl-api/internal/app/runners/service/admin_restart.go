@@ -8,14 +8,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartRunnerRequest struct{}
 
 // @ID						AdminRestartRunner
-// @Summary				restart a runner event loop
+// @Summary				restart a runner
 // @Description.markdown	restart_runner.md
 // @Param					runner_id	path	string					true	"runner ID"
 // @Param					req			body	RestartRunnerRequest	true	"Input"
@@ -39,8 +39,10 @@ func (s *service) RestartRunner(ctx *gin.Context) {
 		return
 	}
 
-	s.evClient.Send(ctx, runner.ID, &signals.Signal{
-		Type: signals.OperationRestart,
-	})
+	if err := s.helpers.EnqueueRunnerSignal(ctx, runner.ID, &restart.Signal{RunnerID: runner.ID}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue restart signal: %w", err))
+		return
+	}
+
 	ctx.JSON(http.StatusOK, true)
 }

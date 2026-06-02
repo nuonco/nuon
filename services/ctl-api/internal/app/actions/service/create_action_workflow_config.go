@@ -14,7 +14,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -74,12 +73,6 @@ func (s *service) CreateAppActionConfig(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, awID, &signals.Signal{
-		Type: signals.OperationConfigCreated,
-
-		ConfigID: awc.ID,
-	})
 
 	ctx.JSON(http.StatusCreated, awc)
 }
@@ -270,12 +263,6 @@ func (s *service) CreateActionWorkflowConfig(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to create app: %w", err))
 		return
 	}
-
-	s.evClient.Send(ctx, awID, &signals.Signal{
-		Type: signals.OperationConfigCreated,
-
-		ConfigID: awc.ID,
-	})
 
 	ctx.JSON(http.StatusCreated, awc)
 }

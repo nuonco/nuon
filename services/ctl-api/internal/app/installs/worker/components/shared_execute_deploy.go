@@ -10,7 +10,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalrequest"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	pkgplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -116,7 +116,7 @@ func (w *Workflows) execPlan(ctx workflow.Context, install *app.Install, install
 	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		RunnerID:   install.RunnerID,
 		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		w.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "unable to execute runner job")

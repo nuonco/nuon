@@ -20,7 +20,7 @@ func ActionLinks(ctx context.Context, actionID string) map[string]any {
 
 func ActionEmployeeLinks(ctx context.Context, actionID string) map[string]any {
 	return map[string]any{
-		"event_loop_ui": eventLoopLink(ctx, "actions", actionID),
+		"queue_ui":      queueLink(ctx, "actions", actionID),
 		"admin_restart": buildAdminAPILink(ctx, "v1", "actions", actionID, "admin-restart"),
 	}
 }

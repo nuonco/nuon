@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 )
 
 type RunnerGroupType string
@@ -63,16 +62,4 @@ func (r *RunnerGroup) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
-}
-
-func (r *RunnerGroup) EventLoops() []bulk.EventLoop {
-	evs := make([]bulk.EventLoop, 0)
-	for _, runner := range r.Runners {
-		evs = append(evs, bulk.EventLoop{
-			Namespace: "runners",
-			ID:        runner.ID,
-		})
-	}
-
-	return evs
 }

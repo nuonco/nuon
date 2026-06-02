@@ -31,11 +31,12 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	if installRun.RunType == app.SandboxRunTypeDeprovision {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
 	}
+	jobType := install.AppSandboxConfig.JobType()
 	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
 		OwnerID:   installRun.ID,
 		Operation: operation,
 		Group:     app.RunnerJobGroupSandbox,
-		Type:      app.RunnerJobTypeSandboxTerraform,
+		Type:      jobType,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to get plan runner job for current apply job")
@@ -56,6 +57,7 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
+		JobType:   jobType,
 		Op:        app.RunnerJobOperationTypeApplyPlan,
 		Metadata: map[string]string{
 			"install_id":       install.ID,
@@ -147,11 +149,11 @@ func (w *Workflows) executeApplyPlan(ctx workflow.Context, install *app.Install,
 	}
 
 	// queue job
-	l.Info("queued job and waiting on it to be picked up by runner event loop")
+	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:      runnerJob.ID,
 		RunnerID:   install.RunnerID,
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		w.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, "job failed")

@@ -10,7 +10,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -49,6 +48,11 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		sandboxMode = install.SandboxMode.Bool
 	}
 
+	instanceType := install.AppRunnerConfig.InstanceType
+	if instanceType == "" {
+		instanceType = app.DefaultInstanceTypeForPlatform(install.AppRunnerConfig.CloudPlatform)
+	}
+
 	groups := append(app.CommonRunnerGroupSettingsGroups[:], app.DefaultInstallRunnerGroupSettingsGroups[:]...)
 	runnerGroup := app.RunnerGroup{
 		OwnerID:   install.ID,
@@ -77,7 +81,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			EnableMetrics:   false,
 			EnableSentry:    true,
 			Groups:          groups,
-			AWSInstanceType: "t3a.medium",
+			AWSInstanceType: instanceType,
 			Metadata: pgtype.Hstore(map[string]*string{
 				"org.id":          generics.ToPtr(install.OrgID),
 				"org.name":        generics.ToPtr(install.Org.Name),
@@ -106,10 +110,6 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			return nil, fmt.Errorf("unable to create runner queues: %w", err)
 		}
 	}
-
-	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
 
 	return &runnerGroup, nil
 }
@@ -209,8 +209,5 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		return nil, fmt.Errorf("unable to create runner queues: %w", err)
 	}
 
-	h.evClient.Send(ctx, runnerGroup.Runners[0].ID, &signals.Signal{
-		Type: signals.OperationCreated,
-	})
 	return &runnerGroup, nil
 }

@@ -8,8 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
-	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/v2/delete"
+	componentdelete "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/delete"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -106,32 +105,18 @@ func (s *service) DeleteComponent(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
-// dispatchComponentDelete enqueues the v2 delete signal in queue mode, otherwise
-// falls back to the legacy event loop OperationDelete signal.
 func (s *service) dispatchComponentDelete(ctx context.Context, componentID string) error {
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	q, err := s.queueClient.GetQueueByOwner(ctx, componentID, "components")
 	if err != nil {
-		return fmt.Errorf("unable to check features: %w", err)
+		return fmt.Errorf("unable to get component queue: %w", err)
 	}
-
-	if useQueues {
-		q, err := s.queueClient.GetQueueByOwner(ctx, componentID, "components")
-		if err != nil {
-			return fmt.Errorf("unable to get component queue: %w", err)
-		}
-		if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-			QueueID:   q.ID,
-			OwnerID:   componentID,
-			OwnerType: "components",
-			Signal:    &componentdelete.Signal{ComponentID: componentID},
-		}); err != nil {
-			return fmt.Errorf("unable to enqueue component delete signal: %w", err)
-		}
-		return nil
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   q.ID,
+		OwnerID:   componentID,
+		OwnerType: "components",
+		Signal:    &componentdelete.Signal{ComponentID: componentID},
+	}); err != nil {
+		return fmt.Errorf("unable to enqueue component delete signal: %w", err)
 	}
-
-	s.evClient.Send(ctx, componentID, &signals.Signal{
-		Type: signals.OperationDelete,
-	})
 	return nil
 }

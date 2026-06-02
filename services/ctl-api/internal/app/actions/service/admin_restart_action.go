@@ -10,14 +10,13 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartActionWorkflowRequest struct{}
 
 // @ID						AdminRestartActionWorkflow
-// @Summary				restart an action workflow event loop
+// @Summary				restart an action workflow
 // @Description.markdown	restart_action_workflow.md
 // @Param					action_workflow_id	path	string							true	"action ID"
 // @Param					req					body	RestartActionWorkflowRequest	true	"Input"
@@ -36,15 +35,12 @@ func (s *service) RestartAction(ctx *gin.Context) {
 		return
 	}
 
-	actionWorkflow, err := s.getActionWorkflow(ctx, actionWorkflowID)
+	_, err := s.getActionWorkflow(ctx, actionWorkflowID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install: %w", err))
 		return
 	}
 
-	s.evClient.Send(ctx, actionWorkflow.ID, &signals.Signal{
-		Type: signals.OperationRestart,
-	})
 	ctx.JSON(http.StatusOK, true)
 }
 

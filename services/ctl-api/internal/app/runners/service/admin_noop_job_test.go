@@ -45,7 +45,6 @@ type AdminNoopJobTestSuite struct {
 	testAcc       *app.Account
 	testRunner    *app.Runner
 	testRunnerGrp *app.RunnerGroup
-	mockEvClient  *tests.MockEventLoopClient
 }
 
 func TestAdminNoopJobSuite(t *testing.T) {
@@ -60,13 +59,9 @@ func (s *AdminNoopJobTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -82,7 +77,6 @@ func (s *AdminNoopJobTestSuite) SetupSuite() {
 
 func (s *AdminNoopJobTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
-	s.mockEvClient.Reset()
 	s.setupTestData()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
@@ -181,9 +175,9 @@ func (s *AdminNoopJobTestSuite) TestAdminCreateNoopJob() {
 				assert.Equal(s.T(), "runners", logStream.OwnerType)
 				assert.True(s.T(), logStream.Open)
 
-				signals := s.mockEvClient.GetSignals()
+				signals := tests.GetQueueSignals(s.T(), s.service.DB)
 				require.Len(s.T(), signals, 1)
-				assert.Equal(s.T(), runnerID, signals[0].ID)
+				assert.Equal(s.T(), runnerID, signals[0].OwnerID)
 			},
 		},
 		{

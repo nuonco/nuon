@@ -51,13 +51,12 @@ type CreateAppTestService struct {
 type CreateAppTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      CreateAppTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service CreateAppTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
 }
 
 func TestCreateAppSuite(t *testing.T) {
@@ -73,14 +72,9 @@ func (s *CreateAppTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	// Create fake event loop client for testing
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -101,7 +95,6 @@ func (s *CreateAppTestSuite) SetupTest() {
 	s.setupTestData()
 
 	// Reset mock before each test
-	s.mockEvClient.Reset()
 
 	// Create test router with standard middlewares using helper
 	s.router = tests.NewTestRouter(tests.RouterOptions{

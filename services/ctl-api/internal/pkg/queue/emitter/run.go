@@ -30,7 +30,7 @@ func (e *emitterWorkflow) run(ctx workflow.Context) (finished bool, err error) {
 	// mode-specific loops check.
 	mgr := workflowmanager.New(
 		workflowmanager.WithHistoryMax(emitterCANHistoryMax),
-		workflowmanager.WithCheckInterval(5*time.Minute),
+		workflowmanager.WithCheckInterval(10*time.Minute),
 		workflowmanager.WithMetricsWriter(e.mw),
 		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
 			if _, err := e.ensureEmitterActive(gCtx); err != nil {
@@ -109,6 +109,14 @@ func (e *emitterWorkflow) emitSignalMetric(ctx workflow.Context, emitter *app.Qu
 }
 
 func (e *emitterWorkflow) emitSignal(ctx workflow.Context, l *zap.Logger, emitter *app.QueueEmitter) error {
+	// Check if emitter signals are globally disabled
+	if e.cfg.DisableEmitterSignals {
+		e.emitSignalMetric(ctx, emitter, "disabled")
+		l.Info("emitter signals disabled globally, skipping emit",
+			zap.String("queue-id", emitter.QueueID))
+		return nil
+	}
+
 	// Emit the signal to the queue and get back the signal ref
 	resp, err := activities.AwaitEmitSignal(ctx, &activities.EmitSignalRequest{
 		EmitterID: e.emitterID,

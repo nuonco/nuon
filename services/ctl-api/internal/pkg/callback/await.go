@@ -8,6 +8,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+// TODO: restored to the pre-#1531 value; replace with per-signal derived
+// timeouts (SignalWithTimeout) so long deploys use their configured budget.
 const defaultAwaitTimeout = 30 * time.Minute
 
 // Result is the payload sent by the handler on completion.

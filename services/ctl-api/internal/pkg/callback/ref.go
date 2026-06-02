@@ -59,3 +59,44 @@ func (c Ref) Value() (driver.Value, error) {
 func (Ref) GormDataType() string {
 	return "jsonb"
 }
+
+// Refs is a slice of Ref with JSONB serialization for GORM.
+// It replaces the single Callback field on QueueSignal to support
+// multiple completion callbacks (e.g. from EnsureSignal).
+type Refs []Ref
+
+// IsSet returns true if there is at least one callback target.
+func (r Refs) IsSet() bool {
+	return len(r) > 0
+}
+
+// Add appends a callback ref if it is set.
+func (r *Refs) Add(ref Ref) {
+	if ref.IsSet() {
+		*r = append(*r, ref)
+	}
+}
+
+// Scan implements database/sql.Scanner for reading JSONB from PostgreSQL.
+func (r *Refs) Scan(v interface{}) error {
+	switch v := v.(type) {
+	case nil:
+		return nil
+	case []byte:
+		return json.Unmarshal(v, r)
+	}
+	return nil
+}
+
+// Value implements driver.Valuer for writing JSONB to PostgreSQL.
+func (r Refs) Value() (driver.Value, error) {
+	if r == nil {
+		return nil, nil
+	}
+	return json.Marshal(r)
+}
+
+// GormDataType tells GORM to use the jsonb PostgreSQL type.
+func (Refs) GormDataType() string {
+	return "jsonb"
+}

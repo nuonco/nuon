@@ -7,7 +7,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -27,7 +26,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   signals.TemporalNamespace,
+		Namespace:   "runners",
 		Name:        fmt.Sprintf("runner-process-%s", process.ID),
 		MaxInFlight: 1,
 		MaxDepth:    10,
@@ -36,16 +35,24 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process queue: %w", err)
 	}
 
-	// Cron emitter: process health check every minute
+	// Cron emitter: health check interval depends on process type.
+	// Build processes are longer-lived and less latency-sensitive.
+	healthCheckSchedule := "*/5 * * * *"
+	healthCheckExpiry := 5 * time.Minute
+	if process.Type == app.RunnerProcessTypeBuild {
+		healthCheckSchedule = "*/15 * * * *"
+		healthCheckExpiry = 15 * time.Minute
+	}
+
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:         q.ID,
 		Name:            fmt.Sprintf("process-%s-health-check", process.ID),
 		Description:     "Periodic process health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "* * * * *",
+		CronSchedule:    healthCheckSchedule,
 		JitterWindow:    time.Second * 30,
 		SignalType:      "process_healthcheck",
-		SignalExpiresIn: 1 * time.Hour,
+		SignalExpiresIn: healthCheckExpiry,
 		SignalTemplate: queuesignal.NewRaw("process_healthcheck", map[string]any{
 			"runner_id":  runnerID,
 			"process_id": process.ID,

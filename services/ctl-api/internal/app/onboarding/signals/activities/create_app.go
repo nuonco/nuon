@@ -6,7 +6,6 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	appsignals "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -19,7 +18,7 @@ type CreateOnboardingAppResponse struct {
 // @start-to-close-timeout 5m
 // @as-wrapper
 func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName string, createBranch bool) (*CreateOnboardingAppResponse, error) {
-	// Load org for context — needed for event loop startup (startEventLoop calls signal.GetOrg)
+	// Load org for context — needed for GORM BeforeCreate hooks (OrgID)
 	var org app.Org
 	if err := a.db.WithContext(ctx).First(&org, "id = ?", orgID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get org: %w", err)
@@ -49,7 +48,7 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 		OrgID:             orgID,
 		Name:              appName,
 		Status:            "queued",
-		StatusDescription: "waiting for event loop to start and provision app",
+		StatusDescription: "waiting for queue to provision app",
 		DisplayName:       generics.NewNullString(appName),
 		NotificationsConfig: app.NotificationsConfig{
 			EnableSlackNotifications: true,
@@ -65,17 +64,6 @@ func (a *Activities) createOnboardingApp(ctx context.Context, orgID, appName str
 	if err := a.appsHelpers.CreateAppSandboxQueue(ctx, newApp.ID); err != nil {
 		return nil, fmt.Errorf("unable to create app sandbox queue: %w", err)
 	}
-
-	// Send v1 event loop signals (matching apps/service/create_app.go)
-	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
-		Type: appsignals.OperationCreated,
-	})
-	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
-		Type: appsignals.OperationPollDependencies,
-	})
-	a.evClient.Send(ctx, newApp.ID, &appsignals.Signal{
-		Type: appsignals.OperationProvision,
-	})
 
 	resp := &CreateOnboardingAppResponse{
 		AppID: newApp.ID,

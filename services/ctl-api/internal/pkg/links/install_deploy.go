@@ -20,7 +20,7 @@ func InstallDeployLinks(ctx context.Context, installDeployID string) map[string]
 
 func InstallDeployEmployeeLinks(ctx context.Context, installDeployID string) map[string]any {
 	return map[string]any{
-		"event_loop_ui": eventLoopLink(ctx, "installDeploys", installDeployID),
+		"queue_ui":      queueLink(ctx, "installDeploys", installDeployID),
 		"admin_restart": buildAdminAPILink(ctx, "v1", "installDeploys", installDeployID, "admin-restart"),
 	}
 }

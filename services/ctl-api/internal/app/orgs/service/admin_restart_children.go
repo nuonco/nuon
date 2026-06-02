@@ -8,14 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	sigs "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartOrgChildrenRequest struct{}
 
 // @ID						AdminRestartOrgChildren
-// @Summary				restart an org and all it's children event loops
+// @Summary				restart an org and all its children
 // @Description.markdown	restart_org_children.md
 // @Param					org_id	path	string						true	"org ID"
 // @Param					req		body	RestartOrgChildrenRequest	true	"Input"
@@ -34,14 +33,11 @@ func (s *service) RestartOrgChildren(ctx *gin.Context) {
 		return
 	}
 
-	org, err := s.getOrg(ctx, orgID)
+	_, err := s.getOrg(ctx, orgID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org: %w", err))
 		return
 	}
-	s.evClient.Send(ctx, org.ID, &sigs.Signal{
-		Type: sigs.OperationRestartChildren,
-	})
 
 	ctx.JSON(http.StatusOK, true)
 }

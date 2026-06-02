@@ -52,14 +52,13 @@ type GetAppActionLatestConfigTestService struct {
 type GetAppActionLatestConfigTestSuite struct {
 	tests.BaseDBTestSuite
 
-	app          *fxtest.App
-	service      GetAppActionLatestConfigTestService
-	router       *gin.Engine
-	ctx          context.Context
-	testOrg      *app.Org
-	testAcc      *app.Account
-	testApp      *app.App
-	mockEvClient *tests.MockEventLoopClient
+	app     *fxtest.App
+	service GetAppActionLatestConfigTestService
+	router  *gin.Engine
+	ctx     context.Context
+	testOrg *app.Org
+	testAcc *app.Account
+	testApp *app.App
 }
 
 func TestGetAppActionLatestConfigSuite(t *testing.T) {
@@ -75,13 +74,9 @@ func (s *GetAppActionLatestConfigTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 	gin.SetMode(gin.TestMode)
 
-	s.mockEvClient = tests.NewMockEventLoopClient()
-
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
 			T: s.T(),
-
-			Mocks: &tests.TestMocks{MockEv: s.mockEvClient},
 
 			CustomValidator: true,
 		}),
@@ -98,8 +93,6 @@ func (s *GetAppActionLatestConfigTestSuite) SetupSuite() {
 func (s *GetAppActionLatestConfigTestSuite) SetupTest() {
 	s.BaseDBTestSuite.SetupTest()
 	s.setupTestData()
-
-	s.mockEvClient.Reset()
 
 	s.router = tests.NewTestRouter(tests.RouterOptions{
 		L:       s.service.L,

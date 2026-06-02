@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop/bulk"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
@@ -128,45 +127,4 @@ func (a *App) AfterQuery(tx *gorm.DB) error {
 	}
 
 	return nil
-}
-
-func (a *App) EventLoops() []bulk.EventLoop {
-	evs := make([]bulk.EventLoop, 0)
-	evs = append(evs, bulk.EventLoop{
-		Namespace: "apps",
-		ID:        a.ID,
-	})
-
-	// TODO(jm): remove this after we build out the queue migration
-	for _, branch := range a.AppBranches {
-		evs = append(evs, bulk.EventLoop{
-			Namespace:   "apps",
-			ID:          branch.Queue.ID,
-			WorkflowRef: generics.ToPtr(branch.Queue.Workflow),
-		})
-	}
-
-	for _, cmp := range a.Components {
-		evs = append(evs, bulk.EventLoop{
-			Namespace: "components",
-			ID:        cmp.ID,
-		})
-	}
-
-	for _, acw := range a.ActionWorkflows {
-		evs = append(evs, bulk.EventLoop{
-			Namespace: "actions",
-			ID:        acw.ID,
-		})
-	}
-
-	for _, inst := range a.Installs {
-		evs = append(evs, inst.EventLoops()...)
-	}
-
-	for _, branch := range a.AppBranches {
-		evs = append(evs, branch.EventLoops()...)
-	}
-
-	return evs
 }

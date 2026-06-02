@@ -52,10 +52,8 @@ type QueueSignal struct {
 
 	ExpiresAt *time.Time `json:"expires_at,omitempty" gorm:"default:null" temporaljson:"expires_at,omitzero,omitempty"`
 
-	// Callback describes where to send a Temporal signal when this queue signal
-	// completes. When set, the handler signals the parent workflow on completion
-	// instead of requiring the parent to block on a heartbeating AwaitSignal activity.
-	Callback callback.Ref `json:"callback" gorm:"type:jsonb;default:null" temporaljson:"callback,omitzero,omitempty"`
+	Callback  callback.Ref  `json:"callback" gorm:"type:jsonb;default:null" temporaljson:"callback,omitzero,omitempty"`
+	Callbacks callback.Refs `json:"callbacks" gorm:"type:jsonb;default:null" temporaljson:"callbacks,omitzero,omitempty"`
 }
 
 func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
@@ -151,6 +149,12 @@ func (r *QueueSignal) Indexes(db *gorm.DB) []migrations.Index {
 				"type",
 			},
 			Option: "WHERE enqueued = false",
+		},
+		{
+			Name: indexes.Name(db, &QueueSignal{}, "deleted_at"),
+			Columns: []string{
+				"deleted_at",
+			},
 		},
 	}
 }

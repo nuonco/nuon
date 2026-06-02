@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -10,8 +11,8 @@ import (
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/generatestate"
-	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/state/statepartialgenerate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -52,6 +53,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	changedInputsRaw := generics.FromPtrStr(flw.Metadata["inputs"])
 	changedInputs := strings.Split(changedInputsRaw, ",")
+	deployDependents := generics.FromPtrStr(flw.Metadata["deploy_dependents"]) == strconv.FormatBool(true)
 
 	appConfig, err := activities.AwaitGetAppConfig(ctx, activities.GetAppConfigRequest{
 		ID: install.AppConfigID,
@@ -90,15 +92,17 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
 		componentIDs = append(componentIDs, comp.ID)
 
-		dependentCompIDs, err := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
-			AppConfigID: appConfig.ID,
-			ComponentID: comp.ID,
-		})
-		if err != nil {
-			return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
-		}
+		if deployDependents {
+			dependentCompIDs, err := activities.AwaitGetComponentDependents(ctx, &activities.GetComponentDependentsRequest{
+				AppConfigID: appConfig.ID,
+				ComponentID: comp.ID,
+			})
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to get component dependents for %s", comp.ID)
+			}
 
-		componentIDs = append(componentIDs, dependentCompIDs...)
+			componentIDs = append(componentIDs, dependentCompIDs...)
+		}
 	}
 	componentIDs = generics.UniqueSlice(componentIDs)
 

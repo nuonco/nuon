@@ -12,7 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
 
 type Params struct {
@@ -24,11 +24,11 @@ type Params struct {
 	CHDB                 *gorm.DB `name:"ch"`
 	MW                   metrics.Writer
 	L                    *zap.Logger
-	EvClient             eventloop.Client
 	AccountClient        *account.Client
 	Helpers              *helpers.Helpers
 	EndpointAudit        *apiPkg.EndpointAudit
 	RunnerHeartbeatCache *RunnerHeartbeatCache
+	Heartbeater          *heartbeater.Heartbeater
 }
 
 type service struct {
@@ -39,10 +39,10 @@ type service struct {
 	chDB                 *gorm.DB
 	mw                   metrics.Writer
 	cfg                  *internal.Config
-	evClient             eventloop.Client
 	acctClient           *account.Client
 	helpers              *helpers.Helpers
 	runnerHeartbeatCache *RunnerHeartbeatCache
+	heartbeater          *heartbeater.Heartbeater
 }
 
 var _ apiPkg.Service = (*service)(nil)
@@ -75,7 +75,6 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST("/v1/runners/:runner_id/mng/shutdown", s.MngShutDown)
 	api.POST("/v1/runners/:runner_id/mng/update", s.MngUpdate)
 	api.POST("/v1/runners/:runner_id/mng/restart", s.MngRestart)
-	api.POST("/v1/runners/:runner_id/mng/fetch-token", s.MngFetchToken)
 	api.POST("/v1/runners/:runner_id/prune-tokens", s.PruneTokens)
 
 	// settings
@@ -128,6 +127,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runners.GET("/details", s.AdminListRunnersDetails)
 		runners.POST("/restart", s.AdminRestartRunners)
 		runners.POST("/shutdown-processes", s.AdminShutdownAllRunnerProcesses)
+		runners.POST("/update-health-check-cron", s.AdminUpdateHealthCheckCron)
 		runners.PATCH("/bulk-update", s.AdminBulkUpdateRunners)
 
 		// sandbox management
@@ -196,6 +196,12 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		runnerJobs := sandboxMode.Group("/runner-jobs")
 		runnerJobs.GET("", s.AdminListAllSandboxConfigs)
 		runnerJobs.POST("/disable-all", s.AdminDisableAllSandboxConfigs)
+	}
+
+	// org-wide runner settings
+	orgs := api.Group("/v1/orgs/:org_id")
+	{
+		orgs.PATCH("/runner-settings", s.AdminUpdateOrgRunnerSettings)
 	}
 
 	// runner groups
@@ -334,10 +340,10 @@ func New(params Params) *service {
 		db:                   params.DB,
 		chDB:                 params.CHDB,
 		mw:                   params.MW,
-		evClient:             params.EvClient,
 		acctClient:           params.AccountClient,
 		helpers:              params.Helpers,
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
+		heartbeater:          params.Heartbeater,
 	}
 }
 

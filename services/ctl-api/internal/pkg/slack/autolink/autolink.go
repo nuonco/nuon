@@ -100,10 +100,10 @@ func (h *Helper) EnsureForOrg(ctx context.Context, orgID string) (*Result, error
 
 	if h.mw != nil {
 		if res.LinkCreated {
-			h.mw.Count("event_loop.general.slack_auto_link.links_created", 1, nil)
+			h.mw.Count("general.slack_auto_link.links_created", 1, nil)
 		}
 		if res.SubSeeded {
-			h.mw.Count("event_loop.general.slack_auto_link.subs_seeded", 1, nil)
+			h.mw.Count("general.slack_auto_link.subs_seeded", 1, nil)
 		}
 	}
 	return res, nil

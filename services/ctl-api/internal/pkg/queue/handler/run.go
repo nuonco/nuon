@@ -7,6 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -50,34 +51,49 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Start the lifecycle manager to periodically check that the queue signal
 	// still exists and hasn't expired. Sets mgr.Stopped when the entity is
 	// gone or expired, which unblocks the Await below.
-	mgr := workflowmanager.New(
-		workflowmanager.WithCheckInterval(1*time.Minute),
-		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
-			_, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
-			if err != nil {
-				if dbgenerics.IsGormErrRecordNotFound(err) {
-					l.Warn("queue signal deleted, terminating orphaned handler")
-					return false, nil
-				}
-				return true, nil // transient error, keep going
+	//
+	// The alive checker combines both existence and expiry checks in a single
+	// DB query to avoid redundant round-trips.
+	var mgrOpts []workflowmanager.Option
+	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(3*time.Minute))
+
+	// don't continue-as-new mid-phase: it orphans the in-flight update and the
+	// successor run fails the signal while the work is still alive.
+	mgrOpts = append(mgrOpts, workflowmanager.WithDeferRestart(func() bool {
+		return h.validating || h.executing
+	}))
+
+	// Create a temporal metrics writer for workflow size reporting.
+	if h.mw != nil && h.v != nil {
+		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {
+			mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
+		}
+	}
+
+	mgrOpts = append(mgrOpts, workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
+		qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+		if err != nil {
+			if dbgenerics.IsGormErrRecordNotFound(err) {
+				l.Warn("queue signal deleted, terminating orphaned handler")
+				return false, nil
 			}
-			return true, nil
-		}),
-		workflowmanager.WithExpiryChecker(func(gCtx workflow.Context) (*time.Time, error) {
-			qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
-			if err != nil {
-				return nil, err
-			}
-			return qs.ExpiresAt, nil
-		}),
-		workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
-			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
-				QueueSignalID:     h.queueSignalID,
-				Status:            app.StatusError,
-				StatusDescription: "signal expired or deleted",
-			})
-		}),
-	)
+			return true, nil // transient error, keep going
+		}
+		// Check expiry in the same call to avoid a second DB query.
+		if qs.ExpiresAt != nil && workflow.Now(gCtx).After(*qs.ExpiresAt) {
+			l.Warn("queue signal expired, stopping handler")
+			return false, nil
+		}
+		return true, nil
+	}))
+	mgrOpts = append(mgrOpts, workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     h.queueSignalID,
+			Status:            app.StatusError,
+			StatusDescription: "signal expired or deleted",
+		})
+	}))
+	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
 	// execute the handler and handle a restart or stop
@@ -91,16 +107,14 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	}
 	if mgr.Stopped {
 		// Entity was deleted or expired. Send callbacks so waiting callers unblock.
-		if h.hasCallbacks() {
-			h.sendCompletionCallbacks(ctx)
-		}
+		h.sendCompletionCallbacks(ctx)
 		return true, nil
 	}
 
 	// Signal completed — send completion callbacks to unblock queue and parent.
-	if h.hasCallbacks() {
-		h.sendCompletionCallbacks(ctx)
-	}
+	// Always call sendCompletionCallbacks (it reloads from DB) so that callbacks
+	// added dynamically by EnsureSignal after init are picked up.
+	h.sendCompletionCallbacks(ctx)
 
 	// Once execution has completed, keep the workflow alive for a cache period
 	// so that subsequent signals can reuse it via update-with-start.

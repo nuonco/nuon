@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/actions/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
@@ -49,11 +48,6 @@ func (s *service) DeleteAppAction(ctx *gin.Context) {
 		return
 	}
 
-	// trigger signal
-	s.evClient.Send(ctx, aw.ID, &signals.Signal{
-		Type: signals.OperationDelete,
-	})
-
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }
 
@@ -93,11 +87,6 @@ func (s *service) DeleteActionWorkflow(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-
-	// trigger signal
-	s.evClient.Send(ctx, aw.ID, &signals.Signal{
-		Type: signals.OperationDelete,
-	})
 
 	ctx.JSON(http.StatusOK, app.EmptyResponse{})
 }

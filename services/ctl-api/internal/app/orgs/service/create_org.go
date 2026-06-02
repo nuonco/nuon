@@ -10,8 +10,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
-	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/created"
-	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/v2/provision"
+	orgcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/created"
+	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -83,7 +83,7 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 	cctx.SetOrgGinContext(ctx, newOrg)
 
 	// Always use v2 queue signals for org creation — the org was just created
-	// so feature flags won't be set yet (race condition with v1 event loop).
+	// so feature flags won't be set yet.
 	signalsQueueID, err := s.getOrgSignalsQueueID(ctx, newOrg.ID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))

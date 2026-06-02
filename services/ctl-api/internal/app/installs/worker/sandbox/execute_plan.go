@@ -11,7 +11,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/workflowstepapprovalrequest"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -34,6 +34,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   sandboxRun.ID,
+		JobType:   install.AppSandboxConfig.JobType(),
 		Op:        op,
 		Metadata: map[string]string{
 			"install_id":       install.ID,
@@ -85,11 +86,11 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 	}
 
 	// queue job
-	l.Info("queued job and waiting on it to be picked up by runner event loop")
+	l.Info("queued job and waiting on it to be picked up by runner")
 	status, err := job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
 		JobID:      runnerJob.ID,
 		RunnerID:   install.RunnerID,
-		WorkflowID: fmt.Sprintf("event-loop-%s-execute-job-%s", install.ID, runnerJob.ID),
+		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
 		w.updateRunStatusWithoutStatusSync(ctx, sandboxRun.ID, app.SandboxRunStatusError, "job failed")

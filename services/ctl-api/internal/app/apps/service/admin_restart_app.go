@@ -11,14 +11,13 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
 type RestartAppRequest struct{}
 
 // @ID						AdminRestartApp
-// @Summary				restart an apps event loop
+// @Summary				restart an app
 // @Description.markdown	restart_app.md
 // @Param					app_id	path	string				true	"app ID"
 // @Param					req		body	RestartAppRequest	true	"Input"
@@ -36,15 +35,12 @@ func (s *service) RestartApp(ctx *gin.Context) {
 		ctx.Error(stderr.NewInvalidRequest(err))
 		return
 	}
-	app, err := s.getApp(ctx, appID)
+	_, err := s.getApp(ctx, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app: %w", err))
 		return
 	}
 
-	s.evClient.Send(ctx, app.ID, &signals.Signal{
-		Type: signals.OperationRestart,
-	})
 	ctx.JSON(http.StatusOK, true)
 }
 

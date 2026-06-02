@@ -13,8 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 
-	runnersignals "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals"
-	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/v2/processjob"
+	processjobsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
@@ -62,7 +61,6 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
 	} else {
-		// Legacy event loop path: poll job status.
 		if _, err := w.pollJob(ctx, req); err != nil {
 			return app.RunnerJobStatus(""), err
 		}
@@ -85,7 +83,7 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 }
 
 // queueJob dispatches the job for execution. Returns the queue signal ID when the
-// queue path is used (non-empty string), or empty string for the legacy event loop path.
+// queue path is used (non-empty string), or empty string for the poll path.
 func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb callback.Ref) (string, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -93,8 +91,7 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb ca
 	}
 
 	// Check if this runner uses queue-based job dispatch (parallel-runner-jobs feature flag).
-	// If a per-job-group queue exists, enqueue the processjob signal directly and skip the
-	// legacy event loop path entirely.
+	// If a per-job-group queue exists, enqueue the processjob signal directly.
 	queueResp, err := activities.AwaitPkgWorkflowsJobGetRunnerJobGroupQueue(ctx, &activities.GetRunnerJobGroupQueueRequest{
 		RunnerID: runnerID,
 		JobID:    jobID,
@@ -118,14 +115,7 @@ func (j *Workflows) queueJob(ctx workflow.Context, runnerID, jobID string, cb ca
 		return enqueueResp.ID, nil
 	}
 
-	// Legacy path: dispatch through the runner event loop.
-	l.Info("queueing job on runner event loop", zap.String("runner-id", runnerID))
-	j.evClient.Send(ctx, runnerID, &runnersignals.Signal{
-		Type:  runnersignals.OperationProcessJob,
-		JobID: jobID,
-	})
-
-	return "", nil
+	return "", errors.New("no job-group queue found for runner")
 }
 
 func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.RunnerJobStatus, error) {
@@ -179,8 +169,7 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 	})
 
 	for {
-		// if the job is already timed out, there is no reason to continue. In some reasons, if a job fails and
-		// is not updated by it's event loop, then this would catch that.
+		// if the job is already timed out, there is no reason to continue.
 		now := workflow.Now(dctx)
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
 			return app.RunnerJobStatusTimedOut, temporal.NewNonRetryableApplicationError("overall timeout reached", "api", fmt.Errorf("timeout"))

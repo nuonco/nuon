@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"gorm.io/gorm"
 
@@ -36,18 +37,20 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 	secrets := make([]app.AppSecretConfig, 0, len(cfg.Secrets.Secrets))
 	for _, secret := range cfg.Secrets.Secrets {
 		secrets = append(secrets, app.AppSecretConfig{
-			AppID:                     appID,
-			AppConfigID:               appConfigID,
-			Name:                      secret.Name,
-			DisplayName:               secret.DisplayName,
-			Description:               secret.Description,
-			Required:                  secret.Required,
-			AutoGenerate:              secret.AutoGenerate,
-			Default:                   secret.Default,
-			Format:                    app.AppSecretConfigFmt(secret.Format),
-			KubernetesSync:            secret.KubernetesSync,
+			AppID:        appID,
+			AppConfigID:  appConfigID,
+			Name:         secret.Name,
+			DisplayName:  secret.DisplayName,
+			Description:  secret.Description,
+			Required:     secret.Required,
+			AutoGenerate: secret.AutoGenerate,
+			Default:      secret.Default,
+			Format:       app.AppSecretConfigFmt(secret.Format),
+			// Sync is enabled by the legacy flag or by the presence of any v2 targets.
+			KubernetesSync:            secret.KubernetesSyncEnabled(),
 			KubernetesSecretNamespace: secret.KubernetesSecretNamespace,
 			KubernetesSecretName:      secret.KubernetesSecretName,
+			KubernetesSyncTargets:     kubernetesSyncTargets(secret.KubernetesSyncTargets),
 		})
 	}
 
@@ -66,6 +69,26 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 	}
 
 	return nil
+}
+
+// kubernetesSyncTargets maps config sync targets onto the app model child rows.
+func kubernetesSyncTargets(targets []*config.KubernetesSyncTarget) []app.AppSecretKubernetesSyncTarget {
+	if len(targets) == 0 {
+		return nil
+	}
+
+	rows := make([]app.AppSecretKubernetesSyncTarget, 0, len(targets))
+	for _, t := range targets {
+		if t == nil {
+			continue
+		}
+		rows = append(rows, app.AppSecretKubernetesSyncTarget{
+			Namespaces: t.Namespaces,
+			Name:       t.Name,
+			Key:        t.Key,
+		})
+	}
+	return rows
 }
 
 // validateSecrets validates secret names, required fields, and Kubernetes secret names.
@@ -115,6 +138,54 @@ func validateSecrets(cfg *config.AppConfig) error {
 				return stderr.ErrUser{
 					Err:         fmt.Errorf("invalid kubernetes_secret_name: %s", secret.KubernetesSecretName),
 					Description: fmt.Sprintf("Secret '%s' has invalid kubernetes_secret_name '%s'. Must be a valid DNS RFC 1123 subdomain (lowercase alphanumeric, hyphens, dots)", secret.Name, secret.KubernetesSecretName),
+				}
+			}
+		}
+
+		// Validate v2 sync targets.
+		for _, target := range secret.KubernetesSyncTargets {
+			if target == nil {
+				continue
+			}
+
+			if len(target.Namespaces) == 0 {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("kubernetes_sync_targets entry missing namespace"),
+					Description: fmt.Sprintf("Secret '%s' has a kubernetes_sync_targets entry with no namespace", secret.Name),
+				}
+			}
+
+			if target.Name == "" {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("kubernetes_sync_targets entry missing name"),
+					Description: fmt.Sprintf("Secret '%s' has a kubernetes_sync_targets entry with no name", secret.Name),
+				}
+			}
+
+			if target.Key == "" {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("kubernetes_sync_targets entry missing key"),
+					Description: fmt.Sprintf("Secret '%s' has a kubernetes_sync_targets entry with no key", secret.Name),
+				}
+			}
+
+			// Templated values (e.g. "{{.nuon.install.id}}-ns") are validated after rendering, so skip them here.
+			if !strings.Contains(target.Name, "{{") && !dnsRFC1123Regex.MatchString(target.Name) {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("invalid kubernetes_sync_targets name: %s", target.Name),
+					Description: fmt.Sprintf("Secret '%s' has invalid kubernetes_sync_targets name '%s'. Must be a valid DNS RFC 1123 subdomain (lowercase alphanumeric, hyphens, dots)", secret.Name, target.Name),
+				}
+			}
+
+			for _, ns := range target.Namespaces {
+				if strings.Contains(ns, "{{") {
+					continue
+				}
+				if !dnsRFC1123Regex.MatchString(ns) {
+					return stderr.ErrUser{
+						Err:         fmt.Errorf("invalid kubernetes_sync_targets namespace: %s", ns),
+						Description: fmt.Sprintf("Secret '%s' has invalid kubernetes_sync_targets namespace '%s'. Must be a valid DNS RFC 1123 subdomain (lowercase alphanumeric, hyphens, dots)", secret.Name, ns),
+					}
 				}
 			}
 		}

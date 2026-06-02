@@ -11,7 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/v2/updated"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -20,7 +20,7 @@ import (
 type UpdateInstallInputsRequest struct {
 	Inputs           map[string]*string `json:"inputs" validate:"required,gte=1"`
 	Role             string             `json:"role"`
-	DeployDependents bool               `json:"deploy_dependents"`
+	DeployDependents *bool              `json:"deploy_dependents,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -111,51 +111,46 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
+	// Default to deploying dependents when the field is omitted, preserving the
+	// historical always-deploy behavior; an explicit false is now respected.
+	deployDependents := req.DeployDependents == nil || *req.DeployDependents
+
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
 		*changedInputs,
 		changedInputValues,
 		req.Role,
-		req.DeployDependents,
+		deployDependents,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
 
-	// In queue mode the helper's legacy signals are dropped (legacy event loop is
-	// not running). Enqueue queue equivalents so the input-update workflow runs.
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	// Enqueue queue signals so the input-update workflow runs.
+	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
-			InstallID: install.ID,
-		}, "", ""); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
-			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
+	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
+	if err != nil {
+		ctx.Error(err)
+		return
 	}
-	// In legacy mode the helper already sent OperationUpdated + OperationExecuteFlow.
+	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
+		InstallID: install.ID,
+	}, "", ""); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
 
 	inputs.WorkflowID = &workflow.ID
 	ctx.JSON(http.StatusOK, inputs)

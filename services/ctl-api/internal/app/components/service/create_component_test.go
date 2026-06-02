@@ -10,7 +10,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals"
+	componentcreated "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
+	componentpolldeps "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/polldependencies"
+	componentprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/provision"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 // ---------------------------------------------------------------------------
@@ -266,7 +269,6 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentNonexistentDependency() 
 
 func (s *ComponentsServiceTestSuite) TestCreateComponentSendsSignals() {
 	// Reset mock
-	s.mockEvClient.Reset()
 
 	reqBody := CreateComponentRequest{
 		Name: "signal_test_component",
@@ -284,25 +286,23 @@ func (s *ComponentsServiceTestSuite) TestCreateComponentSendsSignals() {
 	err := json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(s.T(), err)
 
-	// Verify 3 signals were sent
-	capturedSignals := s.mockEvClient.GetSignals()
+	// Verify signals were sent
+	capturedSignals := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.Len(s.T(), capturedSignals, 3, "expected 3 signals")
 
 	// All signals should target the created component
-	for _, captured := range capturedSignals {
-		assert.Equal(s.T(), response.ID, captured.ID, "signal should target the created component")
+	for _, qs := range capturedSignals {
+		assert.Equal(s.T(), response.ID, qs.OwnerID, "signal should target the created component")
 	}
 
 	// Verify signal types
 	var signalTypes []string
-	for _, captured := range capturedSignals {
-		sig, ok := captured.Signal.(*signals.Signal)
-		require.True(s.T(), ok, "signal should be *signals.Signal")
-		signalTypes = append(signalTypes, string(sig.Type))
+	for _, qs := range capturedSignals {
+		signalTypes = append(signalTypes, string(qs.Type))
 	}
 
-	assert.Contains(s.T(), signalTypes, string(signals.OperationCreated))
-	assert.Contains(s.T(), signalTypes, string(signals.OperationProvision))
-	assert.Contains(s.T(), signalTypes, string(signals.OperationPollDependencies))
+	assert.Contains(s.T(), signalTypes, string(componentcreated.SignalType))
+	assert.Contains(s.T(), signalTypes, string(componentprovision.SignalType))
+	assert.Contains(s.T(), signalTypes, string(componentpolldeps.SignalType))
 
 }

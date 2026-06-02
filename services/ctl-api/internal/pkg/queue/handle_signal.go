@@ -40,6 +40,19 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		return ErrSignalNoop
 	}
 
+	// If the signal came from an emitter and emitter signals are globally disabled, noop it.
+	if queueSignal.EmitterID != nil && q.cfg.DisableEmitterSignals {
+		l.Info("emitter signals disabled globally, skipping",
+			zap.String("queue-signal-id", queueSignal.ID),
+			zap.String("queue-id", queueSignal.QueueID))
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     queueSignal.ID,
+			Status:            app.StatusCancelled,
+			StatusDescription: "emitter signals disabled",
+		})
+		return ErrSignalNoop
+	}
+
 	if queueSignal.ExecutionCount > 0 {
 		l.Info("re-executing a signal that was already executed",
 			zap.Any("status", queueSignal.Status),

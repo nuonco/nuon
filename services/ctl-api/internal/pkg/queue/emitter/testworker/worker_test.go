@@ -21,7 +21,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/eventloop"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -97,7 +96,6 @@ func (e *EmitterTestSuite) SetupSuite() {
 		fx.Provide(temporal.New),
 		fx.Provide(validator.New),
 		fx.Provide(notifications.New),
-		fx.Provide(eventloop.New),
 		fx.Provide(authz.New),
 		fx.Provide(features.New),
 		fx.Provide(account.New),

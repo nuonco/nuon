@@ -54,6 +54,10 @@ type AppSecretConfig struct {
 	KubernetesSecretName      string `json:"kubernetes_secret_name,omitzero" features:"template" temporaljson:"kubernetes_secret_name,omitzero,omitempty"`
 	KubernetesSecretKey       string `json:"-" features:"-" temporaljson:"kubernetes_secret_key,omitzero,omitempty"`
 
+	// kubernetes sync v2: when present, the secret syncs to each of these targets (namespaces x name x key). The
+	// single-valued Kubernetes* fields above remain for backwards compatibility.
+	KubernetesSyncTargets []AppSecretKubernetesSyncTarget `json:"kubernetes_sync_targets,omitzero" temporaljson:"kubernetes_sync_targets,omitzero,omitempty"`
+
 	CloudFormationStackName string `json:"cloudformation_stack_name,omitzero" gorm:"-" temporaljson:"cloud_formation_stack_name,omitzero,omitempty"`
 	CloudFormationParamName string `json:"cloudformation_param_name,omitzero" gorm:"-" temporaljson:"cloud_formation_param_name,omitzero,omitempty"`
 }

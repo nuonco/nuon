@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
@@ -61,28 +60,16 @@ func (s *service) SyncSecrets(ctx *gin.Context) {
 		return
 	}
 
-	useQueues, err := s.featuresClient.AllFeaturesEnabled(ctx, app.OrgFeatureAppBranches, app.OrgFeatureQueues)
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("checking features: %w", err))
+		ctx.Error(err)
 		return
 	}
-	if useQueues {
-		queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
-		if err != nil {
-			ctx.Error(err)
-			return
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
-			WorkflowID: workflow.ID,
-		}, workflow.ID, "install_workflows"); err != nil {
-			ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-			return
-		}
-	} else {
-		s.evClient.Send(ctx, installID, &signals.Signal{
-			Type:              signals.OperationExecuteFlow,
-			InstallWorkflowID: workflow.ID,
-		})
+	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
 	}
 
 	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})

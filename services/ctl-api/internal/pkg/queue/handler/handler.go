@@ -71,6 +71,10 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
+	// in-flight phase flags; manager defers continue-as-new while either is set.
+	validating bool
+	executing  bool
+
 	// finishedStatus and finishedErr capture the terminal outcome so the
 	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
 	finishedStatus app.Status
@@ -80,9 +84,9 @@ type handler struct {
 	executingCtx    workflow.Context
 	executingCancel workflow.CancelFunc
 
-	// Callback loaded from the QueueSignal DB record during initializeState.
-	// When set, the handler sends a Temporal signal to the parent workflow on completion.
-	callback callback.Ref
+	// Callbacks loaded from the QueueSignal DB record during initializeState.
+	// When set, the handler sends Temporal signals to all parent workflows on completion.
+	callbacks callback.Refs
 
 	// state that is loaded during run, but not passed between continue-as-news
 	queueSignal *app.QueueSignal

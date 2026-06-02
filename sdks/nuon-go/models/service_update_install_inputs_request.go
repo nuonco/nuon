@@ -20,7 +20,7 @@ import (
 type ServiceUpdateInstallInputsRequest struct {
 
 	// deploy dependents
-	DeployDependents bool `json:"deploy_dependents,omitempty"`
+	DeployDependents *bool `json:"deploy_dependents,omitempty"`
 
 	// inputs
 	// Required: true

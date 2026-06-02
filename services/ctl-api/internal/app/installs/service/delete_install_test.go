@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals"
+	"github.com/nuonco/nuon/services/ctl-api/tests"
 )
 
 func (s *InstallsServiceTestSuite) TestDeleteInstallSuccess() {
@@ -20,17 +20,15 @@ func (s *InstallsServiceTestSuite) TestDeleteInstallSuccess() {
 	}
 	require.Equal(s.T(), http.StatusOK, rr.Code)
 
-	captured := s.mockEvClient.GetSignals()
+	captured := tests.GetQueueSignals(s.T(), s.deps.DB)
 	require.GreaterOrEqual(s.T(), len(captured), 2)
 
 	var signalTypes []string
 	for _, c := range captured {
-		if sig, ok := c.Signal.(*signals.Signal); ok {
-			signalTypes = append(signalTypes, string(sig.Type))
-		}
+		signalTypes = append(signalTypes, string(c.Type))
 	}
-	assert.Contains(s.T(), signalTypes, string(signals.OperationExecuteFlow))
-	assert.Contains(s.T(), signalTypes, string(signals.OperationForget))
+	assert.Contains(s.T(), signalTypes, "execute-workflow")
+	assert.Contains(s.T(), signalTypes, "forgotten")
 }
 
 func (s *InstallsServiceTestSuite) TestDeleteInstallNotFound() {
