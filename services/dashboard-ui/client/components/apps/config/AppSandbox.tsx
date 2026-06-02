@@ -3,7 +3,7 @@ import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Text } from '@/components/common/Text'
-import type { TAppConfig } from '@/types'
+import type { TAppConfig, TSandboxConfig } from '@/types'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 
 export interface IAppSandbox {
@@ -11,7 +11,8 @@ export interface IAppSandbox {
 }
 
 export const AppSandbox = ({ appConfig }: IAppSandbox) => {
-  const sandboxConfig = appConfig?.sandbox
+  const sandboxConfig = appConfig?.sandbox as TSandboxConfig | undefined
+  const isPulumi = sandboxConfig?.type === 'pulumi'
   const sandboxConfigRepo =
     sandboxConfig?.connected_github_vcs_config ||
     sandboxConfig?.public_git_vcs_config ||
@@ -20,11 +21,27 @@ export const AppSandbox = ({ appConfig }: IAppSandbox) => {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex gap-6 items-start justify-start">
+      <div className="flex gap-6 items-start justify-start flex-wrap">
         <GitRepo vcsConfig={sandboxConfigRepo} />
-        <LabeledValue label="Terraform">
-          {sandboxConfig?.terraform_version}
-        </LabeledValue>
+        {isPulumi ? (
+          <>
+            <LabeledValue label="Type">Pulumi</LabeledValue>
+            {sandboxConfig?.runtime && (
+              <LabeledValue label="Runtime">{sandboxConfig.runtime}</LabeledValue>
+            )}
+            {sandboxConfig?.pulumi_version && (
+              <LabeledValue label="Pulumi version">
+                {sandboxConfig.pulumi_version}
+              </LabeledValue>
+            )}
+          </>
+        ) : (
+          sandboxConfig?.terraform_version && (
+            <LabeledValue label="Terraform">
+              {sandboxConfig.terraform_version}
+            </LabeledValue>
+          )
+        )}
       </div>
       {sandboxVariables?.length ? (
         <div>
@@ -45,7 +62,7 @@ export const AppSandbox = ({ appConfig }: IAppSandbox) => {
         Object.keys(sandboxConfig.operation_roles).length > 0 && (
           <div>
             <Text variant="subtext" weight="strong">
-              Operation Roles
+              Operation roles
             </Text>
             <OperationRolesList
               operationRoles={sandboxConfig.operation_roles}

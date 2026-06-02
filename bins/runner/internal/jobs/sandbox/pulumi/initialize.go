@@ -2,12 +2,11 @@ package pulumi
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	ociarchive "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/archive"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 )
 
 func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
@@ -16,17 +15,18 @@ func (h *handler) Initialize(ctx context.Context, job *models.AppRunnerJob, jobE
 		return err
 	}
 
-	l.Info("initializing archive...")
-	arch := ociarchive.New()
-	if err := arch.Initialize(ctx); err != nil {
-		return fmt.Errorf("unable to initialize archive: %w", err)
+	l.Info("initializing source workspace")
+	wkspace, err := workspace.New(h.v,
+		workspace.WithLogger(l),
+		workspace.WithGitSource(h.state.plan.GitSource),
+		workspace.WithWorkspaceID(jobExecution.ID),
+	)
+	if err != nil {
+		return err
 	}
-	h.state.arch = arch
-
-	l.Info("unpacking archive...")
-	if err := arch.Unpack(ctx, h.state.plan.Src, h.state.plan.SrcTag); err != nil {
-		return fmt.Errorf("unable to unpack archive: %w", err)
+	h.state.srcWorkspace = wkspace
+	if err := h.state.srcWorkspace.Init(ctx); err != nil {
+		return err
 	}
-
 	return nil
 }

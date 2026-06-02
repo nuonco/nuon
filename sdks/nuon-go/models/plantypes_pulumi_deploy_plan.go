@@ -55,6 +55,9 @@ type PlantypesPulumiDeployPlan struct {
 	// state
 	State *GithubComNuoncoNuonPkgTypesStateState `json:"state,omitempty"`
 
+	// update plans
+	UpdatePlans bool `json:"update_plans,omitempty"`
+
 	// Reuse workspace concept for state storage
 	WorkspaceID string `json:"workspace_id,omitempty"`
 }
