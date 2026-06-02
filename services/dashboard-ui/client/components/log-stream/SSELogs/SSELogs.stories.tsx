@@ -202,6 +202,7 @@ const mockLogStreamContext = {
   logs: mockLogs,
   logStreamId: 'lgsf8k2m4npq1rvx3wtz6yba7',
   isLoading: false,
+  isCatchingUp: false,
   error: null,
   connectionState: 'connected' as const,
 }
@@ -535,6 +536,7 @@ const StoryWithLogs = ({ logs }: { logs: TOTELLog[] }) => {
         logs,
         logStreamId: 'lgs-story',
         isLoading: false,
+        isCatchingUp: false,
         error: null,
         connectionState: 'disconnected' as const,
       }}
