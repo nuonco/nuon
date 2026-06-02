@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/aws/s3uploader"
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"go.temporal.io/sdk/temporal"
@@ -42,7 +43,11 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 	}
 
 	for i, stack := range stackConfig.CustomNestedStacks {
+		// Already uploaded (ContentsHash set, Contents cleared) — nothing to do.
 		if stack.Contents == "" {
+			if stack.ContentsHash != "" {
+				stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusReady
+			}
 			continue
 		}
 
@@ -52,11 +57,13 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 		s3Key := cloudformation.CustomNestedStackS3Key(stackConfig.OrgID, stackConfig.AppID, contentsHash, stack.TemplateURL)
 
 		if err := uploader.UploadBlob(ctx, []byte(stack.Contents), s3Key); err != nil {
+			stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusError
 			return fmt.Errorf("unable to upload custom nested stack template %q: %w", stack.Name, err)
 		}
 
 		stackConfig.CustomNestedStacks[i].ContentsHash = contentsHash
 		stackConfig.CustomNestedStacks[i].Contents = ""
+		stackConfig.CustomNestedStacks[i].Status = config.CustomNestedStackStatusReady
 	}
 
 	res = a.db.WithContext(ctx).
