@@ -394,6 +394,10 @@ func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
 	}
 	if opts != nil && opts.PlanInPath != "" {
 		upOpts = append(upOpts, optup.Plan(opts.PlanInPath))
+	} else {
+		// No saved plan: refresh against reality first so already-existing or
+		// drifted resources are adopted/reconciled instead of recreated.
+		upOpts = append(upOpts, optup.Refresh())
 	}
 	result, err := w.stack.Up(ctx, upOpts...)
 	<-done
