@@ -65,17 +65,29 @@ type AppAppSandboxConfig struct {
 	// public git vcs config
 	PublicGitVcsConfig *AppPublicGitVCSConfig `json:"public_git_vcs_config,omitempty"`
 
+	// pulumi config
+	PulumiConfig map[string]string `json:"pulumi_config,omitempty"`
+
+	// pulumi version
+	PulumiVersion string `json:"pulumi_version,omitempty"`
+
 	// references
 	References []string `json:"references"`
 
 	// refs
 	Refs []*RefsRef `json:"refs"`
 
+	// runtime
+	Runtime string `json:"runtime,omitempty"`
+
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// terraform version
 	TerraformVersion string `json:"terraform_version,omitempty"`
+
+	// type
+	Type string `json:"type,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`

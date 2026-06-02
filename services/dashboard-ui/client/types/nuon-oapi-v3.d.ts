@@ -3241,6 +3241,8 @@ export interface components {
       id?: string;
       /** @description takes a URL to a bash script ⤵  which will be `curl | bash`-ed on the VM. usually via user-data or equivalent. */
       init_script?: string;
+      /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
+      instance_type?: string;
       org_id?: string;
       updated_at?: string;
     };
@@ -3288,10 +3290,16 @@ export interface components {
       };
       org_id?: string;
       public_git_vcs_config?: components["schemas"]["app.PublicGitVCSConfig"];
+      pulumi_config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
+      runtime?: string;
       skip_noops?: boolean;
       terraform_version?: string;
+      type?: string;
       updated_at?: string;
       variables?: {
         [key: string]: string;
@@ -5855,6 +5863,15 @@ export interface components {
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
     };
+    "plantypes.PulumiBackend": {
+      config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
+      runtime: string;
+      stack_name: string;
+      workspace_id: string;
+    };
     "plantypes.PulumiBuildPlan": {
       labels?: {
         [key: string]: string;
@@ -5884,6 +5901,7 @@ export interface components {
     "plantypes.PulumiSandboxMode": {
       plan_contents?: string;
       plan_display_contents?: string;
+      workspace_id?: string;
     };
     "plantypes.SandboxMode": {
       enabled?: boolean;
@@ -5916,6 +5934,7 @@ export interface components {
       policies?: {
         [key: string]: string;
       };
+      pulumi_backend?: components["schemas"]["plantypes.PulumiBackend"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
       state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
       terraform_backend?: components["schemas"]["plantypes.TerraformBackend"];
@@ -6313,6 +6332,7 @@ export interface components {
       };
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
       init_script_url?: string;
+      instance_type?: string;
       type: components["schemas"]["app.AppRunnerType"];
     };
     "service.CreateAppSandboxConfigRequest": {
@@ -6328,9 +6348,15 @@ export interface components {
         [key: string]: string;
       };
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
+      pulumi_config?: {
+        [key: string]: string;
+      };
+      pulumi_version?: string;
       references?: string[];
+      runtime?: string;
       skip_noops?: boolean;
-      terraform_version: string;
+      terraform_version?: string;
+      type?: string;
       variables: {
         [key: string]: string;
       };

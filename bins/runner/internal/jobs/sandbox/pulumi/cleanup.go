@@ -12,9 +12,9 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		return nil
 	}
 
-	if h.state.arch != nil {
-		if err := h.state.arch.Cleanup(ctx); err != nil {
-			h.errRecorder.Record("unable to cleanup archive", err)
+	if h.state.srcWorkspace != nil {
+		if err := h.state.srcWorkspace.Cleanup(ctx); err != nil {
+			h.errRecorder.Record("unable to cleanup source workspace", err)
 		}
 	}
 

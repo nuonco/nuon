@@ -7,7 +7,10 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
+	"strconv"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -33,7 +36,7 @@ type PlantypesKubernetesSecretSync struct {
 	// name
 	Name string `json:"name,omitempty"`
 
-	// namespace
+	// v1 destination (single). Used when Targets is empty.
 	Namespace string `json:"namespace,omitempty"`
 
 	// secret arn
@@ -41,15 +44,96 @@ type PlantypesKubernetesSecretSync struct {
 
 	// the name of the secret from the config
 	SecretName string `json:"secret_name,omitempty"`
+
+	// v2 destinations: when len(Targets) > 0 the runner uses the v2 path and fans the shared source out across each
+	// target's namespaces. The v1 fields above are ignored in that case.
+	Targets []*PlantypesKubernetesSecretSyncTarget `json:"targets"`
 }
 
 // Validate validates this plantypes kubernetes secret sync
 func (m *PlantypesKubernetesSecretSync) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateTargets(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this plantypes kubernetes secret sync based on context it is used
+func (m *PlantypesKubernetesSecretSync) validateTargets(formats strfmt.Registry) error {
+	if swag.IsZero(m.Targets) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Targets); i++ {
+		if swag.IsZero(m.Targets[i]) { // not required
+			continue
+		}
+
+		if m.Targets[i] != nil {
+			if err := m.Targets[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("targets" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("targets" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+// ContextValidate validate this plantypes kubernetes secret sync based on the context it is used
 func (m *PlantypesKubernetesSecretSync) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateTargets(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *PlantypesKubernetesSecretSync) contextValidateTargets(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Targets); i++ {
+
+		if m.Targets[i] != nil {
+
+			if swag.IsZero(m.Targets[i]) { // not required
+				return nil
+			}
+
+			if err := m.Targets[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("targets" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("targets" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
