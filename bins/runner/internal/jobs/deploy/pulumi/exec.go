@@ -112,22 +112,24 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
-		planOutPath := filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
-		l.Info("executing pulumi preview", zap.String("plan_out", planOutPath))
-		result, err := ws.Preview(ctx, &pulumiworkspace.PreviewOpts{PlanOutPath: planOutPath})
+		previewOpts := &pulumiworkspace.PreviewOpts{}
+		if pulumiworkspace.UpdatePlansEnabled() {
+			previewOpts.PlanOutPath = filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
+		}
+		l.Info("executing pulumi preview")
+		result, err := ws.Preview(ctx, previewOpts)
 		if err != nil {
 			l.Error("pulumi preview errored", zap.Error(err))
 			h.writeErrorResult(ctx, "pulumi preview", err)
 			return fmt.Errorf("unable to execute pulumi preview: %w", err)
 		}
 
-		// Wrap the plan with the stack's encryption salt so the apply job can
-		// decrypt it even when running on a fresh stack (no prior state).
-		bundle, err := h.bundleUpdatePlan(ctx, ws, planOutPath)
-		if err != nil {
-			l.Warn("unable to bundle saved pulumi plan", zap.Error(err))
+		var bundle []byte
+		if previewOpts.PlanOutPath != "" {
+			if bundle, err = h.bundleUpdatePlan(ctx, ws, previewOpts.PlanOutPath); err != nil {
+				l.Warn("unable to bundle saved pulumi plan", zap.Error(err))
+			}
 		}
-		l.Info("saved update plan from preview, ready for apply job", zap.Int("bundle_bytes", len(bundle)))
 
 		if err := h.writePlanResult(ctx, result, bundle); err != nil {
 			h.errRecorder.Record("write job execution result", err)
@@ -168,7 +170,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			l.Info("pulumi destroy completed")
 		} else {
 			upOpts := &pulumiworkspace.UpOpts{}
-			if h.state.plan.ApplyPlanContents != "" {
+			if pulumiworkspace.UpdatePlansEnabled() && h.state.plan.ApplyPlanContents != "" {
 				planPath, err := h.materializeUpdatePlan(ctx, ws, h.state.plan.ApplyPlanContents)
 				if err != nil {
 					l.Warn("unable to materialize saved pulumi plan, falling back to fresh diff", zap.Error(err))
@@ -176,8 +178,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 					upOpts.PlanInPath = planPath
 					l.Info("applying update plan saved by preview job", zap.String("plan_path", planPath))
 				}
-			} else {
-				l.Info("no update plan from preview job, computing fresh diff at apply time")
 			}
 
 			l.Info("executing pulumi up")
