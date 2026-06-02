@@ -13,6 +13,10 @@ const mockRows: InstallRow[] = Array.from({ length: 3 }, (_, i) => ({
   region: <span>us-east-1</span>,
   statuses: <span>active</span>,
   platform: <span>AWS</span>,
+  envAccent:
+    i === 0
+      ? { value: 'production', color: 'error' as const, labelKey: 'env' }
+      : null,
 }))
 
 export const Default = () => (

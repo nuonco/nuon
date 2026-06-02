@@ -36,7 +36,7 @@ export const AppInstallsTableContainer = ({
 
   return (
     <AppInstallsTable
-      data={parseInstallsToTableData(result?.data ?? [], org.id, appId)}
+      data={parseInstallsToTableData(result?.data ?? [], org.id, appId, org)}
       isLoading={isLoading}
       emptyAction={<CreateInstallButton />}
       pagination={{ hasNext: result?.pagination?.hasNext ?? false, offset, limit: LIMIT }}

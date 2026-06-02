@@ -8,6 +8,7 @@ import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
+import { EnvAccentBadge } from '@/components/installs/EnvAccentBadge'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
@@ -15,9 +16,12 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { SubNav } from '@/components/navigation/SubNav'
+import { useEnvAccent } from '@/hooks/use-env-accent'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import type { TNavItem } from '@/types'
+import { cn } from '@/utils/classnames'
+import { ENV_ACCENT_BG } from '@/utils/env-accent-classes'
 
 import { PageSidebarProvider } from '@/providers/page-sidebar-provider'
 import { InstallProvider } from '@/providers/install-provider'
@@ -43,6 +47,7 @@ export const InstallLayout = () => {
 const InstallTemplate = () => {
   const { org } = useOrg()
   const { install } = useInstall()
+  const envAccent = useEnvAccent(install)
   const hasRunbooks = !!org?.features?.runbooks
 
   const navLinks: TNavItem[] = [
@@ -122,8 +127,20 @@ const InstallTemplate = () => {
   const isManagedByConfig =
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
+  const accentStripe = envAccent ? (
+    <div
+      aria-hidden
+      title={`${envAccent.labelKey}: ${envAccent.value}`}
+      className={cn(
+        'sticky top-0 z-10 h-1.5 w-full flex-none',
+        ENV_ACCENT_BG[envAccent.color],
+      )}
+    />
+  ) : null
+
   return (
     <PageLayout>
+      {accentStripe}
       {isChildRoute ? (
         <PageContent className="border-t" variant="row">
           <SubNav
@@ -143,10 +160,15 @@ const InstallTemplate = () => {
                   <Text variant="h3" weight="stronger" level={1}>
                     {install.name}
                   </Text>
+                  {envAccent && (
+                    <EnvAccentBadge size="md" accent={envAccent} />
+                  )}
                   {install.labels &&
-                    Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} />
-                    ))}
+                    Object.entries(install.labels)
+                      .filter(([key]) => key !== envAccent?.labelKey)
+                      .map(([key, value]) => (
+                        <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} />
+                      ))}
                 </div>
                 <ID>{install.id}</ID>
                 <div className="flex items-center gap-3">

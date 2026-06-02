@@ -8,8 +8,10 @@ import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
+import { EnvAccentBadge } from '@/components/installs/EnvAccentBadge'
 import { SimpleInstallStatuses } from '@/components/installs/InstallStatuses'
-import type { TInstall, TCloudPlatform } from '@/types'
+import type { TInstall, TCloudPlatform, TOrg } from '@/types'
+import { resolveEnvAccent, type TEnvAccent } from '@/utils/env-accent'
 
 export type InstallRow = {
   actionHref: string
@@ -19,12 +21,14 @@ export type InstallRow = {
   region?: ReactNode
   statuses: ReactNode
   platform: ReactNode
+  envAccent: TEnvAccent | null
 }
 
 export function parseInstallsToTableData(
   installs: TInstall[],
   orgId: string,
-  appId?: string
+  appId?: string,
+  org?: Pick<TOrg, 'env_accent_config'> | null,
 ): InstallRow[] {
   return installs.map((install) => ({
     actionHref: `/${orgId}/installs/${install.id}`,
@@ -32,6 +36,7 @@ export function parseInstallsToTableData(
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,
     installId: install.id,
+    envAccent: resolveEnvAccent(install, org),
     region: (
       <CloudRegion
         variant="subtext"
@@ -59,10 +64,13 @@ const columns: ColumnDef<InstallRow>[] = [
     header: 'Install name',
     cell: (info) => (
       <span>
-        <Text variant="body">
+        <Text variant="body" className="flex items-center gap-1.5">
           <Link href={info.row.original.nameHref}>
             {info.getValue() as string}
           </Link>
+          {info.row.original.envAccent && (
+            <EnvAccentBadge size="sm" accent={info.row.original.envAccent} />
+          )}
         </Text>
         <ID>{info.row.original.installId as string}</ID>
       </span>

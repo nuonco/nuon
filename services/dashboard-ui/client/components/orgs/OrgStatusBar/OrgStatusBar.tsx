@@ -7,8 +7,10 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Tooltip } from '@/components/common/Tooltip'
 import { Time } from '@/components/common/Time'
+import { EnvAccentBadge } from '@/components/installs/EnvAccentBadge'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { VCSConnectionsStatusIndicator } from '@/components/vcs-connections/VCSConnectionsStatusIndicator'
+import { resolveEnvAccent } from '@/utils/env-accent'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getStatusTheme } from '@/utils/status-utils'
 import type { TApp, TAppBranch, TAppConfig, TInstall, TInstallStack, TOrg, TRunnerHeartbeat, TWorkflow, TWorkflowStepApproval } from '@/types'
@@ -203,6 +205,13 @@ export const OrgStatusBar = ({
           <Text family="mono" variant="subtext">
             {install.name}
           </Text>
+
+          {(() => {
+            const envAccent = resolveEnvAccent(install, org)
+            return envAccent ? (
+              <EnvAccentBadge size="sm" accent={envAccent} />
+            ) : null
+          })()}
 
           <InstallStatuses
             install={install}

@@ -10,10 +10,12 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Table } from '@/components/common/Table'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { EnvAccentBadge } from '@/components/installs/EnvAccentBadge'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
 import { LabelBadge } from '@/components/common/LabelBadge'
-import type { TCloudPlatform, TInstall } from '@/types'
+import type { TCloudPlatform, TInstall, TOrg } from '@/types'
+import { resolveEnvAccent, type TEnvAccent } from '@/utils/env-accent'
 
 const InstallNameSkeleton = () => (
   <span className="block my-1">
@@ -68,6 +70,7 @@ export type InstallRow = {
   region?: ReactNode
   statuses: ReactNode
   platform: ReactNode
+  envAccent: TEnvAccent | null
 }
 
 function getCreatedBySubtitle(install: TInstall): { email: string; source: string } | undefined {
@@ -123,7 +126,8 @@ function ActivityCell({ install }: { install: TInstall }) {
 
 export function parseInstallsToTableData(
   installs: TInstall[],
-  orgId: string
+  orgId: string,
+  org?: Pick<TOrg, 'env_accent_config'> | null,
 ): InstallRow[] {
   return installs.map((install) => ({
     appHref: `/${install.org_id}/apps/${install.app_id}`,
@@ -131,6 +135,7 @@ export function parseInstallsToTableData(
     name: install.name,
     nameHref: `/${orgId}/installs/${install.id}`,
     installId: install.id,
+    envAccent: resolveEnvAccent(install, org),
     region: (
       <CloudRegion
         variant="subtext"
@@ -153,13 +158,16 @@ export function parseInstallsToTableData(
     ),
     labels: (() => {
       const lbls = install.labels
-      if (!lbls || Object.keys(lbls).length === 0) return null
+      const accent = resolveEnvAccent(install, org)
+      if ((!lbls || Object.keys(lbls).length === 0) && !accent) return null
+      const lblEntries = lbls ? Object.keys(lbls).sort() : []
       return (
         <span className="flex flex-wrap gap-1">
-          {Object.keys(lbls)
-            .sort()
+          {accent && <EnvAccentBadge size="sm" accent={accent} />}
+          {lblEntries
+            .filter((k) => k !== accent?.labelKey)
             .map((k) => (
-              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} />
+              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls![k]} />
             ))}
         </span>
       )
@@ -275,7 +283,7 @@ export const InstallsTable = ({
 }
 
 export const InstallsTableSkeleton = () => {
-  const skeletonData = Array.from({ length: 5 }, (_, i) => ({
+  const skeletonData: InstallRow[] = Array.from({ length: 5 }, () => ({
     appHref: '',
     appName: '',
     installId: '',
@@ -288,6 +296,7 @@ export const InstallsTableSkeleton = () => {
     activity: <Skeleton height="14px" width="80px" />,
     updatedAt: '',
     action: '',
+    envAccent: null,
   }))
 
   const skeletonColumns: ColumnDef<InstallRow>[] = [

@@ -18,6 +18,12 @@ const mockRows: InstallRow[] = Array.from({ length: 5 }, (_, i) => ({
   activity: <span className="text-sm text-foreground-muted">{i + 1}h ago</span>,
   updatedAt: new Date(Date.now() - (i + 1) * 60 * 60 * 1000).toISOString(),
   action: <Button size="sm" variant="ghost">Manage</Button>,
+  envAccent:
+    i === 0
+      ? { value: 'production', color: 'error', labelKey: 'env' }
+      : i === 1
+        ? { value: 'staging', color: 'warn', labelKey: 'env' }
+        : null,
 }))
 
 export const Default = () => (

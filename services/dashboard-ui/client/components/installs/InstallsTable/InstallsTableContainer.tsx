@@ -35,7 +35,7 @@ export const InstallsTableContainer = ({
 
   return (
     <InstallsTable
-      data={parseInstallsToTableData(result?.data ?? [], org.id)}
+      data={parseInstallsToTableData(result?.data ?? [], org.id, org)}
       isLoading={isLoading}
       emptyStateAction={<CreateInstallButton />}
       filterActions={
