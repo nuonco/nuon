@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -30,7 +31,7 @@ export const RunbookDetailLayout = () => {
         runbookId: runbookId!,
       }),
     enabled: !!org?.id && !!install?.id && !!runbookId,
-    refetchInterval: 20000,
+    refetchInterval: 10000,
   })
 
   const runbook = installRunbook?.runbook
@@ -43,7 +44,7 @@ export const RunbookDetailLayout = () => {
 
   const isIndexRoute = pathname === basePath || pathname === `${basePath}/`
 
-  if (!isLoading && isIndexRoute && runs.length === 0) {
+  if (!isLoading && isIndexRoute) {
     return <Navigate to={`${basePath}/readme`} replace />
   }
 
@@ -120,24 +121,22 @@ export const RunbookDetailLayout = () => {
           <div className="flex flex-wrap items-start gap-4 justify-between w-full">
             <HeadingGroup>
               <BackLink className="mb-4" />
-              <Text variant="h3" weight="strong">
-                {runbook?.name}
-              </Text>
-              <span className="flex flex-wrap items-center gap-4 mt-1">              
+              <span className="flex flex-wrap items-center gap-3">
+                <Text variant="h3" weight="strong">
+                  {runbook?.name}
+                </Text>
                 {runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
-                  <span className="flex flex-wrap gap-1">
+                  <span className="flex flex-wrap items-center gap-1">
                     {Object.keys(runbook.labels)
                       .sort()
                       .map((k) => (
-                        <Badge key={k} variant="code" size="sm" theme="neutral">
-                          {k}: {runbook.labels[k]}
-                        </Badge>
+                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" />
                       ))}
                   </span>
                 ) : null}
               </span>
               {runbook?.description ? (
-                <Text variant="subtext" theme="neutral">
+                <Text variant="subtext">
                   {runbook.description}
                 </Text>
               ) : null}
@@ -157,9 +156,6 @@ export const RunbookDetailLayout = () => {
           <TabNav
             basePath={basePath}
             tabs={[
-              ...(runs.length > 0
-                ? [{ path: '/', text: 'Latest run' }]
-                : []),
               { path: '/readme', text: 'Readme' },
               {
                 path: '/steps',
