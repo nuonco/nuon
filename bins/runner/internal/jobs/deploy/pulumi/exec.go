@@ -90,6 +90,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		Runtime:   plan.Runtime,
 		Config:    plan.Config,
 		EnvVars:   envVars,
+		Logger:    l,
 		StateBackend: &pulumiworkspace.StateBackend{
 			APIEndpoint: h.cfg.RunnerAPIURL,
 			WorkspaceID: plan.WorkspaceID,
