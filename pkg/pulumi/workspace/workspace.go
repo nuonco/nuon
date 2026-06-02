@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
@@ -164,9 +166,45 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	}, nil
 }
 
-// logProgressEvents drains engine events, logging a line per user resource so plan/apply progress is visible in the job log stream.
+// progressHeartbeat is how often in-flight resources re-log a "still <op>"
+// line so long-running creates (e.g. a GKE cluster) show liveness.
+const progressHeartbeat = 10 * time.Second
+
+type inflightResource struct {
+	op      string
+	name    string
+	typ     string
+	started time.Time
+}
+
+// logProgressEvents drains engine events, logging a line per user resource as
+// it starts and finishes, plus a periodic "still <op>" heartbeat for resources
+// that are still in flight — so plan/apply progress stays visible in the job
+// log stream even during long single-resource waits.
 func (w *Workspace) logProgressEvents(eventCh <-chan events.EngineEvent, done chan<- struct{}, collect func(events.EngineEvent)) {
 	defer close(done)
+
+	var mu sync.Mutex
+	inflight := map[string]inflightResource{}
+
+	ticker := time.NewTicker(progressHeartbeat)
+	defer ticker.Stop()
+	stopTicker := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-stopTicker:
+				return
+			case <-ticker.C:
+				mu.Lock()
+				for _, r := range inflight {
+					w.logger.Info(fmt.Sprintf("still %s %s (%s) [%s]", opGerund(r.op), r.name, r.typ, time.Since(r.started).Round(time.Second)))
+				}
+				mu.Unlock()
+			}
+		}
+	}()
+
 	for evt := range eventCh {
 		if collect != nil {
 			collect(evt)
@@ -177,15 +215,22 @@ func (w *Workspace) logProgressEvents(eventCh <-chan events.EngineEvent, done ch
 			if skipResourceLog(m.Type, string(m.Op)) {
 				continue
 			}
+			mu.Lock()
+			inflight[m.URN] = inflightResource{op: string(m.Op), name: extractResourceName(m.URN), typ: m.Type, started: time.Now()}
+			mu.Unlock()
 			w.logger.Info(fmt.Sprintf("%s %s (%s)", opGerund(string(m.Op)), extractResourceName(m.URN), m.Type))
 		case evt.ResOutputsEvent != nil:
 			m := evt.ResOutputsEvent.Metadata
 			if skipResourceLog(m.Type, string(m.Op)) {
 				continue
 			}
+			mu.Lock()
+			delete(inflight, m.URN)
+			mu.Unlock()
 			w.logger.Info(fmt.Sprintf("%s %s (%s)", opPast(string(m.Op)), extractResourceName(m.URN), m.Type))
 		}
 	}
+	close(stopTicker)
 }
 
 func skipResourceLog(typ, op string) bool {
