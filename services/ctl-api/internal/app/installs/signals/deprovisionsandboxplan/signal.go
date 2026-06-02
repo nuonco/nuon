@@ -9,6 +9,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -299,6 +300,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
+		JobType:   install.AppSandboxConfig.JobType(),
 		Op:        op,
 		Metadata: map[string]string{
 			"install_id":       install.ID,
@@ -370,6 +372,11 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		return errors.Wrap(err, "unable to get job")
 	}
 
+	approvalType := app.TerraformPlanApprovalType
+	if install.AppSandboxConfig.Type == config.AppSandboxTypePulumi {
+		approvalType = app.PulumiApprovalType
+	}
+
 	if err := workflowstepapprovalrequest.Dispatch(ctx, &workflowstepapprovalrequest.Signal{
 		InstallID:         install.ID,
 		InstallWorkflowID: s.FlowID,
@@ -377,7 +384,7 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		OwnerID:           installRun.ID,
 		OwnerType:         "install_sandbox_runs",
 		RunnerJobID:       jobResult.ID,
-		ApprovalType:      app.TerraformPlanApprovalType,
+		ApprovalType:      approvalType,
 	}); err != nil {
 		return errors.Wrap(err, "unable to create approval")
 	}

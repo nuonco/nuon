@@ -22,6 +22,9 @@ type PlantypesPulumiSandboxMode struct {
 
 	// plan display contents
 	PlanDisplayContents string `json:"plan_display_contents,omitempty"`
+
+	// workspace id
+	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
 // Validate validates this plantypes pulumi sandbox mode
