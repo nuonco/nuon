@@ -5,6 +5,7 @@ import { AdminActionGroup } from '../../shared/AdminActionGroup'
 import { AdminActionCard } from '../../shared/AdminActionCard'
 import { AdminMetadataPanel, AdminInfoCard } from '../../shared/AdminMetadata'
 import { TemporalLink } from '@/components/admin/TemporalLink'
+import { AdminEnvAccentsCard } from '../../shared/AdminEnvAccentsCard'
 import { AdminFeatureToggleCard } from '../../shared/AdminFeatureToggleCard'
 import { AdminRunnersCard } from '../../shared/AdminRunnersCard'
 import {
@@ -88,6 +89,7 @@ export const AdminOrgSection = ({
           action={() => adminRemoveSupportUsersFromOrg({ orgId, adminEmail })}
         />
         <AdminFeatureToggleCard org={org} orgId={orgId} />
+        <AdminEnvAccentsCard orgId={orgId} />
       </AdminActionGroup>
 
       <AdminActionGroup title="Infrastructure" icon="HardDrivesIcon" variant="warning">
