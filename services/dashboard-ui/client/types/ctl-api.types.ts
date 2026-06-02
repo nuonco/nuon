@@ -176,12 +176,15 @@ export type TCreateSlackChannelSubscriptionBody = Omit<
 // '@/components/match/types' directly to avoid a re-import dance.
 export type TSubscriptionMatch = import('@/components/match/types').SubscriptionMatch
 
+export type TInstallSandbox = components['schemas']['app.InstallSandbox']
+
 // install
-export type TInstall = components['schemas']['app.Install'] & {
+export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
   org_id?: string
+  sandbox?: TInstallSandbox
 }
 export type TInstallAzureAccount = components['schemas']['app.AzureAccount']
 export type TInstallAwsAccount = components['schemas']['app.AWSAccount']
@@ -289,11 +292,18 @@ export type TInstallDeployPlan = {
 }
 
 // sandbox
+export type TSandboxType = 'terraform' | 'pulumi'
+export type TPulumiRuntime = 'go' | 'nodejs' | 'python'
+
 export type TSandboxConfig = components['schemas']['app.AppSandboxConfig'] & {
   cloud_platform?: string
 }
-export type TSandboxRun = components['schemas']['app.InstallSandboxRun'] & {
+
+export type TCreateAppSandboxConfigBody = components['schemas']['service.CreateAppSandboxConfigRequest']
+
+export type TSandboxRun = Omit<components['schemas']['app.InstallSandboxRun'], 'app_sandbox_config'> & {
   org_id: string
+  app_sandbox_config?: TSandboxConfig
 }
 
 // vcs configs
