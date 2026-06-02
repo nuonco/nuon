@@ -28,6 +28,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		labelArgs        []string
 		noSelect         bool
 		deployDeps       bool
+		deployDependents bool
 		offset           int
 		limit            int
 		planOnly         bool
@@ -513,13 +514,14 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 		Long:  "Update an install input value",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.UpdateInput(cmd.Context(), id, inputs, PrintJSON)
+			return svc.UpdateInput(cmd.Context(), id, inputs, deployDependents, PrintJSON)
 		}),
 	}
 	updateInputCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to update")
 	updateInputCmd.MarkFlagRequired("install-id")
 	updateInputCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	updateInputCmd.MarkFlagRequired("inputs")
+	updateInputCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
 	installsCmds.AddCommand(updateInputCmd)
 
 	deprovisionInstallSandboxCmd := &cobra.Command{
