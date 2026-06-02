@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
+	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 type InstallStateGenerateSource string
@@ -49,6 +50,9 @@ type InstallState struct {
 	Archived bool `json:"archived" gorm:"default:false;not null" temporaljson:"archived,omitzero,omitempty"`
 
 	StaleAt generics.NullTime `json:"stale_at,omitzero" gorm:"type:timestamp;default:null" temporaljson:"stale_at,omitzero,omitempty"`
+
+	// StalePartials lists which state partials are stale and need regeneration on next read.
+	StalePartials []pkgstate.PartialName `json:"stale_partials,omitzero" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"stale_partials,omitzero,omitempty"`
 }
 
 func (i *InstallState) Indexes(db *gorm.DB) []migrations.Index {
