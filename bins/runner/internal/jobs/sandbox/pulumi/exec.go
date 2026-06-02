@@ -118,7 +118,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to download pulumi state: %w", err)
 	}
 
-	usePlans := backend.UpdatePlans || pulumiworkspace.UpdatePlansEnabled()
+	usePlans := backend.UpdatePlans
 
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:

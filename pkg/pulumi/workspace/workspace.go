@@ -283,11 +283,6 @@ func opPast(op string) string {
 	}
 }
 
-// UpdatePlansEnabled gates Pulumi saved update plans; off by default since the helm Release resource fails plan validation ("violates plan").
-func UpdatePlansEnabled() bool {
-	return strings.EqualFold(os.Getenv("NUON_PULUMI_UPDATE_PLANS"), "true")
-}
-
 // StateDir returns the path to the local state backend directory.
 func (w *Workspace) StateDir() string {
 	return filepath.Join(w.workDir, ".pulumi-state")
