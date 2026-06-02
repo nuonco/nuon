@@ -326,9 +326,11 @@ func ToInputState(inputs *app.InstallInputs, cfg *app.AppConfig, redacted bool) 
 	if redacted {
 		inputValues = inputs.ValuesRedacted
 	}
-	if len(inputValues) < 1 {
-		return nil
-	}
+	// NOTE: do not early-return when no values are set. An install can have an
+	// inputs record with zero values, in which case we must still materialize
+	// the app config's input defaults — otherwise this returns nil, `.nuon.inputs`
+	// is nil in the render context, and templates referencing
+	// `.nuon.inputs.inputs.*` panic with "nil pointer evaluating interface {}.inputs".
 	is := state.NewInputsState()
 	for _, inp := range cfg.InputConfig.AppInputs {
 		val, ok := inputValues[inp.Name]
