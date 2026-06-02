@@ -29,6 +29,14 @@ type AppOrg struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// EnvAccentConfig drives the install environment indicators in the
+	// dashboard (page stripe, status bar chip, table row border). Default
+	// mapping is seeded in BeforeCreate; operators tune it from the org
+	// settings page.
+	EnvAccentConfig struct {
+		AppEnvAccentConfig
+	} `json:"env_accent_config,omitempty"`
+
 	// features
 	Features TypesStringBoolMap `json:"features,omitempty"`
 
@@ -82,6 +90,10 @@ type AppOrg struct {
 func (m *AppOrg) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateEnvAccentConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateFeatures(formats); err != nil {
 		res = append(res, err)
 	}
@@ -109,6 +121,14 @@ func (m *AppOrg) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppOrg) validateEnvAccentConfig(formats strfmt.Registry) error {
+	if swag.IsZero(m.EnvAccentConfig) { // not required
+		return nil
+	}
+
 	return nil
 }
 
@@ -261,6 +281,10 @@ func (m *AppOrg) validateVcsConnections(formats strfmt.Registry) error {
 func (m *AppOrg) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateEnvAccentConfig(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateFeatures(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -288,6 +312,11 @@ func (m *AppOrg) ContextValidate(ctx context.Context, formats strfmt.Registry) e
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppOrg) contextValidateEnvAccentConfig(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 

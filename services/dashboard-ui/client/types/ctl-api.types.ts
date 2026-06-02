@@ -104,6 +104,8 @@ export type TBuild = TComponentBuild & { org_id: string }
 // org
 export type TOrg = components['schemas']['app.Org']
 export type TOrgInvite = components['schemas']['app.OrgInvite']
+export type TEnvAccentColor = components['schemas']['app.EnvAccentColor']
+export type TEnvAccentConfig = components['schemas']['app.EnvAccentConfig']
 export type TOrgStats = {
   install_names: string[]
   app_count: number
