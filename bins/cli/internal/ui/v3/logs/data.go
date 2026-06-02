@@ -19,7 +19,7 @@ func (m *model) getLogs() error {
 	m.loading = true
 	m.setMessage(fmt.Sprintf("[data] fetching logs cursor:%s", m.logsCursor), "info")
 	// get the next page of logs
-	logs, err := m.api.LogStreamReadLogs(m.ctx, m.logstream_id, m.logsCursor)
+	logs, err := m.api.LogStreamReadLogs(m.ctx, m.logstream_id, m.logsCursor, "")
 	if err != nil {
 		return err
 	}

@@ -34,7 +34,7 @@ func (m Model) fetchLogsCmd() tea.Msg {
 	}
 
 	// Fetch logs from the API
-	logs, err := m.api.LogStreamReadLogs(m.ctx, logStreamID, m.logsCursor)
+	logs, err := m.api.LogStreamReadLogs(m.ctx, logStreamID, m.logsCursor, "")
 	return logsFetchedMsg{logs: logs, logStream: logStream, err: err}
 }
 

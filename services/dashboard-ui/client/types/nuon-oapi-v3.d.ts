@@ -2308,6 +2308,7 @@ export interface paths {
   "/v1/runners/{runner_id}/force-shutdown": {
     /**
      * force shut down a runner
+     * @deprecated
      * @description Force shutdown a runner.
      *
      * This will result in jobs being lost/cancelled if they are in-flight.
@@ -2350,11 +2351,17 @@ export interface paths {
     post: operations["RestartRunnerInstall"];
   };
   "/v1/runners/{runner_id}/mng/shutdown": {
-    /** shut down an install runner's mng process. does not shut down the install runner process. */
+    /**
+     * shut down an install runner's mng process. does not shut down the install runner process.
+     * @deprecated
+     */
     post: operations["ShutDownRunnerMng"];
   };
   "/v1/runners/{runner_id}/mng/shutdown-vm": {
-    /** shut down an install runner VM */
+    /**
+     * shut down an install runner VM
+     * @deprecated
+     */
     post: operations["MngVMShutDown"];
   };
   "/v1/runners/{runner_id}/mng/update": {
@@ -3335,9 +3342,25 @@ export interface components {
       kubernetes_secret_namespace?: string;
       /** @description for syncing into kubernetes */
       kubernetes_sync?: boolean;
+      /**
+       * @description kubernetes sync v2: when present, the secret syncs to each of these targets (namespaces x name x key). The
+       * single-valued Kubernetes* fields above remain for backwards compatibility.
+       */
+      kubernetes_sync_targets?: components["schemas"]["app.AppSecretKubernetesSyncTarget"][];
       name?: string;
       org_id?: string;
       required?: boolean;
+      updated_at?: string;
+    };
+    "app.AppSecretKubernetesSyncTarget": {
+      app_secret_config_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      id?: string;
+      key?: string;
+      name?: string;
+      namespaces?: string[];
+      org_id?: string;
       updated_at?: string;
     };
     "app.AppSecretsConfig": {
@@ -5841,10 +5864,21 @@ export interface components {
       gcp_secret_name?: string;
       key_name?: string;
       name?: string;
+      /** @description v1 destination (single). Used when Targets is empty. */
       namespace?: string;
       secret_arn?: string;
       /** @description the name of the secret from the config */
       secret_name?: string;
+      /**
+       * @description v2 destinations: when len(Targets) > 0 the runner uses the v2 path and fans the shared source out across each
+       * target's namespaces. The v1 fields above are ignored in that case.
+       */
+      targets?: components["schemas"]["plantypes.KubernetesSecretSyncTarget"][];
+    };
+    "plantypes.KubernetesSecretSyncTarget": {
+      key?: string;
+      name?: string;
+      namespaces?: string[];
     };
     "plantypes.KustomizeBuildConfig": {
       /** @description EnableHelm enables Helm chart inflation during kustomize build */
@@ -5870,6 +5904,7 @@ export interface components {
       pulumi_version?: string;
       runtime: string;
       stack_name: string;
+      update_plans?: boolean;
       workspace_id: string;
     };
     "plantypes.PulumiBuildPlan": {
@@ -5895,6 +5930,7 @@ export interface components {
       runtime?: string;
       stack_name?: string;
       state?: components["schemas"]["github_com_nuonco_nuon_pkg_types_state.State"];
+      update_plans?: boolean;
       /** @description Reuse workspace concept for state storage */
       workspace_id?: string;
     };
@@ -6112,6 +6148,7 @@ export interface components {
       kubernetes_secret_name?: string;
       kubernetes_secret_namespace?: string;
       kubernetes_sync?: boolean;
+      kubernetes_sync_targets?: components["schemas"]["service.KubernetesSyncTarget"][];
       name: string;
       required?: boolean;
     };
@@ -6817,6 +6854,11 @@ export interface components {
     };
     "service.InstallPhoneHomeRequest": {
       [key: string]: unknown;
+    };
+    "service.KubernetesSyncTarget": {
+      key: string;
+      name: string;
+      namespaces: string[];
     };
     "service.KustomizeConfigRequest": {
       enable_helm?: boolean;
@@ -23939,6 +23981,7 @@ export interface operations {
   };
   /**
    * force shut down a runner
+   * @deprecated
    * @description Force shutdown a runner.
    *
    * This will result in jobs being lost/cancelled if they are in-flight.
@@ -24273,7 +24316,10 @@ export interface operations {
       };
     };
   };
-  /** shut down an install runner's mng process. does not shut down the install runner process. */
+  /**
+   * shut down an install runner's mng process. does not shut down the install runner process.
+   * @deprecated
+   */
   ShutDownRunnerMng: {
     parameters: {
       path: {
@@ -24326,7 +24372,10 @@ export interface operations {
       };
     };
   };
-  /** shut down an install runner VM */
+  /**
+   * shut down an install runner VM
+   * @deprecated
+   */
   MngVMShutDown: {
     parameters: {
       path: {

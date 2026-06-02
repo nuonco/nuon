@@ -19,25 +19,34 @@ func (c *client) GetLogStream(ctx context.Context, logStreamID string) (*models.
 	return resp.Payload, nil
 }
 
-func (c *client) LogStreamReadLogs(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, error) {
-	resp, err := c.genClient.Operations.LogStreamReadLogs(&operations.LogStreamReadLogsParams{
-		LogStreamID: logStreamId, XNuonAPIOffset: &offset},
-		c.getOrgIDAuthInfo(),
-	)
+func (c *client) LogStreamReadLogs(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, error) {
+	params := &operations.LogStreamReadLogsParams{
+		LogStreamID:    logStreamId,
+		XNuonAPIOffset: &offset,
+		Context:        ctx,
+	}
+	if order != "" {
+		params.Order = &order
+	}
+	resp, err := c.genClient.Operations.LogStreamReadLogs(params, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err
 	}
 	return resp.Payload, nil
 }
 
-func (c *client) LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, string, error) {
+func (c *client) LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, string, error) {
 	hr := newResponseHeaderReader(&operations.LogStreamReadLogsReader{})
 
-	resp, err := c.genClient.Operations.LogStreamReadLogs(&operations.LogStreamReadLogsParams{
+	params := &operations.LogStreamReadLogsParams{
 		LogStreamID:    logStreamId,
 		XNuonAPIOffset: &offset,
 		Context:        ctx,
-	}, c.getOrgIDAuthInfo(), hr.ClientOption())
+	}
+	if order != "" {
+		params.Order = &order
+	}
+	resp, err := c.genClient.Operations.LogStreamReadLogs(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, "", err
 	}

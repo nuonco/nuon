@@ -53,6 +53,7 @@ const mockLogStreamContext = {
   logs: [],
   logStreamId: 'log-stream-1',
   isLoading: false,
+  isCatchingUp: false,
   error: null,
   connectionState: 'connected' as const,
 }
