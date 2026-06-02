@@ -91,7 +91,7 @@ func (c *ConfigDir) getOperationRoles() (*config.OperationRolesConfig, error) {
 }
 
 func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
-	if c.Inputs == nil && len(c.InputsDir) < 1 && (len(c.InputGroupsDir) < 1 && len(c.InputsDir) < 1) {
+	if c.Inputs == nil && len(c.InputsDir) < 1 && len(c.InputGroupsDir) < 1 {
 		return nil, nil
 	}
 	if c.Inputs != nil && (len(c.InputsDir) > 0 || len(c.InputGroupsDir) > 0) {

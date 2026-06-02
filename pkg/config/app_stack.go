@@ -25,11 +25,17 @@ const (
 )
 
 type CustomNestedStack struct {
-	Name         string                  `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
-	TemplateURL  string                  `mapstructure:"template_url" toml:"template_url" json:"template_url" jsonschema:"required" features:"template"`
+	Name string `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
+	// Contents is the source of the nested template. It accepts a local file
+	// path (or any go-getter source); the `get` feature loads its contents
+	// in-place at parse time, and they are uploaded to the managed S3 bucket at
+	// sync time.
+	Contents string `mapstructure:"contents" toml:"contents" json:"contents,omitempty" features:"get"`
+	// TemplateURL is an optional pre-hosted URL for the nested template. Provide
+	// either contents or template_url.
+	TemplateURL  string                  `mapstructure:"template_url" toml:"template_url" json:"template_url,omitempty" features:"template"`
 	Index        int                     `mapstructure:"index" toml:"index" json:"index" jsonschema:"required"`
 	Parameters   map[string]string       `mapstructure:"parameters,omitempty" toml:"parameters" json:"parameters,omitempty"`
-	Contents     string                  `mapstructure:"-" toml:"-" json:"contents,omitempty" jsonschema:"-" features:"get"`
 	ContentsHash string                  `mapstructure:"-" toml:"-" json:"contents_hash,omitempty" jsonschema:"-"`
 	Status       CustomNestedStackStatus `mapstructure:"-" toml:"-" json:"status,omitempty" jsonschema:"-"`
 }
@@ -40,8 +46,11 @@ func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Unique name for this custom nested stack. Used as the CloudFormation logical ID and parameter group label.").
 		Example("k8s_namespaces").
 		Example("eks_access_entries").
-		Field("template_url").Short("nested stack template URL").Required().
-		Long("URL to the CloudFormation nested template. Parameters are extracted and hoisted into the parent stack.").
+		Field("contents").Short("nested stack template source").
+		Long("Local file path (or any go-getter source) to the CloudFormation nested template. The contents are loaded at sync time and uploaded to the managed S3 bucket. Provide either contents or template_url.").
+		Example("./cloudformation/rds-subnet/stack.yaml").
+		Field("template_url").Short("nested stack template URL").
+		Long("Optional pre-hosted URL to the CloudFormation nested template. Provide either contents or template_url. Parameters are extracted and hoisted into the parent stack.").
 		Example("https://nuon-artifacts.s3.us-west-2.amazonaws.com/templates/k8s-namespaces.yaml").
 		Field("index").Short("execution order index").Required().
 		Long("Determines the execution order of custom nested stacks (ascending). Each stack must have a unique index. Lower indices execute first.").
@@ -193,10 +202,10 @@ func (a *StackConfig) parse() error {
 				Err:         fmt.Errorf("custom_nested_stacks[%d]: name is required", i),
 			}
 		}
-		if stack.TemplateURL == "" {
+		if stack.Contents == "" && stack.TemplateURL == "" {
 			return ErrConfig{
-				Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
-				Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name),
+				Description: fmt.Sprintf("custom_nested_stacks[%d] (%s): contents or template_url is required", i, stack.Name),
+				Err:         fmt.Errorf("custom_nested_stacks[%d] (%s): contents or template_url is required", i, stack.Name),
 			}
 		}
 		for paramName, paramValue := range stack.Parameters {

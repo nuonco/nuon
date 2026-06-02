@@ -79,7 +79,7 @@ func TestStackConfig_Parse_MissingName(t *testing.T) {
 	assert.Contains(t, err.Error(), "name is required")
 }
 
-func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
+func TestStackConfig_Parse_MissingTemplateSource(t *testing.T) {
 	cfg := &StackConfig{
 		CustomNestedStacks: []CustomNestedStack{
 			{Name: "my_stack", Index: 0},
@@ -87,7 +87,21 @@ func TestStackConfig_Parse_MissingTemplateURL(t *testing.T) {
 	}
 	err := cfg.parse()
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "template_url is required")
+	assert.Contains(t, err.Error(), "contents or template_url is required")
+}
+
+func TestStackConfig_Parse_ContentsAccepted(t *testing.T) {
+	cfg := &StackConfig{
+		Type:                    "aws-cloudformation",
+		Name:                    "my-stack",
+		Description:             "test stack",
+		VPCNestedTemplateURL:    "https://s3.amazonaws.com/bucket/vpc.yaml",
+		RunnerNestedTemplateURL: "https://s3.amazonaws.com/bucket/runner.yaml",
+		CustomNestedStacks: []CustomNestedStack{
+			{Name: "my_stack", Contents: "./cloudformation/custom.yaml", Index: 0},
+		},
+	}
+	require.NoError(t, cfg.parse())
 }
 
 func TestStackConfig_Parse_NonS3URLAccepted(t *testing.T) {

@@ -59,11 +59,8 @@ func (c *CreateAppStackConfigRequest) Validate(v *validator.Validate) error {
 		if stack.Name == "" {
 			return fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
 		}
-		if stack.TemplateURL == "" {
-			return fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
-		}
 		if stack.Contents == "" {
-			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required when template_url is set", i, stack.Name)
+			return fmt.Errorf("custom_nested_stacks[%d] (%s): contents is required", i, stack.Name)
 		}
 	}
 	return nil

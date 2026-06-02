@@ -92,10 +92,14 @@ func ParseDir(ctx context.Context, parseCfg ParseConfig) (*config.AppConfig, err
 		}
 	}
 
-	// Copy TemplateURL to Contents for go-getter to fetch template content.
+	// Custom nested stack templates are loaded into Contents by the `get`
+	// feature. Prefer the explicit `contents` source; fall back to TemplateURL
+	// for backwards compatibility when only template_url is set.
 	if appCfg.Stack != nil {
 		for i := range appCfg.Stack.CustomNestedStacks {
-			appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
+			if appCfg.Stack.CustomNestedStacks[i].Contents == "" {
+				appCfg.Stack.CustomNestedStacks[i].Contents = appCfg.Stack.CustomNestedStacks[i].TemplateURL
+			}
 		}
 	}
 

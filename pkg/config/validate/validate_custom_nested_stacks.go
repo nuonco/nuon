@@ -33,8 +33,16 @@ func fetchTemplateOutputs(templateURL string) (map[string]struct{}, error) {
 		return nil, err
 	}
 
+	return parseTemplateOutputs(body, strings.HasSuffix(templateURL, ".json"))
+}
+
+// parseTemplateOutputs extracts the Outputs section from a CloudFormation
+// template body. YAML parsing also handles JSON (JSON is a subset of YAML), so
+// the asJSON hint is only used to pick the strict JSON parser when known.
+func parseTemplateOutputs(body []byte, asJSON bool) (map[string]struct{}, error) {
 	var tmpl cfnOutputsShape
-	if strings.HasSuffix(templateURL, ".json") {
+	var err error
+	if asJSON {
 		err = json.Unmarshal(body, &tmpl)
 	} else {
 		err = yaml.Unmarshal(body, &tmpl)
@@ -78,11 +86,18 @@ func ValidateCustomNestedStackOutputs(a *config.AppConfig) error {
 
 	var warnings []string
 	for _, stack := range sorted {
-		if stack.TemplateURL == "" {
+		// Prefer the loaded Contents (the `get` feature populates it from the
+		// contents source); fall back to fetching a pre-hosted template_url.
+		var outputs map[string]struct{}
+		var err error
+		switch {
+		case stack.Contents != "":
+			outputs, err = parseTemplateOutputs([]byte(stack.Contents), strings.HasSuffix(strings.ToLower(stack.TemplateURL), ".json"))
+		case stack.TemplateURL != "":
+			outputs, err = fetchTemplateOutputs(stack.TemplateURL)
+		default:
 			continue
 		}
-
-		outputs, err := fetchTemplateOutputs(stack.TemplateURL)
 		if err != nil {
 			continue
 		}
