@@ -3,6 +3,7 @@ import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Markdown } from '@/components/common/Markdown'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Text } from '@/components/common/Text'
+import { ReadmeWarnings } from '@/components/installs/ReadmeWarnings'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -50,14 +51,7 @@ export const Overview = () => {
 
       {readme?.readme ? (
         <div className="flex flex-col gap-4">
-          {readme.warnings?.map((warn, i) => (
-            <div
-              key={i}
-              className="p-3 rounded bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 text-sm"
-            >
-              {warn}
-            </div>
-          ))}
+          <ReadmeWarnings warnings={readme.warnings} />
           <Markdown content={readme.readme} mode="install" />
         </div>
       ) : (
