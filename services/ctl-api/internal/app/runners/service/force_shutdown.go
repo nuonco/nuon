@@ -33,6 +33,7 @@ type ForceShutdownRequest struct{}
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.EmptyResponse
 // @Router					/v1/runners/{runner_id}/force-shutdown [POST]
+// @Deprecated
 func (s *service) ForceShutDown(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
