@@ -63,6 +63,11 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
+	order := c.Query("order")
+	if order != "asc" && order != "desc" {
+		order = "asc"
+	}
+
 	logStream, err := client.GetLogStream(ctx, logStreamID)
 	if err != nil {
 		h.l.Error("failed to get log stream", zap.Error(err), zap.String("logStreamID", logStreamID))
@@ -107,7 +112,7 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		default:
 		}
 
-		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, currentOffset)
+		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, currentOffset, order)
 		if err != nil {
 			sendError("Polling failed")
 			select {
@@ -207,6 +212,11 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	var offset string
 	totalLogs := 0
 
+	order := c.Query("order")
+	if order != "asc" && order != "desc" {
+		order = "asc"
+	}
+
 	c.Writer.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	c.Writer.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="logs-%s.txt"`, logStreamID))
 	c.Writer.WriteHeader(http.StatusOK)
@@ -214,7 +224,7 @@ func (h *LogStreamsHandler) DownloadLogs(c *gin.Context) {
 	jobOutputOnly := c.Query("job_output") == "true"
 
 	for {
-		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset)
+		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset, order)
 		if err != nil {
 			h.l.Error("failed to read log stream logs", zap.Error(err), zap.String("logStreamID", logStreamID))
 			break
