@@ -20,7 +20,7 @@ import (
 type UpdateInstallInputsRequest struct {
 	Inputs           map[string]*string `json:"inputs" validate:"required,gte=1"`
 	Role             string             `json:"role"`
-	DeployDependents bool               `json:"deploy_dependents"`
+	DeployDependents *bool              `json:"deploy_dependents,omitempty" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 func (c *UpdateInstallInputsRequest) Validate(v *validator.Validate) error {
@@ -111,13 +111,17 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
+	// Default to deploying dependents when the field is omitted, preserving the
+	// historical always-deploy behavior; an explicit false is now respected.
+	deployDependents := req.DeployDependents == nil || *req.DeployDependents
+
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
 		*changedInputs,
 		changedInputValues,
 		req.Role,
-		req.DeployDependents,
+		deployDependents,
 	)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
