@@ -57,6 +57,12 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	var mgrOpts []workflowmanager.Option
 	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(3*time.Minute))
 
+	// don't continue-as-new mid-phase: it orphans the in-flight update and the
+	// successor run fails the signal while the work is still alive.
+	mgrOpts = append(mgrOpts, workflowmanager.WithDeferRestart(func() bool {
+		return h.validating || h.executing
+	}))
+
 	// Create a temporal metrics writer for workflow size reporting.
 	if h.mw != nil && h.v != nil {
 		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {
