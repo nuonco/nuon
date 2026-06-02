@@ -357,7 +357,7 @@ func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewRes
 		optpreview.Message("Nuon preview"),
 		optpreview.EventStreams(eventCh),
 	}
-	if opts != nil && opts.PlanOutPath != "" && UpdatePlansEnabled() {
+	if opts != nil && opts.PlanOutPath != "" {
 		previewOpts = append(previewOpts, optpreview.Plan(opts.PlanOutPath))
 	}
 	result, err := w.stack.Preview(ctx, previewOpts...)
@@ -397,7 +397,7 @@ func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
 		optup.Message("Nuon deploy"),
 		optup.EventStreams(eventCh),
 	}
-	if opts != nil && opts.PlanInPath != "" && UpdatePlansEnabled() {
+	if opts != nil && opts.PlanInPath != "" {
 		upOpts = append(upOpts, optup.Plan(opts.PlanInPath))
 	}
 	result, err := w.stack.Up(ctx, upOpts...)

@@ -34,6 +34,7 @@ type PulumiBackend struct {
 	Runtime       string            `json:"runtime" validate:"required"`
 	PulumiVersion string            `json:"pulumi_version,omitempty"`
 	Config        map[string]string `json:"config,omitempty"`
+	UpdatePlans   bool              `json:"update_plans,omitempty"`
 }
 
 type SandboxRunPlan struct {

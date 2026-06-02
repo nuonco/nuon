@@ -118,10 +118,12 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to download pulumi state: %w", err)
 	}
 
+	usePlans := backend.UpdatePlans || pulumiworkspace.UpdatePlansEnabled()
+
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
 		previewOpts := &pulumiworkspace.PreviewOpts{}
-		if pulumiworkspace.UpdatePlansEnabled() {
+		if usePlans {
 			previewOpts.PlanOutPath = filepath.Join(workDir, updatePlanFilename)
 		}
 		l.Info("executing pulumi preview")
@@ -175,7 +177,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			l.Info("pulumi destroy completed")
 		} else {
 			upOpts := &pulumiworkspace.UpOpts{}
-			if pulumiworkspace.UpdatePlansEnabled() && h.state.plan.ApplyPlanContents != "" {
+			if usePlans && h.state.plan.ApplyPlanContents != "" {
 				planPath, err := h.materializeUpdatePlan(ctx, ws, h.state.plan.ApplyPlanContents)
 				if err != nil {
 					l.Warn("unable to materialize saved pulumi plan, falling back to fresh diff", zap.Error(err))

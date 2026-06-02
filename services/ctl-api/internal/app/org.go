@@ -66,6 +66,7 @@ const (
 	OrgFeatureSlack                   OrgFeature = "slack"
 	OrgFeatureRunbooks                OrgFeature = "runbooks"
 	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
+	OrgFeaturePulumiUpdatePlans       OrgFeature = "pulumi-update-plans"
 )
 
 type Org struct {
@@ -185,6 +186,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureSlack:                   false,
 		OrgFeatureRunbooks:                false,
 		OrgFeaturePulumiSandbox:           false,
+		OrgFeaturePulumiUpdatePlans:       false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -235,6 +237,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureSlack,
 		OrgFeatureRunbooks,
 		OrgFeaturePulumiSandbox,
+		OrgFeaturePulumiUpdatePlans,
 	}
 }
 
@@ -265,6 +268,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureSlack:                   "Enable the Slack integration, including the Slack link in the dashboard sidebar and per-org Slack workspace/channel subscriptions",
 		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
 		OrgFeaturePulumiSandbox:           "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
+		OrgFeaturePulumiUpdatePlans:       "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
 	}
 }
 

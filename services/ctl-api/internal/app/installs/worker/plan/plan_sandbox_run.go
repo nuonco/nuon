@@ -184,12 +184,17 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 	}
 
 	if isPulumi {
+		updatePlans, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to check pulumi-update-plans feature")
+		}
 		plan.PulumiBackend = &plantypes.PulumiBackend{
 			WorkspaceID:   install.InstallSandbox.TerraformWorkspace.ID,
 			StackName:     fmt.Sprintf("install-%s", install.ID),
 			Runtime:       appCfg.SandboxConfig.Runtime,
 			PulumiVersion: appCfg.SandboxConfig.PulumiVersion,
 			Config:        pulumiCfg,
+			UpdatePlans:   updatePlans,
 		}
 	} else {
 		plan.TerraformBackend = &plantypes.TerraformBackend{
