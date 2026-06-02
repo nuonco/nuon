@@ -183,7 +183,7 @@ func (w *Workspace) logProgressEvents(eventCh <-chan events.EngineEvent, done ch
 			if skipResourceLog(m.Type, string(m.Op)) {
 				continue
 			}
-			w.logger.Info(fmt.Sprintf("%s %s", opPast(string(m.Op)), extractResourceName(m.URN)))
+			w.logger.Info(fmt.Sprintf("%s %s (%s)", opPast(string(m.Op)), extractResourceName(m.URN), m.Type))
 		}
 	}
 }
