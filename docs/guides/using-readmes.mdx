@@ -122,13 +122,13 @@ This app uses the {{.nuon.sandbox.type}} sandbox.
 
 ## Components
 
-{{ if .nuon.components.populated }}
+{{ if .nuon.components }}
 
 This install is running the following app components.
 
 | Name | Status |
 |------|------|
-{{- range $name, $component := .nuon.components.components }}
+{{- range $name, $component := .nuon.components }}
 | `{{ $name }}` | `{{ $component.status }}` |
 {{- end }}
 
@@ -142,6 +142,14 @@ __No app components are active in this install. You may need to run "Deploy Comp
 
 Because the dashboard polls the Control Plane, you will get near-real-time
 statuses for each component.
+
+<Note>
+	`.nuon.components` is a map keyed by component name — iterate it directly with
+	`range`. Each value carries that component's fields (`status`, `outputs`, etc.).
+	Unlike `.nuon.sandbox` or `.nuon.install_stack`, it has no top-level
+	`populated` flag, so use `{{ if .nuon.components }}` to check whether any
+	components exist.
+</Note>
 
 ## Tables
 
