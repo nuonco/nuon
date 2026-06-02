@@ -393,7 +393,7 @@ func LogStreamApp(
 func logStreamPlainText(ctx context.Context, api nuon.Client, logstreamID string) {
 	cursor := "0"
 	for {
-		logs, err := api.LogStreamReadLogs(ctx, logstreamID, cursor)
+		logs, err := api.LogStreamReadLogs(ctx, logstreamID, cursor, "")
 		if err != nil {
 			fmt.Printf("Error reading logs: %v\n", err)
 			return
