@@ -71,6 +71,10 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
+	// in-flight phase flags; manager defers continue-as-new while either is set.
+	validating bool
+	executing  bool
+
 	// finishedStatus and finishedErr capture the terminal outcome so the
 	// finishedHandler can return it to AwaitSignal callers without a DB round-trip.
 	finishedStatus app.Status
