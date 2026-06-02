@@ -22,7 +22,10 @@ type ValidateResponse struct{}
 
 func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *ValidateResponse, retErr error) {
 	l, _ := log.WorkflowLogger(ctx)
+	h.validating = true
 	defer func() {
+		h.validating = false
+
 		status := "success"
 		desc := ""
 		if retErr != nil {
