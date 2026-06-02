@@ -25,6 +25,7 @@ type AdminGracefulShutdownRequest struct{}
 // @Produce				json
 // @Success				201	{boolean}	true
 // @Router					/v1/runners/{runner_id}/graceful-shutdown [POST]
+// @Deprecated
 func (s *service) AdminGracefulShutDown(ctx *gin.Context) {
 	runnerID := ctx.Param("runner_id")
 
