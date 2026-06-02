@@ -69,7 +69,13 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
     const [isInvalid, setIsInvalid] = useState(false)
     const [hasBlurred, setHasBlurred] = useState(false)
     const [showValidationMessage, setShowValidationMessage] = useState(false)
-    const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null)
+    const [dropdownPosition, setDropdownPosition] = useState<{
+      top?: number
+      bottom?: number
+      left: number
+      width: number
+      maxHeight: number
+    } | null>(null)
     const [highlightedIndex, setHighlightedIndex] = useState(-1)
     const hiddenInputRef = useRef<HTMLInputElement>(null)
     const validationInputRef = useRef<HTMLInputElement>(null)
@@ -88,15 +94,29 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
       lg: 'px-4 py-3 text-base',
     }
 
+    const computeDropdownPosition = () => {
+      if (!buttonRef.current) return null
+      const rect = buttonRef.current.getBoundingClientRect()
+      const margin = 8
+      const desiredMax = 288 // matches max-h-72
+      const spaceBelow = window.innerHeight - rect.bottom - margin
+      const spaceAbove = rect.top - margin
+      const openUpward = spaceBelow < desiredMax && spaceAbove > spaceBelow
+      const available = Math.max(120, openUpward ? spaceAbove : spaceBelow)
+      return {
+        top: openUpward ? undefined : rect.bottom + 4,
+        bottom: openUpward ? window.innerHeight - rect.top + 4 : undefined,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.min(desiredMax, available),
+      }
+    }
+
     const handleToggle = () => {
       if (disabled) return
-      if (!isOpen && buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect()
-        setDropdownPosition({
-          top: rect.bottom + 4,
-          left: rect.left,
-          width: rect.width,
-        })
+      if (!isOpen) {
+        const pos = computeDropdownPosition()
+        if (pos) setDropdownPosition(pos)
       }
       setIsOpen(prev => !prev)
     }
@@ -213,14 +233,8 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
 
     const openDropdown = () => {
       if (disabled || isOpen) return
-      if (buttonRef.current) {
-        const rect = buttonRef.current.getBoundingClientRect()
-        setDropdownPosition({
-          top: rect.bottom + 4,
-          left: rect.left,
-          width: rect.width,
-        })
-      }
+      const pos = computeDropdownPosition()
+      if (pos) setDropdownPosition(pos)
       const currentIdx = currentValue
         ? filteredOptions.findIndex(o => o.value === currentValue.value)
         : -1
@@ -378,6 +392,7 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             style={{
               position: 'fixed',
               top: dropdownPosition.top,
+              bottom: dropdownPosition.bottom,
               left: dropdownPosition.left,
               width: dropdownPosition.width,
               zIndex: 9999,
@@ -386,7 +401,8 @@ export const Select = forwardRef<HTMLInputElement, ISelect>(
             <TransitionDiv
               isVisible={isOpen}
               role="listbox"
-              className="select-options bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 max-h-72 overflow-x-hidden overflow-y-auto"
+              style={{ maxHeight: dropdownPosition.maxHeight }}
+              className="select-options bg-cool-grey-100 dark:bg-dark-grey-800 shadow-sm border rounded py-1 px-2 overflow-x-hidden overflow-y-auto"
             >
               <div className="flex flex-col gap-1">
                 {searchable && (
