@@ -8,7 +8,7 @@ _June 1, 2026_
 
 ## Runbooks
 
-Runbooks let you define a named, ordered sequence of steps and run it against an install on demand: version upgrades, database migrations, recovery procedures, and other multi-step operations that used to be run by hand.
+Operational procedures shouldn't live in someone's head or a stale wiki page — they should run. Runbooks let you define a named, ordered sequence of steps — the on-call restart, a version upgrade, a database migration, a recovery procedure — and run it against an install on demand, instead of translating prose into commands by hand at the worst possible hour.
 
 Define runbooks as TOML files in a `runbooks/` directory in your app config. Each step is either a **deploy** (deploy a component, optionally with its dependencies) or an **action** (run an existing action, or an inline ad-hoc command):
 
