@@ -113,8 +113,10 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	envVars["PULUMI_SKIP_UPDATE_CHECK"] = "true"
 	// Required by the Pulumi CLI to accept --save-plan / --plan in this version.
 	envVars["PULUMI_EXPERIMENTAL"] = "true"
-	// Shared across jobs (sibling of the per-job workspaces, same disk volume): a per-job cache recompiled the huge pulumi-gcp SDK on every preview and apply.
-	goBuildCache := filepath.Join(filepath.Dir(opts.WorkDir), ".nuon-pulumi-go-cache")
+	// Fixed shared path so every job reuses the compiled pulumi-gcp SDK. Deriving
+	// from WorkDir broke this for component deploys (their WorkDir is a per-job
+	// temp dir), forcing a full recompile on every preview and apply.
+	goBuildCache := filepath.Join(os.TempDir(), "nuon-pulumi-go-cache")
 	if err := os.MkdirAll(goBuildCache, 0755); err != nil {
 		return nil, fmt.Errorf("unable to create go build cache dir: %w", err)
 	}
