@@ -23,48 +23,30 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 
 	h.state = &handlerState{}
 
-	l.Info("fetching sandbox pulumi job plan")
+	l.Info("fetching pulumi sandbox job plan")
 	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job plan")
 	}
 
-	var plan plantypes.DeployPlan
+	var plan plantypes.SandboxRunPlan
 	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return errors.Wrap(err, "unable to parse deploy plan")
+		return errors.Wrap(err, "unable to parse sandbox run plan")
 	}
 	h.state.plan = &plan
 
-	if plan.PulumiDeployPlan == nil {
-		return errors.New("deploy plan does not contain a pulumi deploy plan")
+	if plan.PulumiBackend == nil {
+		return errors.New("sandbox run plan does not contain a pulumi backend")
 	}
 
 	h.state.auth = &pkgplantypes.PlanAuth{
-		AWSAuth:   plan.PulumiDeployPlan.AWSAuth,
-		AzureAuth: plan.PulumiDeployPlan.AzureAuth,
-		GCPAuth:   plan.PulumiDeployPlan.GCPAuth,
-	}
-
-	l.Info("fetching app config")
-	appCfg, err := h.apiClient.GetAppConfig(ctx, plan.AppID, plan.AppConfigID)
-	if err != nil {
-		return errors.Wrap(err, "unable to get app config")
-	}
-
-	l.Info("fetching pulumi config")
-	for _, cfg := range appCfg.ComponentConfigConnections {
-		if cfg.ComponentID != plan.ComponentID {
-			continue
-		}
-		h.state.pulumiCfg = cfg.Pulumi
-	}
-	if h.state.pulumiCfg == nil {
-		return errors.New("unable to find pulumi config")
+		AWSAuth:   plan.AWSAuth,
+		AzureAuth: plan.AzureAuth,
+		GCPAuth:   plan.GCPAuth,
 	}
 
 	h.state.jobID = job.ID
 	h.state.jobExecutionID = jobExecution.ID
-
 	h.state.timeout = time.Duration(job.ExecutionTimeout)
 	l.Info("setting sandbox pulumi operation timeout", zap.String("duration", h.state.timeout.String()))
 

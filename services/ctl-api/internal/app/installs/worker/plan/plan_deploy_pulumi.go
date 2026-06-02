@@ -97,6 +97,11 @@ func (p *Planner) createPulumiDeployPlan(
 		l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
 	}
 
+	updatePlans, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check pulumi-update-plans feature")
+	}
+
 	return &plantypes.PulumiDeployPlan{
 		Config:        configMap,
 		EnvVars:       envVars,
@@ -110,6 +115,7 @@ func (p *Planner) createPulumiDeployPlan(
 		ClusterInfo:   clusterInfo,
 		State:         state,
 		Destroy:       installDeploy.Type == app.InstallDeployTypeTeardown,
+		UpdatePlans:   updatePlans,
 	}, nil
 }
 

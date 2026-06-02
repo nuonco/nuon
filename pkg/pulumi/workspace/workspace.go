@@ -9,14 +9,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/pulumi/pulumi/sdk/v3/go/auto"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/events"
+	"github.com/pulumi/pulumi/sdk/v3/go/auto/optdestroy"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optpreview"
 	"github.com/pulumi/pulumi/sdk/v3/go/auto/optup"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/apitype"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/tokens"
 	"github.com/pulumi/pulumi/sdk/v3/go/common/workspace"
+	"go.uber.org/zap"
 )
 
 // StateBackend configures the state backend for Pulumi.
@@ -35,6 +39,7 @@ type Options struct {
 	Config       map[string]string
 	EnvVars      map[string]string
 	StateBackend *StateBackend
+	Logger       *zap.Logger
 }
 
 // ResourceChange represents a single resource change in a preview, structured
@@ -88,6 +93,7 @@ type Workspace struct {
 	stack   auto.Stack
 	workDir string
 	opts    *Options
+	logger  *zap.Logger
 }
 
 // New creates a new Pulumi workspace with a local file backend for state.
@@ -107,9 +113,16 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 	envVars["PULUMI_SKIP_UPDATE_CHECK"] = "true"
 	// Required by the Pulumi CLI to accept --save-plan / --plan in this version.
 	envVars["PULUMI_EXPERIMENTAL"] = "true"
-	// Isolate Go build cache per workspace to prevent stale cache entries
-	// from referencing cleaned-up temp directories of previous jobs.
-	envVars["GOCACHE"] = filepath.Join(opts.WorkDir, ".go-cache")
+	// Fixed shared path so every job reuses the compiled pulumi-gcp SDK. Deriving
+	// from WorkDir broke this for component deploys (their WorkDir is a per-job
+	// temp dir), forcing a full recompile on every preview and apply.
+	goBuildCache := filepath.Join(os.TempDir(), "nuon-pulumi-go-cache")
+	if err := os.MkdirAll(goBuildCache, 0755); err != nil {
+		return nil, fmt.Errorf("unable to create go build cache dir: %w", err)
+	}
+	if _, ok := envVars["GOCACHE"]; !ok {
+		envVars["GOCACHE"] = goBuildCache
+	}
 
 	projectName := "nuon-project"
 	pulumiYamlPath := filepath.Join(opts.WorkDir, "Pulumi.yaml")
@@ -142,11 +155,134 @@ func New(ctx context.Context, opts *Options) (*Workspace, error) {
 		}
 	}
 
+	logger := opts.Logger
+	if logger == nil {
+		logger = zap.NewNop()
+	}
+
 	return &Workspace{
 		stack:   stack,
 		workDir: opts.WorkDir,
 		opts:    opts,
+		logger:  logger,
 	}, nil
+}
+
+// progressHeartbeat is how often in-flight resources re-log a "still <op>"
+// line so long-running creates (e.g. a GKE cluster) show liveness.
+const progressHeartbeat = 10 * time.Second
+
+type inflightResource struct {
+	op      string
+	name    string
+	typ     string
+	started time.Time
+}
+
+// logProgressEvents drains engine events, logging a line per user resource as
+// it starts and finishes, plus a periodic "still <op>" heartbeat for resources
+// that are still in flight — so plan/apply progress stays visible in the job
+// log stream even during long single-resource waits.
+func (w *Workspace) logProgressEvents(eventCh <-chan events.EngineEvent, done chan<- struct{}, collect func(events.EngineEvent)) {
+	defer close(done)
+
+	var mu sync.Mutex
+	inflight := map[string]inflightResource{}
+
+	ticker := time.NewTicker(progressHeartbeat)
+	defer ticker.Stop()
+	stopTicker := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-stopTicker:
+				return
+			case <-ticker.C:
+				mu.Lock()
+				for _, r := range inflight {
+					w.logger.Info(fmt.Sprintf("still %s %s (%s) [%s]", opGerund(r.op), r.name, r.typ, time.Since(r.started).Round(time.Second)))
+				}
+				mu.Unlock()
+			}
+		}
+	}()
+
+	for evt := range eventCh {
+		if collect != nil {
+			collect(evt)
+		}
+		switch {
+		case evt.ResourcePreEvent != nil:
+			m := evt.ResourcePreEvent.Metadata
+			if skipResourceLog(m.Type, string(m.Op)) {
+				continue
+			}
+			mu.Lock()
+			inflight[m.URN] = inflightResource{op: string(m.Op), name: extractResourceName(m.URN), typ: m.Type, started: time.Now()}
+			mu.Unlock()
+			w.logger.Info(fmt.Sprintf("%s %s (%s)", opGerund(string(m.Op)), extractResourceName(m.URN), m.Type))
+		case evt.ResOutputsEvent != nil:
+			m := evt.ResOutputsEvent.Metadata
+			if skipResourceLog(m.Type, string(m.Op)) {
+				continue
+			}
+			mu.Lock()
+			delete(inflight, m.URN)
+			mu.Unlock()
+			w.logger.Info(fmt.Sprintf("%s %s (%s)", opPast(string(m.Op)), extractResourceName(m.URN), m.Type))
+		}
+	}
+	close(stopTicker)
+}
+
+func skipResourceLog(typ, op string) bool {
+	if typ == "pulumi:pulumi:Stack" || strings.HasPrefix(typ, "pulumi:providers:") {
+		return true
+	}
+	// "same" means no change — don't spam the log with unchanged resources.
+	return op == "same"
+}
+
+func opGerund(op string) string {
+	switch op {
+	case "create", "create-replacement":
+		return "creating"
+	case "update":
+		return "updating"
+	case "delete", "delete-replaced":
+		return "deleting"
+	case "replace":
+		return "replacing"
+	case "refresh":
+		return "refreshing"
+	case "import", "import-replacement":
+		return "importing"
+	case "read":
+		return "reading"
+	default:
+		return op
+	}
+}
+
+func opPast(op string) string {
+	switch op {
+	case "create", "create-replacement":
+		return "created"
+	case "update":
+		return "updated"
+	case "delete", "delete-replaced":
+		return "deleted"
+	case "replace":
+		return "replaced"
+	case "refresh":
+		return "refreshed"
+	case "import", "import-replacement":
+		return "imported"
+	case "read":
+		return "read"
+	default:
+		return op + " done"
+	}
 }
 
 // StateDir returns the path to the local state backend directory.
@@ -178,42 +314,41 @@ func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewRes
 	var diagnostics []string
 	done := make(chan struct{})
 
-	go func() {
-		defer close(done)
-		for evt := range eventCh {
-			if evt.ResourcePreEvent != nil {
-				meta := evt.ResourcePreEvent.Metadata
-				if meta.Type == "pulumi:pulumi:Stack" || strings.HasPrefix(meta.Type, "pulumi:providers:") {
-					continue
-				}
-				rc := ResourceChange{
-					URN:          meta.URN,
-					Type:         meta.Type,
-					Name:         extractResourceName(meta.URN),
-					Action:       string(meta.Op),
-					Diffs:        meta.Diffs,
-					DetailedDiff: meta.DetailedDiff,
-					Provider:     meta.Provider,
-				}
-				if meta.Old != nil {
-					rc.OldInputs = meta.Old.Inputs
-				}
-				if meta.New != nil {
-					rc.NewInputs = meta.New.Inputs
-				}
-				resourceChanges = append(resourceChanges, rc)
+	collect := func(evt events.EngineEvent) {
+		if evt.ResourcePreEvent != nil {
+			meta := evt.ResourcePreEvent.Metadata
+			if meta.Type == "pulumi:pulumi:Stack" || strings.HasPrefix(meta.Type, "pulumi:providers:") {
+				return
 			}
-			if evt.DiagnosticEvent != nil {
-				sev := evt.DiagnosticEvent.Severity
-				if sev == "warning" || sev == "error" {
-					msg := strings.TrimSpace(evt.DiagnosticEvent.Message)
-					if msg != "" {
-						diagnostics = append(diagnostics, msg)
-					}
+			rc := ResourceChange{
+				URN:          meta.URN,
+				Type:         meta.Type,
+				Name:         extractResourceName(meta.URN),
+				Action:       string(meta.Op),
+				Diffs:        meta.Diffs,
+				DetailedDiff: meta.DetailedDiff,
+				Provider:     meta.Provider,
+			}
+			if meta.Old != nil {
+				rc.OldInputs = meta.Old.Inputs
+			}
+			if meta.New != nil {
+				rc.NewInputs = meta.New.Inputs
+			}
+			resourceChanges = append(resourceChanges, rc)
+		}
+		if evt.DiagnosticEvent != nil {
+			sev := evt.DiagnosticEvent.Severity
+			if sev == "warning" || sev == "error" {
+				msg := strings.TrimSpace(evt.DiagnosticEvent.Message)
+				if msg != "" {
+					diagnostics = append(diagnostics, msg)
 				}
 			}
 		}
-	}()
+	}
+
+	go w.logProgressEvents(eventCh, done, collect)
 
 	previewOpts := []optpreview.Option{
 		optpreview.Message("Nuon preview"),
@@ -251,13 +386,23 @@ func (w *Workspace) Preview(ctx context.Context, opts *PreviewOpts) (*PreviewRes
 // Pulumi applies that previously-saved update plan instead of computing a
 // fresh diff — faster, and refuses to apply if reality has drifted.
 func (w *Workspace) Up(ctx context.Context, opts *UpOpts) (*UpResult, error) {
+	eventCh := make(chan events.EngineEvent, 100)
+	done := make(chan struct{})
+	go w.logProgressEvents(eventCh, done, nil)
+
 	upOpts := []optup.Option{
 		optup.Message("Nuon deploy"),
+		optup.EventStreams(eventCh),
 	}
 	if opts != nil && opts.PlanInPath != "" {
 		upOpts = append(upOpts, optup.Plan(opts.PlanInPath))
+	} else {
+		// No saved plan: refresh against reality first so already-existing or
+		// drifted resources are adopted/reconciled instead of recreated.
+		upOpts = append(upOpts, optup.Refresh())
 	}
 	result, err := w.stack.Up(ctx, upOpts...)
+	<-done
 	if err != nil {
 		return nil, fmt.Errorf("pulumi up failed: %w", err)
 	}
@@ -329,7 +474,12 @@ func (w *Workspace) DestroyPreview(ctx context.Context) (*PreviewResult, error) 
 
 // Destroy runs `pulumi destroy`.
 func (w *Workspace) Destroy(ctx context.Context) error {
-	_, err := w.stack.Destroy(ctx)
+	eventCh := make(chan events.EngineEvent, 100)
+	done := make(chan struct{})
+	go w.logProgressEvents(eventCh, done, nil)
+
+	_, err := w.stack.Destroy(ctx, optdestroy.EventStreams(eventCh))
+	<-done
 	if err != nil {
 		return fmt.Errorf("pulumi destroy failed: %w", err)
 	}

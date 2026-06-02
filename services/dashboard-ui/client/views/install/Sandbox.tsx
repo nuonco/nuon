@@ -45,6 +45,7 @@ export const Sandbox = () => {
   })
 
   const sandboxConfig = configResult?.sandbox
+  const isPulumi = sandboxConfig?.type === 'pulumi'
 
   const latestSandboxRunId = install?.install_sandbox_runs?.at(0)?.id
   const driftedObject = install?.drifted_objects?.find(
@@ -106,7 +107,9 @@ export const Sandbox = () => {
               <SandboxConfigCardSkeleton />
             )}
 
-            <TerraformWorkspaceCard />
+            <TerraformWorkspaceCard
+              componentType={isPulumi ? 'pulumi' : 'terraform_module'}
+            />
           </div>
 
           <div className="hidden @5xl:flex flex-col @5xl:col-span-4 gap-4 min-w-0">

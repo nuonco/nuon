@@ -34,6 +34,7 @@ func (w *Workflows) executeSandboxPlan(ctx workflow.Context, install *app.Instal
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   sandboxRun.ID,
+		JobType:   install.AppSandboxConfig.JobType(),
 		Op:        op,
 		Metadata: map[string]string{
 			"install_id":       install.ID,
