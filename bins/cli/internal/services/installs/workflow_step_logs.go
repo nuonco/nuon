@@ -106,7 +106,7 @@ func (s *Service) WorkflowStepLogs(ctx context.Context, installID, workflowID, s
 	}
 
 	if asJSON {
-		logRecords, err := s.api.LogStreamReadLogs(ctx, logStreamID, "")
+		logRecords, err := s.api.LogStreamReadLogs(ctx, logStreamID, "", "")
 		if err != nil {
 			return view.Error(err)
 		}
@@ -142,7 +142,7 @@ func (s *Service) streamStepLogs(ctx context.Context, logStreamID string, opts W
 	offset := ""
 	printed := 0
 	for {
-		logRecords, nextOffset, err := s.api.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset)
+		logRecords, nextOffset, err := s.api.LogStreamReadLogsWithNextOffset(ctx, logStreamID, offset, "")
 		if err != nil {
 			return ui.PrintError(err)
 		}

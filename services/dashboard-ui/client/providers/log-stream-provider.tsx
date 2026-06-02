@@ -9,6 +9,7 @@ export type LogStreamContextValue = {
   logs: TOTELLog[]
   logStreamId: string
   isLoading: boolean
+  isCatchingUp: boolean
   error: TAPIError | null
   connectionState: ConnectionState
 }
@@ -23,116 +24,23 @@ export function LogStreamProvider({
   logStreamId?: string
 }) {
   const { org } = useOrg()
+
   const [logs, setLogs] = useState<TOTELLog[]>([])
   const [connectionState, setConnectionState] = useState<ConnectionState>('disconnected')
   const [error, setError] = useState<TAPIError | null>(null)
   const [isCatchingUp, setIsCatchingUp] = useState(false)
-  const [reconnectAttempt, setReconnectAttempt] = useState(0)
 
+  const seenIdsRef = useRef(new Set<string>())
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const isCatchingUpRef = useRef(false)
-  const catchUpBufferRef = useRef<TOTELLog[]>([])
   const isCompleteRef = useRef(false)
+  const reconnectAttemptRef = useRef(0)
+  const connStateRef = useRef<ConnectionState>('disconnected')
 
-  const connectSSE = () => {
-    if (!logStreamId || !org?.id || eventSourceRef.current) return
-
-    setConnectionState('connecting')
-    setError(null)
-
-    const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse`
-    const eventSource = new EventSource(url)
-    eventSourceRef.current = eventSource
-
-    eventSource.onmessage = (event) => {
-      try {
-        const newLogs: TOTELLog[] = JSON.parse(event.data)
-        if (newLogs.length > 0) {
-          if (isCatchingUpRef.current) {
-            catchUpBufferRef.current.push(...newLogs)
-          } else {
-            setLogs(prev => {
-              const logMap = new Map(prev.map(log => [log.id, log]))
-              newLogs.forEach(log => logMap.set(log.id, log))
-              return Array.from(logMap.values())
-            })
-          }
-        }
-        setConnectionState('connected')
-        setReconnectAttempt(0)
-      } catch {
-        setError({
-          error: 'Failed to parse log data',
-          description: 'The log data received from the server could not be parsed as valid JSON',
-          user_error: false,
-        })
-      }
-    }
-
-    eventSource.addEventListener('status', (event: MessageEvent) => {
-      if (event.data === 'catching-up') {
-        isCatchingUpRef.current = true
-        setIsCatchingUp(true)
-        catchUpBufferRef.current = []
-      } else if (event.data === 'live') {
-        const buffered = catchUpBufferRef.current
-        catchUpBufferRef.current = []
-        isCatchingUpRef.current = false
-        setIsCatchingUp(false)
-        if (buffered.length > 0) {
-          setLogs(prev => {
-            const logMap = new Map(prev.map(log => [log.id, log]))
-            buffered.forEach(log => logMap.set(log.id, log))
-            return Array.from(logMap.values())
-          })
-        }
-      } else if (event.data === 'complete') {
-        isCompleteRef.current = true
-        eventSource.close()
-        eventSourceRef.current = null
-        setConnectionState('disconnected')
-      }
-    })
-
-    eventSource.addEventListener('error', (event: MessageEvent) => {
-      try {
-        const errorData = JSON.parse(event.data)
-        setError({
-          error: errorData.error || 'Server error occurred',
-          description: errorData.description || 'An error was received from the log streaming server',
-          user_error: errorData.user_error || false,
-          meta: errorData.meta,
-        })
-      } catch {
-        setError({
-          error: 'Server error occurred',
-          description: 'Failed to parse error message from the log streaming server',
-          user_error: false,
-        })
-      }
-    })
-
-    eventSource.onerror = () => {
-      eventSource.close()
-      eventSourceRef.current = null
-
-      if (isCompleteRef.current) return
-
-      setConnectionState('reconnecting')
-      const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttempt), 30000)
-      setReconnectAttempt(prev => prev + 1)
-
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectSSE()
-      }, backoffDelay)
-    }
-
-    eventSource.onopen = () => {
-      setConnectionState('connected')
-      setError(null)
-      setReconnectAttempt(0)
-    }
+  const setConnState = (state: ConnectionState) => {
+    if (connStateRef.current === state) return
+    connStateRef.current = state
+    setConnectionState(state)
   }
 
   const disconnect = () => {
@@ -144,14 +52,106 @@ export function LogStreamProvider({
       clearTimeout(reconnectTimeoutRef.current)
       reconnectTimeoutRef.current = null
     }
-    setConnectionState('disconnected')
+    setConnState('disconnected')
   }
 
   useEffect(() => {
+    if (!logStreamId || !org?.id) return
+
     isCompleteRef.current = false
-    if (logStreamId && org?.id) {
-      connectSSE()
+    reconnectAttemptRef.current = 0
+    seenIdsRef.current = new Set()
+    setLogs([])
+    setError(null)
+    setIsCatchingUp(false)
+
+    const connectSSE = () => {
+      if (eventSourceRef.current) return
+
+      setConnState('connecting')
+      setError(null)
+
+      const url = `/api/orgs/${org.id}/log-streams/${logStreamId}/logs/sse`
+      const eventSource = new EventSource(url)
+      eventSourceRef.current = eventSource
+
+      eventSource.onmessage = (event) => {
+        try {
+          const newLogs: TOTELLog[] = JSON.parse(event.data)
+          const unique = newLogs.filter(log => {
+            if (seenIdsRef.current.has(log.id)) return false
+            seenIdsRef.current.add(log.id)
+            return true
+          })
+          if (unique.length > 0) {
+            setLogs(prev => [...prev, ...unique])
+          }
+          setConnState('connected')
+          reconnectAttemptRef.current = 0
+        } catch {
+          setError({
+            error: 'Failed to parse log data',
+            description: 'The log data received from the server could not be parsed as valid JSON',
+            user_error: false,
+          })
+        }
+      }
+
+      eventSource.addEventListener('status', (event: MessageEvent) => {
+        if (event.data === 'catching-up') {
+          setIsCatchingUp(true)
+        } else if (event.data === 'live') {
+          setIsCatchingUp(false)
+        } else if (event.data === 'complete') {
+          isCompleteRef.current = true
+          setIsCatchingUp(false)
+          eventSource.close()
+          eventSourceRef.current = null
+          setConnState('disconnected')
+        }
+      })
+
+      eventSource.addEventListener('error', (event: MessageEvent) => {
+        try {
+          const errorData = JSON.parse(event.data)
+          setError({
+            error: errorData.error || 'Server error occurred',
+            description: errorData.description || 'An error was received from the log streaming server',
+            user_error: errorData.user_error || false,
+            meta: errorData.meta,
+          })
+        } catch {
+          setError({
+            error: 'Server error occurred',
+            description: 'Failed to parse error message from the log streaming server',
+            user_error: false,
+          })
+        }
+      })
+
+      eventSource.onerror = () => {
+        eventSource.close()
+        eventSourceRef.current = null
+
+        if (isCompleteRef.current) return
+
+        setConnState('reconnecting')
+        const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000)
+        reconnectAttemptRef.current += 1
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectSSE()
+        }, backoffDelay)
+      }
+
+      eventSource.onopen = () => {
+        setConnState('connected')
+        setError(null)
+        reconnectAttemptRef.current = 0
+      }
     }
+
+    connectSSE()
     return () => {
       disconnect()
     }
@@ -159,7 +159,9 @@ export function LogStreamProvider({
 
   if (!logStreamId) return <LogsPageSkeleton />
 
-  const isLoading = isCatchingUp || connectionState === 'connecting' || connectionState === 'reconnecting'
+  const isLoading =
+    (logs.length === 0 && connectionState === 'connecting') ||
+    connectionState === 'reconnecting'
 
   return (
     <LogStreamContext.Provider
@@ -167,6 +169,7 @@ export function LogStreamProvider({
         logs,
         logStreamId,
         isLoading,
+        isCatchingUp,
         error,
         connectionState,
       }}
