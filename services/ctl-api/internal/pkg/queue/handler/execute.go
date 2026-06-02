@@ -24,7 +24,9 @@ type ExecuteResponse struct{}
 
 func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *ExecuteResponse, retErr error) {
 	l, _ := log.WorkflowLogger(ctx)
+	h.executing = true
 	defer func() {
+		h.executing = false
 		h.executingCtx = nil
 		h.executingCancel = nil
 
