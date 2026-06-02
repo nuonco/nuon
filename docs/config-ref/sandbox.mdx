@@ -11,7 +11,11 @@ title: 'Sandbox'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`terraform_version`**<br/>string | Terraform version Version of Terraform to use for deployments | **✅ Required** | `"1.5.0"`, `"1.6.0"`, `"latest"` |
+| **`type`**<br/>string | sandbox IaC type IaC type for this sandbox: 'terraform' (default) or 'pulumi'. 'pulumi' requires the pulumi-sandbox feature flag | **Optional** | `"terraform"`, `"pulumi"` |
+| **`terraform_version`**<br/>string | Terraform version Version of Terraform to use for deployments. Required when type=terraform | **Optional** | `"1.5.0"`, `"1.6.0"`, `"latest"` |
+| **`runtime`**<br/>string | Pulumi runtime The Pulumi runtime to use for the program (go, nodejs, python). Required when type=pulumi | **Optional** | `"go"`, `"nodejs"`, `"python"` |
+| **`pulumi_version`**<br/>string | Pulumi version Version of the Pulumi CLI to use. If not specified, uses the latest version | **Optional** | `"3.100.0"` |
+| **`pulumi_config`**<br/>object | Pulumi stack config Map of Pulumi stack configuration values as key-value pairs. Keys use the format 'namespace:key' (e.g., 'gcp:project'). Supports templating | **Optional** | - |
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository configuration Configuration for a private repository connected to the Nuon platform | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository configuration Configuration for a public repository accessible without authentication | **Optional** | - |
 | **`drift_schedule`**<br/>string | drift detection schedule Cron expression for periodic drift detection. If not set, drift detection is disabled | **Optional** | `"0 2 * * *"`, `"*/10 * * * *"` |

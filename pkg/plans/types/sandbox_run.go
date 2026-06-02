@@ -28,6 +28,15 @@ type TerraformLocalArchive struct {
 	Path string `json:"local_archive"`
 }
 
+type PulumiBackend struct {
+	WorkspaceID   string            `json:"workspace_id" validate:"required"`
+	StackName     string            `json:"stack_name" validate:"required"`
+	Runtime       string            `json:"runtime" validate:"required"`
+	PulumiVersion string            `json:"pulumi_version,omitempty"`
+	Config        map[string]string `json:"config,omitempty"`
+	UpdatePlans   bool              `json:"update_plans,omitempty"`
+}
+
 type SandboxRunPlan struct {
 	InstallID   string `json:"install_id"`
 	AppID       string `json:"app_id"`
@@ -39,6 +48,7 @@ type SandboxRunPlan struct {
 	GitSource        *GitSource             `json:"git_source"`
 	LocalArchive     *TerraformLocalArchive `json:"local_archive"`
 	TerraformBackend *TerraformBackend      `json:"terraform_backend"`
+	PulumiBackend    *PulumiBackend         `json:"pulumi_backend,omitempty"`
 
 	AzureAuth *azurecredentials.Config `json:"azure_auth"`
 	AWSAuth   *awscredentials.Config   `json:"aws_auth"`

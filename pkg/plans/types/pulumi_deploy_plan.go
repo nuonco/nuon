@@ -30,5 +30,7 @@ type PulumiDeployPlan struct {
 	// Destroy indicates this is a teardown operation (pulumi destroy instead of up)
 	Destroy bool `json:"destroy"`
 
+	UpdatePlans bool `json:"update_plans,omitempty"`
+
 	PlanJSON []byte `json:"plan_json"`
 }
