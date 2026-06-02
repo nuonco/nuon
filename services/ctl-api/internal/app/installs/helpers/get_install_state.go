@@ -20,19 +20,17 @@ import (
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
-	row, err := h.getLatestInstallStateRow(ctx, installID)
+	latestState, err := h.getLatestInstallStateRow(ctx, installID)
 	if err == nil {
-		es := row.State
+		es := latestState.State
 		switch {
-		case !row.StaleAt.Empty() && len(row.StalePartials) > 0:
-			// only some partials are stale -> regenerate just those inline, persist, clear markers
-			es, err = h.regenerateStalePartials(ctx, row, redacted, skipVersionCheck)
+		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
+			es, err = h.regenerateStalePartials(ctx, latestState, redacted, skipVersionCheck)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to regenerate stale partials")
 			}
-		case !row.StaleAt.Empty():
-			// stale with no partial detail -> surface staleness, leave regen to the async signal path
-			es.StaleAt = &row.StaleAt.Time
+		case !latestState.StaleAt.Empty():
+			es.StaleAt = &latestState.StaleAt.Time
 		}
 
 		// Labels are mutable and not persisted in the state snapshot,
@@ -344,8 +342,7 @@ func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallS
 	return is, nil
 }
 
-// regenerateStalePartial refreshes a single partial into is, reusing the same data fetchers and
-// converters as the from-scratch generation path.
+// regenerateStalePartial refreshes a single partial into state, reusing the same data fetch path as state gen signal.
 func (h *Helpers) regenerateStalePartial(ctx context.Context, install *app.Install, partial pkgstate.PartialName, is *state.State, redacted, skipVersionCheck bool) error {
 	switch partial {
 	case pkgstate.PartialOrg:

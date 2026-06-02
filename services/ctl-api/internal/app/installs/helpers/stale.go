@@ -36,8 +36,7 @@ func (h *Helpers) MarkInstallStateStale(ctx context.Context, installID string) e
 }
 
 // MarkInstallStatePartialsStale marks the latest install state stale and appends the given partials
-// to its stale_partials list (unioned + deduped). Accepts a db handle so callers inside a transaction
-// stay atomic. No-op if no state row exists yet.
+// to its stale_partials list (unioned + deduped).
 func (h *Helpers) MarkInstallStatePartialsStale(ctx context.Context, db *gorm.DB, installID string, partials ...pkgstate.PartialName) error {
 	if len(partials) == 0 {
 		return nil

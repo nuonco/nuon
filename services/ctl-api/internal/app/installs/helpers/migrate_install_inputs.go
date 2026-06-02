@@ -121,7 +121,7 @@ func (h *Helpers) migrateInstallInputs(
 	}
 
 	// inputs changed -> mark the inputs partial of this install's state stale so it is
-	// regenerated lazily on next read. Use the same txn for atomicity.
+	// regenerated lazily on next read.
 	if err := h.MarkInstallStatePartialsStale(ctx, txn, installID, state.PartialInputs); err != nil {
 		return fmt.Errorf("unable to mark inputs partial stale: %w", err)
 	}
