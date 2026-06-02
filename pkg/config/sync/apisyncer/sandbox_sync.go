@@ -32,7 +32,11 @@ func (s *syncer) syncAppSandbox(ctx context.Context, resource string) error {
 func (s *syncer) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigRequest {
 	req := &models.ServiceCreateAppSandboxConfigRequest{
 		AppConfigID:      s.appConfigID,
-		TerraformVersion: &s.cfg.Sandbox.TerraformVersion,
+		Type:             s.cfg.Sandbox.Type,
+		TerraformVersion: s.cfg.Sandbox.TerraformVersion,
+		Runtime:          s.cfg.Sandbox.Runtime,
+		PulumiVersion:    s.cfg.Sandbox.PulumiVersion,
+		PulumiConfig:     map[string]string{},
 		Variables:        map[string]string{},
 		EnvVars:          map[string]string{},
 		VariablesFiles:   make([]string, 0),
@@ -54,6 +58,7 @@ func (s *syncer) getAppSandboxRequest() *models.ServiceCreateAppSandboxConfigReq
 	}
 	maps.Copy(req.Variables, s.cfg.Sandbox.VarsMap)
 	maps.Copy(req.EnvVars, s.cfg.Sandbox.EnvVarMap)
+	maps.Copy(req.PulumiConfig, s.cfg.Sandbox.PulumiConfig)
 
 	for _, v := range s.cfg.Sandbox.VariablesFiles {
 		req.VariablesFiles = append(req.VariablesFiles, v.Contents)

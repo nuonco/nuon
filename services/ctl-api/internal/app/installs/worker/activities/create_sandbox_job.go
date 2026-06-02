@@ -12,6 +12,7 @@ type CreateSandboxJobRequest struct {
 	RunnerID    string                     `validate:"required"`
 	OwnerType   string                     `validate:"required"`
 	OwnerID     string                     `validate:"required"`
+	JobType     app.RunnerJobType          `validate:"omitempty"`
 	Op          app.RunnerJobOperationType `validate:"required"`
 	Metadata    map[string]string          `validate:"required"`
 	LogStreamID string                     `validate:"required"`
@@ -19,11 +20,16 @@ type CreateSandboxJobRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) CreateSandboxJob(ctx context.Context, req *CreateSandboxJobRequest) (*app.RunnerJob, error) {
+	jobType := req.JobType
+	if jobType == "" {
+		jobType = app.RunnerJobTypeSandboxTerraform
+	}
+
 	job, err := a.runnersHelpers.CreateInstallSandboxJob(ctx,
 		req.RunnerID,
 		req.OwnerType,
 		req.OwnerID,
-		app.RunnerJobTypeSandboxTerraform,
+		jobType,
 		req.Op,
 		req.Metadata,
 		req.LogStreamID,

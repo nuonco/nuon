@@ -43,11 +43,17 @@ export const SandboxRunConfigCard = ({
     <ContextTooltip
       title="Component configuration"
       items={[
-        {
-          id: `config-version-`,
-          title: 'Terraform version',
-          subtitle: config?.terraform_version,
-        },
+        config?.type === 'pulumi'
+          ? {
+              id: `config-version-`,
+              title: 'Pulumi runtime',
+              subtitle: config?.runtime ?? 'pulumi',
+            }
+          : {
+              id: `config-version-`,
+              title: 'Terraform version',
+              subtitle: config?.terraform_version,
+            },
         ...getConfigVCSItems(
           config?.connected_github_vcs_config || config?.public_git_vcs_config
         ),

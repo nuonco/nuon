@@ -45,15 +45,26 @@ type ServiceCreateAppSandboxConfigRequest struct {
 	// public git vcs config
 	PublicGitVcsConfig *HelpersPublicGitVCSConfigRequest `json:"public_git_vcs_config,omitempty"`
 
+	// pulumi config
+	PulumiConfig map[string]string `json:"pulumi_config,omitempty"`
+
+	// pulumi version
+	PulumiVersion string `json:"pulumi_version,omitempty"`
+
 	// references
 	References []string `json:"references"`
+
+	// runtime
+	Runtime string `json:"runtime,omitempty"`
 
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// terraform version
-	// Required: true
-	TerraformVersion *string `json:"terraform_version"`
+	TerraformVersion string `json:"terraform_version,omitempty"`
+
+	// type
+	Type string `json:"type,omitempty"`
 
 	// variables
 	// Required: true
@@ -76,10 +87,6 @@ func (m *ServiceCreateAppSandboxConfigRequest) Validate(formats strfmt.Registry)
 	}
 
 	if err := m.validatePublicGitVcsConfig(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateTerraformVersion(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -143,15 +150,6 @@ func (m *ServiceCreateAppSandboxConfigRequest) validatePublicGitVcsConfig(format
 
 			return err
 		}
-	}
-
-	return nil
-}
-
-func (m *ServiceCreateAppSandboxConfigRequest) validateTerraformVersion(formats strfmt.Registry) error {
-
-	if err := validate.Required("terraform_version", "body", m.TerraformVersion); err != nil {
-		return err
 	}
 
 	return nil

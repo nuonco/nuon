@@ -39,3 +39,23 @@ func ParseArgs(args []string) (set map[string]string, remove []string, err error
 	}
 	return set, remove, nil
 }
+
+// ParseKeys validates bare label keys (used by `unset`). It rejects empty keys
+// and any "key=value" form, since a value has no meaning when removing a label.
+//
+//	"key"       -> "key"
+//	"key=value" -> error
+func ParseKeys(args []string) ([]string, error) {
+	keys := make([]string, 0, len(args))
+	for _, a := range args {
+		a = strings.TrimSpace(a)
+		if a == "" {
+			continue
+		}
+		if strings.Contains(a, "=") {
+			return nil, fmt.Errorf("invalid label key %q (provide a bare key, not key=value)", a)
+		}
+		keys = append(keys, strings.TrimSuffix(a, "-"))
+	}
+	return keys, nil
+}
