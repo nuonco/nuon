@@ -76,6 +76,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			current.GET("", s.GetOrg)
 			current.DELETE("", s.DeleteOrg)
 			current.PATCH("", s.UpdateOrg)
+			current.PUT("/env-accent-config", s.UpdateEnvAccentConfig)
 			current.POST("/user", s.CreateUser)
 			current.POST("/remove-user", s.RemoveUser)
 

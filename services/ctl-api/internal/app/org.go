@@ -97,11 +97,12 @@ type Org struct {
 
 	Priority int `json:"-" temporaljson:"priority,omitzero,omitempty"`
 
-	Apps           []App               `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
-	VCSConnections []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
-	Invites        []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
-	Features       types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
-	Tags           pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
+	Apps            []App               `faker:"-" swaggerignore:"true" json:"apps,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"apps,omitzero,omitempty"`
+	VCSConnections  []VCSConnection     `json:"vcs_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"vcs_connections,omitzero,omitempty"`
+	Invites         []OrgInvite         `faker:"-" swaggerignore:"true" json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"invites,omitzero,omitempty"`
+	Features        types.StringBoolMap `json:"features,omitzero" gorm:"type:jsonb;default null" temporaljson:"features,omitzero,omitempty"`
+	Tags            pq.StringArray      `json:"tags,omitzero" gorm:"type:text[];default '{}'" swaggertype:"array,string" temporaljson:"tags,omitzero,omitempty"`
+	EnvAccentConfig EnvAccentConfig     `json:"env_accent_config,omitzero" gorm:"type:jsonb;default null" temporaljson:"env_accent_config,omitzero,omitempty"`
 	labels.Labeled
 
 	// Other relationships as part of the data model
@@ -141,6 +142,12 @@ func (o *Org) AfterQuery(tx *gorm.DB) error {
 
 	if o.Labels == nil {
 		o.Labels = make(labels.Labels)
+	}
+
+	// Backfill the env accent config with sane defaults for any org that
+	// existed before this column was added.
+	if o.EnvAccentConfig.LabelKey == "" && len(o.EnvAccentConfig.Values) == 0 {
+		o.EnvAccentConfig = DefaultEnvAccentConfig()
 	}
 
 	actieFeatures := GetFeatures()
@@ -210,6 +217,10 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 
 	if o.ID == "" {
 		o.ID = domains.NewOrgID()
+	}
+
+	if o.EnvAccentConfig.LabelKey == "" && len(o.EnvAccentConfig.Values) == 0 {
+		o.EnvAccentConfig = DefaultEnvAccentConfig()
 	}
 
 	o.CreatedByID = createdByIDFromContext(tx.Statement.Context)
