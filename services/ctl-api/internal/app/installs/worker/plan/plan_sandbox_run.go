@@ -49,16 +49,33 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get sandbox run")
 	}
 
-	l.Info("configuring environment variables to execute terraform run as")
+	isPulumi := appCfg.SandboxConfig.Type == config.AppSandboxTypePulumi
+
+	l.Info("configuring environment variables to execute sandbox run as")
 	envVars := p.getSandboxRunEnvVars(appCfg)
 
-	l.Info("configuring terraform variables to execute terraform run as")
-	vars, err := p.getSandboxRunTerraformVars(appCfg, req.RootDomain)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get vars")
-	}
-	for k, v := range appCfg.SandboxConfig.Variables {
-		vars[k] = v
+	var vars map[string]any
+	var pulumiCfg map[string]string
+	if isPulumi {
+		l.Info("configuring pulumi stack config")
+		pulumiCfg, err = p.getSandboxRunPulumiConfig(appCfg, req.RootDomain)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get pulumi config")
+		}
+		for k, v := range appCfg.SandboxConfig.PulumiConfig {
+			if v != nil {
+				pulumiCfg[k] = *v
+			}
+		}
+	} else {
+		l.Info("configuring terraform variables")
+		vars, err = p.getSandboxRunTerraformVars(appCfg, req.RootDomain)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to get vars")
+		}
+		for k, v := range appCfg.SandboxConfig.Variables {
+			vars[k] = v
+		}
 	}
 
 	state, err := activities.AwaitGetInstallState(ctx, &activities.GetInstallStateRequest{
@@ -90,17 +107,29 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to render config")
 	}
 
-	l.Info("rendering terraform variables")
-	if err := render.RenderMap(&vars, stateData); err != nil {
-		l.Error("error rendering terraform variables",
-			zap.Any("vars", vars),
-			zap.Error(err),
-			zap.Any("state", stateData),
-		)
-		return nil, nil, errors.Wrap(err, "unable to render variables")
+	if isPulumi {
+		l.Info("rendering pulumi config")
+		if err := render.RenderMap(&pulumiCfg, stateData); err != nil {
+			l.Error("error rendering pulumi config",
+				zap.Any("pulumi_config", pulumiCfg),
+				zap.Error(err),
+				zap.Any("state", stateData),
+			)
+			return nil, nil, errors.Wrap(err, "unable to render pulumi config")
+		}
+		l.Info("rendered pulumi config", zap.Any("config", pulumiCfg))
+	} else {
+		l.Info("rendering terraform variables")
+		if err := render.RenderMap(&vars, stateData); err != nil {
+			l.Error("error rendering terraform variables",
+				zap.Any("vars", vars),
+				zap.Error(err),
+				zap.Any("state", stateData),
+			)
+			return nil, nil, errors.Wrap(err, "unable to render variables")
+		}
+		l.Info("rendered terraform vars", zap.Any("vars", vars))
 	}
-
-	l.Info("outputs vars", zap.Any("vars", vars))
 
 	if err := render.RenderStruct(&appCfg.PoliciesConfig, stateData); err != nil {
 		l.Error("error rendering policies",
@@ -144,10 +173,6 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 
 		LocalArchive: nil,
 
-		TerraformBackend: &plantypes.TerraformBackend{
-			WorkspaceID: install.InstallSandbox.TerraformWorkspace.ID,
-		},
-
 		AWSAuth:   cloudAuth.AWS,
 		AzureAuth: cloudAuth.Azure,
 		GCPAuth:   cloudAuth.GCP,
@@ -158,26 +183,52 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		},
 	}
 
+	if isPulumi {
+		updatePlans, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeaturePulumiUpdatePlans))
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "unable to check pulumi-update-plans feature")
+		}
+		plan.PulumiBackend = &plantypes.PulumiBackend{
+			WorkspaceID:   install.InstallSandbox.TerraformWorkspace.ID,
+			StackName:     fmt.Sprintf("install-%s", install.ID),
+			Runtime:       appCfg.SandboxConfig.Runtime,
+			PulumiVersion: appCfg.SandboxConfig.PulumiVersion,
+			Config:        pulumiCfg,
+			UpdatePlans:   updatePlans,
+		}
+	} else {
+		plan.TerraformBackend = &plantypes.TerraformBackend{
+			WorkspaceID: install.InstallSandbox.TerraformWorkspace.ID,
+		}
+	}
+
 	if install.SandboxMode.Bool {
 		pdcJSONByts := new(bytes.Buffer)
 		if err := json.Compact(pdcJSONByts, []byte(FakeTerraformPlanDisplayContents)); err != nil {
 			return nil, nil, errors.Wrap(err, "unable to get json")
 		}
 
-		stJSONByts := new(bytes.Buffer)
-		if err := json.Compact(stJSONByts, []byte(FakeTerraformStateJSON)); err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get json")
-		}
-
 		plan.SandboxMode = &plantypes.SandboxMode{
 			Enabled: true,
-			Terraform: &plantypes.TerraformSandboxMode{
+			Outputs: p.getSandboxModeOutputs(*install, *stack),
+		}
+		if isPulumi {
+			plan.SandboxMode.Pulumi = &plantypes.PulumiSandboxMode{
+				WorkspaceID:         install.InstallSandbox.TerraformWorkspace.ID,
+				PlanContents:        FakeTerraformPlanContents,
+				PlanDisplayContents: pdcJSONByts.String(),
+			}
+		} else {
+			stJSONByts := new(bytes.Buffer)
+			if err := json.Compact(stJSONByts, []byte(FakeTerraformStateJSON)); err != nil {
+				return nil, nil, errors.Wrap(err, "unable to get json")
+			}
+			plan.SandboxMode.Terraform = &plantypes.TerraformSandboxMode{
 				WorkspaceID:         install.InstallSandbox.TerraformWorkspace.ID,
 				StateJSON:           stJSONByts.Bytes(),
 				PlanContents:        FakeTerraformPlanContents,
 				PlanDisplayContents: pdcJSONByts.String(),
-			},
-			Outputs: p.getSandboxModeOutputs(*install, *stack),
+			}
 		}
 	}
 
@@ -268,6 +319,39 @@ func (p *Planner) getSandboxRunTerraformVars(appCfg *app.AppConfig, rootDomain s
 	maps.Copy(vars, builtin)
 
 	return vars, nil
+}
+
+func (p *Planner) getSandboxRunPulumiConfig(appCfg *app.AppConfig, rootDomain string) (map[string]string, error) {
+	cfg := make(map[string]string)
+
+	for k, v := range generics.ToStringMap(appCfg.SandboxConfig.PulumiConfig) {
+		cfg[k] = v
+	}
+
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		cfg["nuon:nuon_id"] = "{{.nuon.install.id}}"
+		cfg["nuon:vpc_id"] = "{{.nuon.install_stack.outputs.vpc_id}}"
+		cfg["nuon:region"] = "{{.nuon.install_stack.outputs.region}}"
+		cfg["aws:region"] = "{{.nuon.install_stack.outputs.region}}"
+		cfg["nuon:public_root_domain"] = fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain)
+		cfg["nuon:internal_root_domain"] = fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain)
+		cfg["nuon:provision_iam_role_arn"] = "{{.nuon.install_stack.outputs.provision_iam_role_arn}}"
+		cfg["nuon:deprovision_iam_role_arn"] = "{{.nuon.install_stack.outputs.deprovision_iam_role_arn}}"
+		cfg["nuon:maintenance_iam_role_arn"] = "{{.nuon.install_stack.outputs.maintenance_iam_role_arn}}"
+	case app.AppRunnerTypeGCP:
+		cfg["nuon:nuon_id"] = "{{.nuon.install.id}}"
+		cfg["nuon:project_id"] = "{{.nuon.install_stack.outputs.project_id}}"
+		cfg["nuon:region"] = "{{.nuon.install_stack.outputs.region}}"
+		cfg["nuon:network"] = "{{.nuon.install_stack.outputs.network_name}}"
+		cfg["nuon:subnetwork"] = "{{.nuon.install_stack.outputs.private_subnet_name}}"
+		cfg["gcp:project"] = "{{.nuon.install_stack.outputs.project_id}}"
+		cfg["gcp:region"] = "{{.nuon.install_stack.outputs.region}}"
+		cfg["nuon:public_root_domain"] = fmt.Sprintf("{{.nuon.install.id}}.%s", rootDomain)
+		cfg["nuon:internal_root_domain"] = fmt.Sprintf("{{.nuon.install.id}}.internal.%s", rootDomain)
+	}
+
+	return cfg, nil
 }
 
 func (p *Planner) getRoleForSandbox(

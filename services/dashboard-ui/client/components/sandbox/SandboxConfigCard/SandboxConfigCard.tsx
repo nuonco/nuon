@@ -13,17 +13,22 @@ interface ISandboxConfigCard extends Omit<ICard, 'children'> {
   config: TSandboxConfig
   onViewEnvVars?: () => void
   onViewVariablesFiles?: () => void
+  onViewPulumiConfig?: () => void
 }
 
 export const SandboxConfigCard = ({
   config,
   onViewEnvVars,
   onViewVariablesFiles,
+  onViewPulumiConfig,
   ...props
 }: ISandboxConfigCard) => {
+  const isPulumi = config.type === 'pulumi'
   const hasEnvVars = config.env_vars && Object.keys(config.env_vars).length > 0
   const hasVariablesFiles =
     config.variables_files && config.variables_files.length > 0
+  const hasPulumiConfig =
+    isPulumi && config.pulumi_config && Object.keys(config.pulumi_config).length > 0
   const sandboxVariables = objectToKeyValueArray(config.variables)
 
   const vcsConfig =
@@ -34,36 +39,57 @@ export const SandboxConfigCard = ({
       <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <Text weight="strong">Configuration</Text>
-          {(hasEnvVars || hasVariablesFiles) && (
-            <div className="flex gap-2">
-              {hasEnvVars && onViewEnvVars && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onViewEnvVars}
-                >
-                  View env vars
-                </Button>
-              )}
-              {hasVariablesFiles && onViewVariablesFiles && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onViewVariablesFiles}
-                >
-                  View variables files
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="flex gap-2">
+            {hasEnvVars && onViewEnvVars && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onViewEnvVars}
+              >
+                View env vars
+              </Button>
+            )}
+            {hasVariablesFiles && onViewVariablesFiles && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onViewVariablesFiles}
+              >
+                View variables files
+              </Button>
+            )}
+            {hasPulumiConfig && onViewPulumiConfig && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onViewPulumiConfig}
+              >
+                View Pulumi config
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="flex gap-6 items-start justify-start">
+        <div className="flex gap-6 items-start justify-start flex-wrap">
           {vcsConfig && <GitRepo vcsConfig={vcsConfig} />}
-          {config.terraform_version && (
-            <LabeledValue label="Terraform">
-              {config.terraform_version}
-            </LabeledValue>
+          {isPulumi ? (
+            <>
+              <LabeledValue label="Type">Pulumi</LabeledValue>
+              {config.runtime && (
+                <LabeledValue label="Runtime">{config.runtime}</LabeledValue>
+              )}
+              {config.pulumi_version && (
+                <LabeledValue label="Pulumi version">
+                  {config.pulumi_version}
+                </LabeledValue>
+              )}
+            </>
+          ) : (
+            config.terraform_version && (
+              <LabeledValue label="Terraform">
+                {config.terraform_version}
+              </LabeledValue>
+            )
           )}
         </div>
 
