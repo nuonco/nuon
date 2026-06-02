@@ -42,6 +42,7 @@ type options struct {
 	expiryChecker func(ctx workflow.Context) (*time.Time, error)
 	mw            tmetrics.Writer
 	onStopped     func(ctx workflow.Context)
+	deferRestart  func() bool
 }
 
 // Option configures a Manager.
@@ -87,6 +88,13 @@ func WithMetricsWriter(mw tmetrics.Writer) Option {
 // Useful for writing terminal status to DB before the workflow exits.
 func WithOnStopped(fn func(ctx workflow.Context)) Option {
 	return func(o *options) { o.onStopped = fn }
+}
+
+// WithDeferRestart holds off continue-as-new while fn returns true. Stop
+// decisions are still honored. Continue-as-new abandons in-flight updates, so
+// restarting mid-phase would orphan it and be misread as a crash.
+func WithDeferRestart(fn func() bool) Option {
+	return func(o *options) { o.deferRestart = fn }
 }
 
 // New creates a Manager with the given options.
@@ -153,14 +161,26 @@ func (m *Manager) run(ctx workflow.Context) {
 		// Check 1: continue-as-new (history size + hint).
 		restarting, _ := m.checkCAN(ctx, l)
 		if restarting {
-			m.Restarted = true
-			return
+			if m.restartDeferred() {
+				if l != nil {
+					l.Info("continue-as-new needed but deferred until in-flight phase completes")
+				}
+			} else {
+				m.Restarted = true
+				return
+			}
 		}
 
 		// Check 2: alive check.
 		if m.opts.aliveChecker != nil {
 			alive, err := m.opts.aliveChecker(ctx)
 			if err != nil {
+				if m.restartDeferred() {
+					if l != nil {
+						l.Warn("alive check failed during in-flight phase; deferring restart", zap.Error(err))
+					}
+					continue
+				}
 				if l != nil {
 					l.Warn("alive check failed, restarting to recover", zap.Error(err))
 				}
@@ -200,6 +220,10 @@ func (m *Manager) run(ctx workflow.Context) {
 			}
 		}
 	}
+}
+
+func (m *Manager) restartDeferred() bool {
+	return m.opts.deferRestart != nil && m.opts.deferRestart()
 }
 
 func (m *Manager) checkCAN(ctx workflow.Context, l *zap.Logger) (bool, *CANResponse) {
