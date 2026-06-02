@@ -5,6 +5,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
+import { useEnvAccent } from '@/hooks/use-env-accent'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useToast } from '@/hooks/use-toast'
@@ -19,6 +20,7 @@ export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IMod
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
   const { install } = useInstall()
+  const envAccent = useEnvAccent(install)
   const { addToast } = useToast()
 
   const { mutate, isPending: isLoading, error } = useMutation({
@@ -59,6 +61,7 @@ export const DeprovisionModalContainer = ({ ...props }: IDeprovision & Omit<IMod
       installName={install.name}
       isPending={isLoading}
       error={error}
+      envAccent={envAccent}
       onSubmit={() => mutate()}
       {...props}
     />

@@ -3,12 +3,15 @@ import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Input } from '@/components/common/form/Input'
+import { EnvAccentBadge } from '@/components/installs/EnvAccentBadge'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import type { TEnvAccent } from '@/utils/env-accent'
 
 interface IDeprovisionModal extends Omit<IModal, 'onSubmit'> {
   installName: string
   isPending: boolean
   error: any
+  envAccent?: TEnvAccent | null
   onSubmit: () => void
 }
 
@@ -16,6 +19,7 @@ export const DeprovisionModal = ({
   installName,
   isPending,
   error,
+  envAccent,
   onSubmit,
   ...props
 }: IDeprovisionModal) => {
@@ -29,13 +33,14 @@ export const DeprovisionModal = ({
       heading={
         <Text
           flex
-          className="gap-4"
+          className="gap-4 items-center"
           variant="h3"
           weight="strong"
           theme="error"
         >
           <Icon variant="ArrowDownIcon" size="24" />
           Deprovision entire install
+          {envAccent && <EnvAccentBadge size="md" accent={envAccent} />}
         </Text>
       }
       primaryActionTrigger={{

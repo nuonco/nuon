@@ -5,6 +5,7 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
+import { useEnvAccent } from '@/hooks/use-env-accent'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useToast } from '@/hooks/use-toast'
@@ -20,6 +21,7 @@ export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSub
   const queryClient = useQueryClient()
   const { org } = useOrg()
   const { install } = useInstall()
+  const envAccent = useEnvAccent(install)
   const { addToast } = useToast()
 
   const { mutate, isPending: isLoading, error } = useMutation({
@@ -53,6 +55,7 @@ export const ForgetModalContainer = ({ ...props }: IForget & Omit<IModal, 'onSub
       installName={install.name}
       isPending={isLoading}
       error={error}
+      envAccent={envAccent}
       onSubmit={() => mutate()}
       {...props}
     />

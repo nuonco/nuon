@@ -5,15 +5,18 @@ import { Editor } from '@/components/common/Editor'
 import { Input } from '@/components/common/form/Input'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { EnvAccentBadge } from '@/components/installs/EnvAccentBadge'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { useFormPersistence } from '@/hooks/use-form-persistence'
 import type { TRunAdhocActionBody } from '@/lib'
+import type { TEnvAccent } from '@/utils/env-accent'
 
 interface IRunAdhocActionModal extends Omit<IModal, 'onSubmit'> {
   installId: string
   initialValues?: TRunAdhocActionBody
   isPending: boolean
   error: any
+  envAccent?: TEnvAccent | null
   onSubmit: (body: TRunAdhocActionBody) => void
   onDraftResume: (onResume: () => void, onStartFresh: () => void, onClose: () => void, draftTimestamp: string) => void
   onDraftClear?: () => void
@@ -25,6 +28,7 @@ export const RunAdhocActionModal = ({
   initialValues,
   isPending,
   error,
+  envAccent,
   onSubmit,
   onDraftResume,
   onDraftClear,
@@ -143,13 +147,14 @@ export const RunAdhocActionModal = ({
       heading={
         <Text
           flex
-          className="gap-4"
+          className="gap-4 items-center"
           variant="h3"
           weight="strong"
           theme="info"
         >
           <Icon variant="TerminalWindowIcon" size="24" />
           Run adhoc action
+          {envAccent && <EnvAccentBadge size="md" accent={envAccent} />}
         </Text>
       }
       primaryActionTrigger={{

@@ -8,6 +8,7 @@ import { Toast } from '@/components/surfaces/Toast'
 import { ResumeDraftModal } from '@/components/installs/forms/shared/ResumeDraftModal'
 import { RoleSelector } from '@/components/roles/RoleSelector'
 import type { IModal } from '@/components/surfaces/Modal'
+import { useEnvAccent } from '@/hooks/use-env-accent'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -27,6 +28,7 @@ export const RunAdhocActionModalContainer = ({
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
+  const envAccent = useEnvAccent(install)
   const { removeModal, addModal } = useSurfaces()
   const { addToast } = useToast()
   const [selectedRole, setSelectedRole] = useState<string>(
@@ -103,6 +105,7 @@ export const RunAdhocActionModalContainer = ({
       initialValues={initialValues}
       isPending={isLoading}
       error={error}
+      envAccent={envAccent}
       onSubmit={(body) => mutate(body)}
       onDraftResume={handleDraftResume}
       roleSelector={
