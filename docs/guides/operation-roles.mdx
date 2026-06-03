@@ -33,7 +33,7 @@ When a run starts, the runner selects a role by walking this chain from highest 
 
 | Priority | Source | Scope |
 |----------|--------|-------|
-| 1 (highest) | Runtime override (`--role` flag / dashboard selection) | Any operation |
+| 1 (highest) | Runtime override (`--role-name` flag / dashboard selection) | Any operation |
 | 2 | Break-glass role (`break_glass_role` field on action config, deprecated) | Actions only |
 | 3 | Entity role (inline `operation_roles` block or `role` field) | Single entity |
 | 4 | Matrix rule (`operation_roles.toml` principal + operation) | App-wide |
@@ -53,7 +53,7 @@ name        = "{{.nuon.install.id}}-deploy-role"
 description = "Role for Lambda deployments"
 
 [[roles.policies]]
-type     = "inline"
+name     = "{{.nuon.install.id}}-deploy-policy"
 contents = """
 {
   "Version": "2012-10-17",
@@ -67,6 +67,12 @@ contents = """
 }
 """
 ```
+
+<Note>
+  Defining a custom role grants **AWS** permissions only. If the role operates inside an EKS cluster (Helm
+  or Kubernetes manifest deploys), it also needs an EKS access entry mapping its ARN to Kubernetes RBAC —
+  see [Operation Roles on Kubernetes Clusters](/concepts/operation-roles#operation-roles-on-kubernetes-clusters).
+</Note>
 
 ## Configuring Entity Roles
 
@@ -215,11 +221,11 @@ You can override the role for a specific run without changing any config file.
 
 ### CLI
 
-Pass `--role <role-name>` when triggering a sandbox or component operation:
+Pass `--role-name <role-name>` when triggering an action, or a component deploy or teardown:
 
 ```sh
 # Override role for a manual action run
-nuon actions create-run -w <action-workflow-id> -i <install-id> --role my-custom-role
+nuon actions create-run -w <action-workflow-id> -i <install-id> --role-name my-custom-role
 ```
 
 ### Dashboard

@@ -1,0 +1,115 @@
+---
+title: "Break Glass"
+description: "Run a privileged, audited operation through a role that stays disabled until you need it."
+icon: "fire-extinguisher"
+keywords: ["break glass", "break-glass", "emergency access", "elevated access", "privileged operation", "incident response", "disabled role", "enabled_in_stack", "EKS cluster upgrade", "break glass role", "just-in-time access", "temporary elevated permissions"]
+---
+
+Break glass is the pattern for operations that are too privileged to keep available day-to-day but still
+need to run occasionally under controlled, audited conditions — an EKS control-plane upgrade, an emergency
+data fix, or incident response.
+
+In Nuon, a break-glass role is an [operation role](/guides/operation-roles) whose definition ships with the
+customer's install stack but stays **disabled by default** — gated behind a per-role *Enable* parameter
+that is off until the customer turns it on. While disabled, the role is not created in the account, so it
+cannot be assumed. The flow is: enable → run the operation under the role → disable.
+
+<Note>
+  Break glass builds directly on [operation roles](/guides/operation-roles). If you haven't set up custom
+  roles yet, start there.
+</Note>
+
+## When to Use Break Glass
+
+- **Privileged one-off operations:** EKS version upgrades, schema migrations, or anything needing
+  permissions that should never be present during a routine deploy.
+- **Incident response:** run a privileged action for a live incident without elevating every action run.
+- **Customer-controlled elevation:** the customer holds the switch — the role stays absent until they turn
+  it on, and every assumption is recorded.
+
+## 1. Define a Disabled Role
+
+Declare the role in `permissions.toml` with `type = "custom"` and `enabled_in_stack = false`. Its
+definition is baked into the install stack, but the role itself is not created while disabled.
+
+```toml permissions.toml
+[[roles]]
+type             = "custom"
+name             = "{{.nuon.install.id}}-eks-upgrade-role"
+description      = "Break-glass role for EKS control-plane upgrades"
+enabled_in_stack = false
+
+[[roles.policies]]
+name     = "{{.nuon.install.id}}-eks-upgrade-policy"
+contents = """
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["eks:UpdateClusterVersion", "eks:DescribeUpdate"],
+      "Resource": "*"
+    }
+  ]
+}
+"""
+```
+
+`enabled_in_stack = false` sets the default value of the role's *Enable* parameter (a CloudFormation
+parameter or Terraform variable, depending on which format the customer applies) to off, so the role is not
+created unless the installer explicitly enables it.
+
+After changing config, sync your app:
+
+```sh
+nuon apps sync
+```
+
+## 2. Enable the Role
+
+When the operation is needed, the customer sets the role's *Enable* parameter on and applies the install
+stack update — a deliberate, auditable change that creates the role. Because the role's definition already
+ships with the stack, this is a parameter toggle on the customer's side; it does not require the vendor to
+push a new template or config.
+
+## 3. Run the Operation Under the Role
+
+Trigger the operation with the break-glass role as a
+[runtime override](/guides/operation-roles#runtime-role-override), so it applies to this single run without
+changing any config.
+
+### CLI
+
+```sh
+nuon actions create-run -w <action-workflow-id> -i <install-id> --role-name {{install-id}}-eks-upgrade-role
+```
+
+### Dashboard
+
+On the install page, open the run options panel and select the break-glass role from the role selector
+before triggering the run.
+
+The runner assumes the elevated role, performs the operation, and exits.
+
+## 4. Disable and Audit
+
+Once the operation is complete, the customer sets the *Enable* parameter back off and applies the update,
+which removes the role. Audit-trail records show exactly which role was assumed, when, and by which
+operation, so the elevated permissions existed in the account only as long as necessary.
+
+<Warning>
+  The legacy `break_glass_role` field on action configs is **deprecated**. Use a disabled `type = "custom"`
+  role with a runtime override instead.
+</Warning>
+
+## Kubernetes Note
+
+A break-glass role that operates *inside* an EKS cluster (for example, an EKS upgrade) is still an IAM role.
+Like any operation role, it also needs an EKS access entry mapping its ARN to Kubernetes RBAC — see
+[Operation Roles on Kubernetes Clusters](/concepts/operation-roles#operation-roles-on-kubernetes-clusters).
+
+## Next Steps
+
+- [Operation Roles](/guides/operation-roles): configure entity roles, matrix rules, and runtime overrides
+- [Operation Roles Concepts](/concepts/operation-roles): the precedence chain and elevated-access model
+- [Permissions Config Reference](/config-ref/permissions): defining `custom_roles` and `enabled_in_stack`

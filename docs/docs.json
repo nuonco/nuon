@@ -61,6 +61,7 @@
               {
                 "group": "Self-Hosted Nuon",
                 "root": "guides/self-hosted",
+                "boost": 0.5,
                 "expanded": false,
                 "pages": [
                   "guides/self-hosted/aws",
@@ -174,6 +175,7 @@
               "guides/adhoc-actions",
               "guides/configuring-policies",
               "guides/operation-roles",
+              "guides/break-glass",
               "guides/runner-management-mode",
               "guides/team-management"
             ]

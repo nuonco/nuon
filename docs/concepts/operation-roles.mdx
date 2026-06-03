@@ -78,7 +78,7 @@ Each entity type in a Nuon app supports a specific set of operations:
 When an operation is triggered, the control plane builds the plan for the runner to work with.
 It walks the following chain from highest to lowest priority and uses the first match:
 
-1. **Runtime override:** a role passed explicitly via the `--role` CLI flag or selected in the dashboard
+1. **Runtime override:** a role passed explicitly via the `--role-name` CLI flag or selected in the dashboard
    before triggering a run
 2. **Break-glass role** _(actions only, deprecated):_ the `break_glass_role` field on an action config
 3. **Entity role:** the `operation_roles` block on a sandbox or component config, or the `role` field on
@@ -104,19 +104,21 @@ for them.
 
 ### Roles Defined But Disabled by Default
 
-A custom role can be declared in the app config and provisioned into the customer's CloudFormation stack,
-but marked as disabled. In this state the role exists but cannot be assumed by the runner, so it has no
-effect during normal operations. When an elevated operation is required the role is enabled, the operation
-runs, and the role is disabled again by the customer. This means:
+A custom role can be declared in the app config so its definition ships with the customer's install stack
+from day one, gated behind a per-role **Enable** parameter (a CloudFormation parameter or Terraform
+variable). For a break-glass role that parameter defaults to off, so the role is not created during normal
+operations. When an elevated operation is required the customer turns the parameter on and applies the
+stack update — which creates the role — runs the operation, then turns it back off to remove the role. This
+means:
 
-- The role is already present in the install stack from day one, so no stack update or reprovisioning is
-  needed at the moment of use
-- Under normal conditions the role is disabled, so it cannot be assumed accidentally or without explicit
+- The role's definition ships with the install stack from day one, so making it available requires only a
+  parameter toggle by the customer — not a new template or config change from the vendor
+- Under normal conditions the role does not exist, so it cannot be assumed accidentally or without explicit
   intent
 - Enabling and disabling the role is a deliberate, auditable action scoped to the window of use
 
-The customer retains full control. They can see the role in their install stack, enable or disable
-it at any time, and audit every assumption via audit logs.
+The customer retains full control. They decide when the role exists, enable or disable it at any time, and
+audit every assumption via audit logs.
 
 ### Introducing New Components with New Permission Sets
 
@@ -139,16 +141,38 @@ available during a standard deploy.
 The pattern with operation roles:
 
 1. Define a `type = "custom"` role (e.g., `{{.nuon.install.id}}-eks-upgrade-role`) with the permissions
-   needed for a cluster upgrade. The role is provisioned into the install stack but disabled by default.
+   needed for a cluster upgrade. Its definition ships with the install stack, but its Enable parameter is
+   off by default, so the role is not created until needed.
 2. When an upgrade is needed, the customer enables the role in their install stack.
 3. An operator triggers the upgrade operation via the CLI or dashboard, selecting the upgrade role as a
-   runtime override: `--role {{install-id}}-eks-upgrade-role`.
+   runtime override: `--role-name {{install-id}}-eks-upgrade-role`.
 4. The runner assumes the elevated role, performs the upgrade, and exits.
-5. The customer disables the role again, returning it to its default inactive state.
+5. The customer disables the role again, removing it from the account.
 
 The upgrade is fully auditable. Audit trail records show exactly which role was assumed, when, and by
 which operation, and the elevated permissions exist in the customer's account for only as long as
 necessary.
+
+## Operation Roles on Kubernetes Clusters
+
+An operation role is an **IAM** role — it grants permissions against the AWS API. Acting *inside* an EKS
+cluster (applying Kubernetes manifests or installing Helm releases) requires a second mapping: the role's
+ARN must be bound to Kubernetes RBAC through an **EKS access entry**, which associates the IAM principal
+with an access policy or a group bound to a `ClusterRole`. Without that entry, the runner can assume the
+role but has no permissions inside the cluster.
+
+Nuon's standard roles receive this mapping when the sandbox provisions the cluster. **A custom role used
+for in-cluster work needs its own access entry** — otherwise it can authenticate to AWS but every Helm or
+`kubectl` operation it attempts is denied by Kubernetes RBAC.
+
+How the access entry is created depends on the stack pattern:
+
+- **Nuon-provisioned cluster:** the role is mapped as part of the sandbox's cluster module.
+- **Customer Cluster (existing EKS):** add the role to the `eks_access_entries` custom nested stack that
+  wires the runner into the cluster — see [Customer Cluster](/concepts/stacks/customer-cluster).
+
+This is why a custom role can be defined, assumed, and still fail an in-cluster operation: the IAM side is
+correct but the Kubernetes RBAC mapping is missing.
 
 ## Role Name Resolution
 
