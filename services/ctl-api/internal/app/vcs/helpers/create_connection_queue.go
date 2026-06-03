@@ -5,12 +5,9 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-<<<<<<< HEAD
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
-=======
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
 	webhooksubscription "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
->>>>>>> 54c9049a2 (feat: add vcs connection health checks)
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )

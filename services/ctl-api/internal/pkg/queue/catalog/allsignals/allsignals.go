@@ -145,15 +145,12 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updateversion"
 
 	// vcs signals
-<<<<<<< HEAD
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/connection_event"
-=======
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/github_event"
->>>>>>> c99f525f8 (feat: vcs)
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 
 	// flow signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
