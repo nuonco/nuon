@@ -35,6 +35,31 @@ func (c *client) LogStreamReadLogs(ctx context.Context, logStreamId string, offs
 	return resp.Payload, nil
 }
 
+// LogStreamTailLogs hits the long-poll tail endpoint. `since` is a composite
+// cursor (`<unix_nano>:<id>`, empty for "from oldest"); `wait` is an optional
+// Go duration string, capped server-side at 30s when omitted.
+//
+// The endpoint is gated by the `log-tail-long-poll` org feature flag and
+// returns 404 when the flag is off — callers should pick the tail vs legacy
+// path up-front from `GetOrg().Features` rather than probing this endpoint.
+func (c *client) LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string) (*models.ServiceLogStreamTailLogsResponse, error) {
+	params := &operations.LogStreamTailLogsParams{
+		LogStreamID: logStreamID,
+		Context:     ctx,
+	}
+	if since != "" {
+		params.Since = &since
+	}
+	if wait != "" {
+		params.Wait = &wait
+	}
+	resp, err := c.genClient.Operations.LogStreamTailLogs(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
 func (c *client) LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, string, error) {
 	hr := newResponseHeaderReader(&operations.LogStreamReadLogsReader{})
 
