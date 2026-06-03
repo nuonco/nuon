@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -32,17 +34,81 @@ type ConfigCustomNestedStack struct {
 	// parameters
 	Parameters map[string]string `json:"parameters,omitempty"`
 
+	// status
+	Status ConfigCustomNestedStackStatus `json:"status,omitempty"`
+
 	// template url
 	TemplateURL string `json:"template_url,omitempty"`
 }
 
 // Validate validates this config custom nested stack
 func (m *ConfigCustomNestedStack) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateStatus(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this config custom nested stack based on context it is used
+func (m *ConfigCustomNestedStack) validateStatus(formats strfmt.Registry) error {
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("status")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("status")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+// ContextValidate validate this config custom nested stack based on the context it is used
 func (m *ConfigCustomNestedStack) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateStatus(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ConfigCustomNestedStack) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if err := m.Status.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("status")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("status")
+		}
+
+		return err
+	}
+
 	return nil
 }
 
