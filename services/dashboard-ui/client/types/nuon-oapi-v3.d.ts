@@ -1835,6 +1835,13 @@ export interface paths {
      */
     get: operations["LogStreamReadLogs"];
   };
+  "/v1/log-streams/{log_stream_id}/logs/tail": {
+    /**
+     * long-poll tail a log stream
+     * @description Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
+     */
+    get: operations["LogStreamTailLogs"];
+  };
   "/v1/log-streams/{log_stream_id}/spans": {
     /**
      * read a log stream's trace spans
@@ -6901,6 +6908,11 @@ export interface components {
       status_message?: string;
       trace_id?: string;
     };
+    "service.LogStreamTailLogsResponse": {
+      has_more?: boolean;
+      logs?: components["schemas"]["app.OtelLogRecord"][];
+      next?: string;
+    };
     "service.MngRestartRequest": Record<string, never>;
     "service.MngShutDownRequest": Record<string, never>;
     "service.MngUpdateRequest": Record<string, never>;
@@ -7094,7 +7106,7 @@ export interface components {
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
-      deploy_dependents?: boolean;
+      deploy_dependents?: boolean | null;
       inputs: {
         [key: string]: string;
       };
@@ -21090,6 +21102,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.OtelLogRecord"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * long-poll tail a log stream
+   * @description Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
+   */
+  LogStreamTailLogs: {
+    parameters: {
+      query?: {
+        /** @description composite cursor in the form `<unix_nano>:<id>`; empty starts from the oldest row */
+        since?: string;
+        /** @description max wait for new rows (Go duration, capped server-side at 30s) */
+        wait?: string;
+      };
+      path: {
+        /** @description log stream ID */
+        log_stream_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.LogStreamTailLogsResponse"];
         };
       };
       /** @description Bad Request */
