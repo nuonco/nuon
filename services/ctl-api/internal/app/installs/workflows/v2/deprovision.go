@@ -96,7 +96,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	step, err = sg.installSignalStep(ctx, installID, "deprovision sandbox apply", pgtype.Hstore{}, &deprovisionsandboxapplyplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        installID,
-	}, flw.PlanOnly)
+	}, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
 	if err != nil {
 		return nil, err
 	}
