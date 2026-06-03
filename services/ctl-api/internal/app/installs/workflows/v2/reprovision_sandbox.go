@@ -103,7 +103,7 @@ func getSandboxReprovisionSteps(ctx workflow.Context, install *app.Install, inst
 	step, err = sg.installSignalStep(ctx, installID, "reprovision sandbox apply", pgtype.Hstore{}, &reprovisionsandboxapplyplan.Signal{
 		InstallSandboxID: sandbox.ID,
 		InstallID:        installID,
-	}, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
+	}, flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}

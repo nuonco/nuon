@@ -3,6 +3,7 @@ package handler
 import (
 	"time"
 
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -12,10 +13,15 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSignal) error {
+func (h *handler) initializeState(ctx workflow.Context) error {
+	queueSignal, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
+	if err != nil {
+		return errors.Wrap(err, "unable to get queue signal")
+	}
+
 	// If the signal has an expiry time and we're past it, terminate without processing.
 	if queueSignal.ExpiresAt != nil && workflow.Now(ctx).After(*queueSignal.ExpiresAt) {
-		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: "signal expired",
@@ -41,7 +47,7 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 		_, valFinished := meta["validate_finished_at"]
 		if valStarted && !valFinished {
 			desc := "previous execution was abandoned (crashed mid-validate), marking as failed"
-			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: desc,
@@ -57,7 +63,7 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 		_, execFinished := meta["execute_finished_at"]
 		if execStarted && !execFinished {
 			desc := "previous execution was abandoned (crashed mid-execute), marking as failed"
-			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: desc,
@@ -70,20 +76,17 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 		}
 	}
 
-	// The Signal field has temporaljson:"-" so it's stripped during activity
-	// serialization. We must fetch it via a separate local activity that
-	// deserializes from DB using the catalog.
-	sig, err := activities.LocalAwaitGetQueueSignalSignalByQueueSignalID(ctx, h.queueSignalID)
+	sig, err := activities.AwaitGetQueueSignalSignalByQueueSignalID(ctx, h.queueSignalID)
 	if err != nil {
 		if catalog.IsSignalTypeNotRegistered(err) {
-			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusPending,
 				StatusDescription: "signal type not registered in current build; parked for redeploy",
 			})
 			return nil
 		}
-		return err
+		return errors.Wrap(err, "unable to get signal")
 	}
 	h.sig = sig
 
@@ -114,7 +117,7 @@ func (h *handler) initializeState(ctx workflow.Context, queueSignal *app.QueueSi
 
 	if err := signal.ApplyInit(h.sig, ctx); err != nil {
 		initErr := &signal.SignalErrInit{Err: err}
-		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: initErr.Error(),

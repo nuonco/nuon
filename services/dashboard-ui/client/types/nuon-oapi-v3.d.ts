@@ -5409,11 +5409,8 @@ export interface components {
       parameters?: {
         [key: string]: string;
       };
-      status?: components["schemas"]["config.CustomNestedStackStatus"];
       template_url?: string;
     };
-    /** @enum {string} */
-    "config.CustomNestedStackStatus": "pending" | "ready" | "error";
     "config.HelmRepoConfig": {
       chart?: string;
       repoURL?: string;

@@ -25,9 +25,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 
 	// Check that the signal still exists before doing any work.
 	// If it was deleted, terminate the workflow without continue-as-new.
-	// We pass the fetched signal into initializeState to avoid a redundant DB fetch.
-	qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
-	if err != nil {
+	if _, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID); err != nil {
 		if dbgenerics.IsGormErrRecordNotFound(err) {
 			l.Warn("queue signal not found, terminating handler")
 			return true, nil
@@ -39,7 +37,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return false, err
 	}
 
-	if err := h.initializeState(ctx, qs); err != nil {
+	if err := h.initializeState(ctx); err != nil {
 		return false, errors.Wrap(err, "unable to initialize state")
 	}
 
@@ -57,10 +55,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// The alive checker combines both existence and expiry checks in a single
 	// DB query to avoid redundant round-trips.
 	var mgrOpts []workflowmanager.Option
-	// Handler signals have explicit callbacks for completion, so the alive
-	// checker only needs to detect deletion/expiry. A longer interval reduces
-	// local activity overhead for long-running signals.
-	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(5*time.Minute))
+	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(3*time.Minute))
 
 	// don't continue-as-new mid-phase: it orphans the in-flight update and the
 	// successor run fails the signal while the work is still alive.
@@ -76,7 +71,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	}
 
 	mgrOpts = append(mgrOpts, workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
-		qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
+		qs, err := activities.AwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
 		if err != nil {
 			if dbgenerics.IsGormErrRecordNotFound(err) {
 				l.Warn("queue signal deleted, terminating orphaned handler")
@@ -92,7 +87,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}))
 	mgrOpts = append(mgrOpts, workflowmanager.WithOnStopped(func(gCtx workflow.Context) {
-		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: "signal expired or deleted",
