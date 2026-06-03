@@ -137,7 +137,7 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         strconv.FormatBool(req.Force),
 		},
-		false, // not plan only
+		req.PlanOnly,
 	)
 	if err != nil {
 		// Mark run as failed before returning

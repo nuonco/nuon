@@ -46,6 +46,10 @@ type Client interface {
 	UpdateApp(ctx context.Context, appID string, req *models.ServiceUpdateAppRequest) (*models.AppApp, error)
 	DeleteApp(ctx context.Context, appID string) (bool, error)
 
+	// app branch methods
+	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
+	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
+
 	// app sandbox config methods
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)
 	GetAppSandboxLatestConfig(ctx context.Context, appID string) (*models.AppAppSandboxConfig, error)

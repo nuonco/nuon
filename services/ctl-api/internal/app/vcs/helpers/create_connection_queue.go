@@ -6,8 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/healthcheck"
-	webhooksubscription "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/v2/webhook_subscription"
+	webhooksubscription "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )

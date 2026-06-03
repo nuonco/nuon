@@ -86,9 +86,26 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	// Step 4: Deploy to install groups in order
 	// Fetch install groups for this config, ordered by the order field
-	installGroups, err := activities.AwaitGetInstallGroupsByConfigID(ctx, configID)
+	allInstallGroups, err := activities.AwaitGetInstallGroupsByConfigID(ctx, configID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch install groups")
+	}
+
+	// For plan-only (preview) runs, only include groups marked UseForPreviews.
+	// If none are marked, fall back to the first group.
+	installGroups := allInstallGroups
+	if flw.PlanOnly && len(allInstallGroups) > 0 {
+		var previewGroups []*app.AppBranchInstallGroup
+		for _, g := range allInstallGroups {
+			if g.UseForPreviews {
+				previewGroups = append(previewGroups, g)
+			}
+		}
+		if len(previewGroups) > 0 {
+			installGroups = previewGroups
+		} else {
+			installGroups = allInstallGroups[:1]
+		}
 	}
 
 	// Create sequential steps for each install group

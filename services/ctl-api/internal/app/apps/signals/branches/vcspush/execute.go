@@ -5,7 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {

@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/v2/branches/vcspush"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"

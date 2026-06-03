@@ -113,7 +113,12 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	var syncerOpts []apisyncer.SyncerOption
 	if opts.Branch != "" {
-		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(opts.Branch, opts.Preview))
+		branchID, branchErr := s.resolveAppBranchID(ctx, appID, opts.Branch)
+		if branchErr != nil {
+			return ui.PrintError(branchErr)
+		}
+		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(branchID, opts.Preview))
+		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
 	}
 
 	syncer := apisyncer.New(s.api, appID, version, cfg, syncerOpts...)
@@ -260,6 +265,22 @@ func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
 	}
 
 	ui.PrintLn(msg)
+}
+
+// resolveAppBranchID resolves a branch name or ID to a branch ID.
+func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID string) (string, error) {
+	branches, err := s.api.GetAppBranches(ctx, appID)
+	if err != nil {
+		return "", fmt.Errorf("unable to list app branches: %w", err)
+	}
+
+	for _, b := range branches {
+		if b.ID == branchNameOrID || b.Name == branchNameOrID {
+			return b.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("app branch %q not found", branchNameOrID)
 }
 
 func (s *Service) notifyOrphanedActions(actions map[string]string) {

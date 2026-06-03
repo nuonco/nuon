@@ -16,8 +16,9 @@ func init() {
 
 func appGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 	return map[app.WorkflowType]flow.WorkflowStepGenerator{
-		app.WorkflowTypeAppConfigBuild: appworkflows.AppConfigBuild,
-		app.WorkflowTypeAppBranchesRun: appworkflows.AppBranchRun,
+		app.WorkflowTypeAppConfigBuild:              appworkflows.AppConfigBuild,
+		app.WorkflowTypeAppBranchesRun:              appworkflows.AppBranchRun,
+		app.WorkflowTypeAppBranchesConfigRepoUpdate: appworkflows.AppBranchUpdate,
 	}
 }
 
