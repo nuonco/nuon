@@ -40,7 +40,7 @@ type RunbookStepConfig struct {
 	// For type = "action" — reference existing action
 	ActionName string `mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
 
-	// For type = "action" — inline ad-hoc action (same fields as ActionStepConfig)
+	// For type = "action" — inline action (same fields as ActionStepConfig)
 	Command        string            `mapstructure:"command,omitempty" toml:"command,omitempty" features:"template"`
 	InlineContents string            `mapstructure:"inline_contents,omitempty" toml:"inline_contents,omitempty" features:"get,template"`
 	EnvVarMap      map[string]string `mapstructure:"env_vars,omitempty" toml:"env_vars,omitempty"`
@@ -60,7 +60,7 @@ func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Markdown file with runbook documentation and instructions. Supports Go templating and external file sources: HTTP(S) URLs, git repositories, file paths, and relative paths").
 		Example("./release-notes.md").
 		Field("steps").Short("ordered steps to execute in the runbook").Required().
-		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline ad-hoc actions")
+		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions")
 }
 
 func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -83,7 +83,7 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Name of a previously defined action workflow to execute. Mutually exclusive with inline action fields (command, inline_contents)").
 		Example("database-migration").
 		Field("command").Short("command to execute (for inline action steps)").
-		Long("Shell command for an inline ad-hoc action. Supports Go templating").
+		Long("Shell command for an inline action. Supports Go templating").
 		Example("./validate.sh").
 		Field("inline_contents").Short("inline script contents (for inline action steps)").
 		Long("Embed script contents directly or reference an external file. Supports Go templating and external URLs").
