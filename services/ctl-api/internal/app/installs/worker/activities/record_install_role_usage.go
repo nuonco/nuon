@@ -45,7 +45,7 @@ func (a *Activities) RecordInstallRoleUsage(ctx context.Context, req *RecordInst
 		return generics.TemporalGormError(res.Error)
 	}
 
-	installState, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
+	installState, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false, true)
 	var stateMap map[string]any
 	if err == nil && installState != nil {
 		stateMap, _ = installState.AsMap()

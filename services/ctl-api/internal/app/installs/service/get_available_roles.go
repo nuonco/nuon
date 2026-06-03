@@ -90,7 +90,7 @@ func (s *service) GetAvailableRoles(ctx *gin.Context) {
 		return
 	}
 
-	installState, err := s.helpers.GetInstallState(ctx, installID, false, false)
+	installState, err := s.helpers.GetInstallState(ctx, installID, false, false, false)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install state: %w", err))
 		return

@@ -44,7 +44,7 @@ func (a *Activities) UpdateInstallRolesFromStackOutputs(ctx context.Context, req
 		return nil
 	}
 
-	installState, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false)
+	installState, err := a.helpers.GetInstallState(ctx, req.InstallID, false, false, true)
 	if err != nil {
 		return fmt.Errorf("unable to get install state: %w", err)
 	}

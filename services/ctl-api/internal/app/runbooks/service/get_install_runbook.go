@@ -62,7 +62,7 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 	// Render runbook config readmes with install state, matching the install
 	// readme endpoint pattern (get_install_readme.go).
 	if installRunbook.Runbook.Configs != nil {
-		installState, err := s.installHelpers.GetInstallState(ctx, installID, true, true)
+		installState, err := s.installHelpers.GetInstallState(ctx, installID, true, true, false)
 		if err == nil {
 			stateMap, err := installState.AsMap()
 			if err == nil {

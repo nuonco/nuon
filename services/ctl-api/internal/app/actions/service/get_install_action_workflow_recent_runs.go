@@ -136,7 +136,7 @@ func (s *service) getRecentRuns(ctx *gin.Context, orgID, installID, actionWorkfl
 		return nil, errors.Wrap(res.Error, "unable to get install action workflow")
 	}
 
-	installState, err := s.installHelpers.GetInstallState(ctx, installID, false, false)
+	installState, err := s.installHelpers.GetInstallState(ctx, installID, false, false, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install state: %w", err)
 	}

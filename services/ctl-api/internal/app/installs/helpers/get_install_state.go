@@ -19,12 +19,15 @@ import (
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
-func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
+// allowStaleRefresh controls whether stale partials are regenerated inline on read. Activity callers
+// pass true (durable, no client timeout); HTTP callers pass false to avoid request timeouts and instead
+// surface staleness via StaleAt, leaving regeneration to the activity path.
+func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool, allowStaleRefresh bool) (*state.State, error) {
 	latestState, err := h.getLatestInstallStateRow(ctx, installID)
 	if err == nil {
 		es := latestState.State
 		switch {
-		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
+		case allowStaleRefresh && !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
 			es, err = h.regenerateStalePartials(ctx, latestState, redacted, skipVersionCheck)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to regenerate stale partials")
