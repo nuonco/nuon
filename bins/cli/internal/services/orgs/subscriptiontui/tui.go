@@ -149,11 +149,16 @@ func newResourceState(kind string) *resourceState {
 //   - matchModeSkip / matchModeAny: nothing else read.
 //   - matchModeSpecific: ids populated by the data-driven entity picker
 //     in pickers.go.
-//   - matchModeLabels: selectorRaw parsed by labels.ParseLabelsQuery.
+//   - matchModeLabels: selectorRaw parsed into MatchLabels and
+//     excludeRaw into NotMatchLabels. Either may be empty as long as
+//     at least one is non-empty — mirrors the Slack/dashboard
+//     "include" + "exclude" inputs so "everything except env=stage"
+//     works without enumerating positives.
 type kindMatchState struct {
 	mode        string
 	ids         []string
 	selectorRaw string
+	excludeRaw  string
 }
 
 // Run walks the user through an interactive picker that produces the two
@@ -349,9 +354,13 @@ func buildPhase1Groups(
 
 		groups = append(groups, huh.NewGroup(
 			huh.NewInput().
-				Title(fmt.Sprintf("%s — label selector", k)).
-				Description("key=value pairs, comma-separated (e.g. env=prod,team=*). Required for the Labels mode.").
+				Title(fmt.Sprintf("%s — include label selector", k)).
+				Description("key=value pairs, comma-separated (e.g. env=prod,team=*). Leave blank to match everything except the excludes.").
 				Value(&st.selectorRaw),
+			huh.NewInput().
+				Title(fmt.Sprintf("%s — exclude label selector", k)).
+				Description("key=value pairs whose match removes an entity (e.g. env=stage). Optional; at least one of include/exclude is required for the Labels mode.").
+				Value(&st.excludeRaw),
 		).WithHideFunc(func() bool { return !*scoped || st.mode != matchModeLabels }))
 	}
 
@@ -403,7 +412,10 @@ func buildInterests(allEvents bool, resources map[string]*resourceState) any {
 //   - skip:     omit the kind (nil pointer)
 //   - any:      &TargetMatch{} — empty filter, server treats as "any"
 //   - specific: &TargetMatch{IDs: ...}
-//   - labels:   &TargetMatch{Selector: &Selector{MatchLabels: ...}}
+//   - labels:   &TargetMatch{Selector: ...} with the parsed include
+//     selector in MatchLabels and the parsed exclude selector in
+//     NotMatchLabels. Either map may be empty as long as at least one
+//     of them is non-empty.
 func buildMatch(scoped bool, kindStates map[string]*kindMatchState) (*labels.SubscriptionMatch, error) {
 	if !scoped {
 		return nil, nil
@@ -430,11 +442,19 @@ func buildMatch(scoped bool, kindStates map[string]*kindMatchState) (*labels.Sub
 			}
 			tm = &labels.TargetMatch{IDs: st.ids}
 		case matchModeLabels:
-			lbls := labels.ParseLabelsQuery(st.selectorRaw)
-			if len(lbls) == 0 {
-				return nil, fmt.Errorf("%s match mode is labels but no key=value pairs were given", kind)
+			inc := labels.ParseLabelsQuery(st.selectorRaw)
+			exc := labels.ParseLabelsQuery(st.excludeRaw)
+			if len(inc) == 0 && len(exc) == 0 {
+				return nil, fmt.Errorf("%s match mode is labels but no include/exclude key=value pairs were given", kind)
 			}
-			tm = &labels.TargetMatch{Selector: &labels.Selector{MatchLabels: lbls}}
+			sel := &labels.Selector{}
+			if len(inc) > 0 {
+				sel.MatchLabels = inc
+			}
+			if len(exc) > 0 {
+				sel.NotMatchLabels = exc
+			}
+			tm = &labels.TargetMatch{Selector: sel}
 		default:
 			return nil, fmt.Errorf("unknown %s match mode %q", kind, st.mode)
 		}
