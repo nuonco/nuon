@@ -8,13 +8,30 @@ import (
 	"github.com/invopop/jsonschema"
 )
 
+// CustomNestedStackStatus describes whether a custom nested stack's template
+// contents have been uploaded to the managed S3 bucket and are ready to be
+// referenced in a generated CloudFormation/ARM stack.
+type CustomNestedStackStatus string
+
+const (
+	// CustomNestedStackStatusPending indicates the template contents have been
+	// received but not yet uploaded to S3 (ContentsHash not yet set).
+	CustomNestedStackStatusPending CustomNestedStackStatus = "pending"
+	// CustomNestedStackStatusReady indicates the template contents have been
+	// uploaded to S3 and ContentsHash is set; the stack can be generated.
+	CustomNestedStackStatusReady CustomNestedStackStatus = "ready"
+	// CustomNestedStackStatusError indicates uploading the template contents failed.
+	CustomNestedStackStatusError CustomNestedStackStatus = "error"
+)
+
 type CustomNestedStack struct {
-	Name         string            `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
-	TemplateURL  string            `mapstructure:"template_url" toml:"template_url" json:"template_url" jsonschema:"required" features:"template"`
-	Index        int               `mapstructure:"index" toml:"index" json:"index" jsonschema:"required"`
-	Parameters   map[string]string `mapstructure:"parameters,omitempty" toml:"parameters" json:"parameters,omitempty"`
-	Contents     string            `mapstructure:"-" toml:"-" json:"contents,omitempty" jsonschema:"-" features:"get"`
-	ContentsHash string            `mapstructure:"-" toml:"-" json:"contents_hash,omitempty" jsonschema:"-"`
+	Name         string                  `mapstructure:"name" toml:"name" json:"name" jsonschema:"required"`
+	TemplateURL  string                  `mapstructure:"template_url" toml:"template_url" json:"template_url" jsonschema:"required" features:"template"`
+	Index        int                     `mapstructure:"index" toml:"index" json:"index" jsonschema:"required"`
+	Parameters   map[string]string       `mapstructure:"parameters,omitempty" toml:"parameters" json:"parameters,omitempty"`
+	Contents     string                  `mapstructure:"-" toml:"-" json:"contents,omitempty" jsonschema:"-" features:"get"`
+	ContentsHash string                  `mapstructure:"-" toml:"-" json:"contents_hash,omitempty" jsonschema:"-"`
+	Status       CustomNestedStackStatus `mapstructure:"-" toml:"-" json:"status,omitempty" jsonschema:"-"`
 }
 
 func (a CustomNestedStack) JSONSchemaExtend(schema *jsonschema.Schema) {

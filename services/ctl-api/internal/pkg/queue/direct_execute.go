@@ -40,7 +40,7 @@ func (q *queue) directExecuteHandler(ctx workflow.Context, req DirectExecuteRequ
 
 	l.Info("direct executing queue signal", zap.String("queue-signal-id", req.QueueSignalID))
 
-	queueSignal, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, req.QueueSignalID)
+	queueSignal, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, req.QueueSignalID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get queue signal")
 	}
@@ -63,7 +63,7 @@ func (q *queue) directExecuteHandler(ctx workflow.Context, req DirectExecuteRequ
 	// process immediately, bypassing the channel
 	signalErr := q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
-		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		if statusErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,
 			Status:        app.StatusError,
 		}); statusErr != nil {

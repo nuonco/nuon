@@ -5409,8 +5409,11 @@ export interface components {
       parameters?: {
         [key: string]: string;
       };
+      status?: components["schemas"]["config.CustomNestedStackStatus"];
       template_url?: string;
     };
+    /** @enum {string} */
+    "config.CustomNestedStackStatus": "pending" | "ready" | "error";
     "config.HelmRepoConfig": {
       chart?: string;
       repoURL?: string;
@@ -7094,7 +7097,7 @@ export interface components {
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
-      deploy_dependents?: boolean;
+      deploy_dependents?: boolean | null;
       inputs: {
         [key: string]: string;
       };
