@@ -27,7 +27,7 @@ const mockWorkflow = {
 
 const mockFinishedWorkflow = {
   id: 'inwj31srgsthldkueeo',
-  type: 'deploy',
+  type: 'deploy_components',
   created_at: '2024-01-01T12:00:00Z',
   created_by: { email: 'nat@nuon.co' },
   finished: true,

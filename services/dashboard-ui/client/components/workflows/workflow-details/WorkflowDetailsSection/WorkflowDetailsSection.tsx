@@ -6,7 +6,6 @@ import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
-import { Stack } from '@/components/common/Stack'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
@@ -89,36 +88,46 @@ export const WorkflowDetailsSection = ({
 
       {changedInputs.length > 0 && (
         <>
-          <Stack>
-            <Text variant="subtext" weight="strong" theme="neutral">
-              Changed inputs
-            </Text>
+          <hr />
 
-            {changedInputs?.map((inp) => (
-              <Stack gap={2} className="divide-y">
-                <Text weight="strong">{inp?.name}</Text>
-                <Text theme="neutral">
-                  <ClickToCopy>
-                    <Text
-                      className="line-through"
-                      variant="subtext"
-                      theme="error"
-                      family="mono"
-                    >
-                      {inp?.old}
-                    </Text>
-                  </ClickToCopy>
-                </Text>
-                <Text theme="neutral">
-                  <ClickToCopy>
-                    <Text variant="subtext" theme="success" family="mono">
-                      {inp?.new}
-                    </Text>
-                  </ClickToCopy>
-                </Text>
-              </Stack>
-            ))}
-          </Stack>
+          <PropertyGrid
+            values={changedInputs}
+            columns={[
+              { key: 'name', header: 'Name' },
+              {
+                key: 'old',
+                header: 'Old value',
+                render: (value) => (
+                  <Text theme="neutral">
+                    <ClickToCopy>
+                      <Text
+                        className="line-through"
+                        variant="subtext"
+                        theme="error"
+                        family="mono"
+                      >
+                        {String(value)}
+                      </Text>
+                    </ClickToCopy>
+                  </Text>
+                ),
+              },
+              {
+                key: 'new',
+                header: 'New value',
+                render: (value) => (
+                  <Text theme="neutral">
+                    <ClickToCopy className="self-start">
+                      <Text variant="subtext" theme="success" family="mono">
+                        {String(value)}
+                      </Text>
+                    </ClickToCopy>
+                  </Text>
+                ),
+              },
+            ]}
+            gridTemplate="auto 1fr 1fr"
+          />
         </>
       )}
 
