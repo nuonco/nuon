@@ -79,6 +79,12 @@ var InstallDeploysLatestViewV1 string
 //go:embed install_inputs_view_v1.sql
 var InstallInputsViewV1 string
 
+//go:embed install_runbook_runs_latest_view_v1.sql
+var InstallRunbookRunsLatestViewV1 string
+
+//go:embed runbook_configs_latest_view_v1.sql
+var RunbookConfigsLatestViewV1 string
+
 //go:embed runner_health_checks_view_v1.sql
 var RunnerHealthCheckViewV1 string
 
