@@ -55,6 +55,23 @@ func (s *service) getLogStream(ctx context.Context, logStreamID string) (*app.Lo
 	return &logStream, nil
 }
 
+// getCachedLogStream is the OTLP ingest fast path. The writer only consults
+// OwnerType and ParentLogStreamID, both effectively immutable for the life
+// of the stream, so per-batch Postgres lookups are wasted I/O once we've
+// seen a stream once. Cache miss falls back to getLogStream and primes the
+// LRU. Renames / re-parenting take up to logStreamCacheTTL to propagate.
+func (s *service) getCachedLogStream(ctx context.Context, logStreamID string) (*app.LogStream, error) {
+	if cached, ok := s.logStreamCache.Get(logStreamID); ok {
+		return cached, nil
+	}
+	ls, err := s.getLogStream(ctx, logStreamID)
+	if err != nil {
+		return nil, err
+	}
+	s.logStreamCache.Add(logStreamID, ls)
+	return ls, nil
+}
+
 func (s *service) getOrgLogStream(ctx context.Context, logStreamID string, orgID string) (*app.LogStream, error) {
 	logStream := app.LogStream{}
 	res := s.db.WithContext(ctx).

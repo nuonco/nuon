@@ -1,17 +1,22 @@
 package service
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
 
@@ -29,6 +34,7 @@ type Params struct {
 	EndpointAudit        *apiPkg.EndpointAudit
 	RunnerHeartbeatCache *RunnerHeartbeatCache
 	Heartbeater          *heartbeater.Heartbeater
+	FeaturesClient       *features.Features
 }
 
 type service struct {
@@ -43,7 +49,19 @@ type service struct {
 	helpers              *helpers.Helpers
 	runnerHeartbeatCache *RunnerHeartbeatCache
 	heartbeater          *heartbeater.Heartbeater
+	featuresClient       *features.Features
+	// logStreamCache hits in front of getLogStream on the OTLP ingest
+	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
+	// are effectively immutable for the life of the stream, so a 5min TTL
+	// trades a 5min staleness window for one fewer Postgres round-trip
+	// per OTLP batch.
+	logStreamCache *expirable.LRU[string, *app.LogStream]
 }
+
+const (
+	logStreamCacheSize = 10_000
+	logStreamCacheTTL  = 5 * time.Minute
+)
 
 var _ apiPkg.Service = (*service)(nil)
 
@@ -113,6 +131,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.POST(tfBackendPath, s.UpdateTerraformState)
 
 	api.GET("/v1/log-streams/:log_stream_id/logs", s.LogStreamReadLogs)
+	api.GET("/v1/log-streams/:log_stream_id/logs/tail", s.LogStreamTailLogs)
 	api.GET("/v1/log-streams/:log_stream_id/spans", s.LogStreamReadSpans)
 	api.GET("/v1/log-streams/:log_stream_id", s.GetLogStream)
 
@@ -344,6 +363,8 @@ func New(params Params) *service {
 		helpers:              params.Helpers,
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
 		heartbeater:          params.Heartbeater,
+		featuresClient:       params.FeaturesClient,
+		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}
 }
 
