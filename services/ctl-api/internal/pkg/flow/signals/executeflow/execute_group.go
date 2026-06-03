@@ -54,7 +54,8 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 		"queue", cfg.QueueName,
 	)
 
-	cb := callback.New(ctx, signalOwnerID)
+	s.groupDispatchSeq++
+	cb := callback.NewAttempt(ctx, signalOwnerID, s.groupDispatchSeq)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         cfg.OwnerID,
 		OwnerType:       cfg.OwnerType,
@@ -72,8 +73,12 @@ func (s *Signal) executeGroup(ctx workflow.Context, group *app.WorkflowStepGroup
 	s.activeGroupQueueSignalID = enqueueResp.QueueSignalID
 	defer func() { s.activeGroupQueueSignalID = "" }()
 
-	// Wait for the group signal to finish using the callback signal.
-	_, err = callback.Await(ctx, cb)
+	// Bound by the group's derived timeout; fall back to the human-wait cap when unset.
+	groupTimeout := group.Timeout
+	if groupTimeout <= 0 {
+		groupTimeout = callback.FallbackAwaitTimeout
+	}
+	_, err = callback.AwaitWithTimeout(ctx, cb, groupTimeout)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
