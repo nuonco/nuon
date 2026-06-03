@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,10 +20,22 @@ const maxDownloadLogs = 50000
 const (
 	streamingThreshold = 40
 	streamingDelay     = 200 * time.Millisecond
-	pollInterval       = 1 * time.Second
-	errorRetryDelay    = 5 * time.Second
-	// How often to re-check whether an open stream has closed.
+	// pollInterval is the legacy 1s-poll cadence, used when the org
+	// doesn't have log-tail-long-poll enabled.
+	pollInterval    = 1 * time.Second
+	errorRetryDelay = 5 * time.Second
+	// streamStatusCheck bounds how long we'll sit on an open long-poll
+	// before re-asking the server whether the stream has closed.
 	streamStatusCheck = 10 * time.Second
+
+	// tailInitialWait is the first long-poll probe's wait override. The
+	// server default is ~30s; we want the very first probe to return
+	// quickly so a completed-and-empty stream emits "complete" before
+	// the user perceives a stall on page load.
+	tailInitialWait = "1s"
+	// logTailFeatureName mirrors app.OrgFeatureLogTailLongPoll; the
+	// BFF intentionally doesn't import ctl-api's internal/app package.
+	logTailFeatureName = "log-tail-long-poll"
 )
 
 type LogStreamsHandler struct {
@@ -38,6 +51,24 @@ func (h *LogStreamsHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/api/orgs/:orgId/log-streams/:logStreamId/logs/sse", h.StreamLogs)
 	e.GET("/api/orgs/:orgId/log-streams/:logStreamId/logs/download", h.DownloadLogs)
 	return nil
+}
+
+// streamSession holds per-request state shared by the tail and legacy
+// fetchers — cursor, open-state, and the SSE sinks.
+type streamSession struct {
+	client      nuon.Client
+	l           *zap.Logger
+	logStreamID string
+	order       string
+	isOpen      bool
+
+	hasSeenFirstBatch bool
+	isCatchingUp      bool
+	lastStatusCheck   time.Time
+
+	sendEvent  func(logs []*models.AppOtelLogRecord)
+	sendStatus func(status string)
+	sendError  func(msg string)
 }
 
 func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
@@ -82,28 +113,59 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 	c.Writer.WriteHeader(http.StatusOK)
 	c.Writer.Flush()
 
-	var currentOffset string
-	isCatchingUp := false
-	hasSeenFirstBatch := false
-	isOpen := logStream.Open
-	lastStatusCheck := time.Now()
-
-	sendEvent := func(logs []*models.AppOtelLogRecord) {
-		b, _ := json.Marshal(logs)
-		fmt.Fprintf(c.Writer, "data: %s\n\n", b)
-		c.Writer.Flush()
+	sess := &streamSession{
+		client:          client,
+		l:               h.l,
+		logStreamID:     logStreamID,
+		order:           order,
+		isOpen:          logStream.Open,
+		lastStatusCheck: time.Now(),
+		sendEvent: func(logs []*models.AppOtelLogRecord) {
+			b, _ := json.Marshal(logs)
+			fmt.Fprintf(c.Writer, "data: %s\n\n", b)
+			c.Writer.Flush()
+		},
+		sendStatus: func(status string) {
+			fmt.Fprintf(c.Writer, "event: status\ndata: %s\n\n", status)
+			c.Writer.Flush()
+		},
+		sendError: func(msg string) {
+			b, _ := json.Marshal(map[string]string{"error": msg})
+			fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", b)
+			c.Writer.Flush()
+		},
 	}
 
-	sendStatus := func(status string) {
-		fmt.Fprintf(c.Writer, "event: status\ndata: %s\n\n", status)
-		c.Writer.Flush()
+	// Tail endpoint only supports ASC; DESC stays on the legacy path.
+	useTail := order == "asc" && h.orgHasLogTail(ctx, client, logStreamID)
+	if useTail {
+		sess.runTail(ctx)
+		return
 	}
+	sess.runLegacy(ctx, "")
+}
 
-	sendError := func(msg string) {
-		b, _ := json.Marshal(map[string]string{"error": msg})
-		fmt.Fprintf(c.Writer, "event: error\ndata: %s\n\n", b)
-		c.Writer.Flush()
+// orgHasLogTail reads the org feature flag once to pick the streaming
+// path up-front. We don't probe the tail endpoint to discover the flag is
+// off — that would burn a request on every legacy session. Read failures
+// fall through to the legacy path rather than failing the SSE.
+func (h *LogStreamsHandler) orgHasLogTail(ctx context.Context, client nuon.Client, logStreamID string) bool {
+	org, err := client.GetOrg(ctx)
+	if err != nil {
+		h.l.Warn("failed to read org for log-tail feature gate; using legacy poll",
+			zap.String("logStreamID", logStreamID),
+			zap.Error(err))
+		return false
 	}
+	return org.Features[logTailFeatureName]
+}
+
+// runTail drives the long-poll tail endpoint. Transient errors retry on
+// the tail path rather than swapping to the legacy poller mid-session —
+// the org opted into the new path, keep them on it.
+func (s *streamSession) runTail(ctx context.Context) {
+	since := "" // empty cursor: server starts at the oldest row and drains via has_more.
+	wait := tailInitialWait
 
 	for {
 		select {
@@ -112,9 +174,95 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		default:
 		}
 
-		logs, nextOffset, err := client.LogStreamReadLogsWithNextOffset(ctx, logStreamID, currentOffset, order)
+		resp, err := s.client.LogStreamTailLogs(ctx, s.logStreamID, since, wait)
 		if err != nil {
-			sendError("Polling failed")
+			s.l.Warn("log tail poll failed",
+				zap.String("logStreamID", s.logStreamID),
+				zap.Error(err))
+			s.sendError("Polling failed")
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(errorRetryDelay):
+			}
+			continue
+		}
+
+		// After the first probe, drop the short initial-wait override so
+		// idle steady-state is bounded by the server's 30s wait cap.
+		wait = ""
+
+		if len(resp.Logs) > 0 {
+			if !s.hasSeenFirstBatch {
+				s.isCatchingUp = len(resp.Logs) >= streamingThreshold || resp.HasMore
+				s.hasSeenFirstBatch = true
+				if s.isCatchingUp {
+					s.sendStatus("catching-up")
+				}
+			}
+
+			if s.isCatchingUp {
+				s.sendEvent(resp.Logs)
+				if !resp.HasMore {
+					s.isCatchingUp = false
+					s.sendStatus("live")
+				}
+			} else if !s.isOpen {
+				// Closed stream: no typewriter pacing, just dump.
+				s.sendEvent(resp.Logs)
+			} else {
+				// Live stream: pace one log at a time so output streams
+				// in rather than landing in 100-line jumps.
+				for _, log := range resp.Logs {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(streamingDelay):
+					}
+					s.sendEvent([]*models.AppOtelLogRecord{log})
+				}
+			}
+
+			if resp.Next != "" {
+				since = resp.Next
+			}
+		}
+
+		if !s.isOpen && len(resp.Logs) == 0 {
+			s.sendStatus("complete")
+			<-ctx.Done()
+			return
+		}
+
+		// Re-check the stream's open state — without this we'd sit on
+		// the long-poll forever after a job finishes and stops emitting.
+		// When we discover the stream just closed, drop the next probe's
+		// wait window so we drain and emit "complete" promptly rather
+		// than blocking another full 30s on the server's default wait.
+		if s.isOpen && time.Since(s.lastStatusCheck) >= streamStatusCheck {
+			s.lastStatusCheck = time.Now()
+			ls, err := s.client.GetLogStream(ctx, s.logStreamID)
+			if err == nil && !ls.Open {
+				s.isOpen = false
+				wait = tailInitialWait
+			}
+		}
+	}
+}
+
+// runLegacy is the pre-feature-flag 1s-poll loop, used for DESC sessions
+// and orgs without log-tail-long-poll enabled.
+func (s *streamSession) runLegacy(ctx context.Context, currentOffset string) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		logs, nextOffset, err := s.client.LogStreamReadLogsWithNextOffset(ctx, s.logStreamID, currentOffset, s.order)
+		if err != nil {
+			s.sendError("Polling failed")
 			select {
 			case <-ctx.Done():
 				return
@@ -128,26 +276,26 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 		}
 
 		if len(logs) > 0 {
-			if !hasSeenFirstBatch {
-				isCatchingUp = len(logs) >= streamingThreshold
-				hasSeenFirstBatch = true
-				if isCatchingUp {
-					sendStatus("catching-up")
+			if !s.hasSeenFirstBatch {
+				s.isCatchingUp = len(logs) >= streamingThreshold
+				s.hasSeenFirstBatch = true
+				if s.isCatchingUp {
+					s.sendStatus("catching-up")
 				}
 			}
 
 			paginationComplete := nextOffset == ""
 
-			if isCatchingUp {
-				sendEvent(logs)
+			if s.isCatchingUp {
+				s.sendEvent(logs)
 				if paginationComplete {
-					isCatchingUp = false
-					sendStatus("live")
+					s.isCatchingUp = false
+					s.sendStatus("live")
 				} else {
 					continue
 				}
-			} else if !isOpen {
-				sendEvent(logs)
+			} else if !s.isOpen {
+				s.sendEvent(logs)
 			} else {
 				for _, log := range logs {
 					select {
@@ -155,27 +303,22 @@ func (h *LogStreamsHandler) StreamLogs(c *gin.Context) {
 						return
 					case <-time.After(streamingDelay):
 					}
-					sendEvent([]*models.AppOtelLogRecord{log})
+					s.sendEvent([]*models.AppOtelLogRecord{log})
 				}
 			}
 		}
 
-		// If the stream is closed and we've exhausted all pages, tell the
-		// client and wait for it to close the connection. Returning here would
-		// close the HTTP response, which causes EventSource to auto-reconnect
-		// before the browser processes the "complete" event.
-		if !isOpen && nextOffset == "" {
-			sendStatus("complete")
+		if !s.isOpen && nextOffset == "" {
+			s.sendStatus("complete")
 			<-ctx.Done()
 			return
 		}
 
-		// Periodically re-check whether an open stream has closed.
-		if isOpen && time.Since(lastStatusCheck) >= streamStatusCheck {
-			lastStatusCheck = time.Now()
-			ls, err := client.GetLogStream(ctx, logStreamID)
+		if s.isOpen && time.Since(s.lastStatusCheck) >= streamStatusCheck {
+			s.lastStatusCheck = time.Now()
+			ls, err := s.client.GetLogStream(ctx, s.logStreamID)
 			if err == nil && !ls.Open {
-				isOpen = false
+				s.isOpen = false
 			}
 		}
 
