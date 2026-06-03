@@ -34,9 +34,10 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		orgTyp = app.OrgTypeSandbox
 	}
 
+	enableNotifications := acct.AccountType == app.AccountTypeAuth0 || acct.AccountType == app.AccountTypeAuth
 	notificationsCfg := app.NotificationsConfig{
-		EnableSlackNotifications: acct.AccountType == app.AccountTypeAuth0,
-		EnableEmailNotifications: acct.AccountType == app.AccountTypeAuth0,
+		EnableSlackNotifications: enableNotifications,
+		EnableEmailNotifications: enableNotifications,
 		InternalSlackWebhookURL:  h.cfg.InternalSlackWebhookURL,
 	}
 	org := app.Org{
