@@ -9,6 +9,8 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type RunbookConfig struct {
@@ -40,6 +42,16 @@ func (r *RunbookConfig) BeforeCreate(tx *gorm.DB) error {
 	r.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	r.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (r *RunbookConfig) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &RunbookConfig{}, "latest_view_v1"),
+			SQL:           viewsql.RunbookConfigsLatestViewV1,
+			AlwaysReapply: true,
+		},
+	}
 }
 
 func (r *RunbookConfig) Indexes(db *gorm.DB) []migrations.Index {
