@@ -18,7 +18,7 @@ import (
 // If the step's signal implements SignalWithClone, Clone() is called to produce
 // one or more replacement steps (e.g., a plan signal returns a clean copy, an
 // apply signal returns plan + apply). Otherwise the signal is copied verbatim.
-func cloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) error {
+func CloneStepForRetry(ctx workflow.Context, stepID string, workflowID string) error {
 	step, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, stepID)
 	if err != nil {
 		return fmt.Errorf("unable to get step %s: %w", stepID, err)
