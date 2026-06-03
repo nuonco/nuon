@@ -176,8 +176,10 @@ func TestGetCustomNestedStacks_MissingName(t *testing.T) {
 	assert.Contains(t, err.Error(), "name is required")
 }
 
-func TestGetCustomNestedStacks_MissingTemplateURL(t *testing.T) {
+func TestGetCustomNestedStacks_MissingTemplateSource(t *testing.T) {
 	tpl := &Templates{cfg: &internal.Config{}}
+	// No pre-hosted remote template_url and no uploaded contents (ContentsHash),
+	// so the stack is not ready to be generated.
 	inp := newTestInput("http://localhost", []config.CustomNestedStack{
 		{Name: "my_stack", TemplateURL: "", Index: 0},
 	})
@@ -185,7 +187,7 @@ func TestGetCustomNestedStacks_MissingTemplateURL(t *testing.T) {
 
 	_, err := tpl.getCustomNestedStacks(inp, tb, map[string]bool{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "template_url is required")
+	assert.Contains(t, err.Error(), "template not ready")
 }
 
 func TestGetCustomNestedStacks_ConflictWithExistingResource(t *testing.T) {
