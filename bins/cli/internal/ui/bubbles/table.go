@@ -104,7 +104,8 @@ func calculateColumnWidth(data [][]string, columnIndex int) int {
 
 	for _, row := range data {
 		if columnIndex < len(row) {
-			cellWidth := len(row[columnIndex])
+			// Use lipgloss.Width so ANSI color codes don't inflate the width.
+			cellWidth := lipgloss.Width(row[columnIndex])
 			if cellWidth > maxWidth {
 				maxWidth = cellWidth
 			}

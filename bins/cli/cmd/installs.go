@@ -401,6 +401,47 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 	currentInputs.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(currentInputs)
 
+	inputsCmd := &cobra.Command{
+		Use:   "inputs",
+		Short: "Manage install inputs",
+		Long:  "View and set the app input values for an install",
+	}
+	inputsCmd.PersistentFlags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+
+	inputsGetCmd := &cobra.Command{
+		Use:     "get",
+		Aliases: []string{"list"},
+		Short:   "View install inputs",
+		Long:    "View the install's current input values alongside their declared defaults",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.GetInputs(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	inputsCmd.AddCommand(inputsGetCmd)
+
+	inputsSetCmd := &cobra.Command{
+		Use:   "set [key=value ...]",
+		Short: "Set install inputs",
+		Long: `Set one or more install input values.
+
+Accepts a list of inputs in key=value format, e.g.:
+
+  nuon installs inputs set foo=bar baz=qux
+
+The current inputs are fetched first so changed values can be shown. Setting an
+input that is not declared on the app raises an error.`,
+		Args: cobra.MinimumNArgs(1),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SetInputs(cmd.Context(), id, args, deployDependents, PrintJSON)
+		}),
+	}
+	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
+	inputsCmd.AddCommand(inputsSetCmd)
+
+	installsCmds.AddCommand(inputsCmd)
+
 	selectInstallCmd := &cobra.Command{
 		Use:         "select",
 		Short:       "Select your current install",
