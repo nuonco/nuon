@@ -172,6 +172,10 @@ func (j *Workflows) pollJob(ctx workflow.Context, req *ExecuteJobRequest) (app.R
 		// if the job is already timed out, there is no reason to continue.
 		now := workflow.Now(dctx)
 		if now.After(job.CreatedAt.Add(job.OverallTimeout)) {
+			// Cancel the runner job so the runner stops executing it.
+			if cancelErr := activities.AwaitPkgWorkflowsJobCancelJobByID(dctx, jobID); cancelErr != nil {
+				l.Error("unable to cancel runner job on timeout", zap.Error(cancelErr))
+			}
 			return app.RunnerJobStatusTimedOut, temporal.NewNonRetryableApplicationError("overall timeout reached", "api", fmt.Errorf("timeout"))
 		}
 

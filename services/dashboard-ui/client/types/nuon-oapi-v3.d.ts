@@ -4160,6 +4160,8 @@ export interface components {
       id?: string;
       install_id?: string;
       stale_at?: components["schemas"]["generics.NullTime"];
+      /** @description StalePartials lists which state partials are stale and need regeneration on next read. */
+      stale_partials?: components["schemas"]["state.PartialName"][];
       triggered_by_id?: string;
       triggered_by_type?: string;
       updated_at?: string;
@@ -5409,8 +5411,11 @@ export interface components {
       parameters?: {
         [key: string]: string;
       };
+      status?: components["schemas"]["config.CustomNestedStackStatus"];
       template_url?: string;
     };
+    /** @enum {string} */
+    "config.CustomNestedStackStatus": "pending" | "ready" | "error";
     "config.HelmRepoConfig": {
       chart?: string;
       repoURL?: string;
@@ -7094,7 +7099,7 @@ export interface components {
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
-      deploy_dependents?: boolean;
+      deploy_dependents?: boolean | null;
       inputs: {
         [key: string]: string;
       };
@@ -7320,6 +7325,8 @@ export interface components {
       populated?: boolean;
       status?: string;
     };
+    /** @enum {string} */
+    "state.PartialName": "org" | "app" | "domain" | "runner" | "cloud" | "actions" | "inputs" | "components" | "sandbox" | "stack" | "secrets";
     "state.RunnerState": {
       id?: string;
       populated?: boolean;

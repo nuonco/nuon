@@ -1,0 +1,123 @@
+---
+title: "Configure runbooks"
+description: "Define named, multi-step procedures and run them against your installs on demand."
+icon: "list-check"
+keywords: ["runbooks", "runbook", "runbook TOML", "configure runbooks", "runbook steps", "deploy step", "action step", "operational procedures", "version upgrade", "database migration", "nuon runbooks"]
+---
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/035-runbooks-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/035-runbook-detail.png"
+    alt="A runbook's detail page in the Nuon dashboard, showing its steps"
+    style={{
+      width: '100%',
+      maxWidth: '720px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Runbooks turn a multi-step operational procedure into a single, repeatable artifact you run against an install on demand. Define the sequence once; run it consistently across every install instead of doing it by hand each time.
+
+Common uses:
+
+* version upgrades
+* database migrations
+* data backfills
+* recovery steps
+
+Each step is either a **deploy** (deploy a component) or an **action** (run an [action](/guides/actions), or a command defined inline). Steps run in order, and every run is recorded in the install's workflow history: a durable, auditable record of what ran, when, and against which install.
+
+## Where runbooks live
+
+Define runbooks as TOML files in a `runbooks/` directory in your app config. Each file is one runbook:
+
+```
+my-app/
+├── metadata.toml
+├── components/
+├── actions/
+└── runbooks/
+    └── v2.3-update.toml
+```
+
+They sync with the rest of your config via `nuon apps sync`, run from the app's working directory in your terminal. Whenever you edit a runbook file locally, re-run `nuon apps sync` to push the changes to Nuon.
+
+## Example
+
+```toml
+name        = "v2.3-update"
+description = "Apply the v2.3 schema migration, then roll out the API."
+readme      = "./runbooks/v2.3-update.md"
+
+[[steps]]
+name        = "migrate-db"
+type        = "action"
+action_name = "database-migration"
+
+[[steps]]
+name           = "deploy-api"
+type           = "deploy"
+component_name = "api-server"
+deploy_dependencies = true
+
+[[steps]]
+name    = "smoke-test"
+type    = "action"
+command = "./scripts/smoke-test.sh"
+timeout = "5m"
+```
+
+## Configuration reference
+
+### Runbook
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Name shown in the **Runbooks** tab and used to identify the runbook during sync. |
+| `description` | string | No | Short description of what the runbook does. |
+| `readme` | string | No | Markdown documentation for the runbook. Supports Go templating and external file sources (HTTP(S) URLs, git, or local paths). |
+| `labels` | map | No | Key/value labels for organizing runbooks. |
+| `steps` | array | Yes | Ordered list of steps to execute. See below. |
+
+### Step (`[[steps]]`)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Step name shown in the workflow UI and runbook detail page. |
+| `type` | string | Yes | `deploy` or `action`. |
+| `component_name` | string | deploy steps | Component to deploy. Required when `type = "deploy"`. |
+| `deploy_dependencies` | bool | No | When true, also deploys the component's transitive dependencies in order. |
+| `action_name` | string | action steps | Name of an existing [action](/guides/actions) to run. Mutually exclusive with the inline fields below. |
+| `command` | string | action steps | Shell command for an inline action. Supports Go templating. |
+| `inline_contents` | string | action steps | Inline script contents, or a reference to an external file. Supports templating and external sources. |
+| `env_vars` | map | No | Environment variables for an inline action step. |
+| `timeout` | string | No | Maximum execution time for an inline action step (Go duration, e.g. `30s`, `5m`). |
+| `role` | string | No | IAM role to assume when executing an inline action step. |
+
+An action step uses **either** `action_name` (to run a previously defined action) **or** the inline fields (`command` / `inline_contents`) to define an inline action, not both.
+
+## Triggering a runbook
+
+Trigger and watch runs from the **Runbooks** tab in the [dashboard](https://app.nuon.co/), or from the CLI:
+
+```sh
+# View and run runbooks for an install
+nuon runbooks --install-id <install-id>
+```
+
+Each run is recorded in the install's workflow history, so you can review the steps, logs, and outcome of any past runbook execution.
+
+## A complete example
+
+For a runnable example, see the [`programmable-runbook-and-readme`](https://github.com/nuonco/example-app-configs/tree/main/programmable-runbook-and-readme) app config in `example-app-configs`. It has runbooks for an on-call restart and a smoke test, plus rendered READMEs that embed them.
