@@ -35,10 +35,12 @@ type Signal struct {
 	StepID string `json:"step_id,omitempty"`
 }
 
-var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
-var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
-var _ signal.SignalWithStepContext = (*Signal)(nil)
+var (
+	_ signal.Signal                   = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry      = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+	_ signal.SignalWithStepContext    = (*Signal)(nil)
+)
 
 func (s *Signal) Type() signal.SignalType               { return SignalType }
 func (s *Signal) AutoRetry() bool                       { return true }
@@ -66,7 +68,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 
 		build, err := activities.AwaitCreateComponentBuildRecord(ctx, activities.CreateComponentBuildRecordRequest{
-			CreatedByID:           cmp.CreatedByID,
 			ComponentID:           s.ComponentID,
 			OrgID:                 cmp.OrgID,
 			GitRef:                s.GitRef,
