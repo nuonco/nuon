@@ -141,6 +141,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 			org.POST("/admin-rename", s.AdminRenameOrg)
 			org.POST("/admin-internal-slack-webhook-url", s.AdminSetInternalSlackWebhookURLOrg)
 			org.POST("/admin-customer-slack-webhook-url", s.AdminSetCustomerSlackWebhookURLOrg)
+			org.POST("/admin-enable-email-notifications", s.AdminEnableEmailNotifications)
 			org.POST("/admin-add-vcs-connection", s.AdminAddVCSConnection)
 			org.POST("/admin-service-account", s.AdminCreateServiceAccount)
 			org.POST("/admin-add-logo", s.AdminAddLogo)
