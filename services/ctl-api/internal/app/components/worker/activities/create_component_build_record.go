@@ -11,7 +11,6 @@ import (
 type CreateComponentBuildRecordRequest struct {
 	ComponentID string `validate:"required"`
 	OrgID       string `validate:"required"`
-	CreatedByID string `validate:"required"`
 
 	// GitRef overrides useLatest when set. Used to pin a build to the branch's specific commit.
 	GitRef *string
@@ -25,7 +24,6 @@ type CreateComponentBuildRecordRequest struct {
 // @temporal-gen-v2 activity
 func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateComponentBuildRecordRequest) (*app.ComponentBuild, error) {
 	ctx = cctx.SetOrgIDContext(ctx, req.OrgID)
-	ctx = cctx.SetAccountIDContext(ctx, req.CreatedByID)
 
 	useLatest := req.GitRef == nil
 	build, err := a.helpers.CreateComponentBuild(ctx, req.ComponentID, useLatest, req.GitRef)
