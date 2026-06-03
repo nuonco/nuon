@@ -45,23 +45,13 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Preload("Runbook").
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Where("id IN (?)",
-				tx.Session(&gorm.Session{NewDB: true}).
-					Model(&app.RunbookConfig{}).
-					Select("DISTINCT ON (runbook_id) id").
-					Order("runbook_id, created_at DESC"),
-			)
+			return tx.Scopes(scopes.WithOverrideTable("runbook_configs_latest_view_v1"))
 		}).
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Where("id IN (?)",
-				tx.Session(&gorm.Session{NewDB: true}).
-					Model(&app.InstallRunbookRun{}).
-					Select("DISTINCT ON (install_runbook_id) id").
-					Order("install_runbook_id, created_at DESC"),
-			)
+			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
 		Order("install_runbooks.created_at DESC").
