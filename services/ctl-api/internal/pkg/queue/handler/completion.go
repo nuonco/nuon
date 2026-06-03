@@ -17,7 +17,7 @@ func (h *handler) sendCompletionCallbacks(ctx workflow.Context) {
 	l, _ := log.WorkflowLogger(ctx)
 
 	// Reload from DB to pick up callbacks added after init (e.g. by EnsureSignal).
-	qs, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
+	qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, h.queueSignalID)
 	if err == nil {
 		h.callbacks = qs.Callbacks
 		// Merge legacy single Callback if set.

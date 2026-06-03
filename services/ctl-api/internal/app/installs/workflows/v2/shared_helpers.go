@@ -152,6 +152,16 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 		components[ccc.ComponentID] = ccc.Component
 	}
 
+	// Batch fetch all install components in one activity call instead of
+	// fetching them individually per component in the loop below.
+	installComps, err := activities.AwaitGetInstallComponentsBatch(ctx, activities.GetInstallComponentsBatchRequest{
+		InstallID:    installID,
+		ComponentIDs: componentIDs,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to batch get install components")
+	}
+
 	for i, compID := range componentIDs {
 		// Yield to the Temporal scheduler periodically to avoid deadlock detection
 		// when generating steps for many components (TMPRL1101).
@@ -166,17 +176,8 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
 
-		// Resolve install component ID
-		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
-			InstallID:   installID,
-			ComponentID: compID,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to get install component")
-		}
-
 		var installComponentID string
-		if installComp != nil {
+		if installComp, ok := installComps[compID]; ok && installComp != nil {
 			installComponentID = installComp.ID
 		}
 
@@ -219,7 +220,7 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 				InstallComponentID: installComponentID,
 				InstallID:          installID,
 				ComponentID:        comp.ID,
-			}, flw.PlanOnly)
+			}, flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(appCfg, comp.ID)))
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}

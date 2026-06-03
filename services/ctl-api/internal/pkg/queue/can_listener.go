@@ -84,7 +84,7 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 	}
 
 	// Check 2: restart_hint set in queue metadata.
-	requested, err := activities.AwaitCheckCANRequested(ctx, activities.CheckCANRequestedRequest{
+	requested, err := activities.LocalAwaitCheckCANRequested(ctx, activities.CheckCANRequestedRequest{
 		QueueID: q.queueID,
 	})
 	if err != nil {
@@ -110,7 +110,7 @@ func (q *queue) runCANCheck(ctx workflow.Context, l *zap.Logger) (bool, *CheckCA
 			l.Info("continue-as-new requested via metadata, clearing hint")
 		}
 		// Clear the hint so subsequent checks don't re-trigger.
-		if clearErr := activities.AwaitClearCANRequested(ctx, activities.ClearCANRequestedRequest{
+		if clearErr := activities.LocalAwaitClearCANRequested(ctx, activities.ClearCANRequestedRequest{
 			QueueID: q.queueID,
 		}); clearErr != nil && l != nil {
 			l.Warn("unable to clear restart_hint", zap.Error(clearErr))
