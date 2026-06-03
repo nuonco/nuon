@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 )
@@ -117,6 +118,12 @@ func (h *Helpers) migrateInstallInputs(
 
 	if err := txn.WithContext(ctx).Create(&newInputs).Error; err != nil {
 		return fmt.Errorf("unable to create migrated inputs: %w", err)
+	}
+
+	// inputs changed -> mark the inputs partial of this install's state stale so it is
+	// regenerated lazily on next read.
+	if err := h.MarkInstallStatePartialsStale(ctx, txn, installID, state.PartialInputs); err != nil {
+		return fmt.Errorf("unable to mark inputs partial stale: %w", err)
 	}
 
 	return nil
