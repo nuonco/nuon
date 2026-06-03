@@ -1,8 +1,6 @@
 package driftdetected
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -33,7 +31,7 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 		return errors.Wrap(err, "unable to enqueue drift-detected signal")
 	}
 
-	if _, err := callback.AwaitWithTimeout(ctx, cb, 5*time.Minute); err != nil {
+	if _, err := callback.AwaitWithTimeout(ctx, cb, callback.DriftDetectionTimeout); err != nil {
 		return errors.Wrap(err, "drift-detected signal failed")
 	}
 	return nil

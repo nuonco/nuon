@@ -122,7 +122,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "unable to send validate update")
 	}
 
-	if _, err := callback.AwaitWithTimeout(ctx, validateCB, 5*time.Minute); err != nil {
+	if _, err := callback.AwaitWithTimeout(ctx, validateCB, callback.QuickTimeout); err != nil {
 		return errors.Wrap(err, "validate failed")
 	}
 

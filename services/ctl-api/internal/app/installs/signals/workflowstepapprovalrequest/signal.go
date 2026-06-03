@@ -1,8 +1,6 @@
 package workflowstepapprovalrequest
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -154,7 +152,7 @@ func Dispatch(ctx workflow.Context, sig *Signal) error {
 		return errors.Wrap(err, "unable to enqueue workflow-step-approval-request signal")
 	}
 
-	if _, err := callback.AwaitWithTimeout(ctx, cb, 5*time.Minute); err != nil {
+	if _, err := callback.AwaitWithTimeout(ctx, cb, callback.HumanGatedTimeout); err != nil {
 		return errors.Wrap(err, "workflow-step-approval-request signal failed")
 	}
 	return nil
