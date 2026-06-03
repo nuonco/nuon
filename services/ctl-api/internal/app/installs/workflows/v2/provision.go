@@ -151,7 +151,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		step, err = sg.installSignalStep(ctx, installID, "provision sandbox apply plan", pgtype.Hstore{}, &provisionsandboxapplyplan.Signal{
 			InstallSandboxID: sandboxID,
 			InstallID:        installID,
-		}, flw.PlanOnly)
+		}, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
 		if err != nil {
 			return nil, err
 		}

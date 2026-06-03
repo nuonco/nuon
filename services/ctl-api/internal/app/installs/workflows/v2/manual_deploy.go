@@ -144,7 +144,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 			ComponentID:        comp.ID,
 			FlowID:             "",
 			SandboxMode:        false,
-		}, flw.PlanOnly)
+		}, flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(appCfg, comp.ID)))
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to create image sync")
 		}
