@@ -65,6 +65,11 @@ const (
 	OrgFeatureRunbooks                OrgFeature = "runbooks"
 	OrgFeaturePulumiSandbox           OrgFeature = "pulumi-sandbox"
 	OrgFeaturePulumiUpdatePlans       OrgFeature = "pulumi-update-plans"
+	// OrgFeatureLogTailLongPoll enables the long-poll tail endpoint
+	// (`GET /v1/log-streams/:id/logs/tail`). The dashboard BFF reads
+	// this flag on the org and routes log SSE through the tail path
+	// when set; otherwise it stays on the legacy 1s-polling read path.
+	OrgFeatureLogTailLongPoll OrgFeature = "log-tail-long-poll"
 )
 
 type Org struct {
@@ -185,6 +190,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureRunbooks:                true,
 		OrgFeaturePulumiSandbox:           false,
 		OrgFeaturePulumiUpdatePlans:       false,
+		OrgFeatureLogTailLongPoll:         false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -230,6 +236,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureRunbooks,
 		OrgFeaturePulumiSandbox,
 		OrgFeaturePulumiUpdatePlans,
+		OrgFeatureLogTailLongPoll,
 	}
 }
 
@@ -261,6 +268,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureRunbooks:                "Enable runbooks for defining and executing ordered release procedures with deploy and action steps",
 		OrgFeaturePulumiSandbox:           "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
 		OrgFeaturePulumiUpdatePlans:       "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
+		OrgFeatureLogTailLongPoll:         "Enable the long-poll log-tail endpoint (`/v1/log-streams/:id/logs/tail`) — the dashboard BFF probes it for near-real-time log streaming and falls back to legacy 1s polling when off",
 	}
 }
 
