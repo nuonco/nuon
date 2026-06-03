@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -72,6 +73,11 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	}
 
 	execCtx, cancel := workflow.WithCancel(ctx)
+
+	// Restore the enqueuer's identity onto the execution context.
+	if h.queueSignal != nil {
+		execCtx = queuecctx.ApplyWorkflow(execCtx, h.queueSignal.SignalContext)
+	}
 	h.executingCtx = execCtx
 	h.executingCancel = cancel
 	defer cancel()
