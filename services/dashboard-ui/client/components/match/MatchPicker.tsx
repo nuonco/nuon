@@ -36,7 +36,8 @@ type MatchMode = 'all' | 'specific'
 //     Match by:       ◉ Any ○ Specific ○ Labels
 //     (Specific)      [ entity multi-select scoped to the picked app
 //                       — installs stay org-scoped ]
-//     (Labels)        [ "env=prod, tier=critical, owner=*" text input ]
+//     (Labels)        [ "env=prod, tier=critical, owner=*" include input ]
+//                     [ "env=stage" exclude input — "everything except…" ]
 //
 // `value` is the exact wire shape persisted to the slack_channel_subscriptions
 // row's `match` JSONB column. Undefined => org-wide subscription.
@@ -67,11 +68,17 @@ export const MatchPicker = ({
     const tm = value?.[initialKind]
     return labelsToQueryString(tm?.selector?.match_labels)
   }, [value, initialKind])
+  const initialExcludeLabels = useMemo(() => {
+    const tm = value?.[initialKind]
+    return labelsToQueryString(tm?.selector?.not_match_labels)
+  }, [value, initialKind])
 
   const [mode, setMode] = useState<MatchMode>(initialMode)
   const [kind, setKind] = useState<TargetKind>(initialKind)
   const [predicate, setPredicate] = useState<Predicate>(initialPredicate)
   const [labelsRaw, setLabelsRaw] = useState<string>(initialLabels)
+  const [excludeLabelsRaw, setExcludeLabelsRaw] =
+    useState<string>(initialExcludeLabels)
   // appId is only meaningful when kind ∈ {components, actions} and
   // predicate is 'specific'. It's a UX gate, not part of the wire format
   // — the picked entity ids are globally unique so SubscriptionMatch
@@ -116,17 +123,22 @@ export const MatchPicker = ({
       return
     }
     // labels
-    const parsed = parseLabelsQuery(labelsRaw)
-    // Empty selector is invalid (server-side Validate rejects it); we
-    // still emit the empty-selector shape so the submit-time validator
-    // can surface the error rather than silently keeping the previous
-    // match.
-    onChange({ [kind]: { selector: { match_labels: parsed } } })
+    const include = parseLabelsQuery(labelsRaw)
+    const exclude = parseLabelsQuery(excludeLabelsRaw)
+    // Mirror the Slack modal: emit only the populated halves so the
+    // wire payload stays minimal. Empty include+exclude is invalid
+    // (server-side Validate rejects it); we still emit the empty
+    // shape so the submit-time validator can surface the error rather
+    // than silently keeping the previous match.
+    const selector: { match_labels?: typeof include; not_match_labels?: typeof exclude } = {}
+    if (Object.keys(include).length > 0) selector.match_labels = include
+    if (Object.keys(exclude).length > 0) selector.not_match_labels = exclude
+    onChange({ [kind]: { selector } })
     // We intentionally exclude `value` and `onChange` from deps to avoid
     // an infinite loop — onChange is called with the derived value, which
     // the parent re-passes as `value`. Including either would re-fire the
     // effect on every parent render.
-  }, [mode, kind, predicate, labelsRaw])
+  }, [mode, kind, predicate, labelsRaw, excludeLabelsRaw])
 
   // Switching kind clears the entity ids to mirror the Slack modal's
   // clearStaleSpecificFields behaviour — ids belong to the previous
@@ -138,6 +150,7 @@ export const MatchPicker = ({
     setKind(next)
     setAppId(undefined)
     setLabelsRaw('')
+    setExcludeLabelsRaw('')
   }
 
   // Switching the app inside components/actions invalidates the
@@ -263,22 +276,41 @@ export const MatchPicker = ({
           ) : null}
 
           {predicate === 'labels' ? (
-            <div className="flex flex-col gap-2">
-              <Input
-                labelProps={{ labelText: 'Label selector' }}
-                placeholder="env=prod, tier=critical, owner=*"
-                value={labelsRaw}
-                onChange={(e) => setLabelsRaw(e.target.value)}
-                disabled={disabled}
-              />
-              <Text variant="subtext" theme="neutral">
-                Comma-separated key=value pairs. Use <code>key=*</code> (or just
-                <code> key</code>) to match any value for a key.
-              </Text>
-              {labelsRaw.trim().length > 0 &&
-              Object.keys(parseLabelsQuery(labelsRaw)).length === 0 ? (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <Input
+                  labelProps={{ labelText: 'Include labels' }}
+                  placeholder="env=prod, tier=critical, owner=*"
+                  value={labelsRaw}
+                  onChange={(e) => setLabelsRaw(e.target.value)}
+                  disabled={disabled}
+                />
+                <Text variant="subtext" theme="neutral">
+                  Match {TARGET_KIND_LABELS_PLURAL[kind]} where every listed key
+                  matches. Use <code>key=*</code> (or just <code>key</code>) to
+                  match any value for a key. Leave blank to match everything
+                  except the exclusions below.
+                </Text>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Input
+                  labelProps={{ labelText: 'Exclude labels' }}
+                  placeholder="env=stage"
+                  value={excludeLabelsRaw}
+                  onChange={(e) => setExcludeLabelsRaw(e.target.value)}
+                  disabled={disabled}
+                />
+                <Text variant="subtext" theme="neutral">
+                  Drop {TARGET_KIND_LABELS_PLURAL[kind]} where any listed key
+                  matches — e.g. <code>env=stage</code> to skip stage installs
+                  without enumerating every prod env value.
+                </Text>
+              </div>
+              {labelsRaw.trim().length === 0 &&
+              excludeLabelsRaw.trim().length === 0 ? (
                 <Banner theme="warn">
-                  Add at least one key (e.g. <code>env=prod</code>) — an empty
+                  Add at least one include or exclude key (e.g.{' '}
+                  <code>env=prod</code> or <code>env=stage</code>) — an empty
                   selector matches nothing.
                 </Banner>
               ) : null}
@@ -301,7 +333,7 @@ const derivePredicate = (
 ): Predicate => {
   const tm = m?.[kind]
   if (!tm) return 'any'
-  if (tm.selector?.match_labels) return 'labels'
+  if (tm.selector?.match_labels || tm.selector?.not_match_labels) return 'labels'
   if (tm.ids && tm.ids.length > 0) return 'specific'
   return 'any'
 }

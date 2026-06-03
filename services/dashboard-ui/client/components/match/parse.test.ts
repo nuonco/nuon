@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { labelsToQueryString, parseLabelsQuery } from './parse'
+import { describeMatch } from './types'
 
 describe('parseLabelsQuery', () => {
   test('empty input returns empty map', () => {
@@ -86,5 +87,65 @@ describe('labelsToQueryString', () => {
 
   test('wildcard value renders as k=*', () => {
     expect(labelsToQueryString({ env: '*' })).toBe('env=*')
+  })
+})
+
+describe('describeMatch', () => {
+  test('undefined => Org-wide', () => {
+    expect(describeMatch(undefined)).toBe('Org-wide')
+  })
+
+  test('no populated kind => Org-wide', () => {
+    expect(describeMatch({})).toBe('Org-wide')
+  })
+
+  test('include labels only', () => {
+    expect(
+      describeMatch({
+        installs: { selector: { match_labels: { env: 'prod', tier: '*' } } },
+      })
+    ).toBe('Installs: env=prod, tier=*')
+  })
+
+  test('exclude labels only renders with "not " prefix', () => {
+    expect(
+      describeMatch({
+        installs: { selector: { not_match_labels: { env: 'stage' } } },
+      })
+    ).toBe('Installs: not env=stage')
+  })
+
+  test('include + exclude joined with semicolon', () => {
+    expect(
+      describeMatch({
+        components: {
+          selector: {
+            match_labels: { env: 'prod' },
+            not_match_labels: { canary: '*' },
+          },
+        },
+      })
+    ).toBe('Components: env=prod; not canary=*')
+  })
+
+  test('ids fall back to count-noun summary', () => {
+    expect(describeMatch({ installs: { ids: ['a', 'b', 'c'] } })).toBe(
+      '3 installs'
+    )
+    expect(describeMatch({ installs: { ids: ['a'] } })).toBe('1 install')
+  })
+
+  test('empty TargetMatch{} renders as Any', () => {
+    expect(describeMatch({ actions: {} })).toBe('Any actions')
+  })
+
+  test('empty selector maps fall through to Any (matches nothing summary)', () => {
+    // describeMatch treats empty selectors as no labels; falls through
+    // to ids → empty → Any. The server rejects this shape on submit.
+    expect(
+      describeMatch({
+        installs: { selector: { match_labels: {}, not_match_labels: {} } },
+      })
+    ).toBe('Any installs')
   })
 })
