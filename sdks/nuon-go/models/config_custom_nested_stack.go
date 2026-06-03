@@ -19,7 +19,10 @@ import (
 // swagger:model config.CustomNestedStack
 type ConfigCustomNestedStack struct {
 
-	// contents
+	// Contents is the source of the nested template. It accepts a local file
+	// path (or any go-getter source); the `get` feature loads its contents
+	// in-place at parse time, and they are uploaded to the managed S3 bucket at
+	// sync time.
 	Contents string `json:"contents,omitempty"`
 
 	// contents hash
@@ -37,7 +40,8 @@ type ConfigCustomNestedStack struct {
 	// status
 	Status ConfigCustomNestedStackStatus `json:"status,omitempty"`
 
-	// template url
+	// TemplateURL is an optional pre-hosted URL for the nested template. Provide
+	// either contents or template_url.
 	TemplateURL string `json:"template_url,omitempty"`
 }
 
