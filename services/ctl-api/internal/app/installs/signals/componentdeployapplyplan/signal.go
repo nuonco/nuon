@@ -98,12 +98,19 @@ func (s *Signal) MaxAutoRetries(ctx workflow.Context) int {
 }
 
 func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
+	// Clones keep FlowID/lifecycle; the retry path doesn't re-inject it.
+	lifecycle := signal.LifecycleBase{
+		LifecycleWorkflowID:   s.LifecycleWorkflowID,
+		LifecycleWorkflowType: s.LifecycleWorkflowType,
+	}
 	return []signal.CloneStepDef{
 		{
 			Signal: &componentdeploysyncandplan.Signal{
+				LifecycleBase:      lifecycle,
 				InstallComponentID: s.InstallComponentID,
 				InstallID:          s.InstallID,
 				ComponentID:        s.ComponentID,
+				FlowID:             s.FlowID,
 				SandboxMode:        s.SandboxMode,
 			},
 			Name:          originalStepName + " (plan)",
@@ -111,9 +118,11 @@ func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.Cl
 		},
 		{
 			Signal: &Signal{
+				LifecycleBase:      lifecycle,
 				InstallComponentID: s.InstallComponentID,
 				InstallID:          s.InstallID,
 				ComponentID:        s.ComponentID,
+				FlowID:             s.FlowID,
 				SandboxMode:        s.SandboxMode,
 			},
 			Name:          originalStepName,
