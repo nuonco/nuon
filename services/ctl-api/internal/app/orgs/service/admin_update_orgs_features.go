@@ -47,7 +47,11 @@ func (s *service) AdminUpdateOrgsFeatures(ctx *gin.Context) {
 func (s *service) bulkUpdateOrgFeatures(ctx context.Context, features map[string]bool) error {
 	processBatch := func(orgs []*app.Org) error {
 		for _, org := range orgs {
-			err := s.features.Enable(ctx, org.ID, features)
+			featuresCopy := make(map[string]bool, len(features))
+			for k, v := range features {
+				featuresCopy[k] = v
+			}
+			err := s.features.Enable(ctx, org.ID, featuresCopy)
 			if err != nil {
 				return fmt.Errorf("unable to update org features: %w", err)
 			}
