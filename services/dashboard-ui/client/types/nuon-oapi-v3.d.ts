@@ -7094,7 +7094,7 @@ export interface components {
       vpc_nested_template_url?: string;
     };
     "service.UpdateInstallInputsRequest": {
-      deploy_dependents?: boolean;
+      deploy_dependents?: boolean | null;
       inputs: {
         [key: string]: string;
       };
