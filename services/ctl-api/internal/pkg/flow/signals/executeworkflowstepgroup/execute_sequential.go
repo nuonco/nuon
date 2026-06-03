@@ -44,7 +44,7 @@ func (s *Signal) executeSequential(ctx workflow.Context, l *zap.Logger) error {
 		case directive.StepRetry:
 			// Clone the step for individual retry. The next iteration
 			// picks up the pending clone.
-			if err := cloneStepForRetry(ctx, step.ID, s.WorkflowID); err != nil {
+			if err := CloneStepForRetry(ctx, step.ID, s.WorkflowID); err != nil {
 				l.Warn("unable to clone step for retry", zap.String("step_id", step.ID), zap.Error(err))
 				return err
 			}

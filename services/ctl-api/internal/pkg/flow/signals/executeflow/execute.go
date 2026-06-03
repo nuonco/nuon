@@ -51,6 +51,9 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 	for {
 		runErr := s.executeRun(ctx, run)
 
+		// Only a resume requested while parked below is valid; drop stale ones.
+		s.resumeRequested = false
+
 		if runErr == nil {
 			if s.cancelRequested {
 				return nil
@@ -112,9 +115,12 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 		}
 
 		// Wait for a resume or cancel signal from an update handler
-		if err := workflow.Await(ctx, func() bool {
+		s.awaitingResume = true
+		err = workflow.Await(ctx, func() bool {
 			return s.resumeRequested || s.cancelRequested
-		}); err != nil {
+		})
+		s.awaitingResume = false
+		if err != nil {
 			return err
 		}
 

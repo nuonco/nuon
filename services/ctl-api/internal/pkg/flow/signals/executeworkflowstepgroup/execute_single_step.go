@@ -31,7 +31,8 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 		zap.Int("group_idx", s.GroupIdx))
 
 	// Dispatch the step signal with a callback for completion notification.
-	cb := callback.New(ctx, step.ID)
+	s.stepDispatchSeq++
+	cb := callback.NewAttempt(ctx, step.ID, s.stepDispatchSeq)
 	qsID, err := s.dispatchStep(ctx, step, cb)
 	if err != nil {
 		l.Error("step dispatch error",
@@ -44,24 +45,44 @@ func (s *Signal) executeSingleStep(ctx workflow.Context, l *zap.Logger, step *ap
 	s.stepSignalIDs = append(s.stepSignalIDs, qsID)
 
 	// Await step completion. Execute() stays alive until the directive is
-	// terminal, so this blocks for the full lifecycle including approval
-	// waiting and retry waiting.
-	_, qsErr := callback.Await(ctx, cb)
-	if ctx.Err() != nil {
-		s.handleCancellation(ctx, l, step)
-		return StepResult{
-			Result: directive.NewStepResult(directive.StepStop),
-			Error:  ctx.Err(),
+	// terminal, so this blocks for the full lifecycle including approval and
+	// retry waiting. Bound by the step's derived timeout, falling back to the
+	// human-wait cap when unset.
+	stepTimeout := step.Timeout
+	if stepTimeout <= 0 {
+		stepTimeout = callback.FallbackAwaitTimeout
+	}
+
+	var qsErr error
+	var updatedStep *app.WorkflowStep
+	var d directive.Step
+	for {
+		_, qsErr = callback.AwaitWithTimeout(ctx, cb, stepTimeout)
+		if ctx.Err() != nil {
+			s.handleCancellation(ctx, l, step)
+			return StepResult{
+				Result: directive.NewStepResult(directive.StepStop),
+				Error:  ctx.Err(),
+			}
 		}
+
+		// Read the step's final state from DB.
+		var err error
+		updatedStep, err = activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
+		if err != nil {
+			return StepResult{Error: err}
+		}
+
+		d = directive.Step(updatedStep.ResultDirective)
+
+		// await-retry is non-terminal: the wait may have just timed out; keep
+		// waiting so the step stays retryable instead of stopping.
+		if d == directive.StepAwaitRetry {
+			continue
+		}
+		break
 	}
 
-	// Read the step's final state from DB.
-	updatedStep, err := activities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, step.ID)
-	if err != nil {
-		return StepResult{Error: err}
-	}
-
-	d := directive.Step(updatedStep.ResultDirective)
 	l.Debug("step completed",
 		zap.String("step_id", step.ID),
 		zap.String("directive", string(d)))
