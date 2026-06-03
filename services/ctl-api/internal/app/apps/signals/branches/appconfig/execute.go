@@ -111,8 +111,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		branchName = cfg.Branch
 	}
 	if branchRepo != "" {
-		for i := range intermediateConfig.Components {
-			comp := &intermediateConfig.Components[i]
+		for _, comp := range intermediateConfig.Components {
 			overrideComponentBranch(comp, branchRepo, branchName)
 		}
 	}

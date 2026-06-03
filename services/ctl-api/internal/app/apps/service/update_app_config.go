@@ -7,14 +7,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
+
+// appBranchRunSignal is a minimal signal to trigger an app branch run.
+// Defined here to avoid import cycles with branches/run.
+type appBranchRunSignal struct {
+	RunID string `json:"run_id"`
+}
+
+func (s *appBranchRunSignal) Type() signal.SignalType           { return "app-branch-run" }
+func (s *appBranchRunSignal) Validate(_ workflow.Context) error { return nil }
+func (s *appBranchRunSignal) Execute(_ workflow.Context) error  { return nil }
 
 type UpdateAppConfigRequest struct {
 	Status            app.AppConfigStatus `json:"status"`
@@ -78,6 +92,9 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 				)
 			}
 		}
+
+		// Trigger app branch run if config was synced targeting a branch
+		s.triggerAppBranchRunForConfig(ctx, cfg)
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)
@@ -131,6 +148,9 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 				)
 			}
 		}
+
+		// Trigger app branch run if config was synced targeting a branch
+		s.triggerAppBranchRunForConfig(ctx, cfg)
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)
@@ -169,4 +189,82 @@ func (s *service) updateAppConfig(ctx context.Context, appConfigID string, req *
 	}
 
 	return &cfg, nil
+}
+
+// triggerAppBranchRunForConfig triggers an app branch run if the config
+// has an AppBranchID set (i.e., it was synced targeting a branch).
+func (s *service) triggerAppBranchRunForConfig(ctx context.Context, cfg *app.AppConfig) {
+	if !cfg.AppBranchID.Valid || cfg.AppBranchID.String == "" {
+		return
+	}
+
+	branchID := cfg.AppBranchID.String
+
+	// Load the branch with its queue and latest config
+	var branch app.AppBranch
+	if err := s.db.WithContext(ctx).
+		Preload("Queue").
+		Preload("Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("config_number DESC").Limit(1)
+		}).
+		First(&branch, "id = ?", branchID).Error; err != nil {
+		s.l.Warn("unable to load app branch for auto-trigger",
+			zap.String("app_branch_id", branchID),
+			zap.Error(err))
+		return
+	}
+
+	if branch.Queue.ID == "" || len(branch.Configs) == 0 {
+		s.l.Warn("app branch missing queue or config, skipping auto-trigger",
+			zap.String("app_branch_id", branchID))
+		return
+	}
+
+	run, err := s.helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
+		AppBranchID:       branchID,
+		AppBranchConfigID: branch.Configs[0].ID,
+		EventType:         "sync",
+	})
+	if err != nil {
+		s.l.Warn("unable to create app branch run after sync",
+			zap.String("app_branch_id", branchID),
+			zap.Error(err))
+		return
+	}
+
+	wf, err := s.helpers.CreateWorkflow(
+		ctx,
+		branchID,
+		app.WorkflowTypeAppBranchesRun,
+		map[string]string{
+			"run_id":    run.ID,
+			"config_id": branch.Configs[0].ID,
+		},
+		false,
+	)
+	if err != nil {
+		s.l.Warn("unable to create workflow for app branch run",
+			zap.String("run_id", run.ID),
+			zap.Error(err))
+		return
+	}
+
+	run.WorkflowID = &wf.ID
+	s.db.WithContext(ctx).Save(run)
+
+	runsignal := &appBranchRunSignal{RunID: run.ID}
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID: branch.Queue.ID,
+		Signal:  runsignal,
+	}); err != nil {
+		s.l.Warn("unable to enqueue app branch run signal",
+			zap.String("run_id", run.ID),
+			zap.Error(err))
+		return
+	}
+
+	s.l.Info("triggered app branch run after sync",
+		zap.String("app_branch_id", branchID),
+		zap.String("run_id", run.ID),
+		zap.String("workflow_id", wf.ID))
 }

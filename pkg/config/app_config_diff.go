@@ -478,7 +478,7 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 				diff.NewDiff(diff.WithKey("auto_generate"), diff.WithBoolDiff(os.AutoGenerate, s.AutoGenerate)),
 				diff.NewDiff(diff.WithKey("format"), diff.WithStringDiff(os.Format, s.Format)),
 				diff.NewDiff(diff.WithKey("default"), diff.WithStringDiff(os.Default, s.Default)),
-				diff.NewDiff(diff.WithKey("kubernetes_sync"), diff.WithBoolDiff(os.KubernetesSync, s.KubernetesSync)),
+				diff.NewDiff(diff.WithKey("kubernetes_sync"), diff.WithOptionalBoolDiff(os.KubernetesSync, s.KubernetesSync)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_namespace"), diff.WithStringDiff(os.KubernetesSecretNamespace, s.KubernetesSecretNamespace)),
 				diff.NewDiff(diff.WithKey("kubernetes_secret_name"), diff.WithStringDiff(os.KubernetesSecretName, s.KubernetesSecretName)),
 			),
