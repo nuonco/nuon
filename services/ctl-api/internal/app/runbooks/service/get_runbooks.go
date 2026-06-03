@@ -50,7 +50,12 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(tx2 *gorm.DB) *gorm.DB {
-			return tx2.Order("created_at DESC").Limit(1)
+			return tx2.Where("id IN (?)",
+				tx2.Session(&gorm.Session{NewDB: true}).
+					Model(&app.RunbookConfig{}).
+					Select("DISTINCT ON (runbook_id) id").
+					Order("runbook_id, created_at DESC"),
+			)
 		}).
 		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("idx ASC")

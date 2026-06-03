@@ -42,18 +42,29 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 	installRunbooks := []*app.InstallRunbook{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
+		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Preload("Runbook").
 		Preload("Runbook.Configs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("created_at DESC").Limit(1)
+			return tx.Where("id IN (?)",
+				tx.Session(&gorm.Session{NewDB: true}).
+					Model(&app.RunbookConfig{}).
+					Select("DISTINCT ON (runbook_id) id").
+					Order("runbook_id, created_at DESC"),
+			)
 		}).
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
-			return tx.Order("created_at DESC").Limit(1)
+			return tx.Where("id IN (?)",
+				tx.Session(&gorm.Session{NewDB: true}).
+					Model(&app.InstallRunbookRun{}).
+					Select("DISTINCT ON (install_runbook_id) id").
+					Order("install_runbook_id, created_at DESC"),
+			)
 		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
-		Order("created_at DESC").
+		Order("install_runbooks.created_at DESC").
 		Find(&installRunbooks)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install runbooks: %w", res.Error))
