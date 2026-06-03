@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -43,6 +44,9 @@ type AppInstallState struct {
 	// stale at
 	StaleAt *GenericsNullTime `json:"stale_at,omitempty"`
 
+	// StalePartials lists which state partials are stale and need regeneration on next read.
+	StalePartials []StatePartialName `json:"stale_partials"`
+
 	// triggered by id
 	TriggeredByID string `json:"triggered_by_id,omitempty"`
 
@@ -65,6 +69,10 @@ func (m *AppInstallState) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateStaleAt(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStalePartials(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -118,6 +126,31 @@ func (m *AppInstallState) validateStaleAt(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppInstallState) validateStalePartials(formats strfmt.Registry) error {
+	if swag.IsZero(m.StalePartials) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.StalePartials); i++ {
+
+		if err := m.StalePartials[i].Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("stale_partials" + "." + strconv.Itoa(i))
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("stale_partials" + "." + strconv.Itoa(i))
+			}
+
+			return err
+		}
+
+	}
+
+	return nil
+}
+
 // ContextValidate validate this app install state based on the context it is used
 func (m *AppInstallState) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
@@ -127,6 +160,10 @@ func (m *AppInstallState) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateStaleAt(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateStalePartials(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -178,6 +215,32 @@ func (m *AppInstallState) contextValidateStaleAt(ctx context.Context, formats st
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallState) contextValidateStalePartials(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.StalePartials); i++ {
+
+		if swag.IsZero(m.StalePartials[i]) { // not required
+			return nil
+		}
+
+		if err := m.StalePartials[i].ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("stale_partials" + "." + strconv.Itoa(i))
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("stale_partials" + "." + strconv.Itoa(i))
+			}
+
+			return err
+		}
+
 	}
 
 	return nil
