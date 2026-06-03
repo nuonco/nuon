@@ -52,7 +52,7 @@ func (s *service) LogStreamWriteLogs(ctx *gin.Context) {
 		return
 	}
 
-	logStream, err := s.getLogStream(ctx, logStreamID)
+	logStream, err := s.getCachedLogStream(ctx, logStreamID)
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to get log stream"))
 		return
