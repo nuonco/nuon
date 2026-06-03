@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/labels"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -50,7 +50,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
 		Preload("Configs", func(tx2 *gorm.DB) *gorm.DB {
-			return tx2.Order("created_at DESC").Limit(1)
+			return tx2.Scopes(scopes.WithOverrideTable("runbook_configs_latest_view_v1"))
 		}).
 		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("idx ASC")
