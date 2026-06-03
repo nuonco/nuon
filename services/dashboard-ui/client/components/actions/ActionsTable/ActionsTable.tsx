@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
 import { TableSkeleton } from '@/components/common/TableSkeleton'
@@ -51,9 +51,7 @@ export function parseActionsToTableData(
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <Badge key={k} variant="code" size="sm" theme="neutral">
-                  {k}: {lbls[k]}
-                </Badge>
+                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" />
               ))}
           </span>
         )
