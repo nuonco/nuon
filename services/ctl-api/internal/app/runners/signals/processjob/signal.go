@@ -136,14 +136,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update runner job: %w", err)
 	}
 
-	// clear any old jobs behind this that were orphaned, or not attempted for whatever reason
-	if err := activities.AwaitFlushOrphanedJobs(ctx, activities.FlushOrphanedJobsRequest{
-		RunnerID:  s.RunnerID,
-		Threshold: runnerJob.CreatedAt.Add(-time.Minute * 5),
-	}); err != nil {
-		return pkgerrors.Wrap(err, "unable to flush orphaned jobs")
-	}
-
 	if runnerJob.Status == app.RunnerJobStatusCancelled {
 		l.Info("job was already cancelled, not attempting")
 		return nil
