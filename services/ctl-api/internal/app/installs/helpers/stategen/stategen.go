@@ -1,6 +1,8 @@
 package stategen
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
@@ -51,7 +53,7 @@ func HintOrGenerate(ctx workflow.Context, req Request) error {
 			}
 			// state-manager queue missing — fall through to legacy generation
 		} else {
-			if _, err := callback.Await(ctx, cb); err != nil {
+			if _, err := callback.AwaitWithTimeout(ctx, cb, 30*time.Minute); err != nil {
 				return errors.Wrap(err, "unable to await state generation")
 			}
 			return nil

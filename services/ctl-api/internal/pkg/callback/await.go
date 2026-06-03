@@ -8,8 +8,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const defaultAwaitTimeout = 30 * time.Minute
-
 // FallbackAwaitTimeout caps a human-gated wait that has no configured timeout.
 const FallbackAwaitTimeout = 30 * 24 * time.Hour
 
@@ -17,12 +15,6 @@ const FallbackAwaitTimeout = 30 * 24 * time.Hour
 type Result struct {
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description,omitempty"`
-}
-
-// Await waits for a completion signal on the Ref's signal channel using the
-// default timeout.
-func Await(ctx workflow.Context, ref Ref) (*Result, error) {
-	return AwaitWithTimeout(ctx, ref, defaultAwaitTimeout)
 }
 
 // AwaitWithTimeout waits for a completion signal on the Ref's signal channel.
