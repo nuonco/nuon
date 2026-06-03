@@ -1,6 +1,6 @@
 ---
 title: '035 - Runbooks and rendered READMEs'
-description: 'Define and run multi-step runbooks against installs, fetch install READMEs rendered with live template values, plus deploy controls, webhook event filters, and more.'
+description: "Notebooks that define common actions you need so you've got a runbook for the next incident or upgrade"
 boost: 0.3
 ---
 
@@ -8,35 +8,96 @@ _June 1, 2026_
 
 ## Runbooks
 
-Operational procedures shouldn't live in someone's head or a stale wiki page — they should run. Runbooks let you define a named, ordered sequence of steps — the on-call restart, a version upgrade, a database migration, a recovery procedure — and run it against an install on demand, instead of translating prose into commands by hand at the worst possible hour.
+Runbooks let you define a named, ordered sequence of steps, and run it in your customer's environment with confidence the actions are already proven.
 
-Define runbooks as TOML files in a `runbooks/` directory in your app config. Each step is either a **deploy** (deploy a component, optionally with its dependencies) or an **action** (run an existing action, or an inline ad-hoc command):
+The common use cases:
+
+- on-call restart
+- version upgrade
+- database migration
+
+Define runbooks as TOML files in a `runbooks/` directory in your app config. Each step is either a **deploy** (deploy a component, optionally with its dependencies) or an **action** (run an existing action, or a command defined inline):
 
 ```toml
-name = "v2.3-update"
+name = "restart-and-verify"
 
 [[steps]]
-name           = "migrate-db"
-type           = "action"
-action_name    = "database-migration"
+name        = "restart"
+type        = "action"
+action_name = "deployments_restart"
 
 [[steps]]
-name           = "deploy-api"
-type           = "deploy"
-component_name = "api-server"
+name    = "verify"
+type    = "action"
+command = "curl --fail --silent --retry $MAX_RETRIES https://{{ .nuon.inputs.inputs.subdomain }}.{{ .nuon.install.sandbox.outputs.nuon_dns.public_domain.name }}/"
+timeout = "5m"
+
+[steps.env_vars]
+MAX_RETRIES = "20"
 ```
 
-Trigger and watch runs from the new **Runbooks** tab in the dashboard, or from the CLI with `nuon runbooks --install-id <id>`. See the [Runbooks guide](/guides/runbooks) for the full configuration reference, or the [`programmable-runbook-and-readme`](https://github.com/nuonco/example-app-configs/tree/main/programmable-runbook-and-readme) example app config for a complete, runnable demo of runbooks and rendered READMEs together.
+<div style={{
+  backgroundImage: 'url(/images/changelog/035-runbooks-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/035-runbook-detail.png"
+    alt="A runbook's detail page in the Nuon dashboard, showing its steps"
+    style={{
+      width: '100%',
+      maxWidth: '720px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
+Trigger and watch runs from the new **Runbooks** tab in the dashboard, or from the CLI with `nuon runbooks --install-id <id>`. See the [Runbooks guide](/guides/runbooks) for the full configuration reference.
+
+<Tip>See the [`programmable-runbook-and-readme`](https://github.com/nuonco/example-app-configs/tree/main/programmable-runbook-and-readme) example app config for a complete, runnable demo of runbooks and rendered READMEs together.</Tip>
 
 ## Rendered READMEs
 
-An install's README can now be fetched **fully rendered for that install** through the API. The README's Go template expressions are evaluated against the install's live values, so the API returns the resolved documentation (real URLs, IDs, and outputs) instead of the raw template source.
+An install's README can be **rendered with information specific to that install**. Go template expressions resolve against the install's live values, so you get real URLs, IDs, and outputs.
 
-READMEs are authored as Markdown on the app (the `readme` field in `metadata.toml`) and on individual [runbooks](/guides/runbooks), and support Go templating (e.g. `{{ .nuon.install.outputs.* }}`) plus external file sources (HTTP(S), git, or local paths). See [Using READMEs](/guides/using-readmes).
+Author READMEs as Markdown on:
+
+- the app (the `readme` field in `metadata.toml`)
+- individual [runbooks](/guides/runbooks) (each runbook's `readme` field)
+
+See [Using READMEs](/guides/using-readmes).
+
+<div style={{
+  backgroundImage: 'url(/images/changelog/035-runbooks-bg.png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  padding: '48px 24px',
+  borderRadius: '12px',
+  display: 'flex',
+  justifyContent: 'center',
+  margin: '24px 0'
+}}>
+  <img
+    src="/images/changelog/035-app-readme.png"
+    alt="A per-install README rendered in the dashboard, with runnable runbooks"
+    style={{
+      width: '100%',
+      maxWidth: '700px',
+      borderRadius: '8px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
 
 ## Sandbox auto-retries
 
-[Sandboxes](/concepts/sandboxes) now support `max_auto_retries` in their config, matching the behavior already available on components. Transient sandbox failures self-heal without manual re-runs, and a configurable cap prevents genuinely broken sandboxes from looping forever.
+[Sandboxes](/concepts/sandboxes) now support `max_auto_retries`, matching components. Transient failures self-heal without manual re-runs.
 
 ## Skip no-op deploys and auto-approve on passing policies
 
@@ -54,11 +115,16 @@ auto_approve_on_policies_passing = true
 
 ## Per-webhook event filters
 
-Org [webhooks](/guides/webhooks) now accept a structured `interests` filter so each subscription can opt into a subset of events, scoped by resource (workflow, step, approval, runner), operation, outcome, or approval state, instead of receiving every lifecycle event. Existing subscriptions default to `all_events: true` and continue to behave exactly as before.
+Org [webhooks](/guides/webhooks) now take a structured `interests` filter, so each subscription opts into a subset of events instead of receiving every lifecycle event. Scope by:
+
+- resource: workflow, step, approval, runner
+- operation, outcome, or approval state
+
+Existing subscriptions default to `all_events: true` and behave exactly as before.
 
 ## Nuon CLI
 
-- New **`nuon-ext-replay-stack`** [CLI extension](/guides/cli-extensions): a recovery tool for an install stuck at the **awaiting phone-home** step. If an install stack's phone-home payload was received but the stack version never activated, reprovision the install and run the extension to replay the stored payload to the new phone-home URL, letting the install complete.
+- New **`nuon-ext-replay-stack`** [CLI extension](/guides/cli-extensions) for recovering an install stuck at **awaiting phone-home**. If the stack's phone-home payload was received but the version never activated, reprovision the install and run the extension to replay the stored payload to the new phone-home URL.
 
 ## API
 
