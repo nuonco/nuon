@@ -77,6 +77,60 @@ func TestSelector_Matches(t *testing.T) {
 			set:  nil,
 			want: false,
 		},
+		{
+			name: "not-match excludes set with matching key+value",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "stage"}},
+			set:  Labels{"env": "stage"},
+			want: false,
+		},
+		{
+			name: "not-match allows set with different value for same key",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "stage"}},
+			set:  Labels{"env": "prod"},
+			want: true,
+		},
+		{
+			name: "not-match allows set without the key",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "stage"}},
+			set:  Labels{"team": "platform"},
+			want: true,
+		},
+		{
+			name: "not-match wildcard excludes set with key present",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "*"}},
+			set:  Labels{"env": "anything"},
+			want: false,
+		},
+		{
+			name: "not-match wildcard allows set with key absent",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "*"}},
+			set:  Labels{"team": "platform"},
+			want: true,
+		},
+		{
+			name: "include AND exclude combined: include hit + exclude not triggered",
+			sel:  &Selector{MatchLabels: Labels{"team": "platform"}, NotMatchLabels: Labels{"env": "stage"}},
+			set:  Labels{"team": "platform", "env": "prod"},
+			want: true,
+		},
+		{
+			name: "include AND exclude combined: include hit but exclude triggered",
+			sel:  &Selector{MatchLabels: Labels{"team": "platform"}, NotMatchLabels: Labels{"env": "stage"}},
+			set:  Labels{"team": "platform", "env": "stage"},
+			want: false,
+		},
+		{
+			name: "only NotMatchLabels: empty set is allowed (env=stage exclusion not triggered)",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "stage"}},
+			set:  Labels{},
+			want: true,
+		},
+		{
+			name: "multiple NotMatchLabels: any match excludes",
+			sel:  &Selector{NotMatchLabels: Labels{"env": "stage", "tier": "experimental"}},
+			set:  Labels{"env": "prod", "tier": "experimental"},
+			want: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -114,6 +168,21 @@ func TestSelector_Validate(t *testing.T) {
 			name:    "blank key rejected",
 			sel:     &Selector{MatchLabels: Labels{"": "prod"}},
 			wantErr: true,
+		},
+		{
+			name:    "blank NotMatchLabels key rejected",
+			sel:     &Selector{NotMatchLabels: Labels{"": "stage"}},
+			wantErr: true,
+		},
+		{
+			name:    "only NotMatchLabels is valid",
+			sel:     &Selector{NotMatchLabels: Labels{"env": "stage"}},
+			wantErr: false,
+		},
+		{
+			name:    "MatchLabels + NotMatchLabels both populated is valid",
+			sel:     &Selector{MatchLabels: Labels{"team": "platform"}, NotMatchLabels: Labels{"env": "stage"}},
+			wantErr: false,
 		},
 		{
 			name:    "whitespace-only key rejected",
@@ -172,5 +241,23 @@ func TestSelector_Canonical_DistinguishesValues(t *testing.T) {
 	b := &Selector{MatchLabels: Labels{"env": "stage"}}
 	if a.Canonical() == b.Canonical() {
 		t.Errorf("Canonical should differ for different values")
+	}
+}
+
+func TestSelector_Canonical_DistinguishesIncludeFromExclude(t *testing.T) {
+	include := &Selector{MatchLabels: Labels{"env": "stage"}}
+	exclude := &Selector{NotMatchLabels: Labels{"env": "stage"}}
+	if include.Canonical() == exclude.Canonical() {
+		t.Errorf("Canonical of include vs exclude must differ:\n  include=%s\n  exclude=%s",
+			include.Canonical(), exclude.Canonical())
+	}
+}
+
+func TestSelector_Canonical_NotMatchLabelsStable(t *testing.T) {
+	a := &Selector{NotMatchLabels: Labels{"env": "stage", "tier": "experimental"}}
+	b := &Selector{NotMatchLabels: Labels{"tier": "experimental", "env": "stage"}}
+	if a.Canonical() != b.Canonical() {
+		t.Errorf("Canonical not stable across NotMatchLabels map order:\n  a=%s\n  b=%s",
+			a.Canonical(), b.Canonical())
 	}
 }

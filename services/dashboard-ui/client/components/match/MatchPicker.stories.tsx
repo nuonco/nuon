@@ -43,6 +43,33 @@ export const PreselectedComponentsByLabels = () => (
   />
 )
 
+// Preselected installs by exclusion only — "everything except env=stage".
+// Include textinput stays empty, exclude textinput is pre-filled.
+export const PreselectedInstallsExcludeOnly = () => (
+  <Story
+    initial={{
+      installs: {
+        selector: { not_match_labels: { env: 'stage' } },
+      },
+    }}
+  />
+)
+
+// Preselected installs by both include + exclude — production tier=critical
+// installs except the canary ones.
+export const PreselectedInstallsIncludeAndExclude = () => (
+  <Story
+    initial={{
+      installs: {
+        selector: {
+          match_labels: { env: 'prod' },
+          not_match_labels: { canary: '*' },
+        },
+      },
+    }}
+  />
+)
+
 // Preselected actions with empty TargetMatch{} — predicate radio lands on
 // "Any" so toggling kinds doesn't surprise the user.
 export const PreselectedActionsAny = () => (
