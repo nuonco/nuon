@@ -25,11 +25,16 @@ export type Labels = Record<string, string>
 // dispatch layer, not of label matching.
 export type TargetKind = 'installs' | 'components' | 'actions'
 
-// Selector mirrors pkg/labels.Selector. MatchLabels values may be a
-// literal (`env=prod`) or the wildcard `"*"` (matches any value for the
-// key — the bare-key form `env` round-trips as `env=*`).
+// Selector mirrors pkg/labels.Selector. Both MatchLabels and
+// NotMatchLabels values may be a literal (`env=prod`) or the wildcard
+// `"*"` (matches any value for the key — the bare-key form `env`
+// round-trips as `env=*`). NotMatchLabels lets users say "everything
+// except env=stage" without enumerating every other env value;
+// composition rule is AND across both maps (entity matches iff every
+// key in match_labels matches AND no key in not_match_labels matches).
 export interface Selector {
   match_labels?: Labels
+  not_match_labels?: Labels
 }
 
 // TargetMatch filters one entity kind. An empty TargetMatch ({}) is
@@ -106,7 +111,9 @@ export const firstPopulatedKind = (
 // dashboard table and the Slack modal use the same vocabulary.
 //
 //   - undefined  / no kind populated → "Org-wide"
-//   - selector                       → "Components: env=prod, owner=*"
+//   - include only                   → "Components: env=prod, owner=*"
+//   - exclude only                   → "Components: not env=stage"
+//   - both                           → "Components: env=prod; not env=stage"
 //   - ids                            → "3 installs"
 //   - empty TargetMatch{}            → "Any installs"
 export const describeMatch = (m: SubscriptionMatch | undefined): string => {
@@ -114,8 +121,16 @@ export const describeMatch = (m: SubscriptionMatch | undefined): string => {
   if (!m || !kind) return 'Org-wide'
   const tm = m[kind]
   if (!tm) return 'Org-wide'
-  if (tm.selector?.match_labels && Object.keys(tm.selector.match_labels).length > 0) {
-    return `${TARGET_KIND_LABELS[kind]}: ${labelsToQueryString(tm.selector.match_labels)}`
+  const sel = tm.selector
+  const inc = sel?.match_labels
+  const exc = sel?.not_match_labels
+  const incNonEmpty = inc && Object.keys(inc).length > 0
+  const excNonEmpty = exc && Object.keys(exc).length > 0
+  if (incNonEmpty || excNonEmpty) {
+    const parts: string[] = []
+    if (incNonEmpty) parts.push(labelsToQueryString(inc))
+    if (excNonEmpty) parts.push(`not ${labelsToQueryString(exc)}`)
+    return `${TARGET_KIND_LABELS[kind]}: ${parts.join('; ')}`
   }
   if (tm.ids && tm.ids.length > 0) {
     const noun =

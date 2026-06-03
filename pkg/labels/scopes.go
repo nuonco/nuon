@@ -46,3 +46,31 @@ func WithLabels(column string, lbls Labels) func(*gorm.DB) *gorm.DB {
 		return db
 	}
 }
+
+// WithoutLabels is the negative counterpart of WithLabels. It filters rows
+// where the JSONB column does NOT match any of the specified key-value pairs.
+// A value of "*" rejects rows where the key is present at all
+// (jsonb_exists). Other values reject only rows where the exact pair is set.
+// Each NotMatchLabels entry is independent; a row is excluded if ANY entry
+// matches it (mirrors Selector.Matches in-Go semantics).
+// Returns a no-op scope if lbls is nil or empty.
+func WithoutLabels(column string, lbls Labels) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if len(lbls) == 0 {
+			return db
+		}
+		for k, v := range lbls {
+			if v == "*" {
+				db = db.Where("NOT jsonb_exists("+column+", ?)", k)
+				continue
+			}
+			pair, err := json.Marshal(Labels{k: v})
+			if err != nil {
+				_ = db.AddError(err)
+				return db
+			}
+			db = db.Where("NOT ("+column+" @> ?::jsonb)", string(pair))
+		}
+		return db
+	}
+}
