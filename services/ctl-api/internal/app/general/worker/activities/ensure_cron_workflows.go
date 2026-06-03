@@ -17,6 +17,7 @@ type EnsureCronWorkflowsRequest struct{}
 type EnsureCronWorkflowsResponse struct {
 	SweepStarted   bool `json:"sweep_started"`
 	MetricsStarted bool `json:"metrics_started"`
+	CleanupStarted bool `json:"cleanup_started"`
 }
 
 // EnsureCronWorkflows starts (or replaces) the enqueuer-sweep and
@@ -59,6 +60,22 @@ func (a *Activities) EnsureCronWorkflows(ctx context.Context, _ EnsureCronWorkfl
 	}
 	resp.MetricsStarted = true
 	a.logger.Info("general metrics cron started/replaced", zap.String("workflow-id", "general-metrics-cron"))
+
+	// Start (or replace) the daily queue-signal cleanup cron.
+	cleanupOpts := tclient.StartWorkflowOptions{
+		ID:                    "general-queue-signal-cleanup-cron",
+		TaskQueue:             workflows.APITaskQueue,
+		CronSchedule:          "0 0 * * *",
+		WorkflowIDReusePolicy: enumsv1.WORKFLOW_ID_REUSE_POLICY_TERMINATE_IF_RUNNING,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 0,
+		},
+	}
+	if _, err := a.tClient.ExecuteWorkflowInNamespace(ctx, "general", cleanupOpts, "CleanupQueueSignals"); err != nil {
+		return nil, fmt.Errorf("unable to start queue signal cleanup workflow: %w", err)
+	}
+	resp.CleanupStarted = true
+	a.logger.Info("queue signal cleanup cron started/replaced", zap.String("workflow-id", "general-queue-signal-cleanup-cron"))
 
 	return resp, nil
 }
