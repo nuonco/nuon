@@ -10,6 +10,14 @@ type pushEventInfo struct {
 	Branch string // "main" - matches ConnectedGithubVCSConfig.Branch
 }
 
+type pullRequestEventInfo struct {
+	Repo       string // "owner/repo"
+	BaseBranch string // target branch (e.g., "main")
+	HeadSHA    string // head commit SHA
+	PRNumber   int    // pull request number
+	Action     string // "opened", "synchronize", "closed", etc.
+}
+
 func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 	// Extract ref (e.g. "refs/heads/main")
 	ref, ok := payload["ref"].(string)
@@ -37,5 +45,54 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 	return &pushEventInfo{
 		Repo:   fullName,
 		Branch: branch,
+	}, nil
+}
+
+func parsePullRequestEvent(payload map[string]any) (*pullRequestEventInfo, error) {
+	action, _ := payload["action"].(string)
+	if action == "" {
+		return nil, fmt.Errorf("missing action in pull_request payload")
+	}
+
+	prData, ok := payload["pull_request"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("missing pull_request in payload")
+	}
+
+	number, ok := prData["number"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("missing pull_request.number")
+	}
+
+	base, ok := prData["base"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("missing pull_request.base")
+	}
+	baseBranch, _ := base["ref"].(string)
+	if baseBranch == "" {
+		return nil, fmt.Errorf("missing pull_request.base.ref")
+	}
+
+	head, ok := prData["head"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("missing pull_request.head")
+	}
+	headSHA, _ := head["sha"].(string)
+
+	repository, ok := payload["repository"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("missing repository in pull_request payload")
+	}
+	fullName, _ := repository["full_name"].(string)
+	if fullName == "" {
+		return nil, fmt.Errorf("missing repository.full_name")
+	}
+
+	return &pullRequestEventInfo{
+		Repo:       fullName,
+		BaseBranch: baseBranch,
+		HeadSHA:    headSHA,
+		PRNumber:   int(number),
+		Action:     action,
 	}, nil
 }

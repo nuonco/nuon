@@ -102,6 +102,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"config_version", intermediateConfig.Version,
 		"num_components", len(intermediateConfig.Components))
 
+	// Override component branches when they're in the same repo as the branch config.
+	// This ensures components use the deploying branch, not their configured branch.
+	branchRepo := ""
+	branchName := ""
+	if cfg := branch.Configs[0].ConnectedGithubVCSConfig; cfg != nil {
+		branchRepo = cfg.Repo
+		branchName = cfg.Branch
+	}
+	if branchRepo != "" {
+		for i := range intermediateConfig.Components {
+			comp := &intermediateConfig.Components[i]
+			overrideComponentBranch(comp, branchRepo, branchName)
+		}
+	}
+
 	configJSON, err := json.Marshal(intermediateConfig)
 	if err != nil {
 		closeLogStream()

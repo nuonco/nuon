@@ -34,6 +34,10 @@ func NewAppBranchRunID() string {
 	return shortid.NewNanoID("arn")
 }
 
+func NewInstallConfigUpdateID() string {
+	return shortid.NewNanoID("icu")
+}
+
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }

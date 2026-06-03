@@ -52,8 +52,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	// Determine previous run's app config for build diffing
+	var previousAppConfigID string
+	if run.PreviousRunID != nil && *run.PreviousRunID != "" {
+		prevRun, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+		if err == nil && prevRun.AppConfigID != "" {
+			previousAppConfigID = prevRun.AppConfigID
+		}
+	}
+
 	// Step 1: Build all components via step groups (must complete before sandbox deploys)
-	if err := s.buildComponents(ctx, l, appConfig, run.AppConfigID); err != nil {
+	if err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID); err != nil {
 		return fmt.Errorf("component builds failed: %w", err)
 	}
 
@@ -79,12 +88,47 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 // buildComponents creates WorkflowStepGroups (batches of 5, parallel) with one
 // WorkflowStep per component build, then dispatches each group through the flow
 // engine and awaits completion.
-func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID string) error {
+func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string) error {
 	if s.FlowID == "" {
 		return fmt.Errorf("builds signal has no flow ID — cannot create step groups")
 	}
 
 	componentIDs := appConfig.ComponentIDs
+
+	// Check which components actually need building (build diffing)
+	var filteredComponentIDs []string
+	skippedBuilds := make(map[string]string) // componentID -> existing build ID
+	for _, componentID := range componentIDs {
+		if previousAppConfigID != "" {
+			check, err := activities.AwaitCheckBuildNeeded(ctx, &activities.CheckBuildNeededInput{
+				ComponentID:    componentID,
+				NewAppConfigID: appConfigID,
+				OldAppConfigID: previousAppConfigID,
+			})
+			if err == nil && !check.NeedsBuild {
+				l.Info("skipping build for unchanged component",
+					"component_id", componentID,
+					"existing_build_id", check.ExistingBuildID)
+				skippedBuilds[componentID] = check.ExistingBuildID
+				continue
+			}
+		}
+		filteredComponentIDs = append(filteredComponentIDs, componentID)
+	}
+
+	if len(skippedBuilds) > 0 {
+		l.Info("build diffing results",
+			"total_components", len(componentIDs),
+			"building", len(filteredComponentIDs),
+			"skipped", len(skippedBuilds))
+	}
+
+	if len(filteredComponentIDs) == 0 {
+		l.Info("all components unchanged, no builds needed")
+		return nil
+	}
+
+	componentIDs = filteredComponentIDs
 
 	// Look up component queue IDs for step routing.
 	componentQueues := make(map[string]*componenthelpers.ComponentQueueIDs, len(componentIDs))
