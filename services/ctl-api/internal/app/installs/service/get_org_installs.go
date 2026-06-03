@@ -93,7 +93,10 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 	}
 
 	if q != "" {
-		tx = tx.Where(views.TableOrViewName(s.db, &app.Install{}, ".name")+" ILIKE ? OR "+views.TableOrViewName(s.db, &app.Install{}, ".id")+" = ?", "%"+q+"%", q)
+		nameCol := views.TableOrViewName(s.db, &app.Install{}, ".name")
+		idCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
+		queryPattern := "%" + q + "%"
+		tx = tx.Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ?", queryPattern, queryPattern)
 	}
 	res := tx.Find(&installs)
 	if res.Error != nil {
