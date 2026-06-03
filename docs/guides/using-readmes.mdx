@@ -6,14 +6,13 @@ boost: 5
 keywords: ["Readme", "read me", "READMEs", "readmes", "labels", "label", "label badge", "install documentation", "per-install README", "Markdown template", "app README", "install instructions"]
 ---
 
-App READMEs allow you to define documentation for an App that can be rendered
-per-install. This guide will get you started using READMEs to support operating
-installs of your apps.
+Define a README on your app; Nuon renders it on each install's **Overview**.
+This guide covers authoring and formatting. For per-install variables and live
+data components, see [Programmable READMEs](/guides/programmable-readmes).
 
-## Adding a README to an App
+## Adding a README to an app
 
-To add a README to an App, define the `readme` field in your app. We'll start
-with something simple.
+Set the `readme` field on your app:
 
 ```toml metadata.toml
 # metadata
@@ -21,14 +20,12 @@ name = "My App"
 readme = "This is the README for My App."
 ```
 
-Sync your config, and you should see this rendered on the Overview of each
-install of that app.
+Sync, and it renders on each install's Overview.
 
 ## Formatting
 
-READMEs are technically just a string field, but our rendering in the dashboard
-supports Markdown. You can also use TOML's multi-line strings to make formatting
-easier. Let's use both to add some more structure and content.
+The `readme` is a string, rendered as Markdown in the dashboard. Use TOML
+multi-line strings for readability:
 
 ```toml metadata.toml
 # metadata
@@ -55,16 +52,14 @@ This app consists of the following components.
 ```
 
 <Note>
-	Because Markdown accepts HTML, you can also use HTML/CSS/JS. However, we can't
-	gaurantee that all valid HTML/CSS/JS will work when rendered in the dashboard.
-	Proceed with caution.
+	Markdown accepts HTML, so HTML/CSS/JS works too, but not all of it renders
+	reliably in the dashboard. Proceed with caution.
 </Note>
 
 ## Reference a README.md file
 
-To cleanly separate markdown from TOML, you can reference a `README.md` file in
-your app directory. This is often easier to manage, especially for longer
-documents.
+Reference a `README.md` file instead of inlining. It's easier to manage for longer
+documents:
 
 ```toml metadata.toml
 # metadata
@@ -74,74 +69,6 @@ description = "Grafana App Config"
 display_name = "Grafana App Config"
 readme       = "./README.md"
 ```
-
-## Variables
-
-READMEs support variables. These will be rendered server-side in the context of
-each install, just as they are in component and actions fields. We will use
-variables here to add some install info. We can also parametrize the app info,
-to make sure the README is up to date if we change the app later.
-
-```toml metadata.toml
-# metadata
-name = "My App"
-readme = """
-# {{.nuon.app.name}}
-
-This is the README for {{.nuon.app.name}} in install {{.nuon.install.name}}.
-
-## Sandbox
-
-This app uses the {{.nuon.sandbox.type}} sandbox.
-
-## Components
-
-This app consists of the following components.
-
-- api
-- deployment
-
-```
-
-Additionally, because READMEs are designed to be rendered on a webpage, and
-variables use Golang templating, you have access to the full power of
-[Golang's templating language](https://pkg.go.dev/text/template). Let's use that
-to add component statuses.
-
-```toml metadata.toml
-# metadata
-name = "My App"
-readme = """
-# {{.nuon.app.name}}
-
-This is the README for {{.nuon.app.name}} in install {{.nuon.install.name}}.
-
-## Sandbox
-
-This app uses the {{.nuon.sandbox.type}} sandbox.
-
-## Components
-
-{{ if .nuon.components.populated }}
-
-This install is running the following app components.
-
-| Name | Status |
-|------|------|
-{{- range $name, $component := .nuon.components.components }}
-| `{{ $name }}` | `{{ $component.status }}` |
-{{- end }}
-
-{{ else }}
-
-__No app components are active in this install. You may need to run "Deploy Components" for this install.__
-
-{{ end }}
-
-```
-
-Because the dashboard polls the Control Plane, you will get near-real-time
-statuses for each component.
 
 ## Tables
 
@@ -184,7 +111,7 @@ the chevron icon.
 </details>
 ````
 
-You can include any markdown inside a collapsible section — lists, code blocks,
+You can include any Markdown inside a collapsible section: lists, code blocks,
 tables, and even nested `<details>`.
 
 ## Code blocks
@@ -472,146 +399,7 @@ Same as modal, but slides in from the side of the screen.
 
 Attributes: `heading`, `trigger` (button label, defaults to "View"), `size`.
 
-## Data-bound components
 
-These `<nuon-*>` tags render live install data from the dashboard. They require
-install context — when viewed at the app level (before selecting an install),
-they render as inline code showing the raw tag.
+## Render per-install values
 
-### Config graph
-
-Shows the install's dependency graph of components and infrastructure.
-
-```markdown README.md
-<nuon-config-graph></nuon-config-graph>
-```
-
-### View state
-
-Renders a button that opens the install state viewer.
-
-```markdown README.md
-<nuon-view-state></nuon-view-state>
-```
-
-### Runner card
-
-Shows the status card for the install's runner.
-
-```markdown README.md
-<nuon-runner-card></nuon-runner-card>
-```
-
-### Sandbox card
-
-Shows the status card for the install's sandbox.
-
-```markdown README.md
-<nuon-sandbox-card></nuon-sandbox-card>
-```
-
-### Component card
-
-Shows the status card for a specific component. Reference by `name` or `id`.
-
-```markdown README.md
-<nuon-component-card name="api-server"></nuon-component-card>
-<nuon-component-card name="ingress-nginx"></nuon-component-card>
-```
-
-Attributes: `name`, `id`.
-
-### Stack card
-
-Shows the status card for the install's stack (grouped deploy history).
-
-```markdown README.md
-<nuon-stack-card></nuon-stack-card>
-```
-
-### Action card
-
-Shows the status card for a specific action. Reference by `name` or `id`.
-
-```markdown README.md
-<nuon-action-card name="deploy-canary"></nuon-action-card>
-<nuon-action-card name="rollback"></nuon-action-card>
-```
-
-Attributes: `name`, `id`.
-
-### Run runbook
-
-Renders a card with a button that opens the run runbook confirmation modal.
-Reference by `name` or `id`.
-
-```markdown README.md
-<nuon-run-runbook name="restart-service"></nuon-run-runbook>
-<nuon-run-runbook name="health-check"></nuon-run-runbook>
-```
-
-The card shows the runbook name (linked to its detail page), the number of
-steps, and a run button. Clicking the button opens a confirmation modal listing
-the steps before executing.
-
-Attributes: `name`, `id`.
-
-<Tip>
-Data-bound components are most useful in the referenced `README.md` file format,
-where you can build rich install dashboards combining live status cards with
-documentation.
-</Tip>
-
-## Putting it all together
-
-Here's an example README that combines variables, display components, and
-data-bound components into an install operations page:
-
-````markdown README.md
-# {{.nuon.app.name}}
-
-<nuon-banner theme="info">
-This README is rendered per-install. Component statuses update in real time.
-</nuon-banner>
-
-<nuon-tabs>
-<nuon-tab name="Status">
-
-## Infrastructure
-
-<nuon-group gap="16">
-  <nuon-runner-card></nuon-runner-card>
-  <nuon-sandbox-card></nuon-sandbox-card>
-</nuon-group>
-
-## Components
-
-<nuon-component-card name="networking"></nuon-component-card>
-<nuon-component-card name="ingress-nginx"></nuon-component-card>
-<nuon-component-card name="api-server"></nuon-component-card>
-
-</nuon-tab>
-<nuon-tab name="Actions">
-
-<nuon-action-card name="deploy-canary"></nuon-action-card>
-<nuon-action-card name="rollback"></nuon-action-card>
-
-</nuon-tab>
-<nuon-tab name="Architecture">
-
-```mermaid
-graph TD
-    A[networking] --> B[ingress-nginx]
-    A --> C[api-server]
-    B --> C
-    C --> D[worker]
-```
-
-</nuon-tab>
-</nuon-tabs>
-````
-
-## Conclusion
-
-You should now have the basic info you need to get started creating READMEs for
-your own apps.
+Everything above is static authoring. To render each install's live values and embed real-time components (status cards, the config graph, runnable runbooks), see [Programmable READMEs](/guides/programmable-readmes).

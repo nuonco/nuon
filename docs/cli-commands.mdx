@@ -1,0 +1,52 @@
+---
+title: "Common commands"
+sidebarTitle: "Common commands"
+description: "The Nuon CLI commands you'll reach for most, from auth to deploy."
+keywords: ["nuon cli commands", "nuon auth login", "nuon apps create", "nuon apps sync", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
+---
+
+The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for the full set.
+
+## Authenticate
+
+| Command | What it does |
+|---------|--------------|
+| `nuon auth login` | Sign in (browser SSO). Run this first. |
+| `nuon auth logout` | Sign out. |
+
+## Apps & config
+
+| Command | What it does |
+|---------|--------------|
+| `nuon apps create --name <name>` | Create an app in the control plane. |
+| `nuon apps sync` | Sync the config in the current directory to Nuon. The app name comes from the directory name. |
+| `nuon apps validate` | Validate the config in the current directory. |
+| `nuon apps list` | List your apps. |
+| `nuon apps select` | Set your active app. |
+
+## Installs
+
+| Command | What it does |
+|---------|--------------|
+| `nuon installs create` | Create an install of the selected app. |
+| `nuon installs list` | List installs. |
+| `nuon installs get` | Show an install's details. |
+| `nuon installs deploy-components` | Deploy all components to an install. |
+| `nuon installs outputs` | View an install's outputs. |
+
+## Operate
+
+| Command | What it does |
+|---------|--------------|
+| `nuon runbooks --install-id <id>` | View and run [runbooks](/guides/runbooks) for an install. |
+| `nuon actions` | Manage and run app [actions](/guides/actions). |
+| `nuon components` | Manage app components. |
+
+## Help
+
+| Command | What it does |
+|---------|--------------|
+| `nuon <command> --help` | Help for any command. |
+| `nuon docs` | Open the docs. |
+| `nuon completion <shell>` | Generate shell autocompletion. |
+| `nuon version` | Show the installed CLI version. |
