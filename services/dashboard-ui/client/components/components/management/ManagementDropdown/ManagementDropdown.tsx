@@ -13,7 +13,6 @@ export const ManagementDropdown = ({ appId, appConfigId }: IManagementDropdown) 
   return (
     <Dropdown
       id="components-mgmt"
-      variant="ghost"
       buttonText={
         <>
           <Icon variant="SlidersHorizontalIcon" /> Manage
