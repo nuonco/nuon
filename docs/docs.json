@@ -143,7 +143,6 @@
               "guides/configuring-inputs-and-secrets",
               "guides/configuring-sandboxes",
               "guides/using-variables",
-              "guides/using-readmes",
               "guides/vcs",
               {
                 "group": "Components",
@@ -194,6 +193,9 @@
             "group": "Advanced",
             "boost": 2,
             "pages": [
+              "guides/using-readmes",
+              "guides/programmable-readmes",
+              "guides/runbooks",
               "guides/custom-nested-stacks",
               "guides/customizing-terraform-stack-templates",
               "guides/cli-extensions",
@@ -220,7 +222,13 @@
           {
             "group": "Interface Reference",
             "pages": [
-              "cli",
+              {
+                "group": "CLI",
+                "root": "cli",
+                "pages": [
+                  "cli-commands"
+                ]
+              },
               "tui",
               "nuon-api",
               "sdks"
@@ -279,6 +287,7 @@
         "icon": "clock-rotate-left",
         "pages": [
           "updates/updates",
+          "updates/035-runbooks-and-readmes",
           "updates/034-aws-terraform-install-stack",
           "updates/033-Workflow-Policy-and-improved-cloud-support",
           "updates/032-extensions-and-roles",
