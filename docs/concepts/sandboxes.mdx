@@ -40,6 +40,7 @@ configuration [here](/guides/vcs).
 ```toml sandbox.toml
 # sandbox
 terraform_version = "1.11.3"
+max_auto_retries  = 3
 
 [public_repo]
 directory = "."
@@ -65,6 +66,11 @@ min_size = 2
 max_size = 3
 desired_capacity = 2
 ```
+
+`max_auto_retries` (optional, default `0`) auto-retries transient sandbox apply
+failures (provision, reprovision, and deprovision) up to the configured cap,
+so flaky infrastructure self-heals without a manual re-run. It matches the
+`max_auto_retries` field on [components](/concepts/components).
 
 ## Nuon Managed Sandboxes
 

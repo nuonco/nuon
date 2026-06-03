@@ -19,9 +19,11 @@ type Signal struct {
 	BuildID     string `json:"build_id"`      // optional; if set, skip build creation and trigger pre-created build
 }
 
-var _ signal.Signal = (*Signal)(nil)
-var _ signal.SignalWithAutoRetry = (*Signal)(nil)
-var _ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+var (
+	_ signal.Signal                   = (*Signal)(nil)
+	_ signal.SignalWithAutoRetry      = (*Signal)(nil)
+	_ signal.SignalWithMaxAutoRetries = (*Signal)(nil)
+)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -49,7 +51,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 
 		req := activities.CreateComponentBuildRecordRequest{
-			CreatedByID: cmp.CreatedByID,
 			ComponentID: s.ComponentID,
 			OrgID:       cmp.OrgID,
 		}

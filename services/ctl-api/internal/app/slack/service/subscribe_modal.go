@@ -70,8 +70,14 @@ const (
 	subscribeEntitiesActionIDActions    = "nuon_subscribe_entities_actions"
 
 	// Labels selector textinput. Only rendered when predicate=Labels.
-	subscribeLabelsBlockID  = "nuon_subscribe_labels_block"
-	subscribeLabelsActionID = "nuon_subscribe_labels"
+	// subscribeLabelsBlockID drives the positive (include) selector;
+	// subscribeExcludeLabelsBlockID drives NotMatchLabels so users can
+	// say "everything except env=stage" without enumerating every other
+	// env value.
+	subscribeLabelsBlockID         = "nuon_subscribe_labels_block"
+	subscribeLabelsActionID        = "nuon_subscribe_labels"
+	subscribeExcludeLabelsBlockID  = "nuon_subscribe_exclude_labels_block"
+	subscribeExcludeLabelsActionID = "nuon_subscribe_exclude_labels"
 
 	subscribeNotifBlockID  = "nuon_subscribe_notif_block"
 	subscribeNotifActionID = "nuon_subscribe_notif"
@@ -244,6 +250,13 @@ type subscribeModalRenderState struct {
 	// selector textinput when Predicate==predicateOptionLabels. Parsed
 	// lazily via labels.ParseLabelsQuery on submission and on preview.
 	LabelsRaw string
+
+	// ExcludeLabelsRaw is the verbatim text from the exclusion selector
+	// textinput (same predicate). Parsed into Selector.NotMatchLabels so
+	// "everything except env=stage" works without enumerating positives.
+	// Either LabelsRaw or ExcludeLabelsRaw (or both) may be empty; at
+	// least one must be non-empty for the Labels predicate to validate.
+	ExcludeLabelsRaw string
 
 	Notif string // notifOptionAll | notifOptionSpecific
 
@@ -563,11 +576,34 @@ func buildSubscribeModalView(
 			blocks = append(blocks, map[string]any{
 				"type":     "input",
 				"block_id": subscribeLabelsBlockID,
-				"label":    map[string]any{"type": "plain_text", "text": "Label selector"},
+				"label":    map[string]any{"type": "plain_text", "text": "Include labels"},
+				"hint":     map[string]any{"type": "plain_text", "text": "Leave empty to include everything (combine with Exclude labels below)."},
+				"optional": true,
 				"element":  labelsInput,
 				// dispatch_action so the preview re-runs on enter; we
 				// also re-run on every other dispatch_action that
 				// re-renders the modal.
+				"dispatch_action": true,
+			})
+
+			excludeInput := map[string]any{
+				"type":      "plain_text_input",
+				"action_id": subscribeExcludeLabelsActionID,
+				"placeholder": map[string]any{
+					"type": "plain_text",
+					"text": "env=stage, tier=experimental",
+				},
+			}
+			if render.ExcludeLabelsRaw != "" {
+				excludeInput["initial_value"] = render.ExcludeLabelsRaw
+			}
+			blocks = append(blocks, map[string]any{
+				"type":            "input",
+				"block_id":        subscribeExcludeLabelsBlockID,
+				"label":           map[string]any{"type": "plain_text", "text": "Exclude labels"},
+				"hint":            map[string]any{"type": "plain_text", "text": "Skip events for entities matching these labels (e.g. env=stage)."},
+				"optional":        true,
+				"element":         excludeInput,
 				"dispatch_action": true,
 			})
 		}
@@ -1293,6 +1329,7 @@ func (s *service) renderStateFromSubscription(
 		case tm.Selector != nil:
 			rs.Predicate = predicateOptionLabels
 			rs.LabelsRaw = labelsToQueryString(tm.Selector.MatchLabels)
+			rs.ExcludeLabelsRaw = labelsToQueryString(tm.Selector.NotMatchLabels)
 		default:
 			rs.Predicate = predicateOptionAny
 		}
@@ -1346,7 +1383,14 @@ func describeMatch(m *labels.SubscriptionMatch) string {
 	}
 	switch {
 	case tm.Selector != nil:
-		return "by labels: " + labelsToQueryString(tm.Selector.MatchLabels)
+		parts := make([]string, 0, 2)
+		if inc := labelsToQueryString(tm.Selector.MatchLabels); inc != "" {
+			parts = append(parts, inc)
+		}
+		if exc := labelsToQueryString(tm.Selector.NotMatchLabels); exc != "" {
+			parts = append(parts, "not "+exc)
+		}
+		return "by labels: " + strings.Join(parts, "; ")
 	case len(tm.IDs) > 0:
 		const maxIDs = 3
 		shown := tm.IDs
@@ -1716,11 +1760,12 @@ func buildSubscriptionMatchFromRender(render subscribeModalRenderState) (*labels
 		}
 		tm = &labels.TargetMatch{IDs: append([]string(nil), render.EntityIDs...)}
 	case predicateOptionLabels:
-		parsed := labels.ParseLabelsQuery(render.LabelsRaw)
-		if len(parsed) == 0 {
-			return nil, subscribeLabelsBlockID, "Enter a label selector like env=prod, owner=*."
+		includeLbls := labels.ParseLabelsQuery(render.LabelsRaw)
+		excludeLbls := labels.ParseLabelsQuery(render.ExcludeLabelsRaw)
+		if len(includeLbls) == 0 && len(excludeLbls) == 0 {
+			return nil, subscribeLabelsBlockID, "Enter a label selector (include or exclude) like env=prod or env=stage."
 		}
-		sel := &labels.Selector{MatchLabels: parsed}
+		sel := &labels.Selector{MatchLabels: includeLbls, NotMatchLabels: excludeLbls}
 		if err := sel.Validate(); err != nil {
 			return nil, subscribeLabelsBlockID, "Invalid label selector: " + err.Error()
 		}
@@ -1923,11 +1968,15 @@ func (s *service) maybePreview(
 		}
 		tm = &labels.TargetMatch{IDs: append([]string(nil), render.EntityIDs...)}
 	case predicateOptionLabels:
-		parsed := labels.ParseLabelsQuery(render.LabelsRaw)
-		if len(parsed) == 0 {
+		includeLbls := labels.ParseLabelsQuery(render.LabelsRaw)
+		excludeLbls := labels.ParseLabelsQuery(render.ExcludeLabelsRaw)
+		if len(includeLbls) == 0 && len(excludeLbls) == 0 {
 			return &subscribePreview{Kind: kind}
 		}
-		tm = &labels.TargetMatch{Selector: &labels.Selector{MatchLabels: parsed}}
+		tm = &labels.TargetMatch{Selector: &labels.Selector{
+			MatchLabels:    includeLbls,
+			NotMatchLabels: excludeLbls,
+		}}
 	default:
 		return nil
 	}
@@ -1969,7 +2018,10 @@ func (s *service) previewMatched(
 	case len(t.IDs) > 0:
 		tx = tx.Where("id IN ?", t.IDs)
 	case t.Selector != nil:
-		tx = tx.Scopes(labels.WithLabels("labels", t.Selector.MatchLabels))
+		tx = tx.Scopes(
+			labels.WithLabels("labels", t.Selector.MatchLabels),
+			labels.WithoutLabels("labels", t.Selector.NotMatchLabels),
+		)
 	}
 
 	// First the total count, then the truncated name list.
@@ -2129,13 +2181,14 @@ func readSubscribeRenderStateFromPayload(payload slackInteractionPayload) subscr
 	predicateOpt := pickValue(subscribePredicateBlockID, subscribePredicateActionID, "selected_option")
 
 	rs := subscribeModalRenderState{
-		OrgLinkID:  pickValue(subscribeOrgBlockID, subscribeOrgActionID, "selected_option"),
-		Match:      matchOpt,
-		TargetKind: targetKindFromString(kindOpt),
-		Predicate:  predicateOpt,
-		LabelsRaw:  pickPlainText(subscribeLabelsBlockID, subscribeLabelsActionID),
-		Notif:      pickValue(subscribeNotifBlockID, subscribeNotifActionID, "selected_option"),
-		Resources:  readResourceRenderStateFromValues(values, pickValue, pickMultiValues),
+		OrgLinkID:        pickValue(subscribeOrgBlockID, subscribeOrgActionID, "selected_option"),
+		Match:            matchOpt,
+		TargetKind:       targetKindFromString(kindOpt),
+		Predicate:        predicateOpt,
+		LabelsRaw:        pickPlainText(subscribeLabelsBlockID, subscribeLabelsActionID),
+		ExcludeLabelsRaw: pickPlainText(subscribeExcludeLabelsBlockID, subscribeExcludeLabelsActionID),
+		Notif:            pickValue(subscribeNotifBlockID, subscribeNotifActionID, "selected_option"),
+		Resources:        readResourceRenderStateFromValues(values, pickValue, pickMultiValues),
 	}
 
 	// Read app picker selection. Slack only emits this block when it

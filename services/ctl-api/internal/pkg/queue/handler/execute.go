@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -40,7 +41,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	}()
 
 	// Increment execution count to track how many times this signal has been executed.
-	_ = activities.AwaitIncrementQueueSignalExecutionCount(ctx, &activities.IncrementQueueSignalExecutionCountRequest{
+	_ = activities.LocalAwaitIncrementQueueSignalExecutionCount(ctx, &activities.IncrementQueueSignalExecutionCountRequest{
 		QueueSignalID: h.queueSignalID,
 	})
 
@@ -59,7 +60,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	decision := h.runBeforePhase(ctx, event)
 	if !decision.Allow {
 		blockedErr := &signal.SignalErrExecute{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
@@ -72,12 +73,17 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	}
 
 	execCtx, cancel := workflow.WithCancel(ctx)
+
+	// Restore the enqueuer's identity onto the execution context.
+	if h.queueSignal != nil {
+		execCtx = queuecctx.ApplyWorkflow(execCtx, h.queueSignal.SignalContext)
+	}
 	h.executingCtx = execCtx
 	h.executingCancel = cancel
 	defer cancel()
 
 	start := workflow.Now(ctx)
-	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusInProgress,
 		Metadata: map[string]any{
@@ -97,7 +103,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
 		if errors.As(err, &panicErr) {
-			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: panicErr.Error(),
@@ -117,7 +123,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 
 		execErr := &signal.SignalErrExecute{Err: err}
 		humanDesc := signal.HumanError(err)
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: humanDesc,
@@ -133,7 +139,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	}
 
 	// persist success status to DB
-	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusSuccess,
 		Metadata: map[string]any{

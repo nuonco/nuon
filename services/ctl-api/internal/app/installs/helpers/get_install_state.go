@@ -15,12 +15,24 @@ import (
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	pkgstate "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
 // GetInstallState reads the current state of the install from the DB, and returns it in a structure that can be used for variable interpolation.
 func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacted bool, skipVersionCheck bool) (*state.State, error) {
-	es, err := h.getInstallStateFromDB(ctx, installID)
+	latestState, err := h.getLatestInstallStateRow(ctx, installID)
 	if err == nil {
+		es := latestState.State
+		switch {
+		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
+			es, err = h.regenerateStalePartials(ctx, latestState, redacted, skipVersionCheck)
+			if err != nil {
+				return nil, errors.Wrap(err, "unable to regenerate stale partials")
+			}
+		case !latestState.StaleAt.Empty():
+			es.StaleAt = &latestState.StaleAt.Time
+		}
+
 		// Labels are mutable and not persisted in the state snapshot,
 		// so always hydrate them fresh from the database.
 		if err := h.hydrateLabels(ctx, installID, es); err != nil {
@@ -281,21 +293,127 @@ func (h *Helpers) hydrateLabels(ctx context.Context, installID string, is *state
 	return nil
 }
 
-func (h *Helpers) getInstallStateFromDB(ctx context.Context, installID string) (*state.State, error) {
+func (h *Helpers) getLatestInstallStateRow(ctx context.Context, installID string) (*app.InstallState, error) {
 	var is app.InstallState
 	res := h.db.WithContext(ctx).
-		Where("install_id = ?", installID).
+		Where(app.InstallState{InstallID: installID}).
 		Order("created_at DESC").
 		First(&is)
 	if res.Error != nil {
-		return nil, errors.Wrap(res.Error, "unable to find install state")
+		return nil, res.Error
 	}
 
-	if !is.StaleAt.Empty() {
-		is.State.StaleAt = &is.StaleAt.Time
+	return &is, nil
+}
+
+// regenerateStalePartials regenerates only the partials listed in row.StalePartials, merges them into
+// the cached state, persists the result in place (clearing the stale markers), and returns it.
+func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallState, redacted, skipVersionCheck bool) (*state.State, error) {
+	is := row.State
+	if is == nil {
+		is = state.New()
 	}
 
-	return is.State, nil
+	install, err := h.getStateInstall(ctx, row.InstallID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+	is.ID = install.ID
+	is.Name = install.Name
+
+	for _, partial := range row.StalePartials {
+		if err := h.regenerateStalePartial(ctx, install, partial, is, redacted, skipVersionCheck); err != nil {
+			return nil, errors.Wrapf(err, "unable to regenerate partial %s", partial)
+		}
+	}
+
+	MapLegacyFields(is)
+
+	if res := h.db.WithContext(ctx).Model(row).
+		Select("state", "stale_at", "stale_partials").
+		Updates(app.InstallState{
+			State:         is,
+			StaleAt:       pkggenerics.NullTime{},
+			StalePartials: []pkgstate.PartialName{},
+		}); res.Error != nil {
+		return nil, errors.Wrap(res.Error, "unable to persist regenerated state")
+	}
+
+	return is, nil
+}
+
+// regenerateStalePartial refreshes a single partial into state, reusing the same data fetch path as state gen signal.
+func (h *Helpers) regenerateStalePartial(ctx context.Context, install *app.Install, partial pkgstate.PartialName, is *state.State, redacted, skipVersionCheck bool) error {
+	switch partial {
+	case pkgstate.PartialOrg:
+		is.Org = h.ToOrgState(install.Org)
+	case pkgstate.PartialApp:
+		is.App = h.ToAppState(install.App)
+	case pkgstate.PartialRunner:
+		if len(install.RunnerGroup.Runners) > 0 {
+			is.Runner = h.ToRunnerState(install.RunnerGroup.Runners[0])
+		}
+	case pkgstate.PartialCloud:
+		is.Cloud = h.ToCloudAccount(install)
+	case pkgstate.PartialInputs:
+		appCfg, err := h.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, skipVersionCheck)
+		if err != nil {
+			return errors.Wrap(err, "unable to get app config")
+		}
+		is.Inputs = h.ToInputState(install.CurrentInstallInputs, appCfg, redacted)
+	case pkgstate.PartialDomain:
+		sandboxRuns, err := h.getInstallSandboxRuns(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install sandbox runs")
+		}
+		if len(sandboxRuns) > 0 {
+			is.Domain = h.ToDomainState(&sandboxRuns[0])
+		} else {
+			is.Domain = h.ToDomainState(nil)
+		}
+	case pkgstate.PartialSandbox:
+		sandboxRuns, err := h.getInstallSandboxRuns(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install sandbox runs")
+		}
+		is.Sandbox = h.ToSandboxesState(sandboxRuns)
+	case pkgstate.PartialStack:
+		stack, err := h.getInstallStack(ctx, install.ID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.Wrap(err, "unable to get install stack")
+		}
+		is.InstallStack = h.ToInstallStackState(stack)
+	case pkgstate.PartialSecrets:
+		secrets, err := h.getSecrets(ctx, install.ID, install.RunnerID)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.Wrap(err, "unable to get secrets")
+		}
+		is.Secrets = secrets
+	case pkgstate.PartialComponents:
+		installComps, err := h.getInstallComponentsState(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get install components")
+		}
+		comps := h.ToComponents(installComps)
+		is.Components = make(map[string]any, len(comps.Components))
+		for name, c := range comps.Components {
+			cMap, err := state.AsMap(c)
+			if err != nil {
+				return errors.Wrap(err, "unable to create component map")
+			}
+			is.Components[name] = cMap
+		}
+	case pkgstate.PartialActions:
+		actions, err := h.getInstallActionWorkflows(ctx, install.ID)
+		if err != nil {
+			return errors.Wrap(err, "unable to get actions")
+		}
+		is.Actions = h.ToActions(actions)
+	default:
+		return errors.Errorf("unknown partial: %s", partial)
+	}
+
+	return nil
 }
 
 func (h *Helpers) MapLegacyFields(is *state.State) {

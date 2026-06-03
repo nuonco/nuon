@@ -397,6 +397,9 @@ type Config struct {
 	GeneralPurgeStaleDataCron        string        `config:"general_purge_stale_data_cron"`
 	GeneralPurgeStaleDataDurationAgo time.Duration `config:"general_purge_stale_data_duration_ago" validate:"required"`
 
+	// When enabled, the daily cron hard-deletes process_healthcheck queue signals older than 7 days.
+	QueueSignalCleanupEnabled bool `config:"queue_signal_cleanup_enabled"`
+
 	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
 	// ChannelID is optional and seeds a default org-wide subscription per link.
 	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`
