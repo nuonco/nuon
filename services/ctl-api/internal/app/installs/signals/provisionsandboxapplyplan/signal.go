@@ -122,11 +122,18 @@ var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithCloneSteps = (*Signal)(nil)
 
 func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
+	// Clones keep FlowID/lifecycle; the retry path doesn't re-inject it.
+	lifecycle := signal.LifecycleBase{
+		LifecycleWorkflowID:   s.LifecycleWorkflowID,
+		LifecycleWorkflowType: s.LifecycleWorkflowType,
+	}
 	return []signal.CloneStepDef{
 		{
 			Signal: &provisionsandboxplan.Signal{
+				LifecycleBase:    lifecycle,
 				InstallSandboxID: s.InstallSandboxID,
 				InstallID:        s.InstallID,
+				FlowID:           s.FlowID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName + " (plan)",
@@ -134,8 +141,10 @@ func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.Cl
 		},
 		{
 			Signal: &Signal{
+				LifecycleBase:    lifecycle,
 				InstallSandboxID: s.InstallSandboxID,
 				InstallID:        s.InstallID,
+				FlowID:           s.FlowID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName,

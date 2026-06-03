@@ -8,9 +8,10 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// TODO: restored to the pre-#1531 value; replace with per-signal derived
-// timeouts (SignalWithTimeout) so long deploys use their configured budget.
 const defaultAwaitTimeout = 30 * time.Minute
+
+// FallbackAwaitTimeout caps a human-gated wait that has no configured timeout.
+const FallbackAwaitTimeout = 30 * 24 * time.Hour
 
 // Result is the payload sent by the handler on completion.
 type Result struct {
@@ -18,25 +19,31 @@ type Result struct {
 	StatusDescription string `json:"status_description,omitempty"`
 }
 
-// Await waits for a completion signal on the Ref's signal channel.
-// Returns the Result on success, or an error if the signal failed or timed out.
+// Await waits for a completion signal on the Ref's signal channel using the
+// default timeout.
 func Await(ctx workflow.Context, ref Ref) (*Result, error) {
+	return AwaitWithTimeout(ctx, ref, defaultAwaitTimeout)
+}
+
+// AwaitWithTimeout waits for a completion signal on the Ref's signal channel.
+// A timeout <= 0 waits with no wall-clock deadline (for human-gated waits).
+func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Result, error) {
 	ch := workflow.GetSignalChannel(ctx, ref.SignalName)
 
 	var result Result
 	received := false
 
-	timerCtx, timerCancel := workflow.WithCancel(ctx)
-	defer timerCancel()
-
 	sel := workflow.NewSelector(ctx)
-
 	sel.AddReceive(ch, func(c workflow.ReceiveChannel, more bool) {
 		c.Receive(ctx, &result)
 		received = true
 	})
 
-	sel.AddFuture(workflow.NewTimer(timerCtx, defaultAwaitTimeout), func(f workflow.Future) {})
+	if timeout > 0 {
+		timerCtx, timerCancel := workflow.WithCancel(ctx)
+		defer timerCancel()
+		sel.AddFuture(workflow.NewTimer(timerCtx, timeout), func(f workflow.Future) {})
+	}
 
 	sel.Select(ctx)
 
@@ -49,5 +56,5 @@ func Await(ctx workflow.Context, ref Ref) (*Result, error) {
 		return &result, nil
 	}
 
-	return nil, fmt.Errorf("callback timeout: signal not received within %s", defaultAwaitTimeout)
+	return nil, fmt.Errorf("callback timeout: signal not received within %s", timeout)
 }
