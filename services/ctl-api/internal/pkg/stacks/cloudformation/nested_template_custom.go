@@ -81,8 +81,15 @@ func (tpl *Templates) getCustomNestedStacks(inp *stacks.TemplateInput, t tagBuil
 		if stack.Name == "" {
 			return nil, fmt.Errorf("custom_nested_stacks[%d]: name is required", i)
 		}
-		if stack.TemplateURL == "" {
-			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template_url is required", i, stack.Name)
+		// A nested stack is generated from a pre-hosted remote template_url, or
+		// from contents that have been uploaded to S3 (ContentsHash set). A
+		// local-path template_url with no uploaded contents means the
+		// sync_custom_stacks upload has not finished yet (status pending);
+		// generating now would fall back to a path CloudFormation cannot
+		// resolve.
+		isRemoteURL := strings.HasPrefix(stack.TemplateURL, "http://") || strings.HasPrefix(stack.TemplateURL, "https://")
+		if stack.ContentsHash == "" && !isRemoteURL {
+			return nil, fmt.Errorf("custom_nested_stacks[%d] (%s): template not ready (status %q); contents have not been uploaded to S3 yet", i, stack.Name, stack.Status)
 		}
 
 		logicalID := sanitizeLogicalID(stack.Name)
