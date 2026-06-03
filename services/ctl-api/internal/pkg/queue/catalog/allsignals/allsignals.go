@@ -12,6 +12,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/created"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/customstacks"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/deprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/provision"
