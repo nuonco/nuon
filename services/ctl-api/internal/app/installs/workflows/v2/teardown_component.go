@@ -108,7 +108,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 			ComponentID:        compIDStr,
 			FlowID:             "",
 			SandboxMode:        false,
-		}, flw.PlanOnly)
+		}, flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(appCfg, compIDStr)))
 		if err != nil {
 			return nil, err
 		}

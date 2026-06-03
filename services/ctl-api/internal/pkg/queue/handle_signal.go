@@ -27,7 +27,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	}
 
 	l.Info("starting processing of queue signal")
-	queueSignal, err := activities.AwaitGetQueueSignalByQueueSignalID(ctx, queueRef.ID)
+	queueSignal, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(ctx, queueRef.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get queue signal")
 	}
@@ -45,7 +45,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 		l.Info("emitter signals disabled globally, skipping",
 			zap.String("queue-signal-id", queueSignal.ID),
 			zap.String("queue-id", queueSignal.QueueID))
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     queueSignal.ID,
 			Status:            app.StatusCancelled,
 			StatusDescription: "emitter signals disabled",
@@ -61,7 +61,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	}
 
 	// Mark the signal as dequeued with timestamp
-	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: queueSignal.ID,
 		Status:        app.StatusInProgress,
 		Metadata: map[string]any{
@@ -73,7 +73,7 @@ func (q *queue) handleQueueSignal(ctx workflow.Context, queueRef QueueRef) error
 	signalErr = q.processQueueSignal(ctx, l, queueSignal, queueRef)
 	if signalErr != nil {
 		// Persist error status so callers don't block forever
-		if statusErr := statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		if statusErr := statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID: queueSignal.ID,
 			Status:        app.StatusError,
 		}); statusErr != nil {
@@ -103,7 +103,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 	}
 
 	// Persist the handler's RunID for recovery.
-	_ = activities.AwaitUpdateQueueSignalRunID(ctx, &activities.UpdateQueueSignalRunIDRequest{
+	_ = activities.LocalAwaitUpdateQueueSignalRunID(ctx, &activities.UpdateQueueSignalRunIDRequest{
 		QueueSignalID: queueSignal.ID,
 		RunID:         readyResp.RunID,
 	})
