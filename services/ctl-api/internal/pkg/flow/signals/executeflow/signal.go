@@ -58,6 +58,12 @@ type Signal struct {
 	// to actively cancel the running group.
 	activeGroupQueueSignalID string
 
+	// groupDispatchSeq scopes each group dispatch's completion signal per attempt.
+	groupDispatchSeq int
+
+	// awaitingResume: true while the main loop is parked awaiting resume/cancel.
+	awaitingResume bool
+
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.
 	pauseRequested bool
