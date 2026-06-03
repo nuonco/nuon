@@ -19,6 +19,7 @@ import (
 type TriggerAppBranchRunRequest struct {
 	ConfigID string `json:"config_id"` // optional - use latest if not provided
 	Force    bool   `json:"force"`     // force run even if no changes detected
+	PlanOnly bool   `json:"plan_only"` // plan-only preview mode (no apply)
 }
 
 func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
@@ -117,6 +118,8 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: config.ID,
 		Force:             req.Force,
+		PlanOnly:          req.PlanOnly,
+		EventType:         "manual",
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch run: %w", err))

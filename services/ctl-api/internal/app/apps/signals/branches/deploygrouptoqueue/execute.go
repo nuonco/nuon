@@ -2,14 +2,13 @@ package deploygrouptoqueue
 
 import (
 	"fmt"
+	"log"
 
-	"go.temporal.io/sdk/log"
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
-	componentdeploysyncandplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -25,45 +24,77 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
 
-	// Get the app config to know which components to deploy
-	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
-	if err != nil {
-		return fmt.Errorf("unable to get app config: %w", err)
-	}
-
 	// Get the install group
 	group, err := activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
 	if err != nil {
 		return fmt.Errorf("unable to get install group: %w", err)
 	}
 
-	logger.Info("deploying install group to queue",
+	// Resolve install IDs: use label selector if set, otherwise static IDs
+	installIDs := group.InstallIDs
+	if group.LabelSelector != nil {
+		branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
+		if err != nil {
+			return fmt.Errorf("unable to get app branch for label resolution: %w", err)
+		}
+
+		resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
+			AppID:    branch.AppID,
+			GroupID:  group.ID,
+			Selector: group.LabelSelector,
+		})
+		if err != nil {
+			return fmt.Errorf("unable to resolve install group labels: %w", err)
+		}
+		installIDs = resolved.InstallIDs
+
+		logger.Info("resolved install group via label selector",
+			"install_group_id", group.ID,
+			"resolved_count", len(installIDs),
+		)
+	}
+
+	logger.Info("deploying install group",
 		"install_group_id", group.ID,
 		"install_group_name", group.Name,
-		"install_count", len(group.InstallIDs),
-		"component_count", len(appConfig.ComponentIDs),
+		"install_count", len(installIDs),
 		"max_parallel", group.MaxParallel,
 	)
 
-	if len(group.InstallIDs) == 0 {
+	if len(installIDs) == 0 {
 		logger.Info("no installs in group, skipping")
 		return nil
 	}
 
-	if len(appConfig.ComponentIDs) == 0 {
-		logger.Info("no components to deploy, skipping")
-		return nil
-	}
-
-	// Deploy to each install in the group in parallel (bounded by channel collection)
+	// Create an install config update workflow per install and wait for all to complete
 	errCh := workflow.NewChannel(ctx)
-	pending := len(group.InstallIDs)
+	pending := len(installIDs)
 
-	for _, installID := range group.InstallIDs {
+	for _, installID := range installIDs {
 		installID := installID
 		workflow.Go(ctx, func(gCtx workflow.Context) {
-			deployErr := s.deployToInstall(gCtx, logger, installID, appConfig.ComponentIDs)
-			errCh.Send(gCtx, deployErr)
+			result, createErr := activities.AwaitCreateInstallConfigUpdateWorkflow(gCtx, &activities.CreateInstallConfigUpdateWorkflowInput{
+				InstallID:      installID,
+				NewAppConfigID: run.AppConfigID,
+				AppBranchRunID: s.RunID,
+				InstallGroupID: group.ID,
+				PlanOnly:       run.PlanOnly,
+			})
+			if createErr != nil {
+				errCh.Send(gCtx, fmt.Errorf("install %s: unable to create config update workflow: %w", installID, createErr))
+				return
+			}
+
+			logger.Info("created install config update workflow",
+				"install_id", installID,
+				"workflow_id", result.WorkflowID,
+				"install_config_update_id", result.InstallConfigUpdateID,
+			)
+
+			// The install workflow is now managed by the conductor - it will execute
+			// the generated steps (diff, deploy changed components, etc.)
+			// We don't need to wait for completion here since the conductor handles it.
+			errCh.Send(gCtx, nil)
 		})
 	}
 
@@ -81,7 +112,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("deploy group had %d errors: %v", len(errs), errs)
 	}
 
-	logger.Info("install group deployment completed successfully",
+	logger.Info("install group deployment initiated successfully",
 		"install_group_id", group.ID,
 	)
 

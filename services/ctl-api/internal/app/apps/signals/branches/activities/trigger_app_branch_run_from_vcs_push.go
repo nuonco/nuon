@@ -31,10 +31,21 @@ type TriggerAppBranchRunFromVCSPushResponse struct {
 	QueueSignalID string `json:"queue_signal_id"`
 }
 
+type TriggerAppBranchRunFromVCSPushRequest struct {
+	AppBranchID       string `json:"app_branch_id"`
+	AppBranchConfigID string `json:"app_branch_config_id"`
+	PlanOnly          bool   `json:"plan_only,omitempty"`
+	EventType         string `json:"event_type,omitempty"`
+	PRNumber          *int   `json:"pr_number,omitempty"`
+	HeadSHA           string `json:"head_sha,omitempty"`
+	BaseBranch        string `json:"base_branch,omitempty"`
+}
+
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 5m
-// @as-wrapper
-func (a *Activities) triggerAppBranchRunFromVCSPush(ctx context.Context, appBranchID, appBranchConfigID string) (*TriggerAppBranchRunFromVCSPushResponse, error) {
+func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req TriggerAppBranchRunFromVCSPushRequest) (*TriggerAppBranchRunFromVCSPushResponse, error) {
+	appBranchID := req.AppBranchID
+	appBranchConfigID := req.AppBranchConfigID
 	// Load branch with queue
 	var branch app.AppBranch
 	if err := a.db.WithContext(ctx).Preload("Queue").First(&branch, "id = ?", appBranchID).Error; err != nil {
@@ -56,6 +67,11 @@ func (a *Activities) triggerAppBranchRunFromVCSPush(ctx context.Context, appBran
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: appBranchConfigID,
 		Force:             false,
+		PlanOnly:          req.PlanOnly,
+		EventType:         req.EventType,
+		PRNumber:          req.PRNumber,
+		HeadSHA:           req.HeadSHA,
+		BaseBranch:        req.BaseBranch,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create app branch run: %w", err)
@@ -72,7 +88,7 @@ func (a *Activities) triggerAppBranchRunFromVCSPush(ctx context.Context, appBran
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         "false",
 		},
-		false,
+		req.PlanOnly,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create workflow: %w", err)

@@ -14,6 +14,13 @@ const SignalType signal.SignalType = "vcs-push"
 type Signal struct {
 	AppBranchID       string `json:"app_branch_id" validate:"required"`
 	AppBranchConfigID string `json:"app_branch_config_id" validate:"required"`
+
+	// PR metadata — populated for pull_request events, empty for push events
+	PlanOnly   bool   `json:"plan_only,omitempty"`
+	EventType  string `json:"event_type,omitempty"` // "push" or "pull_request"
+	PRNumber   *int   `json:"pr_number,omitempty"`
+	HeadSHA    string `json:"head_sha,omitempty"`
+	BaseBranch string `json:"base_branch,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)

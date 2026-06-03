@@ -17,8 +17,14 @@ import (
 // swagger:model service.CreateAppConfigRequest
 type ServiceCreateAppConfigRequest struct {
 
+	// app branch id
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
 	// cli version
 	CliVersion string `json:"cli_version,omitempty"`
+
+	// plan only
+	PlanOnly bool `json:"plan_only,omitempty"`
 
 	// not required Readme
 	Readme string `json:"readme,omitempty"`

@@ -9,9 +9,11 @@ import (
 
 func (c *cli) syncCmd() *cobra.Command {
 	var (
-		create bool
-		force  bool
-		appID  string
+		create  bool
+		force   bool
+		appID   string
+		branch  string
+		preview bool
 	)
 	syncCmd := &cobra.Command{
 		Use:               "sync",
@@ -22,6 +24,8 @@ func (c *cli) syncCmd() *cobra.Command {
 				AppFlag: appID,
 				Force:   force,
 				Create:  create,
+				Branch:  branch,
+				Preview: preview,
 			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if create {
@@ -34,6 +38,8 @@ func (c *cli) syncCmd() *cobra.Command {
 	syncCmd.Flags().BoolVar(&create, "create", false, "Create the app if it doesn't exist")
 	syncCmd.Flags().BoolVar(&force, "force", false, "Sync to the configured app even if the directory name does not match")
 	syncCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of the app to sync this config with (defaults to the selected app)")
+	syncCmd.Flags().StringVar(&branch, "branch", "", "Target a specific app branch for this sync")
+	syncCmd.Flags().BoolVar(&preview, "preview", false, "Plan-only preview mode (no apply). Only used with --branch")
 
 	return syncCmd
 }

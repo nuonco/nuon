@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
@@ -19,6 +20,12 @@ type CreateAppConfigRequest struct {
 	// not required Readme
 	Readme     string `json:"readme,omitempty"`
 	CLIVersion string `json:"cli_version,omitempty"`
+
+	// AppBranchID optionally links this config to an app branch.
+	// When set, triggers an app branch run after sync.
+	AppBranchID string `json:"app_branch_id,omitempty"`
+	// PlanOnly creates a preview run (plan without apply). Only used with AppBranchID.
+	PlanOnly bool `json:"plan_only,omitempty"`
 }
 
 func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
@@ -103,6 +110,7 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 	inputs := app.AppConfig{
 		OrgID:              orgID,
 		AppID:              appID,
+		AppBranchID:        generics.NewNullString(req.AppBranchID),
 		Status:             app.AppConfigStatusPending,
 		StatusDescription:  "sync pending",
 		StatusV2:           pendingStatus,

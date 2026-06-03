@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -39,6 +40,10 @@ type SyncOptions struct {
 	Force bool
 	// Create indicates the app should be created if it does not exist.
 	Create bool
+	// Branch optionally targets a specific app branch for this sync.
+	Branch string
+	// Preview creates a plan-only run (no apply). Only used with Branch.
+	Preview bool
 }
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
@@ -105,6 +110,13 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	}
 
 	syncer := apisyncer.New(s.api, appID, version, cfg)
+
+	var syncerOpts []apisyncer.SyncerOption
+	if opts.Branch != "" {
+		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(opts.Branch, opts.Preview))
+	}
+
+	syncer := apisyncer.New(s.api, appID, version, cfg, syncerOpts...)
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return ui.PrintError(err)
