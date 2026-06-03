@@ -44,6 +44,26 @@ func WithGroupIdx(n int) WorkflowStepOptions {
 	}
 }
 
+// componentMaxAutoRetries looks up the max auto retries for a component from
+// the pre-fetched app config, avoiding redundant activity calls.
+func componentMaxAutoRetries(appCfg *app.AppConfig, componentID string) int {
+	for _, ccc := range appCfg.ComponentConfigConnections {
+		if ccc.ComponentID == componentID {
+			return ccc.GetMaxAutoRetries()
+		}
+	}
+	return 0
+}
+
+func WithMaxAutoRetries(n int) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		if s.Status.Metadata == nil {
+			s.Status.Metadata = make(map[string]any)
+		}
+		s.Status.Metadata["max_auto_retries"] = n
+	}
+}
+
 func WithExecutionType(executionType app.WorkflowStepExecutionType) WorkflowStepOptions {
 	return func(s *app.WorkflowStep) {
 		s.ExecutionType = executionType
@@ -142,16 +162,21 @@ func installSignalStep(ctx workflow.Context, installID, name string, metadata pg
 
 	step.Timeout = signal.DeriveTimeout(sig)
 
-	if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
-		maxAutoRetries := mar.MaxAutoRetries(ctx)
-		if step.Status.Metadata == nil {
-			step.Status.Metadata = make(map[string]any)
-		}
-		step.Status.Metadata["max_auto_retries"] = maxAutoRetries
-	}
-
+	// Apply options first so WithMaxAutoRetries can set the metadata before
+	// we decide whether to call the (expensive) MaxAutoRetries activity.
 	for _, o := range opts {
 		o(step)
+	}
+
+	// Only call MaxAutoRetries if not already provided via WithMaxAutoRetries.
+	if _, alreadySet := step.Status.Metadata["max_auto_retries"]; !alreadySet {
+		if mar, ok := sig.(signal.SignalWithMaxAutoRetries); ok {
+			maxAutoRetries := mar.MaxAutoRetries(ctx)
+			if step.Status.Metadata == nil {
+				step.Status.Metadata = make(map[string]any)
+			}
+			step.Status.Metadata["max_auto_retries"] = maxAutoRetries
+		}
 	}
 
 	return step, nil
