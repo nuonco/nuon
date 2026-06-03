@@ -5,6 +5,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/directive"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeworkflowstepgroup"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
@@ -41,6 +44,27 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to forward retry to group: %w", err)
+	}
+
+	// Parked flow: the group isn't live to clone, so clone here and wake the loop.
+	if s.awaitingResume {
+		updated, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
+		if err != nil {
+			return nil, fmt.Errorf("unable to re-read step %s: %w", req.StepID, err)
+		}
+
+		if directive.Step(updated.ResultDirective) == directive.StepRetryGroup {
+			if err := s.cloneGroupForRetry(ctx, updated.GroupIdx); err != nil {
+				return nil, fmt.Errorf("unable to clone group for retry: %w", err)
+			}
+		} else if err := executeworkflowstepgroup.CloneStepForRetry(ctx, req.StepID, s.WorkflowID); err != nil {
+			return nil, fmt.Errorf("unable to clone step for retry: %w", err)
+		}
+
+		s.resumeRequested = true
+		s.resumeRunType = app.WorkflowRunTypeRetry
+		s.resumeStepID = req.StepID
+		s.resumeStartIdx = s.findGroupPositionForStep(ctx, req.StepID)
 	}
 
 	return &RetryStepResponse{WorkflowID: s.WorkflowID, Retryable: true}, nil
