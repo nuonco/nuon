@@ -30,10 +30,7 @@ export const Default = () => (
 
 export const WithoutInstall = () => (
   <div className="max-w-2xl p-4">
-    <WorkflowDetailsSection
-      workflow={mockWorkflow}
-      orgId="org-123"
-    />
+    <WorkflowDetailsSection workflow={mockWorkflow} orgId="org-123" />
   </div>
 )
 
