@@ -9,6 +9,8 @@ import (
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/viewsql"
 )
 
 type InstallRunbookRunStatus string
@@ -66,6 +68,16 @@ func (r *InstallRunbookRun) BeforeCreate(tx *gorm.DB) error {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 	return nil
+}
+
+func (r *InstallRunbookRun) Views(db *gorm.DB) []migrations.View {
+	return []migrations.View{
+		{
+			Name:          views.CustomViewName(db, &InstallRunbookRun{}, "latest_view_v1"),
+			SQL:           viewsql.InstallRunbookRunsLatestViewV1,
+			AlwaysReapply: true,
+		},
+	}
 }
 
 func (r *InstallRunbookRun) Indexes(db *gorm.DB) []migrations.Index {
