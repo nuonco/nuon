@@ -79,20 +79,29 @@ func TestValidatePolicyTypeEngineCompatibility(t *testing.T) {
 
 func TestValidatePolicyComponents(t *testing.T) {
 	tests := map[string]struct {
+		policyType config.AppPolicyType
 		components []string
 		expected   bool
 	}{
-		"empty":                {[]string{}, false},
-		"single_component":     {[]string{"rds_cluster"}, false},
-		"multiple_components":  {[]string{"rds_cluster", "vpc"}, false},
-		"wildcard_only":        {[]string{"*"}, false},
-		"wildcard_with_others": {[]string{"*", "rds_cluster"}, true},
-		"empty_component_name": {[]string{"rds_cluster", ""}, true},
+		// component-scoped types must declare components - empty silently disables them
+		"terraform_empty_error":     {config.AppPolicyTypeTerraformModule, []string{}, true},
+		"terraform_nil_error":       {config.AppPolicyTypeTerraformModule, nil, true},
+		"helm_empty_error":          {config.AppPolicyTypeHelmChart, []string{}, true},
+		"container_image_empty_err": {config.AppPolicyTypeContainerImage, []string{}, true},
+		// non component-scoped types ignore components and may be empty
+		"sandbox_empty_ok":            {config.AppPolicyTypeSandbox, []string{}, false},
+		"kubernetes_cluster_empty_ok": {config.AppPolicyTypeKubernetesCluster, []string{}, false},
+		// populated lists validate the same regardless of type
+		"single_component":     {config.AppPolicyTypeTerraformModule, []string{"rds_cluster"}, false},
+		"multiple_components":  {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", "vpc"}, false},
+		"wildcard_only":        {config.AppPolicyTypeTerraformModule, []string{"*"}, false},
+		"wildcard_with_others": {config.AppPolicyTypeTerraformModule, []string{"*", "rds_cluster"}, true},
+		"empty_component_name": {config.AppPolicyTypeTerraformModule, []string{"rds_cluster", ""}, true},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := validatePolicyComponents(test.components)
+			err := ValidatePolicyComponents(name, test.policyType, test.components)
 			assert.Equal(t, (err != nil), test.expected, "Expected error: %v, got: %v", test.expected, err)
 		})
 	}
