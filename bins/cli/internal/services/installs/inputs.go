@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/install/editor"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -193,6 +194,15 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 	}
 	view.Render(data)
 	return nil
+}
+
+// EditInputs launches an interactive TUI for editing an install's inputs.
+func (s *Service) EditInputs(ctx context.Context, installID string, deployDependents bool) error {
+	installID, err := lookup.InstallID(ctx, s.api, installID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+	return editor.EditInputsApp(ctx, s.cfg, s.api, installID, deployDependents)
 }
 
 // currentValues returns the non-redacted values map from a current-inputs
