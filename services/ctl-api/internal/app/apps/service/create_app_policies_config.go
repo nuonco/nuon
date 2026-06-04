@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/config"
+	"github.com/nuonco/nuon/pkg/config/validate"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -54,11 +55,22 @@ func (c *CreateAppPoliciesConfigRequest) Validate(v *validator.Validate) error {
 		return validatorPkg.FormatValidationError(err)
 	}
 
-	for _, policy := range c.Policies {
+	for idx, policy := range c.Policies {
 		if !generics.SliceContains(policy.Type, app.AllPolicyTypes) {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("policy type must be one of (%s)", strings.Join(generics.ToStringSlice(app.AllPolicyTypes), ",")),
 				Description: "invalid policy type " + string(policy.Type),
+			}
+		}
+
+		policyName := policy.Name
+		if policyName == "" {
+			policyName = fmt.Sprintf("#%d", idx)
+		}
+		if err := validate.ValidatePolicyComponents(policyName, policy.Type, policy.Components); err != nil {
+			return stderr.ErrUser{
+				Err:         err,
+				Description: err.Error(),
 			}
 		}
 	}
