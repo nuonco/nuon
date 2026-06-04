@@ -68,6 +68,13 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
+
+	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusDeprovisioning))
+	lifecycleStatus.StatusHumanDescription = "Install is being deprovisioned"
+	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
+		"lifecycle_status": lifecycleStatus,
+	})
+
 	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
 		ctx.Error(err)

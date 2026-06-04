@@ -93,6 +93,12 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
+	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusProvisioning))
+	lifecycleStatus.StatusHumanDescription = "Install is being provisioned"
+	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
+		"lifecycle_status": lifecycleStatus,
+	})
+
 	// Send signals via queues
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
@@ -218,6 +224,12 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
+
+	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusProvisioning))
+	lifecycleStatus.StatusHumanDescription = "Install is being provisioned"
+	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
+		"lifecycle_status": lifecycleStatus,
+	})
 
 	// Send signals via queues
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)

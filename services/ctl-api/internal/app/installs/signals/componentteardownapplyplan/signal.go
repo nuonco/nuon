@@ -223,7 +223,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		DeployID: installDeploy.ID,
 	})
 
-	s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
+	s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusInactive, "successfully torn down")
 	s.updateInstallComponentStatus(ctx, installDeploy.InstallComponentID, app.InstallComponentStatusInactive, "successfully torn down")
 
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
