@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -11,40 +12,10 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, updateInstall, updateInstallInputs } from '@/lib'
-import { ConfirmUpdateModal, EditInputsFormModal } from './EditInputs'
+import { EditInputsFormModal } from './EditInputs'
 
 interface IEditInputs {
   showNameField?: boolean
-}
-
-export const ConfirmUpdateModalContainer = ({
-  onConfirm,
-  onCancel,
-  ...props
-}: {
-  onConfirm: () => void
-  onCancel: () => void
-} & IModal) => {
-  const { install } = useInstall()
-  const { removeModal } = useSurfaces()
-
-  const isInstallManagedByConfig =
-    install?.metadata?.managed_by === 'nuon/cli/install-config'
-
-  return (
-    <ConfirmUpdateModal
-      isInstallManagedByConfig={isInstallManagedByConfig}
-      onConfirm={() => {
-        onConfirm()
-        removeModal(props.modalId)
-      }}
-      onCancel={() => {
-        onCancel()
-        removeModal(props.modalId)
-      }}
-      {...props}
-    />
-  )
 }
 
 export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditInputs & Omit<IModal, 'onSubmit'>) => {
@@ -106,14 +77,10 @@ export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditI
   const { mutateAsync, isPending: isUpdatingInputs, error: actionError } = useMutation({
     mutationFn: async (formData: FormData) => {
       const nameChanged = showNameField && installName !== (install?.name ?? '')
-      const needsManagedByUpdate = install?.metadata?.managed_by === 'nuon/cli/install-config'
 
-      if (nameChanged || needsManagedByUpdate) {
+      if (nameChanged) {
         await updateInstall({
-          body: {
-            ...(nameChanged && { name: installName }),
-            ...(needsManagedByUpdate && { metadata: { managed_by: 'nuon/dashboard' } }),
-          },
+          body: { name: installName },
           installId: install.id,
           orgId: org.id,
         })
@@ -218,6 +185,8 @@ export const EditInputsFormModalContainer = ({ showNameField, ...props }: IEditI
   )
 }
 
+const MANAGED_BY_CONFIG_TIP = 'Managed by config. Disable config sync to edit.'
+
 export const EditInputsButton = ({
   showNameField,
   ...props
@@ -225,40 +194,27 @@ export const EditInputsButton = ({
   const { install } = useInstall()
   const { addModal } = useSurfaces()
 
-  const showConfirmModal = () => {
-    const confirmModal = (
-      <ConfirmUpdateModalContainer
-        onConfirm={() => {
-          const editModal = <EditInputsFormModalContainer showNameField={showNameField} />
-          addModal(editModal)
-        }}
-        onCancel={() => {}}
-      />
-    )
-    addModal(confirmModal)
-  }
+  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
 
-  const showEditModal = () => {
+  const handleClick = () => {
     const editModal = <EditInputsFormModalContainer showNameField={showNameField} />
     addModal(editModal)
   }
 
-  const handleClick = () => {
-    const isInstallManagedByConfig =
-      install?.metadata?.managed_by === 'nuon/cli/install-config'
-
-    if (isInstallManagedByConfig) {
-      showConfirmModal()
-    } else {
-      showEditModal()
-    }
+  if (isManagedByConfig) {
+    return (
+      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs" className="w-full">
+        <Button disabled className="pointer-events-none" {...props}>
+          {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
+          {showNameField ? 'Edit install' : 'Edit inputs'}
+          {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" /> : null}
+        </Button>
+      </Tooltip>
+    )
   }
 
   return (
-    <Button
-      onClick={handleClick}
-      {...props}
-    >
+    <Button onClick={handleClick} {...props}>
       {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" />}
       {showNameField ? 'Edit install' : 'Edit inputs'}
       {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" /> : null}
