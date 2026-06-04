@@ -1,13 +1,38 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Badge } from '@/components/common/Badge'
 import { Status } from '@/components/common/Status'
 import { Banner } from '@/components/common/Banner'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
+import { SearchInput } from '@/components/common/SearchInput'
+import { Select } from '@/components/common/form/Select'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { RadioInput } from '@/components/common/form/RadioInput'
 import type { TBuild } from '@/types'
+
+type TSortOrder = 'newest' | 'oldest'
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'oldest', label: 'Oldest first' },
+]
+
+const buildTimestamp = (build: TBuild) =>
+  build?.created_at ? new Date(build.created_at).getTime() : 0
+
+const matchesQuery = (build: TBuild, query: string) => {
+  const haystack = [
+    build?.id,
+    build?.vcs_connection_commit?.message,
+    build?.created_by?.email,
+    build?.component_config_connection?.external_image?.tag,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(query.toLowerCase())
+}
 
 interface IBuildSelect {
   componentType?: string
@@ -36,6 +61,9 @@ export const BuildSelect = ({
   error,
   onScroll,
 }: IBuildSelect) => {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<TSortOrder>('newest')
+
   useEffect(() => {
     if (!selectedBuildId && builds.length > 0) {
       const mostRecentActiveBuild = builds.find(
@@ -46,6 +74,19 @@ export const BuildSelect = ({
       }
     }
   }, [selectedBuildId, builds, onSelectBuild])
+
+  const visibleBuilds = useMemo(() => {
+    const filtered = searchQuery
+      ? builds.filter((build) => matchesQuery(build, searchQuery))
+      : builds
+    return [...filtered].sort((a, b) =>
+      sortOrder === 'newest'
+        ? buildTimestamp(b) - buildTimestamp(a)
+        : buildTimestamp(a) - buildTimestamp(b)
+    )
+  }, [builds, searchQuery, sortOrder])
+
+  const showControls = builds.length > 0 && !error
 
   const renderContent = () => {
     if (isLoading && builds.length === 0) {
@@ -106,10 +147,21 @@ export const BuildSelect = ({
       )
     }
 
+    if (visibleBuilds.length === 0) {
+      return (
+        <EmptyState
+          variant="search"
+          size="sm"
+          emptyTitle="No matching builds"
+          emptyMessage="No builds match your search. Try a different term."
+        />
+      )
+    }
+
     return (
       <>
         <div className="flex flex-col gap-1">
-          {builds.map((build) => {
+          {visibleBuilds.map((build) => {
             const isActive = build?.status_v2?.status === 'active'
             const isCurrentDeployment =
               currentBuildId && build.id === currentBuildId
@@ -258,6 +310,25 @@ export const BuildSelect = ({
       className="relative flex flex-col max-h-80 overflow-y-auto -mx-6 -mt-6 border-b border-cool-grey-200 dark:border-dark-grey-600"
       onScroll={onScroll}
     >
+      {showControls && (
+        <div className="sticky top-0 z-10 flex items-center gap-2 bg-white dark:bg-dark-grey-900 px-6 py-3 border-b border-cool-grey-200 dark:border-dark-grey-600">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search builds…"
+            labelClassName="flex-1"
+            className="!min-w-0 w-full"
+          />
+          <div className="w-44 shrink-0">
+            <Select
+              size="sm"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as TSortOrder)}
+              options={SORT_OPTIONS}
+            />
+          </div>
+        </div>
+      )}
       <div className="px-6 py-6">{renderContent()}</div>
     </div>
   )

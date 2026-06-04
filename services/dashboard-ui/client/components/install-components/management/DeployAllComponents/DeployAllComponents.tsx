@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -8,7 +10,11 @@ interface IDeployAllComponentsModal extends Omit<IModal, 'onSubmit'> {
   isPending: boolean
   isKickedOff: boolean
   error?: { error?: string } | null
-  onSubmit: () => void
+  onSubmit: (params: { role: string }) => void
+  roleSelector: (props: {
+    value: string
+    onChange: (value: string) => void
+  }) => ReactNode
 }
 
 export const DeployAllComponentsModal = ({
@@ -17,8 +23,11 @@ export const DeployAllComponentsModal = ({
   isKickedOff,
   error,
   onSubmit,
+  roleSelector,
   ...props
 }: IDeployAllComponentsModal) => {
+  const [selectedRole, setSelectedRole] = useState<string>('')
+
   return (
     <Modal
       heading={
@@ -42,7 +51,7 @@ export const DeployAllComponentsModal = ({
           'Deploy components'
         ),
         disabled: isKickedOff || isPending,
-        onClick: onSubmit,
+        onClick: () => onSubmit({ role: selectedRole }),
         variant: 'primary',
       }}
       {...props}
@@ -60,6 +69,10 @@ export const DeployAllComponentsModal = ({
           This action will deploy the latest build of each component to your
           install.
         </Text>
+        {roleSelector({
+          value: selectedRole,
+          onChange: setSelectedRole,
+        })}
       </div>
     </Modal>
   )
