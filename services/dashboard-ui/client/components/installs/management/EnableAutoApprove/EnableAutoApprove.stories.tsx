@@ -3,7 +3,7 @@ export default {
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'
-import { EnableAutoApproveModal, ConfirmOverrideModal } from './EnableAutoApprove'
+import { EnableAutoApproveModal } from './EnableAutoApprove'
 
 const noop = () => {}
 
@@ -34,11 +34,5 @@ export const Success = () => (
 export const WithError = () => (
   <ModalStory>
     <EnableAutoApproveModal isPending={false} error={{ error: 'Something went wrong' }} isApproveAll={false} isSuccess={false} onSubmit={noop} />
-  </ModalStory>
-)
-
-export const ConfirmOverride = () => (
-  <ModalStory>
-    <ConfirmOverrideModal onConfirm={noop} />
   </ModalStory>
 )

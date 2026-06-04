@@ -1,2 +1,2 @@
-export { EnableConfigSyncModalContainer as EnableConfigSyncModal, EnableConfigSyncButton } from './EnableConfigSyncContainer'
-export { EnableConfigSyncModal as EnableConfigSyncModalComponent } from './EnableConfigSync'
+export { EnableConfigSyncButton } from './EnableConfigSyncContainer'
+export { EnableConfigSyncModal as EnableConfigSyncModalComponent, DisableConfigSyncModal as DisableConfigSyncModalComponent } from './EnableConfigSync'
