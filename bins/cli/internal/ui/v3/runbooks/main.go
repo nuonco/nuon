@@ -15,7 +15,8 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/config"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/common"
-	"github.com/nuonco/nuon/sdks/nuon-go"
+	nuon "github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // View states
@@ -146,15 +147,15 @@ func (k keyMap) FullHelp() [][]key.Binding {
 
 // Messages
 type runbooksLoadedMsg struct {
-	runbooks []*nuon.InstallRunbook
+	runbooks []*models.AppInstallRunbook
 }
 
 type runbookDetailMsg struct {
-	runbook *nuon.InstallRunbook
+	runbook *models.AppInstallRunbook
 }
 
 type runTriggeredMsg struct {
-	run *nuon.InstallRunbookRun
+	run *models.AppInstallRunbookRun
 }
 
 type errMsg struct {
@@ -173,14 +174,14 @@ type model struct {
 	installID string
 
 	state    viewState
-	runbooks []*nuon.InstallRunbook
+	runbooks []*models.AppInstallRunbook
 	cursor   int
 
 	// detail view
-	selectedRunbook *nuon.InstallRunbook
+	selectedRunbook *models.AppInstallRunbook
 
 	// run state
-	lastRun  *nuon.InstallRunbookRun
+	lastRun  *models.AppInstallRunbookRun
 	errorMsg string
 
 	// ui components
@@ -563,7 +564,7 @@ func (m model) viewDetailContent() string {
 			b.WriteString(fmt.Sprintf("  %s  %s  %s\n",
 				dimStyle.Render(run.ID),
 				rStatusSt.Render("["+runStatus+"]"),
-				dimStyle.Render(run.CreatedAt.Format(time.RFC3339)),
+				dimStyle.Render(run.CreatedAt),
 			))
 		}
 	}
