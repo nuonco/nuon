@@ -1,4 +1,4 @@
-FROM golang:1.25 AS base
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25 AS base
 
 WORKDIR /src
 
