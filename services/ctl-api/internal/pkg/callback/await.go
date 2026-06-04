@@ -8,21 +8,32 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const defaultAwaitTimeout = 30 * time.Minute
+const (
+	// QuickTimeout is for fast infrastructure operations: validation, no-op
+	// signals, DB-row creation. If these take longer than 5 minutes something
+	// is stuck.
+	QuickTimeout = 5 * time.Minute
 
-// FallbackAwaitTimeout caps a human-gated wait that has no configured timeout.
-const FallbackAwaitTimeout = 30 * 24 * time.Hour
+	// DriftDetectionTimeout is for drift-detection signals which are lightweight
+	// but fan out through the webhook/Slack pipeline.
+	DriftDetectionTimeout = 15 * time.Minute
+
+	// ShortTimeout is for operations expected to complete within minutes:
+	// state generation, lightweight queue signals.
+	ShortTimeout = 30 * time.Minute
+
+	// HumanGatedTimeout is for operations that require human interaction:
+	// approval workflows, user-initiated stack runs.
+	HumanGatedTimeout = 180 * 24 * time.Hour
+
+	// FallbackAwaitTimeout caps a wait that has no configured timeout.
+	FallbackAwaitTimeout = 30 * 24 * time.Hour
+)
 
 // Result is the payload sent by the handler on completion.
 type Result struct {
 	Status            string `json:"status"`
 	StatusDescription string `json:"status_description,omitempty"`
-}
-
-// Await waits for a completion signal on the Ref's signal channel using the
-// default timeout.
-func Await(ctx workflow.Context, ref Ref) (*Result, error) {
-	return AwaitWithTimeout(ctx, ref, defaultAwaitTimeout)
 }
 
 // AwaitWithTimeout waits for a completion signal on the Ref's signal channel.

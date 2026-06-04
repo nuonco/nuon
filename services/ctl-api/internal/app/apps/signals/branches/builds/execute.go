@@ -259,7 +259,7 @@ func (s *Signal) dispatchAndAwaitGroup(ctx workflow.Context, group *app.Workflow
 		return fmt.Errorf("unable to enqueue group signal: %w", err)
 	}
 
-	_, err = callback.Await(ctx, cb)
+	_, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)
@@ -362,7 +362,7 @@ func (s *Signal) sandboxBuildForInstall(ctx workflow.Context, l log.Logger, inst
 			"install_component_id", installComponentID,
 			"queue_signal_id", enqueueResp.QueueSignalID)
 
-		if _, err = callback.Await(ctx, cb); err != nil {
+		if _, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout); err != nil {
 			return fmt.Errorf("install %s component %s: sandbox deploy failed: %w", installID, componentID, err)
 		}
 
