@@ -69,7 +69,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	)
 
 	// Await the execute-workflow signal completion
-	if _, err = callback.Await(ctx, cb); err != nil {
+	if _, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout); err != nil {
 		logger.Error("workflow execution failed", "error", err)
 		if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 			RunID:        run.ID,

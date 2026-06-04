@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -121,11 +122,13 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "unable to send validate update")
 	}
 
-	if _, err := callback.Await(ctx, validateCB); err != nil {
+	if _, err := callback.AwaitWithTimeout(ctx, validateCB, callback.QuickTimeout); err != nil {
 		return errors.Wrap(err, "validate failed")
 	}
 
 	// 3. Execute: send update (accepted-only), wait for callback.
+	// Derive the timeout from the signal so long-running signals get the full budget.
+	executeTimeout := signal.DeriveTimeout(queueSignal.Signal.Signal)
 	executeCB := callback.New(ctx, queueSignal.ID+"-execute")
 	l.Info("sending execute update")
 	if err := handleractivities.AwaitUpdateWorkflowExecute(ctx, handleractivities.UpdateWorkflowExecuteRequest{
@@ -138,7 +141,7 @@ func (q *queue) processQueueSignal(ctx workflow.Context, l *zap.Logger, queueSig
 		return errors.Wrap(err, "unable to send execute update")
 	}
 
-	if _, err := callback.Await(ctx, executeCB); err != nil {
+	if _, err := callback.AwaitWithTimeout(ctx, executeCB, executeTimeout); err != nil {
 		return errors.Wrap(err, "execute failed")
 	}
 

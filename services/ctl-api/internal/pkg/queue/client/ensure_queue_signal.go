@@ -48,7 +48,7 @@ func EnsureQueueSignal(ctx workflow.Context, ownerID, ownerType string, signalTy
 	}
 
 	// Block until the handler sends a completion callback.
-	if _, err := callback.Await(ctx, cbRef); err != nil {
+	if _, err := callback.AwaitWithTimeout(ctx, cbRef, callback.FallbackAwaitTimeout); err != nil {
 		return fmt.Errorf("ensure signal %v for %s/%s failed while awaiting: %w", signalTypes, ownerType, ownerID, err)
 	}
 
