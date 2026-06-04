@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -9,44 +9,75 @@ import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { updateInstall } from '@/lib'
-import { EnableConfigSyncModal } from './EnableConfigSync'
+import { DisableConfigSyncModal, EnableConfigSyncModal } from './EnableConfigSync'
 
-interface IEnableConfigSync {}
-
-export const EnableConfigSyncModalContainer = ({ ...props }: IEnableConfigSync & Omit<IModal, 'onSubmit'>) => {
+const DisableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
+  const queryClient = useQueryClient()
   const { org } = useOrg()
   const { install } = useInstall()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
 
-  const hasManagedBy = Boolean(install?.metadata?.managed_by)
-  const isManagedByConfig =
-    hasManagedBy && install?.metadata?.managed_by === 'nuon/cli/install-config'
-
-  const { mutate, isPending: isLoading, error } = useMutation({
+  const { mutate, isPending, error } = useMutation({
     mutationFn: () =>
       updateInstall({
         orgId: org.id,
         installId: install.id,
-        body: {
-          metadata: {
-            managed_by: isManagedByConfig
-              ? 'nuon/dashboard'
-              : 'nuon/cli/install-config',
-          },
-        },
+        body: { metadata: { managed_by: 'nuon/dashboard' } },
       }),
     onSuccess: () => {
+      removeModal(props.modalId)
+      queryClient.invalidateQueries({ queryKey: ['install', org.id, install.id] })
       addToast(
-        <Toast heading="Config sync updated" theme="success">
-          <Text>
-            Config sync has been {isManagedByConfig ? 'disabled' : 'enabled'} for {install.name}.
-          </Text>
+        <Toast heading="Config sync disabled" theme="success">
+          <Text>Config sync has been disabled for {install.name}.</Text>
         </Toast>
       )
-      removeModal(props.modalId)
     },
-    onError: (error) => {
+    onError: () => {
+      addToast(
+        <Toast heading="Config sync update failed" theme="error">
+          <Text>Unable to update config sync for {install.name}.</Text>
+        </Toast>
+      )
+    },
+  })
+
+  return (
+    <DisableConfigSyncModal
+      installName={install?.name ?? ''}
+      isPending={isPending}
+      error={error}
+      onSubmit={() => mutate()}
+      {...props}
+    />
+  )
+}
+
+const EnableConfigSyncModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
+  const queryClient = useQueryClient()
+  const { org } = useOrg()
+  const { install } = useInstall()
+  const { removeModal } = useSurfaces()
+  const { addToast } = useToast()
+
+  const { mutate, isPending, error } = useMutation({
+    mutationFn: () =>
+      updateInstall({
+        orgId: org.id,
+        installId: install.id,
+        body: { metadata: { managed_by: 'nuon/cli/install-config' } },
+      }),
+    onSuccess: () => {
+      removeModal(props.modalId)
+      queryClient.invalidateQueries({ queryKey: ['install', org.id, install.id] })
+      addToast(
+        <Toast heading="Config sync enabled" theme="success">
+          <Text>Config sync has been enabled for {install.name}.</Text>
+        </Toast>
+      )
+    },
+    onError: () => {
       addToast(
         <Toast heading="Config sync update failed" theme="error">
           <Text>Unable to update config sync for {install.name}.</Text>
@@ -57,8 +88,7 @@ export const EnableConfigSyncModalContainer = ({ ...props }: IEnableConfigSync &
 
   return (
     <EnableConfigSyncModal
-      isManagedByConfig={isManagedByConfig}
-      isPending={isLoading}
+      isPending={isPending}
       error={error}
       onSubmit={() => mutate()}
       {...props}
@@ -66,25 +96,23 @@ export const EnableConfigSyncModalContainer = ({ ...props }: IEnableConfigSync &
   )
 }
 
-export const EnableConfigSyncButton = ({ ...props }: IEnableConfigSync & IButtonAsButton) => {
+export const EnableConfigSyncButton = ({ ...props }: IButtonAsButton) => {
   const { install } = useInstall()
   const { addModal } = useSurfaces()
-  const modal = <EnableConfigSyncModalContainer />
 
-  const hasManagedBy = Boolean(install?.metadata?.managed_by)
-  const isManagedByConfig =
-    hasManagedBy && install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
 
-  const buttonText = isManagedByConfig ? 'Disable install config sync' : 'Enable install config sync'
+  const handleClick = () => {
+    if (isManagedByConfig) {
+      addModal(<DisableConfigSyncModalContainer />)
+    } else {
+      addModal(<EnableConfigSyncModalContainer />)
+    }
+  }
 
   return (
-    <Button
-      onClick={() => {
-        addModal(modal)
-      }}
-      {...props}
-    >
-      {buttonText}
+    <Button onClick={handleClick} {...props}>
+      {isManagedByConfig ? 'Disable config sync' : 'Enable config sync'}
       <Icon variant="FileCloudIcon" />
     </Button>
   )
