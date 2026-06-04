@@ -100,12 +100,11 @@ export const policiesTableColumns: ColumnDef<TPolicyRow>[] = [
       if (isSandbox) {
         return <Text variant="subtext">Sandbox</Text>
       }
-      const isAllComponents =
-        !components ||
-        components.length === 0 ||
-        (components.length === 1 && components[0] === '*')
-      if (isAllComponents) {
+      if (components?.includes('*')) {
         return <Text variant="subtext">All components</Text>
+      }
+      if (!components || components.length === 0) {
+        return <Text variant="subtext">No components</Text>
       }
       return (
         <div className="flex flex-wrap gap-1">
