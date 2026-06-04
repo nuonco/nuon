@@ -127,26 +127,24 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 	prevValues := currentValues(current)
 	prevRedacted := redactedValues(current)
 
-	// The update endpoint expects the full set of inputs, so start from the
-	// existing values and merge in only the keys that are being changed.
-	merged := make(map[string]string, len(prevValues)+len(updates))
-	for k, v := range prevValues {
-		merged[k] = v
-	}
-
-	// Track which inputs actually changed (new value differs from the
-	// original), so we can render an accurate CHANGED column.
+	// The update endpoint accepts a partial set of inputs and merges them with
+	// the install's existing values server-side, so we only send the subset the
+	// caller is changing. This also avoids re-sending install_stack sourced inputs,
+	// which the API rejects.
+	//
+	// We still fetched the current inputs above to track which keys actually
+	// changed (new value differs from the original), so we can render an accurate
+	// CHANGED column.
 	changed := make(map[string]bool, len(updates))
 	for k, v := range updates {
 		prev, ok := prevValues[k]
 		if !ok || prev != v {
 			changed[k] = true
 		}
-		merged[k] = v
 	}
 
 	request := &models.ServiceUpdateInstallInputsRequest{
-		Inputs:           merged,
+		Inputs:           updates,
 		DeployDependents: &deployDependents,
 	}
 	if config.Debug() {
@@ -155,7 +153,10 @@ func (s *Service) SetInputs(ctx context.Context, installID string, args []string
 
 	resp, err := s.api.UpdateInstallInputs(ctx, installID, request)
 	if err != nil {
-		return ui.PrintJSONError(err)
+		if asJSON {
+			return ui.PrintJSONError(err)
+		}
+		return ui.PrintError(err)
 	}
 
 	if asJSON {
