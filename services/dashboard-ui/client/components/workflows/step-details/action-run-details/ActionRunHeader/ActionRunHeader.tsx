@@ -26,20 +26,24 @@ export const ActionRunHeader = ({
             Action run
           </Text>
 
-          <Text variant="subtext">
-            <Link
-              href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}`}
-            >
-              View action <Icon variant="CaretRightIcon" />
-            </Link>
-          </Text>
-          <Text variant="subtext">
-            <Link
-              href={`/${orgId}/installs/${step?.owner_id}/actions/${actionRun?.config?.action_workflow_id}/runs/${actionRun?.id}`}
-            >
-              View run details <Icon variant="CaretRightIcon" />
-            </Link>
-          </Text>
+          {step?.owner_id && actionRun?.config?.action_workflow_id ? (
+            <Text variant="subtext">
+              <Link
+                href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}`}
+              >
+                View action <Icon variant="CaretRightIcon" />
+              </Link>
+            </Text>
+          ) : null}
+          {step?.owner_id && actionRun?.config?.action_workflow_id && actionRun?.id ? (
+            <Text variant="subtext">
+              <Link
+                href={`/${orgId}/installs/${step.owner_id}/actions/${actionRun.config.action_workflow_id}/runs/${actionRun.id}`}
+              >
+                View run details <Icon variant="CaretRightIcon" />
+              </Link>
+            </Text>
+          ) : null}
         </>
       )}
     </div>
