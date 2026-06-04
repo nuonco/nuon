@@ -20,6 +20,8 @@ const VCSConnectionWithStatus = ({
     enabled: !!org?.id && !!vcs_connection?.id,
   })
 
+  const connectionHref = `/${org?.id}/connections/vcs/${vcs_connection.id}`
+
   return (
     <Text
       key={vcs_connection?.id}
@@ -30,11 +32,12 @@ const VCSConnectionWithStatus = ({
         vcs_connection={vcs_connection}
         statusTheme={getStatusTheme(data?.status)}
         isLoadingStatus={isLoading}
+        href={connectionHref}
       />
       <Button
-        href={`/${org?.id}/connections/vcs/${vcs_connection.id}`}
-        variant="ghost"
-        size="xs"
+        href={connectionHref}
+        variant="icon"
+        size="sm"
         className="self-end"
       >
         <Icon variant="ArrowRightIcon" size={16} />

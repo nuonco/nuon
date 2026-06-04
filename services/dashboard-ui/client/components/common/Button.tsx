@@ -6,6 +6,7 @@ export type TButtonSize = 'lg' | 'md' | 'sm' | 'xs'
 export type TButtonVariant =
   | 'danger'
   | 'ghost'
+  | 'icon'
   | 'primary'
   | 'secondary'
   | 'tab'
@@ -60,6 +61,13 @@ const VARIANT_CLASSES: Record<TButtonVariant, string> = {
   `,
   ghost: `
     border border-transparent rounded-lg bg-inherit
+    hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
+    focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
+    active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
+    disabled:opacity-50 disabled:hover:bg-inherit disabled:hover:dark:bg-inherit
+  `,
+  icon: `
+    border border-transparent rounded-md bg-inherit aspect-square !p-0 justify-center
     hover:bg-cool-grey-500/8 dark:hover:bg-cool-grey-500/8
     focus:outline-none focus:shadow-[0_0_0_1px_white,0_0_0_3px_rgba(128,64,191,0.64)] dark:focus:shadow-[0_0_0_1px_#141217,0_0_0_3px_rgba(128,64,191,0.64)]
     active:bg-cool-grey-500/16 dark:active:bg-cool-grey-500/16
