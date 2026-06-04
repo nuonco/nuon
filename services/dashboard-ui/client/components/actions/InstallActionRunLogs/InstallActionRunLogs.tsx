@@ -10,7 +10,7 @@ import { LogLineSkeleton } from '@/components/log-stream/LogLine'
 import type { TOTELLog, TActionConfig } from '@/types'
 import type { TLogFiltersProps } from '@/hooks/use-log-filters'
 import { cn } from '@/utils/classnames'
-import { getSeverityRawTextClasses } from '@/utils/log-stream-utils'
+import { getSeverityTextClasses } from '@/utils/log-stream-utils'
 
 interface IInstallActionRunLogs {
   actionConfig: TActionConfig
@@ -251,7 +251,7 @@ const StepAwareLogViewer = ({
             {displayLogs?.map((logLine) => (
               <div
                 key={logLine?.id}
-                className={getSeverityRawTextClasses(logLine.severity_number)}
+                className={getSeverityTextClasses(logLine.severity_number)}
               >
                 {logLine.body}
               </div>

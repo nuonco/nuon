@@ -10,7 +10,7 @@ import { LogSeverity } from '../LogSeverity'
 import { LogLineSkeleton } from '../LogLine'
 import { Skeleton } from '@/components/common/Skeleton'
 import { LogFilters } from '../log-filters/LogFilters'
-import { getSeverityRawTextClasses } from '@/utils/log-stream-utils'
+import { getSeverityTextClasses } from '@/utils/log-stream-utils'
 
 export const LogsSkeleton = () => {
   return Array.from({ length: 20 }).map((_, idx) => (
@@ -201,7 +201,7 @@ const RawLogs = ({
         {filteredLogs.map((logLine) => (
           <div
             key={logLine?.id}
-            className={getSeverityRawTextClasses(logLine.severity_number)}
+            className={getSeverityTextClasses(logLine.severity_number)}
           >
             {logLine.body}
           </div>

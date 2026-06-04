@@ -1,13 +1,14 @@
 import { useMemo } from 'react'
 import { Card } from '@/components/common/Card'
 import { ClickToCopy } from '@/components/common/ClickToCopy'
-import { Expand } from '@/components/common/Expand'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { PropertyGrid } from '@/components/common/PropertyGrid'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Modal } from '@/components/surfaces/Modal'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import type { TWorkflow, TInstall } from '@/types'
 import { WorkflowMetadata } from '../WorkflowMetadata'
@@ -54,14 +55,35 @@ export const WorkflowDetailsSection = ({
 
   return (
     <Card>
-      <div className="flex items-center gap-1.5">
-        <Text variant="base" weight="strong">
-          {workflow?.created_by?.email}
-        </Text>
-        <Text theme="neutral">
-          initiated this workflow{' '}
-          <Time time={workflow.created_at} format="relative" />
-        </Text>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Text variant="base" weight="strong">
+            {workflow?.created_by?.email}
+          </Text>
+          <Text theme="neutral">
+            initiated this workflow{' '}
+            <Time time={workflow.created_at} format="relative" />
+          </Text>
+        </div>
+
+        <Modal
+          size="xl"
+          heading="Metadata"
+          className="h-[80vh]"
+          triggerButton={{
+            variant: 'secondary',
+            size: 'sm',
+            className: 'shrink-0',
+            children: (
+              <>
+                <Icon variant="BracketsCurlyIcon" />
+                Metadata
+              </>
+            ),
+          }}
+        >
+          <WorkflowMetadata workflow={workflow} />
+        </Modal>
       </div>
 
       <hr />
@@ -130,18 +152,6 @@ export const WorkflowDetailsSection = ({
           />
         </>
       )}
-
-      <Expand
-        className="border rounded-md"
-        id="workflow-metadata"
-        heading={
-          <Text family="mono" variant="subtext">
-            Workflow metadata
-          </Text>
-        }
-      >
-        <WorkflowMetadata workflow={workflow} />
-      </Expand>
     </Card>
   )
 }

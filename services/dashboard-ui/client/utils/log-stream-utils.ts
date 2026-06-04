@@ -88,20 +88,6 @@ export function getSeverityTextClasses(severityNumber: number): string {
   return 'text-red-700 dark:text-red-600'
 }
 
-// Severity text colors tuned for the raw-mode "terminal" surface — always
-// rendered over a dark background regardless of the user's color scheme, so
-// the medium-shade colors used by getSeverityTextClasses (e.g. blue-600 on a
-// light page bg) lose contrast. We unconditionally use the lighter shades
-// that read well on the dark terminal background.
-export function getSeverityRawTextClasses(severityNumber: number): string {
-  if (severityNumber <= 4) return 'text-primary-300'
-  if (severityNumber <= 8) return 'text-cool-grey-400'
-  if (severityNumber <= 12) return 'text-blue-300'
-  if (severityNumber <= 16) return 'text-orange-300'
-  if (severityNumber <= 20) return 'text-red-400'
-  return 'text-red-300'
-}
-
 export function getBadgeThemeFromSeverity(severityNumber: number): TBadgeTheme {
   if (severityNumber <= 4) return 'brand'
   if (severityNumber <= 8) return 'neutral'
