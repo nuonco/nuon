@@ -36,7 +36,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/msi/armmsi v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.4.0
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
-	github.com/DataDog/datadog-go/v5 v5.6.0
+	github.com/DataDog/datadog-go/v5 v5.8.3
 	github.com/DataDog/dd-trace-go/v2 v2.2.2
 	github.com/Jeffail/gabs v1.4.0
 	github.com/a-h/templ v0.3.977
