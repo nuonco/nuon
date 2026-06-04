@@ -44,7 +44,40 @@ const COMPONENTS_STATUS_TITLES: TTitleMap = {
   unknown: 'Deployment status is unknown',
 }
 
-// Helper for fallback
+const DEPROVISIONING_RUNNER_OVERRIDES: TTitleMap = {
+  active: 'Runner waiting to teardown',
+  deprovisioned: 'Runner teardown complete',
+}
+
+const DEPROVISIONED_RUNNER_OVERRIDES: TTitleMap = {
+  active: 'Runner torn down',
+  deprovisioned: 'Runner teardown complete',
+}
+
+const DEPROVISIONING_SANDBOX_OVERRIDES: TTitleMap = {
+  active: 'Sandbox waiting to teardown',
+  deprovisioned: 'Sandbox teardown complete',
+  deprovisioning: 'Sandbox tearing down',
+}
+
+const DEPROVISIONED_SANDBOX_OVERRIDES: TTitleMap = {
+  active: 'Sandbox torn down',
+  deprovisioned: 'Sandbox teardown complete',
+  deprovisioning: 'Sandbox torn down',
+}
+
+const DEPROVISIONING_COMPONENTS_OVERRIDES: TTitleMap = {
+  active: 'Components waiting to teardown',
+  pending: 'Components tearing down',
+  executing: 'Components tearing down',
+}
+
+const DEPROVISIONED_COMPONENTS_OVERRIDES: TTitleMap = {
+  active: 'Components torn down',
+  pending: 'Components torn down',
+  executing: 'Components torn down',
+}
+
 function getStatusTitle(
   map: TTitleMap,
   status: string,
@@ -79,8 +112,26 @@ export function getInstallComponentsStatusTitle(status: string): string {
 
 export function getInstallStatusTitle(
   statusKey: string,
-  status: string
+  status: string,
+  lifecycleStatus?: string
 ): string {
+  if (lifecycleStatus === 'deprovisioning' || lifecycleStatus === 'deprovisioned') {
+    const isFinished = lifecycleStatus === 'deprovisioned'
+    let override: string | undefined
+    switch (statusKey) {
+      case 'runner_status':
+        override = (isFinished ? DEPROVISIONED_RUNNER_OVERRIDES : DEPROVISIONING_RUNNER_OVERRIDES)[status]
+        break
+      case 'sandbox_status':
+        override = (isFinished ? DEPROVISIONED_SANDBOX_OVERRIDES : DEPROVISIONING_SANDBOX_OVERRIDES)[status]
+        break
+      case 'composite_component_status':
+        override = (isFinished ? DEPROVISIONED_COMPONENTS_OVERRIDES : DEPROVISIONING_COMPONENTS_OVERRIDES)[status]
+        break
+    }
+    if (override) return override
+  }
+
   switch (statusKey) {
     case 'runner_status':
       return getInstallRunnerStatusTitle(status)
