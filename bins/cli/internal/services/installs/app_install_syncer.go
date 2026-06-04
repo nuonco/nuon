@@ -313,30 +313,23 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
-	// Use the current inputs as defaults, for missing values in the current inputs.
-	installCfg.InputGroups = append([]config.InputGroup{{
-		Inputs: currInputs.Values,
-	}}, installCfg.InputGroups...)
-
-	installCfgInputs := installCfg.FlattenedInputs()
-
+	// Only send the inputs explicitly defined in the install config file. The API
+	// merges them with the install's existing values server-side, so we don't
+	// re-send the full set — in particular install_stack sourced inputs, which the
+	// API rejects. definedInputs was computed above from the config file.
 	hasInputChanged := false
-	if len(installCfgInputs) != len(currInputs.Values) {
-		hasInputChanged = true
-	} else {
-		// length is same, go through each input to see if any have changed.
-		for k, v := range installCfgInputs {
-			if currInputs.Values[k] != v {
-				hasInputChanged = true
-				break
-			}
+	for k, v := range definedInputs {
+		if cur, ok := currInputs.Values[k]; !ok || cur != v {
+			hasInputChanged = true
+			break
 		}
 	}
 
-	// If inputs have divereged, update the install inputs.
+	// If any defined input has diverged from the install's current value, update
+	// the install inputs.
 	if hasInputChanged {
 		installInputs, err := s.api.UpdateInstallInputs(ctx, appInstall.ID, &models.ServiceUpdateInstallInputsRequest{
-			Inputs: installCfgInputs,
+			Inputs: definedInputs,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("error updating inputs for install %s: %w", appInstall.Name, err)
