@@ -1,4 +1,4 @@
-FROM node:20-alpine as deps
+FROM public.ecr.aws/p7e3r5y0/mirror/node:20-alpine as deps
 
 RUN echo "deps"
 
