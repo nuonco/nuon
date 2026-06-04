@@ -156,7 +156,7 @@ func (s *Signal) deployComponentToInstall(ctx workflow.Context, logger log.Logge
 		"queue_signal_id", enqueueResp.QueueSignalID,
 	)
 
-	_, err = callback.Await(ctx, cb)
+	_, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout)
 	if err != nil {
 		return fmt.Errorf("deploy failed: %w", err)
 	}
