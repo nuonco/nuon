@@ -64,8 +64,12 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 			return err
 		}
 
-		if err := validatePolicyComponents(policy.Components); err != nil {
-			policyLogger.Error("invalid policy components", zap.Error(err), zap.Strings("components", policy.Components))
+		policyName := policy.Name
+		if policyName == "" {
+			policyName = fmt.Sprintf("#%d", idx)
+		}
+		if err := ValidatePolicyComponents(policyName, policy.Type, policy.Components); err != nil {
+			policyLogger.Error("invalid policy components", zap.Error(err), zap.String("policy_name", policyName), zap.Strings("components", policy.Components))
 			return err
 		}
 
@@ -134,8 +138,34 @@ func validatePolicyTypeEngineCompatibility(policyType config.AppPolicyType, engi
 	return nil
 }
 
-func validatePolicyComponents(components []string) error {
+// componentScopedPolicyType reports whether a policy type is evaluated per
+// component and therefore requires a non-empty components list. Sandbox and
+// kubernetes_cluster policies are not component-scoped and ignore components.
+func componentScopedPolicyType(policyType config.AppPolicyType) bool {
+	switch policyType {
+	case config.AppPolicyTypeTerraformModule,
+		config.AppPolicyTypeHelmChart,
+		config.AppPolicyTypeKubernetesManifest,
+		config.AppPolicyTypeDockerBuild,
+		config.AppPolicyTypeContainerImage,
+		config.AppPolicyTypePulumi:
+		return true
+	default:
+		return false
+	}
+}
+
+// ValidatePolicyComponents validates the components list for a single policy.
+// It is shared by config validation (nuon CLI sync) and the ctl-api create
+// endpoint so both enforce the same rules.
+func ValidatePolicyComponents(policyName string, policyType config.AppPolicyType, components []string) error {
 	if len(components) == 0 {
+		// Component-scoped policies with an empty components list never run,
+		// which silently disables them. Require an explicit target (["*"] for
+		// all components of the type, or specific component names).
+		if componentScopedPolicyType(policyType) {
+			return fmt.Errorf("policy %q (type %s) requires a non-empty components list; use [\"*\"] to apply to all components of this type or list specific component names", policyName, policyType)
+		}
 		return nil
 	}
 
