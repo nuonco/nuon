@@ -118,7 +118,7 @@ func (s *Signal) executeCreateApp(ctx workflow.Context, logger interface{ Info(s
 
 		// Wait for the branch run to complete so app config (input_config) is ready
 		// before advancing. Without this, the install step loads before inputs exist.
-		_, err = callback.Await(ctx, cb)
+		_, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout)
 		if err != nil {
 			return fmt.Errorf("app branch run failed: %w", err)
 		}
