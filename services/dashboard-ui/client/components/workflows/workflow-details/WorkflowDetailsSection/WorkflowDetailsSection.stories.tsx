@@ -2,6 +2,7 @@ export default {
   title: 'Workflows/WorkflowDetails/WorkflowDetailsSection',
 }
 
+import { SurfacesProvider } from '@/providers/surfaces-provider'
 import { WorkflowDetailsSection } from './WorkflowDetailsSection'
 
 const mockWorkflow = {
@@ -19,36 +20,42 @@ const mockInstall = {
 } as any
 
 export const Default = () => (
-  <div className="max-w-2xl p-4">
-    <WorkflowDetailsSection
-      workflow={mockWorkflow}
-      orgId="org-123"
-      install={mockInstall}
-    />
-  </div>
+  <SurfacesProvider>
+    <div className="max-w-2xl p-4">
+      <WorkflowDetailsSection
+        workflow={mockWorkflow}
+        orgId="org-123"
+        install={mockInstall}
+      />
+    </div>
+  </SurfacesProvider>
 )
 
 export const WithoutInstall = () => (
-  <div className="max-w-2xl p-4">
-    <WorkflowDetailsSection workflow={mockWorkflow} orgId="org-123" />
-  </div>
+  <SurfacesProvider>
+    <div className="max-w-2xl p-4">
+      <WorkflowDetailsSection workflow={mockWorkflow} orgId="org-123" />
+    </div>
+  </SurfacesProvider>
 )
 
 export const WithChangedInputs = () => (
-  <div className="max-w-2xl p-4">
-    <WorkflowDetailsSection
-      workflow={{
-        ...mockWorkflow,
-        type: 'input_update',
-        metadata: {
-          changed_input_values: JSON.stringify({
-            region: { old: 'us-east-1', new: 'us-west-2' },
-            instance_type: { old: 't3.small', new: 't3.medium' },
-          }),
-        },
-      }}
-      orgId="org-123"
-      install={mockInstall}
-    />
-  </div>
+  <SurfacesProvider>
+    <div className="max-w-2xl p-4">
+      <WorkflowDetailsSection
+        workflow={{
+          ...mockWorkflow,
+          type: 'input_update',
+          metadata: {
+            changed_input_values: JSON.stringify({
+              region: { old: 'us-east-1', new: 'us-west-2' },
+              instance_type: { old: 't3.small', new: 't3.medium' },
+            }),
+          },
+        }}
+        orgId="org-123"
+        install={mockInstall}
+      />
+    </div>
+  </SurfacesProvider>
 )
