@@ -2138,8 +2138,8 @@ github.com/go-swagger/go-swagger v0.33.0/go.mod h1:wJK762cSroJbM7hgJtKtbZxfevB3R
 github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 h1:tfuBGBXKqDEevZMzYi5KSi8KkcZtzBcTgAUUtapy0OI=
 github.com/go-task/slim-sprig/v3 v3.0.0 h1:sUs3vkvUymDpBKi3qH1YSqBQk9+9D/8M2mN1vB6EwHI=
 github.com/go-task/slim-sprig/v3 v3.0.0/go.mod h1:W848ghGpv3Qj3dhTPRyJypKRiqCdHZiAzKg9hl15HA8=
-github.com/go-test/deep v1.0.8 h1:TDsG77qcSprGbC6vTN8OuXp5g+J+b5Pcguhf7Zt61VM=
-github.com/go-test/deep v1.0.8/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
+github.com/go-test/deep v1.1.1 h1:0r/53hagsehfO4bzD2Pgr/+RgHqhmf+k1Bpse2cTu1U=
+github.com/go-test/deep v1.1.1/go.mod h1:5C2ZWiW0ErCdrYzpqxLbTX7MG14M9iiw8DgHncVwcsE=
 github.com/go-viper/mapstructure/v2 v2.5.0 h1:vM5IJoUAy3d7zRSVtIwQgBj7BiWtMPfmPEgAXnvj1Ro=
 github.com/go-viper/mapstructure/v2 v2.5.0/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/gobwas/glob v0.2.3 h1:A4xDbljILXROh+kObIiy5kIaPYD8e96x1tgBhUI5J+Y=
@@ -2870,6 +2870,8 @@ github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af h1:Sp5TG9f7K39yf
 github.com/sirupsen/logrus v1.9.4-0.20230606125235-dd1b4c2e81af/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=
 github.com/skeema/knownhosts v1.3.1 h1:X2osQ+RAjK76shCbvhHHHVl3ZlgDm8apHEHFqRjnBY8=
 github.com/skeema/knownhosts v1.3.1/go.mod h1:r7KTdC8l4uxWRyK2TpQZ/1o5HaSzh06ePQNxPwTcfiY=
+github.com/slack-go/slack v0.24.0 h1:oMz5WcCBVTkxpBxeA8QVxxK70R+XV/a0qNka6TRNGHQ=
+github.com/slack-go/slack v0.24.0/go.mod h1:H0yR/YBuRJ39RkE+JpV/d/oEsbanzTRowR82bCN0cEs=
 github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7 h1:RVsTEfqivFX/5V7+bPEsYyxfklvAdJcD0FFNJr0MUUs=
 github.com/someshkoli/go-toml/v2 v2.0.0-20260106110510-b42197d17bf7/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/someshkoli/helm-diff/v3 v3.0.0-20250909140920-ea5d6a9f37b9 h1:zA0E5M9f2r8/vuDEBQV71RXzcTu85mD0hV4jmPyUiF0=
