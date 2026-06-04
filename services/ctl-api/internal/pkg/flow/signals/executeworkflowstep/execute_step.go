@@ -241,7 +241,11 @@ func (s *Signal) executeInnerSignal(ctx workflow.Context, step *app.WorkflowStep
 		"queue_signal_id", enqueueResp.QueueSignalID,
 	)
 
-	_, err = callback.Await(ctx, cb)
+	stepTimeout := step.Timeout
+	if stepTimeout <= 0 {
+		stepTimeout = callback.FallbackAwaitTimeout
+	}
+	_, err = callback.AwaitWithTimeout(ctx, cb, stepTimeout)
 	if err != nil {
 		return errors.Wrapf(err, "queue signal execution failed for step %s", step.Name)
 	}
