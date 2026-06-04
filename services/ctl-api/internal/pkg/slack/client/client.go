@@ -23,6 +23,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/slack-go/slack"
 )
 
 // BaseURL is the public Slack Web API endpoint. Tests override this.
@@ -140,7 +142,7 @@ func (c *Client) OAuthV2Access(ctx context.Context, req OAuthV2AccessRequest) (*
 type PostMessageRequest struct {
 	Channel  string         `json:"channel"`
 	Text     string         `json:"text,omitempty"`
-	Blocks   []any          `json:"blocks,omitempty"`
+	Blocks   []slack.Block  `json:"blocks,omitempty"`
 	ThreadTS string         `json:"thread_ts,omitempty"`
 	Metadata map[string]any `json:"metadata,omitempty"`
 }
@@ -167,10 +169,10 @@ func (c *Client) PostMessage(ctx context.Context, botToken string, req PostMessa
 
 // UpdateMessageRequest mutates a previously posted message.
 type UpdateMessageRequest struct {
-	Channel string `json:"channel"`
-	TS      string `json:"ts"`
-	Text    string `json:"text,omitempty"`
-	Blocks  []any  `json:"blocks,omitempty"`
+	Channel string        `json:"channel"`
+	TS      string        `json:"ts"`
+	Text    string        `json:"text,omitempty"`
+	Blocks  []slack.Block `json:"blocks,omitempty"`
 }
 
 // UpdateMessageResponse mirrors chat.update's response.
