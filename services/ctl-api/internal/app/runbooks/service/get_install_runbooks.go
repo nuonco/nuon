@@ -39,6 +39,19 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		return
 	}
 
+	var install app.Install
+	if err := s.db.WithContext(ctx).
+		Where(app.Install{OrgID: org.ID}).
+		First(&install, "id = ?", installID).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to get install: %w", err))
+		return
+	}
+
+	currentRunbookIDs := s.db.WithContext(ctx).
+		Model(&app.RunbookConfig{}).
+		Select("runbook_id").
+		Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
+
 	installRunbooks := []*app.InstallRunbook{}
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -54,6 +67,7 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
+		Where("install_runbooks.runbook_id IN (?)", currentRunbookIDs).
 		Order("install_runbooks.created_at DESC").
 		Find(&installRunbooks)
 	if res.Error != nil {

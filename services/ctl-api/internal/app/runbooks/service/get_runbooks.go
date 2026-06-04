@@ -45,6 +45,22 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
+	var currentAppConfigID string
+	if err := s.db.WithContext(ctx).
+		Model(&app.AppConfig{}).
+		Where(app.AppConfig{AppID: appID}).
+		Order("created_at DESC").
+		Limit(1).
+		Pluck("id", &currentAppConfigID).Error; err != nil {
+		ctx.Error(fmt.Errorf("unable to get app config: %w", err))
+		return
+	}
+
+	currentRunbookIDs := s.db.WithContext(ctx).
+		Model(&app.RunbookConfig{}).
+		Select("runbook_id").
+		Where(app.RunbookConfig{AppConfigID: currentAppConfigID})
+
 	runbooks := []*app.Runbook{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -55,7 +71,8 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("idx ASC")
 		}).
-		Where(app.Runbook{OrgID: org.ID, AppID: appID})
+		Where(app.Runbook{OrgID: org.ID, AppID: appID}).
+		Where("id IN (?)", currentRunbookIDs)
 
 	if q != "" {
 		tx = tx.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)
