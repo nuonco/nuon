@@ -3,30 +3,36 @@ export default {
 }
 
 import { ModalStory } from '@/components/__stories__/helpers'
-import { EnableConfigSyncModal } from './EnableConfigSync'
+import { EnableConfigSyncModal, DisableConfigSyncModal } from './EnableConfigSync'
 
 const noop = () => {}
 
-export const EnableDefault = () => (
+export const Enable = () => (
   <ModalStory>
-    <EnableConfigSyncModal isManagedByConfig={false} isPending={false} error={null} onSubmit={noop} />
+    <EnableConfigSyncModal isPending={false} error={null} onSubmit={noop} />
   </ModalStory>
 )
 
-export const DisableDefault = () => (
+export const EnableLoading = () => (
   <ModalStory>
-    <EnableConfigSyncModal isManagedByConfig={true} isPending={false} error={null} onSubmit={noop} />
+    <EnableConfigSyncModal isPending={true} error={null} onSubmit={noop} />
   </ModalStory>
 )
 
-export const Loading = () => (
+export const EnableError = () => (
   <ModalStory>
-    <EnableConfigSyncModal isManagedByConfig={false} isPending={true} error={null} onSubmit={noop} />
+    <EnableConfigSyncModal isPending={false} error={{ error: 'Something went wrong' }} onSubmit={noop} />
   </ModalStory>
 )
 
-export const WithError = () => (
+export const Disable = () => (
   <ModalStory>
-    <EnableConfigSyncModal isManagedByConfig={false} isPending={false} error={{ error: 'Something went wrong' }} onSubmit={noop} />
+    <DisableConfigSyncModal installName="prod-acme" isPending={false} error={null} onSubmit={noop} />
+  </ModalStory>
+)
+
+export const DisableError = () => (
+  <ModalStory>
+    <DisableConfigSyncModal installName="prod-acme" isPending={false} error={{ error: 'Something went wrong' }} onSubmit={noop} />
   </ModalStory>
 )
