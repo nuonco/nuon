@@ -93,6 +93,18 @@ export const InstallStatuses = ({
   stack,
   ...props
 }: IInstallStatuses) => {
+  const lifecycleStatus = install?.lifecycle_status?.status
+  const isDeprovisioning = lifecycleStatus === 'deprovisioning'
+  const isDeprovisioned = lifecycleStatus === 'deprovisioned'
+
+  const STALE_STATUSES = ['active', 'pending', 'executing', 'queued', 'planning', 'syncing']
+  const effectiveStatus = (status: string | undefined) => {
+    if (!status) return status
+    if (isDeprovisioned && STALE_STATUSES.includes(status)) return 'deprovisioned'
+    if (isDeprovisioning && STALE_STATUSES.includes(status)) return 'deprovisioning'
+    return status
+  }
+
   const driftStatus = install?.drifted_objects?.length ? 'warn' : 'active'
   const latestStackVersion = stack?.versions?.[0]
   const stackStatus = latestStackVersion?.composite_status?.status
@@ -172,11 +184,12 @@ export const InstallStatuses = ({
           title: `${install.runner_type === 'aws' ? 'AWS' : toSentenceCase(install?.runner_type)} runner`,
           subtitle: getInstallStatusTitle(
             'runner_status',
-            install?.runner_status
+            install?.runner_status,
+            install?.lifecycle_status?.status
           ),
           leftContent: (
             <Status
-              status={install?.runner_status}
+              status={effectiveStatus(install?.runner_status)}
               isWithoutText
               variant="timeline"
               iconSize={16}
@@ -186,7 +199,7 @@ export const InstallStatuses = ({
       ]}
     >
       {variant === 'icon' ? (
-        <Text theme={getStatusTheme(install.runner_status ?? '')}>
+        <Text theme={getStatusTheme(effectiveStatus(install.runner_status) ?? '')}>
           <Icon
             variant="SneakerMoveIcon"
             size={14}
@@ -194,8 +207,8 @@ export const InstallStatuses = ({
           />
         </Text>
       ) : (
-        <Status status={install.runner_status} variant="badge">
-          {isLabelHidden ? 'Runner' : install.runner_status}
+        <Status status={effectiveStatus(install.runner_status)} variant="badge">
+          {isLabelHidden ? 'Runner' : effectiveStatus(install.runner_status)}
         </Status>
       )}
     </ContextTooltip>
@@ -212,11 +225,12 @@ export const InstallStatuses = ({
           title: toSentenceCase(install?.install_sandbox_runs?.at(0)?.run_type),
           subtitle: getInstallStatusTitle(
             'sandbox_status',
-            install?.sandbox_status
+            install?.sandbox_status,
+            install?.lifecycle_status?.status
           ),
           leftContent: (
             <Status
-              status={install.sandbox_status}
+              status={effectiveStatus(install.sandbox_status)}
               isWithoutText
               variant="timeline"
               iconSize={16}
@@ -226,7 +240,7 @@ export const InstallStatuses = ({
       ]}
     >
       {variant === 'icon' ? (
-        <Text theme={getStatusTheme(install.sandbox_status ?? '')}>
+        <Text theme={getStatusTheme(effectiveStatus(install.sandbox_status) ?? '')}>
           <Icon
             variant="ShippingContainerIcon"
             size={14}
@@ -234,8 +248,8 @@ export const InstallStatuses = ({
           />
         </Text>
       ) : (
-        <Status status={install.sandbox_status} variant="badge">
-          {isLabelHidden ? 'Sandbox' : install.sandbox_status}
+        <Status status={effectiveStatus(install.sandbox_status)} variant="badge">
+          {isLabelHidden ? 'Sandbox' : effectiveStatus(install.sandbox_status)}
         </Status>
       )}
     </ContextTooltip>
@@ -245,21 +259,23 @@ export const InstallStatuses = ({
     <ComponentsTooltip
       title={getInstallStatusTitle(
         'composite_component_status',
-        install?.composite_component_status
+        install?.composite_component_status,
+        install?.lifecycle_status?.status
       )}
       componentSummaries={getContextTooltipItemsFromInstallComponents(
         install?.install_components as TInstallComponent[],
-        `/${install.org_id}/installs/${install.id}/components`
+        `/${install.org_id}/installs/${install.id}/components`,
+        install?.lifecycle_status?.status
       )}
       position={tooltipPosition}
     >
       {variant === 'icon' ? (
-        <Text theme={getStatusTheme(install.composite_component_status ?? '')}>
+        <Text theme={getStatusTheme(effectiveStatus(install.composite_component_status) ?? '')}>
           <Icon variant="CardsIcon" size={14} className="cursor-default" />
         </Text>
       ) : (
-        <Status status={install.composite_component_status} variant="badge">
-          {isLabelHidden ? 'Components' : install.composite_component_status}
+        <Status status={effectiveStatus(install.composite_component_status)} variant="badge">
+          {isLabelHidden ? 'Components' : effectiveStatus(install.composite_component_status)}
         </Status>
       )}
     </ComponentsTooltip>
@@ -318,9 +334,9 @@ export const InstallStatuses = ({
   const allStatuses = [
     install?.drifted_objects?.length ? 'warn' : 'active',
     stackStatus,
-    install?.runner_status,
-    install?.sandbox_status,
-    install?.composite_component_status,
+    effectiveStatus(install?.runner_status),
+    effectiveStatus(install?.sandbox_status),
+    effectiveStatus(install?.composite_component_status),
   ]
   const { worstStatus } = getWorstStatusTheme(allStatuses)
 
@@ -368,11 +384,11 @@ export const InstallStatuses = ({
     {
       id: 'runner',
       title: 'Runner',
-      subtitle: getInstallStatusTitle('runner_status', install?.runner_status),
+      subtitle: getInstallStatusTitle('runner_status', install?.runner_status, install?.lifecycle_status?.status),
       href: `/${install.org_id}/installs/${install.id}/runner`,
       leftContent: (
         <Status
-          status={install?.runner_status}
+          status={effectiveStatus(install?.runner_status)}
           isWithoutText
           variant="timeline"
           iconSize={16}
@@ -384,12 +400,13 @@ export const InstallStatuses = ({
       title: 'Sandbox',
       subtitle: getInstallStatusTitle(
         'sandbox_status',
-        install?.sandbox_status
+        install?.sandbox_status,
+        install?.lifecycle_status?.status
       ),
       href: `/${install.org_id}/installs/${install.id}/sandbox`,
       leftContent: (
         <Status
-          status={install?.sandbox_status}
+          status={effectiveStatus(install?.sandbox_status)}
           isWithoutText
           variant="timeline"
           iconSize={16}
@@ -401,12 +418,13 @@ export const InstallStatuses = ({
       title: 'Components',
       subtitle: getInstallStatusTitle(
         'composite_component_status',
-        install?.composite_component_status
+        install?.composite_component_status,
+        install?.lifecycle_status?.status
       ),
       href: `/${install.org_id}/installs/${install.id}/components`,
       leftContent: (
         <Status
-          status={install?.composite_component_status}
+          status={effectiveStatus(install?.composite_component_status)}
           isWithoutText
           variant="timeline"
           iconSize={16}
