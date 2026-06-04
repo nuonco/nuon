@@ -101,7 +101,7 @@ func TestValidatePolicyComponents(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := validatePolicyComponents(name, test.policyType, test.components)
+			err := ValidatePolicyComponents(name, test.policyType, test.components)
 			assert.Equal(t, (err != nil), test.expected, "Expected error: %v, got: %v", test.expected, err)
 		})
 	}

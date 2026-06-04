@@ -68,7 +68,7 @@ func ValidatePoliciesWithLogger(a *config.AppConfig, l *zap.Logger) error {
 		if policyName == "" {
 			policyName = fmt.Sprintf("#%d", idx)
 		}
-		if err := validatePolicyComponents(policyName, policy.Type, policy.Components); err != nil {
+		if err := ValidatePolicyComponents(policyName, policy.Type, policy.Components); err != nil {
 			policyLogger.Error("invalid policy components", zap.Error(err), zap.String("policy_name", policyName), zap.Strings("components", policy.Components))
 			return err
 		}
@@ -155,7 +155,10 @@ func componentScopedPolicyType(policyType config.AppPolicyType) bool {
 	}
 }
 
-func validatePolicyComponents(policyName string, policyType config.AppPolicyType, components []string) error {
+// ValidatePolicyComponents validates the components list for a single policy.
+// It is shared by config validation (nuon CLI sync) and the ctl-api create
+// endpoint so both enforce the same rules.
+func ValidatePolicyComponents(policyName string, policyType config.AppPolicyType, components []string) error {
 	if len(components) == 0 {
 		// Component-scoped policies with an empty components list never run,
 		// which silently disables them. Require an explicit target (["*"] for
