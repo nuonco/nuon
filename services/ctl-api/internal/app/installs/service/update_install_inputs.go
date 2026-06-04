@@ -86,16 +86,26 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
 		return
 	}
+	if pinnedAppInputConfig == nil {
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("invalid install inputs provided"),
+			Description: "inputs provided on install, that are not defined on the app",
+		})
+		return
+	}
 
-	err = s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, req.Inputs)
-	if err != nil {
+	// Reject any install_stack (customer) sourced inputs in the provided subset.
+	// This intentionally operates ONLY on the subset the caller sent — existing
+	// customer-sourced values carried over by the merge are preserved, not re-validated.
+	if err := s.validateVendorSourceInputs(pinnedAppInputConfig, req.Inputs); err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	// Validate that only vendor inputs are being updated
-	err = s.validateVendorSourceInputs(pinnedAppInputConfig, req.Inputs)
-	if err != nil {
+	// Merge the provided subset over the install's current inputs, then validate the
+	// full resulting set so required inputs remain satisfied after a partial update.
+	merged := mergeInstallInputs(latestLatestInstallInputs.Values, req.Inputs, pinnedAppInputConfig)
+	if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
 		ctx.Error(err)
 		return
 	}
@@ -104,6 +114,7 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		ctx,
 		latestLatestInstallInputs,
 		pinnedAppInputConfig,
+		merged,
 		req,
 	)
 	if err != nil {
@@ -187,23 +198,9 @@ func (s *service) newInstallInputs(
 	ctx context.Context,
 	installInputs *app.InstallInputs,
 	appInputConfig *app.AppInputConfig,
+	merged map[string]*string,
 	req UpdateInstallInputsRequest,
 ) (*app.InstallInputs, *[]string, string, error) {
-	inputs := map[string]*string{}
-	for k, v := range installInputs.Values {
-		inputs[k] = v
-	}
-
-	for k, v := range req.Inputs {
-		inputs[k] = v
-	}
-
-	// create a lookup for the latest app input config
-	appInputNames := map[string]struct{}{}
-	for _, input := range appInputConfig.AppInputs {
-		appInputNames[input.Name] = struct{}{}
-	}
-
 	changed, err := helpers.ComputeChangedInputs(
 		installInputs.Values,
 		req.Inputs,
@@ -213,20 +210,11 @@ func (s *service) newInstallInputs(
 		return nil, nil, "", fmt.Errorf("unable to compute changed inputs: %w", err)
 	}
 
-	// remove inputs not in the latest app input config
-	for k := range inputs {
-		_, ok := appInputNames[k]
-		if !ok {
-			delete(inputs, k)
-			continue
-		}
-	}
-
 	// this update will be tied to the latest AppInputConfigID for the app
 	obj := &app.InstallInputs{
 		AppInputConfigID: appInputConfig.ID,
 		InstallID:        installInputs.InstallID,
-		Values:           pgtype.Hstore(inputs),
+		Values:           pgtype.Hstore(merged),
 	}
 	res := s.db.WithContext(ctx).Create(&obj)
 	if res.Error != nil {
@@ -243,6 +231,30 @@ func (s *service) newInstallInputs(
 	return latestInstallInputs, &changed.Names, changed.ChangedValuesJSON, nil
 }
 
+// mergeInstallInputs overlays the provided subset onto the install's existing input
+// values and drops any inputs no longer defined in the pinned app input config.
+func mergeInstallInputs(existing map[string]*string, patch map[string]*string, appInputConfig *app.AppInputConfig) map[string]*string {
+	merged := map[string]*string{}
+	for k, v := range existing {
+		merged[k] = v
+	}
+	for k, v := range patch {
+		merged[k] = v
+	}
+
+	appInputNames := map[string]struct{}{}
+	for _, input := range appInputConfig.AppInputs {
+		appInputNames[input.Name] = struct{}{}
+	}
+	for k := range merged {
+		if _, ok := appInputNames[k]; !ok {
+			delete(merged, k)
+		}
+	}
+
+	return merged
+}
+
 func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
 	appInputSources := map[string]app.AppInputSource{}
 	for _, input := range appInputConfig.AppInputs {
@@ -252,12 +264,18 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 	for name := range inputs {
 		source, ok := appInputSources[name]
 		if !ok {
-			return fmt.Errorf("input %s is not defined in app input config", name)
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("input %s is not defined in app input config", name),
+				Description: "input " + name + " does not exist in the app inputs",
+			}
 		}
 
 		// Reject customer sourced inputs
 		if source == app.AppInputSourceCustomer {
-			return fmt.Errorf("%s has source install_stack, cannot be updated via api", name)
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("%s has source install_stack, cannot be updated via api", name),
+				Description: name + " has source install_stack and cannot be updated via the api",
+			}
 		}
 	}
 
