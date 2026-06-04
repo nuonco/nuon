@@ -1,5 +1,6 @@
 import { Plan } from '@/components/approvals/Plan'
 import { Duration } from '@/components/common/Duration'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -11,7 +12,7 @@ import { TraceView } from '@/components/spans/TraceView'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type { TDeploy, TWorkflowStep } from '@/types'
-import { DeployApply, DeployLogsSkeleton } from '../DeployApply'
+import { DeployApply } from '../DeployApply'
 
 export interface IDeployStepDetails {
   step?: TWorkflowStep
@@ -42,22 +43,25 @@ export const DeployStepDetails = ({
             <Text variant="base" weight="strong">
               {deploy?.component_name} deployment
             </Text>
-            <Text variant="subtext">
-              <Link
-                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}`}
-              >
-                View component <Icon variant="CaretRightIcon" />
-              </Link>
-            </Text>
+            {deploy?.component_id ? (
+              <Text variant="subtext">
+                <Link
+                  href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}`}
+                >
+                  View component <Icon variant="CaretRightIcon" />
+                </Link>
+              </Text>
+            ) : null}
 
-            <Text variant="subtext">
-              <Link
-                href={`/${orgId}/installs/${step?.owner_id}/components/${deploy?.component_id}/deploys/${deploy?.id}`}
-              >
-                View deploy logs <Icon variant="CaretRightIcon" />
-              </Link>
-            </Text>
-
+            {deploy?.component_id && deploy?.id ? (
+              <Text variant="subtext">
+                <Link
+                  href={`/${orgId}/installs/${step?.owner_id}/components/${deploy.component_id}/deploys/${deploy.id}`}
+                >
+                  View deploy logs <Icon variant="CaretRightIcon" />
+                </Link>
+              </Text>
+            ) : null}
           </>
         )}
       </div>
@@ -82,43 +86,67 @@ export const DeployStepDetails = ({
         ) : null}
       </div>
       {step?.execution_type === 'approval' ? (
-        deploy?.log_stream ? (
-          <LogStreamProvider logStreamId={deploy.log_stream.id}>
-            <LogViewerProvider>
-              <Tabs
-                tabs={{
-                  plan: (
-                    <div className="mt-4">
-                      <Plan step={step} />
-                    </div>
-                  ),
-                  logs: <SSELogs />,
-                  trace: (
-                    <TraceView
-                      logStreamId={deploy.log_stream.id}
-                      shouldPoll={deploy.log_stream.open}
-                    />
-                  ),
-                }}
-              />
-            </LogViewerProvider>
-          </LogStreamProvider>
-        ) : (
-          <Tabs
-            tabs={{
-              plan: (
-                <div className="mt-4">
-                  <Plan step={step} />
-                </div>
-              ),
-              logs: <DeployLogsSkeleton />,
-            }}
-          />
-        )
+        <ApprovalStepTabs step={step} deploy={deploy} />
       ) : (
         <DeployApply initDeploy={deploy} />
       )}
     </div>
+  )
+}
+
+// Plan tab is only rendered once the runner has produced an approval
+// (step.approval set). When present it's the first tab so finished
+// approval steps land on Plan; otherwise Logs is first.
+const ApprovalStepTabs = ({
+  step,
+  deploy,
+}: {
+  step: TWorkflowStep
+  deploy?: TDeploy
+}) => {
+  const hasPlan = !!step?.approval
+  const hasLogStream = !!deploy?.log_stream
+
+  const logsTab = hasLogStream ? (
+    <SSELogs />
+  ) : (
+    <EmptyState
+      variant="history"
+      emptyTitle="Waiting for logs"
+      emptyMessage="Logs will appear here as soon as the runner starts streaming them."
+    />
+  )
+
+  const traceTab = hasLogStream ? (
+    <TraceView
+      logStreamId={deploy!.log_stream!.id}
+      shouldPoll={deploy!.log_stream!.open}
+    />
+  ) : null
+
+  const tabs: Record<string, React.ReactNode> = hasPlan
+    ? {
+        plan: (
+          <div className="mt-4">
+            <Plan step={step} />
+          </div>
+        ),
+        logs: logsTab,
+        ...(traceTab ? { trace: traceTab } : {}),
+      }
+    : {
+        logs: logsTab,
+        ...(traceTab ? { trace: traceTab } : {}),
+      }
+
+  const tabsEl = <Tabs tabs={tabs} />
+
+  if (!hasLogStream) return tabsEl
+
+  return (
+    <LogStreamProvider logStreamId={deploy!.log_stream!.id}>
+      <LogViewerProvider>{tabsEl}</LogViewerProvider>
+    </LogStreamProvider>
   )
 }
 
