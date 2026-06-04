@@ -59,7 +59,7 @@ describe('status-utils', () => {
       expect(getStatusTheme('Not deployed')).toBe('neutral')
       expect(getStatusTheme('No build')).toBe('neutral')
       expect(getStatusTheme('not-attempted')).toBe('neutral')
-      expect(getStatusTheme('deprovisioned')).toBe('neutral')
+      expect(getStatusTheme('deprovisioned')).toBe('warn')
       expect(getStatusTheme('skeleton')).toBe('neutral')
     })
 
@@ -103,7 +103,7 @@ describe('status-utils', () => {
 
     test('should return ClockCountdown for neutral statuses', () => {
       expect(getStatusIconVariant('pending')).toBe('ClockCountdownIcon')
-      expect(getStatusIconVariant('inactive')).toBe('ClockCountdownIcon')
+      expect(getStatusIconVariant('inactive')).toBe('WarningIcon')
       expect(getStatusIconVariant('offline')).toBe('ClockCountdownIcon')
     })
 

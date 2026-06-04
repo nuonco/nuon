@@ -98,15 +98,16 @@ export const Status = ({
     INDICATOR_BASE,
     INDICATOR_SIZE[variant],
     INDICATOR_THEME_CLASSES[variant][theme],
-    {
-      [`h-[${iconSize + 8}px] w-[${iconSize + 8}px]`]: variant === 'timeline',
-    }
   )
+  const indicatorStyle =
+    variant === 'timeline'
+      ? { width: iconSize + 8, height: iconSize + 8 }
+      : undefined
   const statusTextClass = STATUS_TEXT_CLASSES[variant]
 
   return (
     <span className={rootClass} {...props}>
-      <span className={indicatorClass}>
+      <span className={indicatorClass} style={indicatorStyle}>
         {iconVariant ? (
           <Icon
             className="status-icon"
