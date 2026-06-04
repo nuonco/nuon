@@ -53,7 +53,7 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-runner \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml -v
 
-FROM golang:1.25-alpine AS nuon-cli
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS nuon-cli
 
 ARG NUON_CLI_VERSION
 
@@ -62,7 +62,7 @@ RUN curl "https://nuon-artifacts.s3.us-west-2.amazonaws.com/cli/${NUON_CLI_VERSI
 
 FROM public.ecr.aws/p7e3r5y0/kaniko-project/executor:latest  AS kaniko
 
-FROM golang:1.25-alpine AS aws-iam-authenticator
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS aws-iam-authenticator
 
 ARG AWS_IAM_AUTHENTICATOR_VERSION
 
@@ -73,7 +73,7 @@ RUN curl \
     "https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v${AWS_IAM_AUTHENTICATOR_VERSION}/aws-iam-authenticator_${AWS_IAM_AUTHENTICATOR_VERSION}_linux_amd64" \
     && chmod +x aws-iam-authenticator
 
-FROM golang:1.25-alpine AS kubelogin
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS kubelogin
 
 ARG KUBELOGIN_VERSION
 
@@ -88,7 +88,7 @@ RUN curl -LO \
     && rm -r bin \
     && chmod +x kubelogin
 
-FROM golang:1.25-alpine AS gcloud
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS gcloud
 
 ARG GCLOUD_VERSION
 
@@ -98,14 +98,14 @@ RUN curl -sSL "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google
     && /opt/google-cloud-sdk/install.sh --quiet --usage-reporting false --path-update false \
     && /opt/google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin --quiet
 
-FROM python:3.12-alpine AS azure-cli
+FROM public.ecr.aws/p7e3r5y0/mirror/python:3.12-alpine AS azure-cli
 
 ARG AZURE_CLI_VERSION
 
 RUN apk add --update --no-cache gcc musl-dev libffi-dev
 RUN pip install --no-cache-dir --prefix=/azure-cli azure-cli==${AZURE_CLI_VERSION}
 
-FROM golang:1.25-alpine AS pulumi
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS pulumi
 
 ARG PULUMI_VERSION
 
@@ -113,7 +113,7 @@ RUN apk add --update --no-cache curl ca-certificates
 WORKDIR /opt
 RUN curl -sSL "https://get.pulumi.com/releases/sdk/pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz" | tar xz
 
-FROM golang:1.25-alpine AS certs
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS certs
 
 # NOTE(jdt): ideally we would wget -a but busybox doesn't support it
 # or use `update-ca-certificate` but it can't handle a single file w/ multiple certs
@@ -193,7 +193,7 @@ RUN --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
 
 # END
 
-FROM golang:1.25-alpine AS runtime-base
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS runtime-base
 
 RUN apk add --no-cache \
     bash \
@@ -253,7 +253,7 @@ COPY --from=build-linux-amd64 /out/ /
 
 # Prepare artifacts for upload
 # Go code will handle the S3 upload part
-FROM alpine:latest AS artifacts
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:latest AS artifacts
 
 ARG BIN_NAME=runner
 
