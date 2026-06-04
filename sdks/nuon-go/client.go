@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-playground/validator/v10"
@@ -305,6 +306,8 @@ func New(opts ...clientOption) (*client, error) {
 	if c.v == nil {
 		c.v = validator.New()
 	}
+
+	c.APIURL = strings.TrimRight(c.APIURL, "/")
 
 	if err := c.v.Struct(c); err != nil {
 		return nil, err
