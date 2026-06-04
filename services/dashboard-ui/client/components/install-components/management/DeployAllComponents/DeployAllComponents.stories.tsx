@@ -7,6 +7,8 @@ import { DeployAllComponentsModal } from './DeployAllComponents'
 
 const noop = () => {}
 
+const mockRoleSelector = () => <div className="p-4 border rounded">Role selector placeholder</div>
+
 export const Default = () => (
   <ModalStory>
     <DeployAllComponentsModal
@@ -15,6 +17,7 @@ export const Default = () => (
       isKickedOff={false}
       error={null}
       onSubmit={noop}
+      roleSelector={mockRoleSelector}
     />
   </ModalStory>
 )
@@ -27,6 +30,7 @@ export const Loading = () => (
       isKickedOff={false}
       error={null}
       onSubmit={noop}
+      roleSelector={mockRoleSelector}
     />
   </ModalStory>
 )
@@ -39,6 +43,7 @@ export const WithError = () => (
       isKickedOff={false}
       error={{ error: 'Unable to deploy components' } as any}
       onSubmit={noop}
+      roleSelector={mockRoleSelector}
     />
   </ModalStory>
 )

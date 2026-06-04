@@ -7,6 +7,7 @@ import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
+import { RoleSelector } from '@/components/roles/RoleSelector'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -80,7 +81,18 @@ export const DeployAllComponentsModalContainer = ({
       isPending={isPending}
       isKickedOff={isKickedOff}
       error={error as any}
-      onSubmit={() => execute({ body: { plan_only: false } })}
+      onSubmit={({ role }) =>
+        execute({ body: { plan_only: false, ...(role && { role }) } })
+      }
+      roleSelector={({ value, onChange }) => (
+        <RoleSelector
+          installId={install?.id}
+          operationType="deploy"
+          value={value}
+          onChange={onChange}
+          name="role"
+        />
+      )}
       {...props}
     />
   )
