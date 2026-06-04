@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
@@ -11,32 +12,11 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import {
   getAppConfig,
   createInstallConfig,
-  updateInstall,
   updateInstallConfig,
 } from '@/lib'
-import { ConfirmOverrideModal } from '../EnableAutoApprove/EnableAutoApprove'
 import { EditStackOverridesModal } from './EditStackOverrides'
 
-const ConfirmOverrideModalContainer = ({ onConfirm, ...props }: { onConfirm: () => void } & IModal) => {
-  const { removeModal } = useSurfaces()
-  const { install } = useInstall()
-
-  const isInstallManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
-
-  if (!isInstallManagedByConfig) {
-    return null
-  }
-
-  return (
-    <ConfirmOverrideModal
-      onConfirm={() => {
-        onConfirm()
-        removeModal(props.modalId)
-      }}
-      {...props}
-    />
-  )
-}
+const MANAGED_BY_CONFIG_TIP = 'Managed by config. Disable config sync to edit.'
 
 export const EditStackOverridesModalContainer = ({
   ...props
@@ -72,14 +52,6 @@ export const EditStackOverridesModalContainer = ({
         parameters?: Record<string, string>
       }>
     }) => {
-      if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
-        await updateInstall({
-          orgId: org.id,
-          installId: install.id,
-          body: { metadata: { managed_by: 'nuon/dashboard' } },
-        })
-      }
-
       if (hasInstallConfig) {
         return updateInstallConfig({
           orgId: org.id,
@@ -144,30 +116,26 @@ export const EditStackOverridesButton = ({
   const { addModal } = useSurfaces()
   const { install } = useInstall()
 
-  const isInstallManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const handleClick = () => {
-    if (isInstallManagedByConfig) {
-      const overrideModal = (
-        <ConfirmOverrideModalContainer
-          onConfirm={() => {
-            const mainModal = <EditStackOverridesModalContainer />
-            addModal(mainModal)
-          }}
-        />
-      )
-      addModal(overrideModal)
-    } else {
-      const modal = <EditStackOverridesModalContainer />
-      addModal(modal)
-    }
+    const modal = <EditStackOverridesModalContainer />
+    addModal(modal)
+  }
+
+  if (isManagedByConfig) {
+    return (
+      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs" className="w-full">
+        <Button disabled className="pointer-events-none" {...props}>
+          <Icon variant="StackSimpleIcon" />
+          Edit stack overrides
+        </Button>
+      </Tooltip>
+    )
   }
 
   return (
-    <Button
-      onClick={handleClick}
-      {...props}
-    >
+    <Button onClick={handleClick} {...props}>
       <Icon variant="StackSimpleIcon" />
       Edit stack overrides
     </Button>

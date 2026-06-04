@@ -2,39 +2,19 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useOrg } from '@/hooks/use-org'
 import { useInstall } from '@/hooks/use-install'
 import { useToast } from '@/hooks/use-toast'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { updateInstall, createInstallConfig, updateInstallConfig } from '@/lib'
-import { ConfirmOverrideModal, EnableAutoApproveModal } from './EnableAutoApprove'
+import { createInstallConfig, updateInstallConfig } from '@/lib'
+import { EnableAutoApproveModal } from './EnableAutoApprove'
 
-interface IEnableAutoApprove {}
+const MANAGED_BY_CONFIG_TIP = 'Managed by config. Disable config sync to edit.'
 
-export const ConfirmOverrideModalContainer = ({ onConfirm, ...props }: { onConfirm: () => void } & IModal) => {
-  const { removeModal } = useSurfaces()
-  const { install } = useInstall()
-
-  const isInstallManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
-
-  if (!isInstallManagedByConfig) {
-    return null
-  }
-
-  return (
-    <ConfirmOverrideModal
-      onConfirm={() => {
-        onConfirm()
-        removeModal(props.modalId)
-      }}
-      {...props}
-    />
-  )
-}
-
-export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove & Omit<IModal, 'onSubmit'>) => {
+export const EnableAutoApproveModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'>) => {
   const queryClient = useQueryClient()
   const { removeModal } = useSurfaces()
   const { org } = useOrg()
@@ -46,14 +26,6 @@ export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove
 
   const { mutate, isPending: isLoading, data, error } = useMutation({
     mutationFn: async () => {
-      if (install?.metadata?.managed_by === 'nuon/cli/install-config') {
-        await updateInstall({
-          orgId: org.id,
-          installId: install.id,
-          body: { metadata: { managed_by: 'nuon/dashboard' } },
-        })
-      }
-
       if (hasInstallConfig) {
         return updateInstallConfig({
           orgId: org.id,
@@ -101,39 +73,35 @@ export const EnableAutoApproveModalContainer = ({ ...props }: IEnableAutoApprove
 
 export const EnableAutoApproveButton = ({
   ...props
-}: IEnableAutoApprove & IButtonAsButton) => {
+}: IButtonAsButton) => {
   const { addModal } = useSurfaces()
   const { install } = useInstall()
 
   const hasInstallConfig = Boolean(install?.install_config)
   const isApproveAll = hasInstallConfig && install?.install_config?.approval_option === 'approve-all'
-  const isInstallManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
+  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const buttonText = isApproveAll ? 'Disable auto approval' : 'Enable auto approval'
   const buttonIcon = isApproveAll ? 'ToggleRightIcon' : 'ToggleLeftIcon'
 
   const handleClick = () => {
-    if (isInstallManagedByConfig) {
-      const overrideModal = (
-        <ConfirmOverrideModalContainer
-          onConfirm={() => {
-            const mainModal = <EnableAutoApproveModalContainer />
-            addModal(mainModal)
-          }}
-        />
-      )
-      addModal(overrideModal)
-    } else {
-      const modal = <EnableAutoApproveModalContainer />
-      addModal(modal)
-    }
+    const modal = <EnableAutoApproveModalContainer />
+    addModal(modal)
+  }
+
+  if (isManagedByConfig) {
+    return (
+      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs" className="w-full">
+        <Button disabled className="pointer-events-none" {...props}>
+          {buttonText}
+          <Icon variant={buttonIcon} />
+        </Button>
+      </Tooltip>
+    )
   }
 
   return (
-    <Button
-      onClick={handleClick}
-      {...props}
-    >
+    <Button onClick={handleClick} {...props}>
       {buttonText}
       <Icon variant={buttonIcon} />
     </Button>
