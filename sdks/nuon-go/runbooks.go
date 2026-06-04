@@ -134,9 +134,15 @@ type CreateRunbookStepConfigRequest struct {
 
 // RunbookWorkflow is a minimal workflow representation for runbook runs.
 type RunbookWorkflow struct {
-	ID                string `json:"id"`
-	Status            string `json:"status,omitempty"`
-	StatusDescription string `json:"status_description,omitempty"`
+	ID                string                 `json:"id"`
+	Status            *RunbookWorkflowStatus `json:"status,omitempty"`
+	StatusDescription string                 `json:"status_description,omitempty"`
+}
+
+// RunbookWorkflowStatus mirrors the API's composite status object (app.CompositeStatus).
+type RunbookWorkflowStatus struct {
+	Status                 string `json:"status,omitempty"`
+	StatusHumanDescription string `json:"status_human_description,omitempty"`
 }
 
 // GetAppRunbook retrieves a runbook by name or ID for an app.
