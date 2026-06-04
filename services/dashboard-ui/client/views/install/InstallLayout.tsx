@@ -7,6 +7,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Time } from '@/components/common/Time'
 import { Text } from '@/components/common/Text'
+import { DeprovisionBanner } from '@/components/installs/DeprovisionBanner'
 import { DriftedSummary } from '@/components/installs/DriftedSummary'
 import { InstallStatusesContainer } from '@/components/installs/InstallStatuses'
 import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
@@ -124,6 +125,7 @@ const InstallTemplate = () => {
 
   return (
     <PageLayout>
+      <DeprovisionBanner />
       {isChildRoute ? (
         <PageContent className="border-t" variant="row">
           <SubNav
