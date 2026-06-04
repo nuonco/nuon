@@ -29,7 +29,7 @@ export const BuildSelectContainer = ({
   const [currentPage, setCurrentPage] = useState(0)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMorePages, setHasMorePages] = useState(true)
-  const limit = 5
+  const limit = 25
 
   const {
     data: buildsResult,
