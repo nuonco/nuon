@@ -40,7 +40,7 @@ func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, j
 		return nil
 	}
 
-	if err := retry.Retry(ctx, fn, retry.WithMaxAttempts(10), retry.WithSleep(5)); err != nil {
+	if err := retry.Retry(ctx, fn, retry.WithMaxAttempts(10), retry.WithSleep(5*time.Second)); err != nil {
 		return err
 	}
 

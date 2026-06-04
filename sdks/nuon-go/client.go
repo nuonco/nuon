@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-playground/validator/v10"
@@ -214,6 +215,7 @@ type Client interface {
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)
 	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, error)
 	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, string, error)
+	LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string) (*models.ServiceLogStreamTailLogsResponse, error)
 
 	// terraform workspaces
 	GetTerraformWorkspaceStatesJSON(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceStateJSON, error)
@@ -304,6 +306,8 @@ func New(opts ...clientOption) (*client, error) {
 	if c.v == nil {
 		c.v = validator.New()
 	}
+
+	c.APIURL = strings.TrimRight(c.APIURL, "/")
 
 	if err := c.v.Struct(c); err != nil {
 		return nil, err

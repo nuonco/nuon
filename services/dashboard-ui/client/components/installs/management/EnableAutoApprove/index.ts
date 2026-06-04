@@ -1,10 +1,6 @@
 export {
-  ConfirmOverrideModalContainer as ConfirmOverrideModal,
   EnableAutoApproveModalContainer as EnableAutoApproveModal,
   EnableAutoApproveButton,
 } from './EnableAutoApproveContainer'
-export {
-  ConfirmOverrideModal as ConfirmOverrideModalComponent,
-  EnableAutoApproveModal as EnableAutoApproveModalComponent,
-} from './EnableAutoApprove'
+export { EnableAutoApproveModal as EnableAutoApproveModalComponent } from './EnableAutoApprove'
 export { AutoApproveToggle } from './AutoApproveToggle'

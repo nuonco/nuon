@@ -8,9 +8,27 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-// TODO: restored to the pre-#1531 value; replace with per-signal derived
-// timeouts (SignalWithTimeout) so long deploys use their configured budget.
-const defaultAwaitTimeout = 30 * time.Minute
+const (
+	// QuickTimeout is for fast infrastructure operations: validation, no-op
+	// signals, DB-row creation. If these take longer than 5 minutes something
+	// is stuck.
+	QuickTimeout = 5 * time.Minute
+
+	// DriftDetectionTimeout is for drift-detection signals which are lightweight
+	// but fan out through the webhook/Slack pipeline.
+	DriftDetectionTimeout = 15 * time.Minute
+
+	// ShortTimeout is for operations expected to complete within minutes:
+	// state generation, lightweight queue signals.
+	ShortTimeout = 30 * time.Minute
+
+	// HumanGatedTimeout is for operations that require human interaction:
+	// approval workflows, user-initiated stack runs.
+	HumanGatedTimeout = 180 * 24 * time.Hour
+
+	// FallbackAwaitTimeout caps a wait that has no configured timeout.
+	FallbackAwaitTimeout = 30 * 24 * time.Hour
+)
 
 // Result is the payload sent by the handler on completion.
 type Result struct {
@@ -18,25 +36,25 @@ type Result struct {
 	StatusDescription string `json:"status_description,omitempty"`
 }
 
-// Await waits for a completion signal on the Ref's signal channel.
-// Returns the Result on success, or an error if the signal failed or timed out.
-func Await(ctx workflow.Context, ref Ref) (*Result, error) {
+// AwaitWithTimeout waits for a completion signal on the Ref's signal channel.
+// A timeout <= 0 waits with no wall-clock deadline (for human-gated waits).
+func AwaitWithTimeout(ctx workflow.Context, ref Ref, timeout time.Duration) (*Result, error) {
 	ch := workflow.GetSignalChannel(ctx, ref.SignalName)
 
 	var result Result
 	received := false
 
-	timerCtx, timerCancel := workflow.WithCancel(ctx)
-	defer timerCancel()
-
 	sel := workflow.NewSelector(ctx)
-
 	sel.AddReceive(ch, func(c workflow.ReceiveChannel, more bool) {
 		c.Receive(ctx, &result)
 		received = true
 	})
 
-	sel.AddFuture(workflow.NewTimer(timerCtx, defaultAwaitTimeout), func(f workflow.Future) {})
+	if timeout > 0 {
+		timerCtx, timerCancel := workflow.WithCancel(ctx)
+		defer timerCancel()
+		sel.AddFuture(workflow.NewTimer(timerCtx, timeout), func(f workflow.Future) {})
+	}
 
 	sel.Select(ctx)
 
@@ -49,5 +67,5 @@ func Await(ctx workflow.Context, ref Ref) (*Result, error) {
 		return &result, nil
 	}
 
-	return nil, fmt.Errorf("callback timeout: signal not received within %s", defaultAwaitTimeout)
+	return nil, fmt.Errorf("callback timeout: signal not received within %s", timeout)
 }
