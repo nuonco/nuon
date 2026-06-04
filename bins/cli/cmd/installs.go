@@ -440,6 +440,22 @@ input that is not declared on the app raises an error.`,
 	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
 	inputsCmd.AddCommand(inputsSetCmd)
 
+	// `inputs edit` is a preview feature, gated behind NUON_PREVIEW.
+	if c.cfg.Preview {
+		inputsEditCmd := &cobra.Command{
+			Use:         "edit",
+			Short:       "Edit install inputs",
+			Long:        "Edit an install's inputs in an interactive TUI form pre-filled with the current values",
+			Annotations: tuiAnnotation(TUIAltScreen),
+			Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+				svc := installs.New(c.apiClient, c.cfg)
+				return svc.EditInputs(cmd.Context(), id, deployDependents)
+			}),
+		}
+		inputsEditCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
+		inputsCmd.AddCommand(inputsEditCmd)
+	}
+
 	installsCmds.AddCommand(inputsCmd)
 
 	selectInstallCmd := &cobra.Command{
