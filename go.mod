@@ -138,15 +138,15 @@ require (
 	go.opentelemetry.io/collector/consumer/consumererror v0.131.0
 	go.opentelemetry.io/collector/exporter v0.131.0
 	go.opentelemetry.io/collector/pdata v1.37.0
-	go.opentelemetry.io/contrib/bridges/otelzap v0.12.0
-	go.opentelemetry.io/otel v1.41.0
+	go.opentelemetry.io/contrib/bridges/otelzap v0.19.0
+	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp v0.13.0
 	go.opentelemetry.io/otel/sdk v1.41.0
 	go.opentelemetry.io/otel/sdk/log v0.13.0
 	go.temporal.io/api v1.62.7
 	go.temporal.io/sdk v1.42.0
 	go.uber.org/fx v1.23.0
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 	golang.design/x/clipboard v0.7.1
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sync v0.20.0
@@ -469,8 +469,8 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.13.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.37.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.37.0 // indirect
-	go.opentelemetry.io/otel/log v0.13.0 // indirect
-	go.opentelemetry.io/otel/metric v1.41.0 // indirect
+	go.opentelemetry.io/otel/log v0.20.0 // indirect
+	go.opentelemetry.io/otel/metric v1.44.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.41.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
@@ -649,7 +649,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/y0ssar1an/q v1.0.10 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.38.0
-	go.opentelemetry.io/otel/trace v1.41.0
+	go.opentelemetry.io/otel/trace v1.44.0
 	go.opentelemetry.io/proto/otlp v1.7.1
 	go.temporal.io/sdk/contrib/tally v0.2.0
 	go.uber.org/atomic v1.11.0 // indirect
