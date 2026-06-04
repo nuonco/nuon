@@ -127,7 +127,7 @@ func (s *Signal) retryGroup(ctx workflow.Context, l *zap.Logger) error {
 				"group_retry_idx": newGroupRetryIdx,
 				"retry_type":      "auto",
 			}),
-			Idx:            maxIdx + 100 + i,
+			Idx:            maxIdx + 100*(i+1),
 			ExecutionType:  step.ExecutionType,
 			Metadata:       step.Metadata,
 			Retryable:      step.Retryable,
