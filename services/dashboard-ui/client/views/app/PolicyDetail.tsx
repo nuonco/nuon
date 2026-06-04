@@ -58,10 +58,9 @@ export const PolicyDetail = () => {
 
   const isSandboxPolicy = policy?.type === 'sandbox'
   const policyComponents = policy?.components ?? []
-  const isAllComponents =
-    !isSandboxPolicy &&
-    (policyComponents.length === 0 ||
-      (policyComponents.length === 1 && policyComponents[0] === '*'))
+  const isAllComponents = !isSandboxPolicy && policyComponents.includes('*')
+  const hasNoComponents =
+    !isSandboxPolicy && !isAllComponents && policyComponents.length === 0
 
   return (
     <PageSection>
@@ -139,6 +138,11 @@ export const PolicyDetail = () => {
               <div className="flex items-center gap-2">
                 <Icon variant="CardsIcon" size={16} />
                 <Text variant="subtext">All components</Text>
+              </div>
+            ) : hasNoComponents ? (
+              <div className="flex items-center gap-2">
+                <Icon variant="ProhibitIcon" size={16} />
+                <Text variant="subtext">No components</Text>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
