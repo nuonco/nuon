@@ -213,8 +213,9 @@ type Client interface {
 
 	// log stream/logs
 	GetLogStream(ctx context.Context, logStreamID string) (*models.AppLogStream, error)
-	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, error)
-	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string) ([]*models.AppOtelLogRecord, string, error)
+	LogStreamReadLogs(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, error)
+	LogStreamReadLogsWithNextOffset(ctx context.Context, logStreamId string, offset string, order string) ([]*models.AppOtelLogRecord, string, error)
+	LogStreamTailLogs(ctx context.Context, logStreamID string, since string, wait string) (*models.ServiceLogStreamTailLogsResponse, error)
 
 	// terraform workspaces
 	GetTerraformWorkspaceStatesJSON(ctx context.Context, workspaceID string) ([]*models.AppTerraformWorkspaceStateJSON, error)

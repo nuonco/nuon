@@ -766,6 +766,8 @@ type ClientService interface {
 
 	LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamReadSpansOK, error)
 
+	LogStreamTailLogs(params *LogStreamTailLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamTailLogsOK, error)
+
 	MngVMShutDown(params *MngVMShutDownParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*MngVMShutDownOK, error)
 
 	PhoneHome(params *PhoneHomeParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PhoneHomeCreated, error)
@@ -15961,6 +15963,52 @@ func (a *Client) LogStreamReadSpans(params *LogStreamReadSpansParams, authInfo r
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for LogStreamReadSpans: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+LogStreamTailLogs longs poll tail a log stream
+
+Returns rows after the supplied composite cursor, long-polling up to ~30s for new rows on an idle stream. Behind the `log-tail-long-poll` org feature flag.
+*/
+func (a *Client) LogStreamTailLogs(params *LogStreamTailLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*LogStreamTailLogsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewLogStreamTailLogsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "LogStreamTailLogs",
+		Method:             "GET",
+		PathPattern:        "/v1/log-streams/{log_stream_id}/logs/tail",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &LogStreamTailLogsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*LogStreamTailLogsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for LogStreamTailLogs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

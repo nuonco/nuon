@@ -22,7 +22,10 @@ type ValidateResponse struct{}
 
 func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *ValidateResponse, retErr error) {
 	l, _ := log.WorkflowLogger(ctx)
+	h.validating = true
 	defer func() {
+		h.validating = false
+
 		status := "success"
 		desc := ""
 		if retErr != nil {
@@ -45,7 +48,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	// mark the signal as in-progress in the DB
-	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusInProgress,
 		Metadata: map[string]any{
@@ -59,7 +62,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	decision := h.runBeforePhase(ctx, event)
 	if !decision.Allow {
 		blockedErr := &signal.SignalErrValidate{Err: errors.New("blocked by lifecycle hook: " + decision.Reason)}
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: blockedErr.Error(),
@@ -82,7 +85,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 		// If the signal panicked, write error status here (outside the panic boundary).
 		var panicErr *signal.SignalErrPanic
 		if errors.As(err, &panicErr) {
-			_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 				QueueSignalID:     h.queueSignalID,
 				Status:            app.StatusError,
 				StatusDescription: panicErr.Error(),
@@ -96,7 +99,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 
 		validateErr := &signal.SignalErrValidate{Err: err}
 		humanDesc := signal.HumanError(err)
-		_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 			QueueSignalID:     h.queueSignalID,
 			Status:            app.StatusError,
 			StatusDescription: humanDesc,
@@ -112,7 +115,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	// record validate completion timestamp
-	_ = statusactivities.AwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
 		QueueSignalID: h.queueSignalID,
 		Status:        app.StatusInProgress,
 		Metadata: map[string]any{

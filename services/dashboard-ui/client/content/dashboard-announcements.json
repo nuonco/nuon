@@ -1,12 +1,12 @@
 {
   "announcements": [
     {
-      "id": "slack-webhooks-aws-tf-034",
-      "title": "Slack Integration, Webhooks, and AWS Terraform Stacks",
-      "date": "May 12, 2026",
-      "description": "Slack notifications, org-scoped webhooks, and Terraform stacks for AWS.",
+      "id": "runbooks-readmes-035",
+      "title": "Runbooks and rendered READMEs",
+      "date": "June 1, 2026",
+      "description": "Define and run multi-step runbooks against installs, and fetch install READMEs rendered with live values.",
       "ctaText": "Learn more",
-      "ctaUrl": "https://docs.nuon.co/updates/034-aws-terraform-install-stack",
+      "ctaUrl": "https://docs.nuon.co/updates/035-runbooks-and-readmes",
       "dismissible": false
     }
   ]

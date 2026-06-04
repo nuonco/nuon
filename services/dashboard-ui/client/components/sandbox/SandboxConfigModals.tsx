@@ -6,6 +6,51 @@ import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TKeyValue } from '@/types'
 
+interface SandboxPulumiConfigModalProps extends IModal {
+  pulumiConfig: Record<string, string>
+}
+
+export const SandboxPulumiConfigModal = ({
+  pulumiConfig,
+  ...props
+}: SandboxPulumiConfigModalProps) => {
+  const keyValuePairs: TKeyValue[] = Object.entries(pulumiConfig).map(([key, value]) => ({
+    key,
+    value,
+  }))
+
+  const configText = Object.entries(pulumiConfig)
+    .map(([key, value]) => `${key}: "${value}"`)
+    .join('\n')
+
+  return (
+    <Modal
+      heading={
+        <Text variant="h3" weight="strong" flex className="gap-2">
+          <Icon variant="ListIcon" size="20" />
+          Pulumi config
+        </Text>
+      }
+      size="lg"
+      className="!max-h-[80vh]"
+      childrenClassName="overflow-y-auto"
+      {...props}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center gap-4">
+          <Text variant="body">
+            Pulumi config key-value pairs configured for this sandbox.
+          </Text>
+          <div className="flex justify-end">
+            <ClickToCopyButton textToCopy={configText} className="w-fit" />
+          </div>
+        </div>
+        <KeyValueList values={keyValuePairs} />
+      </div>
+    </Modal>
+  )
+}
+
 interface SandboxEnvironmentVariablesModalProps extends IModal {
   envVars: Record<string, string>
 }

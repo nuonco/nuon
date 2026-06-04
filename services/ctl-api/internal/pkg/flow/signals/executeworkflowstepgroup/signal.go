@@ -73,6 +73,9 @@ type Signal struct {
 	// stepSignalIDs tracks in-flight step signal IDs for cancellation propagation.
 	stepSignalIDs []string
 
+	// stepDispatchSeq scopes each step dispatch's completion signal per attempt.
+	stepDispatchSeq int
+
 	// lastDirective tracks the last directive written to the workflow.
 	// Used by Execute() to determine the correct group status after execution.
 	lastDirective string

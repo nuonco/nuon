@@ -120,11 +120,18 @@ var _ signal.SignalWithStepContext = (*Signal)(nil)
 var _ signal.SignalWithCloneSteps = (*Signal)(nil)
 
 func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.CloneStepDef, error) {
+	// Clones keep FlowID/lifecycle; the retry path doesn't re-inject it.
+	lifecycle := signal.LifecycleBase{
+		LifecycleWorkflowID:   s.LifecycleWorkflowID,
+		LifecycleWorkflowType: s.LifecycleWorkflowType,
+	}
 	return []signal.CloneStepDef{
 		{
 			Signal: &deprovisionsandboxplan.Signal{
+				LifecycleBase:    lifecycle,
 				InstallSandboxID: s.InstallSandboxID,
 				InstallID:        s.InstallID,
+				FlowID:           s.FlowID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName + " (plan)",
@@ -132,8 +139,10 @@ func (s *Signal) Clone(_ workflow.Context, originalStepName string) ([]signal.Cl
 		},
 		{
 			Signal: &Signal{
+				LifecycleBase:    lifecycle,
 				InstallSandboxID: s.InstallSandboxID,
 				InstallID:        s.InstallID,
+				FlowID:           s.FlowID,
 				SandboxMode:      s.SandboxMode,
 			},
 			Name:          originalStepName,
@@ -223,11 +232,12 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 	if installRun.RunType == app.SandboxRunTypeDeprovision {
 		operation = app.RunnerJobOperationTypeCreateTeardownPlan
 	}
+	jobType := install.AppSandboxConfig.JobType()
 	planJob, err := activities.AwaitGetLatestJob(ctx, &activities.GetLatestJobRequest{
 		OwnerID:   installRun.ID,
 		Operation: operation,
 		Group:     app.RunnerJobGroupSandbox,
-		Type:      app.RunnerJobTypeSandboxTerraform,
+		Type:      jobType,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to get plan runner job for current apply job")
@@ -247,6 +257,7 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		RunnerID:  install.RunnerID,
 		OwnerType: "install_sandbox_runs",
 		OwnerID:   installRun.ID,
+		JobType:   jobType,
 		Op:        app.RunnerJobOperationTypeApplyPlan,
 		Metadata: map[string]string{
 			"install_id":       install.ID,

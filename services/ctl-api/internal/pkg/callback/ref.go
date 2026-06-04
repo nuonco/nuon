@@ -39,6 +39,11 @@ func SignalName(id string) string {
 	return fmt.Sprintf("signal-complete-%s", id)
 }
 
+// NewAttempt scopes the signal name per dispatch to avoid stale completions.
+func NewAttempt(ctx workflow.Context, id string, attempt int) Ref {
+	return New(ctx, fmt.Sprintf("%s#%d", id, attempt))
+}
+
 // Scan implements database/sql.Scanner for reading JSONB from PostgreSQL.
 func (c *Ref) Scan(v interface{}) error {
 	switch v := v.(type) {

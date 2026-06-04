@@ -6,6 +6,7 @@ import { ModalStory } from '@/components/__stories__/helpers'
 import {
   SandboxEnvironmentVariablesModal,
   SandboxVariablesFilesModal,
+  SandboxPulumiConfigModal,
 } from './SandboxConfigModals'
 
 export const EnvironmentVariables = () => (
@@ -27,6 +28,18 @@ export const VariablesFiles = () => (
         'region = "us-west-2"\ninstance_type = "t3.medium"',
         'vpc_id = "vpc-12345"\nsubnet_ids = ["subnet-1", "subnet-2"]',
       ]}
+    />
+  </ModalStory>
+)
+
+export const PulumiConfig = () => (
+  <ModalStory label="Open Pulumi config modal">
+    <SandboxPulumiConfigModal
+      pulumiConfig={{
+        'gcp:project': 'my-gcp-project',
+        'gcp:region': 'us-central1',
+        'gcp:zone': 'us-central1-a',
+      }}
     />
   </ModalStory>
 )

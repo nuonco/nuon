@@ -63,6 +63,7 @@ func AllModels() []any {
 		&app.AppSecret{},
 		&app.AppSecretsConfig{},
 		&app.AppSecretConfig{},
+		&app.AppSecretKubernetesSyncTarget{},
 		&app.AppPoliciesConfig{},
 		&app.AppPolicyConfig{},
 		&app.AppPermissionsConfig{},

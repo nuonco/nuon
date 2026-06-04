@@ -24,9 +24,22 @@ import (
 const SignalType signal.SignalType = "process_job"
 
 const (
-	defaultJobPollPeriod       = time.Second
-	defaultAvailablePollPeriod = time.Second
+	minPollPeriod = time.Second
+	maxPollPeriod = 10 * time.Second
 )
+
+// pollPeriod backs off 1s→10s (1,2,4,8,10,...) so fast jobs are detected quickly
+// while long jobs stay cheap on workflow history.
+func pollPeriod(attempt int) time.Duration {
+	if attempt < 0 || attempt > 4 {
+		return maxPollPeriod
+	}
+	d := minPollPeriod << attempt
+	if d > maxPollPeriod {
+		return maxPollPeriod
+	}
+	return d
+}
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`
@@ -121,14 +134,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")
 		return fmt.Errorf("unable to update runner job: %w", err)
-	}
-
-	// clear any old jobs behind this that were orphaned, or not attempted for whatever reason
-	if err := activities.AwaitFlushOrphanedJobs(ctx, activities.FlushOrphanedJobsRequest{
-		RunnerID:  s.RunnerID,
-		Threshold: runnerJob.CreatedAt.Add(-time.Minute * 5),
-	}); err != nil {
-		return pkgerrors.Wrap(err, "unable to flush orphaned jobs")
 	}
 
 	if runnerJob.Status == app.RunnerJobStatusCancelled {
@@ -236,8 +241,8 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 	var runnerStatus app.RunnerStatus
 
 	if job.Group != app.RunnerJobGroupOperations {
-		for runnerStatus != app.RunnerStatusActive {
-			workflow.Sleep(ctx, defaultAvailablePollPeriod)
+		for attempt := 0; runnerStatus != app.RunnerStatusActive; attempt++ {
+			workflow.Sleep(ctx, pollPeriod(attempt))
 			etags["runner_status"] = string(runnerStatus)
 
 			now := workflow.Now(ctx)
@@ -294,8 +299,8 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 	}
 
 	// poll until the job is picked up, and an execution exists
-	for !jobExecutionFound {
-		workflow.Sleep(ctx, defaultAvailablePollPeriod)
+	for attempt := 0; !jobExecutionFound; attempt++ {
+		workflow.Sleep(ctx, pollPeriod(attempt))
 
 		now := workflow.Now(ctx)
 		if now.After(overallTimeout) {
@@ -408,8 +413,8 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 
 	// poll the job execution, until it's completed
 	executionTimeout := jobExecution.CreatedAt.Add(job.ExecutionTimeout)
-	for {
-		workflow.Sleep(ctx, defaultJobPollPeriod)
+	for attempt := 0; ; attempt++ {
+		workflow.Sleep(ctx, pollPeriod(attempt))
 
 		now := workflow.Now(ctx)
 

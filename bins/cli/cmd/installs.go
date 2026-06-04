@@ -28,6 +28,7 @@ func (c *cli) installsCmd() *cobra.Command {
 		labelArgs        []string
 		noSelect         bool
 		deployDeps       bool
+		deployDependents bool
 		offset           int
 		limit            int
 		planOnly         bool
@@ -400,6 +401,47 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 	currentInputs.MarkFlagRequired("install-id")
 	installsCmds.AddCommand(currentInputs)
 
+	inputsCmd := &cobra.Command{
+		Use:   "inputs",
+		Short: "Manage install inputs",
+		Long:  "View and set the app input values for an install",
+	}
+	inputsCmd.PersistentFlags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+
+	inputsGetCmd := &cobra.Command{
+		Use:     "get",
+		Aliases: []string{"list"},
+		Short:   "View install inputs",
+		Long:    "View the install's current input values alongside their declared defaults",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.GetInputs(cmd.Context(), id, PrintJSON)
+		}),
+	}
+	inputsCmd.AddCommand(inputsGetCmd)
+
+	inputsSetCmd := &cobra.Command{
+		Use:   "set [key=value ...]",
+		Short: "Set install inputs",
+		Long: `Set one or more install input values.
+
+Accepts a list of inputs in key=value format, e.g.:
+
+  nuon installs inputs set foo=bar baz=qux
+
+The current inputs are fetched first so changed values can be shown. Setting an
+input that is not declared on the app raises an error.`,
+		Args: cobra.MinimumNArgs(1),
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.SetInputs(cmd.Context(), id, args, deployDependents, PrintJSON)
+		}),
+	}
+	inputsSetCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
+	inputsCmd.AddCommand(inputsSetCmd)
+
+	installsCmds.AddCommand(inputsCmd)
+
 	selectInstallCmd := &cobra.Command{
 		Use:         "select",
 		Short:       "Select your current install",
@@ -513,13 +555,14 @@ The --stack, --sandbox, and --component-id flags are mutually exclusive.`,
 		Long:  "Update an install input value",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.UpdateInput(cmd.Context(), id, inputs, PrintJSON)
+			return svc.UpdateInput(cmd.Context(), id, inputs, deployDependents, PrintJSON)
 		}),
 	}
 	updateInputCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID of the install you want to update")
 	updateInputCmd.MarkFlagRequired("install-id")
 	updateInputCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	updateInputCmd.MarkFlagRequired("inputs")
+	updateInputCmd.Flags().BoolVar(&deployDependents, "deploy-dependents", true, "Deploy components that depend on the updated inputs")
 	installsCmds.AddCommand(updateInputCmd)
 
 	deprovisionInstallSandboxCmd := &cobra.Command{
@@ -1062,30 +1105,66 @@ By default, launches an interactive TUI to browse and execute actions.`,
 
 	installsCmds.AddCommand(actionsCmd)
 
-	labelCmd := &cobra.Command{
-		Use:   "label",
-		Short: "Add, remove, or view labels on an install",
-		Long: `Add, remove, or view labels on an install.
+	labelsCmd := &cobra.Command{
+		Use:   "labels",
+		Short: "List, set, or unset labels on an install",
+		Long: `List, set, or unset labels on an install.
 
-Labels are key-value strings. Pass kubectl-style positional args:
-  KEY=VALUE   add or overwrite a label
-  KEY-        remove a label
+Labels are key-value strings used to organize and filter installs.`,
+	}
 
-With no args, prints the install's current labels.
+	labelsListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List the labels on an install",
+		Long: `List the labels on an install.
 
 Examples:
-  nuon installs label --install-id inst_abc env=prod team=platform
-  nuon installs label --install-id inst_abc env-
-  nuon installs label --install-id inst_abc env=prod owner-
-  nuon installs label --install-id inst_abc`,
-		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+  nuon installs labels list --install-id inst_abc`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Label(cmd.Context(), id, args, PrintJSON)
+			return svc.LabelsList(cmd.Context(), id, PrintJSON)
 		}),
 	}
-	labelCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to label")
-	labelCmd.MarkFlagRequired("install-id")
-	installsCmds.AddCommand(labelCmd)
+	labelsListCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	labelsListCmd.MarkFlagRequired("install-id")
+	labelsCmd.AddCommand(labelsListCmd)
+
+	labelsSetCmd := &cobra.Command{
+		Use:   "set",
+		Short: "Set (add or overwrite) labels on an install",
+		Long: `Set labels on an install. Pass kubectl-style positional args:
+  KEY=VALUE   add or overwrite a label
+
+Examples:
+  nuon installs labels set --install-id inst_abc env=prod team=platform`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.LabelsSet(cmd.Context(), id, args, PrintJSON)
+		}),
+	}
+	labelsSetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	labelsSetCmd.MarkFlagRequired("install-id")
+	labelsCmd.AddCommand(labelsSetCmd)
+
+	labelsUnsetCmd := &cobra.Command{
+		Use:   "unset",
+		Short: "Unset (remove) labels on an install",
+		Long: `Unset labels on an install. Pass one or more bare keys to remove:
+  KEY   remove a label
+
+Examples:
+  nuon installs labels unset --install-id inst_abc env team`,
+		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.LabelsUnset(cmd.Context(), id, args, PrintJSON)
+		}),
+	}
+	labelsUnsetCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	labelsUnsetCmd.MarkFlagRequired("install-id")
+	labelsCmd.AddCommand(labelsUnsetCmd)
+
+	installsCmds.AddCommand(labelsCmd)
 
 	return installsCmds
 }

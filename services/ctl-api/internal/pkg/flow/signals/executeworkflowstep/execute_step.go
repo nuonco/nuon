@@ -86,8 +86,29 @@ func (s *Signal) Execute(ctx workflow.Context) (err error) {
 	// Execute the inner signal
 	stepErr := s.executeInnerSignal(ctx, step)
 	if stepErr != nil {
-		// If the context was cancelled, Cancel() already handled status updates.
 		if ctx.Err() != nil {
+			// If Cancel() was called (via the cancel update handler), it already
+			// wrote DirectiveStop and updated status — nothing more to do.
+			// But if the context was cancelled without Cancel() (e.g., handler
+			// lifecycle stopped the workflow), write a fallback directive so the
+			// group doesn't default to StepContinue and skip the step.
+			if !s.canceled {
+				dctx, dcancel := workflow.NewDisconnectedContext(ctx)
+				defer dcancel()
+				if err := setResultDirective(dctx, s.StepID, DirectiveStop); err != nil {
+					l.Error("unable to set fallback stop directive", zap.Error(err))
+				}
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(dctx, statusactivities.UpdateStatusRequest{
+					ID: s.StepID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusError,
+						StatusHumanDescription: "step interrupted: context cancelled",
+						Metadata: map[string]any{
+							"reason": stepErr.Error(),
+						},
+					},
+				})
+			}
 			return nil
 		}
 		return s.handleStepError(ctx, l, step, flw, stepErr)

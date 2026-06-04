@@ -17,6 +17,9 @@ runner_api_token         = "{{.APIToken}}"
 {{- end}}
 runner_id                = "{{.Runner.ID}}"
 runner_init_script_url   = "{{.RunnerInitScriptURL}}"
+{{- if .Settings.AWSInstanceType}}
+runner_machine_type      = "{{.Settings.AWSInstanceType}}"
+{{- end}}
 phone_home_url           = "{{.CloudFormationStackVersion.PhoneHomeURL}}"
 provision_permissions    = {{.ProvisionPermissions}}
 maintenance_permissions  = {{.MaintenancePermissions}}

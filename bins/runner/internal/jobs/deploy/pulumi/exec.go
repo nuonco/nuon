@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
@@ -25,6 +26,8 @@ import (
 )
 
 const updatePlanFilename = ".pulumi-update-plan.json"
+
+const stateUploadTimeout = 60 * time.Second
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
 	l, err := pkgctx.Logger(ctx)
@@ -90,6 +93,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		Runtime:   plan.Runtime,
 		Config:    plan.Config,
 		EnvVars:   envVars,
+		Logger:    l,
 		StateBackend: &pulumiworkspace.StateBackend{
 			APIEndpoint: h.cfg.RunnerAPIURL,
 			WorkspaceID: plan.WorkspaceID,
@@ -109,24 +113,28 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		return fmt.Errorf("unable to download pulumi state: %w", err)
 	}
 
+	usePlans := plan.UpdatePlans
+
 	switch job.Operation {
 	case models.AppRunnerJobOperationTypeCreateDashApplyDashPlan:
-		planOutPath := filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
-		l.Info("executing pulumi preview", zap.String("plan_out", planOutPath))
-		result, err := ws.Preview(ctx, &pulumiworkspace.PreviewOpts{PlanOutPath: planOutPath})
+		previewOpts := &pulumiworkspace.PreviewOpts{}
+		if usePlans {
+			previewOpts.PlanOutPath = filepath.Join(h.state.arch.BasePath(), updatePlanFilename)
+		}
+		l.Info("executing pulumi preview")
+		result, err := ws.Preview(ctx, previewOpts)
 		if err != nil {
 			l.Error("pulumi preview errored", zap.Error(err))
 			h.writeErrorResult(ctx, "pulumi preview", err)
 			return fmt.Errorf("unable to execute pulumi preview: %w", err)
 		}
 
-		// Wrap the plan with the stack's encryption salt so the apply job can
-		// decrypt it even when running on a fresh stack (no prior state).
-		bundle, err := h.bundleUpdatePlan(ctx, ws, planOutPath)
-		if err != nil {
-			l.Warn("unable to bundle saved pulumi plan", zap.Error(err))
+		var bundle []byte
+		if previewOpts.PlanOutPath != "" {
+			if bundle, err = h.bundleUpdatePlan(ctx, ws, previewOpts.PlanOutPath); err != nil {
+				l.Warn("unable to bundle saved pulumi plan", zap.Error(err))
+			}
 		}
-		l.Info("saved update plan from preview, ready for apply job", zap.Int("bundle_bytes", len(bundle)))
 
 		if err := h.writePlanResult(ctx, result, bundle); err != nil {
 			h.errRecorder.Record("write job execution result", err)
@@ -147,27 +155,26 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 		}
 
 	case models.AppRunnerJobOperationTypeApplyDashPlan:
+		// Persist state on every exit (success, error, or panic) so partially
+		// created resources are never lost — the retry then reconciles instead
+		// of recreating.
+		defer func() {
+			if err := h.updatePulumiState(ctx, ws); err != nil {
+				l.Error("failed to persist pulumi state", zap.Error(err))
+			}
+		}()
+
 		if plan.Destroy {
 			l.Info("executing pulumi destroy")
 			if err := ws.Destroy(ctx); err != nil {
 				l.Error("pulumi destroy errored", zap.Error(err))
 				h.writeErrorResult(ctx, "pulumi destroy", err)
-				// Still try to upload state even on failure
-				if stateErr := h.updatePulumiState(ctx, ws); stateErr != nil {
-					l.Error("failed to update state after error", zap.Error(stateErr))
-				}
 				return fmt.Errorf("unable to execute pulumi destroy: %w", err)
 			}
-
-			// Update state in control plane after destroy
-			if err := h.updatePulumiState(ctx, ws); err != nil {
-				h.writeErrorResult(ctx, "update pulumi state", err)
-			}
-
 			l.Info("pulumi destroy completed")
 		} else {
 			upOpts := &pulumiworkspace.UpOpts{}
-			if h.state.plan.ApplyPlanContents != "" {
+			if usePlans && h.state.plan.ApplyPlanContents != "" {
 				planPath, err := h.materializeUpdatePlan(ctx, ws, h.state.plan.ApplyPlanContents)
 				if err != nil {
 					l.Warn("unable to materialize saved pulumi plan, falling back to fresh diff", zap.Error(err))
@@ -175,8 +182,6 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 					upOpts.PlanInPath = planPath
 					l.Info("applying update plan saved by preview job", zap.String("plan_path", planPath))
 				}
-			} else {
-				l.Info("no update plan from preview job, computing fresh diff at apply time")
 			}
 
 			l.Info("executing pulumi up")
@@ -184,16 +189,7 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 			if err != nil {
 				l.Error("pulumi up errored", zap.Error(err))
 				h.writeErrorResult(ctx, "pulumi up", err)
-				// Still try to upload state even on failure
-				if stateErr := h.updatePulumiState(ctx, ws); stateErr != nil {
-					l.Error("failed to update state after error", zap.Error(stateErr))
-				}
 				return fmt.Errorf("unable to execute pulumi up: %w", err)
-			}
-
-			// Update state in control plane
-			if err := h.updatePulumiState(ctx, ws); err != nil {
-				h.writeErrorResult(ctx, "update pulumi state", err)
 			}
 
 			h.state.outputs = result.Outputs
@@ -404,21 +400,29 @@ func (h *handler) downloadState(ctx context.Context, l *zap.Logger, ws *pulumiwo
 // POST /v1/runners/pulumi-state/{workspace_id}?job_id=X stores raw state bytes
 // in the terraform_workspace_states table without parsing.
 func (h *handler) updatePulumiState(ctx context.Context, ws *pulumiworkspace.Workspace) error {
+	// Detach from job cancellation so a mid-deploy cancel still exports + persists
+	// state; otherwise created resources are dropped and the retry recreates them.
+	ctx = context.WithoutCancel(ctx)
+
 	stateJSON, err := ws.ExportState(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to export pulumi state: %w", err)
 	}
 
-	workspaceID := h.state.plan.PulumiDeployPlan.WorkspaceID
-	stateURL := fmt.Sprintf("%s/v1/runners/pulumi-state/%s?job_id=%s",
-		h.cfg.RunnerAPIURL, workspaceID, h.state.jobID)
+	return uploadPulumiState(ctx, h.cfg.RunnerAPIURL, h.cfg.RunnerAPIToken, h.state.plan.PulumiDeployPlan.WorkspaceID, h.state.jobID, stateJSON)
+}
 
+func uploadPulumiState(ctx context.Context, apiURL, token, workspaceID, jobID string, stateJSON []byte) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), stateUploadTimeout)
+	defer cancel()
+
+	stateURL := fmt.Sprintf("%s/v1/runners/pulumi-state/%s?job_id=%s", apiURL, workspaceID, jobID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, stateURL, bytes.NewReader(stateJSON))
 	if err != nil {
 		return fmt.Errorf("unable to create state upload request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Authorization", "Bearer "+h.cfg.RunnerAPIToken)
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
