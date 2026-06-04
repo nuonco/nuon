@@ -3,6 +3,7 @@ import type { TWorkflowResponse } from '@/types'
 
 export type TDeployComponentsBody = {
   plan_only?: boolean
+  role?: string
 }
 
 export const deployComponents = ({

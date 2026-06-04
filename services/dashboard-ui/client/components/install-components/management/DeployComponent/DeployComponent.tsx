@@ -77,7 +77,7 @@ export const DeployComponentModal = ({
           </Text>
         </div>
       }
-      size="lg"
+      size="xl"
       className="!max-h-[80vh]"
       childrenClassName="flex-auto overflow-y-auto"
       onClose={handleClose}
@@ -104,21 +104,25 @@ export const DeployComponentModal = ({
         variant: 'primary' as const,
       }}
       footerActions={
-        <div className="flex flex-col gap-1 pl-4">
-          <CheckboxInput
-            checked={deployDependents}
-            onChange={(e) => setDeployDependents(e.target.checked)}
-            labelProps={{
-              className:
-                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-4 max-w-none',
-              labelText: 'Deploy dependents',
-              labelTextProps: { variant: 'base', weight: 'stronger' },
-            }}
-          />
-          <Text variant="subtext" theme="neutral" className="ml-8 leading-none">
-            Deploy all dependents as well as the selected build.
-          </Text>
-        </div>
+        <CheckboxInput
+          checked={deployDependents}
+          onChange={(e) => setDeployDependents(e.target.checked)}
+          labelProps={{
+            className:
+              'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+            labelText: (
+              <span className="flex flex-col gap-1">
+                <Text variant="base" weight="stronger" className="!leading-none">
+                  Deploy dependents
+                </Text>
+                <Text variant="subtext" theme="neutral" className="!leading-none">
+                  Deploy all dependents as well as the selected build.
+                </Text>
+              </span>
+            ),
+            labelTextProps: { as: 'div' },
+          }}
+        />
       }
       {...props}
     >

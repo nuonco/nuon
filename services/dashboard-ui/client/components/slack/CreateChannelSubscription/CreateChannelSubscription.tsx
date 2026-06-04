@@ -196,11 +196,10 @@ export const CreateChannelSubscriptionModal = ({
 
         <div className="flex flex-col gap-2">
           <Label>Events</Label>
-          <InterestsPicker
-            variant="slack"
-            value={interests}
-            onChange={setInterests}
-          />
+          <Text variant="subtext" theme="neutral">
+            Pick which events post notifications in this channel.
+          </Text>
+          <InterestsPicker value={interests} onChange={setInterests} />
         </div>
       </div>
     </Modal>
