@@ -1,10 +1,10 @@
 import { Toggle } from '@/components/common/form/Toggle'
+import { Tooltip } from '@/components/common/Tooltip'
 import { useInstall } from '@/hooks/use-install'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import {
-  ConfirmOverrideModalContainer,
-  EnableAutoApproveModalContainer,
-} from './EnableAutoApproveContainer'
+import { EnableAutoApproveModalContainer } from './EnableAutoApproveContainer'
+
+const MANAGED_BY_CONFIG_TIP = 'Managed by config. Disable config sync to edit.'
 
 export const AutoApproveToggle = () => {
   const { addModal } = useSurfaces()
@@ -14,31 +14,30 @@ export const AutoApproveToggle = () => {
   const isApproveAll =
     hasInstallConfig &&
     install?.install_config?.approval_option === 'approve-all'
-  const isInstallManagedByConfig =
+  const isManagedByConfig =
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const handleChange = () => {
-    if (isInstallManagedByConfig) {
-      const overrideModal = (
-        <ConfirmOverrideModalContainer
-          onConfirm={() => {
-            const mainModal = <EnableAutoApproveModalContainer />
-            addModal(mainModal)
-          }}
-        />
-      )
-      addModal(overrideModal)
-    } else {
-      const modal = <EnableAutoApproveModalContainer />
-      addModal(modal)
-    }
+    const modal = <EnableAutoApproveModalContainer />
+    addModal(modal)
   }
 
-  return (
+  const toggle = (
     <Toggle
       checked={isApproveAll}
       onChange={handleChange}
+      disabled={isManagedByConfig}
       label="Auto approval"
     />
   )
+
+  if (isManagedByConfig) {
+    return (
+      <Tooltip tipContent={MANAGED_BY_CONFIG_TIP} position="left" tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs">
+        {toggle}
+      </Tooltip>
+    )
+  }
+
+  return toggle
 }
