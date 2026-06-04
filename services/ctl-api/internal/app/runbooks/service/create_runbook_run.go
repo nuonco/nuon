@@ -20,7 +20,7 @@ import (
 // @Security		APIKey
 // @Security		OrgID
 // @Param			install_id	path	string	true	"install ID"
-// @Param			runbook_id	path	string	true	"runbook ID"
+// @Param			runbook_id	path	string	true	"runbook ID or name"
 // @Success		201			{object}	app.InstallRunbookRun
 // @Router			/v1/installs/{install_id}/runbooks/{runbook_id}/runs [post]
 func (s *service) CreateRunbookRun(ctx *gin.Context) {
@@ -31,7 +31,7 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	}
 
 	installID := ctx.Param("install_id")
-	runbookID := ctx.Param("runbook_id")
+	runbookIDOrName := ctx.Param("runbook_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -58,8 +58,10 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	var installRunbook app.InstallRunbook
 	res = s.db.WithContext(ctx).
 		Preload("Runbook").
+		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
-		First(&installRunbook, "runbook_id = ?", runbookID)
+		Where("install_runbooks.runbook_id = ? OR runbooks.name = ?", runbookIDOrName, runbookIDOrName).
+		First(&installRunbook)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install runbook: %w", res.Error))
 		return

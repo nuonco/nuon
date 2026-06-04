@@ -278,6 +278,8 @@ type Client interface {
 	GetInstallRunbooks(ctx context.Context, installID string) ([]*models.AppInstallRunbook, error)
 	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbook, error)
 	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error)
+	GetInstallRunbookRun(ctx context.Context, installID, runID string) (*models.AppInstallRunbookRun, error)
+	GetInstallRunbookRuns(ctx context.Context, installID, runbookIDOrName string, query *models.GetPaginatedQuery) ([]*models.AppInstallRunbookRun, bool, error)
 }
 
 var _ Client = (*client)(nil)

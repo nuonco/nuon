@@ -86,6 +86,51 @@ func (c *client) GetInstallRunbook(ctx context.Context, installID, runbookID str
 	return resp.Payload, nil
 }
 
+// GetInstallRunbookRuns lists runbook runs for an install, optionally filtered by runbook ID or name.
+func (c *client) GetInstallRunbookRuns(ctx context.Context, installID, runbookIDOrName string, query *models.GetPaginatedQuery) ([]*models.AppInstallRunbookRun, bool, error) {
+	params := &operations.GetInstallRunbookRunsParams{
+		InstallID: installID,
+		Context:   ctx,
+	}
+	if runbookIDOrName != "" {
+		params.RunbookID = &runbookIDOrName
+	}
+
+	query = handlePaginationQuery(query)
+
+	if query != nil {
+		offset := int64(query.Offset)
+		limit := int64(query.Limit)
+		params.Offset = &offset
+		params.Limit = &limit
+	}
+
+	resp, err := c.genClient.Operations.GetInstallRunbookRuns(params, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, false, err
+	}
+
+	if query != nil {
+		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
+		return items, hasMore, nil
+	}
+
+	return resp.Payload, false, nil
+}
+
+// GetInstallRunbookRun retrieves a single runbook run on an install.
+func (c *client) GetInstallRunbookRun(ctx context.Context, installID, runID string) (*models.AppInstallRunbookRun, error) {
+	resp, err := c.genClient.Operations.GetInstallRunbookRun(&operations.GetInstallRunbookRunParams{
+		InstallID: installID,
+		RunID:     runID,
+		Context:   ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+	return resp.Payload, nil
+}
+
 // CreateInstallRunbookRun triggers a runbook run on an install.
 func (c *client) CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error) {
 	resp, err := c.genClient.Operations.CreateRunbookRun(&operations.CreateRunbookRunParams{
