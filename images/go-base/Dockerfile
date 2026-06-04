@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine
 
 ENV CGO_ENABLED=0
 
