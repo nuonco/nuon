@@ -61,6 +61,8 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   retried: 'info',
   applying: 'info',
   'awaiting-user-run': 'info',
+  deprovisioning: 'info',
+  reprovisioning: 'info',
 
   // Neutral
   noop: 'neutral',
@@ -71,7 +73,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'Not deployed': 'neutral',
   'No build': 'neutral',
   'not-attempted': 'neutral',
-  deprovisioned: 'neutral',
+  deprovisioned: 'warn',
   skeleton: 'neutral',
 
   // Brand
@@ -124,15 +126,17 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   available: 'Loading',
   'pending-approval': 'Loading',
   info: 'Loading',
+  deprovisioning: 'Loading',
+  reprovisioning: 'Loading',
 
   // Neutral
   noop: 'ClockCountdownIcon',
-  inactive: 'ClockCountdownIcon',
+  inactive: 'WarningIcon',
   pending: 'ClockCountdownIcon',
   offline: 'ClockCountdownIcon',
   'Not deployed': 'ClockCountdownIcon',
   'No build': 'ClockCountdownIcon',
-  deprovisioned: 'ClockCountdownIcon',
+  deprovisioned: 'WarningIcon',
 
   // skipped
   'auto-skipped': 'MinusCircleIcon',
