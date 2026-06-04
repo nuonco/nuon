@@ -154,7 +154,7 @@ func (s *Signal) cloneGroupForRetry(ctx workflow.Context, groupIdx int) error {
 				"retry_idx":       newGroupRetryIdx,
 				"group_retry_idx": newGroupRetryIdx,
 			}),
-			Idx:                 maxIdx + 100 + i,
+			Idx:                 maxIdx + 100*(i+1),
 			ExecutionType:       step.ExecutionType,
 			Metadata:            step.Metadata,
 			Retryable:           step.Retryable,
