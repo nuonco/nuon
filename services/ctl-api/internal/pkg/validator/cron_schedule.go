@@ -51,9 +51,19 @@ func cronScheduleValidator(fl validator.FieldLevel) bool {
 func MinScheduleInterval(sched cron.Schedule) time.Duration {
 	now := time.Now().UTC()
 	prev := sched.Next(now)
+	if prev.IsZero() {
+		// schedule never fires (e.g. impossible date) — treat as infinite gap.
+		return time.Duration(1<<63 - 1)
+	}
 	min := time.Duration(1<<63 - 1)
 	for i := 0; i < minIntervalProbeFires; i++ {
 		next := sched.Next(prev)
+		if next.IsZero() {
+			// no further fires within the underlying parser's search horizon
+			// (robfig/cron caps at ~5 years). The gaps we already sampled are
+			// representative; stop probing rather than computing a bogus delta.
+			break
+		}
 		if d := next.Sub(prev); d < min {
 			min = d
 		}
