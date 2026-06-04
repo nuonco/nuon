@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-cli \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml  -v
 
-FROM golang:1.25-alpine AS final
+FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS final
 
 ARG BIN_NAME=nuon
 ARG SERVICE=cli
@@ -121,7 +121,7 @@ COPY --from=build-linux-amd64 /out/ /
 
 # Compress, checksum, and prepare artifacts for upload
 # Go code will handle the S3 upload part
-FROM alpine:latest AS artifacts
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:latest AS artifacts
 RUN apk add --no-cache pigz
 
 ARG BIN_NAME=nuon
@@ -137,7 +137,7 @@ RUN cd /artifacts && \
     done
 
 # Export single binary for quick builds (no multi-platform)
-FROM alpine:latest AS export-linux-amd64
+FROM public.ecr.aws/p7e3r5y0/mirror/alpine:latest AS export-linux-amd64
 RUN apk add --no-cache pigz
 
 ARG BIN_NAME=nuon
