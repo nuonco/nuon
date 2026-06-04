@@ -3,7 +3,7 @@ ARG RUNTIME_IMAGE=runtimeimage
 
 # --- Admin dashboard React SPA build ---
 
-FROM node:20-alpine AS admin-dashboard-build
+FROM public.ecr.aws/p7e3r5y0/mirror/node:20-alpine AS admin-dashboard-build
 
 RUN npm i -g bun
 
