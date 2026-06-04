@@ -45,13 +45,13 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 
-	var currentAppConfigID string
+	var currentAppConfig app.AppConfig
 	if err := s.db.WithContext(ctx).
-		Model(&app.AppConfig{}).
+		Select("id").
 		Where(app.AppConfig{AppID: appID}).
 		Order("created_at DESC").
 		Limit(1).
-		Pluck("id", &currentAppConfigID).Error; err != nil {
+		Find(&currentAppConfig).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to get app config: %w", err))
 		return
 	}
@@ -59,7 +59,7 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 	currentRunbookIDs := s.db.WithContext(ctx).
 		Model(&app.RunbookConfig{}).
 		Select("runbook_id").
-		Where(app.RunbookConfig{AppConfigID: currentAppConfigID})
+		Where(app.RunbookConfig{AppConfigID: currentAppConfig.ID})
 
 	runbooks := []*app.Runbook{}
 	tx := s.db.WithContext(ctx).

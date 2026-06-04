@@ -72,13 +72,13 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appID := ctx.Param("app_id")
-	_, err = s.findApp(ctx, org.ID, appID)
+	appObj, err := s.findApp(ctx, org.ID, appID)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get app %s: %w", appID, err))
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q, lbls)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appObj.ID, q, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -88,6 +88,21 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 }
 
 func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
+	var currentAppConfig app.AppConfig
+	if err := s.db.WithContext(ctx).
+		Select("id").
+		Where(app.AppConfig{AppID: appID}).
+		Order("created_at DESC").
+		Limit(1).
+		Find(&currentAppConfig).Error; err != nil {
+		return nil, fmt.Errorf("unable to get app config: %w", err)
+	}
+
+	currentActionWorkflowIDs := s.db.WithContext(ctx).
+		Model(&app.ActionWorkflowConfig{}).
+		Select("action_workflow_id").
+		Where(app.ActionWorkflowConfig{AppConfigID: currentAppConfig.ID})
+
 	actionWorkflows := []*app.ActionWorkflow{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -98,7 +113,8 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string, 
 		Preload("Configs.Triggers").
 		Preload("Configs.Triggers.Component").
 		Preload("Configs.Steps").
-		Where("org_id = ? AND app_id = ?", orgID, appID)
+		Where("org_id = ? AND app_id = ?", orgID, appID).
+		Where("action_workflows.id IN (?)", currentActionWorkflowIDs)
 
 	if q != "" {
 		tx = tx.Where("name ILIKE ? OR action_workflows.id = ?", "%"+q+"%", q)

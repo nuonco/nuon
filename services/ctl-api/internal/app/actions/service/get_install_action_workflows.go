@@ -75,11 +75,24 @@ func (s *service) GetInstallActionWorkflows(ctx *gin.Context) {
 }
 
 func (s *service) getInstallActionWorkflows(ctx *gin.Context, installID string) ([]app.InstallActionWorkflow, error) {
+	var currentInstall app.Install
+	if err := s.db.WithContext(ctx).
+		Select("app_config_id").
+		First(&currentInstall, "id = ?", installID).Error; err != nil {
+		return nil, errors.Wrap(err, "unable to get install app config")
+	}
+
+	currentActionWorkflowIDs := s.db.WithContext(ctx).
+		Model(&app.ActionWorkflowConfig{}).
+		Select("action_workflow_id").
+		Where(app.ActionWorkflowConfig{AppConfigID: currentInstall.AppConfigID})
+
 	install := &app.Install{}
 	res := s.db.WithContext(ctx).
 		Preload("InstallActionWorkflows", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).
+				Where("install_action_workflows.action_workflow_id IN (?)", currentActionWorkflowIDs).
 				Order("install_action_workflows.created_at DESC")
 		}).
 		Preload("InstallActionWorkflows.ActionWorkflow").
