@@ -514,28 +514,29 @@ func (h *SlackSignalLifecycleHook) postOrThread(
 		}
 	}
 
-	// Skip child replies for workflow-kind events. The parent message
-	// itself already renders the workflow's headline + latest status, so
-	// a threaded reply with the same content ("Running runbook —
-	// Started" / "Succeeded") is redundant noise. Step events still post
-	// as children.
-	if rendered.event.Kind == slackrender.KindWorkflow {
-		return nil
+	// Post the child as a threaded reply — but only for step / approval
+	// events. Workflow-kind events are already represented by the parent
+	// card (a reply with the same "Provisioning install — Started /
+	// Succeeded" content would be redundant noise); they still fall
+	// through to refresh the parent rollup below so the workflow's final
+	// state lands on the card.
+	if rendered.event.Kind != slackrender.KindWorkflow {
+		childMsg := slackrender.BuildChildMessage(rendered.event)
+		if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+			Channel:  sub.ChannelID,
+			Text:     childMsg.Text,
+			Blocks:   childMsg.Blocks,
+			ThreadTS: parentTS,
+		}); err != nil {
+			return fmt.Errorf("post slack threaded reply: %w", err)
+		}
 	}
 
-	// Post the child as a threaded reply.
-	childMsg := slackrender.BuildChildMessage(rendered.event)
-	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
-		Channel:  sub.ChannelID,
-		Text:     childMsg.Text,
-		Blocks:   childMsg.Blocks,
-		ThreadTS: parentTS,
-	}); err != nil {
-		return fmt.Errorf("post slack threaded reply: %w", err)
-	}
-
-	// Best-effort: edit the parent with the freshest rollup. Failure here
-	// is logged but never returned — the child already landed.
+	// Best-effort: edit the parent with the freshest rollup so it reflects
+	// the latest step (while running) and the terminal workflow status (on
+	// the workflow's succeeded / failed event). Skipped when the parent was
+	// just created this call (found == false) — it already carries the
+	// current state. Failure here is logged but never returned.
 	if found {
 		rollup := slackrender.BuildParentRollup(rendered.event, startedAt)
 		if _, err := h.slackClient.UpdateMessage(ctx, install.BotAccessToken, slackclient.UpdateMessageRequest{
