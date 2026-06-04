@@ -10,12 +10,14 @@ interface IVCSConnectionItem {
   vcs_connection: TVCSConnection
   statusTheme?: TTheme
   isLoadingStatus?: boolean
+  href?: string
 }
 
 export const VCSConnectionItem = ({
   vcs_connection,
   statusTheme,
   isLoadingStatus,
+  href,
 }: IVCSConnectionItem) => {
   return (
     <span className="!flex gap-2 items-center w-full">
@@ -27,7 +29,7 @@ export const VCSConnectionItem = ({
       <Text theme="neutral">
         <Icon variant="GitHub" />
       </Text>
-      <VCSAccountLink vcs_connection={vcs_connection} />
+      <VCSAccountLink vcs_connection={vcs_connection} href={href} />
     </span>
   )
 }
