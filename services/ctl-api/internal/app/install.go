@@ -18,14 +18,25 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
+type InstallLifecycleStatus string
+
+const (
+	InstallLifecycleStatusProvisioning   InstallLifecycleStatus = "provisioning"
+	InstallLifecycleStatusProvisioned    InstallLifecycleStatus = "provisioned"
+	InstallLifecycleStatusDeprovisioning InstallLifecycleStatus = "deprovisioning"
+	InstallLifecycleStatusDeprovisioned  InstallLifecycleStatus = "deprovisioned"
+	InstallLifecycleStatusReprovisioning InstallLifecycleStatus = "reprovisioning"
+)
+
 type Install struct {
-	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
-	Metadata    pgtype.Hstore         `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	ID              string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID     string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy       Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt       time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt       time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt       soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	Metadata        pgtype.Hstore         `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	LifecycleStatus CompositeStatus       `json:"lifecycle_status,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_status,omitzero,omitempty"`
 	labels.Labeled
 
 	// used for RLS

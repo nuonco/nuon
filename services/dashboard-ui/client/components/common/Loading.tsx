@@ -4,22 +4,27 @@ export const Loading = ({
   className,
   strokeWidth = 'default',
   variant = 'default',
+  size,
 }: {
   className?: string
   strokeWidth?: 'default' | 'thick'
   variant?: 'default' | 'large'
+  size?: number | string
 }) => {
+  const sizeStyle = size ? { width: Number(size), height: Number(size) } : undefined
+
   return (
     <span className="animate-pulse">
       <svg
         className={cn(
           'animate-spin',
           {
-            'h-5 w-5': variant === 'default',
-            'h-10 w-10': variant === 'large',
+            'h-5 w-5': !size && variant === 'default',
+            'h-10 w-10': !size && variant === 'large',
           },
           className
         )}
+        style={sizeStyle}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
