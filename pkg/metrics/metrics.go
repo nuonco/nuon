@@ -25,6 +25,11 @@ type Writer interface {
 	Timing(name string, value time.Duration, tags []string)
 	Gauge(name string, value float64, tags []string)
 	Count(name string, value int64, tags []string)
+	// Distribution sends a single value into a Datadog distribution
+	// metric. Use this for non-duration sample distributions (e.g. row
+	// counts, queue depths) where you want percentile rollups aggregated
+	// across hosts. For latencies prefer Timing.
+	Distribution(name string, value float64, tags []string)
 
 	// datadog specific
 	Event(e *statsd.Event)

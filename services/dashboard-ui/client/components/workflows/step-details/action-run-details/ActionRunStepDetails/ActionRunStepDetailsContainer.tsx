@@ -16,6 +16,10 @@ export const ActionRunStepDetailsContainer = ({ step }: IActionRunDetails) => {
     queryKey: ['action-run', org?.id, step?.owner_id, step?.step_target_id],
     queryFn: () => getInstallActionRun({ orgId: org!.id, installId: step!.owner_id, runId: step!.step_target_id }),
     enabled: !!org?.id && !!step?.owner_id && !!step?.step_target_id,
+    refetchInterval: (query) => {
+      if (!query.state.data?.log_stream) return 1_500
+      return false
+    },
   })
 
   const createdBy = actionRun?.created_by

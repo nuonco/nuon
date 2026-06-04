@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -44,15 +43,16 @@ const (
 // long-pollers don't hold a slot, only callers actively querying CH.
 var tailProbeSem = make(chan struct{}, tailMaxConcurrentProbes)
 
-// Metric names. All three are tagged with `org_id` so per-org rollout
-// (per the feature flag) shows up clearly on dashboards.
+// Metric names. Emitted untagged — per-org slicing is rarely the right
+// debug path here (CH latency doesn't vary by org, and "which org spiked"
+// is easier to answer from ctl-api logs than from metric cardinality).
 const (
-	// metricTailProbe — how many CH probes is this feature generating
-	// per org? Cost / load guardrail. The 250ms→1s expo backoff puts
-	// the steady-state per-idle-subscriber rate at ~1 qps; if real
-	// numbers run materially hotter (e.g. rows trickle in just often
-	// enough to keep resetting the backoff) this is where it shows
-	// before CH does.
+	// metricTailProbe — how many CH probes is this feature generating?
+	// Cost / load guardrail. The 250ms→1s expo backoff puts the
+	// steady-state per-idle-subscriber rate at ~1 qps; if real numbers
+	// run materially hotter (e.g. rows trickle in just often enough to
+	// keep resetting the backoff) this is where it shows before CH
+	// does.
 	metricTailProbe = "log_tail.probe"
 	// metricTailEmptyProbeMs — when CH had nothing to return, how
 	// long did the round-trip cost? Health of the idle path. Should
@@ -60,13 +60,52 @@ const (
 	// work on empty probes (sort-key pruning regressed, async_insert
 	// backed up). Early-warning metric.
 	metricTailEmptyProbeMs = "log_tail.empty_probe_ms"
-	// metricTailFirstByteMs — the actual UX metric. From the moment
-	// the BFF issued the request, how long until the user saw a line
-	// of output? On a live job this should sit near tailMinBackoff
-	// (250ms) + the CH read. If p50 isn't materially better than the
-	// legacy 1s-poll path, the feature isn't doing its job and we
-	// should reconsider before broader rollout.
-	metricTailFirstByteMs = "log_tail.first_byte_ms"
+	// metricTailHotProbeMs — SLO metric. Time of the probe when iteration
+	// 1 already had rows, i.e. content was in CH when the BFF asked. Pure
+	// CH+JSON cost, no long-poll backoff mixed in. If this climbs while
+	// metricTailEmptyProbeMs is flat, the tail query shape regressed
+	// (sort-key pruning broke, cursor stopped being strictly-greater).
+	metricTailHotProbeMs = "log_tail.hot_probe_ms"
+	// metricTailOutcome — one count per session exit, tagged with
+	// `result:<hot_hit|idle_then_hit|timeout_empty|client_cancel|error>`.
+	// Replaces the bimodal log_tail.first_byte_ms histogram: hot/idle
+	// counts now come from this and hot-path latency comes from
+	// metricTailHotProbeMs. Critically also surfaces three outcomes we
+	// had no signal for before: how often we hit the 30s long-poll cap,
+	// how often the client (BFF) gave up early, and CH probe error rate.
+	metricTailOutcome = "log_tail.outcome"
+	// metricTailSessionMs — wall time of a tail request from entry to
+	// exit, tagged with `result:`. Captures the full user-facing wait
+	// including long-poll backoffs, which neither hot_probe_ms nor
+	// empty_probe_ms see. Read together with metricTailOutcome to compare
+	// "time-to-first-byte on a hit" against "30s long-poll caps" without
+	// mixing them on the same histogram.
+	metricTailSessionMs = "log_tail.session_ms"
+	// metricTailProbesPerSession — number of CH probes a single tail
+	// session issued before it exited, tagged with `result:`. A hit on
+	// probe 1 = 1; a 30s timeout typically ~5–6 (250ms→1s expo backoff).
+	// Distribution rather than count so the dashboard can show p50/p95
+	// per outcome and we can catch tight stream backoffs without
+	// reading the loop code.
+	metricTailProbesPerSession = "log_tail.probes_per_session"
+	// metricTailRowsPerResponse — rows returned to the client on a
+	// response-producing exit (hot_hit, idle_then_hit, timeout_empty=0).
+	// Emitted only when we actually return a body, so error/cancel
+	// paths don't show up as misleading "0 rows" responses on the
+	// distribution. Drives the "are we returning chunked-tiny vs
+	// page-saturating batches" view.
+	metricTailRowsPerResponse = "log_tail.rows_per_response"
+)
+
+// Outcome label values for metricTailOutcome. Kept as constants so all
+// emission sites stay aligned and a typo in one place doesn't silently
+// create a phantom outcome bucket on dashboards.
+const (
+	tailOutcomeHotHit       = "hot_hit"
+	tailOutcomeIdleThenHit  = "idle_then_hit"
+	tailOutcomeTimeoutEmpty = "timeout_empty"
+	tailOutcomeClientCancel = "client_cancel"
+	tailOutcomeError        = "error"
 )
 
 // LogStreamTailLogsResponse is the wire shape returned by the tail endpoint.
@@ -144,23 +183,31 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 		}
 	}
 
-	tags := metrics.ToTags(map[string]string{"org_id": orgID})
-
 	startedAt := time.Now()
 	deadline := startedAt.Add(wait)
 
 	backoff := tailMinBackoff
+	firstIter := true
+	probes := 0
 	for {
 		probeStart := time.Now()
 		logs, next, hasMore, qerr := s.tailProbe(ctx.Request.Context(), orgID, logStreamID, cursor)
-		s.mw.Count(metricTailProbe, 1, tags)
+		probes++
+		s.mw.Count(metricTailProbe, 1, nil)
 		if qerr != nil {
+			s.emitTailExit(tailOutcomeError, startedAt, probes)
 			ctx.Error(errors.Wrap(qerr, "unable to probe log tail"))
 			return
 		}
 
 		if len(logs) > 0 {
-			s.mw.Timing(metricTailFirstByteMs, time.Since(startedAt), tags)
+			outcome := tailOutcomeIdleThenHit
+			if firstIter {
+				s.mw.Timing(metricTailHotProbeMs, time.Since(probeStart), nil)
+				outcome = tailOutcomeHotHit
+			}
+			s.emitTailExit(outcome, startedAt, probes)
+			s.mw.Distribution(metricTailRowsPerResponse, float64(len(logs)), nil)
 			ctx.JSON(http.StatusOK, LogStreamTailLogsResponse{
 				Logs:    logs,
 				Next:    next,
@@ -169,18 +216,22 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 			return
 		}
 
-		s.mw.Timing(metricTailEmptyProbeMs, time.Since(probeStart), tags)
+		s.mw.Timing(metricTailEmptyProbeMs, time.Since(probeStart), nil)
+		firstIter = false
 
 		// Drop out at the wait deadline (or when the client closes the
 		// connection). Returning an empty payload is the long-poll
 		// equivalent of "still nothing, ask again".
 		select {
 		case <-ctx.Request.Context().Done():
+			s.emitTailExit(tailOutcomeClientCancel, startedAt, probes)
 			return
 		default:
 		}
 		remaining := time.Until(deadline)
 		if remaining <= 0 {
+			s.emitTailExit(tailOutcomeTimeoutEmpty, startedAt, probes)
+			s.mw.Distribution(metricTailRowsPerResponse, 0, nil)
 			ctx.JSON(http.StatusOK, LogStreamTailLogsResponse{
 				Logs:    []app.OtelLogRecord{},
 				Next:    encodeTailCursor(cursor),
@@ -195,6 +246,7 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 		}
 		select {
 		case <-ctx.Request.Context().Done():
+			s.emitTailExit(tailOutcomeClientCancel, startedAt, probes)
 			return
 		case <-time.After(sleep):
 		}
@@ -206,6 +258,18 @@ func (s *service) LogStreamTailLogs(ctx *gin.Context) {
 			backoff = tailMaxBackoff
 		}
 	}
+}
+
+// emitTailExit fires the three per-session exit metrics (outcome,
+// session_ms, probes_per_session) with a consistent `result:` label.
+// rows_per_response is emitted separately at the (only two) response-
+// producing call sites so error/cancel paths don't pollute the
+// distribution with phantom zeros.
+func (s *service) emitTailExit(result string, startedAt time.Time, probes int) {
+	tags := []string{"result:" + result}
+	s.mw.Count(metricTailOutcome, 1, tags)
+	s.mw.Timing(metricTailSessionMs, time.Since(startedAt), tags)
+	s.mw.Distribution(metricTailProbesPerSession, float64(probes), tags)
 }
 
 // tailCursor encodes the (timestamp, id) tiebreak used to paginate

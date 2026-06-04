@@ -1,3 +1,4 @@
+import { EmptyState } from '@/components/common/EmptyState'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
@@ -13,7 +14,16 @@ import type { IActionRunLogs } from './types'
 
 export const ActionRunLogs = ({ actionRun, isAdhoc }: IActionRunLogs) => {
   if (!actionRun?.log_stream) {
-    return null
+    return (
+      <div className="flex flex-col gap-2">
+        {isAdhoc && <Text weight="strong">Action logs</Text>}
+        <EmptyState
+          variant="history"
+          emptyTitle="Waiting for logs"
+          emptyMessage="Logs will appear here as soon as the runner starts streaming them."
+        />
+      </div>
+    )
   }
 
   return (
