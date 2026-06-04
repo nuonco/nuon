@@ -223,7 +223,7 @@ func (a AppPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./disallow-ingress-nginx-custom-snippets.yaml").
 		Example("./block-mutable-tags.rego").
 		Field("components").Short("target components").
-		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type. If empty, doesn't apply to any component. Ignored when type is 'sandbox'.").
+		Long("List of component names this policy applies to. Use [\"*\"] to apply to all components of the specified type, or list specific component names. Required for component-scoped policy types - an empty list is rejected. Ignored when type is 'sandbox'.").
 		Example("*").
 		Example("rds_cluster")
 }
