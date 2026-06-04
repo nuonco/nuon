@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import type { IPanel } from '@/components/surfaces/Panel'
 import { useOrg } from '@/hooks/use-org'
@@ -38,6 +39,16 @@ export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   if (step.step_target_type === 'install_stack_versions') return <StackStepDetails />
   if (step.step_target_type === 'runners') return <RunnerStepDetails />
   if (step.step_target_type === 'install_workflow_steps') return <SyncSecretsStepDetails />
+  // step_target_type only lands once the runner picks up the step;
+  // hold the panel body with a placeholder until then. The container
+  // fast-polls in this window so the gap is ~1-2s.
+  return (
+    <EmptyState
+      variant="history"
+      emptyTitle="Waiting for step to start"
+      emptyMessage="Details will appear here as soon as the runner picks up this step."
+    />
+  )
 }
 
 export interface IStepDetailPanelContainer extends IPanel {
@@ -69,6 +80,9 @@ export const StepDetailPanelContainer = ({
     refetchInterval: (query) => {
       if (!shouldPoll) return false
       if (query.state.data?.finished) return 30_000
+      // Fast-poll while waiting for runner pickup so the holding state
+      // in `getStepPanelDetails` flips to the real detail quickly.
+      if (!query.state.data?.step_target_type) return 1_500
       return pollInterval
     },
     initialData: initStep,

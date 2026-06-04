@@ -150,6 +150,27 @@ func (w *writer) Timing(name string, value time.Duration, tags []string) {
 	w.handleErr(client.Timing(name, value, allTags, defaultRate))
 }
 
+func (w *writer) Distribution(name string, value float64, tags []string) {
+	allTags := append(w.Tags, tags...)
+	if w.Disable {
+		l := w.Log.With(
+			zap.String("metric_type", "distribution"),
+			zap.String("is_metric", "true"))
+		allAttrs := w.tagsToZapFields(allTags)
+		allAttrs = append(allAttrs, zap.Float64("value", value))
+		l.Debug(fmt.Sprintf("metric.distribution.%s", name), allAttrs...)
+		return
+	}
+
+	client, err := w.getClient()
+	if err != nil {
+		w.handleErr(err)
+		return
+	}
+
+	w.handleErr(client.Distribution(name, value, allTags, defaultRate))
+}
+
 func (w *writer) Event(ev *statsd.Event) {
 	if w.Disable {
 		allTags := w.tagsToZapFields(ev.Tags)

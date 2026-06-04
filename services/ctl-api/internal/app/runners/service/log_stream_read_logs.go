@@ -21,6 +21,54 @@ const (
 	nestedAttributeRegex string = `^(?:[a-zA-Z0-9_]+(?:\.[a-zA-Z0-9_]+)?)$` // https://regex101.com/r/179bxx/1
 )
 
+// metricReadFreshnessLagMs — temporary rollout metric to compare the
+// flag-off legacy poll path against `log_tail.hot_probe_ms` on the
+// flag-on path. For every response with rows, we emit `time.Since(newest
+// row timestamp)` — i.e. how stale the freshest row we just returned to
+// the user is. On the `mode:poll` slice (BFF 1s-tick live tail) p50
+// can't drop below ~500ms by construction because of the polling floor;
+// `log_tail.hot_probe_ms` p50 sits in the 300–500ms range with no such
+// floor. That gap is the rollout argument expressed in milliseconds.
+// Delete once log-tail-long-poll has rolled out broadly enough that we
+// no longer need the comparison.
+const metricReadFreshnessLagMs = "log_read.freshness_lag_ms"
+
+// readMode classifies a legacy read so the comparison against the tail
+// endpoint isn't muddied by search/download/backfill traffic. Only
+// `mode:poll` is apples-to-apples with the tail endpoint's role.
+const (
+	readModePoll     = "poll"     // empty cursor, no filters, ASC — the BFF live-tail loop
+	readModeBackfill = "backfill" // non-empty cursor, no filters — paging through history
+	readModeFiltered = "filtered" // any filter set, or order=desc — search / ad-hoc
+)
+
+func classifyReadMode(cursor int64, order string, f logFilters) string {
+	if order != "asc" || hasAnyFilter(f) {
+		return readModeFiltered
+	}
+	if cursor > 0 {
+		return readModeBackfill
+	}
+	return readModePoll
+}
+
+func hasAnyFilter(f logFilters) bool {
+	return len(f.serviceNames) > 0 ||
+		len(f.scopeNames) > 0 ||
+		len(f.severityTexts) > 0 ||
+		f.tool != "" ||
+		f.helmReleaseName != "" ||
+		f.helmOperation != "" ||
+		f.tfWorkspaceID != "" ||
+		f.tfOperation != "" ||
+		f.k8sKind != "" ||
+		f.k8sNamespace != "" ||
+		f.k8sName != "" ||
+		f.traceID != "" ||
+		f.spanID != "" ||
+		f.bodyContains != ""
+}
+
 // logFilters holds optional filter values parsed from query parameters.
 //
 // Top-level columns are filtered with normal SQL clauses. Map columns
@@ -201,6 +249,18 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 	if readErr != nil {
 		ctx.Error(errors.Wrap(readErr, "unable to read runner logs"))
 		return
+	}
+
+	// Emit freshness lag of the newest returned row. ASC orders newest
+	// last, DESC orders newest first; either way it's the timestamp the
+	// user perceives as "most recent visible log" right now.
+	if len(logs) > 0 {
+		newest := logs[len(logs)-1]
+		if order == "desc" {
+			newest = logs[0]
+		}
+		s.mw.Timing(metricReadFreshnessLagMs, time.Since(newest.Timestamp),
+			[]string{"mode:" + classifyReadMode(cursor, order, filters)})
 	}
 
 	// Set headers
