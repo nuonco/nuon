@@ -13,6 +13,8 @@ package flow
 //  6. Persist groups and steps to DB.
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/pkg/errors"
@@ -191,10 +193,33 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 			groupIDByIdx[g.GroupIdx] = g.ID
 		}
 
+		// Derive group timeouts from their steps.
+		// Sequential groups: sum of step timeouts.
+		// Parallel groups: max of step timeouts.
+		groupParallel := make(map[int]bool, len(groups))
+		for _, g := range groups {
+			groupParallel[g.GroupIdx] = g.Parallel
+		}
+		groupTimeouts := make(map[int]time.Duration, len(groups))
+		for _, step := range steps {
+			t := step.Timeout
+			if t <= 0 {
+				continue
+			}
+			if groupParallel[step.GroupIdx] {
+				if t > groupTimeouts[step.GroupIdx] {
+					groupTimeouts[step.GroupIdx] = t
+				}
+			} else {
+				groupTimeouts[step.GroupIdx] += t
+			}
+		}
+
 		groupsReq := activities.CreateFlowStepGroupsRequest{
 			Groups: make([]activities.CreateFlowStepGroup, 0, len(groups)),
 		}
 		for _, g := range groups {
+			g.Timeout = groupTimeouts[g.GroupIdx]
 			groupsReq.Groups = append(groupsReq.Groups, activities.CreateFlowStepGroup{
 				ID:         g.ID,
 				WorkflowID: flw.ID,
@@ -202,6 +227,7 @@ func persistGenerateResult(ctx workflow.Context, flw *app.Workflow, result *app.
 				Parallel:   g.Parallel,
 				Name:       g.Name,
 				Status:     g.Status,
+				Timeout:    g.Timeout,
 			})
 		}
 		if _, err := activities.AwaitPkgWorkflowsFlowCreateFlowStepGroups(ctx, groupsReq); err != nil {
