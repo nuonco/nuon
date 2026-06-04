@@ -47,17 +47,10 @@ interface IWorkflowMetadata {
 
 export const WorkflowMetadata = ({ workflow }: IWorkflowMetadata) => {
   return (
-    <div className="flex flex-col gap-2 p-4 border-t">
-      <Expand
-        className="border rounded-md"
-        id="workflow-status-history"
-        heading={
-          <Text family="mono" variant="subtext">
-            View status history
-          </Text>
-        }
-      >
-        <div className="border-t flex flex-col p-4 divide-y">
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <Text weight="strong">Status history</Text>
+        <div className="border rounded-lg flex flex-col px-4 divide-y">
           {workflow?.status?.history?.map((status, idx) => (
             <WorkflowHistoryStatus
               key={`${status.created_at_ts}-${idx}`}
@@ -69,21 +62,14 @@ export const WorkflowMetadata = ({ workflow }: IWorkflowMetadata) => {
             <WorkflowHistoryStatus status={workflow.status} id="workflow-history-current" />
           ) : null}
         </div>
-      </Expand>
+      </div>
 
-      <Expand
-        className="border rounded-md"
-        id="workflow-json"
-        heading={
-          <Text family="mono" variant="subtext">
-            View workflow JSON
-          </Text>
-        }
-      >
-        <div className="border-t p-4">
+      <div className="flex flex-col gap-2">
+        <Text weight="strong">Workflow JSON</Text>
+        <div className="border rounded-lg p-4">
           <JSONViewer data={workflow} expanded={1} />
         </div>
-      </Expand>
+      </div>
     </div>
   )
 }
