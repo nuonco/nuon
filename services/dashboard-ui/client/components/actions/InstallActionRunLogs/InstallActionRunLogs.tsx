@@ -241,9 +241,18 @@ const StepAwareLogViewer = ({
         </div>
 
         {isRaw ? (
-          <pre className="pt-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">
+          <pre
+            className={cn(
+              'mt-3 overflow-x-auto rounded-md border p-4',
+              'bg-dark-grey-900 text-cool-grey-300',
+              'font-mono text-xs leading-relaxed whitespace-pre-wrap break-all'
+            )}
+          >
             {displayLogs?.map((logLine) => (
-              <div key={logLine?.id} className={getSeverityTextClasses(logLine.severity_number)}>
+              <div
+                key={logLine?.id}
+                className={getSeverityTextClasses(logLine.severity_number)}
+              >
                 {logLine.body}
               </div>
             ))}

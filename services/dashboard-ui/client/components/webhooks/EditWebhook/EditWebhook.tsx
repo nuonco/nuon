@@ -184,11 +184,10 @@ export const EditWebhookModal = ({
 
         <div className="flex flex-col gap-2">
           <Label>Events</Label>
-          <InterestsPicker
-            variant="webhook"
-            value={interests}
-            onChange={setInterests}
-          />
+          <Text variant="subtext" theme="neutral">
+            Pick which events fire deliveries to this webhook.
+          </Text>
+          <InterestsPicker value={interests} onChange={setInterests} />
         </div>
       </div>
     </Modal>
