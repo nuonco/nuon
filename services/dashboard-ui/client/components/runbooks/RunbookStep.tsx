@@ -5,7 +5,6 @@ import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { KeyValueList } from '@/components/common/KeyValueList'
-import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import type { TRunbookStep } from '@/lib/ctl-api/apps/runbooks/get-runbooks'
@@ -24,7 +23,14 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
       heading={
         <span className="flex items-center gap-2">
           <Icon
-            variant={step.type === 'deploy' ? 'RocketIcon' : 'TerminalIcon'}
+            variant={
+              step.type === 'deploy'
+                ? 'RocketIcon'
+                : step.type === 'sandbox_reprovision' ||
+                    step.type === 'sandbox_deprovision'
+                  ? 'CubeIcon'
+                  : 'TerminalIcon'
+            }
             size={16}
           />
           <Text weight="strong">
@@ -39,39 +45,42 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
       isOpen
     >
       <div className="flex flex-col gap-4 p-4 border-t">
-        <div className="flex flex-wrap gap-4">
+        <div className="flex flex-col divide-y">
           {step.component_name ? (
-            <LabeledValue label="Component">
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Component</Text>
               <Text variant="subtext">{step.component_name}</Text>
-            </LabeledValue>
+            </div>
           ) : null}
           {step.type === 'deploy' ? (
-            <LabeledValue label="Deploy dependencies">
-              <Badge
-                variant="code"
-                size="sm"
-                theme={step.deploy_dependencies ? 'info' : 'neutral'}
-              >
-                {step.deploy_dependencies ? 'Yes' : 'No'}
-              </Badge>
-            </LabeledValue>
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Deploy dependencies</Text>
+              <Text variant="subtext">{step.deploy_dependencies ? 'Yes' : 'No'}</Text>
+            </div>
+          ) : null}
+          {step.type === 'sandbox_reprovision' ? (
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Skip component deploys</Text>
+              <Text variant="subtext">{step.skip_component_deploys ? 'Yes' : 'No'}</Text>
+            </div>
           ) : null}
           {step.action_workflow_id ? (
-            <LabeledValue label="Action ID">
-              <span className="flex items-center gap-2">
-                <ID>{step.action_workflow_id}</ID>
-              </span>
-            </LabeledValue>
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Action ID</Text>
+              <ID>{step.action_workflow_id}</ID>
+            </div>
           ) : null}
           {step.role ? (
-            <LabeledValue label="Role">
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Role</Text>
               <Text variant="subtext">{step.role}</Text>
-            </LabeledValue>
+            </div>
           ) : null}
           {step.timeout ? (
-            <LabeledValue label="Timeout">
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Timeout</Text>
               <Duration nanoseconds={step.timeout} variant="subtext" />
-            </LabeledValue>
+            </div>
           ) : null}
         </div>
 
