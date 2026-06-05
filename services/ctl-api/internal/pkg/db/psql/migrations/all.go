@@ -108,5 +108,13 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "108-install-workflows-name-hook-managed",
 			Fn:   m.Migration108InstallWorkflowsNameHookManaged,
 		},
+		{
+			Name: "109-backfill-runbook-step-deploy-dependents",
+			Fn:   m.Migration109BackfillRunbookStepDeployDependents,
+		},
+		{
+			Name: "110-canonicalize-runbook-step-deploy-type",
+			Fn:   m.Migration110CanonicalizeRunbookStepDeployType,
+		},
 	}
 }
