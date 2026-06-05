@@ -1,8 +1,10 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef } from 'react'
 import { Badge } from '@/components/common/Badge'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { useToast } from '@/hooks/use-toast'
 import { getStatusTheme } from '@/utils/status-utils'
+import { toSentenceCase } from '@/utils/string-utils'
 
 export function useStatusToast({
   status,
@@ -30,15 +32,12 @@ export function useStatusToast({
 
     firedRef.current = true
     const outcome = theme === 'success' ? 'succeeded' : 'failed'
+    const heading = `${toSentenceCase(resourceType)} ${outcome}`
 
-    const heading: ReactNode = label ? (
-      <span className="inline-flex items-center gap-1.5">
-        <Badge variant="code" size="md">{label}</Badge> {resourceType} {outcome}
-      </span>
-    ) : (
-      `${resourceType} ${outcome}`
+    addToast(
+      <Toast heading={heading} theme={theme}>
+        {label ? <Text><Badge variant="code" size="md">{label}</Badge></Text> : null}
+      </Toast>
     )
-
-    addToast(<Toast heading={heading} theme={theme} />)
   }, [status])
 }

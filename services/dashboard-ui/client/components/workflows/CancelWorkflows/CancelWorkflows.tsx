@@ -55,7 +55,7 @@ export const CancelWorkflowsModal = ({
       <div className="flex flex-col gap-2">
         {error && (
           <Banner theme="error">
-            {error || 'An error occurred. Please refresh the page and try again.'}
+            {error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         )}
         {hasPartialErrors && (
@@ -70,12 +70,9 @@ export const CancelWorkflowsModal = ({
             </ul>
           </Banner>
         )}
-        <Text variant="base" weight="strong">
-          Are you sure you want to cancel {count} workflow{count === 1 ? '' : 's'}?
-        </Text>
         <Text variant="base">
-          Once a workflow is canceled you cannot restart it. You will have to
-          trigger new workflow runs.
+          Once canceled, {count === 1 ? 'this workflow' : `these ${count} workflows`} cannot
+          be restarted. You will have to trigger new workflow runs.
         </Text>
       </div>
     </Modal>

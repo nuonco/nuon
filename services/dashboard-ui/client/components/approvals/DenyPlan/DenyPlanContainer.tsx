@@ -71,9 +71,8 @@ export const DenyPlanModalContainer = ({
     },
     onError: (err: any) => {
       addToast(
-        <Toast heading="Failed to deny changes" theme="error">
-          <Text>There was an error while trying deny these changes.</Text>
-          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        <Toast heading="Denial failed" theme="error">
+          <Text>{err?.error || 'Unable to deny these changes.'}</Text>
         </Toast>
       )
     },

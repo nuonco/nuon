@@ -39,15 +39,15 @@ export const AdminOrgFeaturesPanelContainer = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['org'] })
       addToast(
-        <Toast heading="Features Updated" theme="success">
-          <Text>Organization features updated successfully</Text>
+        <Toast heading="Features updated" theme="success">
+          <Text>Organization features updated.</Text>
         </Toast>
       )
     },
     onError: () => {
       addToast(
-        <Toast heading="Update Failed" theme="error">
-          <Text>Failed to update organization features. Please try again.</Text>
+        <Toast heading="Update failed" theme="error">
+          <Text>Unable to update organization features. Try again.</Text>
         </Toast>
       )
     },
