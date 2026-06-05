@@ -65,6 +65,7 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 			Idx:                int64(idx),
 			ComponentName:      step.ComponentName,
 			DeployDependencies: step.DeployDependencies,
+			SkipComponentDeploys: step.SkipComponentDeploys,
 			ActionName:         step.ActionName,
 			Command:            step.Command,
 			InlineContents:     step.InlineContents,

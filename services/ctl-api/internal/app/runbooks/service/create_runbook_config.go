@@ -25,6 +25,7 @@ type CreateRunbookStepConfigRequest struct {
 	Idx                int64             `json:"idx"`
 	ComponentName      string            `json:"component_name,omitempty"`
 	DeployDependencies bool              `json:"deploy_dependencies,omitempty"`
+	SkipComponentDeploys bool              `json:"skip_component_deploys,omitempty"`
 	ActionName         string            `json:"action_name,omitempty"`
 	Command            string            `json:"command,omitempty"`
 	InlineContents     string            `json:"inline_contents,omitempty"`
@@ -87,6 +88,18 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 
 	steps := make([]app.RunbookStepConfig, 0, len(req.Steps))
 	for idx, stepReq := range req.Steps {
+		stepType := app.RunbookStepType(stepReq.Type)
+		switch stepType {
+		case app.RunbookStepTypeDeploy,
+			app.RunbookStepTypeAction,
+			app.RunbookStepTypeSandboxProvision,
+			app.RunbookStepTypeSandboxReprovision,
+			app.RunbookStepTypeSandboxDeprovision:
+		default:
+			ctx.Error(fmt.Errorf("invalid step type %q for step %s", stepReq.Type, stepReq.Name))
+			return
+		}
+
 		envVars := pgtype.Hstore{}
 		for k, v := range stepReq.EnvVars {
 			envVars[k] = &v
@@ -95,9 +108,10 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		stepCfg := app.RunbookStepConfig{
 			Idx:                idx,
 			Name:               stepReq.Name,
-			Type:               app.RunbookStepType(stepReq.Type),
+			Type:               stepType,
 			ComponentName:      stepReq.ComponentName,
 			DeployDependencies: stepReq.DeployDependencies,
+			SkipComponentDeploys: stepReq.SkipComponentDeploys,
 			Command:            stepReq.Command,
 			InlineContents:     stepReq.InlineContents,
 			EnvVars:            envVars,

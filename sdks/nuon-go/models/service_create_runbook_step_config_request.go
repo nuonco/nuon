@@ -47,6 +47,9 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// role
 	Role string `json:"role,omitempty"`
 
+	// skip component deploys
+	SkipComponentDeploys bool `json:"skip_component_deploys,omitempty"`
+
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
 
