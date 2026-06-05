@@ -4650,6 +4650,8 @@ export interface components {
       name?: string;
       role?: string;
       runbook_config_id?: string;
+      /** @description sandbox lifecycle fields */
+      skip_component_deploys?: boolean;
       timeout?: number;
       type?: string;
       updated_at?: string;
@@ -6740,6 +6742,7 @@ export interface components {
       inline_contents?: string;
       name: string;
       role?: string;
+      skip_component_deploys?: boolean;
       timeout?: number;
       type: string;
     };
