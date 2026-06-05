@@ -31,6 +31,8 @@ func TestRunbookConfig_Parse(t *testing.T) {
 					Timeout:        "2m",
 					EnvVarMap:      map[string]string{"API_URL": "https://example.com"},
 				},
+				{Name: "sbx-reprovision", Type: RunbookStepTypeSandboxReprovision, Role: "custom-role"},
+				{Name: "sbx-deprovision", Type: RunbookStepTypeSandboxDeprovision},
 			},
 		}
 
@@ -84,4 +86,6 @@ func TestRunbookConfig_Parse(t *testing.T) {
 func TestRunbookStepType_Constants(t *testing.T) {
 	require.Equal(t, RunbookStepType("deploy"), RunbookStepTypeDeploy)
 	require.Equal(t, RunbookStepType("action"), RunbookStepTypeAction)
+	require.Equal(t, RunbookStepType("sandbox_reprovision"), RunbookStepTypeSandboxReprovision)
+	require.Equal(t, RunbookStepType("sandbox_deprovision"), RunbookStepTypeSandboxDeprovision)
 }
