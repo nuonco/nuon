@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // DeleteRunbookReader is a Reader for the DeleteRunbook structure.
@@ -29,6 +31,36 @@ func (o *DeleteRunbookReader) ReadResponse(response runtime.ClientResponse, cons
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewDeleteRunbookBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 401:
+		result := NewDeleteRunbookUnauthorized()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 403:
+		result := NewDeleteRunbookForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 404:
+		result := NewDeleteRunbookNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 500:
+		result := NewDeleteRunbookInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}] DeleteRunbook", response, response.Code())
 	}
@@ -96,6 +128,356 @@ func (o *DeleteRunbookOK) readResponse(response runtime.ClientResponse, consumer
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteRunbookBadRequest creates a DeleteRunbookBadRequest with default headers values
+func NewDeleteRunbookBadRequest() *DeleteRunbookBadRequest {
+	return &DeleteRunbookBadRequest{}
+}
+
+/*
+DeleteRunbookBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type DeleteRunbookBadRequest struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete runbook bad request response has a 2xx status code
+func (o *DeleteRunbookBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete runbook bad request response has a 3xx status code
+func (o *DeleteRunbookBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete runbook bad request response has a 4xx status code
+func (o *DeleteRunbookBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete runbook bad request response has a 5xx status code
+func (o *DeleteRunbookBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete runbook bad request response a status code equal to that given
+func (o *DeleteRunbookBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the delete runbook bad request response
+func (o *DeleteRunbookBadRequest) Code() int {
+	return 400
+}
+
+func (o *DeleteRunbookBadRequest) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookBadRequest %s", 400, payload)
+}
+
+func (o *DeleteRunbookBadRequest) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookBadRequest %s", 400, payload)
+}
+
+func (o *DeleteRunbookBadRequest) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteRunbookBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteRunbookUnauthorized creates a DeleteRunbookUnauthorized with default headers values
+func NewDeleteRunbookUnauthorized() *DeleteRunbookUnauthorized {
+	return &DeleteRunbookUnauthorized{}
+}
+
+/*
+DeleteRunbookUnauthorized describes a response with status code 401, with default header values.
+
+Unauthorized
+*/
+type DeleteRunbookUnauthorized struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete runbook unauthorized response has a 2xx status code
+func (o *DeleteRunbookUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete runbook unauthorized response has a 3xx status code
+func (o *DeleteRunbookUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete runbook unauthorized response has a 4xx status code
+func (o *DeleteRunbookUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete runbook unauthorized response has a 5xx status code
+func (o *DeleteRunbookUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete runbook unauthorized response a status code equal to that given
+func (o *DeleteRunbookUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
+// Code gets the status code for the delete runbook unauthorized response
+func (o *DeleteRunbookUnauthorized) Code() int {
+	return 401
+}
+
+func (o *DeleteRunbookUnauthorized) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookUnauthorized %s", 401, payload)
+}
+
+func (o *DeleteRunbookUnauthorized) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookUnauthorized %s", 401, payload)
+}
+
+func (o *DeleteRunbookUnauthorized) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteRunbookUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteRunbookForbidden creates a DeleteRunbookForbidden with default headers values
+func NewDeleteRunbookForbidden() *DeleteRunbookForbidden {
+	return &DeleteRunbookForbidden{}
+}
+
+/*
+DeleteRunbookForbidden describes a response with status code 403, with default header values.
+
+Forbidden
+*/
+type DeleteRunbookForbidden struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete runbook forbidden response has a 2xx status code
+func (o *DeleteRunbookForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete runbook forbidden response has a 3xx status code
+func (o *DeleteRunbookForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete runbook forbidden response has a 4xx status code
+func (o *DeleteRunbookForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete runbook forbidden response has a 5xx status code
+func (o *DeleteRunbookForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete runbook forbidden response a status code equal to that given
+func (o *DeleteRunbookForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
+// Code gets the status code for the delete runbook forbidden response
+func (o *DeleteRunbookForbidden) Code() int {
+	return 403
+}
+
+func (o *DeleteRunbookForbidden) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookForbidden %s", 403, payload)
+}
+
+func (o *DeleteRunbookForbidden) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookForbidden %s", 403, payload)
+}
+
+func (o *DeleteRunbookForbidden) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteRunbookForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteRunbookNotFound creates a DeleteRunbookNotFound with default headers values
+func NewDeleteRunbookNotFound() *DeleteRunbookNotFound {
+	return &DeleteRunbookNotFound{}
+}
+
+/*
+DeleteRunbookNotFound describes a response with status code 404, with default header values.
+
+Not Found
+*/
+type DeleteRunbookNotFound struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete runbook not found response has a 2xx status code
+func (o *DeleteRunbookNotFound) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete runbook not found response has a 3xx status code
+func (o *DeleteRunbookNotFound) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete runbook not found response has a 4xx status code
+func (o *DeleteRunbookNotFound) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this delete runbook not found response has a 5xx status code
+func (o *DeleteRunbookNotFound) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this delete runbook not found response a status code equal to that given
+func (o *DeleteRunbookNotFound) IsCode(code int) bool {
+	return code == 404
+}
+
+// Code gets the status code for the delete runbook not found response
+func (o *DeleteRunbookNotFound) Code() int {
+	return 404
+}
+
+func (o *DeleteRunbookNotFound) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookNotFound %s", 404, payload)
+}
+
+func (o *DeleteRunbookNotFound) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookNotFound %s", 404, payload)
+}
+
+func (o *DeleteRunbookNotFound) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteRunbookNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewDeleteRunbookInternalServerError creates a DeleteRunbookInternalServerError with default headers values
+func NewDeleteRunbookInternalServerError() *DeleteRunbookInternalServerError {
+	return &DeleteRunbookInternalServerError{}
+}
+
+/*
+DeleteRunbookInternalServerError describes a response with status code 500, with default header values.
+
+Internal Server Error
+*/
+type DeleteRunbookInternalServerError struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this delete runbook internal server error response has a 2xx status code
+func (o *DeleteRunbookInternalServerError) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this delete runbook internal server error response has a 3xx status code
+func (o *DeleteRunbookInternalServerError) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this delete runbook internal server error response has a 4xx status code
+func (o *DeleteRunbookInternalServerError) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this delete runbook internal server error response has a 5xx status code
+func (o *DeleteRunbookInternalServerError) IsServerError() bool {
+	return true
+}
+
+// IsCode returns true when this delete runbook internal server error response a status code equal to that given
+func (o *DeleteRunbookInternalServerError) IsCode(code int) bool {
+	return code == 500
+}
+
+// Code gets the status code for the delete runbook internal server error response
+func (o *DeleteRunbookInternalServerError) Code() int {
+	return 500
+}
+
+func (o *DeleteRunbookInternalServerError) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookInternalServerError %s", 500, payload)
+}
+
+func (o *DeleteRunbookInternalServerError) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[DELETE /v1/apps/{app_id}/runbooks/{runbook_id}][%d] deleteRunbookInternalServerError %s", 500, payload)
+}
+
+func (o *DeleteRunbookInternalServerError) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *DeleteRunbookInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 

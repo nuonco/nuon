@@ -22,6 +22,11 @@ import (
 // @Param			install_id	path	string	true	"install ID"
 // @Param			runbook_id	path	string	true	"runbook ID or name"
 // @Success		201			{object}	app.InstallRunbookRun
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbooks/{runbook_id}/runs [post]
 func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
