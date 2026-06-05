@@ -41,12 +41,9 @@ export const SkipStepModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to skip this step?
-        </Text>
         <Text variant="base">
           Skipping will bypass this step and continue the workflow with the
           remaining steps. Any actions or changes from this step will not be

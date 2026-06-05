@@ -21,8 +21,8 @@ export const EnableAutoApproveModal = ({
 }: IEnableAutoApproveModal) => {
   const buttonText = isApproveAll ? 'Disable auto approval' : 'Enable auto approval'
   const confirmText = isApproveAll
-    ? 'Are you sure you want to disable auto approve for changes to this install?'
-    : 'Are you sure you want to enable auto approve for changes to this install?'
+    ? 'Disabling auto approve means changes to this install will require manual approval.'
+    : 'Enabling auto approve means all changes to this install will be applied without manual review.'
 
   return (
     <Modal

@@ -69,8 +69,8 @@ export const Plan = ({ step, plan, isLoading, error }: IPlanView) => {
       ) : !plan && error ? (
         <EmptyState
           variant="table"
-          emptyMessage="We encountered an issue loading the approval plan. Please try refreshing the page."
-          emptyTitle="Failed to load plan"
+          emptyMessage="Unable to load the approval plan. Try refreshing the page."
+          emptyTitle="Loading failed"
         />
       ) : (
         getApprovalPlanDiff(step, plan)

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
 import { getRunnerJob } from '@/lib'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
@@ -39,8 +40,8 @@ export function RunnerJobProvider({
   useEffect(() => {
     if (error && job) {
       addToast(
-        <Toast heading="Failed to refresh data" theme="warn">
-          {(error as TAPIError)?.error ?? 'Connection issue'}
+        <Toast heading="Refresh failed" theme="warn">
+          <Text>{(error as TAPIError)?.error ?? 'Connection issue'}</Text>
         </Toast>
       )
     }

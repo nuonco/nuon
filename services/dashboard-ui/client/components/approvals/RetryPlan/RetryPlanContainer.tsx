@@ -43,8 +43,8 @@ export const RetryPlanModalContainer = ({
       addToast(
         <Toast heading="Plan retry initiated" theme="success">
           <Text>
-            A new plan is being generated. Please review the updated changes
-            when ready.
+            A new plan is being generated. Review the updated changes when
+            ready.
           </Text>
         </Toast>
       )
@@ -56,9 +56,8 @@ export const RetryPlanModalContainer = ({
     },
     onError: (err: any) => {
       addToast(
-        <Toast heading="Failed to retry changes" theme="error">
-          <Text>There was an error while retrying these changes.</Text>
-          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        <Toast heading="Retry failed" theme="error">
+          <Text>{err?.error || 'Unable to retry these changes.'}</Text>
         </Toast>
       )
     },

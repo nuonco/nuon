@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Text } from '@/components/common/Text'
 import { postPhoneHome } from '@/lib'
 import { Toast } from '@/components/surfaces/Toast'
 import { useOrg } from '@/hooks/use-org'
@@ -36,10 +37,18 @@ export const SendStackOutputsModalContainer = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['install-stack'] })
       removeModal(props.modalId)
-      addToast(<Toast heading="Phone home triggered" theme="info" />)
+      addToast(
+        <Toast heading="Phone home triggered" theme="info">
+          <Text>Stack outputs sent for processing.</Text>
+        </Toast>
+      )
     },
     onError: (err: TAPIError) => {
-      addToast(<Toast heading={err?.error ?? 'Phone home failed'} theme="error" />)
+      addToast(
+        <Toast heading="Phone home failed" theme="error">
+          <Text>{err?.error ?? 'Unable to send stack outputs.'}</Text>
+        </Toast>
+      )
     },
   })
 

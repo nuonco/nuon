@@ -305,7 +305,7 @@ export const PolicyReportPanel = ({
         <Card>
           <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
             <Icon variant="CheckCircleIcon" size={16} />
-            <Text variant="body">All policy checks passed successfully.</Text>
+            <Text variant="body">All policy checks passed.</Text>
           </div>
         </Card>
       )}

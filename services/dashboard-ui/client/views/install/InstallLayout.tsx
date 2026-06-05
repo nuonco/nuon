@@ -124,8 +124,7 @@ const InstallTemplate = () => {
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   return (
-    <PageLayout>
-      <DeprovisionBanner />
+    <PageLayout>    
       {isChildRoute ? (
         <PageContent className="border-t" variant="row">
           <SubNav
@@ -139,6 +138,7 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
+                          <DeprovisionBanner />
             <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
               <HeadingGroup className="gap-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
