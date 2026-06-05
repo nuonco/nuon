@@ -7,10 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -67,58 +65,9 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	if len(install.App.AppInputConfigs) < 1 {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("no app input configs defined on app"),
-			Description: "no app input configs defined",
-		})
-		return
-	}
-
-	latestLatestInstallInputs, err := s.getLatestInstallInputs(ctx, install.ID)
+	patchResult, err := s.helpers.ApplyInstallInputPatch(ctx, install, req.Inputs)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest install inputs: %w", err))
-		return
-	}
-
-	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
-		return
-	}
-	if pinnedAppInputConfig == nil {
-		ctx.Error(stderr.ErrUser{
-			Err:         fmt.Errorf("invalid install inputs provided"),
-			Description: "inputs provided on install, that are not defined on the app",
-		})
-		return
-	}
-
-	// Reject any install_stack (customer) sourced inputs in the provided subset.
-	// This intentionally operates ONLY on the subset the caller sent — existing
-	// customer-sourced values carried over by the merge are preserved, not re-validated.
-	if err := s.validateVendorSourceInputs(pinnedAppInputConfig, req.Inputs); err != nil {
 		ctx.Error(err)
-		return
-	}
-
-	// Merge the provided subset over the install's current inputs, then validate the
-	// full resulting set so required inputs remain satisfied after a partial update.
-	merged := mergeInstallInputs(latestLatestInstallInputs.Values, req.Inputs, pinnedAppInputConfig)
-	if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
-		ctx.Error(err)
-		return
-	}
-
-	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(
-		ctx,
-		latestLatestInstallInputs,
-		pinnedAppInputConfig,
-		merged,
-		req,
-	)
-	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
 		return
 	}
 
@@ -129,8 +78,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
-		*changedInputs,
-		changedInputValues,
+		patchResult.ChangedNames,
+		patchResult.ChangedValuesJSON,
 		req.Role,
 		deployDependents,
 	)
@@ -163,8 +112,8 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
-	inputs.WorkflowID = &workflow.ID
-	ctx.JSON(http.StatusOK, inputs)
+	patchResult.InstallInputs.WorkflowID = &workflow.ID
+	ctx.JSON(http.StatusOK, patchResult.InstallInputs)
 }
 
 func (s *service) getLatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {
@@ -192,92 +141,4 @@ func (s *service) getLatestAppInputConfig(ctx context.Context, appID string) (*a
 	}
 
 	return &appInputConfig, nil
-}
-
-func (s *service) newInstallInputs(
-	ctx context.Context,
-	installInputs *app.InstallInputs,
-	appInputConfig *app.AppInputConfig,
-	merged map[string]*string,
-	req UpdateInstallInputsRequest,
-) (*app.InstallInputs, *[]string, string, error) {
-	changed, err := helpers.ComputeChangedInputs(
-		installInputs.Values,
-		req.Inputs,
-		appInputConfig.AppInputs,
-	)
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("unable to compute changed inputs: %w", err)
-	}
-
-	// this update will be tied to the latest AppInputConfigID for the app
-	obj := &app.InstallInputs{
-		AppInputConfigID: appInputConfig.ID,
-		InstallID:        installInputs.InstallID,
-		Values:           pgtype.Hstore(merged),
-	}
-	res := s.db.WithContext(ctx).Create(&obj)
-	if res.Error != nil {
-		return nil, nil, "", fmt.Errorf("unable to create install inputs: %w", res.Error)
-	}
-
-	latestInstallInputs, err := s.getLatestInstallInputs(ctx, installInputs.InstallID)
-	if err != nil {
-		return nil, nil, "", fmt.Errorf("unable to get latest install inputs: %w", err)
-	}
-
-	latestInstallInputs.Values = nil
-
-	return latestInstallInputs, &changed.Names, changed.ChangedValuesJSON, nil
-}
-
-// mergeInstallInputs overlays the provided subset onto the install's existing input
-// values and drops any inputs no longer defined in the pinned app input config.
-func mergeInstallInputs(existing map[string]*string, patch map[string]*string, appInputConfig *app.AppInputConfig) map[string]*string {
-	merged := map[string]*string{}
-	for k, v := range existing {
-		merged[k] = v
-	}
-	for k, v := range patch {
-		merged[k] = v
-	}
-
-	appInputNames := map[string]struct{}{}
-	for _, input := range appInputConfig.AppInputs {
-		appInputNames[input.Name] = struct{}{}
-	}
-	for k := range merged {
-		if _, ok := appInputNames[k]; !ok {
-			delete(merged, k)
-		}
-	}
-
-	return merged
-}
-
-func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig, inputs map[string]*string) error {
-	appInputSources := map[string]app.AppInputSource{}
-	for _, input := range appInputConfig.AppInputs {
-		appInputSources[input.Name] = input.Source
-	}
-
-	for name := range inputs {
-		source, ok := appInputSources[name]
-		if !ok {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("input %s is not defined in app input config", name),
-				Description: "input " + name + " does not exist in the app inputs",
-			}
-		}
-
-		// Reject customer sourced inputs
-		if source == app.AppInputSourceCustomer {
-			return stderr.ErrUser{
-				Err:         fmt.Errorf("%s has source install_stack, cannot be updated via api", name),
-				Description: name + " has source install_stack and cannot be updated via the api",
-			}
-		}
-	}
-
-	return nil
 }

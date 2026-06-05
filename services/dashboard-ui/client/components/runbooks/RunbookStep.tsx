@@ -28,6 +28,8 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
                 ? 'RocketIcon'
                 : step.type === 'component_tear_down'
                   ? 'TrashIcon'
+                : step.type === 'input_update'
+                  ? 'PencilIcon'
                 : step.type === 'sandbox_reprovision' ||
                     step.type === 'sandbox_deprovision'
                   ? 'CubeIcon'
@@ -72,6 +74,12 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
               <Text variant="subtext">{step.skip_component_deploys ? 'Yes' : 'No'}</Text>
             </div>
           ) : null}
+          {step.type === 'input_update' ? (
+            <div className="flex items-center py-2 gap-4">
+              <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Deploy dependents</Text>
+              <Text variant="subtext">{step.skip_deploy_dependents ? 'No' : 'Yes'}</Text>
+            </div>
+          ) : null}
           {step.action_workflow_id ? (
             <div className="flex items-center py-2 gap-4">
               <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Action ID</Text>
@@ -110,6 +118,15 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
           <div className="flex flex-col gap-2">
             <Text weight="strong">Environment variables</Text>
             <KeyValueList values={objectToKeyValueArray(step.env_vars)} />
+          </div>
+        ) : null}
+
+        {step.type === 'input_update' &&
+        step.inputs &&
+        Object.keys(step.inputs).length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <Text weight="strong">Inputs</Text>
+            <KeyValueList values={objectToKeyValueArray(step.inputs)} />
           </div>
         ) : null}
         {actionBasePath && step.action_workflow_id ? (

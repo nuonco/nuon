@@ -124,6 +124,13 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 			}
 			steps = append(steps, actionStep)
 
+		case app.RunbookStepTypeInputUpdate:
+			inputSteps, err := runbookInputUpdateSteps(ctx, &stepCfg, sg, flw, install)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to generate input_update step %s", stepCfg.Name)
+			}
+			steps = append(steps, inputSteps...)
+
 		case app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
 			sbxSteps, err := runbookSandboxLifecycleSteps(ctx, installID, &stepCfg, flw, sg, install)
@@ -481,4 +488,43 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 	result = append(result, deploySteps...)
 
 	return result, nil
+}
+
+// runbookInputUpdateSteps applies the step's input patch to the install and
+// generates the same step sequence the dashboard's PATCH /v1/installs/{id}/inputs
+// triggers (state-refresh + pre/post-update lifecycle actions + affected
+// component deploys, or sandbox reprovision when the sandbox references the
+// changed inputs).
+func runbookInputUpdateSteps(
+	ctx workflow.Context,
+	stepCfg *app.RunbookStepConfig,
+	sg *stepGroup,
+	flw *app.Workflow,
+	install *app.Install,
+) ([]*app.WorkflowStep, error) {
+	if len(stepCfg.Inputs) == 0 {
+		return nil, errors.Errorf("input_update step %q has no inputs", stepCfg.Name)
+	}
+
+	// Apply the patch and persist a new InstallInputs row.
+	patchResp, err := activities.AwaitApplyInstallInputPatch(ctx, &activities.ApplyInstallInputPatchRequest{
+		InstallID: install.ID,
+		Patch:     map[string]*string(stepCfg.Inputs),
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to apply install input patch")
+	}
+
+	// Nothing to do when no values actually changed — skip the deploy/state
+	// refresh churn rather than emit a no-op step sequence.
+	if len(patchResp.ChangedNames) == 0 {
+		return nil, nil
+	}
+
+	return inputUpdateSteps(ctx, sg, inputUpdateStepsArgs{
+		Install:          install,
+		Flw:              flw,
+		ChangedInputs:    patchResp.ChangedNames,
+		DeployDependents: !stepCfg.SkipDeployDependents,
+	})
 }

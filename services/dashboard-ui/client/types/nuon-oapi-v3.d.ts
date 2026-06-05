@@ -4990,11 +4990,21 @@ export interface components {
       id?: string;
       idx?: number;
       inline_contents?: string;
+      /**
+       * @description input_update fields. Inputs is a map of input-name → templated value to
+       * apply to the install. SkipDeployDependents inverts the dashboard's
+       * "Deploy dependents" checkbox so the Go zero value preserves the default
+       * (deploy dependents on input update).
+       */
+      inputs?: {
+        [key: string]: string;
+      };
       name?: string;
       role?: string;
       runbook_config_id?: string;
       /** @description sandbox lifecycle fields */
       skip_component_deploys?: boolean;
+      skip_deploy_dependents?: boolean;
       tear_down_dependents?: boolean;
       timeout?: number;
       type?: string;
@@ -7217,9 +7227,13 @@ export interface components {
       };
       idx?: number;
       inline_contents?: string;
+      inputs?: {
+        [key: string]: string;
+      };
       name: string;
       role?: string;
       skip_component_deploys?: boolean;
+      skip_deploy_dependents?: boolean;
       tear_down_dependents?: boolean;
       timeout?: number;
       type: string;

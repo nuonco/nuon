@@ -40,6 +40,9 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// inline contents
 	InlineContents string `json:"inline_contents,omitempty"`
 
+	// inputs
+	Inputs map[string]string `json:"inputs,omitempty"`
+
 	// name
 	// Required: true
 	Name *string `json:"name"`
@@ -49,6 +52,9 @@ type ServiceCreateRunbookStepConfigRequest struct {
 
 	// skip component deploys
 	SkipComponentDeploys bool `json:"skip_component_deploys,omitempty"`
+
+	// skip deploy dependents
+	SkipDeployDependents bool `json:"skip_deploy_dependents,omitempty"`
 
 	// tear down dependents
 	TearDownDependents bool `json:"tear_down_dependents,omitempty"`
