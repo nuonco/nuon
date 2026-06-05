@@ -43,8 +43,8 @@ const DeleteChannelSubscriptionModalContainer = ({
     },
     onError: (err: TAPIError) => {
       addToast(
-        <Toast heading="Unable to remove subscription" theme="error">
-          <Text>{err?.description || err?.error || 'Please try again.'}</Text>
+        <Toast heading="Subscription removal failed" theme="error">
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
         </Toast>
       )
     },

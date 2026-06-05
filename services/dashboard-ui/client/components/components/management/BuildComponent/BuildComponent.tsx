@@ -66,12 +66,9 @@ export const BuildComponentModal = ({
             {error?.error || 'Unable to build component'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to build {component.name}?
-        </Text>
         <Text variant="base">
-          This will start a build for the {component.name} component. The build
-          process may take several minutes to complete.
+          This will start a build for {component.name}. The build process may
+          take several minutes.
         </Text>
         <Text variant="subtext" theme="neutral">
           You will be redirected to the build details page to monitor progress.

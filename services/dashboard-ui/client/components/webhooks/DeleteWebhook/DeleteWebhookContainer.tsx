@@ -36,8 +36,8 @@ const DeleteWebhookModalContainer = ({
     },
     onError: (err: TAPIError) => {
       addToast(
-        <Toast heading="Unable to delete webhook" theme="error">
-          <Text>{err?.description || err?.error || 'Please try again.'}</Text>
+        <Toast heading="Webhook deletion failed" theme="error">
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
         </Toast>
       )
     },

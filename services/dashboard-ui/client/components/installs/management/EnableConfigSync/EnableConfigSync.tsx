@@ -51,7 +51,7 @@ export const DisableConfigSyncModal = ({
       <div className="flex flex-col gap-4">
         {error ? (
           <Banner theme="error">
-            {error?.error || 'An error happened, please refresh the page and try again.'}
+            {error?.error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
 
@@ -123,7 +123,7 @@ export const EnableConfigSyncModal = ({
       <div className="flex flex-col gap-4">
         {error ? (
           <Banner theme="error">
-            {error?.error || 'An error happened, please refresh the page and try again.'}
+            {error?.error || 'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
 
