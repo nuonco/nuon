@@ -53,7 +53,7 @@ const EditWebhookModalContainer = ({
           : 'Unable to update webhook'
       addToast(
         <Toast heading={heading} theme="error">
-          <Text>{err?.description || err?.error || 'Please try again.'}</Text>
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
         </Toast>
       )
     },

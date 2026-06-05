@@ -34,15 +34,15 @@ export const AdminActionCardContainer = ({
     mutationFn: action,
     onSuccess: () => {
       addToast(
-        <Toast heading="Action Complete" theme="success">
-          <Text>{title} completed successfully</Text>
+        <Toast heading="Action complete" theme="success">
+          <Text>{title} completed.</Text>
         </Toast>
       )
     },
     onError: (err: any) => {
       const message = err?.error || err?.description || err?.message || 'Unknown error'
       addToast(
-        <Toast heading="Action Failed" theme="error">
+        <Toast heading="Action failed" theme="error">
           <Text>Failed to {title.toLowerCase()}: {message}</Text>
         </Toast>
       )
@@ -54,7 +54,7 @@ export const AdminActionCardContainer = ({
       const confirmationModal = (
         <AdminConfirmationModal
           title={`Confirm: ${title}`}
-          message={confirmationText || `Are you sure you want to ${title.toLowerCase()}?`}
+          message={confirmationText || `This will ${title.toLowerCase()}.`}
           action={action}
           variant={variant}
           requiresInput={requiresInput}

@@ -64,9 +64,8 @@ export const ApprovePlanModalContainer = ({
     },
     onError: (err: any) => {
       addToast(
-        <Toast heading="Failed to approve changes" theme="error">
-          <Text>There was an error while trying approve these changes.</Text>
-          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        <Toast heading="Approval failed" theme="error">
+          <Text>{err?.error || 'Unable to approve these changes.'}</Text>
         </Toast>
       )
     },

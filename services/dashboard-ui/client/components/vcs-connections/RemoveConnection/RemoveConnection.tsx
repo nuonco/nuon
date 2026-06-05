@@ -41,7 +41,7 @@ export const RemoveConnectionModal = ({
           theme="error"
         >
           <Icon variant="TrashIcon" size="24" />
-          Are you sure you want to disconnect this GitHub account?
+          Disconnect GitHub account?
         </Text>
       }
       primaryActionTrigger={{

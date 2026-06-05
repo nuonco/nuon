@@ -39,7 +39,7 @@ export const DeprovisionBanner = ({
   if (!config) return null
 
   return (
-    <Banner theme={config.theme} className="rounded-none border-x-0 border-t-0">
+    <Banner theme={config.theme}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <Text weight="strong">{config.heading}</Text>

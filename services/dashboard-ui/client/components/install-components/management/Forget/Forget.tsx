@@ -34,7 +34,7 @@ export const ForgetComponentModal = ({
           theme="error"
         >
           <Icon variant="TrashIcon" size="24" />
-          Forget {componentName}
+          Forget {componentName}?
         </Text>
       }
       primaryActionTrigger={{
@@ -71,11 +71,8 @@ export const ForgetComponentModal = ({
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Text variant="base" weight="strong">
-              Are you sure you want to forget {componentName}?
-            </Text>
             <Text variant="body" theme="neutral">
-              This action will remove the component and cannot be undone.
+              This will remove {componentName} and cannot be undone.
             </Text>
           </div>
 

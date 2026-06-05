@@ -89,7 +89,7 @@ export const CreateInstallStepContent = ({
     return (
       <Banner theme="error">
         {appError?.error ||
-          'Failed to load app configuration. Please try again.'}
+          'Unable to load app configuration. Try again.'}
       </Banner>
     )
   }

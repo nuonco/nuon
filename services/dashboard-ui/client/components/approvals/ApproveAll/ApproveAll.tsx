@@ -45,12 +45,9 @@ export const ApproveAllModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to approve all proposed changes?
-        </Text>
         <Text variant="base">
           Approving all plans will immediately apply every set of outlined
           changes across the workflow.

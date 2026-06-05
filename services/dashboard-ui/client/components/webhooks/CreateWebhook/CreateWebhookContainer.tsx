@@ -46,7 +46,7 @@ const CreateWebhookModalContainer = (props: Record<string, any>) => {
       addToast(
         <Toast heading={heading} theme="error">
           <Text>
-            {err?.description || err?.error || 'Please try again.'}
+            {err?.description || err?.error || 'Try again.'}
           </Text>
         </Toast>
       )
