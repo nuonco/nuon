@@ -650,50 +650,62 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 
 ## Text & Copy Style
 
-**Always use sentence case, never title case.** This applies to all UI text: headings, buttons, labels, tab labels, empty states, tooltips, and any other copy.
+**See [COPY_STYLE.md](./COPY_STYLE.md) for the full copy style guide** — voice, tone, patterns for every UI context (buttons, modals, empty states, errors, toasts, forms), and a word list. Read it before writing any user-facing text.
 
-- ✅ "Create your org" / "Connect a cloud account" / "Generate random name"
-- ❌ "Create Your Org" / "Connect A Cloud Account" / "Generate Random Name"
+**Key rules (quick reference):**
 
-The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
+- **Sentence case everywhere** — capitalize the first word and proper nouns only. Never title case.
+- **Buttons: verb + object** — "Build component", "Create webhook", "Remove user". Loading state: gerund form ("Building component", "Creating...").
+- **Modal headings** — question for confirmations ("Delete webhook?"), statement for actions ("Create webhook").
+- **Empty states** — "No [things] yet" + explain what will make things appear.
+- **Errors** — "[thing] failed" for headings everywhere. "Unable to [action]" only in longer descriptions. No "Oops!" or humor.
+- **Toasts** — heading (plain string, what happened) + description (specific context with entity names). Async: "Deploying component" + "Deploying {name} to {install}." Instant: "Plan approved" + "Approved changes for {name}."
+- **No exclamation marks, no emoji, no "please", no "successfully".**
+
+The only capitalization exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
 
 ## Toast Patterns
 
-### Mutation toasts (action triggered)
-
-When a mutation kicks off a long-running job (build, deploy, reprovision, etc.), show a **heading-only** toast with `theme="info"`. Use a `Badge variant="code" size="md"` for the entity name when one exists. No body copy.
+Every toast uses **heading + description**. The heading is a plain string saying what happened. The description (children) adds specific context — entity names, what to expect, duration hints. See [COPY_STYLE.md](./COPY_STYLE.md#toasts) for the full pattern reference.
 
 ```tsx
+// Async action (job kicked off) — present progressive heading, info theme
 addToast(
-  <Toast
-    heading={
-      <span className="inline-flex items-center gap-1.5">
-        <Badge variant="code" size="md">{component.name}</Badge> build started
-      </span>
-    }
-    theme="info"
-  />
+  <Toast heading="Deploying component" theme="info">
+    <Text>Deploying {component.name} to {install.name}. This may take a few minutes.</Text>
+  </Toast>
+)
+
+// Instant completion — past tense heading, success theme
+addToast(
+  <Toast heading="Plan approved" theme="success">
+    <Text>Approved changes for {component.name} on {install.name}.</Text>
+  </Toast>
+)
+
+// Error — "[thing] failed" heading, error theme, API error in description
+addToast(
+  <Toast heading="Build failed" theme="error">
+    <Text>{err?.error || 'Unable to start the build.'}</Text>
+  </Toast>
 )
 ```
 
-For actions without a named entity (sandbox operations), use a plain string heading:
-
-```tsx
-addToast(<Toast heading="Sandbox reprovision started" theme="info" />)
-```
-
-For mutation errors use `theme="error"` with the same pattern.
+**Rules:**
+- Heading is always a **plain string** — no JSX, no Badge components, no inline markup
+- Description is always a `<Text>` child with entity names and context
+- Don't say "successfully" — the success theme communicates that
+- Add "This may take a few minutes." for builds, deploys, and provisions
 
 ### Completion toasts (status transition)
 
 Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook watches a status string and fires a toast once when it transitions from a non-terminal status to a terminal one (success/error). It will NOT fire if the page loads with an already-terminal status.
 
 ```tsx
-// In a provider that polls
 useStatusToast({
   status: build?.status_v2?.status,
-  label: build?.component_name,  // optional — shown in a Badge
-  resourceType: 'build',         // e.g. "build succeeded" / "deploy failed"
+  label: build?.component_name,
+  resourceType: 'build',
 })
 ```
 
