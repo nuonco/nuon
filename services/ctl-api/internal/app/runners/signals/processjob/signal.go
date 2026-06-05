@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
-	pkgerrors "github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -40,6 +40,35 @@ func pollPeriod(attempt int) time.Duration {
 	}
 	return d
 }
+
+// sleepOrSignal waits up to d, returning early if a completion signal arrives
+// on ch. The timer is load-bearing: it guarantees the poll loop still wakes to
+// enforce timeouts even when no signal is ever sent (e.g. the runner crashed
+// and went silent, which it can do since it makes no outbound calls). The
+// signal merely shortcuts the common case so the workflow reacts to pickup /
+// completion immediately instead of on the next poll tick. Callers re-check
+// the DB after every wake, so a stray or duplicate signal is harmless.
+func sleepOrSignal(ctx workflow.Context, ch workflow.ReceiveChannel, d time.Duration) {
+	sel := workflow.NewSelector(ctx)
+	if ch != nil {
+		sel.AddReceive(ch, func(c workflow.ReceiveChannel, _ bool) {
+			c.Receive(ctx, nil)
+		})
+	}
+	timerCtx, cancel := workflow.WithCancel(ctx)
+	defer cancel()
+	sel.AddFuture(workflow.NewTimer(timerCtx, d), func(workflow.Future) {})
+	sel.Select(ctx)
+}
+
+// PickupSignalName / TerminalSignalName are the distinct wake-signal names for
+// the two poll edges of a process_job workflow. They MUST be distinct: a fast
+// adhoc job reaches terminal while the pickup loop is still selecting, so a
+// shared name lets the pickup loop consume the terminal signal and forces the
+// finalize loop back onto its poll timer. The runner HTTP handlers
+// (CreateRunnerJobExecution / UpdateRunnerJobExecution) send the matching name.
+func PickupSignalName(jobID string) string   { return callback.SignalName(jobID + "-pickup") }
+func TerminalSignalName(jobID string) string { return callback.SignalName(jobID + "-terminal") }
 
 type Signal struct {
 	RunnerID string `json:"runner_id"`
@@ -67,40 +96,19 @@ func (s *Signal) WithParams(params *signal.Params) {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
+	// Cheap field checks only. The runner-exists / active-process / job-exists
+	// checks that used to live here are redundant: Execute performs the exact
+	// same three activity fetches (Get → HasActiveRunnerProcess → GetJob) and
+	// the same NotAttempted status updates on failure. Duplicating them here
+	// added ~3 serial Temporal round-trips to the front edge of every job, so
+	// we defer the real validation to Execute.
 	if s.RunnerID == "" {
 		return errors.New("runner_id is required")
 	}
 	if s.JobID == "" {
 		return errors.New("job_id is required")
 	}
-
-	// Validate runner exists
-	_, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})
-	if err != nil {
-		_ = activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
-			JobID:             s.JobID,
-			Status:            app.RunnerJobStatusNotAttempted,
-			StatusDescription: fmt.Sprintf("runner not found: %s", signal.HumanError(err)),
-		})
-		return pkgerrors.Wrap(err, "runner not found")
-	}
-
-	// Check if runner has any active process
-	resp, err := activities.AwaitHasActiveRunnerProcess(ctx, activities.HasActiveRunnerProcessRequest{
-		RunnerID: s.RunnerID,
-	})
-	if err != nil || !resp.HasActive {
-		_ = activities.AwaitUpdateJobStatus(ctx, activities.UpdateJobStatusRequest{
-			JobID:             s.JobID,
-			Status:            app.RunnerJobStatusNotAttempted,
-			StatusDescription: "no active runner process available",
-		})
-		return errors.New("runner has no active process")
-	}
-
-	// Validate job exists
-	_, err = activities.AwaitGetJob(ctx, activities.GetJobRequest{ID: s.JobID})
-	return pkgerrors.Wrap(err, "job not found")
+	return nil
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -241,9 +249,30 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 	var runnerStatus app.RunnerStatus
 
 	if job.Group != app.RunnerJobGroupOperations {
-		for attempt := 0; runnerStatus != app.RunnerStatusActive; attempt++ {
-			workflow.Sleep(ctx, pollPeriod(attempt))
+		// Check the runner's health before sleeping. The common case is that the
+		// runner is already active when the job is enqueued, so checking first
+		// lets us proceed with zero wait instead of always burning a full
+		// pollPeriod on a bare workflow.Sleep before the first status check.
+		for attempt := 0; ; attempt++ {
+			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
+			if err != nil {
+				l.Warn("unable to determine runner status", zap.Error(err))
+				return false, false, err
+			}
+			if runnerStatus == app.RunnerStatusActive {
+				break
+			}
 			etags["runner_status"] = string(runnerStatus)
+
+			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+			if err != nil {
+				return false, false, nil
+			}
+			if jobStatus == app.RunnerJobStatusCancelled {
+				l.Error("job was cancelled")
+				tags["status"] = "job_cancelled"
+				return false, false, nil
+			}
 
 			now := workflow.Now(ctx)
 			if now.After(overallTimeout) {
@@ -280,27 +309,18 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				return true, false, nil
 			}
 
-			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
-			if err != nil {
-				l.Warn("unable to determine runner status", zap.Error(err))
-				return false, false, err
-			}
-
-			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
-			if err != nil {
-				return false, false, nil
-			}
-			if jobStatus == app.RunnerJobStatusCancelled {
-				l.Error("job was cancelled")
-				tags["status"] = "job_cancelled"
-				return false, false, nil
-			}
+			// Runner not yet healthy — wait out a poll tick before re-checking.
+			workflow.Sleep(ctx, pollPeriod(attempt))
 		}
 	}
 
-	// poll until the job is picked up, and an execution exists
+	// poll until the job is picked up, and an execution exists. The
+	// CreateRunnerJobExecution handler signals this channel the moment the
+	// runner reserves the job, so we usually wake on the first tick instead
+	// of sleeping out a full pollPeriod.
+	pickupCh := workflow.GetSignalChannel(ctx, PickupSignalName(job.ID))
 	for attempt := 0; !jobExecutionFound; attempt++ {
-		workflow.Sleep(ctx, pollPeriod(attempt))
+		sleepOrSignal(ctx, pickupCh, pollPeriod(attempt))
 
 		now := workflow.Now(ctx)
 		if now.After(overallTimeout) {
@@ -411,10 +431,14 @@ func (s *Signal) monitorJobExecution(ctx workflow.Context, job *app.RunnerJob) (
 		return false, fmt.Errorf("error fetching latest job execution: %w", err)
 	}
 
-	// poll the job execution, until it's completed
+	// poll the job execution, until it's completed. The UpdateRunnerJobExecution
+	// handler signals this channel when the runner reports a terminal status, so
+	// finalize (stamping finished_at) happens on the request we already receive
+	// instead of waiting out the next poll tick.
+	completeCh := workflow.GetSignalChannel(ctx, TerminalSignalName(job.ID))
 	executionTimeout := jobExecution.CreatedAt.Add(job.ExecutionTimeout)
 	for attempt := 0; ; attempt++ {
-		workflow.Sleep(ctx, pollPeriod(attempt))
+		sleepOrSignal(ctx, completeCh, pollPeriod(attempt))
 
 		now := workflow.Now(ctx)
 

@@ -21,6 +21,11 @@ type Settings struct {
 	// control jobs
 	JobLoopMinPollPeriod time.Duration `validate:"required"`
 	SandboxMode          bool
+	// LongPollJobs mirrors the org's `runner-job-long-poll` feature flag,
+	// surfaced through the runner-settings response. When true the
+	// jobloop calls the `/jobs/tail` long-poll endpoint instead of the
+	// legacy 5s idle-poll loop.
+	LongPollJobs bool
 
 	// visibility settings
 	EnableLogging bool

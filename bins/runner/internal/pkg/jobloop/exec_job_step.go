@@ -17,15 +17,16 @@ import (
 	"github.com/nuonco/nuon/pkg/retry"
 )
 
-func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
-	return j.updateJobExecutionStatusWithDescription(ctx, jobID, jobExecutionID, status, "")
-}
-
 // jobExecutionStatusDescriptionMaxLen caps the error description sent to the API
 // so a long stack trace doesn't bloat the stored status history.
 const jobExecutionStatusDescriptionMaxLen = 2048
 
-func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus, description string) error {
+// writeJobExecutionStatus is the synchronous, retry-wrapped API call.
+// It's the writer the coalescer's background goroutine drives and also
+// the call terminal updates fall through to directly. Intermediate
+// (non-terminal) callers go through the coalescer instead — see
+// `statusCoalescer` in status_coalescer.go.
+func (j *jobLoop) writeJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus, description string) error {
 	if len(description) > jobExecutionStatusDescriptionMaxLen {
 		description = description[:jobExecutionStatusDescriptionMaxLen] + "…(truncated)"
 	}
@@ -45,6 +46,52 @@ func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, j
 	}
 
 	return nil
+}
+
+// updateJobExecutionStatus and updateJobExecutionStatusWithDescription
+// are the legacy synchronous entry points. They route through the
+// per-execution coalescer when one is attached so the runner doesn't
+// block on intermediate transition pings, and fall back to a direct
+// synchronous write when there isn't one (e.g. early failure before
+// `executeJob` started the coalescer).
+func (j *jobLoop) updateJobExecutionStatus(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus) error {
+	return j.updateJobExecutionStatusWithDescription(ctx, jobID, jobExecutionID, status, "")
+}
+
+func (j *jobLoop) updateJobExecutionStatusWithDescription(ctx context.Context, jobID, jobExecutionID string, status models.AppRunnerJobExecutionStatus, description string) error {
+	if c := j.coalescerFor(jobExecutionID); c != nil {
+		if isTerminalExecutionStatus(status) {
+			return c.WriteTerminal(ctx, status, description)
+		}
+		c.EnqueueNonTerminal(status, description)
+		return nil
+	}
+	return j.writeJobExecutionStatus(ctx, jobID, jobExecutionID, status, description)
+}
+
+// coalescerFor returns the coalescer attached to the current execution,
+// or nil if none has been registered yet. The map is keyed by execution
+// id so concurrent jobs (parallel-runner-jobs feature) don't share a
+// writer.
+func (j *jobLoop) coalescerFor(executionID string) *statusCoalescer {
+	j.coalescersMu.Lock()
+	defer j.coalescersMu.Unlock()
+	return j.coalescers[executionID]
+}
+
+func (j *jobLoop) attachCoalescer(executionID string, c *statusCoalescer) {
+	j.coalescersMu.Lock()
+	defer j.coalescersMu.Unlock()
+	if j.coalescers == nil {
+		j.coalescers = make(map[string]*statusCoalescer)
+	}
+	j.coalescers[executionID] = c
+}
+
+func (j *jobLoop) detachCoalescer(executionID string) {
+	j.coalescersMu.Lock()
+	defer j.coalescersMu.Unlock()
+	delete(j.coalescers, executionID)
 }
 
 func (j *jobLoop) errToStatus(err error) models.AppRunnerJobExecutionStatus {
