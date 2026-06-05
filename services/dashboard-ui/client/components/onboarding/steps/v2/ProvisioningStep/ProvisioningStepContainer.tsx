@@ -585,7 +585,7 @@ export const ProvisioningStepContainer = ({
           <div className="flex flex-col flex-1 min-w-0 gap-0">
             <Text variant="base" weight="strong" className="truncate">{appName}</Text>
             <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">
-              {appDone ? 'Deployed successfully' : dynamicMessage}
+              {appDone ? 'Deployed' : dynamicMessage}
             </Text>
           </div>
           {appDone ? (

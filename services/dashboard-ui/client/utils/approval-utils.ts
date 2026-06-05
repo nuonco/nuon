@@ -38,27 +38,27 @@ export const APPROVAL_MODAL_COPY: Record<
 > = {
   terraform_plan: {
     title: 'Approve Terraform plan?',
-    heading: 'Are you sure you want to approve these infrastructure changes?',
+    heading: 'This will immediately apply the proposed infrastructure changes.',
     message:
-      'Approving the plan will immediately apply the proposed changes to your environment.',
+      'The Terraform plan will be applied to your environment.',
   },
   helm_approval: {
     title: 'Approve Helm chart plan?',
-    heading: 'Are you sure you want to approve these deployment changes?',
+    heading: 'This will immediately apply the proposed deployment changes.',
     message:
-      'Approving the plan will immediately apply the proposed updates to your release.',
+      'The Helm chart updates will be applied to your release.',
   },
   kubernetes_manifest_approval: {
     title: 'Approve Kubernetes manifest?',
-    heading: 'Are you sure you want to approve these configuration changes?',
+    heading: 'This will immediately apply the proposed configuration changes.',
     message:
-      'Approving the manifest will immediately apply the changes to your cluster.',
+      'The manifest changes will be applied to your cluster.',
   },
   pulumi_plan: {
     title: 'Approve Pulumi plan?',
-    heading: 'Are you sure you want to approve these infrastructure changes?',
+    heading: 'This will immediately apply the proposed infrastructure changes.',
     message:
-      'Approving the plan will immediately apply the proposed Pulumi changes to your environment.',
+      'The Pulumi plan will be applied to your environment.',
   },
 }
 
@@ -68,27 +68,27 @@ export const DENY_MODAL_COPY: Record<
 > = {
   terraform_plan: {
     title: 'Deny Terraform plan?',
-    heading: 'Are you sure you want to deny these infrastructure changes?',
+    heading: 'The proposed infrastructure changes will be discarded.',
     message:
-      'Denying the plan will discard the proposed changes and prevent them from being applied.',
+      'Denying prevents the plan from being applied to your environment.',
   },
   helm_approval: {
     title: 'Deny Helm chart plan?',
-    heading: 'Are you sure you want to deny these deployment changes?',
+    heading: 'The proposed deployment changes will be discarded.',
     message:
-      'Denying the plan will discard the proposed updates and prevent them from being applied.',
+      'Denying prevents the updates from being applied to your release.',
   },
   kubernetes_manifest_approval: {
     title: 'Deny Kubernetes manifest?',
-    heading: 'Are you sure you want to deny these configuration changes?',
+    heading: 'The proposed configuration changes will be discarded.',
     message:
-      'Denying the manifest will discard the changes and prevent them from being applied to your cluster.',
+      'Denying prevents the changes from being applied to your cluster.',
   },
   pulumi_plan: {
     title: 'Deny Pulumi plan?',
-    heading: 'Are you sure you want to deny these infrastructure changes?',
+    heading: 'The proposed infrastructure changes will be discarded.',
     message:
-      'Denying the plan will discard the proposed Pulumi changes and prevent them from being applied.',
+      'Denying prevents the Pulumi plan from being applied to your environment.',
   },
 }
 
@@ -98,26 +98,26 @@ export const RETRY_MODAL_COPY: Record<
 > = {
   terraform_plan: {
     title: 'Retry Terraform plan?',
-    heading: 'Are you sure you want to retry this Terraform plan?',
+    heading: 'A new plan will be generated, replacing the current proposed changes.',
     message:
-      'Retrying will generate a new plan, replacing the current proposed infrastructure changes.',
+      'The existing infrastructure changes will be discarded.',
   },
   helm_approval: {
     title: 'Retry Helm chart plan?',
-    heading: 'Are you sure you want to retry this Helm chart plan?',
+    heading: 'A new plan will be generated, replacing the current proposed changes.',
     message:
-      'Retrying will generate a new plan, replacing the current proposed deployment updates.',
+      'The existing deployment updates will be discarded.',
   },
   kubernetes_manifest_approval: {
     title: 'Retry Kubernetes manifest?',
-    heading: 'Are you sure you want to retry this Kubernetes manifest?',
+    heading: 'A new manifest will be generated, replacing the current proposed changes.',
     message:
-      'Retrying will generate a new manifest, replacing the current proposed configuration changes for your cluster.',
+      'The existing configuration changes will be discarded.',
   },
   pulumi_plan: {
     title: 'Retry Pulumi plan?',
-    heading: 'Are you sure you want to retry this Pulumi plan?',
+    heading: 'A new plan will be generated, replacing the current proposed changes.',
     message:
-      'Retrying will generate a new plan, replacing the current proposed Pulumi infrastructure changes.',
+      'The existing Pulumi infrastructure changes will be discarded.',
   },
 }

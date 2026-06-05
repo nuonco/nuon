@@ -59,7 +59,7 @@ export const CreateOrgStep = ({
           {error && (
             <Banner theme="error">
               {error?.error ||
-                'Failed to create organization. Please try again.'}
+                'Unable to create organization. Try again.'}
             </Banner>
           )}
           <div className="flex flex-col gap-1">
@@ -96,7 +96,7 @@ export const CreateOrgStep = ({
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <Text variant="body" weight="strong">
-                  Your organization has been created successfully!
+                  Your organization has been created.
                 </Text>
                 <Status
                   status={createdOrg.status ?? 'active'}
@@ -171,7 +171,7 @@ export const CompletedOrgCard = ({
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <Text variant="body" weight="strong">
-                Your organization has been created successfully!
+                Your organization has been created.
               </Text>
               {org?.status !== 'active' ? (
                 <Text variant="subtext" as="p" className="max-w-md">

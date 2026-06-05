@@ -6,6 +6,7 @@ import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { useStatusToast } from '@/hooks/use-status-toast'
 import { useToast } from '@/hooks/use-toast'
 import { getSandboxBuild } from '@/lib'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
@@ -80,8 +81,8 @@ export function SandboxBuildProvider({
   useEffect(() => {
     if (error && build) {
       addToast(
-        <Toast heading="Failed to refresh data" theme="warn">
-          {(error as TAPIError)?.error ?? 'Connection issue'}
+        <Toast heading="Refresh failed" theme="warn">
+          <Text>{(error as TAPIError)?.error ?? 'Connection issue'}</Text>
         </Toast>
       )
     }

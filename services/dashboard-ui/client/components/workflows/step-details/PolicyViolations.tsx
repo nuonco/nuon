@@ -86,7 +86,7 @@ export const PolicyViolations = ({ step }: IPolicyViolations) => {
         ) : (
           <div className="p-4">
             <Text variant="subtext" theme="neutral">
-              All policy checks passed successfully.
+              All policy checks passed.
             </Text>
           </div>
         )}

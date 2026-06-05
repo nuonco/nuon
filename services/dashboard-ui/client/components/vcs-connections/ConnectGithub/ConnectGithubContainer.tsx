@@ -33,7 +33,7 @@ export const ConnectGithubModalContainer = ({
     },
     onError: (err) => {
       addToast(
-        <Toast theme="error" heading="Failed to connect GitHub">
+        <Toast theme="error" heading="GitHub connection failed">
           <Text variant="subtext">{err?.error}</Text>
         </Toast>
       )

@@ -49,15 +49,12 @@ export const SyncSecretsModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="strong">
-          Are you sure you want to sync secrets for {installName}?
-        </Text>
         <Text variant="base">
           This will synchronize all secrets from your app configuration to the
-          install environment.
+          {installName} install environment.
         </Text>
       </div>
     </Modal>
