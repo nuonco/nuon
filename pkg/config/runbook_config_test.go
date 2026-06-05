@@ -13,10 +13,10 @@ func TestRunbookConfig_Parse(t *testing.T) {
 			Readme: "# Release Notes",
 			Steps: []*RunbookStepConfig{
 				{
-					Name:               "deploy-database",
-					Type:               RunbookStepTypeDeploy,
-					ComponentName:      "database",
-					DeployDependencies: true,
+					Name:             "deploy-database",
+					Type:             RunbookStepTypeDeploy,
+					ComponentName:    "database",
+					DeployDependents: true,
 				},
 				{
 					Name:       "run-migrations",
@@ -81,6 +81,23 @@ func TestRunbookConfig_Parse(t *testing.T) {
 		// Dependencies should be extracted from template references
 		// (depends on refs.Parse implementation)
 	})
+}
+
+func TestRunbookConfig_LegacyDeployDependencies(t *testing.T) {
+	rc := &RunbookConfig{
+		Name: "legacy",
+		Steps: []*RunbookStepConfig{
+			{
+				Name:                     "legacy-deploy",
+				Type:                     RunbookStepTypeDeploy,
+				ComponentName:            "api",
+				DeployDependenciesLegacy: true,
+			},
+		},
+	}
+
+	require.NoError(t, rc.parse())
+	require.True(t, rc.Steps[0].DeployDependents, "legacy deploy_dependencies should be folded into DeployDependents")
 }
 
 func TestRunbookStepType_Constants(t *testing.T) {

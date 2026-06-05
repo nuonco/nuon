@@ -12,7 +12,7 @@ export const DeployStep = () => (
       name: 'deploy-whoami',
       type: 'deploy',
       component_name: 'whoami',
-      deploy_dependencies: true,
+      deploy_dependents: true,
     }}
   />
 )

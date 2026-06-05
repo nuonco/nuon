@@ -15,6 +15,7 @@ type RunbookStepType string
 
 const (
 	RunbookStepTypeDeploy             RunbookStepType = "deploy"
+	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
 	RunbookStepTypeAction             RunbookStepType = "action"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
@@ -35,9 +36,14 @@ type RunbookStepConfig struct {
 	Name string          `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Type RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
 
-	// For type = "deploy"
+	// For type = "deploy" / "component_tear_down"
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
-	DeployDependencies bool   `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
+	DeployDependents   bool   `mapstructure:"deploy_dependents,omitempty" toml:"deploy_dependents,omitempty"`
+	TearDownDependents bool   `mapstructure:"tear_down_dependents,omitempty" toml:"tear_down_dependents,omitempty"`
+
+	// Legacy alias for DeployDependents — kept for back-compat with TOML configs
+	// written before the rename. Folded into DeployDependents in parse().
+	DeployDependenciesLegacy bool `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty" jsonschema:"-"`
 
 	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
 	// and do NOT redeploy components on top.
@@ -76,16 +82,19 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("One of: 'deploy' (deploy a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
+		Long("One of: 'deploy' (deploy a component), 'component_tear_down' (tear down a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
 		Example("deploy").
+		Example("component_tear_down").
 		Example("action").
 		Example("sandbox_reprovision").
 		Field("component_name").Short("component to deploy (for deploy steps)").
 		Long("Name of the component to deploy. Required when type is 'deploy'").
 		Example("database").
 		Example("api-server").
-		Field("deploy_dependencies").Short("also deploy transitive dependencies").
-		Long("When true, deploys the component and all its transitive dependencies in dependency order. Only applies to deploy steps").
+		Field("deploy_dependents").Short("also deploy transitive dependents").
+		Long("When true, deploys the component and all components that transitively depend on it (downstream), in dependency order. Only applies to deploy steps").
+		Field("tear_down_dependents").Short("also tear down transitive dependents").
+		Long("When true, tears down the component and all components that transitively depend on it (downstream), with dependents torn down first. Only applies to component_tear_down steps").
 		Field("action_name").Short("existing action to run (for action steps)").
 		Long("Name of a previously defined action workflow to execute. Mutually exclusive with inline action fields (command, inline_contents)").
 		Example("database-migration").
@@ -121,6 +130,10 @@ func (r *RunbookConfig) parse() error {
 					Err:         err,
 				}
 			}
+		}
+		// Fold the legacy alias into the canonical field. New code should only read DeployDependents.
+		if step.DeployDependenciesLegacy {
+			step.DeployDependents = true
 		}
 	}
 
