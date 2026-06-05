@@ -13,17 +13,20 @@ import { SkipStepButton } from './SkipStep'
 export const StepButtons = ({
   buttonSize = 'sm',
   isApproveAll = false,
+  showRetry = true,
   step,
 }: {
   buttonSize?: TButtonSize
   isApproveAll?: boolean
+  // Only the latest attempt of a retried step should expose retry/skip controls.
+  showRetry?: boolean
   step: TWorkflowStep
 }) => {
   const { hasResponded } = useRespondedApprovals()
   const { approval, retry } = getStepButtons(step)
   return (
     <div className="md:ml-auto flex items-center gap-4">
-      {retry ? (
+      {retry && showRetry ? (
         <>
           {step?.skippable ? (
             <SkipStepButton size={buttonSize} variant="danger" step={step} />
