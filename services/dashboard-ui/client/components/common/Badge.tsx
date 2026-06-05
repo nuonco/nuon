@@ -48,7 +48,7 @@ export const Badge = ({
   return (
     <span
       className={cn(
-        'border flex gap-1.5 items-center shrink-0 grow-0 w-fit',
+        'border inline-flex gap-1.5 items-center shrink-0 grow-0 w-fit',
         SIZE_CLASSES[size],
         VARIANT_CLASSES[variant],
         THEME_CLASSES[theme],

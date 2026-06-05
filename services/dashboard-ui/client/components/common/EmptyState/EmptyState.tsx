@@ -16,7 +16,7 @@ export interface IEmptyState extends React.HTMLAttributes<HTMLDivElement> {
 export const EmptyState = ({
   action,
   className,
-  emptyMessage = 'Nothing found',
+  emptyMessage = 'Nothing here yet.',
   emptyTitle = 'Nothing to show',
   isDarkModeOnly = false,
   size = 'default',

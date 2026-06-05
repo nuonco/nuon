@@ -41,14 +41,9 @@ export const RunRunbookModal = ({
       }),
     onSuccess: (result) => {
       addToast(
-        <Toast
-          heading={
-            <span className="inline-flex items-center gap-1.5">
-              <Badge variant="code" size="md">{runbookName}</Badge> run started
-            </span>
-          }
-          theme="info"
-        />
+        <Toast heading="Runbook run started" theme="info">
+          <Text>Running <Badge variant="code" size="md">{runbookName}</Badge>.</Text>
+        </Toast>
       )
       removeModal(props.modalId)
       queryClient.invalidateQueries({ queryKey: ['install-runbook'] })
@@ -61,15 +56,8 @@ export const RunRunbookModal = ({
     },
     onError: (err: any) => {
       addToast(
-        <Toast
-          heading={
-            <span className="inline-flex items-center gap-1.5">
-              Failed to run <Badge variant="code" size="md">{runbookName}</Badge>
-            </span>
-          }
-          theme="error"
-        >
-          <Text variant="subtext">{err?.error || 'Unknown error occurred'}</Text>
+        <Toast heading="Runbook run failed" theme="error">
+          <Text>{err?.error || `Unable to run ${runbookName}.`}</Text>
         </Toast>
       )
     },

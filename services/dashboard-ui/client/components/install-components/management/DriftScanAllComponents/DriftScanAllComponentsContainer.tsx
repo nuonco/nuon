@@ -97,7 +97,7 @@ export const DriftScanAllComponentsButton = ({ ...props }: IButtonAsButton) => {
       }}
       {...props}
     >
-      Drift scan components <Icon variant="ScanIcon" />
+      Drift scan all components <Icon variant="ScanIcon" />
     </Button>
   )
 }

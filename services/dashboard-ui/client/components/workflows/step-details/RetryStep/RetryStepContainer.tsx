@@ -51,9 +51,8 @@ export const RetryStepModalContainer = ({
     },
     onError: (err) => {
       addToast(
-        <Toast heading="Failed to retry step" theme="error">
-          <Text>There was an error while retrying this step.</Text>
-          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        <Toast heading="Step retry failed" theme="error">
+          <Text>{err?.error || 'Unable to retry this step.'}</Text>
         </Toast>
       )
     },

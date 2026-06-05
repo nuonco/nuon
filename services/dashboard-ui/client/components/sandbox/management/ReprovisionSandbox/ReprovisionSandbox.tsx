@@ -55,7 +55,7 @@ export const ReprovisionSandboxModal = ({
         ) : null}
 
         <Text variant="body" className="leading-relaxed">
-          Are you sure you want to reprovision this sandbox?
+          Reprovisioning will recreate all sandbox resources.
         </Text>
 
         <RoleSelector

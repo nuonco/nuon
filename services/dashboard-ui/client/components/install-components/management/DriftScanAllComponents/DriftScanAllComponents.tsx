@@ -39,7 +39,7 @@ export const DriftScanAllComponentsModal = ({
             <Icon variant="Loading" /> Starting drift scan
           </span>
         ) : (
-          'Drift scan components'
+          'Drift scan all components'
         ),
         disabled: isKickedOff || isPending,
         onClick: onSubmit,
@@ -53,11 +53,8 @@ export const DriftScanAllComponentsModal = ({
             {(error as any)?.error || 'Unable to deploy components'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to drift scan components?
-        </Text>
         <Text variant="base">
-          This action will perform a drift scan against the latest build of each
+          This will perform a drift scan against the latest build of each
           component and the component deployments on your install.
         </Text>
       </div>

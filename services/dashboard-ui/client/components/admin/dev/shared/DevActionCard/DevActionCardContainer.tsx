@@ -35,14 +35,14 @@ export const DevActionCardContainer = ({
     onSuccess: () => {
       addToast(
         <Toast heading="Action complete" theme="success">
-          <Text>{title} completed successfully</Text>
+          <Text>{title} completed.</Text>
         </Toast>
       )
     },
     onError: () => {
       addToast(
         <Toast heading="Action failed" theme="error">
-          <Text>Failed to {title.toLowerCase()}. Please try again.</Text>
+          <Text>Unable to {title.toLowerCase()}. Try again.</Text>
         </Toast>
       )
     },
@@ -55,7 +55,7 @@ export const DevActionCardContainer = ({
           title={`Confirm: ${title}`}
           message={
             confirmationText ||
-            `Are you sure you want to ${title.toLowerCase()}?`
+            `This will ${title.toLowerCase()}.`
           }
           action={action}
           variant={variant}
