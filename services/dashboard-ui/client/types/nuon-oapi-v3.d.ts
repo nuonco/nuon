@@ -4636,7 +4636,7 @@ export interface components {
       action_workflow_id?: string;
       /** @description inline action fields */
       command?: string;
-      /** @description deploy fields */
+      /** @description deploy / tear-down fields */
       component_name?: string;
       created_at?: string;
       created_by_id?: string;
@@ -4652,6 +4652,7 @@ export interface components {
       runbook_config_id?: string;
       /** @description sandbox lifecycle fields */
       skip_component_deploys?: boolean;
+      tear_down_dependencies?: boolean;
       timeout?: number;
       type?: string;
       updated_at?: string;
@@ -6743,6 +6744,7 @@ export interface components {
       name: string;
       role?: string;
       skip_component_deploys?: boolean;
+      tear_down_dependencies?: boolean;
       timeout?: number;
       type: string;
     };
