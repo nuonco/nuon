@@ -70,6 +70,11 @@ const (
 	// this flag on the org and routes log SSE through the tail path
 	// when set; otherwise it stays on the legacy 1s-polling read path.
 	OrgFeatureLogTailLongPoll OrgFeature = "log-tail-long-poll"
+	// OrgFeatureRunnerJobLongPoll switches the runner from its 5s
+	// idle-poll loop onto a long-poll endpoint
+	// (`GET /v1/runners/:id/jobs/tail`). The flag is surfaced via the
+	// runner-settings response; runners read it at boot.
+	OrgFeatureRunnerJobLongPoll OrgFeature = "runner-job-long-poll"
 )
 
 type Org struct {
@@ -191,6 +196,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeaturePulumiSandbox:           false,
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureLogTailLongPoll:         false,
+		OrgFeatureRunnerJobLongPoll:       false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -237,6 +243,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeaturePulumiSandbox,
 		OrgFeaturePulumiUpdatePlans,
 		OrgFeatureLogTailLongPoll,
+		OrgFeatureRunnerJobLongPoll,
 	}
 }
 
@@ -269,6 +276,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeaturePulumiSandbox:           "Enable Pulumi-typed app sandboxes (sandbox type=pulumi) in addition to Terraform",
 		OrgFeaturePulumiUpdatePlans:       "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
 		OrgFeatureLogTailLongPoll:         "Enable the long-poll log-tail endpoint (`/v1/log-streams/:id/logs/tail`) — the dashboard BFF probes it for near-real-time log streaming and falls back to legacy 1s polling when off",
+		OrgFeatureRunnerJobLongPoll:       "Switch the runner from a 5s idle-poll loop to a long-poll endpoint (`/v1/runners/:id/jobs/tail`) so job pickup is sub-second. Surfaced via runner settings; runners pick it up on the next process restart.",
 	}
 }
 

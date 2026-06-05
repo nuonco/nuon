@@ -23,6 +23,7 @@ func (s *Settings) fetch(ctx context.Context) error {
 
 	s.HeartBeatTimeout = time.Duration(settings.HeartBeatTimeout)
 	s.SandboxMode = settings.SandboxMode
+	s.LongPollJobs = settings.LongPollJobs
 	s.EnableMetrics = settings.EnableMetrics
 	s.EnableSentry = settings.EnableSentry
 	s.Metadata = settings.Metadata

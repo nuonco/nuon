@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-playground/validator/v10"
@@ -27,6 +28,7 @@ type Client interface {
 
 	// jobs
 	GetJobs(ctx context.Context, grp models.AppRunnerJobGroup, status models.AppRunnerJobStatus, limit *int64) ([]*models.AppRunnerJob, error)
+	TailJobs(ctx context.Context, grp models.AppRunnerJobGroup, wait time.Duration) ([]*models.AppRunnerJob, error)
 	GetJob(ctx context.Context, jobID string) (*models.AppRunnerJob, error)
 	GetJobPlanJSON(ctx context.Context, jobID string) (string, error)
 	GetJobCompositePlan(ctx context.Context, jobID string) (*models.PlantypesCompositePlan, error)
