@@ -31,6 +31,36 @@ func (o *CreateRunbookRunReader) ReadResponse(response runtime.ClientResponse, c
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewCreateRunbookRunBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 401:
+		result := NewCreateRunbookRunUnauthorized()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 403:
+		result := NewCreateRunbookRunForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 404:
+		result := NewCreateRunbookRunNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 500:
+		result := NewCreateRunbookRunInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs] CreateRunbookRun", response, response.Code())
 	}
@@ -97,6 +127,356 @@ func (o *CreateRunbookRunCreated) GetPayload() *models.AppInstallRunbookRun {
 func (o *CreateRunbookRunCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
 	o.Payload = new(models.AppInstallRunbookRun)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunbookRunBadRequest creates a CreateRunbookRunBadRequest with default headers values
+func NewCreateRunbookRunBadRequest() *CreateRunbookRunBadRequest {
+	return &CreateRunbookRunBadRequest{}
+}
+
+/*
+CreateRunbookRunBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type CreateRunbookRunBadRequest struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runbook run bad request response has a 2xx status code
+func (o *CreateRunbookRunBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runbook run bad request response has a 3xx status code
+func (o *CreateRunbookRunBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runbook run bad request response has a 4xx status code
+func (o *CreateRunbookRunBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runbook run bad request response has a 5xx status code
+func (o *CreateRunbookRunBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runbook run bad request response a status code equal to that given
+func (o *CreateRunbookRunBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the create runbook run bad request response
+func (o *CreateRunbookRunBadRequest) Code() int {
+	return 400
+}
+
+func (o *CreateRunbookRunBadRequest) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunBadRequest %s", 400, payload)
+}
+
+func (o *CreateRunbookRunBadRequest) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunBadRequest %s", 400, payload)
+}
+
+func (o *CreateRunbookRunBadRequest) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunbookRunBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunbookRunUnauthorized creates a CreateRunbookRunUnauthorized with default headers values
+func NewCreateRunbookRunUnauthorized() *CreateRunbookRunUnauthorized {
+	return &CreateRunbookRunUnauthorized{}
+}
+
+/*
+CreateRunbookRunUnauthorized describes a response with status code 401, with default header values.
+
+Unauthorized
+*/
+type CreateRunbookRunUnauthorized struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runbook run unauthorized response has a 2xx status code
+func (o *CreateRunbookRunUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runbook run unauthorized response has a 3xx status code
+func (o *CreateRunbookRunUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runbook run unauthorized response has a 4xx status code
+func (o *CreateRunbookRunUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runbook run unauthorized response has a 5xx status code
+func (o *CreateRunbookRunUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runbook run unauthorized response a status code equal to that given
+func (o *CreateRunbookRunUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
+// Code gets the status code for the create runbook run unauthorized response
+func (o *CreateRunbookRunUnauthorized) Code() int {
+	return 401
+}
+
+func (o *CreateRunbookRunUnauthorized) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunUnauthorized %s", 401, payload)
+}
+
+func (o *CreateRunbookRunUnauthorized) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunUnauthorized %s", 401, payload)
+}
+
+func (o *CreateRunbookRunUnauthorized) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunbookRunUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunbookRunForbidden creates a CreateRunbookRunForbidden with default headers values
+func NewCreateRunbookRunForbidden() *CreateRunbookRunForbidden {
+	return &CreateRunbookRunForbidden{}
+}
+
+/*
+CreateRunbookRunForbidden describes a response with status code 403, with default header values.
+
+Forbidden
+*/
+type CreateRunbookRunForbidden struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runbook run forbidden response has a 2xx status code
+func (o *CreateRunbookRunForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runbook run forbidden response has a 3xx status code
+func (o *CreateRunbookRunForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runbook run forbidden response has a 4xx status code
+func (o *CreateRunbookRunForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runbook run forbidden response has a 5xx status code
+func (o *CreateRunbookRunForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runbook run forbidden response a status code equal to that given
+func (o *CreateRunbookRunForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
+// Code gets the status code for the create runbook run forbidden response
+func (o *CreateRunbookRunForbidden) Code() int {
+	return 403
+}
+
+func (o *CreateRunbookRunForbidden) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunForbidden %s", 403, payload)
+}
+
+func (o *CreateRunbookRunForbidden) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunForbidden %s", 403, payload)
+}
+
+func (o *CreateRunbookRunForbidden) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunbookRunForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunbookRunNotFound creates a CreateRunbookRunNotFound with default headers values
+func NewCreateRunbookRunNotFound() *CreateRunbookRunNotFound {
+	return &CreateRunbookRunNotFound{}
+}
+
+/*
+CreateRunbookRunNotFound describes a response with status code 404, with default header values.
+
+Not Found
+*/
+type CreateRunbookRunNotFound struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runbook run not found response has a 2xx status code
+func (o *CreateRunbookRunNotFound) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runbook run not found response has a 3xx status code
+func (o *CreateRunbookRunNotFound) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runbook run not found response has a 4xx status code
+func (o *CreateRunbookRunNotFound) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this create runbook run not found response has a 5xx status code
+func (o *CreateRunbookRunNotFound) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this create runbook run not found response a status code equal to that given
+func (o *CreateRunbookRunNotFound) IsCode(code int) bool {
+	return code == 404
+}
+
+// Code gets the status code for the create runbook run not found response
+func (o *CreateRunbookRunNotFound) Code() int {
+	return 404
+}
+
+func (o *CreateRunbookRunNotFound) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunNotFound %s", 404, payload)
+}
+
+func (o *CreateRunbookRunNotFound) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunNotFound %s", 404, payload)
+}
+
+func (o *CreateRunbookRunNotFound) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunbookRunNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewCreateRunbookRunInternalServerError creates a CreateRunbookRunInternalServerError with default headers values
+func NewCreateRunbookRunInternalServerError() *CreateRunbookRunInternalServerError {
+	return &CreateRunbookRunInternalServerError{}
+}
+
+/*
+CreateRunbookRunInternalServerError describes a response with status code 500, with default header values.
+
+Internal Server Error
+*/
+type CreateRunbookRunInternalServerError struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this create runbook run internal server error response has a 2xx status code
+func (o *CreateRunbookRunInternalServerError) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this create runbook run internal server error response has a 3xx status code
+func (o *CreateRunbookRunInternalServerError) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this create runbook run internal server error response has a 4xx status code
+func (o *CreateRunbookRunInternalServerError) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this create runbook run internal server error response has a 5xx status code
+func (o *CreateRunbookRunInternalServerError) IsServerError() bool {
+	return true
+}
+
+// IsCode returns true when this create runbook run internal server error response a status code equal to that given
+func (o *CreateRunbookRunInternalServerError) IsCode(code int) bool {
+	return code == 500
+}
+
+// Code gets the status code for the create runbook run internal server error response
+func (o *CreateRunbookRunInternalServerError) Code() int {
+	return 500
+}
+
+func (o *CreateRunbookRunInternalServerError) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunInternalServerError %s", 500, payload)
+}
+
+func (o *CreateRunbookRunInternalServerError) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[POST /v1/installs/{install_id}/runbooks/{runbook_id}/runs][%d] createRunbookRunInternalServerError %s", 500, payload)
+}
+
+func (o *CreateRunbookRunInternalServerError) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *CreateRunbookRunInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
