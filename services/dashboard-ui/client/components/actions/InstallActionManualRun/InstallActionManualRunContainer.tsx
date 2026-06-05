@@ -75,9 +75,8 @@ export const InstallActionManualRunModalContainer = ({
         },
       })
       addToast(
-        <Toast heading="Failed to run action workflow" theme="error">
-          <Text>There was an error running {action?.name}.</Text>
-          <Text variant="subtext">{err?.error || 'Unknown error occurred'}</Text>
+        <Toast heading="Action run failed" theme="error">
+          <Text>{err?.error || `Unable to run ${action?.name}.`}</Text>
         </Toast>
       )
     },

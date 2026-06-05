@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/common/Badge'
 import { type IButtonAsButton } from '@/components/common/Button'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { type IModal } from '@/components/surfaces/Modal'
 import { useApp } from '@/hooks/use-app'
@@ -35,13 +36,17 @@ export const BuildAllComponentsModalContainer = ({ ...props }: IModal) => {
     mutationFn: () => buildComponents({ appId: app.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
-        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{app.name}</Badge> builds started</span>} theme="info" />
+        <Toast heading="Builds started" theme="info">
+          <Text>Building all components for <Badge variant="code" size="md">{app.name}</Badge>. This may take a few minutes.</Text>
+        </Toast>
       )
       removeModal(props.modalId)
     },
     onError: () => {
       addToast(
-        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{app.name}</Badge> builds failed</span>} theme="error" />
+        <Toast heading="Builds failed" theme="error">
+          <Text>Unable to build components for <Badge variant="code" size="md">{app.name}</Badge>.</Text>
+        </Toast>
       )
     },
   })

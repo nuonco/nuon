@@ -22,7 +22,7 @@ const APPROVAL_BANNER_COPY: Record<
   terraform_plan: {
     title: 'Terraform plan requires review',
     message:
-      'This Terraform plan is ready for your review. Please inspect the proposed infrastructure changes before applying them.',
+      'This Terraform plan is ready for your review. Inspect the proposed infrastructure changes before applying them.',
   },
   helm_approval: {
     title: 'Helm chart plan requires review',
@@ -32,12 +32,12 @@ const APPROVAL_BANNER_COPY: Record<
   kubernetes_manifest_approval: {
     title: 'Kubernetes manifest requires review',
     message:
-      'This Kubernetes manifest contains pending configuration changes. Please review these updates before applying them to your cluster.',
+      'This Kubernetes manifest contains pending configuration changes. Review these updates before applying them to your cluster.',
   },
   pulumi_plan: {
     title: 'Pulumi plan requires review',
     message:
-      'This Pulumi plan is ready for your review. Please inspect the proposed infrastructure changes before applying them.',
+      'This Pulumi plan is ready for your review. Inspect the proposed infrastructure changes before applying them.',
   },
 }
 

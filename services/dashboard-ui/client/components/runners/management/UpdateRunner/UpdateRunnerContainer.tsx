@@ -108,7 +108,7 @@ export const UpdateRunnerModal = ({
     onSuccess: () => {
       addToast(
         <Toast heading="Runner update started" theme="success">
-          <Text>Runner update initiated successfully.</Text>
+          <Text>Runner update initiated.</Text>
         </Toast>
       )
       removeModal(props.modalId)

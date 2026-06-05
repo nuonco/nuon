@@ -23,8 +23,8 @@ export const InstallSlackButtonContainer = (
     },
     onError: (err: TAPIError) => {
       addToast(
-        <Toast heading="Unable to start Slack install" theme="error">
-          <Text>{err?.description || err?.error || 'Please try again.'}</Text>
+        <Toast heading="Slack install failed" theme="error">
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
         </Toast>
       )
     },

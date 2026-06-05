@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 
 type SSEEventHandler = (event: MessageEvent) => void
@@ -57,8 +58,8 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
       try {
         const errorData = JSON.parse(event.data)
         addToast(
-          <Toast heading="Failed to refresh data" theme="warn">
-            {errorData?.error ?? 'Connection issue'}
+          <Toast heading="Refresh failed" theme="warn">
+            <Text>{errorData?.error ?? 'Connection issue'}</Text>
           </Toast>
         )
       } catch {

@@ -50,9 +50,8 @@ export const SkipStepModalContainer = ({
     },
     onError: (err) => {
       addToast(
-        <Toast heading="Failed to skip step" theme="error">
-          <Text>There was an error while skipping this step.</Text>
-          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        <Toast heading="Skip failed" theme="error">
+          <Text>{err?.error || 'Unable to skip this step.'}</Text>
         </Toast>
       )
     },

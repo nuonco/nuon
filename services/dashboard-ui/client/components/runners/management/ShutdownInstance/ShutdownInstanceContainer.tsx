@@ -48,7 +48,7 @@ export const ShutdownInstanceModalContainer = ({ ...props }: IModal) => {
     onSuccess: () => {
       addToast(
         <Toast heading="Restart runner instance started" theme="success">
-          <Text>Restart runner instance initiated successfully.</Text>
+          <Text>Restart runner instance initiated.</Text>
         </Toast>
       )
       removeModal(props.modalId)

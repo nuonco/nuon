@@ -55,7 +55,7 @@ export const CancelWorkflowsContainer = ({
         )
       } else {
         addToast(
-          <Toast heading="Failed to cancel workflows" theme="error">
+          <Toast heading="Workflow cancellation failed" theme="error">
             <Text>None of the selected workflows could be cancelled.</Text>
           </Toast>
         )
@@ -68,7 +68,7 @@ export const CancelWorkflowsContainer = ({
     },
     onError: (err) => {
       addToast(
-        <Toast heading="Failed to cancel workflows" theme="error">
+        <Toast heading="Workflow cancellation failed" theme="error">
           <Text>{err?.error || 'An unknown error occurred.'}</Text>
         </Toast>
       )
