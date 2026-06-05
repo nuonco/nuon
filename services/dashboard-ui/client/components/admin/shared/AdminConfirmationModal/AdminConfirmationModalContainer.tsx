@@ -34,7 +34,7 @@ export const AdminConfirmationModalContainer = ({
     onSuccess: () => {
       addToast(
         <Toast heading="Action complete" theme="success">
-          <Text>{successMessage ?? `${title} completed successfully`}</Text>
+          <Text>{successMessage ?? `${title} completed.`}</Text>
         </Toast>
       )
       removeModal(props.modalId)

@@ -50,12 +50,8 @@ export const ApproveAllModalContainer = ({
     },
     onError: (err: any) => {
       addToast(
-        <Toast heading="Failed to approve changes" theme="error">
-          <Text>
-            There was an error while trying approve all changes to{' '}
-            {workflow.type} workflow {workflow.id}.
-          </Text>
-          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        <Toast heading="Approval failed" theme="error">
+          <Text>{err?.error || `Unable to approve all changes to ${workflow.type} workflow.`}</Text>
         </Toast>
       )
     },

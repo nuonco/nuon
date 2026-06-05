@@ -39,7 +39,7 @@ export const CreateInstallFromApp = ({
   const isDuplicateName = submitError?.error?.includes('duplicated key not allowed')
   const submitErrorMessage = useMemo(() => {
     if (!submitError) return undefined
-    if (isDuplicateName) return 'Duplicate install names are not allowed. Please choose a different name.'
+    if (isDuplicateName) return 'Duplicate install names are not allowed. Choose a different name.'
     return submitError.error || submitError.description || 'Unable to create install.'
   }, [submitError, isDuplicateName])
 

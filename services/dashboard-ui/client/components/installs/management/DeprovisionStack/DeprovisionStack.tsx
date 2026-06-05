@@ -37,7 +37,7 @@ export const DeprovisionStackModal = ({
       <div className="flex flex-col gap-4">
         <Banner theme="warn">
           <Text variant="body">
-            <strong>Manual Action Required:</strong> Once you have deprovisioned the install from the UI, please go to the cloud platform console and destroy this stack for your install.
+            <strong>Manual action required:</strong> Once you have deprovisioned the install from the UI, go to the cloud platform console and destroy this stack for your install.
           </Text>
         </Banner>
 

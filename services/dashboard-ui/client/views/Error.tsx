@@ -15,8 +15,8 @@ const messages: Record<string, { title: string; message: string }> = {
 }
 
 const fallback = {
-  title: 'Something went wrong',
-  message: 'An unexpected error occurred. Please try again.',
+  title: 'Loading failed',
+  message: 'An unexpected error occurred. Try again.',
 }
 
 export const Error = () => {

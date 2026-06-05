@@ -108,7 +108,7 @@ export const AdminInstallSection = ({
 
       <AdminActionGroup title="Component management" icon="CubeIcon" variant="danger">
         <AdminActionCard
-          title="Teardown components"
+          title="Teardown all components"
           description="Teardown all components on this install"
           action={() => adminTeardownInstallComponents({ installId, orgId })}
           variant="danger"
