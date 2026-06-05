@@ -18,9 +18,10 @@ import (
 
 const (
 	// batch sizes bound how much we hold in memory / send per statement so a large
-	// app (many installs and/or many action workflows / components) can't OOM the api.
+	// app (many installs and/or many action workflows / components / runbooks) can't OOM the api.
 	actionWorkflowFetchBatchSize = 20
 	componentFetchBatchSize      = 20
+	runbookFetchBatchSize        = 20
 	installFetchBatchSize        = 20
 	insertBatchSize              = 20
 )
@@ -155,6 +156,65 @@ func createInstallComponents(ctx context.Context, db *gorm.DB, installIDs []stri
 			batch = append(batch, app.InstallComponent{
 				ComponentID: component.ID,
 				InstallID:   installID,
+			})
+			if len(batch) < insertBatchSize {
+				continue
+			}
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return flush()
+}
+
+// Runbooks ensures every runbook for the app has an InstallRunbook row for the
+// given installs. If installIDs is empty, every install belonging to the app is
+// ensured.
+func Runbooks(ctx context.Context, db *gorm.DB, appID string, installIDs []string) error {
+	var runbooks []app.Runbook
+	return db.WithContext(ctx).
+		Where(app.Runbook{AppID: appID}).
+		FindInBatches(&runbooks, runbookFetchBatchSize, func(_ *gorm.DB, _ int) error {
+			if len(installIDs) > 0 {
+				return createInstallRunbooks(ctx, db, installIDs, runbooks)
+			}
+
+			var installs []app.Install
+			return db.WithContext(ctx).
+				Where(app.Install{AppID: appID}).
+				FindInBatches(&installs, installFetchBatchSize, func(_ *gorm.DB, _ int) error {
+					batchIDs := make([]string, 0, len(installs))
+					for _, install := range installs {
+						batchIDs = append(batchIDs, install.ID)
+					}
+					return createInstallRunbooks(ctx, db, batchIDs, runbooks)
+				}).Error
+		}).Error
+}
+
+func createInstallRunbooks(ctx context.Context, db *gorm.DB, installIDs []string, runbooks []app.Runbook) error {
+	batch := make([]app.InstallRunbook, 0, insertBatchSize)
+	flush := func() error {
+		if len(batch) < 1 {
+			return nil
+		}
+		res := db.WithContext(ctx).
+			Clauses(clause.OnConflict{DoNothing: true}).
+			Create(&batch)
+		if res.Error != nil {
+			return errors.Wrap(res.Error, "unable to create install runbooks")
+		}
+		batch = batch[:0]
+		return nil
+	}
+
+	for _, installID := range installIDs {
+		for _, runbook := range runbooks {
+			batch = append(batch, app.InstallRunbook{
+				RunbookID: runbook.ID,
+				InstallID: installID,
 			})
 			if len(batch) < insertBatchSize {
 				continue

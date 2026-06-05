@@ -220,7 +220,7 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 	if err := ensure.ActionWorkflows(ctx, s.db, appID, []string{install.ID}); err != nil {
 		return nil, fmt.Errorf("unable to ensure install action workflows: %w", err)
 	}
-	if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, appID, []string{install.ID}); err != nil {
+	if err := ensure.Runbooks(ctx, s.db, appID, []string{install.ID}); err != nil {
 		return nil, fmt.Errorf("unable to ensure install runbooks: %w", err)
 	}
 

@@ -16,6 +16,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/deprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/ensureinstallactions"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/ensureinstallcomponents"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/ensureinstallrunbooks"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/reprovision"

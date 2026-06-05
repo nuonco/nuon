@@ -96,6 +96,9 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	if err := ensure.ActionWorkflows(ctx, a.db, req.AppID, nil); err != nil {
 		return nil, fmt.Errorf("unable to ensure install action workflows: %w", err)
 	}
+	if err := ensure.Runbooks(ctx, a.db, req.AppID, nil); err != nil {
+		return nil, fmt.Errorf("unable to ensure install runbooks: %w", err)
+	}
 
 	// Mark config as active with component and action IDs
 	a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]interface{}{

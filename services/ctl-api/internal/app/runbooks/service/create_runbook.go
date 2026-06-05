@@ -8,7 +8,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/ensureinstallrunbooks"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type CreateRunbookRequest struct {
@@ -69,9 +71,20 @@ func (s *service) CreateRunbook(ctx *gin.Context) {
 		return
 	}
 
-	// Ensure install runbooks for all existing installs
-	if err := s.helpers.EnsureInstallRunbooks(ctx, appID, nil); err != nil {
-		ctx.Error(fmt.Errorf("unable to ensure install runbooks: %w", err))
+	// fan the new runbook out across every install for the app durably, off the
+	// request path, via a signal on the app queue
+	queue, err := s.appsHelpers.GetOrCreateAppSignalsQueue(ctx, appID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get app signals queue: %w", err))
+		return
+	}
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   queue.ID,
+		OwnerID:   appID,
+		OwnerType: "apps",
+		Signal:    &ensureinstallrunbooks.Signal{AppID: appID},
+	}); err != nil {
+		ctx.Error(fmt.Errorf("unable to enqueue ensure install runbooks signal: %w", err))
 		return
 	}
 
