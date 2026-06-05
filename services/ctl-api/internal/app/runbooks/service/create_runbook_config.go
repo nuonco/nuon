@@ -20,21 +20,21 @@ type CreateRunbookConfigRequest struct {
 }
 
 type CreateRunbookStepConfigRequest struct {
-	Name                 string            `json:"name" validate:"required"`
-	Type                 string            `json:"type" validate:"required"`
-	Idx                  int64             `json:"idx"`
-	ComponentName        string            `json:"component_name,omitempty"`
-	DeployDependents     bool              `json:"deploy_dependents,omitempty"`
-	TearDownDependents   bool              `json:"tear_down_dependents,omitempty"`
-	SkipComponentDeploys bool              `json:"skip_component_deploys,omitempty"`
+	Name                 string `json:"name" validate:"required"`
+	Type                 string `json:"type" validate:"required"`
+	Idx                  int64  `json:"idx"`
+	ComponentName        string `json:"component_name,omitempty"`
+	DeployDependents     bool   `json:"deploy_dependents,omitempty"`
+	TearDownDependents   bool   `json:"tear_down_dependents,omitempty"`
+	SkipComponentDeploys bool   `json:"skip_component_deploys,omitempty"`
 	// Legacy alias for DeployDependents — accepted to keep older API clients working.
-	DeployDependenciesLegacy bool   `json:"deploy_dependencies,omitempty" swaggerignore:"true"`
-	ActionName               string `json:"action_name,omitempty"`
-	Command              string            `json:"command,omitempty"`
-	InlineContents       string            `json:"inline_contents,omitempty"`
-	EnvVars              map[string]string `json:"env_vars,omitempty"`
-	Timeout              int64             `json:"timeout,omitempty"`
-	Role                 string            `json:"role,omitempty"`
+	DeployDependenciesLegacy bool              `json:"deploy_dependencies,omitempty" swaggerignore:"true"`
+	ActionName               string            `json:"action_name,omitempty"`
+	Command                  string            `json:"command,omitempty"`
+	InlineContents           string            `json:"inline_contents,omitempty"`
+	EnvVars                  map[string]string `json:"env_vars,omitempty"`
+	Timeout                  int64             `json:"timeout,omitempty"`
+	Role                     string            `json:"role,omitempty"`
 }
 
 // @ID				CreateRunbookConfig
