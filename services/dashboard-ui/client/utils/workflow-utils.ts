@@ -101,6 +101,16 @@ export function getStepBadge(
 
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
+/**
+ * A step's logical "kind" — stable across retry attempts. Retrying a step
+ * creates a new step row that shares the same group and name as the prior
+ * attempt(s), so callers can group attempts together (e.g. to only show retry
+ * controls on the latest attempt of a kind).
+ */
+export function getStepKind(step: TWorkflowStep): string {
+  return `${step?.group_idx ?? ''}:${step?.step_target_type ?? ''}:${step?.name ?? step?.id ?? ''}`
+}
+
 export type TStepButtonsCfg = {
   cancel: boolean
   approval: boolean
@@ -109,7 +119,9 @@ export type TStepButtonsCfg = {
 
 export function getStepButtons(step: TWorkflowStep): TStepButtonsCfg {
   const status = step?.status?.status
-  const isFailedAwaitingRetry = status === 'failed-pending-retry'
+  // A step that has already been superseded by a newer retry attempt
+  // (`retried === true`) should never offer retry/skip controls.
+  const isFailedAwaitingRetry = status === 'failed-pending-retry' && !step?.retried
   const isRetryableError = status === 'error' && !!step?.retryable && !step?.retried && !step?.status?.metadata?.retries_exhausted && step?.status?.metadata?.retry_type !== 'auto'
   return {
     retry: isFailedAwaitingRetry || isRetryableError,
