@@ -56,7 +56,7 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
     },
     onError: () => {
       addToast(
-        <Toast heading="Failed to update labels" theme="error">
+        <Toast heading="Label update failed" theme="error">
           <Text>Unable to update labels for {install.name}.</Text>
         </Toast>,
       )

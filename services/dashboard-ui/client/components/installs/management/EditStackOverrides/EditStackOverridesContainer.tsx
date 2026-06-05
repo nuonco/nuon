@@ -73,7 +73,7 @@ export const EditStackOverridesModalContainer = ({
     onSuccess: () => {
       addToast(
         <Toast heading="Stack overrides updated" theme="success">
-          <Text>Install stack overrides saved successfully.</Text>
+          <Text>Install stack overrides saved.</Text>
         </Toast>
       )
       refresh()

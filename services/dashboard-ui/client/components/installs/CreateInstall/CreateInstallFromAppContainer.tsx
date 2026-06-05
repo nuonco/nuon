@@ -104,7 +104,7 @@ export const CreateInstallFromAppContainer = ({
     onSuccess: (result) => {
       addToast(
         <Toast heading="Install created" theme="success">
-          <Text>Install created successfully!</Text>
+          <Text>Install created.</Text>
         </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })

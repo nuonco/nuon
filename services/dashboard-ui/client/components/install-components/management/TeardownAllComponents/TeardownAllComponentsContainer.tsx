@@ -101,7 +101,7 @@ export const TeardownAllComponentsButton = ({ ...props }: IButtonAsButton) => {
       {...props}
       variant="danger"
     >
-      Teardown components <Icon variant="CloudArrowDownIcon" />
+      Teardown all components <Icon variant="CloudArrowDownIcon" />
     </Button>
   )
 }

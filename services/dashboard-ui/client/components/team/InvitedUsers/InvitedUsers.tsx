@@ -48,7 +48,7 @@ export const InvitedUsers = ({
 }
 
 export const InvitedUsersError = ({
-  message = 'We encountered an issue loading invites. Please try refreshing the page.',
+  message = 'Unable to load invites. Try refreshing the page.',
   title = 'Unable to load user invites',
 }: {
   message?: string

@@ -135,7 +135,7 @@ function CreateInstallStepContentContainer({
       await completeUserJourney({ journeyName: 'evaluation' })
       addToast(
         <Toast heading="Install created" theme="success">
-          <Text>Install created successfully!</Text>
+          <Text>Install created.</Text>
         </Toast>
       )
       const workflowId = result.data.workflow_id

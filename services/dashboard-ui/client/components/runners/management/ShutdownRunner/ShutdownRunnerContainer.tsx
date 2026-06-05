@@ -55,7 +55,7 @@ export const ShutdownRunnerModal = ({ runnerId, processId, showRunnerLabel, ...p
     onSuccess: () => {
       addToast(
         <Toast heading="Shutdown runner process started" theme="success">
-          <Text>Shutdown runner process initiated successfully.</Text>
+          <Text>Shutdown runner process initiated.</Text>
         </Toast>
       )
       removeModal(props.modalId)

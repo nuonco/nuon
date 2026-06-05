@@ -51,7 +51,7 @@ export const TeardownComponentModal = ({
             theme="error"
           >
             <Icon variant="WarningIcon" size="24" />
-            Teardown {component.name} component
+            Teardown {component.name}?
           </Text>
           <Text
             variant="body"
@@ -89,11 +89,9 @@ export const TeardownComponentModal = ({
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Text variant="base" weight="strong">
-              Are you sure you want to teardown {component.name}?
-            </Text>
             <Text variant="body" theme="neutral">
-              Tearing down a component will remove all of its running deployments from the cloud account.
+              Tearing down {component.name} will remove all of its running
+              deployments from the cloud account.
             </Text>
           </div>
 
