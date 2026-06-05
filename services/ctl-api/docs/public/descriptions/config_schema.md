@@ -18,4 +18,5 @@ You can pass in a valid source argument to render within a specific config file:
 - container_image
 - helm
 - terraform
+- runbook
 - job
