@@ -53,6 +53,7 @@
                 "root": "guides/byoc",
                 "expanded": false,
                 "pages": [
+                  "guides/byoc/requirements",
                   "guides/byoc/aws",
                   "guides/byoc/azure",
                   "guides/byoc/gcp"
@@ -63,9 +64,7 @@
                 "root": "guides/self-hosted",
                 "expanded": false,
                 "pages": [
-                  "guides/self-hosted/aws",
-                  "guides/self-hosted/azure",
-                  "guides/self-hosted/gcp"
+                  "guides/self-hosted/supported-platforms"
                 ]
               }
             ]
