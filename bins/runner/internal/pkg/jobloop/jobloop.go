@@ -2,6 +2,7 @@ package jobloop
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
@@ -50,6 +51,13 @@ type jobLoop struct {
 	shutdowner fx.Shutdowner
 
 	processRegistrar *process.Registrar
+
+	// coalescers maps execution_id -> per-execution status writer. The
+	// jobLoop type is shared by every concurrent job (parallel-runner-
+	// jobs feature flag) so an execution-keyed map is required to keep
+	// writers isolated.
+	coalescersMu sync.Mutex
+	coalescers   map[string]*statusCoalescer
 
 	// for healthcheck
 	healthcheck Healthcheck

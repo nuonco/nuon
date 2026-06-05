@@ -82,6 +82,12 @@ type AppRunnerGroupSettings struct {
 	// logging level
 	LoggingLevel string `json:"logging_level,omitempty"`
 
+	// LongPollJobs mirrors the org's `runner-job-long-poll` feature flag
+	// so the runner can choose between the legacy idle-poll loop and the
+	// new long-poll endpoint at boot. Not persisted; populated by the
+	// runner-settings handler.
+	LongPollJobs bool `json:"long_poll_jobs,omitempty"`
+
 	// Metadata is used as both log and metric tags/attributes in the runner when emitting data
 	Metadata map[string]string `json:"metadata,omitempty"`
 
