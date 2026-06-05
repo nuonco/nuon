@@ -369,7 +369,15 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "apply job failed"))
+		msg := job.JobErrorMessage(err, "apply job failed")
+		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
+		if s.runnerJobID != "" {
+			_ = activities.AwaitRecordDeployCompositeError(ctx, activities.RecordDeployCompositeErrorRequest{
+				DeployID:        installDeploy.ID,
+				RunnerJobID:     s.runnerJobID,
+				FallbackMessage: msg,
+			})
+		}
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)
 	}
