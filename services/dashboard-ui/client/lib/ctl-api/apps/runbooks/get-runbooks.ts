@@ -43,6 +43,7 @@ export type TRunbookStep = {
   type?: string
   component_name?: string
   deploy_dependencies?: boolean
+  skip_component_deploys?: boolean
   action_workflow_id?: string
   command?: string
   inline_contents?: string

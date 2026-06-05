@@ -14,8 +14,10 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeDeploy RunbookStepType = "deploy"
-	RunbookStepTypeAction RunbookStepType = "action"
+	RunbookStepTypeDeploy             RunbookStepType = "deploy"
+	RunbookStepTypeAction             RunbookStepType = "action"
+	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
+	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 )
 
 type RunbookConfig struct {
@@ -36,6 +38,10 @@ type RunbookStepConfig struct {
 	// For type = "deploy"
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
 	DeployDependencies bool   `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
+
+	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
+	// and do NOT redeploy components on top.
+	SkipComponentDeploys bool `mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
 
 	// For type = "action" — reference existing action
 	ActionName string `mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
@@ -70,9 +76,10 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("Either 'deploy' for deploying a component, or 'action' for running an action").
+		Long("One of: 'deploy' (deploy a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
 		Example("deploy").
 		Example("action").
+		Example("sandbox_reprovision").
 		Field("component_name").Short("component to deploy (for deploy steps)").
 		Long("Name of the component to deploy. Required when type is 'deploy'").
 		Example("database").
@@ -95,7 +102,9 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("30s").
 		Example("5m").
 		Field("role").Short("IAM role for inline action execution").
-		Long("IAM role name to use when executing the inline action step")
+		Long("IAM role name to use when executing the inline action step").
+		Field("skip_component_deploys").Short("skip component deployments after sandbox reprovision").
+		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option")
 }
 
 func (r *RunbookConfig) parse() error {
