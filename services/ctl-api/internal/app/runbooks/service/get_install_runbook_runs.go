@@ -24,6 +24,11 @@ import (
 // @Param			offset		query	int		false	"offset"	Default(0)
 // @Param			limit		query	int		false	"limit"		Default(10)
 // @Success		200			{array}	app.InstallRunbookRun
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbook-runs [get]
 func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
@@ -82,6 +87,11 @@ func (s *service) GetInstallRunbookRuns(ctx *gin.Context) {
 // @Param			install_id	path	string	true	"install ID"
 // @Param			run_id		path	string	true	"run ID"
 // @Success		200			{object}	app.InstallRunbookRun
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbook-runs/{run_id} [get]
 func (s *service) GetInstallRunbookRun(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
