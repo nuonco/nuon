@@ -27,12 +27,20 @@ export type TRunbook = {
   configs?: TRunbookConfig[]
 }
 
+export type TRunbookCell = {
+  type: 'markdown' | 'deploy' | 'action'
+  content?: string
+  step_idx?: number
+  name?: string
+}
+
 export type TRunbookConfig = {
   id: string
   runbook_id?: string
   app_config_id?: string
   readme?: string
   steps?: TRunbookStep[]
+  cells?: TRunbookCell[]
   created_at?: string
 }
 

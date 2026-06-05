@@ -27,6 +27,7 @@ import { RunbookDetailLayout } from './RunbookDetailLayout'
 import { RunbookReadmeTab } from './runbook-tabs/RunbookReadmeTab'
 import { RunbookStepsTab } from './runbook-tabs/RunbookStepsTab'
 import { RunbookHistoryTab } from './runbook-tabs/RunbookHistoryTab'
+import { RunbookNotebookTab } from './runbook-tabs/RunbookNotebookTab'
 import { ActionRunLayout } from './ActionRunLayout'
 import { ActionRunDetail } from './ActionRunDetail'
 import { ActionRunLogsPage } from './ActionRunLogs'
@@ -123,6 +124,7 @@ export const installRoutes: RouteObject[] = [
         element: <RunbookDetailLayout />,
         children: [
           { path: 'readme', element: <RunbookReadmeTab /> },
+          { path: 'notebook', element: <RunbookNotebookTab /> },
           { path: 'steps', element: <RunbookStepsTab /> },
           { path: 'history', element: <RunbookHistoryTab /> },
         ],

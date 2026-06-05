@@ -13,7 +13,6 @@ import (
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
-	"github.com/go-openapi/validate"
 )
 
 // ServiceCreateRunbookConfigRequest service create runbook config request
@@ -24,17 +23,23 @@ type ServiceCreateRunbookConfigRequest struct {
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 
+	// cells
+	Cells []*ServiceCreateRunbookCellConfigRequest `json:"cells"`
+
 	// readme
 	Readme string `json:"readme,omitempty"`
 
 	// steps
-	// Required: true
 	Steps []*ServiceCreateRunbookStepConfigRequest `json:"steps"`
 }
 
 // Validate validates this service create runbook config request
 func (m *ServiceCreateRunbookConfigRequest) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateCells(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateSteps(formats); err != nil {
 		res = append(res, err)
@@ -46,10 +51,39 @@ func (m *ServiceCreateRunbookConfigRequest) Validate(formats strfmt.Registry) er
 	return nil
 }
 
-func (m *ServiceCreateRunbookConfigRequest) validateSteps(formats strfmt.Registry) error {
+func (m *ServiceCreateRunbookConfigRequest) validateCells(formats strfmt.Registry) error {
+	if swag.IsZero(m.Cells) { // not required
+		return nil
+	}
 
-	if err := validate.Required("steps", "body", m.Steps); err != nil {
-		return err
+	for i := 0; i < len(m.Cells); i++ {
+		if swag.IsZero(m.Cells[i]) { // not required
+			continue
+		}
+
+		if m.Cells[i] != nil {
+			if err := m.Cells[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (m *ServiceCreateRunbookConfigRequest) validateSteps(formats strfmt.Registry) error {
+	if swag.IsZero(m.Steps) { // not required
+		return nil
 	}
 
 	for i := 0; i < len(m.Steps); i++ {
@@ -81,6 +115,10 @@ func (m *ServiceCreateRunbookConfigRequest) validateSteps(formats strfmt.Registr
 func (m *ServiceCreateRunbookConfigRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCells(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -88,6 +126,35 @@ func (m *ServiceCreateRunbookConfigRequest) ContextValidate(ctx context.Context,
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *ServiceCreateRunbookConfigRequest) contextValidateCells(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Cells); i++ {
+
+		if m.Cells[i] != nil {
+
+			if swag.IsZero(m.Cells[i]) { // not required
+				return nil
+			}
+
+			if err := m.Cells[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

@@ -35,6 +35,7 @@ type RunbookConfig struct {
 
 	Readme string              `json:"readme,omitzero" temporaljson:"readme,omitzero,omitempty"`
 	Steps  []RunbookStepConfig `json:"steps,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"steps,omitzero,omitempty"`
+	Cells  []RunbookCellConfig `json:"cells,omitzero" gorm:"type:jsonb;serializer:json" temporaljson:"cells,omitzero,omitempty"`
 }
 
 func (r *RunbookConfig) BeforeCreate(tx *gorm.DB) error {

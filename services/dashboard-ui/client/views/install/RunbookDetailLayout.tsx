@@ -39,13 +39,15 @@ export const RunbookDetailLayout = () => {
   const steps =
     latestConfig?.steps?.slice().sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0)) ??
     []
+  const hasCells = (latestConfig?.cells?.length ?? 0) > 0
   const runs = installRunbook?.runs ?? []
   const basePath = `/${org?.id}/installs/${install?.id}/runbooks/${runbookId}`
 
   const isIndexRoute = pathname === basePath || pathname === `${basePath}/`
 
   if (!isLoading && isIndexRoute) {
-    return <Navigate to={`${basePath}/readme`} replace />
+    const defaultTab = hasCells ? '/notebook' : '/readme'
+    return <Navigate to={`${basePath}${defaultTab}`} replace />
   }
 
   if (isLoading) {
@@ -156,6 +158,9 @@ export const RunbookDetailLayout = () => {
           <TabNav
             basePath={basePath}
             tabs={[
+              ...(hasCells
+                ? [{ path: '/notebook', text: 'Notebook' }]
+                : []),
               { path: '/readme', text: 'Readme' },
               {
                 path: '/steps',

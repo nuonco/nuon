@@ -75,6 +75,29 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 		})
 	}
 
+	if len(runbook.Cells) > 0 {
+		for _, cell := range runbook.Cells {
+			timeout := time.Duration(0)
+			if cell.Timeout != "" {
+				timeout, _ = time.ParseDuration(cell.Timeout)
+			}
+
+			request.Cells = append(request.Cells, &models.ServiceCreateRunbookCellConfigRequest{
+				Type:               generics.ToPtr(string(cell.Type)),
+				Content:            cell.Content,
+				Name:               cell.Name,
+				ComponentName:      cell.ComponentName,
+				DeployDependencies: cell.DeployDependencies,
+				ActionName:         cell.ActionName,
+				Command:            cell.Command,
+				InlineContents:     cell.InlineContents,
+				EnvVars:            cell.EnvVarMap,
+				Timeout:            timeout.Nanoseconds(),
+				Role:               cell.Role,
+			})
+		}
+	}
+
 	savedConfig, err := s.apiClient.CreateRunbookConfig(ctx, savedRunbook.ID, request)
 	if err != nil {
 		return "", "", sync.SyncAPIErr{

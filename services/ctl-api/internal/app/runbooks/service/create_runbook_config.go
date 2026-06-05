@@ -13,10 +13,26 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
+type CreateRunbookCellConfigRequest struct {
+	Type    string `json:"type" validate:"required"`
+	Content string `json:"content,omitempty"`
+	Name    string `json:"name,omitempty"`
+
+	ComponentName      string            `json:"component_name,omitempty"`
+	DeployDependencies bool              `json:"deploy_dependencies,omitempty"`
+	ActionName         string            `json:"action_name,omitempty"`
+	Command            string            `json:"command,omitempty"`
+	InlineContents     string            `json:"inline_contents,omitempty"`
+	EnvVars            map[string]string `json:"env_vars,omitempty"`
+	Timeout            int64             `json:"timeout,omitempty"`
+	Role               string            `json:"role,omitempty"`
+}
+
 type CreateRunbookConfigRequest struct {
 	AppConfigID *string                           `json:"app_config_id"`
 	Readme      string                            `json:"readme"`
-	Steps       []*CreateRunbookStepConfigRequest `json:"steps" validate:"required"`
+	Steps       []*CreateRunbookStepConfigRequest `json:"steps"`
+	Cells       []*CreateRunbookCellConfigRequest `json:"cells,omitempty"`
 }
 
 type CreateRunbookStepConfigRequest struct {
@@ -133,6 +149,22 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		steps = append(steps, stepCfg)
 	}
 
+	var cells []app.RunbookCellConfig
+	stepIdx := 0
+	for _, cellReq := range req.Cells {
+		cell := app.RunbookCellConfig{
+			Type:    cellReq.Type,
+			Content: cellReq.Content,
+			Name:    cellReq.Name,
+		}
+		if cellReq.Type != "markdown" {
+			idx := stepIdx
+			cell.StepIdx = &idx
+			stepIdx++
+		}
+		cells = append(cells, cell)
+	}
+
 	rbcfg := app.RunbookConfig{
 		OrgID:       org.ID,
 		AppID:       runbook.AppID,
@@ -140,6 +172,7 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		RunbookID:   runbook.ID,
 		Readme:      req.Readme,
 		Steps:       steps,
+		Cells:       cells,
 	}
 
 	res := s.db.WithContext(ctx).Create(&rbcfg)

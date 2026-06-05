@@ -83,6 +83,17 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 						}
 						cfg.Readme = rendered
 					}
+					for j := range cfg.Cells {
+						cell := &cfg.Cells[j]
+						if cell.Type == "markdown" && cell.Content != "" {
+							rendered, _, renderErr := render.RenderWithWarnings(cell.Content, stateMap)
+							if renderErr != nil {
+								zap.L().Warn("unable to render runbook cell content", zap.Error(renderErr))
+								continue
+							}
+							cell.Content = rendered
+						}
+					}
 				}
 			}
 		}

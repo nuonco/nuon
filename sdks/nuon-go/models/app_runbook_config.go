@@ -26,6 +26,9 @@ type AppRunbookConfig struct {
 	// app id
 	AppID string `json:"app_id,omitempty"`
 
+	// cells
+	Cells []*AppRunbookCellConfig `json:"cells"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -52,6 +55,10 @@ type AppRunbookConfig struct {
 func (m *AppRunbookConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCells(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateSteps(formats); err != nil {
 		res = append(res, err)
 	}
@@ -59,6 +66,36 @@ func (m *AppRunbookConfig) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunbookConfig) validateCells(formats strfmt.Registry) error {
+	if swag.IsZero(m.Cells) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Cells); i++ {
+		if swag.IsZero(m.Cells[i]) { // not required
+			continue
+		}
+
+		if m.Cells[i] != nil {
+			if err := m.Cells[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -96,6 +133,10 @@ func (m *AppRunbookConfig) validateSteps(formats strfmt.Registry) error {
 func (m *AppRunbookConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCells(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +144,35 @@ func (m *AppRunbookConfig) ContextValidate(ctx context.Context, formats strfmt.R
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunbookConfig) contextValidateCells(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Cells); i++ {
+
+		if m.Cells[i] != nil {
+
+			if swag.IsZero(m.Cells[i]) { // not required
+				return nil
+			}
+
+			if err := m.Cells[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("cells" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

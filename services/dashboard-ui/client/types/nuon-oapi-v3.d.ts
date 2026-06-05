@@ -4620,9 +4620,16 @@ export interface components {
       status_v2?: components["schemas"]["app.CompositeStatus"];
       updated_at?: string;
     };
+    "app.RunbookCellConfig": {
+      content?: string;
+      name?: string;
+      step_idx?: number;
+      type?: string;
+    };
     "app.RunbookConfig": {
       app_config_id?: string;
       app_id?: string;
+      cells?: components["schemas"]["app.RunbookCellConfig"][];
       created_at?: string;
       created_by_id?: string;
       id?: string;
@@ -6718,10 +6725,26 @@ export interface components {
       skip_noops?: boolean;
       version?: string;
     };
+    "service.CreateRunbookCellConfigRequest": {
+      action_name?: string;
+      command?: string;
+      component_name?: string;
+      content?: string;
+      deploy_dependencies?: boolean;
+      env_vars?: {
+        [key: string]: string;
+      };
+      inline_contents?: string;
+      name?: string;
+      role?: string;
+      timeout?: number;
+      type: string;
+    };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
+      cells?: components["schemas"]["service.CreateRunbookCellConfigRequest"][];
       readme?: string;
-      steps: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
+      steps?: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
     };
     "service.CreateRunbookRequest": {
       description?: string;

@@ -12,10 +12,11 @@ title: 'Runbook'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the runbook The runbook name is displayed in the Runbooks tab of the Nuon dashboard and used to identify it during sync | **✅ Required** | `"v2.3-update"`, `"database-migration"` |
-| **`steps`**<br/>[array](#steps) | ordered steps to execute in the runbook Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing ... | **✅ Required** | - |
 | **`description`**<br/>string | - | **Optional** | - |
 | **`readme`**<br/>string | readme file for the runbook Markdown file with runbook documentation and instructions. Supports Go templating and external file sources: HTTP(S) URLs, git repositories, file paths, and relative paths | **Optional** | `"./release-notes.md"` |
 | **`labels`**<br/>object | - | **Optional** | - |
+| **`steps`**<br/>[array](#steps) | ordered steps to execute in the runbook Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing ... | **Optional** | - |
+| **`cells`**<br/>[array](#cells) | notebook-style cells interleaving documentation with steps Ordered list of cells that can be markdown documentation or executable steps (deploy/action). Cells are normalized to steps at config crea... | **Optional** | - |
 | **`dependencies`**<br/>array | - | **Optional** | - |
 
 ### `steps`
@@ -32,4 +33,20 @@ title: 'Runbook'
 | **`env_vars`**<br/>object | environment variables for inline action steps Map of environment variables passed to the inline action command | **Optional** | - |
 | **`timeout`**<br/>string | timeout for inline action steps Maximum execution time for inline action steps. Must be a valid Go duration string | **Optional** | `"30s"`, `"5m"` |
 | **`role`**<br/>string | IAM role for inline action execution IAM role name to use when executing the inline action step | **Optional** | - |
+
+### `cells`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`type`**<br/>string | type of cell Either 'markdown' for documentation, 'deploy' for deploying a component, or 'action' for running an action | **✅ Required** | `"markdown"`, `"deploy"`, `"action"` |
+| **`content`**<br/>string | markdown content (for markdown cells) Markdown text displayed between executable steps. Supports Go templating with install state variables | **Optional** | - |
+| **`name`**<br/>string | name of the step (for deploy/action cells) Displayed in the workflow UI and runbook detail page. Required for deploy and action cells | **Optional** | `"deploy-database"`, `"run-migrations"` |
+| **`component_name`**<br/>string | component to deploy (for deploy cells) Name of the component to deploy. Required when type is 'deploy' | **Optional** | - |
+| **`deploy_dependencies`**<br/>boolean | also deploy transitive dependencies When true, deploys the component and all its transitive dependencies in dependency order. Only applies to deploy cells | **Optional** | - |
+| **`action_name`**<br/>string | existing action to run (for action cells) Name of a previously defined action workflow to execute. Mutually exclusive with inline action fields | **Optional** | - |
+| **`command`**<br/>string | command to execute (for inline action cells) Shell command for an inline action. Supports Go templating | **Optional** | - |
+| **`inline_contents`**<br/>string | inline script contents (for inline action cells) Embed script contents directly or reference an external file. Supports Go templating and external URLs | **Optional** | - |
+| **`env_vars`**<br/>object | environment variables for inline action cells Map of environment variables passed to the inline action command | **Optional** | - |
+| **`timeout`**<br/>string | timeout for inline action cells Maximum execution time. Must be a valid Go duration string | **Optional** | `"30s"`, `"5m"` |
+| **`role`**<br/>string | IAM role for inline action execution IAM role name to use when executing the inline action cell | **Optional** | - |
 
