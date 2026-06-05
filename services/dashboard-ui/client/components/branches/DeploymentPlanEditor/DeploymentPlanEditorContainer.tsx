@@ -108,7 +108,7 @@ export const DeploymentPlanEditorContainer = ({
     },
     onError: (error: Error) => {
       addToast(
-        <Toast heading="Failed to save deployment plan" theme="error">
+        <Toast heading="Deployment plan save failed" theme="error">
           <Text>{error.message || 'An unknown error occurred.'}</Text>
         </Toast>
       )

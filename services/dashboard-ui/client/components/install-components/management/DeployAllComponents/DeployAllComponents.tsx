@@ -48,7 +48,7 @@ export const DeployAllComponentsModal = ({
             <Icon variant="Loading" /> Starting deployments
           </span>
         ) : (
-          'Deploy components'
+          'Deploy all components'
         ),
         disabled: isKickedOff || isPending,
         onClick: () => onSubmit({ role: selectedRole }),
@@ -62,12 +62,8 @@ export const DeployAllComponentsModal = ({
             {(error as any)?.error || 'Unable to deploy components'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to deploy all components?
-        </Text>
         <Text variant="base">
-          This action will deploy the latest build of each component to your
-          install.
+          This will deploy the latest build of each component to your install.
         </Text>
         {roleSelector({
           value: selectedRole,

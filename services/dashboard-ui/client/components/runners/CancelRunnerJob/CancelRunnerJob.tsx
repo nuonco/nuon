@@ -22,59 +22,48 @@ export type TCancelJobType =
 type TCancelJobData = {
   buttonText: string
   confirmHeading: string
-  confirmMessage: string
 }
 
 export const cancelJobOptions: Record<TCancelJobType, TCancelJobData> = {
   build: {
     buttonText: 'Cancel build',
     confirmHeading: 'Cancel component build?',
-    confirmMessage: 'Are you sure you want to cancel this component build?',
   },
   deploy: {
     buttonText: 'Cancel deploy',
     confirmHeading: 'Cancel component deployment?',
-    confirmMessage: 'Are you sure you want to cancel this component deployment?',
   },
   sync: {
     buttonText: 'Cancel sync',
     confirmHeading: 'Cancel component sync?',
-    confirmMessage: 'Are you sure you want to cancel this component sync?',
   },
   'sandbox-run': {
     buttonText: 'Cancel sandbox job',
     confirmHeading: 'Cancel sandbox job?',
-    confirmMessage: 'Are you sure you want to cancel this sandbox job?',
   },
   sandbox: {
     buttonText: 'Cancel sandbox job',
     confirmHeading: 'Cancel sandbox job?',
-    confirmMessage: 'Are you sure you want to cancel this sandbox job?',
   },
   'workflow-run': {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel action workflow?',
-    confirmMessage: 'Are you sure you want to cancel this action workflow?',
   },
   actions: {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel action workflow?',
-    confirmMessage: 'Are you sure you want to cancel this action workflow?',
   },
   operations: {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel shut down?',
-    confirmMessage: 'Are you sure you want to cancel this shut down job?',
   },
   runner: {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel runner job?',
-    confirmMessage: 'Are you sure you want to cancel this runner job?',
   },
   'health-checks': {
     buttonText: 'Cancel action',
     confirmHeading: 'Cancel health check?',
-    confirmMessage: 'Are you sure you want to cancel this health check job?',
   },
 }
 
@@ -129,15 +118,12 @@ export const CancelRunnerJobModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happned, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="strong">
-          {cancelJobData.confirmMessage}
-        </Text>
         <Text variant="base">
-          Once a runner job is canceled, it cannot be restarted. The job will stop
-          immediately and any in-progress work will be lost.
+          Once canceled, the job cannot be restarted. It will stop immediately
+          and any in-progress work will be lost.
         </Text>
       </div>
     </Modal>

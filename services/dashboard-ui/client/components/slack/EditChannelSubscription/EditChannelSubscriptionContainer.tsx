@@ -57,7 +57,7 @@ const EditChannelSubscriptionModalContainer = ({
           : 'Unable to save changes'
       addToast(
         <Toast heading={heading} theme="error">
-          <Text>{err?.description || err?.error || 'Please try again.'}</Text>
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
         </Toast>
       )
     },

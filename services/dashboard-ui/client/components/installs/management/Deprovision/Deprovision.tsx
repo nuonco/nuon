@@ -35,7 +35,7 @@ export const DeprovisionModal = ({
           theme="error"
         >
           <Icon variant="ArrowDownIcon" size="24" />
-          Deprovision entire install
+          Deprovision install?
         </Text>
       }
       primaryActionTrigger={{
@@ -64,11 +64,8 @@ export const DeprovisionModal = ({
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Text variant="base" weight="strong">
-              Are you sure you want to deprovision {installName}?
-            </Text>
             <Text variant="body" theme="neutral">
-              Deprovisioning an install will remove it from the cloud account.
+              Deprovisioning {installName} will remove it from the cloud account.
             </Text>
           </div>
 
@@ -103,7 +100,7 @@ export const DeprovisionModal = ({
 
           <Banner theme="warn">
             <Text variant="body">
-              <strong>Important:</strong> After this workflow completes, please manually teardown the install stack.
+              <strong>Important:</strong> After this workflow completes, manually teardown the install stack.
             </Text>
           </Banner>
         </div>

@@ -42,16 +42,16 @@ export const AdminRunnersPanelContainer = ({
     mutationFn: () => adminRestartOrgRunners({ orgId, adminEmail }),
     onSuccess: async () => {
       addToast(
-        <Toast heading="Runners Restarted" theme="success">
-          <Text>All runners restarted successfully</Text>
+        <Toast heading="Runners restarted" theme="success">
+          <Text>All runners for this organization have been restarted.</Text>
         </Toast>
       )
       await fetchInstalls()
     },
     onError: () => {
       addToast(
-        <Toast heading="Restart Failed" theme="error">
-          <Text>Failed to restart runners. Please try again.</Text>
+        <Toast heading="Restart failed" theme="error">
+          <Text>Unable to restart runners. Try again.</Text>
         </Toast>
       )
     },

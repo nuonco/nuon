@@ -50,15 +50,12 @@ export const CancelWorkflowModal = ({
         {error ? (
           <Banner theme="error">
             {error.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="strong">
-          Are you sure you want to cancel this {workflowType} workflow?
-        </Text>
         <Text variant="base">
-          Once a workflow is canceled you can not restart it. You will have to
-          trigger a new workflow run.
+          Once canceled, this {workflowType} workflow cannot be restarted. You
+          will have to trigger a new workflow run.
         </Text>
       </div>
     </Modal>
