@@ -21,6 +21,11 @@ import (
 // @Param			app_id		path	string	true	"app ID"
 // @Param			runbook_id	path	string	true	"runbook ID"
 // @Success		200			{object}	app.Runbook
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks/{runbook_id} [get]
 func (s *service) GetRunbook(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)

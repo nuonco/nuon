@@ -31,6 +31,36 @@ func (o *GetRunbookConfigsReader) ReadResponse(response runtime.ClientResponse, 
 			return nil, err
 		}
 		return result, nil
+	case 400:
+		result := NewGetRunbookConfigsBadRequest()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 401:
+		result := NewGetRunbookConfigsUnauthorized()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 403:
+		result := NewGetRunbookConfigsForbidden()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 404:
+		result := NewGetRunbookConfigsNotFound()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
+	case 500:
+		result := NewGetRunbookConfigsInternalServerError()
+		if err := result.readResponse(response, consumer, o.formats); err != nil {
+			return nil, err
+		}
+		return nil, result
 	default:
 		return nil, runtime.NewAPIError("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs] GetRunbookConfigs", response, response.Code())
 	}
@@ -98,6 +128,356 @@ func (o *GetRunbookConfigsOK) readResponse(response runtime.ClientResponse, cons
 
 	// response payload
 	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRunbookConfigsBadRequest creates a GetRunbookConfigsBadRequest with default headers values
+func NewGetRunbookConfigsBadRequest() *GetRunbookConfigsBadRequest {
+	return &GetRunbookConfigsBadRequest{}
+}
+
+/*
+GetRunbookConfigsBadRequest describes a response with status code 400, with default header values.
+
+Bad Request
+*/
+type GetRunbookConfigsBadRequest struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this get runbook configs bad request response has a 2xx status code
+func (o *GetRunbookConfigsBadRequest) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get runbook configs bad request response has a 3xx status code
+func (o *GetRunbookConfigsBadRequest) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get runbook configs bad request response has a 4xx status code
+func (o *GetRunbookConfigsBadRequest) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get runbook configs bad request response has a 5xx status code
+func (o *GetRunbookConfigsBadRequest) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get runbook configs bad request response a status code equal to that given
+func (o *GetRunbookConfigsBadRequest) IsCode(code int) bool {
+	return code == 400
+}
+
+// Code gets the status code for the get runbook configs bad request response
+func (o *GetRunbookConfigsBadRequest) Code() int {
+	return 400
+}
+
+func (o *GetRunbookConfigsBadRequest) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsBadRequest %s", 400, payload)
+}
+
+func (o *GetRunbookConfigsBadRequest) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsBadRequest %s", 400, payload)
+}
+
+func (o *GetRunbookConfigsBadRequest) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *GetRunbookConfigsBadRequest) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRunbookConfigsUnauthorized creates a GetRunbookConfigsUnauthorized with default headers values
+func NewGetRunbookConfigsUnauthorized() *GetRunbookConfigsUnauthorized {
+	return &GetRunbookConfigsUnauthorized{}
+}
+
+/*
+GetRunbookConfigsUnauthorized describes a response with status code 401, with default header values.
+
+Unauthorized
+*/
+type GetRunbookConfigsUnauthorized struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this get runbook configs unauthorized response has a 2xx status code
+func (o *GetRunbookConfigsUnauthorized) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get runbook configs unauthorized response has a 3xx status code
+func (o *GetRunbookConfigsUnauthorized) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get runbook configs unauthorized response has a 4xx status code
+func (o *GetRunbookConfigsUnauthorized) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get runbook configs unauthorized response has a 5xx status code
+func (o *GetRunbookConfigsUnauthorized) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get runbook configs unauthorized response a status code equal to that given
+func (o *GetRunbookConfigsUnauthorized) IsCode(code int) bool {
+	return code == 401
+}
+
+// Code gets the status code for the get runbook configs unauthorized response
+func (o *GetRunbookConfigsUnauthorized) Code() int {
+	return 401
+}
+
+func (o *GetRunbookConfigsUnauthorized) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsUnauthorized %s", 401, payload)
+}
+
+func (o *GetRunbookConfigsUnauthorized) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsUnauthorized %s", 401, payload)
+}
+
+func (o *GetRunbookConfigsUnauthorized) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *GetRunbookConfigsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRunbookConfigsForbidden creates a GetRunbookConfigsForbidden with default headers values
+func NewGetRunbookConfigsForbidden() *GetRunbookConfigsForbidden {
+	return &GetRunbookConfigsForbidden{}
+}
+
+/*
+GetRunbookConfigsForbidden describes a response with status code 403, with default header values.
+
+Forbidden
+*/
+type GetRunbookConfigsForbidden struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this get runbook configs forbidden response has a 2xx status code
+func (o *GetRunbookConfigsForbidden) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get runbook configs forbidden response has a 3xx status code
+func (o *GetRunbookConfigsForbidden) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get runbook configs forbidden response has a 4xx status code
+func (o *GetRunbookConfigsForbidden) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get runbook configs forbidden response has a 5xx status code
+func (o *GetRunbookConfigsForbidden) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get runbook configs forbidden response a status code equal to that given
+func (o *GetRunbookConfigsForbidden) IsCode(code int) bool {
+	return code == 403
+}
+
+// Code gets the status code for the get runbook configs forbidden response
+func (o *GetRunbookConfigsForbidden) Code() int {
+	return 403
+}
+
+func (o *GetRunbookConfigsForbidden) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsForbidden %s", 403, payload)
+}
+
+func (o *GetRunbookConfigsForbidden) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsForbidden %s", 403, payload)
+}
+
+func (o *GetRunbookConfigsForbidden) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *GetRunbookConfigsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRunbookConfigsNotFound creates a GetRunbookConfigsNotFound with default headers values
+func NewGetRunbookConfigsNotFound() *GetRunbookConfigsNotFound {
+	return &GetRunbookConfigsNotFound{}
+}
+
+/*
+GetRunbookConfigsNotFound describes a response with status code 404, with default header values.
+
+Not Found
+*/
+type GetRunbookConfigsNotFound struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this get runbook configs not found response has a 2xx status code
+func (o *GetRunbookConfigsNotFound) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get runbook configs not found response has a 3xx status code
+func (o *GetRunbookConfigsNotFound) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get runbook configs not found response has a 4xx status code
+func (o *GetRunbookConfigsNotFound) IsClientError() bool {
+	return true
+}
+
+// IsServerError returns true when this get runbook configs not found response has a 5xx status code
+func (o *GetRunbookConfigsNotFound) IsServerError() bool {
+	return false
+}
+
+// IsCode returns true when this get runbook configs not found response a status code equal to that given
+func (o *GetRunbookConfigsNotFound) IsCode(code int) bool {
+	return code == 404
+}
+
+// Code gets the status code for the get runbook configs not found response
+func (o *GetRunbookConfigsNotFound) Code() int {
+	return 404
+}
+
+func (o *GetRunbookConfigsNotFound) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsNotFound %s", 404, payload)
+}
+
+func (o *GetRunbookConfigsNotFound) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsNotFound %s", 404, payload)
+}
+
+func (o *GetRunbookConfigsNotFound) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *GetRunbookConfigsNotFound) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
+		return err
+	}
+
+	return nil
+}
+
+// NewGetRunbookConfigsInternalServerError creates a GetRunbookConfigsInternalServerError with default headers values
+func NewGetRunbookConfigsInternalServerError() *GetRunbookConfigsInternalServerError {
+	return &GetRunbookConfigsInternalServerError{}
+}
+
+/*
+GetRunbookConfigsInternalServerError describes a response with status code 500, with default header values.
+
+Internal Server Error
+*/
+type GetRunbookConfigsInternalServerError struct {
+	Payload *models.StderrErrResponse
+}
+
+// IsSuccess returns true when this get runbook configs internal server error response has a 2xx status code
+func (o *GetRunbookConfigsInternalServerError) IsSuccess() bool {
+	return false
+}
+
+// IsRedirect returns true when this get runbook configs internal server error response has a 3xx status code
+func (o *GetRunbookConfigsInternalServerError) IsRedirect() bool {
+	return false
+}
+
+// IsClientError returns true when this get runbook configs internal server error response has a 4xx status code
+func (o *GetRunbookConfigsInternalServerError) IsClientError() bool {
+	return false
+}
+
+// IsServerError returns true when this get runbook configs internal server error response has a 5xx status code
+func (o *GetRunbookConfigsInternalServerError) IsServerError() bool {
+	return true
+}
+
+// IsCode returns true when this get runbook configs internal server error response a status code equal to that given
+func (o *GetRunbookConfigsInternalServerError) IsCode(code int) bool {
+	return code == 500
+}
+
+// Code gets the status code for the get runbook configs internal server error response
+func (o *GetRunbookConfigsInternalServerError) Code() int {
+	return 500
+}
+
+func (o *GetRunbookConfigsInternalServerError) Error() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsInternalServerError %s", 500, payload)
+}
+
+func (o *GetRunbookConfigsInternalServerError) String() string {
+	payload, _ := json.Marshal(o.Payload)
+	return fmt.Sprintf("[GET /v1/apps/{app_id}/runbooks/{runbook_id}/configs][%d] getRunbookConfigsInternalServerError %s", 500, payload)
+}
+
+func (o *GetRunbookConfigsInternalServerError) GetPayload() *models.StderrErrResponse {
+	return o.Payload
+}
+
+func (o *GetRunbookConfigsInternalServerError) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
+
+	o.Payload = new(models.StderrErrResponse)
+
+	// response payload
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {
 		return err
 	}
 
