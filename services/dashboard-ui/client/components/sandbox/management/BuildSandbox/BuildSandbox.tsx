@@ -51,12 +51,9 @@ export const BuildSandboxModal = ({
             {error?.error || 'Unable to start sandbox build'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to build the sandbox for {appName}?
-        </Text>
         <Text variant="base">
-          This will start a sandbox build. The build process may take several
-          minutes to complete.
+          This will start a sandbox build for {appName}. The build process may
+          take several minutes.
         </Text>
       </div>
     </Modal>

@@ -26,7 +26,7 @@ export const UnlockTerraformWorkspaceModal = ({
         <div className="flex flex-col gap-2">
           <Text flex className="gap-4" variant="h3" weight="strong">
             <Icon variant="LockOpenIcon" size="24" />
-            Unlock Terraform workspace
+            Unlock Terraform workspace?
           </Text>
           <Text variant="body" className="text-cool-grey-600 dark:text-cool-grey-400">
             Force unlock the Terraform state for {description}
@@ -61,8 +61,8 @@ export const UnlockTerraformWorkspaceModal = ({
 
         <div className="flex flex-col gap-4">
           <Text variant="body" theme="neutral">
-            Are you sure you want to force unlock this Terraform workspace? This should only be
-            done if a previous operation failed to release the lock.
+            Force unlocking should only be done if a previous operation failed to
+            release the lock.
           </Text>
 
           <Banner theme="warn">

@@ -38,16 +38,16 @@ export const BranchDetailActionsContainer = ({
       }),
     onSuccess: () => {
       addToast(
-        <Toast theme="success" heading="Run triggered successfully">
+        <Toast theme="success" heading="Run triggered">
           <Text>Your app branch run has been queued.</Text>
         </Toast>
       )
       refresh()
     },
     onError: (error: TAPIError) => {
-      const errorMessage = error.error || 'Failed to trigger run'
+      const errorMessage = error.error || 'Unable to trigger run.'
       addToast(
-        <Toast theme="error" heading="Failed to trigger run">
+        <Toast theme="error" heading="Branch run failed">
           <Text>{errorMessage}</Text>
         </Toast>
       )

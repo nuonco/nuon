@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -38,7 +40,9 @@ export const DriftScanSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id },
       })
       addToast(
-        <Toast heading="Sandbox drift scan started" theme="info" />
+        <Toast heading="Sandbox drift scan started" theme="info">
+          <Text>Scanning <Badge variant="code" size="md">{install.name}</Badge> sandbox for drift.</Text>
+        </Toast>
       )
       removeModal(props.modalId)
       const workflowId = result.data.workflow_id
@@ -56,7 +60,9 @@ export const DriftScanSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id, err: err?.error },
       })
       addToast(
-        <Toast heading="Sandbox drift scan failed" theme="error" />
+        <Toast heading="Sandbox drift scan failed" theme="error">
+          <Text>Unable to start drift scan for <Badge variant="code" size="md">{install.name}</Badge> sandbox.</Text>
+        </Toast>
       )
     },
   })

@@ -30,7 +30,7 @@ export const DeprovisionSandboxModal = ({
   return (
     <Modal
       className="!max-w-xl"
-      heading="Deprovision install sandbox"
+      heading="Deprovision sandbox?"
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">
@@ -58,14 +58,12 @@ export const DeprovisionSandboxModal = ({
         ) : null}
 
         <span className="flex flex-col gap-1">
-          <Text variant="h3" weight="strong">
-            Are you sure you want to deprovision {installName} sandbox?
-          </Text>
           <Text
             className="text-cool-grey-600 dark:text-white/70"
             variant="subtext"
           >
-            Deprovisioning a sandbox will remove it from the cloud account.
+            Deprovisioning the {installName} sandbox will remove it from the
+            cloud account.
           </Text>
         </span>
 

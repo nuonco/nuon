@@ -75,7 +75,7 @@ export const StepBanner = ({
           <Text weight="strong">
             {isPolicyAutoApproved
               ? 'Auto-approved: all policy checks passed'
-              : 'All policy checks passed successfully'}
+              : 'All policy checks passed'}
           </Text>
         </Banner>
       ) : null}
