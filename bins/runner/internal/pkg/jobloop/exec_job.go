@@ -62,6 +62,19 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	}
 	l = l.With(zap.String("runner_job_execution.id", execution.ID))
 
+	// Per-execution status coalescer. Intermediate status transitions
+	// (resetting → fetching → validate → initialize → ...) now drop
+	// non-terminal pings on the floor while the previous write is in
+	// flight; terminal statuses still land synchronously and in order.
+	// The deferred Close() is a guard against panics — WriteTerminal
+	// is idempotent (stopOnce) so the normal path is unaffected.
+	coalescer := newStatusCoalescer(job.ID, execution.ID, l, j.writeJobExecutionStatus)
+	j.attachCoalescer(execution.ID, coalescer)
+	defer func() {
+		coalescer.Close()
+		j.detachCoalescer(execution.ID)
+	}()
+
 	// Open the per-execution root span. Every step / op span is a descendant
 	// so the entire job execution forms a single trace. Job metadata goes onto
 	// ctx so op.Start can stamp it on every descendant span without each

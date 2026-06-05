@@ -36,6 +36,16 @@ const metricReadFreshnessLagMs = "log_read.freshness_lag_ms"
 // readMode classifies a legacy read so the comparison against the tail
 // endpoint isn't muddied by search/download/backfill traffic. Only
 // `mode:poll` is apples-to-apples with the tail endpoint's role.
+//
+// liveTailFreshnessCeiling guards against contamination: a cursor==0
+// first-page load of an old or finished stream legitimately returns rows
+// that are hours old (the newest row *on the first page* is ancient), and
+// those samples would otherwise dominate the poll-slice median and bury
+// the real live-tail floor we're comparing against. We only count a sample
+// when its lag is small enough to plausibly be a live tail; genuine
+// live-tail polls sit well under this, finished-job opens sit well over.
+const liveTailFreshnessCeiling = 5 * time.Minute
+
 const (
 	readModePoll     = "poll"     // empty cursor, no filters, ASC — the BFF live-tail loop
 	readModeBackfill = "backfill" // non-empty cursor, no filters — paging through history
@@ -259,8 +269,10 @@ func (s *service) LogStreamReadLogs(ctx *gin.Context) {
 		if order == "desc" {
 			newest = logs[0]
 		}
-		s.mw.Timing(metricReadFreshnessLagMs, time.Since(newest.Timestamp),
-			[]string{"mode:" + classifyReadMode(cursor, order, filters)})
+		if lag := time.Since(newest.Timestamp); lag <= liveTailFreshnessCeiling {
+			s.mw.Timing(metricReadFreshnessLagMs, lag,
+				[]string{"mode:" + classifyReadMode(cursor, order, filters)})
+		}
 	}
 
 	// Set headers
