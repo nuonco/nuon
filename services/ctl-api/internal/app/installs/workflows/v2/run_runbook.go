@@ -2,6 +2,7 @@ package v2
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
@@ -13,10 +14,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentsyncimage"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxapplyplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
@@ -81,6 +87,14 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 				return nil, errors.Wrapf(err, "unable to generate action step %s", stepCfg.Name)
 			}
 			steps = append(steps, actionStep)
+
+		case app.RunbookStepTypeSandboxReprovision,
+			app.RunbookStepTypeSandboxDeprovision:
+			sbxSteps, err := runbookSandboxLifecycleSteps(ctx, installID, &stepCfg, flw, sg, install)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to generate sandbox %s step %s", stepCfg.Type, stepCfg.Name)
+			}
+			steps = append(steps, sbxSteps...)
 		}
 	}
 
@@ -250,4 +264,79 @@ func runbookActionStep(ctx workflow.Context, installID string, stepCfg *app.Runb
 	}
 
 	return sg.installSignalStep(ctx, installID, fmt.Sprintf("action: %s", stepCfg.Name), pgtype.Hstore{}, sig, false)
+}
+
+func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, flw *app.Workflow, sg *stepGroup, install *app.Install) ([]*app.WorkflowStep, error) {
+	sandbox, err := activities.AwaitGetInstallSandboxByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install sandbox")
+	}
+
+	role := stepCfg.Role
+	if role == "" {
+		role = flw.Role
+	}
+
+	var (
+		planLabel   string
+		applyLabel  string
+		planSignal  signal.Signal
+		applySignal signal.Signal
+	)
+	switch stepCfg.Type {
+	case app.RunbookStepTypeSandboxReprovision:
+		planLabel = fmt.Sprintf("sandbox reprovision plan: %s", stepCfg.Name)
+		applyLabel = fmt.Sprintf("sandbox reprovision apply: %s", stepCfg.Name)
+		planSignal = &reprovisionsandboxplan.Signal{InstallSandboxID: sandbox.ID, InstallID: installID, Role: role}
+		applySignal = &reprovisionsandboxapplyplan.Signal{InstallSandboxID: sandbox.ID, InstallID: installID}
+	case app.RunbookStepTypeSandboxDeprovision:
+		planLabel = fmt.Sprintf("sandbox deprovision plan: %s", stepCfg.Name)
+		applyLabel = fmt.Sprintf("sandbox deprovision apply: %s", stepCfg.Name)
+		planSignal = &deprovisionsandboxplan.Signal{InstallSandboxID: sandbox.ID, InstallID: installID, Role: role}
+		applySignal = &deprovisionsandboxapplyplan.Signal{InstallSandboxID: sandbox.ID, InstallID: installID}
+	default:
+		return nil, errors.Errorf("unsupported sandbox lifecycle step type %q", stepCfg.Type)
+	}
+
+	sg.nextGroupNamed(fmt.Sprintf("sandbox %s: %s", strings.TrimPrefix(string(stepCfg.Type), "sandbox_"), stepCfg.Name))
+
+	result := make([]*app.WorkflowStep, 0, 2)
+	planStep, err := sg.installSignalStep(ctx, installID, planLabel, pgtype.Hstore{}, planSignal, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, planStep)
+
+	if flw.PlanOnly {
+		return result, nil
+	}
+
+	applyStep, err := sg.installSignalStep(ctx, installID, applyLabel, pgtype.Hstore{}, applySignal, flw.PlanOnly, WithMaxAutoRetries(install.AppSandboxConfig.GetMaxAutoRetries()))
+	if err != nil {
+		return nil, err
+	}
+	result = append(result, applyStep)
+
+	// Optionally redeploy all components after a sandbox (re)provision, mirroring the standalone workflows.
+	// Deprovision never deploys; SkipComponentDeploys lets the runbook author opt out.
+	if stepCfg.SkipComponentDeploys || stepCfg.Type == app.RunbookStepTypeSandboxDeprovision {
+		return result, nil
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{InstallID: installID})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg, awData)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to generate component deploy steps")
+	}
+	result = append(result, deploySteps...)
+
+	return result, nil
 }

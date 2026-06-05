@@ -79,6 +79,12 @@ export const RunbookStepCard = ({
 }: IRunbookStepCard) => {
   const isDeploy = step.step_target_type === 'install_deploys'
   const isActionRun = step.step_target_type === 'install_action_workflow_runs'
+  const isSandboxRun = step.step_target_type === 'install_sandbox_runs'
+  const targetLabel = isDeploy
+    ? 'deploy'
+    : isSandboxRun
+      ? 'sandbox run'
+      : 'action run'
   const actionRun = isActionRun ? (targetData as TInstallActionRun) : undefined
   const envVarEntries = Object.entries(actionRun?.run_env_vars ?? {})
   const stepStatus =
@@ -168,7 +174,7 @@ export const RunbookStepCard = ({
             id={`step-data-${step.id}`}
             heading={
               <Text family="mono" variant="subtext">
-                View {isDeploy ? 'deploy' : 'action run'} JSON
+                View {targetLabel} JSON
               </Text>
             }
           >
