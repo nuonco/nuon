@@ -47,6 +47,12 @@ type AppRunbookStepConfig struct {
 	// inline contents
 	InlineContents string `json:"inline_contents,omitempty"`
 
+	// input_update fields. Inputs is a map of input-name → templated value to
+	// apply to the install. SkipDeployDependents inverts the dashboard's
+	// "Deploy dependents" checkbox so the Go zero value preserves the default
+	// (deploy dependents on input update).
+	Inputs map[string]string `json:"inputs,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
@@ -58,6 +64,9 @@ type AppRunbookStepConfig struct {
 
 	// sandbox lifecycle fields
 	SkipComponentDeploys bool `json:"skip_component_deploys,omitempty"`
+
+	// skip deploy dependents
+	SkipDeployDependents bool `json:"skip_deploy_dependents,omitempty"`
 
 	// tear down dependents
 	TearDownDependents bool `json:"tear_down_dependents,omitempty"`

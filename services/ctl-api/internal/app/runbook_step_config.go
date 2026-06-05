@@ -20,6 +20,7 @@ const (
 	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
 	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
 	RunbookStepTypeAction             RunbookStepType = "action"
+	RunbookStepTypeInputUpdate        RunbookStepType = "input_update"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 
@@ -54,6 +55,13 @@ type RunbookStepConfig struct {
 
 	// sandbox lifecycle fields
 	SkipComponentDeploys bool `json:"skip_component_deploys,omitzero" gorm:"default:false" temporaljson:"skip_component_deploys,omitzero,omitempty"`
+
+	// input_update fields. Inputs is a map of input-name → templated value to
+	// apply to the install. SkipDeployDependents inverts the dashboard's
+	// "Deploy dependents" checkbox so the Go zero value preserves the default
+	// (deploy dependents on input update).
+	Inputs               pgtype.Hstore `json:"inputs,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"inputs,omitzero,omitempty"`
+	SkipDeployDependents bool          `json:"skip_deploy_dependents,omitzero" gorm:"default:false" temporaljson:"skip_deploy_dependents,omitzero,omitempty"`
 
 	// action reference field
 	ActionWorkflowID generics.NullString `json:"action_workflow_id,omitzero" swaggertype:"string" temporaljson:"action_workflow_id,omitzero,omitempty"`

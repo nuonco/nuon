@@ -18,6 +18,7 @@ const (
 	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
 	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
 	RunbookStepTypeAction             RunbookStepType = "action"
+	RunbookStepTypeInputUpdate        RunbookStepType = "input_update"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 
@@ -59,6 +60,17 @@ type RunbookStepConfig struct {
 	// and do NOT redeploy components on top.
 	SkipComponentDeploys bool `mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
 
+	// For type = "input_update" — map of input-name → templated value to apply
+	// to the install. Values support the same Go-template features as action
+	// command / inline_contents (e.g. {{.component.x.output.y}}).
+	Inputs map[string]string `mapstructure:"inputs,omitempty" toml:"inputs,omitempty" features:"template"`
+
+	// For type = "input_update" — when true, only update inputs without
+	// redeploying components that depend on them. Mirrors the dashboard's
+	// "Deploy dependents" checkbox (inverted polarity so the Go zero value
+	// preserves the default of deploying dependents).
+	SkipDeployDependents bool `mapstructure:"skip_deploy_dependents,omitempty" toml:"skip_deploy_dependents,omitempty"`
+
 	// For type = "action" — reference existing action
 	ActionName string `mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
 
@@ -94,10 +106,11 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down' (tear down a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
+		Long("One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down' (tear down a component), 'action' (run an action), 'input_update' (update install inputs and optionally redeploy affected components), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
 		Example("component_deploy").
 		Example("component_tear_down").
 		Example("action").
+		Example("input_update").
 		Example("sandbox_reprovision").
 		Field("component_name").Short("component to deploy or tear down (for component steps)").
 		Long("Name of the component to deploy or tear down. Required when type is 'component_deploy' or 'component_tear_down'").
@@ -127,7 +140,11 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("role").Short("IAM role for inline action execution").
 		Long("IAM role name to use when executing the inline action step").
 		Field("skip_component_deploys").Short("skip component deployments after sandbox reprovision").
-		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option")
+		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option").
+		Field("inputs").Short("install inputs to update (for input_update steps)").
+		Long("Map of input-name to value. Values support Go templating (e.g. {{.component.x.output.y}}). Required when type is 'input_update'. Customer-sourced (install_stack) inputs cannot be updated this way").
+		Field("skip_deploy_dependents").Short("skip redeploying components after updating inputs").
+		Long("Only applies to 'input_update' steps. When true, only the install inputs are updated and components depending on those inputs are NOT redeployed. Mirrors the dashboard's 'Deploy dependents' checkbox (inverted polarity — the default is to deploy dependents)")
 }
 
 func (r *RunbookConfig) parse() error {

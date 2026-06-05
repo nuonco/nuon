@@ -46,6 +46,8 @@ type CreateRunbookStepConfigRequest struct {
 	EnvVars                  map[string]string `json:"env_vars,omitempty"`
 	Timeout                  int64             `json:"timeout,omitempty"`
 	Role                     string            `json:"role,omitempty"`
+	Inputs                   map[string]string `json:"inputs,omitempty"`
+	SkipDeployDependents     bool              `json:"skip_deploy_dependents,omitempty"`
 }
 
 // @ID				CreateRunbookConfig
@@ -111,11 +113,22 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		case app.RunbookStepTypeComponentDeploy,
 			app.RunbookStepTypeComponentTearDown,
 			app.RunbookStepTypeAction,
+			app.RunbookStepTypeInputUpdate,
 			app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
 		default:
 			ctx.Error(fmt.Errorf("invalid step type %q for step %s", stepReq.Type, stepReq.Name))
 			return
+		}
+
+		if stepType == app.RunbookStepTypeInputUpdate && len(stepReq.Inputs) == 0 {
+			ctx.Error(fmt.Errorf("step %s of type input_update requires non-empty inputs", stepReq.Name))
+			return
+		}
+
+		inputs := pgtype.Hstore{}
+		for k, v := range stepReq.Inputs {
+			inputs[k] = &v
 		}
 
 		envVars := pgtype.Hstore{}
@@ -131,6 +144,8 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			DeployDependents:     stepReq.DeployDependents || stepReq.DeployDependenciesLegacy,
 			TearDownDependents:   stepReq.TearDownDependents,
 			SkipComponentDeploys: stepReq.SkipComponentDeploys,
+			Inputs:               inputs,
+			SkipDeployDependents: stepReq.SkipDeployDependents,
 			Command:              stepReq.Command,
 			InlineContents:       stepReq.InlineContents,
 			EnvVars:              envVars,
