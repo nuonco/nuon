@@ -16,7 +16,6 @@ type RunbookStepType string
 const (
 	RunbookStepTypeDeploy             RunbookStepType = "deploy"
 	RunbookStepTypeAction             RunbookStepType = "action"
-	RunbookStepTypeSandboxProvision   RunbookStepType = "sandbox_provision"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 )
@@ -40,8 +39,8 @@ type RunbookStepConfig struct {
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
 	DeployDependencies bool   `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
 
-	// For type = "sandbox_provision" / "sandbox_reprovision" — when true, only run the sandbox infra
-	// plan + apply and do NOT redeploy components on top.
+	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
+	// and do NOT redeploy components on top.
 	SkipComponentDeploys bool `mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
 
 	// For type = "action" — reference existing action
@@ -77,7 +76,7 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("One of: 'deploy' (deploy a component), 'action' (run an action), 'sandbox_provision', 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
+		Long("One of: 'deploy' (deploy a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
 		Example("deploy").
 		Example("action").
 		Example("sandbox_reprovision").
@@ -104,8 +103,8 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("5m").
 		Field("role").Short("IAM role for inline action execution").
 		Long("IAM role name to use when executing the inline action step").
-		Field("skip_component_deploys").Short("skip component deployments after sandbox reprovision/provision").
-		Long("Only applies to 'sandbox_provision' and 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is (re)provisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option")
+		Field("skip_component_deploys").Short("skip component deployments after sandbox reprovision").
+		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option")
 }
 
 func (r *RunbookConfig) parse() error {

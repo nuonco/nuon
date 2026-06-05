@@ -26,8 +26,7 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
             variant={
               step.type === 'deploy'
                 ? 'RocketIcon'
-                : step.type === 'sandbox_provision' ||
-                    step.type === 'sandbox_reprovision' ||
+                : step.type === 'sandbox_reprovision' ||
                     step.type === 'sandbox_deprovision'
                   ? 'CubeIcon'
                   : 'TerminalIcon'
@@ -59,8 +58,7 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
               <Text variant="subtext">{step.deploy_dependencies ? 'Yes' : 'No'}</Text>
             </div>
           ) : null}
-          {step.type === 'sandbox_provision' ||
-          step.type === 'sandbox_reprovision' ? (
+          {step.type === 'sandbox_reprovision' ? (
             <div className="flex items-center py-2 gap-4">
               <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Skip component deploys</Text>
               <Text variant="subtext">{step.skip_component_deploys ? 'Yes' : 'No'}</Text>

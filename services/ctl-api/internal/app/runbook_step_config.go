@@ -19,7 +19,6 @@ type RunbookStepType string
 const (
 	RunbookStepTypeDeploy             RunbookStepType = "deploy"
 	RunbookStepTypeAction             RunbookStepType = "action"
-	RunbookStepTypeSandboxProvision   RunbookStepType = "sandbox_provision"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 )

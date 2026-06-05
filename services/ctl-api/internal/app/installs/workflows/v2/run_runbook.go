@@ -18,8 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/deprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxapplyplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
@@ -90,8 +88,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 			}
 			steps = append(steps, actionStep)
 
-		case app.RunbookStepTypeSandboxProvision,
-			app.RunbookStepTypeSandboxReprovision,
+		case app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
 			sbxSteps, err := runbookSandboxLifecycleSteps(ctx, installID, &stepCfg, flw, sg, install)
 			if err != nil {
@@ -287,11 +284,6 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 		applySignal signal.Signal
 	)
 	switch stepCfg.Type {
-	case app.RunbookStepTypeSandboxProvision:
-		planLabel = fmt.Sprintf("sandbox provision plan: %s", stepCfg.Name)
-		applyLabel = fmt.Sprintf("sandbox provision apply: %s", stepCfg.Name)
-		planSignal = &provisionsandboxplan.Signal{InstallSandboxID: sandbox.ID, InstallID: installID, Role: role}
-		applySignal = &provisionsandboxapplyplan.Signal{InstallSandboxID: sandbox.ID, InstallID: installID}
 	case app.RunbookStepTypeSandboxReprovision:
 		planLabel = fmt.Sprintf("sandbox reprovision plan: %s", stepCfg.Name)
 		applyLabel = fmt.Sprintf("sandbox reprovision apply: %s", stepCfg.Name)

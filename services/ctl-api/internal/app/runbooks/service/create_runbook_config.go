@@ -92,7 +92,6 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		switch stepType {
 		case app.RunbookStepTypeDeploy,
 			app.RunbookStepTypeAction,
-			app.RunbookStepTypeSandboxProvision,
 			app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
 		default:
