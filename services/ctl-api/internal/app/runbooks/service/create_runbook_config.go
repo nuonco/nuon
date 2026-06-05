@@ -92,8 +92,12 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	steps := make([]app.RunbookStepConfig, 0, len(req.Steps))
 	for idx, stepReq := range req.Steps {
 		stepType := app.RunbookStepType(stepReq.Type)
+		// Canonicalize the legacy "deploy" step type to "component_deploy".
+		if stepType == app.RunbookStepTypeDeployLegacy {
+			stepType = app.RunbookStepTypeComponentDeploy
+		}
 		switch stepType {
-		case app.RunbookStepTypeDeploy,
+		case app.RunbookStepTypeComponentDeploy,
 			app.RunbookStepTypeComponentTearDown,
 			app.RunbookStepTypeAction,
 			app.RunbookStepTypeSandboxReprovision,

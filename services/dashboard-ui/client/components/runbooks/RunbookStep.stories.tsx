@@ -10,7 +10,7 @@ export const DeployStep = () => (
     step={{
       id: 'step-1',
       name: 'deploy-whoami',
-      type: 'deploy',
+      type: 'component_deploy',
       component_name: 'whoami',
       deploy_dependents: true,
     }}

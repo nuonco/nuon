@@ -17,11 +17,15 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeDeploy             RunbookStepType = "deploy"
+	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
 	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
 	RunbookStepTypeAction             RunbookStepType = "action"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+
+	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
+	// as input and canonicalized to component_deploy at ingress.
+	RunbookStepTypeDeployLegacy RunbookStepType = "deploy"
 )
 
 type RunbookStepConfig struct {

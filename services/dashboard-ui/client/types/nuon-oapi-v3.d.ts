@@ -4640,7 +4640,7 @@ export interface components {
       component_name?: string;
       created_at?: string;
       created_by_id?: string;
-      deploy_dependencies?: boolean;
+      deploy_dependents?: boolean;
       env_vars?: {
         [key: string]: string;
       };
@@ -4652,7 +4652,7 @@ export interface components {
       runbook_config_id?: string;
       /** @description sandbox lifecycle fields */
       skip_component_deploys?: boolean;
-      tear_down_dependencies?: boolean;
+      tear_down_dependents?: boolean;
       timeout?: number;
       type?: string;
       updated_at?: string;
@@ -6735,7 +6735,7 @@ export interface components {
       action_name?: string;
       command?: string;
       component_name?: string;
-      deploy_dependencies?: boolean;
+      deploy_dependents?: boolean;
       env_vars?: {
         [key: string]: string;
       };
@@ -6744,7 +6744,7 @@ export interface components {
       name: string;
       role?: string;
       skip_component_deploys?: boolean;
-      tear_down_dependencies?: boolean;
+      tear_down_dependents?: boolean;
       timeout?: number;
       type: string;
     };

@@ -24,7 +24,7 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
         <span className="flex items-center gap-2">
           <Icon
             variant={
-              step.type === 'deploy'
+              step.type === 'component_deploy' || step.type === 'deploy'
                 ? 'RocketIcon'
                 : step.type === 'component_tear_down'
                   ? 'TrashIcon'
@@ -54,7 +54,7 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
               <Text variant="subtext">{step.component_name}</Text>
             </div>
           ) : null}
-          {step.type === 'deploy' ? (
+          {step.type === 'component_deploy' || step.type === 'deploy' ? (
             <div className="flex items-center py-2 gap-4">
               <Text variant="subtext" theme="neutral" className="w-48 shrink-0">Deploy dependents</Text>
               <Text variant="subtext">{step.deploy_dependents ? 'Yes' : 'No'}</Text>

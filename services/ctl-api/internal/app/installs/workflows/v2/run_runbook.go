@@ -76,7 +76,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	// Generate steps for each runbook step
 	for _, stepCfg := range rbConfig.Steps {
 		switch stepCfg.Type {
-		case app.RunbookStepTypeDeploy:
+		case app.RunbookStepTypeComponentDeploy:
 			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, flw)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to generate deploy step %s", stepCfg.Name)

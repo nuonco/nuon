@@ -14,11 +14,15 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeDeploy             RunbookStepType = "deploy"
+	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
 	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
 	RunbookStepTypeAction             RunbookStepType = "action"
 	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
 	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+
+	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
+	// as input and canonicalized to component_deploy at parse/ingress time.
+	RunbookStepTypeDeployLegacy RunbookStepType = "deploy"
 )
 
 type RunbookConfig struct {
@@ -36,7 +40,7 @@ type RunbookStepConfig struct {
 	Name string          `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Type RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
 
-	// For type = "deploy" / "component_tear_down"
+	// For type = "component_deploy" / "component_tear_down"
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
 	DeployDependents   bool   `mapstructure:"deploy_dependents,omitempty" toml:"deploy_dependents,omitempty"`
 	TearDownDependents bool   `mapstructure:"tear_down_dependents,omitempty" toml:"tear_down_dependents,omitempty"`
@@ -82,17 +86,17 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("One of: 'deploy' (deploy a component), 'component_tear_down' (tear down a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
-		Example("deploy").
+		Long("One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down' (tear down a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
+		Example("component_deploy").
 		Example("component_tear_down").
 		Example("action").
 		Example("sandbox_reprovision").
-		Field("component_name").Short("component to deploy (for deploy steps)").
-		Long("Name of the component to deploy. Required when type is 'deploy'").
+		Field("component_name").Short("component to deploy or tear down (for component steps)").
+		Long("Name of the component to deploy or tear down. Required when type is 'component_deploy' or 'component_tear_down'").
 		Example("database").
 		Example("api-server").
 		Field("deploy_dependents").Short("also deploy transitive dependents").
-		Long("When true, deploys the component and all components that transitively depend on it (downstream), in dependency order. Only applies to deploy steps").
+		Long("When true, deploys the component and all components that transitively depend on it (downstream), in dependency order. Only applies to component_deploy steps").
 		Field("tear_down_dependents").Short("also tear down transitive dependents").
 		Long("When true, tears down the component and all components that transitively depend on it (downstream), with dependents torn down first. Only applies to component_tear_down steps").
 		Field("action_name").Short("existing action to run (for action steps)").
@@ -134,6 +138,10 @@ func (r *RunbookConfig) parse() error {
 		// Fold the legacy alias into the canonical field. New code should only read DeployDependents.
 		if step.DeployDependenciesLegacy {
 			step.DeployDependents = true
+		}
+		// Canonicalize the legacy "deploy" type to "component_deploy".
+		if step.Type == RunbookStepTypeDeployLegacy {
+			step.Type = RunbookStepTypeComponentDeploy
 		}
 	}
 

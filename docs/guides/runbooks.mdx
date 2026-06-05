@@ -67,7 +67,7 @@ action_name = "database-migration"
 
 [[steps]]
 name           = "deploy-api"
-type           = "deploy"
+type           = "component_deploy"
 component_name = "api-server"
 deploy_dependents = true
 
@@ -95,9 +95,9 @@ timeout = "5m"
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | Yes | Step name shown in the workflow UI and runbook detail page. |
-| `type` | string | Yes | `deploy`, `component_tear_down`, `action`, `sandbox_reprovision`, or `sandbox_deprovision`. |
-| `component_name` | string | deploy / tear-down steps | Component to deploy or tear down. Required when `type = "deploy"` or `"component_tear_down"`. |
-| `deploy_dependents` | bool | No | When true, also deploys the component's transitive dependents (downstream subgraph) in dependency order. Only applies to `deploy` steps. |
+| `type` | string | Yes | `component_deploy`, `component_tear_down`, `action`, `sandbox_reprovision`, or `sandbox_deprovision`. `deploy` is accepted as a legacy alias for `component_deploy`. |
+| `component_name` | string | component steps | Component to deploy or tear down. Required when `type = "component_deploy"` or `"component_tear_down"`. |
+| `deploy_dependents` | bool | No | When true, also deploys the component's transitive dependents (downstream subgraph) in dependency order. Only applies to `component_deploy` steps. |
 | `tear_down_dependents` | bool | No | When true, also tears down the component's transitive dependents (downstream subgraph), with dependents torn down first. Only applies to `component_tear_down` steps. |
 | `skip_component_deploys` | bool | No | When true, only the sandbox infrastructure is reprovisioned; components are not redeployed on top. Only applies to `sandbox_reprovision` steps. |
 | `action_name` | string | action steps | Name of an existing [action](/guides/actions) to run. Mutually exclusive with the inline fields below. |
