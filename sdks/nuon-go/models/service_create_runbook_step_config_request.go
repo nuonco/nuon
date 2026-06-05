@@ -28,8 +28,8 @@ type ServiceCreateRunbookStepConfigRequest struct {
 	// component name
 	ComponentName string `json:"component_name,omitempty"`
 
-	// deploy dependencies
-	DeployDependencies bool `json:"deploy_dependencies,omitempty"`
+	// deploy dependents
+	DeployDependents bool `json:"deploy_dependents,omitempty"`
 
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
@@ -49,6 +49,9 @@ type ServiceCreateRunbookStepConfigRequest struct {
 
 	// skip component deploys
 	SkipComponentDeploys bool `json:"skip_component_deploys,omitempty"`
+
+	// tear down dependents
+	TearDownDependents bool `json:"tear_down_dependents,omitempty"`
 
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
