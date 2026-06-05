@@ -1,6 +1,8 @@
 import { useMutation } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useApp } from '@/hooks/use-app'
@@ -20,13 +22,17 @@ export const BuildSandboxModalContainer = ({ ...props }: Omit<IModal, 'onSubmit'
     mutationFn: () => createSandboxBuild({ appId: app.id, orgId: org.id }),
     onSuccess: () => {
       addToast(
-        <Toast heading="Sandbox build started" theme="info" />
+        <Toast heading="Sandbox build started" theme="info">
+          <Text>Building sandbox for <Badge variant="code" size="md">{app.name}</Badge>. This may take a few minutes.</Text>
+        </Toast>
       )
       removeModal(props.modalId)
     },
     onError: () => {
       addToast(
-        <Toast heading="Sandbox build failed" theme="error" />
+        <Toast heading="Sandbox build failed" theme="error">
+          <Text>Unable to build sandbox for <Badge variant="code" size="md">{app.name}</Badge>.</Text>
+        </Toast>
       )
     },
   })

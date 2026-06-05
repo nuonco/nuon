@@ -255,7 +255,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       expect(getJobExecutionStatus(finishedJob)).toBe(
-        'component built successfully'
+        'component built'
       )
       expect(getJobExecutionStatus(failedJob)).toBe('component build failed')
       expect(getJobExecutionStatus(inProgressJob)).toBe(
@@ -280,7 +280,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       expect(getJobExecutionStatus(finishedJob)).toBe(
-        'sandbox provisioned successfully'
+        'sandbox provisioned'
       )
       expect(getJobExecutionStatus(failedJob)).toBe(
         'sandbox provisioning failed'
@@ -302,7 +302,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       expect(getJobExecutionStatus(finishedJob)).toBe(
-        'component synced successfully'
+        'component synced'
       )
       expect(getJobExecutionStatus(timedOutJob)).toBe(
         'component sync timed out'
@@ -326,7 +326,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       expect(getJobExecutionStatus(finishedJob)).toBe(
-        'component deployed successfully'
+        'component deployed'
       )
       expect(getJobExecutionStatus(inProgressJob)).toBe(
         'component is being deployed'
@@ -348,7 +348,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       expect(getJobExecutionStatus(finishedJob)).toBe(
-        'action completed successfully'
+        'action completed'
       )
       expect(getJobExecutionStatus(availableJob)).toBe('action starting soon')
     })
@@ -365,7 +365,7 @@ describe('runner-utils', () => {
       } as TRunnerJob
 
       expect(getJobExecutionStatus(finishedJob)).toBe(
-        'operation completed successfully'
+        'operation completed'
       )
       expect(getJobExecutionStatus(notAttemptedJob)).toBe(
         'operation not attempted'

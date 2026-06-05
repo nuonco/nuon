@@ -32,7 +32,7 @@ const APIUnavailable = ({ onRetry }: { onRetry: () => void }) => (
       <div className="flex flex-col items-center gap-4">
         <Text variant="h2">Unable to connect</Text>
         <Text variant="subtext" theme="neutral">
-          The API is currently unavailable. Please try again in a moment.
+          The API is currently unavailable. Try again in a moment.
         </Text>
       </div>
       <Button onClick={onRetry}>Retry</Button>

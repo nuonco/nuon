@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
+import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { useInstall } from '@/hooks/use-install'
@@ -40,7 +42,9 @@ export const ReprovisionSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id },
       })
       addToast(
-        <Toast heading="Sandbox reprovision started" theme="info" />
+        <Toast heading="Sandbox reprovision started" theme="info">
+          <Text>Reprovisioning <Badge variant="code" size="md">{install.name}</Badge> sandbox. This may take a few minutes.</Text>
+        </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -60,7 +64,9 @@ export const ReprovisionSandboxModalContainer = ({
         props: { orgId: org.id, installId: install.id, err: err?.error },
       })
       addToast(
-        <Toast heading="Sandbox reprovision failed" theme="error" />
+        <Toast heading="Sandbox reprovision failed" theme="error">
+          <Text>Unable to reprovision <Badge variant="code" size="md">{install.name}</Badge> sandbox.</Text>
+        </Toast>
       )
     },
   })

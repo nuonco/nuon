@@ -47,7 +47,7 @@ export const DriftScanSandboxModal = ({
         ) : null}
 
         <Text variant="body" className="leading-relaxed">
-          Are you sure you want to drift scan this sandbox?
+          This will perform a drift scan against the current sandbox state.
         </Text>
       </div>
     </Modal>

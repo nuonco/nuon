@@ -36,8 +36,8 @@ const DeleteOrgLinkModalContainer = ({
     },
     onError: (err: TAPIError) => {
       addToast(
-        <Toast heading="Unable to unlink workspace" theme="error">
-          <Text>{err?.description || err?.error || 'Please try again.'}</Text>
+        <Toast heading="Workspace unlink failed" theme="error">
+          <Text>{err?.description || err?.error || 'Try again.'}</Text>
         </Toast>
       )
     },
