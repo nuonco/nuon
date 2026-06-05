@@ -57,8 +57,12 @@ func (h *handler) execCommand(ctx context.Context, l *zap.Logger, cfg *models.Ap
 		}
 	}
 
-	lOut := zapwriter.New(l, zapcore.InfoLevel, "")
-	lErr := zapwriter.New(l, zapcore.ErrorLevel, "")
+	// Tag the user's script stdout/stderr so the UI can show just the command
+	// output and hide the runner's own job-lifecycle logs (which share the
+	// same oteljob scope and Info severity).
+	outL := l.With(zap.String("nuon.command_output", "true"))
+	lOut := zapwriter.New(outL, zapcore.InfoLevel, "")
+	lErr := zapwriter.New(outL, zapcore.ErrorLevel, "")
 
 	dirName := git.Dir(src)
 	cwd := h.state.workspace.AbsPath(dirName)

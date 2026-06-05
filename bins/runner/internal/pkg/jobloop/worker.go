@@ -11,11 +11,20 @@ import (
 	"github.com/sourcegraph/conc/panics"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
+
+	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 const (
 	defaultJobPollBackoff time.Duration = time.Second * 1
 	starvedJobPollBackoff time.Duration = time.Second * 5
+
+	// Tail (long-poll) tuning. The ctl-api endpoint caps server-side
+	// hold at 25s and the runner request gets a small grace on top so
+	// the server's empty 200 reaches us before the client cancels.
+	tailJobPollWait    time.Duration = 25 * time.Second
+	tailJobPollTimeout time.Duration = tailJobPollWait + 5*time.Second
 )
 
 func (j *jobLoop) runWorker() {
@@ -35,6 +44,12 @@ func (j *jobLoop) runWorker() {
 }
 
 func (j *jobLoop) worker() error {
+	// useTail flips to false once the org returns 404 from the tail
+	// endpoint so we don't keep re-probing a known-disabled endpoint
+	// every iteration; falls back to the legacy poll for the lifetime
+	// of this process.
+	useTail := j.settings != nil && j.settings.LongPollJobs
+
 	for {
 		select {
 		case <-j.ctx.Done():
@@ -42,16 +57,13 @@ func (j *jobLoop) worker() error {
 		default:
 		}
 
-		// TODO(sdboyer): testing hypothesis that this may be hanging indefinitely on HTTP blips;
-		// if confirmed, this timeout should be removed and generalized; if disconfirmed, remove it anyway.
-		tctx, cancel := context.WithTimeoutCause(j.ctx, time.Second*5, errors.Wrapf(context.DeadlineExceeded, "polling for jobs in group %s timed out", j.jobGroup))
-		var lim *int64
-		jobs, err := j.apiClient.GetJobs(tctx,
-			j.jobGroup,
-			j.jobStatus,
-			lim)
-		cancel()
+		jobs, err := j.fetchAvailableJobs(useTail)
 		if err != nil {
+			if errors.Is(err, nuonrunner.ErrTailJobsNotAvailable) {
+				j.l.Info("tail jobs endpoint disabled by feature flag, falling back to legacy poll")
+				useTail = false
+				continue
+			}
 			j.l.Error("unable to fetch jobs", zap.Error(err))
 
 			if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
@@ -61,8 +73,16 @@ func (j *jobLoop) worker() error {
 		}
 
 		if len(jobs) < 1 {
-			if err := smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff); err != nil {
-				return err
+			// On the tail path the server has already held the
+			// request open up to `tailJobPollWait`, so reissue
+			// immediately instead of sleeping `starvedJobPollBackoff`
+			// and reintroducing the 5s pickup latency we just
+			// removed. The legacy GetJobs path keeps the old
+			// backoff to avoid hammering the API.
+			if !useTail {
+				if err := smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff); err != nil {
+					return err
+				}
 			}
 			continue
 		}
@@ -92,4 +112,21 @@ func (j *jobLoop) worker() error {
 			return err
 		}
 	}
+}
+
+// fetchAvailableJobs branches between the long-poll tail endpoint and the
+// legacy poll based on the runtime feature flag. The tail path uses a
+// longer per-request timeout because the server intentionally holds it
+// open. The legacy path keeps the original 5s ceiling.
+func (j *jobLoop) fetchAvailableJobs(useTail bool) ([]*models.AppRunnerJob, error) {
+	if useTail {
+		tctx, cancel := context.WithTimeoutCause(j.ctx, tailJobPollTimeout, errors.Wrapf(context.DeadlineExceeded, "tail poll for jobs in group %s timed out", j.jobGroup))
+		defer cancel()
+		return j.apiClient.TailJobs(tctx, j.jobGroup, tailJobPollWait)
+	}
+
+	tctx, cancel := context.WithTimeoutCause(j.ctx, 5*time.Second, errors.Wrapf(context.DeadlineExceeded, "polling for jobs in group %s timed out", j.jobGroup))
+	defer cancel()
+	var lim *int64
+	return j.apiClient.GetJobs(tctx, j.jobGroup, j.jobStatus, lim)
 }

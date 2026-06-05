@@ -117,6 +117,12 @@ type RunnerGroupSettings struct {
 
 	// platform variable for use in the runner
 	Platform CloudPlatform `json:"platform" temporaljson:"-" gorm:"-" swaggertype:"string"`
+
+	// LongPollJobs mirrors the org's `runner-job-long-poll` feature flag
+	// so the runner can choose between the legacy idle-poll loop and the
+	// new long-poll endpoint at boot. Not persisted; populated by the
+	// runner-settings handler.
+	LongPollJobs bool `json:"long_poll_jobs,omitzero" gorm:"-" temporaljson:"-"`
 }
 
 func (i *RunnerGroupSettings) Indexes(db *gorm.DB) []migrations.Index {
