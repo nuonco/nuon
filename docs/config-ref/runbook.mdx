@@ -23,9 +23,10 @@ title: 'Runbook'
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`name`**<br/>string | name of the step Displayed in the workflow UI and runbook detail page | **✅ Required** | `"deploy-database"`, `"run-migrations"` |
-| **`type`**<br/>string | type of step Either 'deploy' for deploying a component, or 'action' for running an action | **✅ Required** | `"deploy"`, `"action"` |
-| **`component_name`**<br/>string | component to deploy (for deploy steps) Name of the component to deploy. Required when type is 'deploy' | **Optional** | `"database"`, `"api-server"` |
-| **`deploy_dependencies`**<br/>boolean | also deploy transitive dependencies When true, deploys the component and all its transitive dependencies in dependency order. Only applies to deploy steps | **Optional** | - |
+| **`type`**<br/>string | type of step One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down', 'action', 'sandbox_reprovision', or 'sandbox_deprovision' | **✅ Required** | `"component_deploy"`, `"component_tear_down"`, `"action"` |
+| **`component_name`**<br/>string | component to deploy or tear down (for component steps) Name of the component to deploy or tear down. Required when type is 'component_deploy' or 'component_tear_down' | **Optional** | `"database"`, `"api-server"` |
+| **`deploy_dependents`**<br/>boolean | also deploy transitive dependents When true, deploys the component and all components that transitively depend on it (downstream), in dependency order. Only applies to component_deploy steps | **Optional** | - |
+| **`tear_down_dependents`**<br/>boolean | also tear down transitive dependents When true, tears down the component and all components that transitively depend on it (downstream), with dependents torn down first. Only applies to component_tear_down steps | **Optional** | - |
 | **`action_name`**<br/>string | existing action to run (for action steps) Name of a previously defined action workflow to execute. Mutually exclusive with inline action fields (command, inline_contents) | **Optional** | `"database-migration"` |
 | **`command`**<br/>string | command to execute (for inline action steps) Shell command for an inline action. Supports Go templating | **Optional** | `"./validate.sh"` |
 | **`inline_contents`**<br/>string | inline script contents (for inline action steps) Embed script contents directly or reference an external file. Supports Go templating and external URLs | **Optional** | `"./scripts/validate.sh"` |
