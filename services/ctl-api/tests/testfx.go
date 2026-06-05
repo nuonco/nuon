@@ -162,6 +162,12 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 	} else if opts.T != nil {
 		ctrl := gomock.NewController(opts.T)
 		mockTC := temporalclient.NewMockClient(ctrl)
+		// Allow any number of ExecuteWorkflowInNamespace calls so that helpers
+		// that fan out to Temporal (e.g. CreateAction, CreateComponent) do not
+		// cause unexpected-call failures in suites that don't supply their own MockTC.
+		mockTC.EXPECT().ExecuteWorkflowInNamespace(
+			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+		).Return(nil, nil).AnyTimes()
 		options = append(options, fx.Supply(fx.Annotate(mockTC, fx.As(new(temporalclient.Client)))))
 	}
 

@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/pkg/errors"
 )
 
 type CreateComponentParams struct {
@@ -41,10 +42,6 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 	}
 	if err := h.CreateComponentDependencies(ctx, component.ID, depIDs); err != nil {
 		return nil, fmt.Errorf("unable to create component dependencies: %w", err)
-	}
-
-	if err := h.EnsureInstallComponents(ctx, params.AppID, nil); err != nil {
-		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
 
 	return &component, nil

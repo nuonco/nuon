@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/ensure"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -213,10 +214,10 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		}
 	}
 
-	if err := s.componentHelpers.EnsureInstallComponents(ctx, appID, []string{install.ID}); err != nil {
+	if err := ensure.Components(ctx, s.db, appID, []string{install.ID}); err != nil {
 		return nil, fmt.Errorf("unable to ensure install components: %w", err)
 	}
-	if err := s.actionsHelpers.EnsureInstallAction(ctx, appID, []string{install.ID}); err != nil {
+	if err := ensure.ActionWorkflows(ctx, s.db, appID, []string{install.ID}); err != nil {
 		return nil, fmt.Errorf("unable to ensure install action workflows: %w", err)
 	}
 	if err := s.runbooksHelpers.EnsureInstallRunbooks(ctx, appID, []string{install.ID}); err != nil {

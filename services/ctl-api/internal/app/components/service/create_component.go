@@ -8,8 +8,10 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/ensureinstallcomponents"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -76,7 +78,30 @@ func (s *service) CreateComponent(ctx *gin.Context) {
 		return
 	}
 
+	// fan the new component out across every install for the app durably, off
+	// the request path, via a signal on the app queue
+	if err := s.enqueueEnsureInstallComponents(ctx, appID); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	ctx.JSON(http.StatusCreated, component)
+}
+
+func (s *service) enqueueEnsureInstallComponents(ctx *gin.Context, appID string) error {
+	queue, err := s.appsHelpers.GetOrCreateAppSignalsQueue(ctx, appID)
+	if err != nil {
+		return fmt.Errorf("unable to get app signals queue: %w", err)
+	}
+	if _, err := s.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   queue.ID,
+		OwnerID:   appID,
+		OwnerType: "apps",
+		Signal:    &ensureinstallcomponents.Signal{AppID: appID},
+	}); err != nil {
+		return fmt.Errorf("unable to enqueue ensure install components signal: %w", err)
+	}
+	return nil
 }
 
 func (s *service) createComponent(ctx *gin.Context, appID string, req *CreateComponentRequest) (*app.Component, error) {

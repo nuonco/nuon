@@ -8,6 +8,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/ensure"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"go.temporal.io/sdk/activity"
@@ -85,6 +86,15 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 			"status_v2": errorStatus,
 		})
 		return nil, fmt.Errorf("unable to sync config: %w", err)
+	}
+
+	// fan the synced components and action workflows out across every install
+	// for the app. This activity is already durable, so we do it inline.
+	if err := ensure.Components(ctx, a.db, req.AppID, nil); err != nil {
+		return nil, fmt.Errorf("unable to ensure install components: %w", err)
+	}
+	if err := ensure.ActionWorkflows(ctx, a.db, req.AppID, nil); err != nil {
+		return nil, fmt.Errorf("unable to ensure install action workflows: %w", err)
 	}
 
 	// Mark config as active with component and action IDs
