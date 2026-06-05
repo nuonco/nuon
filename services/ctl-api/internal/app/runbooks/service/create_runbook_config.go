@@ -20,18 +20,21 @@ type CreateRunbookConfigRequest struct {
 }
 
 type CreateRunbookStepConfigRequest struct {
-	Name                 string            `json:"name" validate:"required"`
-	Type                 string            `json:"type" validate:"required"`
-	Idx                  int64             `json:"idx"`
-	ComponentName        string            `json:"component_name,omitempty"`
-	DeployDependencies   bool              `json:"deploy_dependencies,omitempty"`
-	SkipComponentDeploys bool              `json:"skip_component_deploys,omitempty"`
-	ActionName           string            `json:"action_name,omitempty"`
-	Command              string            `json:"command,omitempty"`
-	InlineContents       string            `json:"inline_contents,omitempty"`
-	EnvVars              map[string]string `json:"env_vars,omitempty"`
-	Timeout              int64             `json:"timeout,omitempty"`
-	Role                 string            `json:"role,omitempty"`
+	Name                 string `json:"name" validate:"required"`
+	Type                 string `json:"type" validate:"required"`
+	Idx                  int64  `json:"idx"`
+	ComponentName        string `json:"component_name,omitempty"`
+	DeployDependents     bool   `json:"deploy_dependents,omitempty"`
+	TearDownDependents   bool   `json:"tear_down_dependents,omitempty"`
+	SkipComponentDeploys bool   `json:"skip_component_deploys,omitempty"`
+	// Legacy alias for DeployDependents — accepted to keep older API clients working.
+	DeployDependenciesLegacy bool              `json:"deploy_dependencies,omitempty" swaggerignore:"true"`
+	ActionName               string            `json:"action_name,omitempty"`
+	Command                  string            `json:"command,omitempty"`
+	InlineContents           string            `json:"inline_contents,omitempty"`
+	EnvVars                  map[string]string `json:"env_vars,omitempty"`
+	Timeout                  int64             `json:"timeout,omitempty"`
+	Role                     string            `json:"role,omitempty"`
 }
 
 // @ID				CreateRunbookConfig
@@ -89,8 +92,13 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	steps := make([]app.RunbookStepConfig, 0, len(req.Steps))
 	for idx, stepReq := range req.Steps {
 		stepType := app.RunbookStepType(stepReq.Type)
+		// Canonicalize the legacy "deploy" step type to "component_deploy".
+		if stepType == app.RunbookStepTypeDeployLegacy {
+			stepType = app.RunbookStepTypeComponentDeploy
+		}
 		switch stepType {
-		case app.RunbookStepTypeDeploy,
+		case app.RunbookStepTypeComponentDeploy,
+			app.RunbookStepTypeComponentTearDown,
 			app.RunbookStepTypeAction,
 			app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
@@ -109,7 +117,8 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 			Name:                 stepReq.Name,
 			Type:                 stepType,
 			ComponentName:        stepReq.ComponentName,
-			DeployDependencies:   stepReq.DeployDependencies,
+			DeployDependents:     stepReq.DeployDependents || stepReq.DeployDependenciesLegacy,
+			TearDownDependents:   stepReq.TearDownDependents,
 			SkipComponentDeploys: stepReq.SkipComponentDeploys,
 			Command:              stepReq.Command,
 			InlineContents:       stepReq.InlineContents,

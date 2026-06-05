@@ -67,9 +67,9 @@ action_name = "database-migration"
 
 [[steps]]
 name           = "deploy-api"
-type           = "deploy"
+type           = "component_deploy"
 component_name = "api-server"
-deploy_dependencies = true
+deploy_dependents = true
 
 [[steps]]
 name    = "smoke-test"
@@ -95,9 +95,11 @@ timeout = "5m"
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | Yes | Step name shown in the workflow UI and runbook detail page. |
-| `type` | string | Yes | `deploy` or `action`. |
-| `component_name` | string | deploy steps | Component to deploy. Required when `type = "deploy"`. |
-| `deploy_dependencies` | bool | No | When true, also deploys the component's transitive dependencies in order. |
+| `type` | string | Yes | `component_deploy`, `component_tear_down`, `action`, `sandbox_reprovision`, or `sandbox_deprovision`. `deploy` is accepted as a legacy alias for `component_deploy`. |
+| `component_name` | string | component steps | Component to deploy or tear down. Required when `type = "component_deploy"` or `"component_tear_down"`. |
+| `deploy_dependents` | bool | No | When true, also deploys the component's transitive dependents (downstream subgraph) in dependency order. Only applies to `component_deploy` steps. |
+| `tear_down_dependents` | bool | No | When true, also tears down the component's transitive dependents (downstream subgraph), with dependents torn down first. Only applies to `component_tear_down` steps. |
+| `skip_component_deploys` | bool | No | When true, only the sandbox infrastructure is reprovisioned; components are not redeployed on top. Only applies to `sandbox_reprovision` steps. |
 | `action_name` | string | action steps | Name of an existing [action](/guides/actions) to run. Mutually exclusive with the inline fields below. |
 | `command` | string | action steps | Shell command for an inline action. Supports Go templating. |
 | `inline_contents` | string | action steps | Inline script contents, or a reference to an external file. Supports templating and external sources. |

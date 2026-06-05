@@ -13,10 +13,10 @@ func TestRunbookConfig_Parse(t *testing.T) {
 			Readme: "# Release Notes",
 			Steps: []*RunbookStepConfig{
 				{
-					Name:               "deploy-database",
-					Type:               RunbookStepTypeDeploy,
-					ComponentName:      "database",
-					DeployDependencies: true,
+					Name:             "deploy-database",
+					Type:             RunbookStepTypeComponentDeploy,
+					ComponentName:    "database",
+					DeployDependents: true,
 				},
 				{
 					Name:       "run-migrations",
@@ -83,8 +83,46 @@ func TestRunbookConfig_Parse(t *testing.T) {
 	})
 }
 
+func TestRunbookConfig_LegacyDeployDependencies(t *testing.T) {
+	rc := &RunbookConfig{
+		Name: "legacy",
+		Steps: []*RunbookStepConfig{
+			{
+				Name:                     "legacy-deploy",
+				Type:                     RunbookStepTypeComponentDeploy,
+				ComponentName:            "api",
+				DeployDependenciesLegacy: true,
+			},
+		},
+	}
+
+	require.NoError(t, rc.parse())
+	require.True(t, rc.Steps[0].DeployDependents, "legacy deploy_dependencies should be folded into DeployDependents")
+	require.Len(t, rc.DeprecationWarnings, 1, "deprecation warning should be recorded")
+	require.Contains(t, rc.DeprecationWarnings[0], "deploy_dependencies")
+}
+
+func TestRunbookConfig_LegacyDeployType(t *testing.T) {
+	rc := &RunbookConfig{
+		Name: "legacy-type",
+		Steps: []*RunbookStepConfig{
+			{
+				Name:          "legacy-deploy-step",
+				Type:          RunbookStepTypeDeployLegacy,
+				ComponentName: "api",
+			},
+		},
+	}
+
+	require.NoError(t, rc.parse())
+	require.Equal(t, RunbookStepTypeComponentDeploy, rc.Steps[0].Type, "legacy 'deploy' type should be canonicalized to 'component_deploy'")
+	require.Len(t, rc.DeprecationWarnings, 1, "deprecation warning should be recorded")
+	require.Contains(t, rc.DeprecationWarnings[0], "type 'deploy' is deprecated")
+}
+
 func TestRunbookStepType_Constants(t *testing.T) {
-	require.Equal(t, RunbookStepType("deploy"), RunbookStepTypeDeploy)
+	require.Equal(t, RunbookStepType("component_deploy"), RunbookStepTypeComponentDeploy)
+	require.Equal(t, RunbookStepType("deploy"), RunbookStepTypeDeployLegacy)
 	require.Equal(t, RunbookStepType("action"), RunbookStepTypeAction)
 	require.Equal(t, RunbookStepType("sandbox_reprovision"), RunbookStepTypeSandboxReprovision)
 	require.Equal(t, RunbookStepType("sandbox_deprovision"), RunbookStepTypeSandboxDeprovision)
