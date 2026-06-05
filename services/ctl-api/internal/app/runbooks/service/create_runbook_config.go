@@ -20,18 +20,18 @@ type CreateRunbookConfigRequest struct {
 }
 
 type CreateRunbookStepConfigRequest struct {
-	Name               string            `json:"name" validate:"required"`
-	Type               string            `json:"type" validate:"required"`
-	Idx                int64             `json:"idx"`
-	ComponentName      string            `json:"component_name,omitempty"`
-	DeployDependencies bool              `json:"deploy_dependencies,omitempty"`
+	Name                 string            `json:"name" validate:"required"`
+	Type                 string            `json:"type" validate:"required"`
+	Idx                  int64             `json:"idx"`
+	ComponentName        string            `json:"component_name,omitempty"`
+	DeployDependencies   bool              `json:"deploy_dependencies,omitempty"`
 	SkipComponentDeploys bool              `json:"skip_component_deploys,omitempty"`
-	ActionName         string            `json:"action_name,omitempty"`
-	Command            string            `json:"command,omitempty"`
-	InlineContents     string            `json:"inline_contents,omitempty"`
-	EnvVars            map[string]string `json:"env_vars,omitempty"`
-	Timeout            int64             `json:"timeout,omitempty"`
-	Role               string            `json:"role,omitempty"`
+	ActionName           string            `json:"action_name,omitempty"`
+	Command              string            `json:"command,omitempty"`
+	InlineContents       string            `json:"inline_contents,omitempty"`
+	EnvVars              map[string]string `json:"env_vars,omitempty"`
+	Timeout              int64             `json:"timeout,omitempty"`
+	Role                 string            `json:"role,omitempty"`
 }
 
 // @ID				CreateRunbookConfig
@@ -105,17 +105,17 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		}
 
 		stepCfg := app.RunbookStepConfig{
-			Idx:                idx,
-			Name:               stepReq.Name,
-			Type:               stepType,
-			ComponentName:      stepReq.ComponentName,
-			DeployDependencies: stepReq.DeployDependencies,
+			Idx:                  idx,
+			Name:                 stepReq.Name,
+			Type:                 stepType,
+			ComponentName:        stepReq.ComponentName,
+			DeployDependencies:   stepReq.DeployDependencies,
 			SkipComponentDeploys: stepReq.SkipComponentDeploys,
-			Command:            stepReq.Command,
-			InlineContents:     stepReq.InlineContents,
-			EnvVars:            envVars,
-			Timeout:            time.Duration(stepReq.Timeout),
-			Role:               stepReq.Role,
+			Command:              stepReq.Command,
+			InlineContents:       stepReq.InlineContents,
+			EnvVars:              envVars,
+			Timeout:              time.Duration(stepReq.Timeout),
+			Role:                 stepReq.Role,
 		}
 
 		// Resolve action_name to ActionWorkflowID
