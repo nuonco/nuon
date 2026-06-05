@@ -64,9 +64,7 @@
                 "root": "guides/self-hosted",
                 "expanded": false,
                 "pages": [
-                  "guides/self-hosted/aws",
-                  "guides/self-hosted/azure",
-                  "guides/self-hosted/gcp"
+                  "guides/self-hosted/supported-platforms"
                 ]
               }
             ]
