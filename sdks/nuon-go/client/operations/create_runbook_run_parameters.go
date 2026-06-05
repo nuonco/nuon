@@ -69,7 +69,7 @@ type CreateRunbookRunParams struct {
 
 	/* RunbookID.
 
-	   runbook ID
+	   runbook ID or name
 	*/
 	RunbookID string
 
