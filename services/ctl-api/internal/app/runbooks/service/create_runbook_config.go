@@ -44,6 +44,11 @@ type CreateRunbookStepConfigRequest struct {
 // @Param			runbook_id	path	string						true	"runbook ID"
 // @Param			req			body	CreateRunbookConfigRequest	true	"Input"
 // @Success		201			{object}	app.RunbookConfig
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks/{runbook_id}/configs [post]
 func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
