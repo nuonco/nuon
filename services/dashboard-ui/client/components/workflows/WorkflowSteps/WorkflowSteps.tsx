@@ -11,7 +11,7 @@ import { StepButtons } from '@/components/workflows/step-details/StepButtons'
 import { StepDetailPanelButton } from '@/components/workflows/step-details/StepDetailPanel'
 import { StepTitle } from '@/components/workflows/step-details/StepTitle'
 import type { TWorkflowStep } from '@/types'
-import { getStepBadge } from '@/utils/workflow-utils'
+import { getStepBadge, getStepKind } from '@/utils/workflow-utils'
 
 export interface IWorkflowSteps {
   approvalPrompt?: boolean
@@ -34,6 +34,14 @@ export const WorkflowSteps = ({
     .filter((step) => step.execution_type !== 'hidden')
     .filter((step) => step.name.includes(searchName))
 
+  // Retrying a step appends a new attempt row that shares the same logical
+  // "kind" (group + name) as the prior attempts. Only the latest attempt of a
+  // kind should expose retry/skip controls, so track the last index per kind.
+  const lastIdxByKind = new Map<string, number>()
+  filteredSteps.forEach((step, idx) => {
+    lastIdxByKind.set(getStepKind(step), idx)
+  })
+
   return (
     <div className="flex flex-col gap-6">
       <SearchInput
@@ -43,8 +51,9 @@ export const WorkflowSteps = ({
       />
       <div className="flex flex-col gap-4">
         {filteredSteps.length ? (
-          filteredSteps.map((step) => {
+          filteredSteps.map((step, idx) => {
             const badgeConfig = getStepBadge(step, approvalPrompt, planOnly)
+            const isLatestAttempt = lastIdxByKind.get(getStepKind(step)) === idx
 
             return (
               <div
@@ -78,7 +87,11 @@ export const WorkflowSteps = ({
                   ) : null}
                 </div>
 
-                <StepButtons isApproveAll={!approvalPrompt} step={step} />
+                <StepButtons
+                  isApproveAll={!approvalPrompt}
+                  showRetry={isLatestAttempt}
+                  step={step}
+                />
               </div>
             )
           })
