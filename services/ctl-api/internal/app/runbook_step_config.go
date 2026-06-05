@@ -17,8 +17,10 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeDeploy RunbookStepType = "deploy"
-	RunbookStepTypeAction RunbookStepType = "action"
+	RunbookStepTypeDeploy             RunbookStepType = "deploy"
+	RunbookStepTypeAction             RunbookStepType = "action"
+	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
+	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
 )
 
 type RunbookStepConfig struct {
@@ -42,6 +44,9 @@ type RunbookStepConfig struct {
 	// deploy fields
 	ComponentName      string `json:"component_name,omitzero" temporaljson:"component_name,omitzero,omitempty"`
 	DeployDependencies bool   `json:"deploy_dependencies,omitzero" gorm:"default:false" temporaljson:"deploy_dependencies,omitzero,omitempty"`
+
+	// sandbox lifecycle fields
+	SkipComponentDeploys bool `json:"skip_component_deploys,omitzero" gorm:"default:false" temporaljson:"skip_component_deploys,omitzero,omitempty"`
 
 	// action reference field
 	ActionWorkflowID generics.NullString `json:"action_workflow_id,omitzero" swaggertype:"string" temporaljson:"action_workflow_id,omitzero,omitempty"`

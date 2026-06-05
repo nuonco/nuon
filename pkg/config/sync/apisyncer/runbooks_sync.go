@@ -60,17 +60,18 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 		}
 
 		request.Steps = append(request.Steps, &models.ServiceCreateRunbookStepConfigRequest{
-			Name:               generics.ToPtr(step.Name),
-			Type:               generics.ToPtr(string(step.Type)),
-			Idx:                int64(idx),
-			ComponentName:      step.ComponentName,
-			DeployDependencies: step.DeployDependencies,
-			ActionName:         step.ActionName,
-			Command:            step.Command,
-			InlineContents:     step.InlineContents,
-			EnvVars:            step.EnvVarMap,
-			Timeout:            timeout.Nanoseconds(),
-			Role:               step.Role,
+			Name:                 generics.ToPtr(step.Name),
+			Type:                 generics.ToPtr(string(step.Type)),
+			Idx:                  int64(idx),
+			ComponentName:        step.ComponentName,
+			DeployDependencies:   step.DeployDependencies,
+			SkipComponentDeploys: step.SkipComponentDeploys,
+			ActionName:           step.ActionName,
+			Command:              step.Command,
+			InlineContents:       step.InlineContents,
+			EnvVars:              step.EnvVarMap,
+			Timeout:              timeout.Nanoseconds(),
+			Role:                 step.Role,
 		})
 	}
 
