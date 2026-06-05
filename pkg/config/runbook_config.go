@@ -34,6 +34,10 @@ type RunbookConfig struct {
 
 	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
 	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
+
+	// DeprecationWarnings collects messages about legacy field usage observed during parse().
+	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the user.
+	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
 }
 
 type RunbookStepConfig struct {
@@ -47,7 +51,7 @@ type RunbookStepConfig struct {
 
 	// Legacy alias for DeployDependents — kept for back-compat with TOML configs
 	// written before the rename. Folded into DeployDependents in parse().
-	DeployDependenciesLegacy bool `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty" jsonschema:"-"`
+	DeployDependenciesLegacy bool `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
 
 	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
 	// and do NOT redeploy components on top.
@@ -97,6 +101,8 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("api-server").
 		Field("deploy_dependents").Short("also deploy transitive dependents").
 		Long("When true, deploys the component and all components that transitively depend on it (downstream), in dependency order. Only applies to component_deploy steps").
+		Field("deploy_dependencies").Short("legacy alias for deploy_dependents").
+		Deprecated("use 'deploy_dependents' instead").
 		Field("tear_down_dependents").Short("also tear down transitive dependents").
 		Long("When true, tears down the component and all components that transitively depend on it (downstream), with dependents torn down first. Only applies to component_tear_down steps").
 		Field("action_name").Short("existing action to run (for action steps)").
@@ -138,10 +144,12 @@ func (r *RunbookConfig) parse() error {
 		// Fold the legacy alias into the canonical field. New code should only read DeployDependents.
 		if step.DeployDependenciesLegacy {
 			step.DeployDependents = true
+			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: 'deploy_dependencies' is deprecated, use 'deploy_dependents' instead", r.Name, step.Name))
 		}
 		// Canonicalize the legacy "deploy" type to "component_deploy".
 		if step.Type == RunbookStepTypeDeployLegacy {
 			step.Type = RunbookStepTypeComponentDeploy
+			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: type 'deploy' is deprecated, use 'component_deploy' instead", r.Name, step.Name))
 		}
 	}
 

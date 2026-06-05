@@ -98,6 +98,8 @@ func TestRunbookConfig_LegacyDeployDependencies(t *testing.T) {
 
 	require.NoError(t, rc.parse())
 	require.True(t, rc.Steps[0].DeployDependents, "legacy deploy_dependencies should be folded into DeployDependents")
+	require.Len(t, rc.DeprecationWarnings, 1, "deprecation warning should be recorded")
+	require.Contains(t, rc.DeprecationWarnings[0], "deploy_dependencies")
 }
 
 func TestRunbookConfig_LegacyDeployType(t *testing.T) {
@@ -114,6 +116,8 @@ func TestRunbookConfig_LegacyDeployType(t *testing.T) {
 
 	require.NoError(t, rc.parse())
 	require.Equal(t, RunbookStepTypeComponentDeploy, rc.Steps[0].Type, "legacy 'deploy' type should be canonicalized to 'component_deploy'")
+	require.Len(t, rc.DeprecationWarnings, 1, "deprecation warning should be recorded")
+	require.Contains(t, rc.DeprecationWarnings[0], "type 'deploy' is deprecated")
 }
 
 func TestRunbookStepType_Constants(t *testing.T) {
