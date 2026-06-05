@@ -27,6 +27,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"permissions":         PermissionsConfigSchema,
 	"policy":              PolicyConfigSchema,
 	"policies":            PoliciesConfigSchema,
+	"runbook":             RunbookConfigSchema,
 	"runner":              RunnerConfigSchema,
 	"sandbox":             SandboxConfigSchema,
 	"secret":              SecretConfigSchema,
@@ -318,6 +319,19 @@ func PoliciesConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.PoliciesConfig{}), nil
+}
+
+func RunbookConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.RunbookConfig{}); err != nil {
+		return nil, errors.Wrap(err, "RunbookConfig validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.RunbookConfig{}), nil
 }
 
 func RunnerConfigSchema() (*jsonschema.Schema, error) {

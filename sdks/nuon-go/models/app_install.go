@@ -98,6 +98,9 @@ type AppInstall struct {
 	// labels
 	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
 
+	// lifecycle status
+	LifecycleStatus any `json:"lifecycle_status,omitempty"`
+
 	// links
 	Links map[string]any `json:"links,omitempty"`
 

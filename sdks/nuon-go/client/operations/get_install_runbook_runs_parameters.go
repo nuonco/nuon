@@ -82,6 +82,12 @@ type GetInstallRunbookRunsParams struct {
 	*/
 	Offset *int64
 
+	/* RunbookID.
+
+	   filter by runbook ID or name
+	*/
+	RunbookID *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -182,6 +188,17 @@ func (o *GetInstallRunbookRunsParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
+// WithRunbookID adds the runbookID to the get install runbook runs params
+func (o *GetInstallRunbookRunsParams) WithRunbookID(runbookID *string) *GetInstallRunbookRunsParams {
+	o.SetRunbookID(runbookID)
+	return o
+}
+
+// SetRunbookID adds the runbookId to the get install runbook runs params
+func (o *GetInstallRunbookRunsParams) SetRunbookID(runbookID *string) {
+	o.RunbookID = runbookID
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetInstallRunbookRunsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -224,6 +241,23 @@ func (o *GetInstallRunbookRunsParams) WriteToRequest(r runtime.ClientRequest, re
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.RunbookID != nil {
+
+		// query param runbook_id
+		var qrRunbookID string
+
+		if o.RunbookID != nil {
+			qrRunbookID = *o.RunbookID
+		}
+		qRunbookID := qrRunbookID
+		if qRunbookID != "" {
+
+			if err := r.SetQueryParam("runbook_id", qRunbookID); err != nil {
 				return err
 			}
 		}
