@@ -1,4 +1,5 @@
 import { Plan } from '@/components/approvals/Plan'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
@@ -85,6 +86,9 @@ export const DeployStepDetails = ({
           </Text>
         ) : null}
       </div>
+      {deploy?.composite_error ? (
+        <CompositeError error={deploy.composite_error} />
+      ) : null}
       {step?.execution_type === 'approval' ? (
         <ApprovalStepTabs step={step} deploy={deploy} />
       ) : (
