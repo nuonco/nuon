@@ -46,6 +46,9 @@ export const AdminOrgSection = ({
   runnerLoading,
 }: IAdminOrgSection) => {
   const runnerId = runner?.id ?? ''
+  // Destructive org-level actions require typing the org's name (falling back
+  // to the org id) so admins must explicitly confirm the exact target org.
+  const orgConfirmText = org?.name || orgId
 
   const metadata = (
     <AdminMetadataPanel>
@@ -198,7 +201,7 @@ export const AdminOrgSection = ({
           variant="danger"
           requiresConfirmation
           requiresInput
-          inputText="yesimsure"
+          inputText={orgConfirmText}
           confirmationText="WARNING: This will deprovision ALL infrastructure for this organization including runners and installs. Database records will be preserved. This may take a while to complete."
         />
         <AdminActionCard
@@ -208,7 +211,7 @@ export const AdminOrgSection = ({
           variant="danger"
           requiresConfirmation
           requiresInput
-          inputText="yesimsure"
+          inputText={orgConfirmText}
           confirmationText="WARNING: This will permanently delete ALL install records for this organization. Any running infrastructure will be orphaned and must be cleaned up manually (e.g. via aws-nuke). This action CANNOT be undone. Only use this when installs are broken beyond repair."
         />
         <AdminActionCard
@@ -218,7 +221,7 @@ export const AdminOrgSection = ({
           variant="danger"
           requiresConfirmation
           requiresInput
-          inputText="yesimsure"
+          inputText={orgConfirmText}
           confirmationText="WARNING: This will permanently delete the organization record and all its roles. Any running infrastructure will be orphaned and must be cleaned up manually. This action CANNOT be undone."
         />
       </AdminActionGroup>
