@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
@@ -107,6 +108,14 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	}); err != nil {
 		return false, err
 	}
+
+	// drain in-flight phase updates first: ending the run mid-handler drops its deferred completion callback and wedges the dispatcher. bounded so a stuck handler can't leak the workflow
+	if _, err := workflow.AwaitWithTimeout(ctx, callback.QuickTimeout, func() bool {
+		return workflow.AllHandlersFinished(ctx)
+	}); err != nil {
+		return false, err
+	}
+
 	if mgr.Restarted {
 		return false, nil
 	}

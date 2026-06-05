@@ -56,6 +56,9 @@ type AppRunbookStepConfig struct {
 	// runbook config id
 	RunbookConfigID string `json:"runbook_config_id,omitempty"`
 
+	// sandbox lifecycle fields
+	SkipComponentDeploys bool `json:"skip_component_deploys,omitempty"`
+
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
 
