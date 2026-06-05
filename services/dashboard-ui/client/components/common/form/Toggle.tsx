@@ -27,11 +27,11 @@ export const Toggle = ({
       aria-label={label}
       disabled={disabled}
       className={cn(
-        'flex gap-2 cursor-pointer text-left items-center',
-        disabled && 'opacity-50 cursor-not-allowed',
+        'flex gap-2 text-left items-center',
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
         className
       )}
-      onClick={() => !disabled && onChange(!checked)}
+      onClick={() => onChange(!checked)}
       {...props}
     >
       <span className="relative shrink-0 h-[20px] w-[24px]">

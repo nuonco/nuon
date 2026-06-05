@@ -1067,6 +1067,7 @@ export interface paths {
      * - container_image
      * - helm
      * - terraform
+     * - runbook
      * - job
      */
     get: operations["GetConfigSchema"];
@@ -1647,6 +1648,10 @@ export interface paths {
     /**
      * Updates install input config for app
      * @description Update input values for an install.
+     *
+     * This endpoint accepts a partial subset of inputs and merges them with the install's existing
+     * inputs, so callers only need to send the inputs they want to change. Inputs sourced from the
+     * `install_stack` (customer source) are managed by the install stack and are rejected if supplied.
      */
     patch: operations["UpdateInstallInputs"];
   };
@@ -3772,6 +3777,7 @@ export interface components {
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      lifecycle_status?: Record<string, never>;
       links?: {
         [key: string]: unknown;
       };
@@ -13256,6 +13262,36 @@ export interface operations {
           "application/json": components["schemas"]["app.Runbook"][];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** create a runbook for an app */
@@ -13328,6 +13364,36 @@ export interface operations {
           "application/json": components["schemas"]["app.Runbook"];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** delete a runbook */
@@ -13345,6 +13411,36 @@ export interface operations {
       200: {
         content: {
           "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -13427,6 +13523,36 @@ export interface operations {
           "application/json": components["schemas"]["app.RunbookConfig"][];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** create a runbook config */
@@ -13450,6 +13576,36 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.RunbookConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -15927,6 +16083,7 @@ export interface operations {
    * - container_image
    * - helm
    * - terraform
+   * - runbook
    * - job
    */
   GetConfigSchema: {
@@ -19633,6 +19790,10 @@ export interface operations {
   /**
    * Updates install input config for app
    * @description Update input values for an install.
+   *
+   * This endpoint accepts a partial subset of inputs and merges them with the install's existing
+   * inputs, so callers only need to send the inputs they want to change. Inputs sourced from the
+   * `install_stack` (customer source) are managed by the install stack and are rejected if supplied.
    */
   UpdateInstallInputs: {
     parameters: {
@@ -20368,6 +20529,8 @@ export interface operations {
   GetInstallRunbookRuns: {
     parameters: {
       query?: {
+        /** @description filter by runbook ID or name */
+        runbook_id?: string;
         /** @description offset */
         offset?: number;
         /** @description limit */
@@ -20383,6 +20546,36 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallRunbookRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -20402,6 +20595,36 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallRunbookRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -20427,6 +20650,36 @@ export interface operations {
           "application/json": components["schemas"]["app.InstallRunbook"][];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** get an install runbook */
@@ -20435,7 +20688,7 @@ export interface operations {
       path: {
         /** @description install ID */
         install_id: string;
-        /** @description runbook ID */
+        /** @description runbook ID or name */
         runbook_id: string;
       };
     };
@@ -20446,6 +20699,36 @@ export interface operations {
           "application/json": components["schemas"]["app.InstallRunbook"];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** run a runbook on an install */
@@ -20454,7 +20737,7 @@ export interface operations {
       path: {
         /** @description install ID */
         install_id: string;
-        /** @description runbook ID */
+        /** @description runbook ID or name */
         runbook_id: string;
       };
     };
@@ -20463,6 +20746,36 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.InstallRunbookRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };

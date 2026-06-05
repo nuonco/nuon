@@ -95,7 +95,7 @@ func DispatchGroupSignal(ctx workflow.Context, cfg StepConfig, group *app.Workfl
 	}
 
 	// Legacy fallback: no StepGroupID, use framework-level finished handler.
-	_, err = callback.Await(ctx, cb)
+	_, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout)
 	if err != nil {
 		if ctx.Err() != nil {
 			cancelCtx, cancelCtxCancel := workflow.NewDisconnectedContext(ctx)

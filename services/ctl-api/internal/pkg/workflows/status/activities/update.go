@@ -695,6 +695,30 @@ func (a *Activities) UpdateQueueStatusV2(ctx context.Context, req UpdateQueueSta
 	return a.updateStatusV2(ctx, &obj, status, getter)
 }
 
+type UpdateInstallLifecycleStatusV2Request struct {
+	InstallID         string                     `validate:"required"`
+	Status            app.InstallLifecycleStatus `validate:"required"`
+	StatusDescription string                     `validate:"required"`
+}
+
+// @temporal-gen-v2 activity
+// @by-field InstallID
+func (a *Activities) UpdateInstallLifecycleStatusV2(ctx context.Context, req UpdateInstallLifecycleStatusV2Request) error {
+	obj := app.Install{ID: req.InstallID}
+
+	getter := func(ctx context.Context) (app.CompositeStatus, error) {
+		var obj app.Install
+		if err := a.getStatus(ctx, &obj, req.InstallID); err != nil {
+			return app.CompositeStatus{}, err
+		}
+		return obj.LifecycleStatus, nil
+	}
+
+	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
+	status.StatusHumanDescription = req.StatusDescription
+	return a.updateStatusCommon(ctx, &obj, status, getter, "lifecycle_status")
+}
+
 type UpdateQueueSignalStatusV2Request struct {
 	QueueSignalID     string     `validate:"required"`
 	Status            app.Status `validate:"required"`

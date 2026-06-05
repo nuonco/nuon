@@ -9293,6 +9293,7 @@ You can pass in a valid source argument to render within a specific config file:
 - container_image
 - helm
 - terraform
+- runbook
 - job
 */
 func (a *Client) GetConfigSchema(params *GetConfigSchemaParams, opts ...ClientOption) (*GetConfigSchemaOK, error) {
@@ -17829,9 +17830,13 @@ func (a *Client) UpdateInstallConfig(params *UpdateInstallConfigParams, authInfo
 }
 
 /*
-UpdateInstallInputs updates install input config for app
+	UpdateInstallInputs updates install input config for app
 
-Update input values for an install.
+	Update input values for an install.
+
+This endpoint accepts a partial subset of inputs and merges them with the install's existing
+inputs, so callers only need to send the inputs they want to change. Inputs sourced from the
+`install_stack` (customer source) are managed by the install stack and are rejected if supplied.
 */
 func (a *Client) UpdateInstallInputs(params *UpdateInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallInputsOK, error) {
 	// NOTE: parameters are not validated before sending

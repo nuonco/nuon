@@ -57,7 +57,8 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 
 	if queueSignalID != "" {
 		// Queue path: await signal completion via callback.
-		if _, err := callback.Await(ctx, cb); err != nil {
+		// Bound by the workflow's execution timeout (1h), but be explicit.
+		if _, err := callback.AwaitWithTimeout(ctx, cb, time.Hour); err != nil {
 			return app.RunnerJobStatusUnknown, errors.Wrap(err, "queue signal failed")
 		}
 	} else {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-playground/validator/v10"
@@ -268,15 +269,17 @@ type Client interface {
 	GetActionWorkflowLatestConfig(ctx context.Context, actionWorkflowID string) (*models.AppActionWorkflowConfig, error)
 
 	// runbooks - app level
-	GetAppRunbook(ctx context.Context, appID, nameOrID string) (*Runbook, error)
-	CreateRunbook(ctx context.Context, appID string, req *CreateRunbookRequest) (*Runbook, error)
-	UpdateRunbook(ctx context.Context, runbookID string, req *UpdateRunbookRequest) (*Runbook, error)
-	CreateRunbookConfig(ctx context.Context, runbookID string, req *CreateRunbookConfigRequest) (*RunbookConfig, error)
+	GetAppRunbook(ctx context.Context, appID, nameOrID string) (*models.AppRunbook, error)
+	CreateRunbook(ctx context.Context, appID string, req *models.ServiceCreateRunbookRequest) (*models.AppRunbook, error)
+	UpdateRunbook(ctx context.Context, runbookID string, req *models.ServiceUpdateRunbookRequest) (*models.AppRunbook, error)
+	CreateRunbookConfig(ctx context.Context, runbookID string, req *models.ServiceCreateRunbookConfigRequest) (*models.AppRunbookConfig, error)
 
 	// runbooks - install level
-	GetInstallRunbooks(ctx context.Context, installID string) ([]*InstallRunbook, error)
-	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*InstallRunbook, error)
-	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*InstallRunbookRun, error)
+	GetInstallRunbooks(ctx context.Context, installID string) ([]*models.AppInstallRunbook, error)
+	GetInstallRunbook(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbook, error)
+	CreateInstallRunbookRun(ctx context.Context, installID, runbookID string) (*models.AppInstallRunbookRun, error)
+	GetInstallRunbookRun(ctx context.Context, installID, runID string) (*models.AppInstallRunbookRun, error)
+	GetInstallRunbookRuns(ctx context.Context, installID, runbookIDOrName string, query *models.GetPaginatedQuery) ([]*models.AppInstallRunbookRun, bool, error)
 }
 
 var _ Client = (*client)(nil)
@@ -305,6 +308,8 @@ func New(opts ...clientOption) (*client, error) {
 	if c.v == nil {
 		c.v = validator.New()
 	}
+
+	c.APIURL = strings.TrimRight(c.APIURL, "/")
 
 	if err := c.v.Struct(c); err != nil {
 		return nil, err
