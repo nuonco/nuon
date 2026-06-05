@@ -4725,6 +4725,13 @@ export interface components {
       };
       local_aws_iam_role_arn?: string;
       logging_level?: string;
+      /**
+       * @description LongPollJobs mirrors the org's `runner-job-long-poll` feature flag
+       * so the runner can choose between the legacy idle-poll loop and the
+       * new long-poll endpoint at boot. Not persisted; populated by the
+       * runner-settings handler.
+       */
+      long_poll_jobs?: boolean;
       /** @description Metadata is used as both log and metric tags/attributes in the runner when emitting data */
       metadata?: {
         [key: string]: string;

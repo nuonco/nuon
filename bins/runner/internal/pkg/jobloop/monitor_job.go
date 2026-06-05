@@ -6,6 +6,8 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -44,6 +46,12 @@ func (j *jobLoop) handleJobStatus(ctx context.Context, job *models.AppRunnerJob,
 	default:
 		return false
 	}
+
+	// Record the cancellation on the job's root span so the trace shows exactly
+	// when, and why, the execution context was cancelled by the control plane.
+	trace.SpanFromContext(ctx).AddEvent("job cancelled by control plane", trace.WithAttributes(
+		attribute.String("nuon.job.cancel_status", string(job.Status)),
+	))
 
 	l.Info("attempting graceful shutdown")
 	err := jh.GracefulShutdown(ctx, job, l)

@@ -190,6 +190,8 @@ type ClientService interface {
 
 	RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesOK, error)
 
+	TailRunnerJobs(params *TailRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailRunnerJobsOK, error)
+
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
 
 	UpdateInstallActionWorkflowRunStep(params *UpdateInstallActionWorkflowRunStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallActionWorkflowRunStepOK, error)
@@ -2273,6 +2275,52 @@ func (a *Client) RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RunnerOtelWriteTraces: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+TailRunnerJobs longs poll for an available runner job
+
+Returns the next available job for this runner, holding the request up to ~25s when the queue is empty. Behind the `runner-job-long-poll` org feature flag; returns 404 when the flag is off so the runner can fall back to legacy 5s polling.
+*/
+func (a *Client) TailRunnerJobs(params *TailRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailRunnerJobsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewTailRunnerJobsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "TailRunnerJobs",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/jobs/tail",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &TailRunnerJobsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*TailRunnerJobsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for TailRunnerJobs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
