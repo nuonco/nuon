@@ -2,6 +2,12 @@
 
 This guide defines the voice, tone, and writing patterns for all user-facing text in the dashboard UI. It is derived from the existing codebase and should be followed by all contributors — human and AI.
 
+---
+
+# Foundations
+
+Rules that apply to all UI copy, regardless of surface.
+
 ## Voice
 
 **Direct, confident, and calm.** Nuon's UI speaks like a competent teammate — not a marketer, not a robot, not a customer support script. The voice is:
@@ -17,9 +23,9 @@ This guide defines the voice, tone, and writing patterns for all user-facing tex
 |---------|------|---------|
 | Neutral actions (create, edit) | Matter-of-fact | "Create webhook" |
 | Destructive actions (delete, deprovision) | Calm but serious | "This action will remove the install and cannot be undone." |
-| Errors | Honest, no blame | "Unable to load your organizations. This is usually temporary." |
-| Empty states | Helpful, forward-looking | "No workflows found. Activity will appear here once your runner starts processing jobs." |
-| Success confirmations | Understated | "Plan approved" / "Sandbox build started" |
+| Errors | Honest, no blame | heading: "Loading failed" / description: "This is usually temporary. Try refreshing the page." |
+| Empty states | Helpful, forward-looking | "No workflows found. Activity will appear here once the runner starts processing jobs." |
+| Success confirmations | Understated | "Plan approved" / "Building sandbox" |
 | Warnings | Clear, factual | "Force unlocking a workspace that is actively in use may cause state corruption." |
 
 ## Capitalization
@@ -33,6 +39,62 @@ This guide defines the voice, tone, and writing patterns for all user-facing tex
 ```
 
 **Exceptions:** Proper nouns (AWS, Nuon, Terraform, GitHub, Slack) and acronyms (API, CLI, VCS, URL).
+
+## Pronouns & possessives
+
+**Use "your" sparingly — only for account-level possessions.** "Your org", "your team", "your account" are fine. For resources (installs, components, webhooks, runners), use the entity name or "this [thing]".
+
+```
+"Removing {email} will revoke their access to your org."     ← "your org" is correct
+"Deprovisioning {installName} will remove all resources."    ← not "your install"
+"This webhook will stop receiving events."                    ← not "your webhook"
+```
+
+**Why:** Users often manage resources they don't personally own. "Your install" is awkward when an admin is managing a customer's deployment. The entity name is always unambiguous.
+
+**Exception:** Onboarding copy and first-run experiences can use "your" more freely ("Create your first app") because the user is always acting on their own behalf.
+
+## Pluralization & counts
+
+### Use counts when the number matters
+
+When the user took a bulk action or needs to know a quantity, show the count:
+
+```
+"3 workflows canceled"
+"Pruned 12 old tokens"
+"1 workflow canceled"              ← not "1 workflows canceled"
+```
+
+### Use "all" when the user selected everything
+
+```
+"All selected workflows were canceled."
+"All plans approved."
+```
+
+### Pluralization pattern
+
+Use a ternary for simple cases. Keep the singular/plural logic next to the number:
+
+```tsx
+`${count} workflow${count === 1 ? '' : 's'} canceled`
+```
+
+For more complex copy, write both variants:
+```tsx
+count === 1
+  ? `Pruned 1 old token.`
+  : `Pruned ${count} old tokens.`
+```
+
+**Don't** skip pluralization — "3 workflow canceled" reads as a bug.
+
+---
+
+# UI patterns
+
+Reference for specific surfaces. Find the section that matches what you're building.
 
 ## Buttons & actions
 
@@ -60,7 +122,7 @@ When a button action is in progress, switch to the gerund form (verb + "-ing"):
 "Deploy build"       →  "Deploying build"
 "Remove user"        →  "Removing user"
 "Cancel workflow"    →  "Canceling workflow"
-"Shutdown process"   →  "Shutting down"
+"Shutdown process"   →  "Shutting down process"
 ```
 
 For short generic actions, use the gerund + ellipsis:
@@ -82,40 +144,26 @@ Use `variant="danger"` for destructive actions. The label should name the destru
 "Remove user"             not  "Revoke access"
 ```
 
-## Modal headings
+### Disabled states
 
-### Confirmation modals (destructive)
+When a button or action is disabled, **always explain why** via a tooltip. The user should never have to guess.
 
-Use a question ending with `?` for actions that need confirmation:
-
-```
-"Delete webhook?"
-"Remove team member?"
-"Cancel build?"
-"Shutdown runner process?"
-"Deprovision entire install"  ← no question mark when the heading IS the action
-```
-
-### Action modals (constructive)
-
-Use a verb + object statement (no question mark) for creation/edit flows:
+**Pattern: "Cannot [action] — [reason]"**
 
 ```
-"Create webhook"
-"Edit install"
-"Invite team member"
-"Subscribe a channel"
+"Cannot deploy — no successful builds yet"
+"Cannot teardown — deploy in progress"
+"Cannot remove — you are the only admin"
+"Cannot run — action requires at least one step"
 ```
 
-### Modal heading icons & themes
+Keep it to one line. The reason should suggest what to do, or at least name the blocker.
 
-| Action type | Theme | Icon pattern |
-|------------|-------|-------------|
-| Constructive (create, edit, connect) | `info` | Domain-specific icon (WebhooksLogoIcon, SlackLogoIcon) |
-| Cautionary (shutdown, reprovision) | `warn` | PowerIcon, ArrowURightUpIcon |
-| Destructive (delete, deprovision, remove) | `error` | WarningIcon or TrashIcon |
+**Don't** just disable a button silently. **Don't** use "This action is currently unavailable" — say *why*.
 
-## When to use a modal vs just do it
+## Modals
+
+### When to use a modal vs just do it
 
 Not every action needs a confirmation modal. Use this rule:
 
@@ -124,11 +172,11 @@ Not every action needs a confirmation modal. Use this rule:
 
 If you're unsure, err toward a modal — it's less disruptive than losing infrastructure.
 
-## Destructive action severity tiers
+### Destructive action severity tiers
 
 Every destructive action falls into one of three tiers. Pick the right tier based on blast radius and reversibility.
 
-### Tier 1 — Simple confirm
+#### Tier 1 — Simple confirm
 
 **When:** Reversible or low-impact. Canceling a workflow, skipping a step, removing a channel subscription.
 
@@ -140,7 +188,7 @@ body: "Canceling this workflow will stop all in-progress steps. You will need to
 button: "Cancel workflow" (variant="danger")
 ```
 
-### Tier 2 — Warning banner
+#### Tier 2 — Warning banner
 
 **When:** Significant but recoverable. Reprovisioning an install, shutting down a runner, disabling config sync, removing a VCS connection.
 
@@ -153,7 +201,7 @@ warning: "Causes all jobs to queue while the process restarts."
 button: "Shutdown process" (variant="danger")
 ```
 
-### Tier 3 — Type to confirm
+#### Tier 3 — Type to confirm
 
 **When:** Irreversible or high-blast-radius. Deprovisioning an install, forgetting an install, deleting all data, removing a user.
 
@@ -167,9 +215,36 @@ verify: "To verify, type {installName} below."
 button: "Deprovision install" (variant="danger", disabled until input matches)
 ```
 
-## Modal body copy
+### Modal headings
 
-### Confirmation structure
+**Confirmation modals (destructive)** — Use a question ending with `?`:
+
+```
+"Delete webhook?"
+"Remove team member?"
+"Cancel build?"
+"Shutdown runner process?"
+"Deprovision install?"
+```
+
+**Action modals (constructive)** — Use a verb + object statement (no question mark):
+
+```
+"Create webhook"
+"Edit install"
+"Invite team member"
+"Subscribe a channel"
+```
+
+**Icons & themes:**
+
+| Action type | Theme | Icon pattern |
+|------------|-------|-------------|
+| Constructive (create, edit, connect) | `info` | Domain-specific icon (WebhooksLogoIcon, SlackLogoIcon) |
+| Cautionary (shutdown, reprovision) | `warn` | PowerIcon, ArrowURightUpIcon |
+| Destructive (delete, deprovision, remove) | `error` | WarningIcon or TrashIcon |
+
+### Modal body copy
 
 Confirmation modals lead with the consequence — not "Are you sure?". The modal heading, danger theme, and warning icon already signal that this is a confirmation. Restating the question wastes the user's time. Get to the point: what will happen.
 
@@ -190,7 +265,7 @@ Structure (not all parts required — use only what's needed, based on the sever
 // Tier 3: Forget install (heading: "Forget {installName}?")
 "This will permanently remove {installName} from the dashboard."
 <strong>Warning:</strong> "This should only be used when an install was broken in an
-unordinary way and needs to be manually removed."
+unusual way and needs to be manually removed."
 "To verify, type {installName} below."
 ```
 
@@ -198,18 +273,18 @@ unordinary way and needs to be manually removed."
 
 > **Migration note:** Many existing modals still use "Are you sure you want to..." phrasing. When touching these components, update them to the consequence-first pattern. Don't rewrite them all at once.
 
-### Consequence statements
+#### Consequence statements
 
 State the outcome plainly. One sentence. Don't hedge with "might" or "could" when the outcome is certain.
 
 ```
 "This webhook will stop receiving workflow lifecycle events."
-"This action will remove the user and revoke their access immediately."
+"Removing this user will revoke their access immediately."
 "Lifecycle events will stop posting to this channel."
-"Once a workflow is canceled you will not restart it."
+"Once a workflow is canceled, it cannot be restarted."
 ```
 
-### Warning labels
+#### Warning labels
 
 Use bold labels for callouts. Three levels:
 
@@ -217,66 +292,14 @@ Use bold labels for callouts. Three levels:
 - `<strong>Important:</strong>` — Required follow-up action or changed behavior
 - `<strong>Note:</strong>` — Helpful context, no risk
 
-### Bulleted impacts
+#### Bulleted impacts
 
 When an action has multiple effects, use a lead-in sentence followed by bullets:
 
 ```
 "This will create a workflow that attempts to:"
-• "Teardown each install component according to the dependency order."
+• "Teardown each install component according to the dependency order"
 • "Teardown the install sandbox"
-```
-
-## Page headings & descriptions
-
-Page headings name the resource type. Descriptions are one sentence explaining what the user can do here.
-
-```
-title: "Installs"
-description: "View and manage deployments of your app into customer cloud accounts."
-
-title: "Team"
-description: "Manage your team members and permissions."
-
-title: "Workflows"
-description: "View past and active workflows for this install."
-```
-
-**Don't** start descriptions with "This page..." or "Here you can...". Start with a verb.
-
-## Empty states
-
-Empty states have two parts: a title and a message. **Every empty state message must end with a next step** — tell the user what will make things appear or what they can do. Never leave the user staring at a dead end.
-
-### Title pattern: "No [things] yet" or "No [things] found"
-
-- Use **"yet"** when the user hasn't created the resource: `"No apps yet"`, `"No runs yet"`
-- Use **"found"** when filters/search returned nothing: `"No matching reports"`, `"No workflows found"`
-- Use **"configured"** for settings that haven't been set up: `"No webhooks configured"`, `"No policies configured"`
-
-### Message pattern: explain what will make things appear
-
-Always end with a forward-looking statement — either what the user can do, or what will trigger content to show up.
-
-```
-"Activity will appear here once your runner starts processing jobs."
-"This action has not been run yet. Trigger a run to see history here."
-"Evaluations will appear here once a deploy or sandbox run triggers a policy check."
-"Logs will appear here as soon as the runner starts streaming them."
-"Create a webhook to receive workflow lifecycle events from this org."
-```
-
-**Don't** write passive descriptions of emptiness:
-```
-"No runner processes are currently active or offline."     ← dead end, no next step
-"There are no workflows to display."                       ← just restates the title
-"It looks like there's nothing here!"                      ← filler
-```
-
-Instead, rewrite with a next step:
-```
-"No active processes. Processes will appear here when a runner connects."
-"No workflows to display. Workflows run automatically when you deploy or teardown components."
 ```
 
 ## Toasts
@@ -331,7 +354,7 @@ Use `theme="success"`. Heading in past tense. Description confirms what was affe
 </Toast>
 
 <Toast heading="Branch created" theme="success">
-  <Text>Created app branch: {branch.name}</Text>
+  <Text>Created app branch: {branch.name}.</Text>
 </Toast>
 ```
 
@@ -345,7 +368,7 @@ Use `theme="error"`. Heading: always **"[thing] failed"**. Description: the API 
 </Toast>
 
 <Toast heading="Step retry failed" theme="error">
-  <Text>{err?.error || 'There was an error while retrying this step.'}</Text>
+  <Text>{err?.error || 'The step was not queued for retry. Try again later.'}</Text>
 </Toast>
 
 <Toast heading="Workflow cancellation failed" theme="error">
@@ -359,7 +382,7 @@ Use `theme="error"`. Heading: always **"[thing] failed"**. Description: the API 
 |------------|---------------|---------|
 | Async job started | Present progressive | "Deploying component", "Building sandbox", "Shutting down runner" |
 | Instant completion | Past tense | "Plan approved", "Branch created", "Workspace unlinked" |
-| Error | "[thing] failed" | "Build failed", "Connection failed", "Step retry failed" |
+| Error | "[thing] failed" | "Build failed", "Connection failed", "Workflow cancellation failed" |
 
 ### Rules
 
@@ -386,13 +409,16 @@ For longer error state descriptions (not headings), you can expand with "Unable 
 
 ```
 heading: "Deploy failed"
-description: "Unable to deploy {component} to {install}. This is usually temporary."
+description: "Unable to deploy {component.name} to {install.name}. This is usually temporary."
 
 heading: "Connection failed"
 description: "Unable to connect to the API. This is usually temporary."
 ```
 
-**Don't** mix patterns. Don't use "Failed to [action]" as a heading — it's wordier than "[thing] failed" and less scannable. Don't use "Could not", "Couldn't", or "We were unable to".
+**Don't** mix patterns. Avoid these alternatives:
+- "Failed to [action]" — wordier than "[thing] failed" and less scannable
+- "Unable to [action]" as a heading — save this for description text only
+- "Could not" / "Couldn't" / "We were unable to" — hedging language
 
 **Don't** say "Oops!", "Uh oh!", or use humor in error states.
 
@@ -402,7 +428,7 @@ Follow the heading with a calm, factual explanation. One sentence. If the API re
 
 ```
 "Unable to start the build. Check the logs for details."
-"We had trouble connecting to our servers. This is usually temporary."
+"This is usually temporary. Try refreshing the page."
 "{err.error}"  ← API error message, shown as-is
 ```
 
@@ -415,6 +441,58 @@ State what's wrong. No "please".
 "Repository is required when using VCS"
 "Email doesn't match"
 ```
+
+## Empty states
+
+Empty states have two parts: a title and a message. **Every empty state message must end with a next step** — tell the user what will make things appear or what they can do. Never leave the user staring at a dead end.
+
+### Title pattern: "No [things] yet" or "No [things] found"
+
+- Use **"yet"** when the user hasn't created the resource: `"No apps yet"`, `"No runs yet"`
+- Use **"found"** when filters/search returned nothing: `"No matching reports"`, `"No workflows found"`
+- Use **"configured"** for settings that haven't been set up: `"No webhooks configured"`, `"No policies configured"`
+
+### Message pattern: explain what will make things appear
+
+Always end with a forward-looking statement — either what the user can do, or what will trigger content to show up.
+
+```
+"Activity will appear here once the runner starts processing jobs."
+"This action has not been run yet. Trigger a run to see history here."
+"Evaluations will appear here once a deploy or sandbox run triggers a policy check."
+"Logs will appear here as soon as the runner starts streaming them."
+"Create a webhook to receive workflow lifecycle events from this org."
+```
+
+**Don't** write passive descriptions of emptiness:
+```
+"No runner processes are currently active or offline."     ← dead end, no next step
+"There are no workflows to display."                       ← just restates the title
+"It looks like there's nothing here!"                      ← filler
+```
+
+Instead, rewrite with a next step:
+```
+"No active processes. Processes will appear here when a runner connects."
+"No workflows to display. Workflows run automatically when you deploy or teardown components."
+```
+
+## Page headings & descriptions
+
+Page headings name the resource type. Descriptions are one sentence explaining what the user can do here.
+
+```
+title: "Installs"
+description: "View and manage deployments of your app into customer cloud accounts."
+
+title: "Team"
+description: "Manage your team members and permissions."
+
+title: "Workflows"
+description: "View past and active workflows for this install."
+```
+
+**Don't** start descriptions with "This page..." or "Here you can...". Start with a verb.
 
 ## Form labels & help text
 
@@ -448,8 +526,8 @@ One sentence below the input. Explains constraints or gives context the label ca
 ```
 "Must be an absolute http or https URL."
 "The secret cannot be retrieved later. Edit the webhook to rotate it."
-"Regex pattern to filter which file changes trigger workflow runs"
-"Path to your application config (use "." for root)"
+"Regex pattern to filter which file changes trigger workflow runs."
+"Path to the application config (use "." for root)."
 ```
 
 **Don't** repeat the label in the help text. Don't start with "This field..." or "Enter the...".
@@ -463,7 +541,7 @@ Short explanatory copy that appears near a feature toggle, setting, or unfamilia
 Lead with what the feature does, then state the concrete effect of enabling/disabling it.
 
 ```
-"Config sync pulls settings from your install config file on every deploy."
+"Config sync pulls settings from the install config file on every deploy."
 "When auto approve is enabled, all changes will be applied without manual review."
 "Drift detection compares the actual state of your infrastructure against the expected state."
 ```
@@ -510,72 +588,9 @@ Sentence case. Keep them short — ideally one or two words.
 "URL"         "Type"       "ID"         "Started"
 ```
 
-## Pronouns & possessives
+---
 
-**Use "your" sparingly — only for account-level possessions.** "Your org", "your team", "your account" are fine. For resources (installs, components, webhooks, runners), use the entity name or "this [thing]".
-
-```
-"Removing {email} will revoke their access to your org."     ← "your org" is correct
-"Deprovisioning {installName} will remove all resources."    ← not "your install"
-"This webhook will stop receiving events."                    ← not "your webhook"
-```
-
-**Why:** Users often manage resources they don't personally own. "Your install" is awkward when an admin is managing a customer's deployment. The entity name is always unambiguous.
-
-**Exception:** Onboarding copy and first-run experiences can use "your" more freely ("Create your first app") because the user is always acting on their own behalf.
-
-## Disabled states
-
-When a button or action is disabled, **always explain why** via a tooltip. The user should never have to guess.
-
-### Pattern: "Cannot [action] — [reason]"
-
-```
-"Cannot deploy — no successful builds yet"
-"Cannot teardown — deploy in progress"
-"Cannot remove — you are the only admin"
-"Cannot run — action requires at least one step"
-```
-
-Keep it to one line. The reason should suggest what to do, or at least name the blocker.
-
-**Don't** just disable a button silently. **Don't** use "This action is currently unavailable" — say *why*.
-
-## Pluralization & counts
-
-### Use counts when the number matters
-
-When the user took a bulk action or needs to know a quantity, show the count:
-
-```
-"3 workflows canceled"
-"Pruned 12 old tokens"
-"1 workflow canceled"              ← not "1 workflows canceled"
-```
-
-### Use "all" when the user selected everything
-
-```
-"All selected workflows were canceled."
-"All plans approved."
-```
-
-### Pluralization pattern
-
-Use a ternary for simple cases. Keep the singular/plural logic next to the number:
-
-```tsx
-`${count} workflow${count === 1 ? '' : 's'} canceled`
-```
-
-For more complex copy, write both variants:
-```tsx
-count === 1
-  ? `Pruned 1 old token.`
-  : `Pruned ${count} old tokens.`
-```
-
-**Don't** skip pluralization — "3 workflow canceled" reads as a bug.
+# Reference
 
 ## Word list
 
