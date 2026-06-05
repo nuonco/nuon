@@ -97,6 +97,12 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		ui.PrintWarning("deprecated: skipped syncing installs from app config. to sync these installs, switch to 'nuon installs sync' command.")
 	}
 
+	for _, runbook := range cfg.Runbooks {
+		for _, msg := range runbook.DeprecationWarnings {
+			ui.PrintWarning("deprecated: " + msg)
+		}
+	}
+
 	syncer := apisyncer.New(s.api, appID, version, cfg)
 	err = syncer.Sync(ctx)
 	if err != nil {

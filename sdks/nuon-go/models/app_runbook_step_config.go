@@ -23,7 +23,7 @@ type AppRunbookStepConfig struct {
 	// inline action fields
 	Command string `json:"command,omitempty"`
 
-	// deploy fields
+	// deploy / tear-down fields
 	ComponentName string `json:"component_name,omitempty"`
 
 	// created at
@@ -32,8 +32,8 @@ type AppRunbookStepConfig struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// deploy dependencies
-	DeployDependencies bool `json:"deploy_dependencies,omitempty"`
+	// deploy dependents
+	DeployDependents bool `json:"deploy_dependents,omitempty"`
 
 	// env vars
 	EnvVars map[string]string `json:"env_vars,omitempty"`
@@ -58,6 +58,9 @@ type AppRunbookStepConfig struct {
 
 	// sandbox lifecycle fields
 	SkipComponentDeploys bool `json:"skip_component_deploys,omitempty"`
+
+	// tear down dependents
+	TearDownDependents bool `json:"tear_down_dependents,omitempty"`
 
 	// timeout
 	Timeout int64 `json:"timeout,omitempty"`
