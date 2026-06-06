@@ -57,7 +57,7 @@ export const WorkflowDetailsSection = ({
   const toggleExpanded = () => setExpanded((prev) => !prev)
 
   return (
-    <Card className="!p-4">
+    <Card className="!p-4 !gap-4">
       <div
         role="button"
         tabIndex={0}
