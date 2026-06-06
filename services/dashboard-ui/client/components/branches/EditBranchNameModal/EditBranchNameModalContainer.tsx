@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -134,8 +135,8 @@ export const EditBranchNameModalContainer = ({
     },
     onSuccess: () => {
       addToast(
-        <Toast heading="Branch updated successfully" theme="success">
-          <Text>Updated branch: {branch.name}</Text>
+        <Toast heading="Branch updated" theme="success">
+          <Text>Updated branch <Badge variant="code" size="md">{branch.name}</Badge>.</Text>
         </Toast>
       )
       setValidationError(null)

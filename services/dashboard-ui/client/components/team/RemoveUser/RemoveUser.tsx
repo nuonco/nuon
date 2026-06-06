@@ -53,11 +53,9 @@ export const RemoveUserModal = ({
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Text variant="base" weight="strong">
-              Are you sure you want to remove {accountEmail} from your organization?
-            </Text>
             <Text variant="body" theme="neutral">
-              This action will remove the user and revoke their access immediately.
+              {accountEmail} will be removed from your organization and their access
+              revoked immediately.
             </Text>
           </div>
 

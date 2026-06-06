@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -58,8 +59,8 @@ export const CreateBranchModalContainer = ({
     },
     onSuccess: (data) => {
       addToast(
-        <Toast heading="Branch created successfully" theme="success">
-          <Text>Created app branch: {data.name}</Text>
+        <Toast heading="Branch created" theme="success">
+          <Text>Created app branch <Badge variant="code" size="md">{data.name}</Badge>.</Text>
         </Toast>
       )
       removeModal(props.modalId)

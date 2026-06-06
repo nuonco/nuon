@@ -43,7 +43,7 @@ export const DenyPlanModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
         <Text variant="base" weight="stronger">

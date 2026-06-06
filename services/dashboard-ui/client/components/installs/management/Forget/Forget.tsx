@@ -35,7 +35,7 @@ export const ForgetModal = ({
           theme="error"
         >
           <Icon variant="TrashIcon" size="24" />
-          Forget {installName}
+          Forget {installName}?
         </Text>
       }
       primaryActionTrigger={{
@@ -70,11 +70,8 @@ export const ForgetModal = ({
 
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Text variant="base" weight="strong">
-              Are you sure you want to forget {installName}?
-            </Text>
             <Text variant="body" theme="neutral">
-              This action will remove the install and can not be undone.
+              This will remove the install and cannot be undone.
             </Text>
           </div>
 

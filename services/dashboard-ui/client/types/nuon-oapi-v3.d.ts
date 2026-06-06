@@ -4636,11 +4636,11 @@ export interface components {
       action_workflow_id?: string;
       /** @description inline action fields */
       command?: string;
-      /** @description deploy fields */
+      /** @description deploy / tear-down fields */
       component_name?: string;
       created_at?: string;
       created_by_id?: string;
-      deploy_dependencies?: boolean;
+      deploy_dependents?: boolean;
       env_vars?: {
         [key: string]: string;
       };
@@ -4650,6 +4650,9 @@ export interface components {
       name?: string;
       role?: string;
       runbook_config_id?: string;
+      /** @description sandbox lifecycle fields */
+      skip_component_deploys?: boolean;
+      tear_down_dependents?: boolean;
       timeout?: number;
       type?: string;
       updated_at?: string;
@@ -4725,6 +4728,13 @@ export interface components {
       };
       local_aws_iam_role_arn?: string;
       logging_level?: string;
+      /**
+       * @description LongPollJobs mirrors the org's `runner-job-long-poll` feature flag
+       * so the runner can choose between the legacy idle-poll loop and the
+       * new long-poll endpoint at boot. Not persisted; populated by the
+       * runner-settings handler.
+       */
+      long_poll_jobs?: boolean;
       /** @description Metadata is used as both log and metric tags/attributes in the runner when emitting data */
       metadata?: {
         [key: string]: string;
@@ -6725,7 +6735,7 @@ export interface components {
       action_name?: string;
       command?: string;
       component_name?: string;
-      deploy_dependencies?: boolean;
+      deploy_dependents?: boolean;
       env_vars?: {
         [key: string]: string;
       };
@@ -6733,6 +6743,8 @@ export interface components {
       inline_contents?: string;
       name: string;
       role?: string;
+      skip_component_deploys?: boolean;
+      tear_down_dependents?: boolean;
       timeout?: number;
       type: string;
     };

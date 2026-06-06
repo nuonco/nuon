@@ -41,14 +41,11 @@ export const RetryStepModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to retry this step?
-        </Text>
         <Text variant="base">
-          Retrying will rerun this workflow step. If successful, the workflow
+          Retrying will rerun this workflow step. If it succeeds, the workflow
           will continue from this point.
         </Text>
       </div>

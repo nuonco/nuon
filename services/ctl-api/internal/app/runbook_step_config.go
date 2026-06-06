@@ -17,8 +17,15 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeDeploy RunbookStepType = "deploy"
-	RunbookStepTypeAction RunbookStepType = "action"
+	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
+	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
+	RunbookStepTypeAction             RunbookStepType = "action"
+	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
+	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+
+	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
+	// as input and canonicalized to component_deploy at ingress.
+	RunbookStepTypeDeployLegacy RunbookStepType = "deploy"
 )
 
 type RunbookStepConfig struct {
@@ -38,10 +45,15 @@ type RunbookStepConfig struct {
 	Idx  int             `json:"idx" gorm:"notnull;default:0" temporaljson:"idx,omitzero,omitempty"`
 	Name string          `json:"name,omitzero" gorm:"notnull" temporaljson:"name,omitzero,omitempty"`
 	Type RunbookStepType `json:"type,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"type,omitzero,omitempty"`
+	Role string          `json:"role,omitzero" temporaljson:"role,omitzero,omitempty"`
 
-	// deploy fields
+	// deploy / tear-down fields
 	ComponentName      string `json:"component_name,omitzero" temporaljson:"component_name,omitzero,omitempty"`
-	DeployDependencies bool   `json:"deploy_dependencies,omitzero" gorm:"default:false" temporaljson:"deploy_dependencies,omitzero,omitempty"`
+	DeployDependents   bool   `json:"deploy_dependents,omitzero" gorm:"default:false" temporaljson:"deploy_dependents,omitzero,omitempty"`
+	TearDownDependents bool   `json:"tear_down_dependents,omitzero" gorm:"default:false" temporaljson:"tear_down_dependents,omitzero,omitempty"`
+
+	// sandbox lifecycle fields
+	SkipComponentDeploys bool `json:"skip_component_deploys,omitzero" gorm:"default:false" temporaljson:"skip_component_deploys,omitzero,omitempty"`
 
 	// action reference field
 	ActionWorkflowID generics.NullString `json:"action_workflow_id,omitzero" swaggertype:"string" temporaljson:"action_workflow_id,omitzero,omitempty"`
@@ -51,7 +63,6 @@ type RunbookStepConfig struct {
 	InlineContents string        `json:"inline_contents,omitzero" temporaljson:"inline_contents,omitzero,omitempty"`
 	EnvVars        pgtype.Hstore `json:"env_vars,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"env_vars,omitzero,omitempty"`
 	Timeout        time.Duration `json:"timeout,omitzero" gorm:"default:0;not null" swaggertype:"primitive,integer" temporaljson:"timeout,omitzero,omitempty"`
-	Role           string        `json:"role,omitzero" temporaljson:"role,omitzero,omitempty"`
 }
 
 func (r *RunbookStepConfig) BeforeCreate(tx *gorm.DB) error {

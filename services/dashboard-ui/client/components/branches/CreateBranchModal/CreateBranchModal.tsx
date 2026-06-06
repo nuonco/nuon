@@ -189,7 +189,7 @@ export const CreateBranchModal = ({
           <>
             {vcsConnections.length === 0 ? (
               <Banner theme="warn">
-                No VCS connections found. Please connect your GitHub account
+                No VCS connections found. Connect your GitHub account
                 first.
               </Banner>
             ) : (
@@ -226,7 +226,7 @@ export const CreateBranchModal = ({
                   <Banner theme="error">Failed to load repositories</Banner>
                 ) : repos.length === 0 ? (
                   <Banner theme="warn">
-                    No connected repositories found. Please update your GitHub
+                    No connected repositories found. Update your GitHub
                     connection to grant access to repositories.
                   </Banner>
                 ) : (

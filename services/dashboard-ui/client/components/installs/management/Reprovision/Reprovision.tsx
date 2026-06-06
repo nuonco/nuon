@@ -51,13 +51,10 @@ export const ReprovisionModal = ({
         {error ? (
           <Banner theme="error">
             {error?.error ||
-              'An error happened, please refresh the page and try again.'}
+              'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
         <div className="flex flex-col gap-1">
-          <Text variant="base" weight="strong">
-            Are you sure you want to reprovision {}?
-          </Text>
           <Text variant="base">
             Reprovisioning will recreate all resources and deploy all components
             again.

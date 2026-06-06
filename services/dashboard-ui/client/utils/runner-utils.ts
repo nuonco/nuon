@@ -86,7 +86,7 @@ export function getJobExecutionStatus(job: TRunnerJob): string {
 
 const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
   build: {
-    finished: 'component built successfully',
+    finished: 'component built',
     failed: 'component build failed',
     'timed-out': 'component build timed out',
     queued: 'component build queued',
@@ -96,7 +96,7 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     cancelled: 'component build canceled',
   },
   sandbox: {
-    finished: 'sandbox provisioned successfully',
+    finished: 'sandbox provisioned',
     failed: 'sandbox provisioning failed',
     'timed-out': 'sandbox provisioning timed out',
     queued: 'sandbox provisioning queued',
@@ -106,7 +106,7 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     cancelled: 'sandbox provisioning canceled',
   },
   sync: {
-    finished: 'component synced successfully',
+    finished: 'component synced',
     failed: 'component sync failed',
     'timed-out': 'component sync timed out',
     queued: 'component sync queued',
@@ -116,7 +116,7 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     cancelled: 'component sync canceled',
   },
   deploy: {
-    finished: 'component deployed successfully',
+    finished: 'component deployed',
     failed: 'component deployment failed',
     'timed-out': 'component deployment timed out',
     queued: 'component deployment queued',
@@ -126,7 +126,7 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     cancelled: 'component deployment canceled',
   },
   actions: {
-    finished: 'action completed successfully',
+    finished: 'action completed',
     failed: 'action failed',
     'timed-out': 'action timed out',
     queued: 'action queued',
@@ -136,7 +136,7 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     cancelled: 'action canceled',
   },
   operations: {
-    finished: 'operation completed successfully',
+    finished: 'operation completed',
     failed: 'operation failed',
     'timed-out': 'operation timed out',
     queued: 'operation queued',
@@ -146,7 +146,7 @@ const statusMessagesByGroup: Record<TJobGroup, Record<TJobStatus, string>> = {
     cancelled: 'operation canceled',
   },
   management: {
-    finished: 'completed successfully',
+    finished: 'completed',
     failed: 'failed',
     'timed-out': 'timed out',
     queued: 'queued',

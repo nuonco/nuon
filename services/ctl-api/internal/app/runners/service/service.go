@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/metrics"
+	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
@@ -35,6 +36,7 @@ type Params struct {
 	RunnerHeartbeatCache *RunnerHeartbeatCache
 	Heartbeater          *heartbeater.Heartbeater
 	FeaturesClient       *features.Features
+	TemporalClient       temporalclient.Client
 }
 
 type service struct {
@@ -50,6 +52,7 @@ type service struct {
 	runnerHeartbeatCache *RunnerHeartbeatCache
 	heartbeater          *heartbeater.Heartbeater
 	featuresClient       *features.Features
+	temporalClient       temporalclient.Client
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -265,6 +268,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.POST("/heart-beats", s.CreateRunnerHeartBeat)
 	runners.GET("", s.GetRunner)
 	runners.GET("/jobs", s.GetRunnerJobs)
+	runners.GET("/jobs/tail", s.TailRunnerJobs)
 	runners.GET("/settings", s.GetRunnerSettings)
 	runners.GET("/public-settings", s.GetRunnerPublicSettings)
 	runners.POST("/traces", s.OtelWriteTraces)
@@ -364,6 +368,7 @@ func New(params Params) *service {
 		runnerHeartbeatCache: params.RunnerHeartbeatCache,
 		heartbeater:          params.Heartbeater,
 		featuresClient:       params.FeaturesClient,
+		temporalClient:       params.TemporalClient,
 		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}
 }
