@@ -47,7 +47,7 @@ export const SpanTree = ({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between gap-3 px-2 h-14 border-b border-cool-grey-200 dark:border-dark-grey-600">
+      <div className="@container flex items-center justify-between gap-3 px-2 h-14 border-b border-cool-grey-200 dark:border-dark-grey-600">
         <Text variant="subtext" theme="neutral" className="whitespace-nowrap shrink-0">
           {spans.length} span{spans.length === 1 ? '' : 's'}
           {hiddenCount > 0 ? (
@@ -56,7 +56,7 @@ export const SpanTree = ({
             </Text>
           ) : null}
         </Text>
-        <div className="@container flex flex-auto justify-end items-center gap-2">
+        <div className="flex flex-auto justify-end items-center gap-2">
           {headerActions}
           <Button
             size="sm"
@@ -68,7 +68,7 @@ export const SpanTree = ({
               variant={isAllExpanded ? 'ArrowsInLineVerticalIcon' : 'ArrowsOutLineVerticalIcon'}
               size="12"
             />
-            <span className="@max-[14rem]:hidden">{isAllExpanded ? 'Collapse' : 'Expand'}</span>
+            <span className="@max-[22rem]:hidden">{isAllExpanded ? 'Collapse' : 'Expand'}</span>
           </Button>
         </div>
       </div>
