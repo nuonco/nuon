@@ -1,4 +1,11 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
@@ -30,6 +37,56 @@ export const TraceView = ({
   const [variant, setVariant] = useState<TTraceRightPaneVariant>('logs')
   const [scope, setScope] = useState<TTraceScopeVariant>('user')
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+
+  // Resizable left/right split (lg+ only). Width of the left (span tree) pane,
+  // expressed as a percentage of the container and clamped to a usable range.
+  const splitRef = useRef<HTMLDivElement>(null)
+  const [leftWidthPct, setLeftWidthPct] = useState(30)
+
+  const updateWidthFromClientX = useCallback((clientX: number) => {
+    const el = splitRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.width === 0) return
+    const pct = ((clientX - rect.left) / rect.width) * 100
+    setLeftWidthPct(Math.min(80, Math.max(20, pct)))
+  }, [])
+
+  const handlePointerMove = useCallback(
+    (e: PointerEvent) => updateWidthFromClientX(e.clientX),
+    [updateWidthFromClientX]
+  )
+
+  const stopResizing = useCallback(() => {
+    window.removeEventListener('pointermove', handlePointerMove)
+    window.removeEventListener('pointerup', stopResizing)
+    document.body.style.userSelect = ''
+    document.body.style.cursor = ''
+  }, [handlePointerMove])
+
+  const startResizing = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault()
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', stopResizing)
+      document.body.style.userSelect = 'none'
+      document.body.style.cursor = 'col-resize'
+    },
+    [handlePointerMove, stopResizing]
+  )
+
+  const handleSeparatorKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      setLeftWidthPct((p) => Math.max(20, p - 2))
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      setLeftWidthPct((p) => Math.min(80, p + 2))
+    }
+  }, [])
+
+  // Clean up window listeners if we unmount mid-drag.
+  useEffect(() => () => stopResizing(), [stopResizing])
 
   const visibleSpans = useMemo(
     () => (scope === 'user' ? filterRunnerInternal(spans) : spans),
@@ -68,7 +125,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="UserIcon" size="12" />
-                <span className="@max-[22rem]:hidden">User</span>
+                <span className="@max-[30rem]:hidden">User</span>
               </>
             ),
             ariaLabel:
@@ -81,7 +138,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="StackIcon" size="12" />
-                <span className="@max-[22rem]:hidden">All</span>
+                <span className="@max-[30rem]:hidden">All</span>
               </>
             ),
             ariaLabel: 'Show all spans including runner internals',
@@ -97,7 +154,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="ListIcon" size="12" />
-                <span className="@max-[22rem]:hidden">Logs</span>
+                <span className="@max-[30rem]:hidden">Logs</span>
               </>
             ),
             ariaLabel: 'Show logs',
@@ -107,7 +164,7 @@ export const TraceView = ({
             label: (
               <>
                 <Icon variant="TimerIcon" size="12" />
-                <span className="@max-[22rem]:hidden">Timeline</span>
+                <span className="@max-[30rem]:hidden">Timeline</span>
               </>
             ),
             ariaLabel: 'Show timeline',
@@ -128,8 +185,12 @@ export const TraceView = ({
           </Text>
         </Banner>
       ) : null}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,7fr)] flex-auto min-h-0">
-        <div className="overflow-y-auto min-h-[20rem]">
+      <div
+        ref={splitRef}
+        className="flex flex-col lg:flex-row flex-auto min-h-0"
+        style={{ '--trace-left': `${leftWidthPct}%` } as React.CSSProperties}
+      >
+        <div className="overflow-y-auto min-h-[20rem] w-full lg:w-[var(--trace-left)] lg:shrink-0">
           {isLoading && !spans.length ? (
             <div className="p-6 text-center">
               <Text variant="subtext" theme="neutral">
@@ -150,9 +211,22 @@ export const TraceView = ({
             />
           )}
         </div>
+
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panels"
+          tabIndex={0}
+          onPointerDown={startResizing}
+          onKeyDown={handleSeparatorKeyDown}
+          className="group hidden lg:flex shrink-0 w-1.5 cursor-col-resize items-stretch justify-center touch-none focus:outline-none"
+        >
+          <span className="w-px bg-cool-grey-200 dark:bg-dark-grey-600 transition-colors group-hover:bg-primary-400 group-focus-visible:bg-primary-500" />
+        </div>
+
         <div
           className={cn(
-            'overflow-y-auto min-h-[20rem] lg:border-l lg:border-cool-grey-200 lg:dark:border-dark-grey-600',
+            'overflow-y-auto min-h-[20rem] w-full lg:flex-1 lg:min-w-0',
             isLogs && 'px-3'
           )}
         >
