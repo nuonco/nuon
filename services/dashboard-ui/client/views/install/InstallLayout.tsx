@@ -45,6 +45,7 @@ const InstallTemplate = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const hasRunbooks = !!org?.features?.runbooks
+  const hasNotebooks = !!org?.features?.notebooks
 
   const navLinks: TNavItem[] = [
     { type: 'section', label: 'Overview' },
@@ -85,6 +86,15 @@ const InstallTemplate = () => {
             path: `/runbooks`,
             iconVariant: 'BookIcon' as const,
             text: 'Runbooks',
+          },
+        ]
+      : []),
+    ...(hasNotebooks
+      ? [
+          {
+            path: `/notebooks`,
+            iconVariant: 'NotebookIcon' as const,
+            text: 'Notebooks',
           },
         ]
       : []),

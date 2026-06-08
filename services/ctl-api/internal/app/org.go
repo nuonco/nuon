@@ -75,6 +75,12 @@ const (
 	// (`GET /v1/runners/:id/jobs/tail`). The flag is surfaced via the
 	// runner-settings response; runners read it at boot.
 	OrgFeatureRunnerJobLongPoll OrgFeature = "runner-job-long-poll"
+	// OrgFeatureNotebooks enables install-scoped Notebooks: a
+	// Jupyter-style execution surface where each cell runs a command on
+	// the install's runner via a long-lived, warm per-notebook Temporal
+	// workflow. Gates all `/v1/installs/:id/notebooks` endpoints and the
+	// dashboard notebooks UI.
+	OrgFeatureNotebooks OrgFeature = "notebooks"
 )
 
 type Org struct {
@@ -197,6 +203,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureLogTailLongPoll:         false,
 		OrgFeatureRunnerJobLongPoll:       false,
+		OrgFeatureNotebooks:               false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -244,6 +251,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeaturePulumiUpdatePlans,
 		OrgFeatureLogTailLongPoll,
 		OrgFeatureRunnerJobLongPoll,
+		OrgFeatureNotebooks,
 	}
 }
 
@@ -277,6 +285,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeaturePulumiUpdatePlans:       "Pin Pulumi applies to the approved preview via saved update plans; leave off for stacks using helm (the helm Release resource fails plan validation)",
 		OrgFeatureLogTailLongPoll:         "Enable the long-poll log-tail endpoint (`/v1/log-streams/:id/logs/tail`) — the dashboard BFF probes it for near-real-time log streaming and falls back to legacy 1s polling when off",
 		OrgFeatureRunnerJobLongPoll:       "Switch the runner from a 5s idle-poll loop to a long-poll endpoint (`/v1/runners/:id/jobs/tail`) so job pickup is sub-second. Surfaced via runner settings; runners pick it up on the next process restart.",
+		OrgFeatureNotebooks:               "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
 	}
 }
 
