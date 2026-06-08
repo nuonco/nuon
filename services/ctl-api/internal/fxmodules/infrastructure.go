@@ -10,6 +10,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/filecache"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
+	notebookclient "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/analytics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
@@ -150,4 +151,5 @@ var InfrastructureModule = fx.Module("infrastructure",
 	fx.Provide(queueclient.New),
 	fx.Provide(emitterclient.New),
 	fx.Provide(flowclient.New),
+	fx.Provide(notebookclient.New),
 )
