@@ -46,6 +46,16 @@ type AppExternalImageComponentConfig struct {
 	// tag
 	Tag string `json:"tag,omitempty"`
 
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2", ">=1.0.0,<2.0.0") that, when set, causes the
+	// runner to list tags from the source registry, filter to those that
+	// parse as semver and satisfy the constraint, and pick the highest
+	// matching tag at build time. Tag is then ignored as the source ref;
+	// the resolved tag is recorded on ComponentBuild.ResolvedTag.
+	//
+	// When empty, the runner uses Tag literally.
+	UpdatePolicy string `json:"update_policy,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }

@@ -1,5 +1,7 @@
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card, type ICard } from '@/components/common/Card'
+import { ClickToCopy } from '@/components/common/ClickToCopy'
 import { Cron } from '@/components/common/Cron'
 import { GitRepo } from '@/components/common/GitRepo'
 import { Hash } from '@/components/common/Hash'
@@ -7,6 +9,7 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { OperationRolesList } from '@/components/common/OperationRolesList'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
 import {
   HelmValuesFilesModal,
@@ -22,19 +25,22 @@ import {
   PulumiEnvVarsModal,
 } from '@/components/components/configs/PulumiConfig'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import type { TComponentConfig } from '@/types'
+import type { TBuild, TComponentConfig } from '@/types'
 import { getComponentConfigDisplayData } from '@/utils/component-config-display'
+import { isImageBuild } from '@/utils/image-ref'
 
 interface IComponentConfigCard extends Omit<ICard, 'children'> {
   config: TComponentConfig
   footer?: React.ReactNode
   headerActions?: React.ReactNode
+  latestBuild?: TBuild
 }
 
 export const ComponentConfigCard = ({
   config,
   footer,
   headerActions,
+  latestBuild,
   ...props
 }: IComponentConfigCard) => {
   const { commonFields, typeSpecificFields, vcsInfo, operationRoles } =
@@ -254,8 +260,66 @@ export const ComponentConfigCard = ({
             {footer}
           </div>
         )}
+
+        {latestBuild && isImageBuild(latestBuild) ? (
+          <LatestResolvedImage build={latestBuild} />
+        ) : null}
       </div>
     </Card>
+  )
+}
+
+const LatestResolvedImage = ({ build }: { build: TBuild }) => {
+  return (
+    <div className="flex flex-col gap-3 pt-6 border-t">
+      <span className="flex items-center gap-2">
+        <Text variant="body" weight="strong" level={5}>
+          Latest resolved image
+        </Text>
+        {build.no_op ? (
+          <Badge variant="code" size="sm" theme="neutral">
+            no-op
+          </Badge>
+        ) : null}
+      </span>
+      <div className="grid gap-4 md:grid-cols-2">
+        {build.source_ref ? (
+          <LabeledValue label="Source ref">
+            <Text variant="subtext" family="mono" className="break-all">
+              {build.source_ref}
+            </Text>
+          </LabeledValue>
+        ) : null}
+        {build.resolved_tag ? (
+          <LabeledValue label="Resolved tag">
+            <Text variant="subtext" family="mono">
+              {build.resolved_tag}
+            </Text>
+          </LabeledValue>
+        ) : null}
+        {build.source_digest ? (
+          <LabeledValue label="Digest" className="md:col-span-2">
+            <ClickToCopy>
+              <Text variant="subtext" family="mono" className="break-all">
+                {build.source_digest}
+              </Text>
+            </ClickToCopy>
+          </LabeledValue>
+        ) : null}
+        {build.source_media_type ? (
+          <LabeledValue label="Media type" className="md:col-span-2">
+            <Text variant="subtext" family="mono" className="break-all">
+              {build.source_media_type}
+            </Text>
+          </LabeledValue>
+        ) : null}
+        {build.resolved_at ? (
+          <LabeledValue label="Resolved">
+            <Time variant="subtext" time={build.resolved_at} />
+          </LabeledValue>
+        ) : null}
+      </div>
+    </div>
   )
 }
 
