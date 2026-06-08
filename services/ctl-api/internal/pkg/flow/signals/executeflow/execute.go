@@ -1,6 +1,8 @@
 package executeflow
 
 import (
+	"time"
+
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -14,6 +16,12 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
+
+// residentIdleTimeout bounds how long a Resident workflow parks waiting for the
+// next step (e.g. a notebook cell) after running 0->end. On idle the execute
+// loop returns cleanly so the queue signal completes and history stays finite;
+// the workflow re-warms lazily on the next dispatch.
+const residentIdleTimeout = 15 * time.Minute
 
 // executeFlow runs the workflow conductor with run-based execution.
 // Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
@@ -63,10 +71,17 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			// or if we paused at an approval/directive point.
 			if s.isWorkflowComplete(ctx) {
 				s.updateRunStatus(ctx, run.ID, app.StatusSuccess)
-				return nil
+				if !s.Resident {
+					return nil
+				}
+				// Resident: stay alive to accept the next step (e.g. a
+				// notebook cell) instead of completing. Fall through to the
+				// shared park below, which honors appendRequested and an idle
+				// timeout in resident mode.
+			} else {
+				// Paused at approval - update run status and wait for resume
+				s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 			}
-			// Paused at approval - update run status and wait for resume
-			s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 		} else {
 			if s.cancelRequested {
 				return nil
@@ -114,11 +129,24 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			})
 		}
 
-		// Wait for a resume or cancel signal from an update handler
+		// Wait for a resume/append or cancel signal from an update handler. In
+		// resident mode the park is bounded by an idle timeout: on idle we
+		// return cleanly and the workflow re-warms on the next dispatch.
 		s.awaitingResume = true
-		err = workflow.Await(ctx, func() bool {
-			return s.resumeRequested || s.cancelRequested
-		})
+		if s.Resident {
+			var woke bool
+			woke, err = workflow.AwaitWithTimeout(ctx, residentIdleTimeout, func() bool {
+				return s.resumeRequested || s.appendRequested || s.cancelRequested
+			})
+			if err == nil && !woke {
+				s.awaitingResume = false
+				return nil
+			}
+		} else {
+			err = workflow.Await(ctx, func() bool {
+				return s.resumeRequested || s.cancelRequested
+			})
+		}
 		s.awaitingResume = false
 		if err != nil {
 			return err
@@ -129,8 +157,9 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			return runErr
 		}
 
-		// Create a new run for the resume
+		// Create a new run for the resume/append.
 		s.resumeRequested = false
+		s.appendRequested = false
 		run, err = s.createRun(ctx, s.resumeRunType, s.resumeStepID, s.resumeStartIdx)
 		if err != nil {
 			return err

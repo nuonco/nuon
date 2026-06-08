@@ -43,12 +43,23 @@ type Signal struct {
 	// per-event DB lookup.
 	OwnerName string `json:"owner_name,omitempty"`
 
+	// Resident keeps the workflow alive after it runs 0->end: instead of
+	// completing, the execute loop parks to accept run-a-step-in-between
+	// updates (e.g. notebook cells). Gated so install workflows keep exact
+	// run-to-completion semantics. Bounded by residentIdleTimeout — on idle
+	// the loop returns cleanly and the workflow re-warms on the next dispatch.
+	Resident bool `json:"resident,omitempty"`
+
 	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
 	resumeRequested bool
 	resumeRunType   app.WorkflowRunType
 	resumeStepID    string
 	resumeStartIdx  int
+
+	// appendRequested is set by the append-step update handler to wake a
+	// parked resident workflow and run a freshly-added step.
+	appendRequested bool
 
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
