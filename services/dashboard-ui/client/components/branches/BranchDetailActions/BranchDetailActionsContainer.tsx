@@ -26,7 +26,7 @@ export const BranchDetailActionsContainer = ({
   const { refresh } = useBranch()
 
   const triggerRunMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (planOnly: boolean) =>
       triggerBranchRun({
         appId,
         branchId: branch.id!,
@@ -34,12 +34,18 @@ export const BranchDetailActionsContainer = ({
         request: {
           config_id: currentConfig?.id,
           force: false,
+          plan_only: planOnly,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (_, planOnly) => {
       addToast(
+<<<<<<< HEAD
         <Toast theme="success" heading="Run triggered">
           <Text>Your app branch run has been queued.</Text>
+=======
+        <Toast theme="success" heading={planOnly ? 'Preview run triggered' : 'Run triggered successfully'}>
+          <Text>{planOnly ? 'A plan-only preview run has been queued.' : 'Your app branch run has been queued.'}</Text>
+>>>>>>> 9fb091ac2 (chore: update ui for branches)
         </Toast>
       )
       refresh()
@@ -64,7 +70,20 @@ export const BranchDetailActionsContainer = ({
       return
     }
 
-    triggerRunMutation.mutate()
+    triggerRunMutation.mutate(false)
+  }
+
+  const handleTriggerPreview = () => {
+    if (!currentConfig) {
+      addToast(
+        <Toast theme="error" heading="No configuration available">
+          <Text>Create a config first before triggering a preview.</Text>
+        </Toast>
+      )
+      return
+    }
+
+    triggerRunMutation.mutate(true)
   }
 
   return (
@@ -82,6 +101,7 @@ export const BranchDetailActionsContainer = ({
       hasConfig={!!currentConfig}
       isTriggerPending={triggerRunMutation.isPending}
       onTriggerRun={handleTriggerRun}
+      onTriggerPreview={handleTriggerPreview}
     />
   )
 }

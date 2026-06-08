@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
@@ -11,7 +13,7 @@ import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
 import { AddInstallPicker } from './AddInstallPicker'
 import { SortableInstallRow } from './SortableInstallRow'
-import type { IInstallGroup } from './types'
+import type { IInstallGroup, InstallSelectionMode } from './types'
 
 interface IGroupEditor {
   group: IInstallGroup
@@ -105,6 +107,35 @@ export const GroupEditor = ({
           </div>
 
           <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1 rounded-md bg-cool-grey-100 dark:bg-dark-grey-700 p-0.5">
+              <button
+                type="button"
+                className={cn(
+                  'flex-1 text-xs font-medium px-2 py-1 rounded transition-colors',
+                  group.selection_mode === 'manual'
+                    ? 'bg-white dark:bg-dark-grey-600 shadow-sm'
+                    : 'text-cool-grey-600 dark:text-dark-grey-400 hover:text-cool-grey-900'
+                )}
+                onClick={() => onUpdate({ selection_mode: 'manual' })}
+                disabled={disabled}
+              >
+                Manual
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  'flex-1 text-xs font-medium px-2 py-1 rounded transition-colors',
+                  group.selection_mode === 'labels'
+                    ? 'bg-white dark:bg-dark-grey-600 shadow-sm'
+                    : 'text-cool-grey-600 dark:text-dark-grey-400 hover:text-cool-grey-900'
+                )}
+                onClick={() => onUpdate({ selection_mode: 'labels' })}
+                disabled={disabled}
+              >
+                By labels
+              </button>
+            </div>
+
             <div className="flex items-center gap-2">
               <Text variant="subtext" theme="neutral">
                 Max parallel
@@ -142,6 +173,16 @@ export const GroupEditor = ({
               disabled={disabled}
               labelProps={{ labelText: 'Rollback on failure' }}
             />
+
+            <CheckboxInput
+              id={`group-preview-${group.id}`}
+              checked={group.use_for_previews ?? false}
+              onChange={(e) =>
+                onUpdate({ use_for_previews: e.target.checked })
+              }
+              disabled={disabled}
+              labelProps={{ labelText: 'Use for previews' }}
+            />
           </div>
         </div>
 
@@ -149,44 +190,158 @@ export const GroupEditor = ({
           ref={setNodeRef}
           className={cn(
             'flex flex-col gap-2 p-4 transition-colors',
-            isOver && 'bg-primary-50/40 dark:bg-primary-900/10'
+            isOver && group.selection_mode === 'manual' && 'bg-primary-50/40 dark:bg-primary-900/10'
           )}
         >
-          <SortableContext
-            items={group.install_ids}
-            strategy={verticalListSortingStrategy}
-          >
-            {installs.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                {installs.map((install) => (
-                  <SortableInstallRow
-                    key={install.id}
-                    installId={install.id}
-                    installName={install.name || install.id}
-                    containerId={group.id}
-                    disabled={disabled}
-                    showRemove
-                    onRemove={() => onRemoveInstall(install.id)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="px-3 py-3 rounded-md border border-dashed border-cool-grey-300 dark:border-dark-grey-600 text-center">
-                <Text variant="subtext" theme="neutral">
-                  Drop installs here or use Add install
-                </Text>
-              </div>
-            )}
-          </SortableContext>
+          {group.selection_mode === 'labels' ? (
+            <LabelSelectorEditor
+              groupId={group.id}
+              labelSelector={group.label_selector}
+              disabled={disabled}
+              onUpdate={(ls) => onUpdate({ label_selector: ls })}
+            />
+          ) : (
+            <>
+              <SortableContext
+                items={group.install_ids}
+                strategy={verticalListSortingStrategy}
+              >
+                {installs.length > 0 ? (
+                  <div className="flex flex-col gap-1.5">
+                    {installs.map((install) => (
+                      <SortableInstallRow
+                        key={install.id}
+                        installId={install.id}
+                        installName={install.name || install.id}
+                        containerId={group.id}
+                        disabled={disabled}
+                        showRemove
+                        onRemove={() => onRemoveInstall(install.id)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-3 py-3 rounded-md border border-dashed border-cool-grey-300 dark:border-dark-grey-600 text-center">
+                    <Text variant="subtext" theme="neutral">
+                      Drop installs here or use Add install
+                    </Text>
+                  </div>
+                )}
+              </SortableContext>
 
-          <AddInstallPicker
-            groupId={group.id}
-            unassignedInstalls={unassignedInstalls}
-            disabled={disabled}
-            onAdd={onAddInstalls}
-          />
+              <AddInstallPicker
+                groupId={group.id}
+                unassignedInstalls={unassignedInstalls}
+                disabled={disabled}
+                onAdd={onAddInstalls}
+              />
+            </>
+          )}
         </div>
       </div>
+    </div>
+  )
+}
+
+const LabelSelectorEditor = ({
+  groupId,
+  labelSelector,
+  disabled,
+  onUpdate,
+}: {
+  groupId: string
+  labelSelector?: { match_labels: Record<string, string> } | null
+  disabled?: boolean
+  onUpdate: (ls: { match_labels: Record<string, string> }) => void
+}) => {
+  const [newKey, setNewKey] = useState('')
+  const [newValue, setNewValue] = useState('')
+
+  const labels = labelSelector?.match_labels ?? {}
+  const entries = Object.entries(labels)
+
+  const addLabel = () => {
+    const key = newKey.trim()
+    const value = newValue.trim()
+    if (!key) return
+    onUpdate({ match_labels: { ...labels, [key]: value } })
+    setNewKey('')
+    setNewValue('')
+  }
+
+  const removeLabel = (key: string) => {
+    const next = { ...labels }
+    delete next[key]
+    onUpdate({ match_labels: next })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Text variant="subtext" theme="neutral">
+        Installs matching all labels will be included at deploy time.
+      </Text>
+
+      {entries.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {entries.map(([key, value]) => (
+            <Badge key={key} variant="code" size="md">
+              <span className="inline-flex items-center gap-1">
+                {key}={value}
+                <button
+                  type="button"
+                  onClick={() => removeLabel(key)}
+                  disabled={disabled}
+                  className="ml-0.5 hover:text-red-600"
+                >
+                  <Icon variant="XIcon" size={12} />
+                </button>
+              </span>
+            </Badge>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-end gap-2">
+        <div className="flex-1">
+          <Input
+            id={`label-key-${groupId}`}
+            type="text"
+            size="sm"
+            placeholder="Key"
+            value={newKey}
+            onChange={(e) => setNewKey(e.target.value)}
+            disabled={disabled}
+          />
+        </div>
+        <div className="flex-1">
+          <Input
+            id={`label-value-${groupId}`}
+            type="text"
+            size="sm"
+            placeholder="Value"
+            value={newValue}
+            onChange={(e) => setNewValue(e.target.value)}
+            disabled={disabled}
+          />
+        </div>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={addLabel}
+          disabled={disabled || !newKey.trim()}
+        >
+          <Icon variant="PlusIcon" size={14} />
+          Add
+        </Button>
+      </div>
+
+      {entries.length === 0 && (
+        <div className="px-3 py-3 rounded-md border border-dashed border-cool-grey-300 dark:border-dark-grey-600 text-center">
+          <Text variant="subtext" theme="neutral">
+            Add label selectors to match installs dynamically
+          </Text>
+        </div>
+      )}
     </div>
   )
 }

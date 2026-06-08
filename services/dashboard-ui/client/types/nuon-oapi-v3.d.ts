@@ -2657,10 +2657,17 @@ export interface paths {
       };
     };
   };
+  "/v1/vcs/webhooks/{subscription_id}/events": {
+    /**
+     * Write a VCS webhook event (shared per subscription)
+     * @description Receives webhook events for a webhook subscription and creates a GithubEvent for processing
+     */
+    post: operations["WriteWebhookEvent"];
+  };
   "/v1/vcs/{vcs_connection_id}/events": {
     /**
      * Write a VCS webhook event
-     * @description Writes incoming webhook events for a VCS connection
+     * @description Writes incoming webhook events for a VCS connection (legacy endpoint)
      */
     post: operations["WriteVCSEvent"];
   };
@@ -3037,6 +3044,11 @@ export interface components {
       created_by_id?: string;
       id?: string;
       install_ids?: string[];
+      /**
+       * @description LabelSelector dynamically resolves installs at deploy time by matching labels.
+       * Mutually exclusive with InstallIDs — set one or the other, not both.
+       */
+      label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       max_parallel?: number;
       name?: string;
       order?: number;
@@ -3044,12 +3056,15 @@ export interface components {
       requires_approval?: boolean;
       rollback_on_failure?: boolean;
       updated_at?: string;
+      /** @description UseForPreviews marks this group for plan-only preview runs (e.g., PR previews). */
+      use_for_previews?: boolean;
     };
     "app.AppBranchRun": {
       app_branch?: components["schemas"]["app.AppBranch"];
       app_branch_config?: components["schemas"]["app.AppBranchConfig"];
       /** @description AppConfigID is the app config that was created/synced during this run */
       app_config_id?: string;
+      base_branch?: string;
       /**
        * @description CommitSHA is the VCS commit that triggered or is associated with this run
        * DEPRECATED: Use VCSConnectionCommit relationship instead
@@ -3062,12 +3077,28 @@ export interface components {
       created_by_id?: string;
       /** @description ErrorMessage stores any error that occurred during execution */
       error_message?: string;
+      /** @description EventType indicates what triggered this run (push, pull_request, manual). */
+      event_type?: string;
       /** @description Force indicates if this run was forced (bypassing change detection) */
       force?: boolean;
+      head_sha?: string;
       id?: string;
       log_stream?: components["schemas"]["app.LogStream"];
       /** @description LogStreamID is the log stream created during this run for event tracking */
       log_stream_id?: string;
+      /**
+       * @description PlanOnly indicates this is a preview run (e.g., PR preview) that should
+       * only plan changes without applying them.
+       */
+      plan_only?: boolean;
+      /** @description PR metadata — populated when EventType is "pull_request" */
+      pr_number?: number;
+      previous_run?: components["schemas"]["app.AppBranchRun"];
+      /**
+       * @description PreviousRunID links to the previous successful run on the same branch,
+       * used for build diffing to determine which components need rebuilding.
+       */
+      previous_run_id?: string;
       /** @description QueueSignal is the signal that was enqueued to trigger this run */
       queue_signal?: components["schemas"]["app.QueueSignal"];
       /** @description StartedAt tracks when execution actually began */
@@ -3732,6 +3763,16 @@ export interface components {
       region?: string;
       runner_service_account_email?: string;
       runner_subnet_name?: string;
+    };
+    "app.GithubEvent": {
+      created_at?: string;
+      created_by_id?: string;
+      event_type?: string;
+      github_install_id?: string;
+      id?: string;
+      payload?: components["schemas"]["blobstore.Blob"];
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
     };
     "app.HelmChart": {
       created_at?: string;
@@ -5208,19 +5249,6 @@ export interface components {
       updated_at?: string;
       vcs_connection_id?: string;
     };
-    "app.VCSEvent": {
-      created_at?: string;
-      created_by_id?: string;
-      event_type?: string;
-      id?: string;
-      payload?: components["schemas"]["app.VCSEventPayload"];
-      status?: components["schemas"]["app.CompositeStatus"];
-      updated_at?: string;
-      vcs_connection_id?: string;
-    };
-    "app.VCSEventPayload": {
-      [key: string]: unknown;
-    };
     "app.Waitlist": {
       created_at?: string;
       created_by_id?: string;
@@ -5459,7 +5487,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "reprovision" | "app_config_build" | "runbook_run";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "reprovision" | "app_config_build" | "runbook_run";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -5644,6 +5672,9 @@ export interface components {
     };
     "github_com_nuonco_nuon_pkg_labels.Labels": {
       [key: string]: string;
+    };
+    "github_com_nuonco_nuon_pkg_labels.Selector": {
+      match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
     };
     "github_com_nuonco_nuon_pkg_types_state.State": {
       actions?: components["schemas"]["state.ActionsState"];
@@ -6442,7 +6473,14 @@ export interface components {
       roles: components["schemas"]["service.AppAWSIAMRoleConfig"][];
     };
     "service.CreateAppConfigRequest": {
+      /**
+       * @description AppBranchID optionally links this config to an app branch.
+       * When set, triggers an app branch run after sync.
+       */
+      app_branch_id?: string;
       cli_version?: string;
+      /** @description PlanOnly creates a preview run (plan without apply). Only used with AppBranchID. */
+      plan_only?: boolean;
       /** @description not required Readme */
       readme?: string;
     };
@@ -6948,11 +6986,17 @@ export interface components {
     };
     "service.InstallGroupRequest": {
       install_ids?: string[];
+      /**
+       * @description LabelSelector dynamically resolves installs at deploy time.
+       * Mutually exclusive with InstallIDs.
+       */
+      label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       max_parallel?: number;
       name: string;
       order?: number;
       requires_approval?: boolean;
       rollback_on_failure?: boolean;
+      use_for_previews?: boolean;
     };
     "service.InstallPermissionsRoleStatus": {
       app_config_id?: string;
@@ -7166,6 +7210,8 @@ export interface components {
       config_id?: string;
       /** @description force run even if no changes detected */
       force?: boolean;
+      /** @description plan-only preview mode (no apply) */
+      plan_only?: boolean;
     };
     "service.UpdateActionWorkflowRequest": {
       labels?: {
@@ -26697,8 +26743,52 @@ export interface operations {
     };
   };
   /**
+   * Write a VCS webhook event (shared per subscription)
+   * @description Receives webhook events for a webhook subscription and creates a GithubEvent for processing
+   */
+  WriteWebhookEvent: {
+    parameters: {
+      path: {
+        /** @description Webhook Subscription ID */
+        subscription_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.GithubEvent"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
    * Write a VCS webhook event
-   * @description Writes incoming webhook events for a VCS connection
+   * @description Writes incoming webhook events for a VCS connection (legacy endpoint)
    */
   WriteVCSEvent: {
     parameters: {
@@ -26711,7 +26801,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.VCSEvent"];
+          "application/json": components["schemas"]["app.GithubEvent"];
         };
       };
       /** @description Bad Request */
