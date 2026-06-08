@@ -24,6 +24,10 @@ func (v *ListView) RenderPaging(data [][]string, offset, limit int, hasMore bool
 	v.tableView.RenderPaging(data, offset, limit, hasMore)
 }
 
+func (v *ListView) RenderPagingWithContext(data [][]string, offset, limit int, hasMore bool, contextLabel, contextValue string) {
+	v.tableView.RenderPagingWithContext(data, offset, limit, hasMore, contextLabel, contextValue)
+}
+
 func (v *ListView) Error(err error) error {
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
@@ -33,8 +37,4 @@ func (v *ListView) Error(err error) error {
 
 func (v *ListView) Print(msg string) {
 	v.tableView.Print(msg)
-}
-
-func (v *ListView) RenderContext(label, value string) {
-	v.tableView.RenderContext(label, value)
 }

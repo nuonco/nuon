@@ -2,11 +2,14 @@ package bubbles
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"charm.land/bubbles/v2/table"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"golang.org/x/term"
+
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -190,23 +193,43 @@ func (m TableModel) viewString() string {
 	return BaseStyle.Render(m.table.View())
 }
 
-// RenderPaging displays a table with pagination information
+// RenderPaging displays a table with pagination information.
 func (v *TableView) RenderPaging(data [][]string, offset, limit int, hasMore bool) {
-	v.Render(data)
+	v.RenderPagingWithContext(data, offset, limit, hasMore, "", "")
+}
 
-	// Add pagination info
-	pagingStyle := lipgloss.NewStyle().
-		Foreground(styles.SubtleColor).
-		Italic(true).
-		Margin(1, 0, 0, 0)
+// RenderPagingWithContext displays a table with pagination information and an
+// optional right-aligned context hint (e.g. "app: app123"). When both pieces
+// fit on one terminal line they are printed on a single row; otherwise only the
+// pagination info is shown.
+func (v *TableView) RenderPagingWithContext(data [][]string, offset, limit int, hasMore bool, contextLabel, contextValue string) {
+	v.Render(data)
 
 	moreText := "no more items available"
 	if hasMore {
 		moreText = "more items available"
 	}
-
 	pagingInfo := fmt.Sprintf("offset %d, limit %d, %s", offset, limit, moreText)
-	fmt.Println(pagingStyle.Render(pagingInfo))
+
+	textStyle := lipgloss.NewStyle().
+		Foreground(styles.SubtleColor).
+		Italic(true)
+	footerStyle := lipgloss.NewStyle().
+		Margin(1, 0, 0, 0)
+
+	if contextValue != "" {
+		contextText := contextLabel + ": " + contextValue
+		if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+			gap := w - len(pagingInfo) - len(contextText) - 2
+			if gap >= 2 {
+				line := textStyle.Render(pagingInfo) + strings.Repeat(" ", gap) + textStyle.Render(contextText)
+				fmt.Println(footerStyle.Render(line))
+				return
+			}
+		}
+	}
+
+	fmt.Println(footerStyle.Render(textStyle.Render(pagingInfo)))
 }
 
 // RenderInteractive displays an interactive table that users can navigate.
@@ -237,22 +260,6 @@ func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
 // Print displays a simple message
 func (v *TableView) Print(msg string) {
 	fmt.Println(BaseStyle.Render(msg))
-}
-
-// RenderContext prints a labeled context line showing an active selection or
-// filter. Call before Render/RenderPaging so the reader knows what's scoped.
-func (v *TableView) RenderContext(label, value string) {
-	if value == "" {
-		return
-	}
-	labelStyle := lipgloss.NewStyle().
-		Foreground(styles.SubtleColor).
-		Italic(true)
-	valueStyle := lipgloss.NewStyle().
-		Foreground(styles.PrimaryColor)
-	contextStyle := lipgloss.NewStyle().
-		Margin(0, 1, 1, 1)
-	fmt.Println(contextStyle.Render(labelStyle.Render(label+":") + " " + valueStyle.Render(value)))
 }
 
 // RenderKeyValue renders key-value pairs in a table format

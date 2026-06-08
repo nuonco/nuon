@@ -48,10 +48,6 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 		return nil
 	}
 
-	if appID != "" {
-		view.RenderContext("app", appID)
-	}
-
 	data := [][]string{
 		{
 			"NAME",
@@ -82,7 +78,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 			install.CreatedAt,
 		})
 	}
-	view.RenderPaging(data, offset, limit, hasMore)
+	view.RenderPagingWithContext(data, offset, limit, hasMore, "app", appID)
 	return nil
 }
 
