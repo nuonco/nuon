@@ -46,7 +46,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 }
 
 // SyncComponent updates a component and creates its configuration based on type.
-func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, appID, appConfigID string, state *sync.State) error {
+func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID, appConfigID string, state *sync.State) error {
 	apiComp, err := getComponent(ctx, db, comp.Name, appID)
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -94,9 +94,26 @@ func SyncComponent(ctx context.Context, db *gorm.DB, comp *config.Component, app
 			return err
 		}
 	case "external_image":
-		// TODO: Implement external image component sync
-		configID = ""
-		checksum = ""
+		configID, checksum, err = SyncExternalImageComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		if err != nil {
+			return err
+		}
+
+		// Always queue a build per fresh CCC. Strict CCC-pinning at deploy
+		// time (see installs/workflows/v2/shared_helpers.go and
+		// installs/signals/componentsyncimage) requires every CCC to
+		// have at least one Active ComponentBuild — otherwise an install
+		// upgraded onto this app config version would have nothing to
+		// deploy for the image. The runner's NoOp dedup
+		// (ComponentBuild.NoOp) handles unchanged-digest cases without
+		// re-pushing the artifact, so the cost is one extra DB row per
+		// (image component × `nuon apps sync`).
+		if _, qErr := helpers.CreateComponentBuild(ctx, apiComp.ID, false, nil); qErr != nil {
+			return sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to queue build for component %s", comp.Name),
+				Err:         qErr,
+			}
+		}
 	case "job":
 		// TODO: Implement job component sync
 		configID = ""
