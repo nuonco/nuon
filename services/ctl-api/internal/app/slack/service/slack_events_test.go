@@ -33,6 +33,11 @@ func TestSlackInnerEventChannelParse(t *testing.T) {
 			wantID:   "C3",
 		},
 		{
+			name:     "member_joined_channel bare string",
+			jsonBody: `{"type":"member_joined_channel","channel":"C4","user":"UBOT"}`,
+			wantID:   "C4",
+		},
+		{
 			name:     "missing channel returns empty",
 			jsonBody: `{"type":"channel_rename"}`,
 			wantID:   "",
@@ -61,5 +66,20 @@ func TestSlackInnerEventChannelParse(t *testing.T) {
 				t.Fatalf("channelIDFromEvent: got %q want %q", got, tc.wantID)
 			}
 		})
+	}
+}
+
+// TestSlackInnerEventUserParse confirms the `user` field decodes off
+// member_joined_channel events — it's how we tell our bot's own join apart
+// from a human teammate joining (welcomeChannelOnBotJoin compares it to
+// SlackInstallation.BotUserID).
+func TestSlackInnerEventUserParse(t *testing.T) {
+	var ev slackInnerEvent
+	body := `{"type":"member_joined_channel","channel":"C4","user":"UBOT"}`
+	if err := json.Unmarshal([]byte(body), &ev); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if ev.User != "UBOT" {
+		t.Fatalf("user: got %q want %q", ev.User, "UBOT")
 	}
 }

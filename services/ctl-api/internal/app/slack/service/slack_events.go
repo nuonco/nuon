@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 )
 
 // slackEventEnvelope is the outer JSON wrapper Slack sends to the Events API.
@@ -32,6 +34,10 @@ type slackEventEnvelope struct {
 type slackInnerEvent struct {
 	Type    string          `json:"type"`
 	Channel json.RawMessage `json:"channel,omitempty"`
+	// User is the Slack user id of the actor on member_joined_channel events.
+	// We compare it against the install's BotUserID to detect when our own
+	// bot was added to a channel (vs. a human teammate joining).
+	User string `json:"user,omitempty"`
 }
 
 // slackChannelRef is the object shape Slack uses for channel_rename's
@@ -136,6 +142,8 @@ func (s *service) SlackEvents(ctx *gin.Context) {
 //     audit logs / pickers stay readable.
 //   - channel_archive / channel_left: we can't post into the channel
 //     anymore, so soft-delete every active sub for that channel.
+//   - member_joined_channel: when the joining member is our own bot, post a
+//     welcome message into the channel (see welcomeChannelOnBotJoin).
 //
 // Everything else is acked with 200 (Slack retries 4xx/5xx aggressively).
 func (s *service) handleSlackEventCallback(ctx *gin.Context, env slackEventEnvelope) {
@@ -204,6 +212,36 @@ func (s *service) handleSlackEventCallback(ctx *gin.Context, env slackEventEnvel
 			zap.String("channel_id", channelID),
 			zap.String("event_type", env.Event.Type))
 		ctx.Status(http.StatusOK)
+	case "member_joined_channel":
+		// Slack fires this for every member that joins a channel the bot is
+		// in; we only act when the joining member is our bot (i.e. the bot
+		// was just added to the channel).
+		//
+		// Slack uses at-least-once delivery: a join we already processed can
+		// be re-POSTed with X-Slack-Retry-Num set. We skip retries so a
+		// single membership yields a single welcome, while a genuine re-add
+		// (always a fresh delivery, no retry header) is welcomed again —
+		// i.e. once-per-membership, no persistent state required.
+		if ctx.GetHeader("X-Slack-Retry-Num") != "" {
+			ctx.Status(http.StatusOK)
+			return
+		}
+		channelID := env.Event.channelIDFromEvent()
+		if env.TeamID == "" || channelID == "" || env.Event.User == "" {
+			s.l.Warn("slack events: member_joined_channel missing team_id/channel/user",
+				zap.String("team_id", env.TeamID))
+			ctx.Status(http.StatusOK)
+			return
+		}
+		if err := s.welcomeChannelOnBotJoin(ctx, env.TeamID, channelID, env.Event.User); err != nil {
+			s.l.Error("slack events: welcome on bot join failed",
+				zap.Error(err),
+				zap.String("team_id", env.TeamID),
+				zap.String("channel_id", channelID))
+			ctx.Status(http.StatusOK)
+			return
+		}
+		ctx.Status(http.StatusOK)
 	default:
 		s.l.Debug("slack events: ignoring unhandled inner event",
 			zap.String("event_type", env.Event.Type), zap.String("team_id", env.TeamID))
@@ -237,6 +275,66 @@ func (s *service) softDeleteSubscriptionsForChannel(ctx *gin.Context, teamID, ch
 	return s.db.WithContext(ctx).
 		Where(app.SlackChannelSubscription{TeamID: teamID, ChannelID: channelID}).
 		Delete(&app.SlackChannelSubscription{}).Error
+}
+
+// slackWelcomeTextFmt is posted into a channel the first time our bot is added
+// to it. Mirrors the slash-command help phrasing so the onboarding is
+// consistent. Kept as plain text (vs. Block Kit) for the same reasons as
+// slashHelpText — the v1 surface is intentionally thin. The %s is the bot's
+// own display name (resolved per-installation, see welcomeChannelOnBotJoin) so
+// the greeting matches whatever the app is actually named in this workspace.
+const slackWelcomeTextFmt = ":wave: *Thanks for adding %s!*\n" +
+	"I post deployment lifecycle events from your installs into the channels you choose.\n\n" +
+	"Run `/nuon subscribe` to pick which org and events this channel should receive, or `/nuon help` to see everything I can do."
+
+// defaultBotDisplayName is the greeting fallback when we can't resolve the
+// bot's actual display name from Slack (e.g. auth.test fails). Never block the
+// welcome on a name lookup.
+const defaultBotDisplayName = "Nuon"
+
+// welcomeChannelOnBotJoin posts the welcome message when our bot is the member
+// that just joined channelID. No-ops (returns nil) when there's no active
+// installation for the workspace or when the joining member is someone other
+// than our bot — both are expected, non-error cases. Retry/dedup is handled by
+// the caller (member_joined_channel skips Slack re-deliveries), so this always
+// posts on a genuine join.
+func (s *service) welcomeChannelOnBotJoin(ctx *gin.Context, teamID, channelID, joinedUserID string) error {
+	var install app.SlackInstallation
+	res := s.db.WithContext(ctx).
+		Where(app.SlackInstallation{TeamID: teamID, Status: app.SlackInstallationStatusActive}).
+		First(&install)
+	if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	if res.Error != nil {
+		return fmt.Errorf("lookup installation: %w", res.Error)
+	}
+
+	// Only greet when the joining member is our bot — Slack fires
+	// member_joined_channel for every member, including human teammates.
+	if joinedUserID != install.BotUserID {
+		return nil
+	}
+
+	// Resolve the bot's own display name so the greeting matches whatever the
+	// app is named in this workspace (e.g. "nuon-stage"). auth.test needs no
+	// extra scope and returns the bot user's handle in User. Best-effort: fall
+	// back to the brand name rather than skip the welcome on a lookup failure.
+	botName := defaultBotDisplayName
+	if at, err := s.slackClient.AuthTest(ctx, install.BotAccessToken); err != nil {
+		s.l.Warn("slack welcome: auth.test failed, using default bot name",
+			zap.String("team_id", teamID), zap.Error(err))
+	} else if at.User != "" {
+		botName = at.User
+	}
+
+	if _, err := s.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: channelID,
+		Text:    fmt.Sprintf(slackWelcomeTextFmt, botName),
+	}); err != nil {
+		return fmt.Errorf("post welcome message: %w", err)
+	}
+	return nil
 }
 
 // markWorkspaceUninstalled flips the installation Status to uninstalled and
