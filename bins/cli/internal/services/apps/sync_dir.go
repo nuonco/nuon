@@ -11,6 +11,8 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/parse"
 	"github.com/nuonco/nuon/pkg/config/sync/apisyncer"
@@ -30,12 +32,11 @@ const (
 
 // SyncOptions controls how the target app is resolved when syncing a directory.
 type SyncOptions struct {
-	// AppFlag is the value of the explicit --app-id flag (ID or name). Highest precedence.
+	// AppFlag is the resolved value of the --app-id flag (ID or name) or picked from context.
 	AppFlag string
-	// DirExplicit is true when the user passed a positional directory argument.
-	// When true, the app is resolved from the directory name (preserving legacy
-	// behavior) even if there is a currently-selected app.
-	DirExplicit bool
+	// Force, when true, suppresses the directory-mismatch confirmation prompt
+	// and syncs to AppFlag regardless of the working directory name.
+	Force bool
 	// Create indicates the app should be created if it does not exist.
 	Create bool
 }
@@ -133,54 +134,71 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 // resolveSyncAppID determines which app the sync should target.
 //
-// Precedence:
-//  1. Explicit --app-id flag (opts.AppFlag).
-//  2. Positional directory argument: app name derived from the directory.
-//     This preserves the legacy `nuon apps sync <dir>` behavior.
-//  3. Currently-selected app (from `nuon apps select`).
-//  4. Fallback: app name derived from the (cwd) directory.
-//
-// When the dir-name path is taken and a different app is currently selected,
-// a warning is printed so the discrepancy is not silent.
+// Algorithm:
+//  1. AppFlag empty (no selection, no explicit --app-id): derive from the
+//     working directory name (legacy default).
+//  2. AppFlag set (auto-bound from selected app OR explicit --app-id):
+//     resolve it and check that the directory name resolves to the same app.
+//     - On match: proceed.
+//     - On mismatch + --force: warn and proceed.
+//     - On mismatch + interactive: prompt for confirmation.
+//     - On mismatch + non-interactive: error, suggest --force.
 func (s *Service) resolveSyncAppID(ctx context.Context, dir string, opts SyncOptions) (string, error) {
-	selectedAppID := s.getAppID()
-
-	// (1) --app-id flag wins.
-	if opts.AppFlag != "" {
-		appID, err := s.resolveOrCreateApp(ctx, opts.AppFlag, opts.Create)
-		if err != nil {
-			return "", err
-		}
-		if selectedAppID != "" && selectedAppID != appID {
-			ui.PrintWarning(fmt.Sprintf("--app-id %q overrides selected app %s", opts.AppFlag, selectedAppID))
-		}
-		return appID, nil
+	// (1) No app-id context at all → legacy dir-name behavior.
+	if opts.AppFlag == "" {
+		appID, _, err := s.resolveFromDirName(ctx, dir, opts.Create)
+		return appID, err
 	}
 
-	// (2) Positional dir argument: use dir-name (legacy behavior).
-	if opts.DirExplicit {
-		appID, appName, err := s.resolveFromDirName(ctx, dir, opts.Create)
-		if err != nil {
-			return "", err
-		}
-		if selectedAppID != "" && selectedAppID != appID {
-			ui.PrintWarning(fmt.Sprintf("selected app is %s but syncing app %q (derived from directory); pass --app-id to override", selectedAppID, appName))
-		}
-		return appID, nil
+	// (2) App-id is set; resolve it to a concrete app ID.
+	targetAppID, err := s.resolveOrCreateApp(ctx, opts.AppFlag, opts.Create)
+	if err != nil {
+		return "", err
 	}
 
-	// (3) Selected app from `nuon apps select`.
-	if selectedAppID != "" {
-		appID, err := lookup.AppID(ctx, s.api, selectedAppID)
-		if err != nil {
-			return "", errs.WithUserFacing(err, "error looking up selected app")
-		}
-		return appID, nil
+	// Compare against the directory-derived app.
+	appName, err := parse.AppNameFromDirName(dir)
+	if err != nil {
+		return "", errs.WithUserFacing(err, "error parsing app name from directory")
+	}
+	dirAppID, dirErr := lookup.AppID(ctx, s.api, appName)
+	if dirErr == nil && dirAppID == targetAppID {
+		return targetAppID, nil // match
 	}
 
-	// (4) Fallback: cwd dir-name (current default behavior).
-	appID, _, err := s.resolveFromDirName(ctx, dir, opts.Create)
-	return appID, err
+	// Mismatch path. Fetch the target app's name so messages are friendly
+	// even when AppFlag is an opaque ID (e.g. auto-bound from ~/.nuon).
+	targetLabel := opts.AppFlag
+	if app, err := s.api.GetApp(ctx, targetAppID); err == nil && app != nil && app.Name != "" {
+		targetLabel = app.Name
+	}
+	notice := fmt.Sprintf("directory %q does not match the selected app %q", appName, targetLabel)
+
+	if opts.Force {
+		ui.PrintWarning(notice + "; --force in effect, syncing to selected app")
+		return targetAppID, nil
+	}
+
+	if !s.cfg.Interactive {
+		return "", errs.NewUserFacing(
+			"%s; pass --force to sync to selected app, or pass matching app ID or name with --app-id",
+			notice,
+		)
+	}
+
+	fmt.Println(styles.TextDim.Render("  " + notice))
+	confirmed, err := bubbles.InlineConfirm(
+		fmt.Sprintf("Sync directory named %q to app %q?", appName, targetLabel),
+		false,
+		s.cfg.Interactive,
+	)
+	if err != nil {
+		return "", err
+	}
+	if !confirmed {
+		return "", errs.NewUserFacing("sync cancelled")
+	}
+	return targetAppID, nil
 }
 
 func (s *Service) resolveFromDirName(ctx context.Context, dir string, create bool) (string, string, error) {
