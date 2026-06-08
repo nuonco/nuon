@@ -279,6 +279,16 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	// Steps may be pre-created (e.g. by tests or by a previous run that was
 	// ContinueAsNew'd) — in that case, skip generation.
 	if len(flw.Steps) == 0 {
+		// Resident host workflows (e.g. notebooks) start with no steps and no
+		// generate-steps signal — they exist only to accept append-step updates.
+		// Skip generation and return so the execute loop parks for the first
+		// cell. Once a step is appended, handle() resumes with len(Steps) > 0 and
+		// runs only the appended group.
+		if s.Resident && (flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil) {
+			l.Debug("resident workflow has no steps; parking for append-step")
+			return nil
+		}
+
 		l.Debug("generating steps for workflow")
 		if err := statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.WorkflowID,

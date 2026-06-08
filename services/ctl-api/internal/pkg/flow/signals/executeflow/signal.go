@@ -293,6 +293,10 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		s.pauseWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
-	return workflow.SetUpdateHandlerWithOptions(ctx, "unpause-workflow",
-		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{})
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "unpause-workflow",
+		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	return workflow.SetUpdateHandlerWithOptions(ctx, "append-step",
+		s.appendStepHandler, workflow.UpdateHandlerOptions{})
 }
