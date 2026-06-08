@@ -109,7 +109,7 @@ COPY --from=build-linux-amd64 /out/ /
 
 # Compress, checksum, and prepare artifacts for upload
 # Go code will handle the S3 upload part
-FROM alpine:latest AS artifacts
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:latest AS artifacts
 RUN apk add --no-cache pigz
 
 ARG BIN_NAME=nuon-lsp
