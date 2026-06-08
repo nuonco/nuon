@@ -73,7 +73,7 @@ export const NotebookCellCard = ({
             onClick={onSave}
           >
             <Icon variant="FloppyDiskIcon" size={16} />
-            {isSaving ? 'Saving…' : 'Save'}
+            {isSaving ? 'Saving...' : 'Save'}
           </Button>
           <Button
             variant="primary"
@@ -82,7 +82,7 @@ export const NotebookCellCard = ({
             onClick={onRun}
           >
             <Icon variant="PlayIcon" size={16} />
-            {isRunning ? 'Running…' : 'Run'}
+            {isRunning ? 'Running...' : 'Run'}
           </Button>
           <Button
             variant="ghost"

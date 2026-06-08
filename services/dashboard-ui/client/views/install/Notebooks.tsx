@@ -61,7 +61,7 @@ export const Notebooks = () => {
             Notebooks
           </Text>
           <Text variant="subtext" theme="neutral">
-            Run commands on this install's runner, Jupyter-style.
+            Run commands on the runner for this install.
           </Text>
         </HeadingGroup>
         <Button
@@ -70,7 +70,7 @@ export const Notebooks = () => {
           onClick={() => create()}
         >
           <Icon variant="PlusIcon" size={16} />
-          New notebook
+          {isCreating ? 'Creating...' : 'Create notebook'}
         </Button>
       </div>
 
@@ -103,7 +103,7 @@ export const Notebooks = () => {
           action={
             <Button variant="primary" disabled={isCreating} onClick={() => create()}>
               <Icon variant="PlusIcon" size={16} />
-              New notebook
+              {isCreating ? 'Creating...' : 'Create notebook'}
             </Button>
           }
         />

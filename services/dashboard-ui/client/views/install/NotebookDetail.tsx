@@ -94,7 +94,7 @@ export const NotebookDetail = () => {
               onClick={() => addCell()}
             >
               <Icon variant="PlusIcon" size={16} />
-              Add cell
+              {isAddingCell ? 'Adding cell...' : 'Add cell'}
             </Button>
           </div>
         </div>

@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Text } from '@/components/common/Text'
+import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
+import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import {
   deleteCell,
@@ -11,9 +14,36 @@ import {
   updateCell,
   type TNotebookCell,
 } from '@/lib'
+import type { TAPIError } from '@/types'
 import { getStatusTheme } from '@/utils/status-utils'
 import { NotebookCellCard } from './NotebookCellCard'
 import { NotebookCellLogs } from '@/components/notebooks/NotebookCellLogs'
+
+interface IDeleteCellModal extends IModal {
+  cellName: string
+  onConfirm: () => void
+}
+
+const DeleteCellModal = ({
+  cellName,
+  onConfirm,
+  ...props
+}: IDeleteCellModal) => (
+  <Modal
+    heading="Delete cell?"
+    primaryActionTrigger={{
+      children: 'Delete cell',
+      onClick: onConfirm,
+      variant: 'danger',
+    }}
+    {...props}
+  >
+    <Text>
+      Deleting {cellName || 'this cell'} will remove its script and run
+      history.
+    </Text>
+  </Modal>
+)
 
 interface INotebookCellCardContainer {
   cell: TNotebookCell
@@ -29,6 +59,7 @@ export const NotebookCellCardContainer = ({
   const { org } = useOrg()
   const { install } = useInstall()
   const { addToast } = useToast()
+  const { addModal } = useSurfaces()
   const queryClient = useQueryClient()
 
   const [name, setName] = useState(cell.name ?? '')
@@ -62,7 +93,8 @@ export const NotebookCellCardContainer = ({
       }),
     enabled: !!org?.id && !!install?.id && !!activeRunId,
     refetchInterval: (query) => {
-      const status = query.state.data?.status_v2?.status ?? query.state.data?.status
+      const status =
+        query.state.data?.status_v2?.status ?? query.state.data?.status
       const theme = status ? getStatusTheme(status) : 'info'
       return theme === 'success' || theme === 'error' ? false : 2000
     },
@@ -78,8 +110,12 @@ export const NotebookCellCardContainer = ({
         body: { name, inline_contents: script },
       }),
     onSuccess: () => invalidateNotebook(),
-    onError: () =>
-      addToast(<Toast heading="Unable to save cell" theme="error" />),
+    onError: (err: TAPIError) =>
+      addToast(
+        <Toast heading="Cell save failed" theme="error">
+          <Text>{err?.error || 'Unable to save the cell.'}</Text>
+        </Toast>
+      ),
   })
 
   const { mutate: run, isPending: isRunning } = useMutation({
@@ -92,11 +128,21 @@ export const NotebookCellCardContainer = ({
       }),
     onSuccess: (newRun) => {
       setActiveRunId(newRun.id)
-      addToast(<Toast heading="Cell run started" theme="info" />)
+      addToast(
+        <Toast heading="Running cell" theme="info">
+          <Text>
+            Running {cell.name || 'cell'}. Output will appear below.
+          </Text>
+        </Toast>
+      )
       invalidateNotebook()
     },
-    onError: () =>
-      addToast(<Toast heading="Unable to run cell" theme="error" />),
+    onError: (err: TAPIError) =>
+      addToast(
+        <Toast heading="Cell run failed" theme="error">
+          <Text>{err?.error || 'Unable to run the cell.'}</Text>
+        </Toast>
+      ),
   })
 
   const { mutate: remove, isPending: isDeleting } = useMutation({
@@ -108,9 +154,23 @@ export const NotebookCellCardContainer = ({
         cellId: cell.id,
       }),
     onSuccess: () => invalidateNotebook(),
-    onError: () =>
-      addToast(<Toast heading="Unable to delete cell" theme="error" />),
+    onError: (err: TAPIError) =>
+      addToast(
+        <Toast heading="Cell deletion failed" theme="error">
+          <Text>{err?.error || 'Unable to delete the cell.'}</Text>
+        </Toast>
+      ),
   })
+
+  const confirmDelete = () => {
+    const modal = (
+      <DeleteCellModal
+        cellName={name}
+        onConfirm={() => remove()}
+      />
+    )
+    addModal(modal)
+  }
 
   const run_ = activeRun ?? cell.latest_run
   const logStreamId = run_?.log_stream_id
@@ -135,7 +195,7 @@ export const NotebookCellCardContainer = ({
       onScriptChange={setScript}
       onSave={save}
       onRun={run}
-      onDelete={remove}
+      onDelete={confirmDelete}
       logs={
         logStreamId ? (
           <NotebookCellLogs

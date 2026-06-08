@@ -131,7 +131,7 @@ const CellTerminal = ({
         {!lines.length && !promptLines.length ? (
           <div className="text-zinc-500">
             {isLoading
-              ? 'Waiting for output…'
+              ? 'Waiting for output...'
               : connectionState === 'connected'
                 ? 'No output yet.'
                 : 'No output.'}
@@ -151,7 +151,7 @@ const CellTerminal = ({
             exit {runFailed ? 1 : 0}
           </span>
         ) : (
-          <span className="text-zinc-500">running…</span>
+          <span className="text-zinc-500">running...</span>
         )}
         {runCreatedAt ? (
           <>
