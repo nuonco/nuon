@@ -64,13 +64,15 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeprovision, sg, appCfg, awData)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreDeprovision)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, lifecycleSteps...)
 
-	deploySteps, err := teardownComponents(ctx, flw, sg, appCfg, awData)
+	deploySteps, err := teardownComponents(ctx, dg, install)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +104,7 @@ func Deprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeprovision, sg, appCfg, awData)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostDeprovision)
 	if err != nil {
 		return nil, err
 	}

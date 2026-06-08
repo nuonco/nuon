@@ -446,7 +446,8 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg, awData)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+	deploySteps, err := deployAllComponents(ctx, dg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")
 	}

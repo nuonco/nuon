@@ -59,6 +59,22 @@ type AppComponentBuild struct {
 	// log stream
 	LogStream *AppLogStream `json:"log_stream,omitempty"`
 
+	// NoOp is true when the runner detected SourceDigest matches the previous
+	// build's SourceDigest and skipped the artifact push.
+	//
+	// Downstream contract:
+	//   - The build is still marked Active because the bytes it represents
+	//     are deployable (they live in the install registry under the prior
+	//     build that pushed them).
+	//   - No new install deploys are auto-queued for a NoOp build; the
+	//     dep-aware deploy path handles fan-out for installs that depend
+	//     on the underlying image.
+	//   - pollForDeployableBuild treats NoOp builds as Active without any
+	//     special-casing because the deployable artifact at the same
+	//     SourceDigest is already present in the install registry from the
+	//     prior build.
+	NoOp bool `json:"no_op,omitempty"`
+
 	// policy reports
 	PolicyReports []*AppPolicyReport `json:"policy_reports"`
 
@@ -70,10 +86,38 @@ type AppComponentBuild struct {
 	// releases
 	Releases []*AppComponentRelease `json:"releases"`
 
+	// ResolvedAt is when the runner resolved SourceRef to SourceDigest.
+	ResolvedAt string `json:"resolved_at,omitempty"`
+
+	// ResolvedTag is the tag the runner actually pulled from. For digest-pinned
+	// refs this is empty. For mutable/semver refs this is the concrete tag the
+	// runner selected (e.g. "1.25.5" even if SourceRef pinned "1.25.3" with a
+	// "~1.25.0" update_policy constraint).
+	ResolvedTag string `json:"resolved_tag,omitempty"`
+
 	// runner details
 	RunnerJob struct {
 		AppRunnerJob
 	} `json:"runner_job,omitempty"`
+
+	// SourceDigest is the manifest list digest of the resolved source ref,
+	// e.g. "sha256:abc...". This is the canonical content address of what was
+	// pulled and is used for build dedup.
+	SourceDigest string `json:"source_digest,omitempty"`
+
+	// SourceImage is the repository portion of SourceRef without tag/digest, e.g. "nginx".
+	SourceImage string `json:"source_image,omitempty"`
+
+	// SourceMediaType records the media type of the resolved manifest (image,
+	// image index, OCI artifact, etc.) for downstream rendering decisions.
+	SourceMediaType string `json:"source_media_type,omitempty"`
+
+	// Source identity for image-type builds.
+	//
+	// SourceRef is what the user wrote in the spec, e.g. "nginx:1.25.3" or
+	// "myimage@sha256:...". Always populated for image-type builds so we have a
+	// permanent record of what was requested at build time.
+	SourceRef string `json:"source_ref,omitempty"`
 
 	// status
 	Status string `json:"status,omitempty"`

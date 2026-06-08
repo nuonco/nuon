@@ -37,7 +37,8 @@ title: 'Container Image'
 | **`iam_role_arn`**<br/>string | IAM role ARN for ECR access ARN of the IAM role with permissions to pull images from the ECR repository | **✅ Required** | `"arn:aws:iam::123456789012:role/ecr-pull-role"` |
 | **`region`**<br/>string | AWS region for the ECR repository AWS region where the ECR repository is located | **✅ Required** | `"us-east-1"`, `"us-west-2"`, `"eu-west-1"` |
 | **`image_url`**<br/>string | ECR image URL Full URL to the ECR image (without tag). Format: \<account-id\>.dkr.ecr.\<region\>.amazonaws.com/\<repository-name\>/\<image-name\> | **✅ Required** | `"123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp/api"`, `"123456789012.dkr.ecr.us-west-2.amazonaws.com/myapp/worker"` |
-| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **Optional** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`update_policy`**<br/>string | semver constraint for tag resolution Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and sa... | **Optional** | `"~1.25.0"`, `"^2.0.0"`, `"\u003e=1.0.0,\u003c2.0.0"`, `"1.x"`, `"^1.0 || ^2.0"` |
 
 ### `gcp_gar`
 
@@ -46,14 +47,16 @@ title: 'Container Image'
 | **`gcp_project_id`**<br/>string | GCP project ID Google Cloud project ID where the Artifact Registry repository is located | **✅ Required** | `"my-gcp-project"` |
 | **`region`**<br/>string | GCP region for the GAR repository Google Cloud region where the Artifact Registry repository is located | **✅ Required** | `"us-central1"`, `"us-east1"`, `"europe-west1"` |
 | **`image_url`**<br/>string | GAR image URL Full URL to the GAR image (without tag). Format: \<region\>-docker.pkg.dev/\<project\>/\<repository\>/\<image\> | **✅ Required** | `"us-central1-docker.pkg.dev/my-project/my-repo/my-image"` |
-| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **Optional** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
 | **`service_account_email`**<br/>string | GCP service account for impersonation Optional service account email to impersonate when pulling from GAR. If not set, uses application default credentials | **Optional** | `"my-sa@my-project.iam.gserviceaccount.com"` |
 | **`workload_identity_provider`**<br/>string | - | **Optional** | - |
+| **`update_policy`**<br/>string | semver constraint for tag resolution Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and sa... | **Optional** | `"~1.25.0"`, `"^2.0.0"`, `"\u003e=1.0.0,\u003c2.0.0"`, `"1.x"`, `"^1.0 || ^2.0"` |
 
 ### `public`
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
 | **`image_url`**<br/>string | container image URL Full URL to the container image from a public registry (Docker Hub, Quay.io, etc). Format: [registry/]\<repository\>/\<image-name\> | **✅ Required** | `"nginx:latest"`, `"docker.io/library/postgres"`, `"quay.io/myorg/myapp"`, `"gcr.io/myproject/myapp"` |
-| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **✅ Required** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **Optional** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`update_policy`**<br/>string | semver constraint for tag resolution Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and sa... | **Optional** | `"~1.25.0"`, `"^2.0.0"`, `"\u003e=1.0.0,\u003c2.0.0"`, `"1.x"`, `"^1.0 || ^2.0"` |
 
