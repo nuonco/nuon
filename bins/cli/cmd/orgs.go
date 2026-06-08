@@ -15,6 +15,8 @@ func (c *cli) orgsCmd() *cobra.Command {
 		limit        int
 		search       string
 		email        string
+		firstName    string
+		lastName     string
 		noSelect     bool
 		connectionID string
 	)
@@ -184,10 +186,12 @@ func (c *cli) orgsCmd() *cobra.Command {
 		Long:  "Invite a user by email to org",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := orgs.New(c.apiClient, c.cfg)
-			return svc.CreateInvite(cmd.Context(), email, PrintJSON)
+			return svc.CreateInvite(cmd.Context(), email, firstName, lastName, PrintJSON)
 		}),
 	}
 	createInviteCmd.Flags().StringVarP(&email, "email", "e", "", "Email of user to invite")
+	createInviteCmd.Flags().StringVar(&firstName, "first-name", "", "First name of user to invite")
+	createInviteCmd.Flags().StringVar(&lastName, "last-name", "", "Last name of user to invite")
 	orgsCmd.AddCommand(createInviteCmd)
 
 	listInvitesCmd := &cobra.Command{

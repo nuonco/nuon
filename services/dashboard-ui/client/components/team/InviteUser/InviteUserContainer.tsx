@@ -18,9 +18,24 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
   const hasSupportRole = !!org?.features?.['support-role']
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: ({ email, roleType }: { email: string; roleType: string }) =>
+    mutationFn: ({
+      email,
+      firstName,
+      lastName,
+      roleType,
+    }: {
+      email: string
+      firstName: string
+      lastName: string
+      roleType: string
+    }) =>
       inviteUser({
-        body: { email, ...(hasSupportRole ? { role_type: roleType } : {}) },
+        body: {
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          ...(hasSupportRole ? { role_type: roleType } : {}),
+        },
         orgId: org.id,
       }),
     onSuccess: (_data, { email }) => {
@@ -46,7 +61,9 @@ const InviteUserModalContainer = (props: Record<string, any>) => {
       hasSupportRole={hasSupportRole}
       isPending={isPending}
       error={error}
-      onSubmit={({ email, roleType }) => mutate({ email, roleType })}
+      onSubmit={({ email, firstName, lastName, roleType }) =>
+        mutate({ email, firstName, lastName, roleType })
+      }
       {...props}
     />
   )

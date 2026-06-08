@@ -27,6 +27,7 @@ func (a *Activities) getOrg(ctx context.Context, orgID string) (*app.Org, error)
 	res := a.db.WithContext(ctx).
 		Preload("NotificationsConfig").
 		Preload("CreatedBy").
+		Preload("CreatedBy.Identities").
 		Preload("Apps").
 		Preload("Apps.Installs").
 		Preload("RunnerGroup.Runners").

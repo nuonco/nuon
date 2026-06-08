@@ -28,8 +28,14 @@ type AppOrgInvite struct {
 	// email
 	Email string `json:"email,omitempty"`
 
+	// first name
+	FirstName string `json:"first_name,omitempty"`
+
 	// id
 	ID string `json:"id,omitempty"`
+
+	// last name
+	LastName string `json:"last_name,omitempty"`
 
 	// parent relationship
 	OrgID string `json:"org_id,omitempty"`

@@ -3,6 +3,8 @@ import type { TOrgInvite } from '@/types'
 
 export type TInviteUserBody = {
   email: string
+  first_name?: string
+  last_name?: string
   role_type?: string
 }
 

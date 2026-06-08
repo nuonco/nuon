@@ -18,9 +18,16 @@ export const InviteUserModal = ({
   hasSupportRole: boolean
   isPending: boolean
   error: TAPIError | null
-  onSubmit: (params: { email: string; roleType: string }) => void
+  onSubmit: (params: {
+    email: string
+    firstName: string
+    lastName: string
+    roleType: string
+  }) => void
 } & Omit<IModal, 'onSubmit'>) => {
   const [email, setEmail] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [roleType, setRoleType] = useState('org_admin')
 
   return (
@@ -42,8 +49,8 @@ export const InviteUserModal = ({
             Invite user
           </span>
         ),
-        disabled: !email || isPending,
-        onClick: () => onSubmit({ email, roleType }),
+        disabled: !email || !firstName || !lastName || isPending,
+        onClick: () => onSubmit({ email, firstName, lastName, roleType }),
         variant: 'primary',
       }}
       {...props}
@@ -54,6 +61,28 @@ export const InviteUserModal = ({
             {error?.error || 'Unable to invite user to organization'}
           </Banner>
         ) : null}
+        <div className="flex gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="invite-first-name">First name</Label>
+            <Input
+              id="invite-first-name"
+              placeholder="Ada"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex flex-1 flex-col gap-2">
+            <Label htmlFor="invite-last-name">Last name</Label>
+            <Input
+              id="invite-last-name"
+              placeholder="Lovelace"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              required
+            />
+          </div>
+        </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="invite-email">
             Email address of the user you want to invite

@@ -24,6 +24,12 @@ type ServiceCreateOrgInviteRequest struct {
 	// Required: true
 	Email *string `json:"email"`
 
+	// first name
+	FirstName string `json:"first_name,omitempty"`
+
+	// last name
+	LastName string `json:"last_name,omitempty"`
+
 	// role type
 	RoleType AppRoleType `json:"role_type,omitempty"`
 }

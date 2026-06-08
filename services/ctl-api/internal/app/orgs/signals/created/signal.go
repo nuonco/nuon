@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -49,6 +50,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"org_name":   org.Name,
 		"created_by": org.CreatedBy.Email,
 		"email":      org.CreatedBy.Email,
+		"name":       identityName(&org.CreatedBy),
 		// TODO: Add org_url - requires app URL config which is not available in signal context
 	})
 
@@ -81,6 +83,21 @@ func (s *Signal) sendNotification(ctx workflow.Context, typ notifications.Type, 
 			zap.Error(err),
 			zap.String("type", typ.String()))
 	}
+}
+
+// identityName returns the first non-empty profile name from the account's
+// identity provider records, or an empty string if none is set. Loops falls
+// back to a default greeting when the name variable is empty.
+func identityName(account *app.Account) string {
+	if account == nil {
+		return ""
+	}
+	for _, identity := range account.Identities {
+		if identity.Name != "" {
+			return identity.Name
+		}
+	}
+	return ""
 }
 
 func hasTag(tags []string, target string) bool {

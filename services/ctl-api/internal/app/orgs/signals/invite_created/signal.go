@@ -52,6 +52,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"org_name":   org.Name,
 		"created_by": orgInvite.CreatedBy.Email,
 		"login_url":  s.LoginURL,
+		"first_name": orgInvite.FirstName,
+		"last_name":  orgInvite.LastName,
 	}
 
 	if err := sharedactivities.AwaitSendEmail(ctx, sharedactivities.SendNotificationRequest{OrgID: s.OrgID, Type: notifications.NotificationsTypeOrgInvite, Vars: vars}); err != nil {
