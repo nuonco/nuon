@@ -64,8 +64,13 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	SkipNoops bool `json:"skip_noops,omitempty"`
 
 	// tag
-	// Required: true
-	Tag *string `json:"tag"`
+	Tag string `json:"tag,omitempty"`
+
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2"). When set, the runner lists tags from the
+	// source registry, filters to those satisfying the constraint, and
+	// uses the highest matching tag. Tag becomes optional in this case.
+	UpdatePolicy string `json:"update_policy,omitempty"`
 }
 
 // Validate validates this service create external image component config request
@@ -85,10 +90,6 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) Validate(formats strf
 	}
 
 	if err := m.validateImageURL(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateTag(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -170,15 +171,6 @@ func (m *ServiceCreateExternalImageComponentConfigRequest) validateGcpGarImageCo
 func (m *ServiceCreateExternalImageComponentConfigRequest) validateImageURL(formats strfmt.Registry) error {
 
 	if err := validate.Required("image_url", "body", m.ImageURL); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *ServiceCreateExternalImageComponentConfigRequest) validateTag(formats strfmt.Registry) error {
-
-	if err := validate.Required("tag", "body", m.Tag); err != nil {
 		return err
 	}
 

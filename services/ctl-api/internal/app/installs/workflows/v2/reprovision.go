@@ -127,7 +127,9 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreReprovision, sg, appCfg, awData)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreReprovision)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +162,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		}
 		steps = append(steps, step)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreSecretsSync)
 		if err != nil {
 			return nil, err
 		}
@@ -175,7 +177,7 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		}
 		steps = append(steps, step)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostSecretsSync)
 		if err != nil {
 			return nil, err
 		}
@@ -190,13 +192,13 @@ func Reprovision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		}
 		steps = append(steps, step)
 
-		deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg, awData)
+		deploySteps, err := deployAllComponents(ctx, dg)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, deploySteps...)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostReprovision, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostReprovision)
 		if err != nil {
 			return nil, err
 		}

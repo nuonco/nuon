@@ -6,6 +6,7 @@ import (
 	"github.com/mitchellh/go-wordwrap"
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/oci/imageref"
 )
 
 func (s *Service) GetDeploy(ctx context.Context, installID, deployID string, asJSON bool) error {
@@ -25,13 +26,28 @@ func (s *Service) GetDeploy(ctx context.Context, installID, deployID string, asJ
 		return nil
 	}
 
-	view.Render([][]string{
+	rows := [][]string{
 		{"install id", installDeploy.InstallID},
 		{"deploy id", installDeploy.ID},
 		{"build id", installDeploy.BuildID},
 		{"release id", installDeploy.ReleaseID},
 		{"status", installDeploy.Status},
-		{"description", wordwrap.WrapString(installDeploy.StatusDescription, 75)},
-	})
+	}
+	if b := installDeploy.ComponentBuild; b != nil && b.SourceDigest != "" {
+		src := imageref.Source{
+			SourceImage:  b.SourceImage,
+			SourceRef:    b.SourceRef,
+			ResolvedTag:  b.ResolvedTag,
+			SourceDigest: b.SourceDigest,
+		}
+		rows = append(rows,
+			[]string{"image", imageref.DisplayRef(src)},
+			[]string{"image ref", imageref.ImageRef(src)},
+		)
+	}
+	rows = append(rows,
+		[]string{"description", wordwrap.WrapString(installDeploy.StatusDescription, 75)},
+	)
+	view.Render(rows)
 	return nil
 }

@@ -122,7 +122,9 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreProvision, sg, appCfg, awData)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreProvision)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +159,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, step)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreSecretsSync, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreSecretsSync)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +174,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, step)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostSecretsSync, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostSecretsSync)
 		if err != nil {
 			return nil, err
 		}
@@ -187,13 +189,13 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		}
 		steps = append(steps, step)
 
-		deploySteps, err := deployAllComponents(ctx, installID, flw, sg, appCfg, awData)
+		deploySteps, err := deployAllComponents(ctx, dg)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, deploySteps...)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostProvision, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostProvision)
 		if err != nil {
 			return nil, err
 		}

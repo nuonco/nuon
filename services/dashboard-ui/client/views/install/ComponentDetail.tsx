@@ -26,7 +26,7 @@ import { Panel } from '@/components/surfaces/Panel'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, getInstallComponent } from '@/lib'
+import { getAppConfig, getComponentBuilds, getInstallComponent } from '@/lib'
 
 export const InstallComponentDetail = () => {
   const { componentId } = useParams()
@@ -73,6 +73,21 @@ export const InstallComponentDetail = () => {
     ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
     .map((c) => c.component_id!)
     .filter(Boolean) ?? []
+
+  const { data: latestBuilds } = useQuery({
+    queryKey: ['component-builds', org?.id, componentId, 0],
+    queryFn: () =>
+      getComponentBuilds({
+        orgId: org.id,
+        componentId: componentId!,
+        limit: 10,
+        offset: 0,
+      }),
+    enabled: !!org?.id && !!componentId,
+  })
+  const latestResolvedBuild = latestBuilds?.data?.find(
+    (b) => !!b.source_digest
+  )
 
   return (
     <PageSection>
@@ -159,6 +174,7 @@ export const InstallComponentDetail = () => {
             ) : config ? (
               <ComponentConfigCard
                 config={config}
+                latestBuild={latestResolvedBuild}
                 headerActions={
                   appConfig && componentId && component?.name ? (
                     <ComponentDependencyGraphButton
