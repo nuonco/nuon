@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.cache/golangci-lint,id=golint-lsp \
     --mount=type=cache,target=/go/pkg/build-cache,id=gobuild \
     golangci-lint run -c .golangci.yml -v
 
-FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine AS final
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine AS final
 
 ARG BIN_NAME=nuon-lsp
 ARG SERVICE=lsp
@@ -124,7 +124,7 @@ RUN cd /artifacts && \
     done
 
 # Export single binary for quick builds (no multi-platform)
-FROM public.ecr.aws/p7e3r5y0/mirror/alpine:latest AS export-linux-amd64
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/alpine:latest AS export-linux-amd64
 RUN apk add --no-cache pigz
 
 ARG BIN_NAME=nuon-lsp
