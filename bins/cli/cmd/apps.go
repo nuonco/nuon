@@ -159,6 +159,7 @@ func (c *cli) appsCmd() *cobra.Command {
 
 	var (
 		syncCreate bool
+		syncForce  bool
 		syncAppID  string
 	)
 	syncCmd := &cobra.Command{
@@ -166,13 +167,9 @@ func (c *cli) appsCmd() *cobra.Command {
 		Short:             "Sync nuon app directory",
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			var (
-				dirName     string
-				dirExplicit bool
-			)
+			var dirName string
 			if len(args) > 0 {
 				dirName = args[0]
-				dirExplicit = true
 			} else {
 				var err error
 				dirName, err = os.Getwd()
@@ -182,9 +179,9 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			opts := apps.SyncOptions{
-				AppFlag:     syncAppID,
-				DirExplicit: dirExplicit,
-				Create:      syncCreate,
+				AppFlag: syncAppID,
+				Force:   syncForce,
+				Create:  syncCreate,
 			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if syncCreate {
@@ -194,7 +191,8 @@ func (c *cli) appsCmd() *cobra.Command {
 		}),
 	}
 	syncCmd.Flags().BoolVar(&syncCreate, "create", false, "Create the app if it doesn't exist")
-	syncCmd.Flags().StringVarP(&syncAppID, "app-id", "a", "", "The ID or name of an app (default: positional dir, selected app, or cwd)")
+	syncCmd.Flags().BoolVar(&syncForce, "force", false, "Sync to the configured app even if the directory name does not match")
+	syncCmd.Flags().StringVarP(&syncAppID, "app-id", "a", "", "The ID or name of the app to sync this config with (defaults to the selected app)")
 	appsCmd.AddCommand(syncCmd)
 
 	var (
@@ -223,13 +221,9 @@ func (c *cli) appsCmd() *cobra.Command {
 		Hidden:            true,
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
-			var (
-				dirName     string
-				dirExplicit bool
-			)
+			var dirName string
 			if len(args) > 0 {
 				dirName = args[0]
-				dirExplicit = true
 			} else {
 				var err error
 				dirName, err = os.Getwd()
@@ -239,9 +233,7 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			svc := apps.New(c.v, c.apiClient, c.cfg)
-			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version, apps.SyncOptions{
-				DirExplicit: dirExplicit,
-			})
+			return svc.DeprecatedSyncDir(cmd.Context(), dirName, version.Version, apps.SyncOptions{})
 		}),
 	}
 	appsCmd.AddCommand(syncDirCmd)
