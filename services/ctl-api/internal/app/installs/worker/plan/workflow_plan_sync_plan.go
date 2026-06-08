@@ -52,11 +52,37 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
 
+	// For image-type builds with source-identity recorded, copy the
+	// artifact by digest and tag the install-registry copy with the
+	// resolved tag instead of an internal ID. Fall back to build/deploy ID
+	// tagging for non-image components and image builds without source
+	// identity.
+	srcTag := deploy.ComponentBuildID
+	dstTag := deploy.ID
+	if compBuild.SourceDigest != "" {
+		// oras.Copy resolves both tags and digest references, so passing
+		// the manifest digest as the source ref pulls the exact same
+		// content the runner originally resolved during build.
+		srcTag = compBuild.SourceDigest
+
+		// Push the install-registry copy under a tag the customer can
+		// recognise. Prefer the tag the runner resolved (e.g. "1.25.5"),
+		// and fall back to the build ID when the user pinned by digest
+		// and there is no resolved tag. The digest is the canonical
+		// identity of the artifact — the tag is metadata only and
+		// duplicate tags across builds (e.g. successive deploys of
+		// "1.25.5") are intentionally idempotent.
+		dstTag = compBuild.ResolvedTag
+		if dstTag == "" {
+			dstTag = compBuild.ID
+		}
+	}
+
 	pln := &plantypes.SyncOCIPlan{
 		Src:    srcCfg,
-		SrcTag: deploy.ComponentBuildID,
+		SrcTag: srcTag,
 
-		DstTag: deploy.ID,
+		DstTag: dstTag,
 		Dst:    dstCfg,
 	}
 
@@ -65,8 +91,14 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 			Enabled: true,
 			Outputs: map[string]any{
 				"image": map[string]interface{}{
-					"tag":           "v1.2.3",
-					"repository":    "nuon/app-service",
+					// Sandbox outputs mirror the live runner sync outputs
+					// shape: `repository` and `ref` are the auto-rendered
+					// digest-pinned forms; `tag` is intentionally empty;
+					// `display_tag` carries the human-friendly tag.
+					"repository":    "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
+					"tag":           "",
+					"ref":           "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
+					"display_tag":   "v1.2.3",
 					"media_type":    "application/vnd.docker.distribution.manifest.v2+json",
 					"digest":        "sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
 					"size":          28437192,

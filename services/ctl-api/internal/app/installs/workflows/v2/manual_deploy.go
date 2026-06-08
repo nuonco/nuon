@@ -76,6 +76,8 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+
 	// first, provision the deploy with before and after triggers
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.ComponentID)
 	if err != nil {
@@ -91,21 +93,28 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(
-		ctx,
-		flw,
-		comp,
-		installID,
-		app.ActionWorkflowTriggerTypePreDeployComponent,
-		sg,
-		appCfg,
-		awData,
-	)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreDeployComponent)
 	if err != nil {
 		return nil, err
 	}
 	if !flw.PlanOnly {
 		steps = append(steps, preDeploySteps...)
+	}
+
+	// When the primary is a non-image component, walk its image deps and
+	// prepend sync steps for any whose latest Active build differs from
+	// what's currently deployed. The deploy_components path does this
+	// inside getComponentDeploySteps; the manual_deploy path emits the
+	// primary inline, so we have to drive the same logic here.
+	//
+	// dg.addedImageDepSyncs is shared with the dependents call below so a
+	// shared image dep is only synced once across both call sites.
+	if !flw.PlanOnly && !comp.Type.IsImage() {
+		depSyncSteps, err := getImageDepSyncSteps(ctx, dg, comp.ID, 0, map[string]int{comp.ID: 0})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to prepend image-dep sync steps for primary")
+		}
+		steps = append(steps, depSyncSteps...)
 	}
 
 	// sync image
@@ -124,6 +133,12 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 
 		steps = append(steps, deployStep)
+
+		// Record that this image component's sync is already emitted so the
+		// subsequent dependents pass (getComponentDeploySteps below) won't
+		// emit a duplicate "sync X (dep)" step when a dependent lists this
+		// image as a dep.
+		dg.addedImageDepSyncs[comp.ID] = struct{}{}
 	} else {
 		sg.nextGroup() // component sync + plan + apply
 		planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
@@ -156,7 +171,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		}
 	}
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg, appCfg, awData)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePostDeployComponent)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +189,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 
 	dependencyCompIDs := generics.SliceAfterValue(componentIDs, comp.ID)
-	dependencyDeploySteps, err := getComponentDeploySteps(ctx, installID, flw, dependencyCompIDs, sg, appCfg, awData)
+	dependencyDeploySteps, err := getComponentDeploySteps(ctx, dg, dependencyCompIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get component deploy steps")
 	}

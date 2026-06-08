@@ -73,9 +73,27 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
 
+	// Address the install-registry artifact by its content (manifest
+	// digest) rather than the synthetic install-deploy ID. The sync plan
+	// copies image-type builds into the install registry under their
+	// ResolvedTag; using the digest as SrcTag here is correct because
+	// oras.Copy resolves both tags and digests, and the digest is the
+	// immutable identity of the artifact.
+	//
+	// For non-image builds and image builds without SourceDigest, the sync
+	// plan still tags the install-registry copy with the install-deploy ID,
+	// so we fall back to that here.
+	srcTag := deploy.ID
+	srcDigest := ""
+	if build.SourceDigest != "" {
+		srcTag = build.SourceDigest
+		srcDigest = build.SourceDigest
+	}
+
 	plan := &plantypes.DeployPlan{
-		Src:    ociConfig,
-		SrcTag: deploy.ID,
+		Src:       ociConfig,
+		SrcTag:    srcTag,
+		SrcDigest: srcDigest,
 
 		AppID:         install.AppID,
 		AppConfigID:   appCfg.ID,
