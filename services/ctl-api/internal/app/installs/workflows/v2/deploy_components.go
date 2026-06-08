@@ -70,16 +70,18 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+
 	var lifecycleSteps []*app.WorkflowStep
 	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreDeployAllComponents)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, lifecycleSteps...)
 	}
 
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg, appCfg, awData)
+	deploySteps, err := getComponentDeploySteps(ctx, dg, componentIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +89,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 	steps = append(steps, deploySteps...)
 
 	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostDeployAllComponents)
 		if err != nil {
 			return nil, err
 		}

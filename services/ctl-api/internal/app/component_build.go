@@ -65,6 +65,44 @@ type ComponentBuild struct {
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 
+	// Source identity for image-type builds.
+	//
+	// SourceRef is what the user wrote in the spec, e.g. "nginx:1.25.3" or
+	// "myimage@sha256:...". Always populated for image-type builds so we have a
+	// permanent record of what was requested at build time.
+	SourceRef string `json:"source_ref,omitzero" gorm:"default null" temporaljson:"source_ref,omitzero,omitempty"`
+	// SourceImage is the repository portion of SourceRef without tag/digest, e.g. "nginx".
+	SourceImage string `json:"source_image,omitzero" gorm:"default null" temporaljson:"source_image,omitzero,omitempty"`
+	// ResolvedTag is the tag the runner actually pulled from. For digest-pinned
+	// refs this is empty. For mutable/semver refs this is the concrete tag the
+	// runner selected (e.g. "1.25.5" even if SourceRef pinned "1.25.3" with a
+	// "~1.25.0" update_policy constraint).
+	ResolvedTag string `json:"resolved_tag,omitzero" gorm:"default null" temporaljson:"resolved_tag,omitzero,omitempty"`
+	// SourceDigest is the manifest list digest of the resolved source ref,
+	// e.g. "sha256:abc...". This is the canonical content address of what was
+	// pulled and is used for build dedup.
+	SourceDigest string `json:"source_digest,omitzero" gorm:"default null" temporaljson:"source_digest,omitzero,omitempty"`
+	// SourceMediaType records the media type of the resolved manifest (image,
+	// image index, OCI artifact, etc.) for downstream rendering decisions.
+	SourceMediaType string `json:"source_media_type,omitzero" gorm:"default null" temporaljson:"source_media_type,omitzero,omitempty"`
+	// ResolvedAt is when the runner resolved SourceRef to SourceDigest.
+	ResolvedAt *time.Time `json:"resolved_at,omitzero" gorm:"default null" temporaljson:"resolved_at,omitzero,omitempty"`
+	// NoOp is true when the runner detected SourceDigest matches the previous
+	// build's SourceDigest and skipped the artifact push.
+	//
+	// Downstream contract:
+	//   - The build is still marked Active because the bytes it represents
+	//     are deployable (they live in the install registry under the prior
+	//     build that pushed them).
+	//   - No new install deploys are auto-queued for a NoOp build; the
+	//     dep-aware deploy path handles fan-out for installs that depend
+	//     on the underlying image.
+	//   - pollForDeployableBuild treats NoOp builds as Active without any
+	//     special-casing because the deployable artifact at the same
+	//     SourceDigest is already present in the install registry from the
+	//     prior build.
+	NoOp bool `json:"no_op,omitzero" gorm:"default false" temporaljson:"no_op,omitzero,omitempty"`
+
 	// QueueSignal is the signal enqueued when this build was created via the queue path
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 }
@@ -99,5 +137,21 @@ func (c *ComponentBuild) AfterQuery(tx *gorm.DB) error {
 		c.StatusDescription = c.StatusV2.StatusHumanDescription
 	}
 
+	// Surface NoOp on Active builds so consumers (CLI, dashboard, status
+	// columns) can immediately tell a build was a content-address dedup hit
+	// without having to inspect SourceDigest history themselves.
+	if c.NoOp && c.Status == ComponentBuildStatusActive {
+		c.StatusDescription = "no-op: source unchanged from previous build (reusing prior artifact)"
+	}
+
 	return nil
+}
+
+// IsNoOp returns true when the runner detected this build's resolved source
+// digest matched the previous active build's digest and skipped the artifact
+// push. NoOp builds are deployable by virtue of the prior build's artifact
+// already living in the install registry at the same digest; they should
+// never trigger new install deploys on their own.
+func (c *ComponentBuild) IsNoOp() bool {
+	return c.NoOp
 }

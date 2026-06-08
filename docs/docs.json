@@ -148,6 +148,7 @@
                 "pages": [
                   "guides/docker-build-components",
                   "guides/container-image-components",
+                  "guides/image-update-policies",
                   "guides/helm-chart-components",
                   "guides/kubernetes-manifest-components",
                   "guides/terraform-components"

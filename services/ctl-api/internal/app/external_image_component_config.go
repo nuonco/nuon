@@ -27,8 +27,17 @@ type ExternalImageComponentConfig struct {
 	ComponentConfigConnectionID string                    `json:"component_config_connection_id,omitzero" gorm:"notnull" temporaljson:"component_config_connection_id,omitzero,omitempty"`
 	ComponentConfigConnection   ComponentConfigConnection `json:"-" temporaljson:"component_config_connection,omitzero,omitempty"`
 
-	ImageURL            string               `json:"image_url,omitzero" gorm:"notnull" temporaljson:"image_url,omitzero,omitempty"`
-	Tag                 string               `json:"tag,omitzero" gorm:"notnull" temporaljson:"tag,omitzero,omitempty"`
+	ImageURL string `json:"image_url,omitzero" gorm:"notnull" temporaljson:"image_url,omitzero,omitempty"`
+	Tag      string `json:"tag,omitzero" gorm:"notnull" temporaljson:"tag,omitzero,omitempty"`
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2", ">=1.0.0,<2.0.0") that, when set, causes the
+	// runner to list tags from the source registry, filter to those that
+	// parse as semver and satisfy the constraint, and pick the highest
+	// matching tag at build time. Tag is then ignored as the source ref;
+	// the resolved tag is recorded on ComponentBuild.ResolvedTag.
+	//
+	// When empty, the runner uses Tag literally.
+	UpdatePolicy        string               `json:"update_policy,omitzero" gorm:"default null" temporaljson:"update_policy,omitzero,omitempty"`
 	AWSECRImageConfig   *AWSECRImageConfig   `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"aws_ecr_image_config,omitzero,omitempty" temporaljson:"awsecr_image_config,omitzero,omitempty"`
 	GCPGARImageConfig   *GCPGARImageConfig   `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"gcp_gar_image_config,omitzero,omitempty" temporaljson:"gcp_gar_image_config,omitzero,omitempty"`
 	AzureACRImageConfig *AzureACRImageConfig `gorm:"polymorphic:ComponentConfig;constraint:OnDelete:CASCADE;" json:"azure_acr_image_config,omitzero,omitempty" temporaljson:"azure_acr_image_config,omitzero,omitempty"`

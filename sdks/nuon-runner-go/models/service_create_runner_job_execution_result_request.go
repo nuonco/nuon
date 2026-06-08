@@ -35,6 +35,37 @@ type ServiceCreateRunnerJobExecutionResultRequest struct {
 	// error metadata
 	ErrorMetadata map[string]string `json:"error_metadata,omitempty"`
 
+	// NoOp is true when the resolved SourceDigest matched the previous build's
+	// SourceDigest and the runner skipped the artifact push.
+	NoOp bool `json:"no_op,omitempty"`
+
+	// ResolvedAt is when the runner resolved SourceRef to SourceDigest.
+	ResolvedAt string `json:"resolved_at,omitempty"`
+
+	// ResolvedTag is the tag the runner pulled from. Empty for digest-pinned
+	// refs.
+	ResolvedTag string `json:"resolved_tag,omitempty"`
+
+	// SourceDigest is the manifest list digest of the resolved source ref.
+	// Used for build dedup against the prior Active build.
+	SourceDigest string `json:"source_digest,omitempty"`
+
+	// SourceImage is the repository portion of SourceRef (no tag/digest).
+	SourceImage string `json:"source_image,omitempty"`
+
+	// SourceMediaType is the media type of the resolved manifest.
+	SourceMediaType string `json:"source_media_type,omitempty"`
+
+	// Source identity for image-type builds.
+	// These fields are populated by the containerimage build handler after it
+	// resolves the user-provided source ref to a manifest descriptor. When the
+	// runner job's owner is a ComponentBuild and SourceDigest is non-empty,
+	// the result handler persists these fields onto the ComponentBuild row.
+	//
+	// SourceRef is what the user wrote in the spec ("nginx:1.25.3" or
+	// "nginx@sha256:..."). Always populated for image-type builds.
+	SourceRef string `json:"source_ref,omitempty"`
+
 	// success
 	Success bool `json:"success,omitempty"`
 }

@@ -13,6 +13,13 @@ type DeployPlan struct {
 
 	Src    *configs.OCIRegistryRepository `json:"src_registry" validate:"required"`
 	SrcTag string                         `json:"src_tag" validate:"required"`
+	// SrcDigest is the manifest digest of the source artifact in the install
+	// registry, e.g. "sha256:abc...". Populated for image-type component
+	// builds with source identity recorded; empty for
+	// non-image builds and legacy image builds. When non-empty, runners
+	// should prefer this over SrcTag for content-addressed pulls and for
+	// rendering digest-pinned image references in pod specs.
+	SrcDigest string `json:"src_digest,omitzero,omitempty"`
 
 	HelmDeployPlan               *HelmDeployPlan               `json:"helm"`
 	TerraformDeployPlan          *TerraformDeployPlan          `json:"terraform"`
