@@ -174,6 +174,18 @@ func NewInstallActionWorkflowRunID() string {
 	return shortid.NewNanoID("iar")
 }
 
+func NewNotebookID() string {
+	return shortid.NewNanoID("nbk")
+}
+
+func NewNotebookCellID() string {
+	return shortid.NewNanoID("nbc")
+}
+
+func NewNotebookCellRunID() string {
+	return shortid.NewNanoID("nbr")
+}
+
 func NewRunnerOperationID() string {
 	return shortid.NewNanoID("rop")
 }
