@@ -42,6 +42,8 @@ import { CurrentInputs } from './CurrentInputs'
 import { ViewState } from './ViewState'
 import { WorkflowDetail } from './WorkflowDetail'
 import { RunnerJobDetail } from './RunnerJobDetail'
+import { Notebooks } from './Notebooks'
+import { NotebookDetail } from './NotebookDetail'
 
 export const installRoutes: RouteObject[] = [
   {
@@ -53,6 +55,11 @@ export const installRoutes: RouteObject[] = [
         element: <Components />,
       },
       { path: ':orgId/installs/:installId/actions', element: <Actions /> },
+      { path: ':orgId/installs/:installId/notebooks', element: <Notebooks /> },
+      {
+        path: ':orgId/installs/:installId/notebooks/:notebookId',
+        element: <NotebookDetail />,
+      },
       { path: ':orgId/installs/:installId/roles', element: <Roles /> },
       { path: ':orgId/installs/:installId/policies', element: <Policies /> },
       { path: ':orgId/installs/:installId/runner', element: <Runner /> },
