@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
+	ociresolve "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/resolve"
 )
 
 type handler struct {
@@ -21,6 +22,7 @@ type handler struct {
 	errRecorder *errs.Recorder
 	cfg         *internal.Config
 	ociCopy     ocicopy.Copier
+	ociResolve  ociresolve.Resolver
 
 	// state is reused between function calls, but can _not_ be reused with different jobs.
 	//
@@ -39,6 +41,7 @@ type HandlerParams struct {
 	ErrRecorder *errs.Recorder
 	Config      *internal.Config
 	OCICopy     ocicopy.Copier
+	OCIResolve  ociresolve.Resolver
 }
 
 func New(params HandlerParams) (*handler, error) {
@@ -47,6 +50,7 @@ func New(params HandlerParams) (*handler, error) {
 		apiClient:   params.APIClient,
 		cfg:         params.Config,
 		ociCopy:     params.OCICopy,
+		ociResolve:  params.OCIResolve,
 		errRecorder: params.ErrRecorder,
 	}, nil
 }

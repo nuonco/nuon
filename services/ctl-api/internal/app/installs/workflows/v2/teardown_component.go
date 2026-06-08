@@ -35,6 +35,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 
 	sg := newStepGroup(flw)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
 	steps := make([]*app.WorkflowStep, 0)
 
 	sg.nextGroupEager() // generate install state
@@ -71,7 +72,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get component")
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePreTeardownComponent, sg, appCfg, awData)
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreTeardownComponent)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +124,7 @@ func TeardownComponent(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		steps = append(steps, deployStep)
 	}
 
-	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, comp, installID, app.ActionWorkflowTriggerTypePostTeardownComponent, sg, appCfg, awData)
+	postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePostTeardownComponent)
 	if err != nil {
 		return nil, err
 	}

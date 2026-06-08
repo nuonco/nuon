@@ -1,0 +1,132 @@
+---
+title: "Track image patches with update policies"
+description: "Use a semver constraint so each app sync picks up the latest matching patch tag without editing your app config."
+icon: "tag"
+keywords: ["container image", "update_policy", "semver", "image patch", "patch tag", "image tracking", "external image"]
+---
+
+A container image component normally pins to a literal tag (`v1.10.0`). When upstream ships `v1.10.1`, you have to edit your app config, change the tag, and resync. For images you want to stay current on within a version range (patches inside a minor, minors inside a major), you can set `update_policy` instead.
+
+When `update_policy` is set, every time the component is rebuilt the runner lists tags from the source registry, filters them to the semver tags that satisfy your constraint, and selects the highest matching tag. Tags that aren't valid semver (`latest`, `stable`, branch names) are skipped.
+
+<Note>
+Update policies are evaluated **at build time**. There is no background scheduler that polls upstream. You pick up new tags the next time a build runs for the component, which today means running `nuon apps sync` (or anything else that triggers a build for that component).
+</Note>
+
+## Scenario
+
+You have an app with two components:
+
+* `img_whoami` — a `container_image` component pulling from Docker Hub.
+* `whoami` — a `helm_chart` component that consumes `img_whoami` in its pod spec.
+
+You want `img_whoami` to stay on the latest `1.10.x` patch automatically. Major and minor bumps still go through a deliberate config change, but patches should be picked up the next time you sync.
+
+## Step 1: Configure the image component with `update_policy`
+
+Drop the literal `tag` (or leave it as a starting hint) and add `update_policy`:
+
+```toml components/img_whoami.toml
+# container-image
+name = "img_whoami"
+type = "container_image"
+
+[public]
+image_url     = "containous/whoami"
+update_policy = "~1.10.0"
+```
+
+`~1.10.0` means "any `1.10.x`": the runner will pick the highest `1.10.*` tag and refuse to roll to `1.11.0` or `2.0.0`.
+
+See the [container image config reference](/config-ref/container-image) for every supported constraint shape (tilde, caret, ranges, OR, exact match).
+
+## Step 2: Wire the helm component to consume the resolved image
+
+In your helm component, reference the image outputs by digest. Using the digest-pinned `repository` form means each install is locked to the exact bytes that were resolved at build time:
+
+```toml components/whoami.toml
+# helm-chart
+name         = "whoami"
+type         = "helm_chart"
+chart_name   = "whoami"
+dependencies = ["img_whoami"]
+
+[values]
+# digest-pinned ref, e.g. "containous/whoami@sha256:abc..."
+image_repository  = "{{ .nuon.components.img_whoami.outputs.image.repository }}"
+
+# human-friendly tag for labels only; do NOT use in the image field
+image_display_tag = "{{ .nuon.components.img_whoami.outputs.image.display_tag }}"
+```
+
+## Step 3: Sync and deploy
+
+```bash
+nuon apps sync
+```
+
+The runner builds `img_whoami`. Assume the highest tag in `containous/whoami` matching `~1.10.0` is `v1.10.0`:
+
+```
+update_policy "~1.10.0" selected tag "v1.10.0" from 47 source tags
+resolving image source containous/whoami:v1.10.0
+copying image from containous/whoami:v1.10.0 to <install-registry>
+```
+
+The resulting build records:
+
+| Field | Value |
+| --- | --- |
+| `source_ref` | `containous/whoami:~1.10.0` |
+| `resolved_tag` | `v1.10.0` |
+| `source_digest` | `sha256:abc…` |
+
+Deploy installs as usual. Pods come up running `v1.10.0`.
+
+## Step 4: Upstream ships v1.10.1 — pick it up on the next sync
+
+A few days later upstream releases `v1.10.1`. You don't touch your app config. Next time you run:
+
+```bash
+nuon apps sync
+```
+
+A new build for `img_whoami` runs:
+
+```
+update_policy "~1.10.0" selected tag "v1.10.1" from 48 source tags
+resolving image source containous/whoami:v1.10.1
+copying image from containous/whoami:v1.10.1 to <install-registry>
+```
+
+The new build is recorded with `resolved_tag: v1.10.1` and a fresh `source_digest`. Because `whoami` depends on `img_whoami`, the deploy flow detects that the install's currently-deployed `img_whoami` build no longer matches the latest active build, and prepends an image sync before redeploying `whoami`. The pod rolls to `v1.10.1`.
+
+## Step 5: Upstream ships v2.0.0 — your installs stay put
+
+When `containous/whoami:v2.0.0` lands, the next sync sees it but rejects it: it falls outside `~1.10.0`. The runner stays on the highest matching `1.10.x` tag. Major bumps still require you to update the constraint deliberately — for example `update_policy = "~1.11.0"` or `update_policy = "^1.0.0"` if you want to track any `1.x`.
+
+## When nothing changed: no-op builds
+
+If you sync and upstream hasn't moved since the last build, the runner resolves the source ref, sees the manifest digest matches the previous build's recorded digest, and skips the copy entirely. The new build row is marked **no-op** and no new install deploy is queued. You'll see this on the build header in the dashboard and on the build timeline.
+
+This means rerunning `nuon apps sync` is always safe — it never re-pushes bytes the install registry already has.
+
+## Reference: common policy shapes
+
+| Constraint | Meaning |
+| --- | --- |
+| `~1.10.0` | `>=1.10.0, <1.11.0` (patches only) |
+| `^1.10.0` | `>=1.10.0, <2.0.0` (minor + patch) |
+| `>=1.0.0,<2.0.0` | comma-separated comparators (AND) |
+| `1.x` / `1.2.x` | wildcard ranges |
+| `1.0.0 - 2.0.0` | inclusive hyphen range |
+| `^1.0 \|\| ^2.0` | OR |
+| `=1.25.5` | exact match |
+
+Full reference: [container-image config](/config-ref/container-image).
+
+## When `update_policy` is **not** the right tool
+
+* **Pinning a specific build for compliance / reproducibility.** Use a literal `tag` (or pin by digest) so nothing changes between syncs.
+* **Polling upstream continuously.** `update_policy` only fires when a build runs. There is no background poller. If you need scheduled image refreshes today, wire `nuon apps sync` into your CI on a cron.
+* **Tracking non-semver tags.** Tags like `latest`, `stable`, or `release-2024` are silently ignored — the highest semver match wins.

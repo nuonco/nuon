@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/oci/imageref"
 )
 
 func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON bool) error {
@@ -48,9 +49,14 @@ func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON
 		commitMessage = build.VcsConnectionCommit.Message
 	}
 
+	status := build.Status
+	if build.NoOp {
+		status = status + " (no-op)"
+	}
+
 	buildRes := [][]string{
 		{"id", build.ID},
-		{"status", build.Status},
+		{"status", status},
 		{"created at", build.CreatedAt},
 		{"updated at", build.UpdatedAt},
 		{"created by", build.CreatedByID},
@@ -65,6 +71,25 @@ func (s *Service) Get(ctx context.Context, appID, compID, buildID string, asJSON
 		{"commit updated at", commitUpdatedAt},
 		{"commit created by", commitCreatedBy},
 		{"commit message", commitMessage},
+
+		// Image-source identity fields. Empty for non-image builds.
+		{"source ref", build.SourceRef},
+		{"source image", build.SourceImage},
+		{"resolved tag", build.ResolvedTag},
+		{"source digest", build.SourceDigest},
+		{"source media type", build.SourceMediaType},
+		{"resolved at", build.ResolvedAt},
+		{"no-op", fmt.Sprintf("%t", build.NoOp)},
+		{"display ref", imageref.DisplayRef(imageref.Source{
+			SourceImage:  build.SourceImage,
+			SourceRef:    build.SourceRef,
+			ResolvedTag:  build.ResolvedTag,
+			SourceDigest: build.SourceDigest,
+		})},
+		{"image ref", imageref.ImageRef(imageref.Source{
+			SourceImage:  build.SourceImage,
+			SourceDigest: build.SourceDigest,
+		})},
 
 		{"description", wordwrap.WrapString(build.StatusDescription, 75)},
 	}

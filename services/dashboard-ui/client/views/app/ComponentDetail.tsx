@@ -24,7 +24,12 @@ import { Panel } from '@/components/surfaces/Panel'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
-import { getAppConfig, getAppConfigs, getComponent } from '@/lib'
+import {
+  getAppConfig,
+  getAppConfigs,
+  getComponent,
+  getComponentBuilds,
+} from '@/lib'
 
 export const ComponentDetail = () => {
   const { componentId } = useParams()
@@ -66,6 +71,21 @@ export const ComponentDetail = () => {
     ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
     .map((c) => c.component_id!)
     .filter(Boolean) ?? []
+
+  const { data: latestBuilds } = useQuery({
+    queryKey: ['component-builds', org?.id, componentId, 0],
+    queryFn: () =>
+      getComponentBuilds({
+        orgId: org.id,
+        componentId: componentId!,
+        limit: 10,
+        offset: 0,
+      }),
+    enabled: !!org?.id && !!componentId,
+  })
+  const latestResolvedBuild = latestBuilds?.data?.find(
+    (b) => !!b.source_digest
+  )
 
   return (
     <PageSection>
@@ -148,6 +168,7 @@ export const ComponentDetail = () => {
             ) : config ? (
               <ComponentConfigCard
                 config={config}
+                latestBuild={latestResolvedBuild}
                 headerActions={
                   appConfig && componentId && component?.name ? (
                     <ComponentDependencyGraphButton
