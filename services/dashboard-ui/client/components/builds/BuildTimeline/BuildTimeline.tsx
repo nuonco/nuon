@@ -5,6 +5,7 @@ import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { Text } from '@/components/common/Text'
 import type { TBuild } from '@/types'
+import { displayRef, isImageBuild } from '@/utils/image-ref'
 
 interface IBuildTimeline {
   builds: TBuild[]
@@ -51,6 +52,11 @@ export const BuildTimeline = ({
                     duplicate build
                   </Badge>
                 ) : null}
+                {build?.no_op ? (
+                  <Badge variant="code" size="sm" theme="neutral">
+                    no-op
+                  </Badge>
+                ) : null}
               </span>
             }
             underline={
@@ -58,6 +64,17 @@ export const BuildTimeline = ({
                 <Text variant="label" theme="neutral">
                   Built by: {build?.created_by?.email}
                 </Text>
+
+                {isImageBuild(build) ? (
+                  <Text
+                    variant="label"
+                    family="mono"
+                    theme="neutral"
+                    className="break-all"
+                  >
+                    {displayRef(build)}
+                  </Text>
+                ) : null}
 
                 {build?.vcs_connection_commit?.message &&
                 build?.vcs_connection_commit?.sha ? (

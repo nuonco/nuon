@@ -1,4 +1,4 @@
-FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25 AS base
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25 AS base
 
 WORKDIR /src
 

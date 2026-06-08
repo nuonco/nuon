@@ -19,14 +19,24 @@ import (
 // "only the invoking user can see this message" replies.
 const slashResponseTypeEphemeral = "ephemeral"
 
-// slashHelpText is the canonical help shown for /nuon help and unknown
-// subcommands. Kept as a single string (vs. block-kit) since the slash command
-// surface is intentionally thin in v1; richer affordances live in the dashboard.
-const slashHelpText = `*Nuon Slack commands*
-` + "`/nuon subscribe`" + ` — subscribe this channel to Nuon events (opens a dialog)
-` + "`/nuon unsubscribe`" + ` — remove this channel's subscription
-` + "`/nuon status`" + ` — show this workspace's installation, linked orgs, and this channel's subscription
-` + "`/nuon help`" + ` — show this message`
+// defaultSlashCommand is the fallback command name used when Slack's payload
+// is missing the `command` field (malformed / replayed requests). Real slash
+// POSTs always carry the actual invoked command.
+const defaultSlashCommand = "/nuon"
+
+// slashHelpText renders the canonical help shown for `<command> help` and
+// unknown subcommands. command is the actual invoked slash command from the
+// Slack payload (e.g. "/nuon", or a workspace-custom name like
+// "/byoc-retool-dev"), so the examples match exactly what the user types.
+// Kept as a single string (vs. block-kit) since the slash command surface is
+// intentionally thin in v1; richer affordances live in the dashboard.
+func slashHelpText(command string) string {
+	return "*Nuon Slack commands*\n" +
+		"`" + command + " subscribe`" + " — subscribe this channel to Nuon events (opens a dialog)\n" +
+		"`" + command + " unsubscribe`" + " — remove this channel's subscription\n" +
+		"`" + command + " status`" + " — show this workspace's installation, linked orgs, and this channel's subscription\n" +
+		"`" + command + " help`" + " — show this message"
+}
 
 // slashResponse is the JSON envelope Slack expects from a slash command POST.
 type slashResponse struct {
@@ -61,6 +71,14 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	triggerID := ctx.PostForm("trigger_id")
 	text := strings.TrimSpace(ctx.PostForm("text"))
 
+	// command is the actual invoked slash command (e.g. "/nuon" or a
+	// workspace-custom name); we echo it back in help so examples match what
+	// the user types. Falls back to the canonical name if Slack omits it.
+	command := strings.TrimSpace(ctx.PostForm("command"))
+	if command == "" {
+		command = defaultSlashCommand
+	}
+
 	if teamID == "" || channelID == "" || userID == "" {
 		// Slack is malformed or replayed; respond OK with an ephemeral
 		// hint so the user sees something rather than a Slack-side error.
@@ -72,7 +90,7 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 
 	switch subcommand {
 	case "", "help":
-		respondSlash(ctx, slashHelpText)
+		respondSlash(ctx, slashHelpText(command))
 	case "subscribe":
 		s.handleSlashSubscribe(ctx, teamID, channelID, channelName, userID, triggerID)
 	case "unsubscribe":
@@ -80,7 +98,7 @@ func (s *service) SlackSlashCommand(ctx *gin.Context) {
 	case "status":
 		s.handleSlashStatus(ctx, teamID, channelID)
 	default:
-		respondSlash(ctx, fmt.Sprintf("Unknown subcommand `%s`.\n\n%s", subcommand, slashHelpText))
+		respondSlash(ctx, fmt.Sprintf("Unknown subcommand `%s`.\n\n%s", subcommand, slashHelpText(command)))
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
@@ -13,6 +14,8 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.ComponentBuild) (*plantypes.ContainerImagePullPlan, error) {
@@ -21,12 +24,34 @@ func (p *Planner) createContainerImageBuildPlan(ctx workflow.Context, bld *app.C
 		return nil, errors.Wrap(err, "unable to get source repository")
 	}
 
-	return &plantypes.ContainerImagePullPlan{
-		Image: bld.ComponentConfigConnection.ExternalImageComponentConfig.ImageURL,
-		Tag:   bld.ComponentConfigConnection.ExternalImageComponentConfig.Tag,
+	plan := &plantypes.ContainerImagePullPlan{
+		Image:        bld.ComponentConfigConnection.ExternalImageComponentConfig.ImageURL,
+		Tag:          bld.ComponentConfigConnection.ExternalImageComponentConfig.Tag,
+		UpdatePolicy: bld.ComponentConfigConnection.ExternalImageComponentConfig.UpdatePolicy,
 
 		RepoCfg: srcRepo,
-	}, nil
+	}
+
+	// Look up the most recent prior Active build's SourceDigest so the runner
+	// can detect a no-op (upstream digest unchanged) and skip the artifact
+	// push. Failure here is non-fatal — without the hint the runner just runs
+	// a normal copy.
+	prior, err := activities.AwaitGetPreviousActiveBuildSourceDigest(ctx, activities.GetPreviousActiveBuildSourceDigestRequest{
+		ComponentID:    bld.ComponentConfigConnection.ComponentID,
+		ExcludeBuildID: bld.ID,
+	})
+	if err != nil {
+		if l, lerr := log.WorkflowLogger(ctx); lerr == nil {
+			l.Warn("unable to look up previous source digest for build dedup",
+				zap.String("component_id", bld.ComponentConfigConnection.ComponentID),
+				zap.String("build_id", bld.ID),
+				zap.Error(err))
+		}
+	} else if prior != nil {
+		plan.PreviousSourceDigest = prior.SourceDigest
+	}
+
+	return plan, nil
 }
 
 func (b *Planner) normalizeRepository(repo string) (string, error) {
