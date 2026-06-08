@@ -45,7 +45,7 @@ type Signal struct {
 
 	// Resident keeps the workflow alive after it runs 0->end: instead of
 	// completing, the execute loop parks to accept run-a-step-in-between
-	// updates (e.g. notebook cells). Gated so install workflows keep exact
+	// updates (append/retry a step). Gated so ordinary workflows keep exact
 	// run-to-completion semantics. Bounded by residentIdleTimeout — on idle
 	// the loop returns cleanly and the workflow re-warms on the next dispatch.
 	Resident bool `json:"resident,omitempty"`

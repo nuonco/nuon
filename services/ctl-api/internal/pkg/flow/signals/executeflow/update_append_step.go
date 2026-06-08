@@ -11,7 +11,7 @@ import (
 )
 
 // AppendStepRequest is the input for the "append-step" update handler. It adds a
-// new single-step group to a parked Resident workflow (e.g. a notebook cell) and
+// new single-step group to a parked Resident workflow (e.g. an appended step) and
 // wakes the execute loop to run only that step.
 //
 // The caller builds the step metadata (execution type, target type) the same way
@@ -19,16 +19,22 @@ import (
 // installs signal taxonomy. Queue IDs are intentionally left empty: dispatch
 // resolves the target queue from the signal, exactly like the adhoc-action path.
 type AppendStepRequest struct {
-	Name           string                        `json:"name"`
-	Signal         signaldb.SignalData           `json:"signal"`
-	ExecutionType  app.WorkflowStepExecutionType `json:"execution_type,omitempty"`
-	StepTargetType string                        `json:"step_target_type,omitempty"`
-	Retryable      bool                          `json:"retryable,omitempty"`
-	Skippable      bool                          `json:"skippable,omitempty"`
+	Name          string                        `json:"name"`
+	Signal        signaldb.SignalData           `json:"signal"`
+	ExecutionType app.WorkflowStepExecutionType `json:"execution_type,omitempty"`
+	// StepTargetType / StepTargetID identify the work this step drives (e.g. an
+	// the inner signal's target row). StepTargetID also
+	// serves as the append idempotency key: a retried append (Temporal update
+	// retry or HTTP retry) with the same StepTargetID returns the existing
+	// group/step instead of creating a duplicate.
+	StepTargetType string `json:"step_target_type,omitempty"`
+	StepTargetID   string `json:"step_target_id,omitempty"`
+	Retryable      bool   `json:"retryable,omitempty"`
+	Skippable      bool   `json:"skippable,omitempty"`
 }
 
 // AppendStepResponse reports the IDs of the freshly-created group and step so the
-// caller (e.g. a notebook cell run) can track the appended work.
+// caller (e.g. a appended step run) can track the appended work.
 type AppendStepResponse struct {
 	WorkflowID string `json:"workflow_id"`
 	GroupID    string `json:"group_id"`
@@ -67,6 +73,22 @@ func (s *Signal) appendStepHandler(ctx workflow.Context, req AppendStepRequest) 
 	}
 	nextStepIdx := len(steps)
 
+	// Idempotency: if a step for this target already exists (a retried append),
+	// return it instead of creating a duplicate. Still wake the loop so a step
+	// that was persisted but not yet picked up gets run.
+	if req.StepTargetID != "" {
+		for i := range steps {
+			if steps[i].StepTargetID == req.StepTargetID {
+				s.wakeForAppend()
+				return &AppendStepResponse{
+					WorkflowID: s.WorkflowID,
+					GroupID:    steps[i].WorkflowStepGroupID,
+					StepID:     steps[i].ID,
+				}, nil
+			}
+		}
+	}
+
 	createdGroups, err := workflowactivities.AwaitPkgWorkflowsFlowCreateFlowStepGroups(ctx, workflowactivities.CreateFlowStepGroupsRequest{
 		Groups: []workflowactivities.CreateFlowStepGroup{{
 			WorkflowID: s.WorkflowID,
@@ -98,6 +120,7 @@ func (s *Signal) appendStepHandler(ctx workflow.Context, req AppendStepRequest) 
 			WorkflowStepGroupID: group.ID,
 			ExecutionType:       execType,
 			StepTargetType:      req.StepTargetType,
+			StepTargetID:        req.StepTargetID,
 			Retryable:           req.Retryable,
 			Skippable:           req.Skippable,
 			QueueSignal:         &sig,
@@ -108,19 +131,23 @@ func (s *Signal) appendStepHandler(ctx workflow.Context, req AppendStepRequest) 
 	}
 	step := createdSteps[0]
 
-	// Wake the parked resident loop to run only the new group. If the loop is
-	// not parked yet (still running an earlier append), the new group is already
-	// persisted and will be picked up on the next resume.
-	if s.awaitingResume {
-		s.appendRequested = true
-		s.resumeRunType = app.WorkflowRunTypeResume
-		s.resumeStepID = step.ID
-		s.resumeStartIdx = nextGroupIdx
-	}
+	// Wake the loop unconditionally. parkResident re-scans the DB for the first
+	// pending group on every wake, so it doesn't matter whether the loop is
+	// currently parked or mid-run: a step appended mid-run is found as soon as
+	// the in-flight run finishes and the loop re-parks.
+	s.wakeForAppend()
 
 	return &AppendStepResponse{
 		WorkflowID: s.WorkflowID,
 		GroupID:    group.ID,
 		StepID:     step.ID,
 	}, nil
+}
+
+// wakeForAppend records that a step was appended so the execute loop runs it.
+// parkResident keys off appendRequested and then derives the start position
+// from the DB, so we don't need to track a precise resume index here.
+func (s *Signal) wakeForAppend() {
+	s.appendRequested = true
+	s.resumeRunType = app.WorkflowRunTypeResume
 }

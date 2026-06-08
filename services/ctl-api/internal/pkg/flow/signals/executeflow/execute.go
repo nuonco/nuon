@@ -18,7 +18,7 @@ import (
 )
 
 // residentIdleTimeout bounds how long a Resident workflow parks waiting for the
-// next step (e.g. a notebook cell) after running 0->end. On idle the execute
+// next step (e.g. an appended step) after running 0->end. On idle the execute
 // loop returns cleanly so the queue signal completes and history stays finite;
 // the workflow re-warms lazily on the next dispatch.
 const residentIdleTimeout = 15 * time.Minute
@@ -50,8 +50,17 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 		s.tmw.Timing(ctx, "workflow.latency", workflow.Now(ctx).Sub(flowStart), append(wfTags, "status", status)...)
 	}()
 
-	// Create and execute the initial run
-	run, err := s.createRun(ctx, app.WorkflowRunTypeInitial, "", 0)
+	// Create and execute the initial run. Resident hosts may rewarm with
+	// historical (terminal) steps from earlier steps; start the initial run at
+	// the first pending group so completed groups are never replayed. If none
+	// are pending the run is a no-op and the loop parks for the next append.
+	initialStartIdx := 0
+	if s.Resident {
+		if pos, ok := s.firstPendingGroupPosition(ctx); ok {
+			initialStartIdx = pos
+		}
+	}
+	run, err := s.createRun(ctx, app.WorkflowRunTypeInitial, "", initialStartIdx)
 	if err != nil {
 		return err
 	}
@@ -75,11 +84,13 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 					return nil
 				}
 				// Resident: stay alive to accept the next step (e.g. a
-				// notebook cell) instead of completing. Fall through to the
+				// appended step) instead of completing. Fall through to the
 				// shared park below, which honors appendRequested and an idle
 				// timeout in resident mode.
-			} else {
-				// Paused at approval - update run status and wait for resume
+			} else if !s.Resident {
+				// Paused at approval - update run status and wait for resume.
+				// Resident hosts skip this: a non-complete state just means a
+				// freshly appended step is pending, which parkResident runs next.
 				s.updateRunStatus(ctx, run.ID, app.AwaitingApproval)
 			}
 		} else {
@@ -105,48 +116,67 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 						Metadata:               metadata,
 					},
 				})
-				return runErr
+				// Resident hosts must survive a stopped/failed step: one bad				// appended step becomes a terminal (errored) group and the host
+				// stays up to run later steps. The step's own status is mirrored
+				// onto its target row by the inner signal.
+				if !s.Resident {
+					return runErr
+				}
+			} else {
+				// Actual execution error
+				s.updateRunStatus(ctx, run.ID, app.StatusError)
+
+				if !s.checkRetryable(ctx) {
+					// Same as above: keep a resident host alive past a step error.
+					if !s.Resident {
+						return runErr
+					}
+				} else {
+					// Mark workflow as failed, awaiting retry
+					_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
+						ID: s.WorkflowID,
+						Status: app.CompositeStatus{
+							Status:                 app.StatusError,
+							StatusHumanDescription: "workflow failed, awaiting retry",
+							Metadata: map[string]any{
+								"error_message":  runErr.Error(),
+								"awaiting_retry": true,
+							},
+						},
+					})
+				}
 			}
-
-			// Actual execution error
-			s.updateRunStatus(ctx, run.ID, app.StatusError)
-
-			if !s.checkRetryable(ctx) {
-				return runErr
-			}
-
-			// Mark workflow as failed, awaiting retry
-			_ = statusactivities.AwaitPkgStatusUpdateFlowStatus(ctx, statusactivities.UpdateStatusRequest{
-				ID: s.WorkflowID,
-				Status: app.CompositeStatus{
-					Status:                 app.StatusError,
-					StatusHumanDescription: "workflow failed, awaiting retry",
-					Metadata: map[string]any{
-						"error_message":  runErr.Error(),
-						"awaiting_retry": true,
-					},
-				},
-			})
 		}
 
-		// Wait for a resume/append or cancel signal from an update handler. In
-		// resident mode the park is bounded by an idle timeout: on idle we
-		// return cleanly and the workflow re-warms on the next dispatch.
-		s.awaitingResume = true
+		// Wait for the next thing to run, cancel, or idle out. Resident hosts
+		// park until a pending group appears (re-scanning on every wake so a
+		// step appended mid-run is never missed); other workflows wait for an
+		// explicit resume/cancel.
 		if s.Resident {
-			var woke bool
-			woke, err = workflow.AwaitWithTimeout(ctx, residentIdleTimeout, func() bool {
-				return s.resumeRequested || s.appendRequested || s.cancelRequested
-			})
-			if err == nil && !woke {
-				s.awaitingResume = false
+			parked, perr := s.parkResident(ctx)
+			if perr != nil {
+				return perr
+			}
+			if s.cancelRequested {
+				s.updateRunStatus(ctx, run.ID, app.StatusCancelled)
+				return runErr
+			}
+			if !parked {
+				// Idle timeout with nothing pending — exit cleanly.
 				return nil
 			}
-		} else {
-			err = workflow.Await(ctx, func() bool {
-				return s.resumeRequested || s.cancelRequested
-			})
+			// parkResident set resumeStartIdx to the first pending group.
+			run, err = s.createRun(ctx, app.WorkflowRunTypeResume, "", s.resumeStartIdx)
+			if err != nil {
+				return err
+			}
+			continue
 		}
+
+		s.awaitingResume = true
+		err = workflow.Await(ctx, func() bool {
+			return s.resumeRequested || s.cancelRequested
+		})
 		s.awaitingResume = false
 		if err != nil {
 			return err
@@ -157,9 +187,8 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 			return runErr
 		}
 
-		// Create a new run for the resume/append.
+		// Create a new run for the resume.
 		s.resumeRequested = false
-		s.appendRequested = false
 		run, err = s.createRun(ctx, s.resumeRunType, s.resumeStepID, s.resumeStartIdx)
 		if err != nil {
 			return err
@@ -279,10 +308,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	// Steps may be pre-created (e.g. by tests or by a previous run that was
 	// ContinueAsNew'd) — in that case, skip generation.
 	if len(flw.Steps) == 0 {
-		// Resident host workflows (e.g. notebooks) start with no steps and no
+		// Resident host workflows (e.g. interactive append-driven hosts) start with no steps and no
 		// generate-steps signal — they exist only to accept append-step updates.
 		// Skip generation and return so the execute loop parks for the first
-		// cell. Once a step is appended, handle() resumes with len(Steps) > 0 and
+		// step. Once a step is appended, handle() resumes with len(Steps) > 0 and
 		// runs only the appended group.
 		if s.Resident && (flw.GenerateStepsSignal == nil || flw.GenerateStepsSignal.Signal == nil) {
 			l.Debug("resident workflow has no steps; parking for append-step")
@@ -375,6 +404,19 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 	// Execute groups
 	l.Debug("executing groups for workflow", zap.Int("group_count", len(groups)))
 
+	// Resident hosts replay nothing: precompute which groups still have a
+	// non-terminal step so already-finished groups (earlier appended steps) are
+	// skipped even on a cold rewarm that starts at group 0.
+	var residentPending map[int]bool
+	if s.Resident {
+		residentPending = make(map[int]bool)
+		for _, st := range flw.Steps {
+			if !isStepTerminal(st.Status.Status) {
+				residentPending[st.GroupIdx] = true
+			}
+		}
+	}
+
 	for gi := startFromGroupIdx; gi < len(groups); gi++ {
 		if s.cancelRequested {
 			s.markRemainingGroupStepsDiscarded(ctx, l, groups, gi-1)
@@ -383,6 +425,10 @@ func (s *Signal) handle(ctx workflow.Context, startFromGroupIdx int) error {
 		}
 
 		group := &groups[gi]
+
+		if s.Resident && !residentPending[group.GroupIdx] {
+			continue
+		}
 
 		l.Debug("dispatching group", zap.Int("group_idx", group.GroupIdx), zap.Int("group_position", gi), zap.String("step_group_id", group.ID), zap.Bool("parallel", group.Parallel))
 
@@ -617,6 +663,75 @@ func (s *Signal) findGroupPositionForStep(ctx workflow.Context, stepID string) i
 		}
 	}
 	return 0
+}
+
+// firstPendingGroupPosition returns the position (index into the ordered group
+// slice) of the first group that still has a non-terminal step, and whether one
+// exists. Resident hosts use it to (a) start a rewarmed run at the first
+// unfinished group instead of replaying completed history, and (b) decide
+// whether to run or park after each step. Terminal-but-failed groups (e.g. a
+// appended step that errored) are skipped, so one failed step never wedges the
+// host.
+func (s *Signal) firstPendingGroupPosition(ctx workflow.Context) (int, bool) {
+	groups, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowStepGroups(ctx, s.WorkflowID)
+	if err != nil || len(groups) == 0 {
+		return 0, false
+	}
+	steps, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowSteps(ctx, workflowactivities.GetFlowStepsRequest{
+		FlowID: s.WorkflowID,
+	})
+	if err != nil {
+		return 0, false
+	}
+
+	pending := make(map[int]bool)
+	for _, st := range steps {
+		if !isStepTerminal(st.Status.Status) {
+			pending[st.GroupIdx] = true
+		}
+	}
+	for pos, g := range groups {
+		if pending[g.GroupIdx] {
+			return pos, true
+		}
+	}
+	return 0, false
+}
+
+// parkResident blocks a resident host until there is a pending group to run
+// (e.g. an appended appended step), cancellation is requested, or the idle
+// timeout elapses. It returns (true, nil) when a pending group was found
+// (resumeStartIdx is set to its position), (false, nil) on idle timeout or
+// cancel, and a non-nil error only on context failure. It re-scans on every
+// wake so appends that arrived while a run was still executing — i.e. before
+// the loop parked — are never missed.
+func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
+	for {
+		if s.cancelRequested {
+			return false, nil
+		}
+		if pos, ok := s.firstPendingGroupPosition(ctx); ok {
+			s.resumeStartIdx = pos
+			return true, nil
+		}
+
+		s.awaitingResume = true
+		woke, err := workflow.AwaitWithTimeout(ctx, residentIdleTimeout, func() bool {
+			return s.resumeRequested || s.appendRequested || s.cancelRequested
+		})
+		s.awaitingResume = false
+		s.resumeRequested = false
+		s.appendRequested = false
+		if err != nil {
+			return false, err
+		}
+		if !woke {
+			// Idle out: return cleanly so the queue signal completes and history
+			// stays finite; the host re-warms lazily on the next dispatch.
+			return false, nil
+		}
+		// Woke — loop back to re-scan for a pending group.
+	}
 }
 
 // markRemainingGroupStepsDiscarded marks all remaining groups and their
