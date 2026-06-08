@@ -57,6 +57,8 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(runnerauthservice.New)),
 	fx.Provide(heartbeater.New),
 	fx.Provide(runnersservice.NewRunnerHeartbeatCache),
+	fx.Provide(runnersservice.NewRunnerJobWakeRegistry),
+	fx.Invoke(runnersservice.StartRunnerJobNotifyListener),
 	fx.Provide(api.AsService(runnersservice.New)),
 	fx.Provide(api.AsService(slackservice.New)),
 	fx.Provide(api.AsService(vcsservice.New)),

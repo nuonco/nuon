@@ -120,5 +120,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "111-backfill-lifecycle-phase",
 			Fn:   m.Migration111BackfillLifecyclePhase,
 		},
+		{
+			Name: "112-runner-job-available-notify-trigger",
+			Fn:   m.Migration112RunnerJobAvailableNotifyTrigger,
+		},
 	}
 }
