@@ -34,3 +34,7 @@ func (v *ListView) Error(err error) error {
 func (v *ListView) Print(msg string) {
 	v.tableView.Print(msg)
 }
+
+func (v *ListView) RenderContext(label, value string) {
+	v.tableView.RenderContext(label, value)
+}

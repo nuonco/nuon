@@ -48,6 +48,10 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 		return nil
 	}
 
+	if appID != "" {
+		view.RenderContext("app", appID)
+	}
+
 	data := [][]string{
 		{
 			"NAME",
@@ -59,7 +63,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 			"CREATED AT",
 		},
 	}
-	curID := s.cfg.GetString("org_id")
+	curID := s.cfg.GetString("install_id")
 	for _, install := range installs {
 		if curID != "" {
 			if install.ID == curID {

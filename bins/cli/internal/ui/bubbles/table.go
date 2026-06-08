@@ -239,6 +239,22 @@ func (v *TableView) Print(msg string) {
 	fmt.Println(BaseStyle.Render(msg))
 }
 
+// RenderContext prints a labeled context line showing an active selection or
+// filter. Call before Render/RenderPaging so the reader knows what's scoped.
+func (v *TableView) RenderContext(label, value string) {
+	if value == "" {
+		return
+	}
+	labelStyle := lipgloss.NewStyle().
+		Foreground(styles.SubtleColor).
+		Italic(true)
+	valueStyle := lipgloss.NewStyle().
+		Foreground(styles.PrimaryColor)
+	contextStyle := lipgloss.NewStyle().
+		Margin(0, 1, 1, 1)
+	fmt.Println(contextStyle.Render(labelStyle.Render(label+":") + " " + valueStyle.Render(value)))
+}
+
 // RenderKeyValue renders key-value pairs in a table format
 func (v *TableView) RenderKeyValue(pairs map[string]string) {
 	if len(pairs) == 0 {
