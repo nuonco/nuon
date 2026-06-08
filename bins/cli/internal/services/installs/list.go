@@ -59,7 +59,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 			"CREATED AT",
 		},
 	}
-	curID := s.cfg.GetString("org_id")
+	curID := s.cfg.GetString("install_id")
 	for _, install := range installs {
 		if curID != "" {
 			if install.ID == curID {
@@ -78,7 +78,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 			install.CreatedAt,
 		})
 	}
-	view.RenderPaging(data, offset, limit, hasMore)
+	view.RenderPagingWithContext(data, offset, limit, hasMore, "app", appID)
 	return nil
 }
 
