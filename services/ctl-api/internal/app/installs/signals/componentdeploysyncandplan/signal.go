@@ -33,11 +33,17 @@ type Signal struct {
 	InstallID          string
 	DeployID           string
 	ComponentID        string
-	WorkflowStepID     string
-	FlowStepID         string
-	FlowID             string
-	SandboxMode        bool
-	Role               string
+	// BuildID is the ComponentBuild to deploy. When DeployID is empty and
+	// BuildID is set, the signal creates an InstallDeploy pinned to this
+	// build instead of falling back to "latest build for component" at
+	// signal-run time. The workflow generator resolves this at step-gen
+	// so the build identity is captured up front.
+	BuildID        string
+	WorkflowStepID string
+	FlowStepID     string
+	FlowID         string
+	SandboxMode    bool
+	Role           string
 
 	runnerJobID string
 }
@@ -206,15 +212,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 		s.DeployID = installDeploy.ID
 	} else {
-		componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
-		if err != nil {
-			return fmt.Errorf("unable to get component build: %w", err)
+		buildID := s.BuildID
+		if buildID == "" {
+			componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
+			if err != nil {
+				return fmt.Errorf("unable to get component build: %w", err)
+			}
+			buildID = componentBuild.ID
 		}
 
 		installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
 			InstallID:   install.ID,
 			ComponentID: s.ComponentID,
-			BuildID:     componentBuild.ID,
+			BuildID:     buildID,
 			Type:        app.InstallDeployTypeApply,
 			WorkflowID:  s.FlowID,
 			Role:        s.Role,

@@ -19,6 +19,73 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
+// genCtx is the per-workflow-invocation context for step generation. It bundles
+// the read-only inputs every helper needs (workflow row, install ID, pinned
+// app config, install action workflows) along with the workflow-scoped
+// mutable state (step group, image-dep sync dedup map, derived component
+// maps).
+//
+// One genCtx is constructed at workflow entry and threaded through every
+// helper that emits steps. Sharing it across all calls inside a single
+// workflow gives dep-aware deploys a single dedup boundary for free.
+type genCtx struct {
+	sg        *stepGroup
+	flw       *app.Workflow
+	installID string
+	appCfg    *app.AppConfig
+	awData    []*app.InstallActionWorkflow
+
+	// Derived once from appCfg.ComponentConfigConnections for dep-aware
+	// deploys.
+	components   map[string]app.Component
+	depIDsByComp map[string][]string
+	cccByComp    map[string]*app.ComponentConfigConnection
+
+	// addedImageDepSyncs tracks image-dep components that already had a
+	// sync step prepended in this workflow. Multiple non-image components
+	// may share the same image dep; we only sync it once per workflow.
+	addedImageDepSyncs map[string]struct{}
+}
+
+func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) *genCtx {
+	components, depIDsByComp, cccByComp := buildComponentConfigMaps(appCfg)
+	return &genCtx{
+		sg:                 sg,
+		flw:                flw,
+		installID:          installID,
+		appCfg:             appCfg,
+		awData:             awData,
+		components:         components,
+		depIDsByComp:       depIDsByComp,
+		cccByComp:          cccByComp,
+		addedImageDepSyncs: make(map[string]struct{}),
+	}
+}
+
+// buildComponentConfigMaps builds the (components, depIDsByComp, cccByComp)
+// trio used by the dep-aware deploy logic from an AppConfig's pinned
+// ComponentConfigConnections. cccByComp records membership of each component
+// in the install's pinned app config snapshot — used to skip deps that are
+// not part of this app config version. The build-to-push for each dep is
+// resolved at workflow generation time via the GetLatestActiveComponentBuild
+// activity (global heuristic — no cross-ACV pinning).
+func buildComponentConfigMaps(appCfg *app.AppConfig) (
+	map[string]app.Component,
+	map[string][]string,
+	map[string]*app.ComponentConfigConnection,
+) {
+	components := make(map[string]app.Component, len(appCfg.ComponentConfigConnections))
+	depIDsByComp := make(map[string][]string, len(appCfg.ComponentConfigConnections))
+	cccByComp := make(map[string]*app.ComponentConfigConnection, len(appCfg.ComponentConfigConnections))
+	for i := range appCfg.ComponentConfigConnections {
+		ccc := &appCfg.ComponentConfigConnections[i]
+		components[ccc.ComponentID] = ccc.Component
+		depIDsByComp[ccc.ComponentID] = []string(ccc.ComponentDependencyIDs)
+		cccByComp[ccc.ComponentID] = ccc
+	}
+	return components, depIDsByComp, cccByComp
+}
+
 // filterActionWorkflowsByTrigger filters pre-fetched install action workflows by trigger type,
 // optionally scoped to a specific component. It uses the version-pinned configs from
 // appCfg.ActionWorkflowConfigs (with Triggers preloaded) instead of fetching latest configs.
@@ -71,28 +138,28 @@ func filterActionWorkflowsByTrigger(installActionWorkflows []*app.InstallActionW
 	return result
 }
 
-func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, comp *app.Component, installID string, triggerTyp app.ActionWorkflowTriggerType, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
+func getComponentLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, comp *app.Component, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
-	installActions := filterActionWorkflowsByTrigger(awData, triggerTyp, comp.ID, appCfg)
+	installActions := filterActionWorkflowsByTrigger(dg.awData, triggerTyp, comp.ID, dg.appCfg)
 
 	for _, installAction := range installActions {
 		sig := &executeactionworkflow.Signal{
 			Signal: &actionworkflowrun.Signal{
-				InstallID:               installID,
+				InstallID:               dg.installID,
 				InstallActionWorkflowID: installAction.ID,
 				TriggerType:             triggerTyp,
-				TriggeredByID:           flw.ID,
+				TriggeredByID:           dg.flw.ID,
 				TriggeredByType:         string(triggerTyp),
 				RunEnvVars: map[string]string{
 					"TRIGGER_TYPE":   string(triggerTyp),
 					"COMPONENT_ID":   comp.ID,
 					"COMPONENT_NAME": comp.Name,
 				},
-				Role: flw.Role,
+				Role: dg.flw.Role,
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
-		step, err := sg.installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, flw.PlanOnly)
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, name, pgtype.Hstore{}, sig, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
@@ -103,37 +170,37 @@ func getComponentLifecycleActionsSteps(ctx workflow.Context, flw *app.Workflow, 
 	return steps, nil
 }
 
-func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.Workflow, triggerTyp app.ActionWorkflowTriggerType, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
+func getLifecycleActionsSteps(ctx workflow.Context, dg *genCtx, triggerTyp app.ActionWorkflowTriggerType) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
-	installActions := filterActionWorkflowsByTrigger(awData, triggerTyp, "", appCfg)
+	installActions := filterActionWorkflowsByTrigger(dg.awData, triggerTyp, "", dg.appCfg)
 
 	if len(installActions) == 0 {
 		return steps, nil
 	}
 
-	sg.nextGroup() // lifecycleSteps
+	dg.sg.nextGroup() // lifecycleSteps
 
 	for _, installAction := range installActions {
 		sig := &executeactionworkflow.Signal{
 			Signal: &actionworkflowrun.Signal{
-				InstallID:               installID,
+				InstallID:               dg.installID,
 				InstallActionWorkflowID: installAction.ID,
 				TriggerType:             triggerTyp,
-				TriggeredByID:           flw.ID,
+				TriggeredByID:           dg.flw.ID,
 				TriggeredByType:         string(triggerTyp),
 				RunEnvVars: map[string]string{
 					"TRIGGER_TYPE": string(triggerTyp),
-					"FLOW_TYPE":    string(flw.Type),
-					"FLOW_ID":      flw.ID,
+					"FLOW_TYPE":    string(dg.flw.Type),
+					"FLOW_ID":      dg.flw.ID,
 					// TODO(sdboyer) remove these once they're updated on the other end
-					"INSTALL_WORKFLOW_TYPE": string(flw.Type),
-					"INSTALL_WORKFLOW_ID":   flw.ID,
+					"INSTALL_WORKFLOW_TYPE": string(dg.flw.Type),
+					"INSTALL_WORKFLOW_ID":   dg.flw.ID,
 				},
-				Role: flw.Role,
+				Role: dg.flw.Role,
 			},
 		}
 		name := fmt.Sprintf("%s Action Run (%s)", installAction.ActionWorkflow.Name, triggerTyp)
-		step, err := sg.installSignalStep(ctx, installID, name, pgtype.Hstore{}, sig, flw.PlanOnly)
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, name, pgtype.Hstore{}, sig, dg.flw.PlanOnly)
 		if err != nil {
 			return nil, err
 		}
@@ -144,18 +211,22 @@ func getLifecycleActionsSteps(ctx workflow.Context, installID string, flw *app.W
 	return steps, nil
 }
 
-func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Workflow, componentIDs []string, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
+func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []string) ([]*app.WorkflowStep, error) {
 	steps := make([]*app.WorkflowStep, 0)
 
-	components := make(map[string]app.Component)
-	for _, ccc := range appCfg.ComponentConfigConnections {
-		components[ccc.ComponentID] = ccc.Component
+	// componentIDIdx maps each component ID to its position in componentIDs.
+	// Used by the dep-aware deploy logic to avoid prepending an image sync
+	// step for an image dep that already appears earlier in this batch (it
+	// will be sync'd by the normal per-component flow).
+	componentIDIdx := make(map[string]int, len(componentIDs))
+	for i, id := range componentIDs {
+		componentIDIdx[id] = i
 	}
 
 	// Batch fetch all install components in one activity call instead of
 	// fetching them individually per component in the loop below.
 	installComps, err := activities.AwaitGetInstallComponentsBatch(ctx, activities.GetInstallComponentsBatchRequest{
-		InstallID:    installID,
+		InstallID:    dg.installID,
 		ComponentIDs: componentIDs,
 	})
 	if err != nil {
@@ -170,19 +241,42 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 			_ = workflow.Sleep(ctx, time.Millisecond)
 		}
 
-		sg.nextGroup()
-		comp, has := components[compID]
+		comp, has := dg.components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
+
+		// Dep-aware image-sync prepend.
+		//
+		// When deploying a non-image component, walk its image dependencies
+		// and prepend a sync step for any image dep whose latest Active
+		// ComponentBuild differs from what is currently deployed on the
+		// install. The dep sync steps live in their own step group ordered
+		// before the parent component's group so the new image bytes land in
+		// the install registry before the parent renders/deploys against
+		// them.
+		//
+		// Skipped when:
+		//   - dg.flw.PlanOnly is true (matches existing image-sync gating)
+		//   - the parent component is itself an image (its own sync is
+		//     handled by the normal flow below)
+		if !dg.flw.PlanOnly && !comp.Type.IsImage() {
+			depSyncSteps, err := getImageDepSyncSteps(ctx, dg, compID, i, componentIDIdx)
+			if err != nil {
+				return nil, err
+			}
+			steps = append(steps, depSyncSteps...)
+		}
+
+		dg.sg.nextGroup()
 
 		var installComponentID string
 		if installComp, ok := installComps[compID]; ok && installComp != nil {
 			installComponentID = installComp.ID
 		}
 
-		if !flw.PlanOnly {
-			preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePreDeployComponent, sg, appCfg, awData)
+		if !dg.flw.PlanOnly {
+			preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, &comp, app.ActionWorkflowTriggerTypePreDeployComponent)
 			if err != nil {
 				return nil, err
 			}
@@ -190,48 +284,72 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 		}
 
 		// sync image
-		if comp.Type.IsImage() && !flw.PlanOnly {
-			deployStep, err := sg.installSignalStep(ctx, installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
+		if comp.Type.IsImage() && !dg.flw.PlanOnly {
+			// Resolve the build to push using the global "latest active
+			// build for this component" heuristic. This does NOT enforce
+			// per-AppConfig-version pinning — a deploy of an install
+			// pinned to ACV vN may pick up a build created against vN+1
+			// or vN-1. Cross-ACV correctness is a deferred fix.
+			latestBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, comp.ID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to resolve latest active build for image component %s", comp.Name)
+			}
+			if latestBuild == nil {
+				return nil, errors.Errorf("no active build for image component %s (build still in-flight?)", comp.Name)
+			}
+			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
 				InstallComponentID: installComponentID,
 				ComponentID:        comp.ID,
-				Role:               flw.Role,
-			}, flw.PlanOnly)
+				BuildID:            latestBuild.ID,
+				Role:               dg.flw.Role,
+			}, dg.flw.PlanOnly)
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
 
 			steps = append(steps, deployStep)
 		} else {
-			if flw.PlanOnly && comp.Type == app.ComponentTypeExternalImage || comp.Type == app.ComponentTypeDockerBuild {
+			if dg.flw.PlanOnly && comp.Type == app.ComponentTypeExternalImage || comp.Type == app.ComponentTypeDockerBuild {
 				continue
 			}
 
-			planStep, err := sg.installSignalStep(ctx, installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
+			// Resolve the build to deploy using the global heuristic.
+			// Same caveat as the image-sync branch above — cross-ACV
+			// build leakage is possible.
+			latestBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, comp.ID)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to resolve latest active build for component %s", comp.Name)
+			}
+			if latestBuild == nil {
+				return nil, errors.Errorf("no active build for component %s (build still in-flight?)", comp.Name)
+			}
+			planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 				InstallComponentID: installComponentID,
-				InstallID:          installID,
+				InstallID:          dg.installID,
 				ComponentID:        comp.ID,
-				Role:               flw.Role,
-			}, flw.PlanOnly, WithSkippable(false))
+				BuildID:            latestBuild.ID,
+				Role:               dg.flw.Role,
+			}, dg.flw.PlanOnly, WithSkippable(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
 
-			applyPlanStep, err := sg.installSignalStep(ctx, installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
+			applyPlanStep, err := dg.sg.installSignalStep(ctx, dg.installID, "apply "+comp.Name, pgtype.Hstore{}, &componentdeployapplyplan.Signal{
 				InstallComponentID: installComponentID,
-				InstallID:          installID,
+				InstallID:          dg.installID,
 				ComponentID:        comp.ID,
-			}, flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(appCfg, comp.ID)))
+			}, dg.flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(dg.appCfg, comp.ID)))
 			if err != nil {
 				return nil, errors.Wrap(err, "unable to create image sync")
 			}
-			if flw.PlanOnly {
+			if dg.flw.PlanOnly {
 				steps = append(steps, planStep)
 			} else {
 				steps = append(steps, planStep, applyPlanStep)
 			}
 		}
-		if !flw.PlanOnly {
-			postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, flw, &comp, installID, app.ActionWorkflowTriggerTypePostDeployComponent, sg, appCfg, awData)
+		if !dg.flw.PlanOnly {
+			postDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, &comp, app.ActionWorkflowTriggerTypePostDeployComponent)
 			if err != nil {
 				return nil, err
 			}
@@ -242,9 +360,156 @@ func getComponentDeploySteps(ctx workflow.Context, installID string, flw *app.Wo
 	return steps, nil
 }
 
-func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workflow, sg *stepGroup, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) ([]*app.WorkflowStep, error) {
+// getImageDepSyncSteps returns image-dep sync steps to prepend before the
+// non-image parent component identified by parentCompID at parentIdx in
+// componentIDs. It walks the parent's pinned dependencies (from the AppConfig
+// snapshot), filters to image-typed deps, and emits a componentsyncimage
+// signal for each image dep whose latest Active ComponentBuild — for the
+// install's pinned app config version — differs from the build currently
+// deployed on the install.
+//
+// Why the lookup is pinned to the install's app config version:
+//
+// Each ComponentConfigConnection (ccc) is the per-app-config-version snapshot
+// of a component's config and is what owns that component's builds. When an
+// app config is re-synced, fresh ccc rows are created for every component;
+// builds that happen later are tied to the new ccc, not the old. The dep-sync
+// decision must therefore use the ccc that belongs to the consumer's pinned
+// app config version. Asking for "latest active build for component X" across
+// every ccc (i.e. across every app config version) over-syncs into installs
+// pinned to an older app config and conceptually decouples the dep from the
+// consumer's snapshot.
+//
+// The returned steps are added to a single step group ordered before the
+// parent's group: the function calls sg.nextGroup() lazily on the first
+// emitted step so that no empty group is left behind when no dep needs
+// syncing.
+//
+// Dedup rules:
+//   - skip image deps already handled earlier in this workflow (dg.addedImageDepSyncs)
+//   - skip image deps that already appear earlier in componentIDs (their
+//     normal per-component sync step will run earlier in the workflow)
+//
+// Quiet skip rules (no error returned, no step emitted):
+//   - dep is not present in the loaded app config
+//   - dep is not an image-typed component
+//   - dep has no ccc in the install's pinned app config snapshot (the app
+//     config doesn't include this dep at all)
+//   - install component for the dep does not exist (nothing to sync against)
+//   - dep has no Active ComponentBuild yet for the pinned ccc
+//   - dep's currently deployed ComponentBuildID matches the latest Active
+//     build for the pinned ccc (nothing to do)
+func getImageDepSyncSteps(
+	ctx workflow.Context,
+	dg *genCtx,
+	parentCompID string,
+	parentIdx int,
+	componentIDIdx map[string]int,
+) ([]*app.WorkflowStep, error) {
+	depIDs := dg.depIDsByComp[parentCompID]
+	if len(depIDs) == 0 {
+		return nil, nil
+	}
+
+	steps := make([]*app.WorkflowStep, 0)
+	groupStarted := false
+
+	for _, depID := range depIDs {
+		if _, already := dg.addedImageDepSyncs[depID]; already {
+			continue
+		}
+
+		// Skip if the dep is being deployed earlier in this same batch:
+		// its normal per-component image-sync step will run before the
+		// parent's group anyway, and adding another would double-sync.
+		if depIdx, in := componentIDIdx[depID]; in && depIdx < parentIdx {
+			continue
+		}
+
+		dep, has := dg.components[depID]
+		if !has {
+			// Dep is not part of this app config snapshot — nothing to do.
+			continue
+		}
+		if !dep.Type.IsImage() {
+			continue
+		}
+
+		// Membership check only: skip deps that aren't part of this app
+		// config snapshot. We don't use the CCC for build resolution —
+		// see note below on cross-ACV leakage.
+		if depCCC, hasCCC := dg.cccByComp[depID]; !hasCCC || depCCC == nil {
+			continue
+		}
+
+		// Resolve the dep's latest Active build via the global heuristic
+		// (most recent Active build for this component across all CCCs).
+		// This can leak a build from a newer/older AppConfig version into
+		// the sync decision — cross-ACV correctness is a deferred fix.
+		// Skip silently when no Active build exists yet — the next deploy
+		// attempt will pick it up once the build lands.
+		latestActive, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, depID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to resolve latest active build for image dep %s", depID)
+		}
+		if latestActive == nil {
+			continue
+		}
+
+		depInstallComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
+			InstallID:   dg.installID,
+			ComponentID: depID,
+		})
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to get install component for image dep %s", depID)
+		}
+		if depInstallComp == nil {
+			// No install component record yet for this dep — there is no
+			// runner-side state to sync against. The normal install
+			// bootstrapping flow is responsible for creating it; skip
+			// silently here.
+			continue
+		}
+
+		// AwaitGetInstallComponent preloads the most recent InstallDeploy
+		// (any type, ORDER BY created_at DESC LIMIT 1). For image
+		// components every install_deploy is a sync-image, so the most
+		// recent deploy is the currently-synced build. When the deployed
+		// build matches the app-config-version-pinned latest Active
+		// build, no sync is needed.
+		var deployedBuildID string
+		if len(depInstallComp.InstallDeploys) > 0 {
+			deployedBuildID = depInstallComp.InstallDeploys[0].ComponentBuildID
+		}
+		if deployedBuildID == latestActive.ID {
+			continue
+		}
+
+		if !groupStarted {
+			dg.sg.nextGroup()
+			groupStarted = true
+		}
+
+		step, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+dep.Name+" (dep)", pgtype.Hstore{}, &componentsyncimage.Signal{
+			InstallComponentID: depInstallComp.ID,
+			ComponentID:        dep.ID,
+			BuildID:            latestActive.ID,
+			Role:               dg.flw.Role,
+		}, dg.flw.PlanOnly)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create dep image sync for %s", depID)
+		}
+
+		steps = append(steps, step)
+		dg.addedImageDepSyncs[depID] = struct{}{}
+	}
+
+	return steps, nil
+}
+
+func deployAllComponents(ctx workflow.Context, dg *genCtx) ([]*app.WorkflowStep, error) {
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
-		InstallID: installID,
+		InstallID: dg.installID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install graph")
@@ -252,32 +517,32 @@ func deployAllComponents(ctx workflow.Context, installID string, flw *app.Workfl
 
 	steps := make([]*app.WorkflowStep, 0)
 
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
-		InstallID: installID,
-	}, flw.PlanOnly)
+	step, err := dg.sg.installSignalStep(ctx, dg.installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+		InstallID: dg.installID,
+	}, dg.flw.PlanOnly)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, step)
 
 	var lifecycleSteps []*app.WorkflowStep
-	if !flw.PlanOnly {
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeployAllComponents, sg, appCfg, awData)
+	if !dg.flw.PlanOnly {
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreDeployAllComponents)
 		if err != nil {
 			return nil, err
 		}
 		steps = append(steps, lifecycleSteps...)
 	}
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, componentIDs, sg, appCfg, awData)
+	deploySteps, err := getComponentDeploySteps(ctx, dg, componentIDs)
 	if err != nil {
 		return nil, err
 	}
 	steps = append(steps, deploySteps...)
-	if !flw.PlanOnly {
+	if !dg.flw.PlanOnly {
 		// Yield after processing all component deploy steps to avoid deadlock detection (TMPRL1101).
 		_ = workflow.Sleep(ctx, time.Millisecond)
 
-		lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeployAllComponents, sg, appCfg, awData)
+		lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostDeployAllComponents)
 		if err != nil {
 			return nil, err
 		}
