@@ -4143,6 +4143,12 @@ export interface components {
       install_workflow_id?: string;
       runbook_config?: components["schemas"]["app.RunbookConfig"];
       runbook_config_id?: string;
+      runbook_inputs?: {
+        [key: string]: string;
+      };
+      runbook_inputs_redacted?: {
+        [key: string]: string;
+      };
       status?: string;
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
@@ -4805,9 +4811,25 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      inputs?: components["schemas"]["app.RunbookInput"][];
       readme?: string;
       runbook_id?: string;
       steps?: components["schemas"]["app.RunbookStepConfig"][];
+      updated_at?: string;
+    };
+    "app.RunbookInput": {
+      created_at?: string;
+      created_by_id?: string;
+      default?: string;
+      description?: string;
+      display_name?: string;
+      id?: string;
+      idx?: number;
+      name?: string;
+      required?: boolean;
+      runbook_config_id?: string;
+      sensitive?: boolean;
+      type?: string;
       updated_at?: string;
     };
     "app.RunbookStepConfig": {
@@ -6951,8 +6973,18 @@ export interface components {
     };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
+      inputs?: components["schemas"]["service.CreateRunbookInputRequest"][];
       readme?: string;
       steps: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
+    };
+    "service.CreateRunbookInputRequest": {
+      default?: string;
+      description?: string;
+      display_name?: string;
+      name: string;
+      required?: boolean;
+      sensitive?: boolean;
+      type?: string;
     };
     "service.CreateRunbookRequest": {
       description?: string;
@@ -6960,6 +6992,11 @@ export interface components {
         [key: string]: string;
       };
       name: string;
+    };
+    "service.CreateRunbookRunRequest": {
+      inputs?: {
+        [key: string]: string;
+      };
     };
     "service.CreateRunbookStepConfigRequest": {
       action_name?: string;
@@ -21289,6 +21326,12 @@ export interface operations {
         install_id: string;
         /** @description runbook ID or name */
         runbook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRunbookRunRequest"];
       };
     };
     responses: {

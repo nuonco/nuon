@@ -44,7 +44,8 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	}
 
 	rbConfig, err := activities.AwaitGetRunbookConfigByID(ctx, activities.GetRunbookConfigByIDRequest{
-		RunbookConfigID: generics.FromPtrStr(runbookConfigID),
+		RunbookConfigID:   generics.FromPtrStr(runbookConfigID),
+		InstallWorkflowID: flw.ID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get runbook config")

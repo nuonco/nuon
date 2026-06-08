@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
@@ -43,6 +44,9 @@ type InstallRunbookRun struct {
 
 	RunbookConfigID string        `json:"runbook_config_id,omitzero" temporaljson:"runbook_config_id,omitzero,omitempty"`
 	RunbookConfig   RunbookConfig `json:"runbook_config,omitzero" temporaljson:"runbook_config,omitzero,omitempty"`
+
+	RunbookInputs         pgtype.Hstore `json:"runbook_inputs,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"runbook_inputs,omitzero,omitempty"`
+	RunbookInputsRedacted pgtype.Hstore `json:"runbook_inputs_redacted,omitzero" gorm:"type:hstore;->;-:migration" swaggertype:"object,string" temporaljson:"runbook_inputs_redacted,omitzero,omitempty"`
 
 	Status            InstallRunbookRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                  `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
