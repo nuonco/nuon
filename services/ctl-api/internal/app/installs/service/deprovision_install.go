@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -69,10 +70,9 @@ func (s *service) DeprovisionInstall(ctx *gin.Context) {
 		return
 	}
 
-	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusDeprovisioning))
-	lifecycleStatus.StatusHumanDescription = "Install is being deprovisioned"
+	lp := lifecyclephase.New(lifecyclephase.Deprovisioning, "Tearing down components and cloud resources")
 	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
-		"lifecycle_status": lifecycleStatus,
+		"lifecycle_phase": lp,
 	})
 
 	queueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)

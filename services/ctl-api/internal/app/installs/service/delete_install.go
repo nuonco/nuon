@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	forgotten "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/forgotten"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -48,10 +49,9 @@ func (s *service) DeleteInstall(ctx *gin.Context) {
 		return
 	}
 
-	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusDeprovisioning))
-	lifecycleStatus.StatusHumanDescription = "Install is being deprovisioned"
+	lp := lifecyclephase.New(lifecyclephase.Deprovisioning, "Tearing down components and cloud resources")
 	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
-		"lifecycle_status": lifecycleStatus,
+		"lifecycle_phase": lp,
 	})
 
 	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)

@@ -116,5 +116,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "110-canonicalize-runbook-step-deploy-type",
 			Fn:   m.Migration110CanonicalizeRunbookStepDeployType,
 		},
+		{
+			Name: "111-backfill-lifecycle-phase",
+			Fn:   m.Migration111BackfillLifecyclePhase,
+		},
 	}
 }
