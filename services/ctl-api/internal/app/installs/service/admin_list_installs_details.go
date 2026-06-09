@@ -58,6 +58,8 @@ func (s *service) listInstallsDetails(ctx *gin.Context, statuses []string) ([]*A
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("AppRunnerConfig").
+		Preload("RunnerGroup").
+		Preload("RunnerGroup.Runners").
 		Joins("JOIN apps ON apps.id = " + installView + ".app_id AND apps.deleted_at = 0").
 		Joins("JOIN orgs ON orgs.id = apps.org_id AND orgs.deleted_at = 0").
 		Order(views.TableOrViewName(s.db, &app.Install{}, ".created_at DESC"))
