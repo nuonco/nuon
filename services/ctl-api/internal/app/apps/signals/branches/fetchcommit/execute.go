@@ -68,17 +68,26 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Update step metadata with commit details for the UI
 	if s.StepID != "" {
+		meta := map[string]any{
+			"commit_sha":     vcsCommit.SHA,
+			"commit_message": vcsCommit.Message,
+			"author_name":    vcsCommit.AuthorName,
+			"author_email":   vcsCommit.AuthorEmail,
+		}
+		if cfg.ConnectedGithubVCSConfig != nil {
+			meta["repo"] = cfg.ConnectedGithubVCSConfig.Repo
+			meta["branch"] = cfg.ConnectedGithubVCSConfig.Branch
+		}
+		if cfg.PublicGitVCSConfig != nil {
+			meta["repo"] = cfg.PublicGitVCSConfig.Repo
+			meta["branch"] = cfg.PublicGitVCSConfig.Branch
+		}
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.StepID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusSuccess,
 				StatusHumanDescription: fmt.Sprintf("fetched commit %s", vcsCommit.SHA[:8]),
-				Metadata: map[string]any{
-					"commit_sha":     vcsCommit.SHA,
-					"commit_message": vcsCommit.Message,
-					"author_name":    vcsCommit.AuthorName,
-					"author_email":   vcsCommit.AuthorEmail,
-				},
+				Metadata:               meta,
 			},
 		})
 	}

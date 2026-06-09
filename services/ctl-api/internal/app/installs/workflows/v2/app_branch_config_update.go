@@ -20,6 +20,7 @@ import (
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	newAppConfigID := generics.FromPtrStr(flw.Metadata["new_app_config_id"])
+	installConfigUpdateID := generics.FromPtrStr(flw.Metadata["install_config_update_id"])
 
 	if newAppConfigID == "" {
 		return nil, errors.New("new_app_config_id not found in workflow metadata")
@@ -36,8 +37,9 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	// Step 1: Compute config diff between current and new app config
 	sg.nextGroupEager()
 	step, err := sg.installSignalStep(ctx, installID, "config diff", pgtype.Hstore{}, &installconfigdiff.Signal{
-		InstallID:      installID,
-		NewAppConfigID: newAppConfigID,
+		InstallID:             installID,
+		NewAppConfigID:        newAppConfigID,
+		InstallConfigUpdateID: installConfigUpdateID,
 	}, flw.PlanOnly, WithSkippable(false))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create config diff step")

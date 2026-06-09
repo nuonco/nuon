@@ -547,6 +547,13 @@ export interface paths {
      */
     post: operations["BuildAppConfig"];
   };
+  "/v1/apps/{app_id}/configs/{config_id}/diff": {
+    /**
+     * diff two app configs
+     * @description Compares a new app config against an old one and returns a hierarchical diff.
+     */
+    get: operations["GetAppConfigDiff"];
+  };
   "/v1/apps/{app_id}/configs/{config_id}/graph": {
     /**
      * get an app config graph
@@ -1367,6 +1374,13 @@ export interface paths {
      * @description Returns recent workflow runs for an install action workflow.
      */
     get: operations["GetInstallActionRecentRuns"];
+  };
+  "/v1/installs/{install_id}/app-config-updates": {
+    /**
+     * trigger an app config update for an install
+     * @description Creates a workflow to diff and deploy a new app config to an install.
+     */
+    post: operations["CreateInstallAppConfigUpdate"];
   };
   "/v1/installs/{install_id}/app-permissions-config": {
     /** get app permissions config for an install with provisioning status */
@@ -4047,6 +4061,24 @@ export interface components {
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
     };
+    "app.InstallConfigUpdate": {
+      app_branch_run_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      /** @description Diff stores the serialized config diff result. */
+      diff?: components["schemas"]["blobstore.Blob"];
+      id?: string;
+      install_group_id?: string;
+      install_id?: string;
+      new_app_config_id?: string;
+      old_app_config_id?: string;
+      org_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      /** @description WorkflowID links to the install workflow that performs the actual diff and deploy. */
+      workflow_id?: string;
+    };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
       /** @description AppliedAt is set when the apply runner job completes successfully. */
@@ -5739,6 +5771,24 @@ export interface components {
       secret_access_key: string;
       session_token: string;
     };
+    "diff.Diff": {
+      children?: components["schemas"]["diff.Diff"][];
+      diff?: components["schemas"]["diff.DiffKey"];
+      key?: string;
+    };
+    "diff.DiffKey": {
+      diff?: string;
+      op?: components["schemas"]["diff.Op"];
+    };
+    "diff.DiffSummary": {
+      added?: number;
+      changed?: number;
+      has_changed?: boolean;
+      removed?: number;
+      unchanged?: number;
+    };
+    /** @enum {string} */
+    "diff.Op": "add" | "remove" | "change" | "noop" | "";
     "generics.NullTime": {
       time?: string;
       /** @description Valid is true if Time is not NULL */
@@ -6431,6 +6481,13 @@ export interface components {
       permissions_boundary?: string;
       policies?: components["schemas"]["service.AppAWSIAMPolicyConfig"][];
     };
+    "service.AppConfigDiffResponse": {
+      changed?: string;
+      config_id?: string;
+      diff?: components["schemas"]["diff.Diff"];
+      old_config_id?: string;
+      summary?: components["schemas"]["diff.DiffSummary"];
+    };
     "service.AppConfigTemplate": {
       content?: string;
       filename?: string;
@@ -6877,6 +6934,10 @@ export interface components {
       run_env_vars?: {
         [key: string]: string;
       };
+    };
+    "service.CreateInstallAppConfigUpdateRequest": {
+      app_config_id: string;
+      plan_only?: boolean;
     };
     "service.CreateInstallComponentDeployRequest": {
       build_id?: string;
@@ -12266,6 +12327,62 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.Workflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * diff two app configs
+   * @description Compares a new app config against an old one and returns a hierarchical diff.
+   */
+  GetAppConfigDiff: {
+    parameters: {
+      query?: {
+        /** @description previous config ID to compare against */
+        old_config_id?: string;
+      };
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description new config ID */
+        config_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppConfigDiffResponse"];
         };
       };
       /** @description Bad Request */
@@ -18366,6 +18483,62 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallActionWorkflow"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * trigger an app config update for an install
+   * @description Creates a workflow to diff and deploy a new app config to an install.
+   */
+  CreateInstallAppConfigUpdate: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateInstallAppConfigUpdateRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfigUpdate"];
         };
       };
       /** @description Bad Request */

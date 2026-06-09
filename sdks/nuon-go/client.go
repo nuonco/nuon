@@ -49,6 +49,12 @@ type Client interface {
 	// app branch methods
 	GetAppBranches(ctx context.Context, appID string) ([]*models.AppAppBranch, error)
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
+	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)
+	UpdateAppBranch(ctx context.Context, appID, appBranchID string, req *models.ServiceUpdateAppBranchRequest) (*models.AppAppBranch, error)
+	CreateAppBranchConfig(ctx context.Context, appID, appBranchID string, req *models.ServiceCreateAppBranchConfigRequest) (*models.AppAppBranchConfig, error)
+	GetAppBranchLatestConfig(ctx context.Context, appID, appBranchID string) (*models.AppAppBranchConfig, error)
+	TriggerAppBranchRun(ctx context.Context, appID, appBranchID string, req *models.ServiceTriggerAppBranchRunRequest) (*models.AppAppBranchRun, error)
+	GetAppBranchRuns(ctx context.Context, appID, appBranchID string) ([]*models.AppWorkflow, error)
 
 	// app sandbox config methods
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)

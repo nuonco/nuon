@@ -6,7 +6,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -176,6 +178,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		closeLogStream()
 		return fmt.Errorf("unable to update run with app config ID: %w", err)
+	}
+
+	// Update step metadata with config info for the UI
+	if s.StepID != "" {
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.StepID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusSuccess,
+				StatusHumanDescription: fmt.Sprintf("synced %d components, %d actions", len(syncResp.ComponentIDs), len(syncResp.ActionIDs)),
+				Metadata: map[string]any{
+					"app_config_id":   syncResp.AppConfigID,
+					"component_count": len(syncResp.ComponentIDs),
+					"action_count":    len(syncResp.ActionIDs),
+				},
+			},
+		})
 	}
 
 	closeLogStream()

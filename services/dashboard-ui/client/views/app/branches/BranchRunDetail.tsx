@@ -2,8 +2,6 @@ import { useParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
-import { Card } from '@/components/common/Card'
-import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
@@ -71,15 +69,11 @@ const BranchRunDetailContent = () => {
     },
   })
 
-  // Filter out build sub-steps (owner_type "components") — their status
-  // is tracked via the parent builds step's metadata instead.
   const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
 
   useEffect(() => {
     if (steps.length > 0 && !selectedStep) {
-      const inProgressStep = steps.find(
-        (step) => step.status?.status === 'in-progress'
-      )
+      const inProgressStep = steps.find((step) => step.status?.status === 'in-progress')
       setSelectedStep(inProgressStep || steps[0])
     }
   }, [steps, selectedStep])
@@ -96,11 +90,10 @@ const BranchRunDetailContent = () => {
 
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
-  const branchRun = (run as any)?.app_branch_runs?.[0]
-  const commit = branchRun?.vcs_connection_commit
+  const isActive = ['pending', 'queued', 'in-progress'].includes(status)
 
   return (
-    <PageSection className="max-w-full">
+    <PageSection className="max-w-full space-y-4">
       <PageTitle title={`Run | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
@@ -112,49 +105,77 @@ const BranchRunDetailContent = () => {
           { path: `/${org?.id}/apps/${app?.id}/branches/${branchId}/runs/${runId}`, text: 'Run' },
         ]}
       />
-      <div className="flex items-start justify-between">
-        <HeadingGroup>
-          <Text variant="h3" weight="strong">
-            Workflow run
-          </Text>
-          <ID>{runId}</ID>
-          <div className="flex items-center gap-3 mt-2">
+
+      {/* ── Page header ── */}
+      <div className="flex items-start justify-between gap-4">
+        {/* Left: title + run id + status */}
+        <div className="flex flex-col gap-1.5 min-w-0">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-[22px] font-semibold text-cool-grey-900 dark:text-white leading-tight">
+              Workflow run
+            </h1>
+            {branch?.name && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-cool-grey-300 dark:border-dark-grey-600 bg-cool-grey-50 dark:bg-dark-grey-800 font-mono text-[12px] text-cool-grey-600 dark:text-cool-grey-300 shrink-0">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="text-cool-grey-400 dark:text-cool-grey-500">
+                  <path d="M5 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="currentColor" fillOpacity=".6" />
+                  <path d="M5 7v2M5 9a4 4 0 0 0 4 4h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+                {branch.name}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <ID className="text-[12px] font-mono text-cool-grey-400 dark:text-cool-grey-500">{runId}</ID>
+          </div>
+
+          <div className="flex items-center gap-2 mt-0.5">
             <Badge theme={statusTheme(status)} size="sm">
+              {status === 'in-progress' && (
+                <svg className="animate-spin w-3 h-3 shrink-0" viewBox="0 0 12 12" fill="none">
+                  <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" />
+                  <path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              )}
               {status}
             </Badge>
             {statusDescription && (
-              <Text variant="subtext" theme="neutral">
-                {statusDescription}
-              </Text>
+              <Text variant="subtext" theme="neutral">{statusDescription}</Text>
             )}
           </div>
-        </HeadingGroup>
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex flex-col items-end gap-1">
-            <Text variant="subtext" theme="neutral">
-              Created <Time time={run.created_at} format="relative" />
-            </Text>
+        </div>
+
+        {/* Right: timestamps + actions */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="flex flex-col items-end gap-0.5">
+            <div className="flex items-center gap-1.5">
+              <Text variant="subtext" theme="neutral">Created</Text>
+              <Time time={run.created_at} format="relative" variant="subtext" />
+            </div>
             {run.started_at && (
-              <Text variant="subtext" theme="neutral">
-                Started <Time time={run.started_at} format="relative" />
-              </Text>
+              <div className="flex items-center gap-1.5">
+                <Text variant="subtext" theme="neutral">Started</Text>
+                <Time time={run.started_at} format="relative" variant="subtext" />
+              </div>
             )}
             {run.finished_at && (
-              <Text variant="subtext" theme="neutral">
-                Finished <Time time={run.finished_at} format="relative" />
-              </Text>
+              <div className="flex items-center gap-1.5">
+                <Text variant="subtext" theme="neutral">Finished</Text>
+                <Time time={run.finished_at} format="relative" variant="subtext" />
+              </div>
             )}
           </div>
+
           <div className="flex items-center gap-2">
-            <AdminDashboardLink path={`/workflows/${runId}`} label="View in admin" />
-            {['pending', 'queued', 'in-progress'].includes(status) && (
+            <AdminDashboardLink path={`/workflows/${runId}`} label="admin" />
+            {isActive && (
               <Button
                 variant="danger"
                 size="sm"
                 onClick={() => cancel()}
                 disabled={isCancelling}
               >
-                <Icon variant="XCircleIcon" size={16} />
+                <Icon variant="XCircleIcon" size={15} />
                 {isCancelling ? 'Cancelling...' : 'Cancel run'}
               </Button>
             )}
@@ -162,56 +183,37 @@ const BranchRunDetailContent = () => {
         </div>
       </div>
 
-      {commit && (
-        <div className="flex items-start gap-3 p-4 bg-cool-grey-50 dark:bg-dark-grey-850 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
-          <Icon variant="GitCommitIcon" size={20} className="text-cool-grey-500 dark:text-dark-grey-300 mt-0.5 shrink-0" />
-          <div className="min-w-0">
-            <Text variant="base" weight="strong" className="truncate">
-              {commit.message?.split('\n')[0] || 'No message'}
-            </Text>
-            <div className="flex items-center gap-3 mt-1">
-              <Text variant="subtext" theme="neutral" family="mono">
-                {commit.sha?.substring(0, 8)}
-              </Text>
-              {commit.author_name && (
-                <Text variant="subtext" theme="neutral">
-                  by {commit.author_name}
-                </Text>
-              )}
-              {branchRun?.event_type && (
-                <Badge theme="neutral" size="sm">
-                  {branchRun.event_type}
-                </Badge>
-              )}
-            </div>
-          </div>
+      {/* ── Workflow progress card ── */}
+      <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-cool-grey-100 dark:border-dark-grey-800">
+          <Text variant="h3" weight="strong">
+            Workflow progress
+          </Text>
+          <Text variant="subtext" theme="neutral" className="cursor-pointer hover:underline">
+            Jump to a step
+          </Text>
         </div>
-      )}
-
-      <Card>
-        <div className="p-6 min-w-0">
-          <div className="flex items-center justify-between mb-4">
-            <Text variant="h3" weight="strong">
-              Workflow progress
-            </Text>
-            <Text variant="subtext" theme="neutral">
-              Scroll horizontally or use trackpad to navigate
-            </Text>
-          </div>
-
+        <div className="px-4 pb-4">
           <WorkflowStepsPipeline
             steps={steps}
             selectedStepId={selectedStep?.id}
             onSelectStep={setSelectedStep}
           />
         </div>
-      </Card>
+      </div>
 
+      {/* ── Step detail card ── */}
       {selectedStep && (
-        <WorkflowStepDetail
-          step={selectedStep}
-          onClose={() => setSelectedStep(null)}
-        />
+        <>
+          <div className="flex items-baseline gap-3 mt-2">
+            <Text variant="h3" weight="strong">Step details</Text>
+            <Text variant="subtext" theme="neutral">{selectedStep.name}</Text>
+          </div>
+          <WorkflowStepDetail
+            step={selectedStep}
+            onClose={() => setSelectedStep(null)}
+          />
+        </>
       )}
     </PageSection>
   )

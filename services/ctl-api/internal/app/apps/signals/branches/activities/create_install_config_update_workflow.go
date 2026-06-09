@@ -33,11 +33,25 @@ func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, inpu
 		return nil, fmt.Errorf("unable to get install: %w", err)
 	}
 
+	// Create the InstallConfigUpdate tracking record first so we can reference its ID in metadata.
+	update := app.InstallConfigUpdate{
+		AppBranchRunID: input.AppBranchRunID,
+		InstallGroupID: input.InstallGroupID,
+		InstallID:      input.InstallID,
+		OldAppConfigID: install.AppConfigID,
+		NewAppConfigID: input.NewAppConfigID,
+		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
+	}
+	if err := a.db.WithContext(ctx).Create(&update).Error; err != nil {
+		return nil, fmt.Errorf("unable to create install config update: %w", err)
+	}
+
 	// Create the install workflow via install helpers (handles approval config, metadata, etc.)
 	metadata := map[string]string{
-		"new_app_config_id": input.NewAppConfigID,
-		"app_branch_run_id": input.AppBranchRunID,
-		"install_group_id":  input.InstallGroupID,
+		"new_app_config_id":        input.NewAppConfigID,
+		"app_branch_run_id":        input.AppBranchRunID,
+		"install_group_id":         input.InstallGroupID,
+		"install_config_update_id": update.ID,
 	}
 
 	wf, err := a.installHelpers.CreateWorkflow(
@@ -51,18 +65,11 @@ func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, inpu
 		return nil, fmt.Errorf("unable to create install config update workflow: %w", err)
 	}
 
-	// Create the InstallConfigUpdate tracking record
-	update := app.InstallConfigUpdate{
-		AppBranchRunID: input.AppBranchRunID,
-		InstallGroupID: input.InstallGroupID,
-		InstallID:      input.InstallID,
-		OldAppConfigID: install.AppConfigID,
-		NewAppConfigID: input.NewAppConfigID,
-		WorkflowID:     &wf.ID,
-		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
-	}
-	if err := a.db.WithContext(ctx).Create(&update).Error; err != nil {
-		return nil, fmt.Errorf("unable to create install config update: %w", err)
+	// Link the workflow to the update record.
+	if err := a.db.WithContext(ctx).
+		Model(&update).
+		Update("workflow_id", wf.ID).Error; err != nil {
+		return nil, fmt.Errorf("unable to link workflow to install config update: %w", err)
 	}
 
 	// Enqueue the workflow for execution on the install's queue.

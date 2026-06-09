@@ -17,14 +17,14 @@ type Diffable interface {
 }
 
 type DiffKey struct {
-	Op   Op
-	Diff string
+	Op   Op     `json:"op"`
+	Diff string `json:"diff"`
 }
 
 type Diff struct {
-	Key      string
-	Diff     *DiffKey
-	Children []*Diff
+	Key      string   `json:"key"`
+	Diff     *DiffKey `json:"diff,omitempty"`
+	Children []*Diff  `json:"children,omitempty"`
 }
 
 // String returns the full diff tree with +/-/~ prefixes indicating
@@ -94,11 +94,11 @@ func opPrefix(op Op) string {
 }
 
 type DiffSummary struct {
-	HasChanged bool
-	Added      int
-	Removed    int
-	Changed    int
-	Unchanged  int
+	HasChanged bool `json:"has_changed"`
+	Added      int  `json:"added"`
+	Removed    int  `json:"removed"`
+	Changed    int  `json:"changed"`
+	Unchanged  int  `json:"unchanged"`
 }
 
 func (d *Diff) Summary() DiffSummary {

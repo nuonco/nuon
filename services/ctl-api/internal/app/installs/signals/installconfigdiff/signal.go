@@ -14,8 +14,9 @@ import (
 const SignalType signal.SignalType = "install-config-diff"
 
 type Signal struct {
-	InstallID      string `json:"install_id" validate:"required"`
-	NewAppConfigID string `json:"new_app_config_id" validate:"required"`
+	InstallID             string `json:"install_id" validate:"required"`
+	NewAppConfigID        string `json:"new_app_config_id" validate:"required"`
+	InstallConfigUpdateID string `json:"install_config_update_id,omitempty"`
 
 	// FlowID and StepID are injected by the flow engine via SignalWithStepContext.
 	FlowID string `json:"flow_id,omitempty"`
@@ -164,14 +165,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"unchanged", len(diff.Unchanged),
 	)
 
-	// Serialize diff for logging; will be stored on InstallConfigUpdate.Diff
-	// once we wire the blob store integration.
+	// Serialize and persist the diff.
 	diffJSON, err := json.Marshal(diff)
 	if err != nil {
 		return fmt.Errorf("unable to marshal diff: %w", err)
 	}
 
-	_ = diffJSON // TODO: store on InstallConfigUpdate.Diff blob
+	// Save the diff blob on the InstallConfigUpdate record if we have the ID.
+	if s.InstallConfigUpdateID != "" {
+		if err := activities.AwaitSaveInstallConfigUpdateDiff(ctx, &activities.SaveInstallConfigUpdateDiffInput{
+			InstallConfigUpdateID: s.InstallConfigUpdateID,
+			DiffJSON:              string(diffJSON),
+		}); err != nil {
+			l.Warn("unable to save config diff blob", "error", err)
+		}
+	}
 
 	return nil
 }

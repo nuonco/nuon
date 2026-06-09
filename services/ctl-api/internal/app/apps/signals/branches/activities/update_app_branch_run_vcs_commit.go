@@ -25,7 +25,7 @@ func (a *Activities) updateAppBranchRunVCSCommit(ctx context.Context, runID, vcs
 		Where("id = ?", runID).
 		Updates(map[string]interface{}{
 			"vcs_connection_commit_id": vcsCommitID,
-			"commit_sha":              commit.SHA,
+			"commit_sha":               commit.SHA,
 		})
 
 	if res.Error != nil {
