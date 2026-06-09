@@ -7,7 +7,24 @@
   )
 
 SELECT
-	irr.*
+	irr.*,
+	(
+		SELECT
+			hstore(
+				array_agg(ri.name),
+				array_agg(
+					CASE
+						WHEN ri.sensitive IS TRUE THEN '********'
+						ELSE irr.runbook_inputs -> ri.name :: text
+					END
+				)
+			)
+		FROM
+			runbook_inputs ri
+		WHERE
+			ri.runbook_config_id = irr.runbook_config_id
+			AND ri.deleted_at = 0
+	) AS runbook_inputs_redacted
 FROM
 	install_runbook_runs_with_row irr
 WHERE

@@ -60,6 +60,9 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("idx ASC")
 		}).
+		Preload("Configs.Inputs", func(tx2 *gorm.DB) *gorm.DB {
+			return tx2.Order("idx ASC")
+		}).
 		Where(app.Runbook{OrgID: org.ID, AppID: appID})
 
 	if q != "" {

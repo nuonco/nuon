@@ -35,6 +35,9 @@ type AppRunbookConfig struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// inputs
+	Inputs []*AppRunbookInput `json:"inputs"`
+
 	// readme
 	Readme string `json:"readme,omitempty"`
 
@@ -52,6 +55,10 @@ type AppRunbookConfig struct {
 func (m *AppRunbookConfig) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateInputs(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateSteps(formats); err != nil {
 		res = append(res, err)
 	}
@@ -59,6 +66,36 @@ func (m *AppRunbookConfig) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunbookConfig) validateInputs(formats strfmt.Registry) error {
+	if swag.IsZero(m.Inputs) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.Inputs); i++ {
+		if swag.IsZero(m.Inputs[i]) { // not required
+			continue
+		}
+
+		if m.Inputs[i] != nil {
+			if err := m.Inputs[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -96,6 +133,10 @@ func (m *AppRunbookConfig) validateSteps(formats strfmt.Registry) error {
 func (m *AppRunbookConfig) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateInputs(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSteps(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -103,6 +144,35 @@ func (m *AppRunbookConfig) ContextValidate(ctx context.Context, formats strfmt.R
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppRunbookConfig) contextValidateInputs(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.Inputs); i++ {
+
+		if m.Inputs[i] != nil {
+
+			if swag.IsZero(m.Inputs[i]) { // not required
+				return nil
+			}
+
+			if err := m.Inputs[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("inputs" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
