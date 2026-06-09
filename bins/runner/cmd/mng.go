@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/shutdownbeacon"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -44,6 +45,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 	providers := []fx.Option{fx.Provide(log.NewSystem)}
 	providers = append(c.commonProviders(), providers...)
 	providers = append(providers, management.GetJobs()...)
+	providers = append(providers, fx.Provide(shutdownbeacon.New))
 	// add mng and heartbeater to the mng process
 	providers = append(providers,
 		[]fx.Option{
@@ -58,6 +60,7 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			fx.Invoke(func(*heartbeater.HeartBeater) {}),
 			fx.Invoke(func(*process.Registrar) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
+			fx.Invoke(func(*shutdownbeacon.Beacon) {}),
 		}...,
 	)
 	// run
