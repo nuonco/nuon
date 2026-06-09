@@ -202,7 +202,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if install.AwsAccount != nil {
 				region = install.AwsAccount.Region
 			}
-			status := install.Status
+			status := install.RunnerStatus
 
 			rows = append(rows, table.Row{
 				install.ID,

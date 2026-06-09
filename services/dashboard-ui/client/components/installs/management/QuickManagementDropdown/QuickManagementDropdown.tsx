@@ -7,6 +7,7 @@ import { Text } from '@/components/common/Text'
 import { InstallProvider } from '@/providers/install-provider'
 import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TInstall } from '@/types'
+import { EditLabelsButton } from '../EditLabels'
 import { EditInputsButton } from '../EditInputs'
 import { ViewCurrentInputsButton } from '../ViewCurrentInputs'
 import { EnableAutoApproveButton } from '../EnableAutoApprove'
@@ -30,6 +31,7 @@ const QuickManagementMenu = ({ orgId, installId }: IQuickManagementMenu) => {
       <Text variant="label" theme="neutral">
         Settings
       </Text>
+      <EditLabelsButton isMenuButton />
       <EditInputsButton isMenuButton />
       <ViewCurrentInputsButton isMenuButton />
       <Button href={`/${orgId}/installs/${installId}/state`} isMenuButton>
