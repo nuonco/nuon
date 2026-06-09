@@ -45,6 +45,9 @@ type Notebook struct {
 
 	Cells []NotebookCell `json:"cells,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"cells,omitzero,omitempty"`
 
+	CellCount   int        `json:"cell_count" gorm:"-" temporaljson:"cell_count,omitzero,omitempty"`
+	LatestRunAt *time.Time `json:"latest_run_at,omitzero" gorm:"-" temporaljson:"latest_run_at,omitzero,omitempty"`
+
 	// Queue owns the lifecycle of the notebook's warm Temporal workflow: a
 	// notebook-start signal enqueued at create time starts NotebookWorkflow,
 	// and the queue can re-dispatch it for recovery. Cell runs still dispatch
