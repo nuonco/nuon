@@ -2,6 +2,7 @@ package apisyncer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
@@ -73,6 +74,23 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 			EnvVars:              step.EnvVarMap,
 			Timeout:              timeout.Nanoseconds(),
 			Role:                 step.Role,
+		})
+	}
+
+	for _, input := range runbook.Inputs {
+		var defaultVal string
+		if input.Default != nil {
+			defaultVal = fmt.Sprintf("%v", input.Default)
+		}
+
+		request.Inputs = append(request.Inputs, &models.ServiceCreateRunbookInputRequest{
+			Name:        generics.ToPtr(input.Name),
+			DisplayName: input.DisplayName,
+			Description: input.Description,
+			Default:     defaultVal,
+			Required:    input.Required,
+			Sensitive:   input.Sensitive,
+			Type:        input.Type,
 		})
 	}
 

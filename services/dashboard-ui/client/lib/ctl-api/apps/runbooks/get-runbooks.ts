@@ -33,7 +33,20 @@ export type TRunbookConfig = {
   app_config_id?: string
   readme?: string
   steps?: TRunbookStep[]
+  inputs?: TRunbookInput[]
   created_at?: string
+}
+
+export type TRunbookInput = {
+  id: string
+  name: string
+  display_name?: string
+  description?: string
+  default?: string
+  required?: boolean
+  sensitive?: boolean
+  type?: string
+  idx?: number
 }
 
 export type TRunbookStep = {
