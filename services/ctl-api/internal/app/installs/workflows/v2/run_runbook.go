@@ -66,8 +66,9 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		}
 	}
 
-	var runbookSteps []app.RunbookStepConfig
+	runbookSteps := rbConfig.Steps
 	if len(disabledSteps) > 0 {
+		runbookSteps = make([]app.RunbookStepConfig, 0, len(rbConfig.Steps))
 		for _, stepCfg := range rbConfig.Steps {
 			if _, off := disabledSteps[stepCfg.ID]; off {
 				continue
