@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/appconfigupdated"
@@ -93,10 +94,9 @@ func (s *service) CreateInstallV2(ctx *gin.Context) {
 		return
 	}
 
-	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusProvisioning))
-	lifecycleStatus.StatusHumanDescription = "Install is being provisioned"
+	lp := lifecyclephase.New(lifecyclephase.Provisioning, "Setting up runner and sandbox resources")
 	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
-		"lifecycle_status": lifecycleStatus,
+		"lifecycle_phase": lp,
 	})
 
 	// Send signals via queues
@@ -225,10 +225,9 @@ func (s *service) CreateInstall(ctx *gin.Context) {
 		return
 	}
 
-	lifecycleStatus := app.NewCompositeStatus(ctx, app.Status(app.InstallLifecycleStatusProvisioning))
-	lifecycleStatus.StatusHumanDescription = "Install is being provisioned"
+	lp2 := lifecyclephase.New(lifecyclephase.Provisioning, "Setting up runner and sandbox resources")
 	s.db.WithContext(ctx).Model(&app.Install{ID: install.ID}).Updates(map[string]any{
-		"lifecycle_status": lifecycleStatus,
+		"lifecycle_phase": lp2,
 	})
 
 	// Send signals via queues
