@@ -17,6 +17,17 @@ type CreateRunbookConfigRequest struct {
 	AppConfigID *string                           `json:"app_config_id"`
 	Readme      string                            `json:"readme"`
 	Steps       []*CreateRunbookStepConfigRequest `json:"steps" validate:"required"`
+	Inputs      []*CreateRunbookInputRequest      `json:"inputs,omitempty"`
+}
+
+type CreateRunbookInputRequest struct {
+	Name        string `json:"name" validate:"required"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description"`
+	Default     string `json:"default,omitempty"`
+	Required    bool   `json:"required,omitempty"`
+	Sensitive   bool   `json:"sensitive,omitempty"`
+	Type        string `json:"type,omitempty"`
 }
 
 type CreateRunbookStepConfigRequest struct {
@@ -142,6 +153,21 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		steps = append(steps, stepCfg)
 	}
 
+	inputs := make([]app.RunbookInput, 0, len(req.Inputs))
+	for idx, inputReq := range req.Inputs {
+		inputType := generics.ValOrDefault(inputReq.Type, "string")
+		inputs = append(inputs, app.RunbookInput{
+			Idx:         idx,
+			Name:        inputReq.Name,
+			DisplayName: inputReq.DisplayName,
+			Description: inputReq.Description,
+			Default:     inputReq.Default,
+			Required:    inputReq.Required,
+			Sensitive:   inputReq.Sensitive,
+			Type:        app.RunbookInputType(inputType),
+		})
+	}
+
 	rbcfg := app.RunbookConfig{
 		OrgID:       org.ID,
 		AppID:       runbook.AppID,
@@ -149,6 +175,7 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		RunbookID:   runbook.ID,
 		Readme:      req.Readme,
 		Steps:       steps,
+		Inputs:      inputs,
 	}
 
 	res := s.db.WithContext(ctx).Create(&rbcfg)
