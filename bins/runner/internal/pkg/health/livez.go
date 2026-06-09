@@ -45,7 +45,10 @@ func New(params Params) (*Server, error) {
 	s := &Server{
 		l: params.L,
 		srv: &http.Server{
-			Addr:              fmt.Sprintf(":%d", params.Cfg.HealthPort),
+			// Bind to loopback only: the Azure VMSS Application Health
+			// extension runs inside the guest and probes 127.0.0.1, so the
+			// endpoint never needs to be reachable off-host.
+			Addr:              fmt.Sprintf("127.0.0.1:%d", params.Cfg.HealthPort),
 			Handler:           mux,
 			ReadHeaderTimeout: 5 * time.Second,
 		},
