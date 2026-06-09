@@ -14,26 +14,15 @@ func (c *client) GetAllComponents(ctx context.Context, query *models.GetPaginate
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetOrgComponents(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetOrgComponentsReader{})
+	resp, err := c.genClient.Operations.GetOrgComponents(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetAppComponents(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppComponent, bool, error) {
@@ -42,26 +31,15 @@ func (c *client) GetAppComponents(ctx context.Context, appID string, query *mode
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetAppComponents(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetAppComponentsReader{})
+	resp, err := c.genClient.Operations.GetAppComponents(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetAppComponent(ctx context.Context, appID, nameOrID string) (*models.AppComponent, error) {
@@ -225,26 +203,15 @@ func (c *client) GetComponentConfigs(ctx context.Context, componentID string, qu
 		Context:     ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetComponentConfigs(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetComponentConfigsReader{})
+	resp, err := c.genClient.Operations.GetComponentConfigs(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, fmt.Errorf("unable to get component configs: %w", err)
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetComponentLatestConfig(ctx context.Context, componentID string) (*models.AppComponentConfigConnection, error) {

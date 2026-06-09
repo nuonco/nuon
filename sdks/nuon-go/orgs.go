@@ -23,30 +23,20 @@ func (c *client) GetOrgs(ctx context.Context, query *models.GetPaginatedQuery) (
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-		if query.Q != "" {
-			q := query.Q
-			params.Q = &q
-		}
+	if query != nil && query.Q != "" {
+		q := query.Q
+		params.Q = &q
 	}
 
-	resp, err := c.genClient.Operations.GetOrgs(params, c.getApiKeyAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetOrgsReader{})
+	resp, err := c.genClient.Operations.GetOrgs(params, c.getApiKeyAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) DeleteOrg(ctx context.Context) (bool, error) {

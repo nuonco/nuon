@@ -14,26 +14,15 @@ func (c *client) GetInstallDeploys(ctx context.Context, installID string, query 
 		Context:   ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetInstallDeploys(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetInstallDeploysReader{})
+	resp, err := c.genClient.Operations.GetInstallDeploys(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) CreateInstallDeploy(ctx context.Context, installID string, req *models.ServiceCreateInstallDeployRequest) (*models.AppInstallDeploy, error) {
