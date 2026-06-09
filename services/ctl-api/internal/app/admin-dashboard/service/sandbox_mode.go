@@ -200,6 +200,7 @@ type upsertRunnerJobConfigRequest struct {
 	DurationMs          int64  `json:"duration_ms"`
 	SleepDurationMs     int64  `json:"sleep_duration_ms"`
 	ShouldError         bool   `json:"should_error"`
+	ErrorMessage        string `json:"error_message"`
 	Panic               bool   `json:"panic"`
 	TriggerShutdown     bool   `json:"trigger_shutdown"`
 	LogTemplate         string `json:"log_template"`
@@ -226,6 +227,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 		Duration:            time.Duration(req.DurationMs) * time.Millisecond,
 		SleepDuration:       time.Duration(req.SleepDurationMs) * time.Millisecond,
 		ShouldError:         req.ShouldError,
+		ErrorMessage:        req.ErrorMessage,
 		Panic:               req.Panic,
 		TriggerShutdown:     req.TriggerShutdown,
 		LogTemplate:         req.LogTemplate,
@@ -238,7 +240,7 @@ func (s *service) SandboxModeUpsertRunnerJobConfig(c *gin.Context) {
 	if res := s.db.WithContext(c.Request.Context()).
 		Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "job_type"}, {Name: "operation"}, {Name: "deleted_at"}},
-			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "panic", "trigger_shutdown", "log_template", "plan_template", "plan_display_template", "state_template", "output_template", "updated_at"}),
+			DoUpdates: clause.AssignmentColumns([]string{"enabled", "duration", "sleep_duration", "should_error", "error_message", "panic", "trigger_shutdown", "log_template", "plan_template", "plan_display_template", "state_template", "output_template", "updated_at"}),
 		}).
 		Create(&config); res.Error != nil {
 		s.l.Error("failed to upsert runner job config", zap.Error(res.Error))
