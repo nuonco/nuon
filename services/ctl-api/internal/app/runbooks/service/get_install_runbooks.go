@@ -57,6 +57,9 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
+		Preload("Runbook.Configs.Inputs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
