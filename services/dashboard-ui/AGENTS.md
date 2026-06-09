@@ -155,7 +155,7 @@ export const DeployDetail = () => (
 - Add `isScrollable` to any component — it's ignored (kept for backwards compat only)
 - Create `CONTAINER_ID` constants or pass `id` props to scroll containers
 - Import or render `<BackToTop />` in view files — PageLayout handles it
-- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
+- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead. (This rule is PageSection-specific: `Card` has no padding prop, so overriding it with paired values like `!p-4 !gap-4` is fine — always change padding and gap together so the spacing rhythm stays consistent.)
 
 ### Mobile Sidebar
 
@@ -460,6 +460,29 @@ Browse Phosphor icons at https://phosphoricons.com. Custom icons for cloud provi
 
 A dev-mode console warning will tell you when a variant is missing from the map.
 
+### Links & Navigation
+
+**Never import `Link` from `react-router` directly.** Use the common components instead:
+
+- For inline text links: `Link` from `@/components/common/Link` (uses `href`, not `to`)
+- For navigation buttons (icon buttons, ghost nav actions): `Button` with `href` and `variant="ghost"`
+
+```tsx
+// ✅ Correct — text link
+import { Link } from '@/components/common/Link'
+<Link href={`/${org.id}/connections/vcs/${id}`}>View</Link>
+
+// ✅ Correct — nav button
+import { Button } from '@/components/common/Button'
+<Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
+  <Icon variant="ArrowRightIcon" size={16} />
+</Button>
+
+// ❌ Wrong
+import { Link } from 'react-router'
+<Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
+```
+
 ### Admin Tool Links
 
 **Never create ad-hoc links to admin tooling (admin dashboard, Temporal UI).** Always use the dedicated components in `client/components/admin/`. These components handle auth checks and demo mode internally — they render nothing for non-admin users, so consumers don't need any conditional logic.
@@ -648,6 +671,10 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 - Create the modal instance before passing to `addModal`: `const modal = <MyModal />` then `addModal(modal)`
 - Close modals on success via `removeModal(props.modalId)`
 
+## Design & Visual Conventions
+
+**See [DESIGN.md](./DESIGN.md) for the design system guide** — Stratus tokens (colors, type, motion), spacing rhythm, anti-slop rules, interaction patterns, accessibility baseline, and the Figma link. Read it before doing visual work. That doc owns visual/design guidance; this file owns code conventions; [COPY_STYLE.md](./COPY_STYLE.md) owns user-facing copy.
+
 ## Text & Copy Style
 
 **See [COPY_STYLE.md](./COPY_STYLE.md) for the full copy style guide** — voice, tone, patterns for every UI context (buttons, modals, empty states, errors, toasts, forms), and a word list. Read it before writing any user-facing text.
@@ -719,7 +746,7 @@ The hook uses `getStatusTheme()` from `client/utils/status-utils.ts` to determin
 
 **Use the existing components for rendering:**
 
-- **`<Time>`** (`client/components/common/Time.tsx`) — Renders timestamps. Supports `format="relative"` (e.g., "2 hours ago" with tooltip), `"short-datetime"`, `"long-datetime"`, `"time-only"`, `"log-datetime"`.
+- **`<Time>`** (`client/components/common/Time.tsx`) — Renders timestamps. Supports `format="relative"` (e.g., "2 hours ago" with tooltip), `"short-datetime"`, `"long-datetime"`, `"time-only"`, `"log-datetime"`. Add `shouldTick` to auto-update a relative timestamp every 30s (opt-in, off by default).
 - **`<Duration>`** (`client/components/common/Duration.tsx`) — Renders durations between two times. Pass `beginTime` and optionally `endTime` (defaults to now). Supports `durationUnits`, `unitDisplay`, and `format` props.
 
 ```tsx
