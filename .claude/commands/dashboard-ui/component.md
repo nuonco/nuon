@@ -79,10 +79,12 @@ export const Default = () => <ModalStory><MyModal data={mock} /></ModalStory>
 
 ## Text & Copy Style
 
-Use sentence case for all UI text (headings, buttons, labels, tab labels). Never title case. See AGENTS.md for details.
+All user-facing text follows `services/dashboard-ui/COPY_STYLE.md` — read it before writing copy. Quick rules: sentence case everywhere (never title case), buttons are verb + object, "[thing] failed" error headings, no exclamation marks / "please" / "successfully".
 
 - ✅ "Create your org" / "Connect a cloud account"
 - ❌ "Create Your Org" / "Connect A Cloud Account"
+
+For visual decisions (tokens, spacing, borders, dark mode), follow `services/dashboard-ui/DESIGN.md` — no raw hex colors, off-scale spacing, or custom border colors/widths.
 
 For `Tabs`: keys are rendered via `toSentenceCase(camelToWords(key))` which lowercases everything after the first character — always write keys all-lowercase (`'create your own app'`, not `'Create Your Own App'`).
 
