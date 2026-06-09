@@ -16,6 +16,7 @@ title: 'Runbook'
 | **`description`**<br/>string | - | **Optional** | - |
 | **`readme`**<br/>string | readme file for the runbook Markdown file with runbook documentation and instructions. Supports Go templating and external file sources: HTTP(S) URLs, git repositories, file paths, and relative paths | **Optional** | `"./release-notes.md"` |
 | **`labels`**<br/>object | - | **Optional** | - |
+| **`input`**<br/>[array](#input) | - | **Optional** | - |
 | **`dependencies`**<br/>array | - | **Optional** | - |
 
 ### `steps`
@@ -35,4 +36,16 @@ title: 'Runbook'
 | **`env_vars`**<br/>object | environment variables for inline action steps Map of environment variables passed to the inline action command | **Optional** | - |
 | **`timeout`**<br/>string | timeout for inline action steps Maximum execution time for inline action steps. Must be a valid Go duration string | **Optional** | `"30s"`, `"5m"` |
 | **`role`**<br/>string | IAM role for inline action execution IAM role name to use when executing the inline action step | **Optional** | - |
+
+### `input`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`display_name`**<br/>string | - | **✅ Required** | - |
+| **`description`**<br/>string | - | **✅ Required** | - |
+| **`name`**<br/>string | - | **Optional** | - |
+| **`default`**<br/>object | - | **Optional** | - |
+| **`required`**<br/>boolean | - | **Optional** | - |
+| **`sensitive`**<br/>boolean | - | **Optional** | - |
+| **`type`**<br/>string | - | **Optional** | - |
 

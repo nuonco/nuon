@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 // NewCreateRunbookRunParams creates a new CreateRunbookRunParams object,
@@ -66,6 +68,12 @@ type CreateRunbookRunParams struct {
 	   install ID
 	*/
 	InstallID string
+
+	/* Req.
+
+	   Input
+	*/
+	Req *models.ServiceCreateRunbookRunRequest
 
 	/* RunbookID.
 
@@ -137,6 +145,17 @@ func (o *CreateRunbookRunParams) SetInstallID(installID string) {
 	o.InstallID = installID
 }
 
+// WithReq adds the req to the create runbook run params
+func (o *CreateRunbookRunParams) WithReq(req *models.ServiceCreateRunbookRunRequest) *CreateRunbookRunParams {
+	o.SetReq(req)
+	return o
+}
+
+// SetReq adds the req to the create runbook run params
+func (o *CreateRunbookRunParams) SetReq(req *models.ServiceCreateRunbookRunRequest) {
+	o.Req = req
+}
+
 // WithRunbookID adds the runbookID to the create runbook run params
 func (o *CreateRunbookRunParams) WithRunbookID(runbookID string) *CreateRunbookRunParams {
 	o.SetRunbookID(runbookID)
@@ -159,6 +178,11 @@ func (o *CreateRunbookRunParams) WriteToRequest(r runtime.ClientRequest, reg str
 	// path param install_id
 	if err := r.SetPathParam("install_id", o.InstallID); err != nil {
 		return err
+	}
+	if o.Req != nil {
+		if err := r.SetBodyParam(o.Req); err != nil {
+			return err
+		}
 	}
 
 	// path param runbook_id
