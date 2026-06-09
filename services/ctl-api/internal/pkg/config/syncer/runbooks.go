@@ -117,12 +117,33 @@ func (s *syncer) syncRunbook(ctx context.Context, runbook *config.RunbookConfig)
 		steps = append(steps, stepCfg)
 	}
 
+	inputs := make([]app.RunbookInput, 0, len(runbook.Inputs))
+	for idx, input := range runbook.Inputs {
+		var defaultVal string
+		if input.Default != nil {
+			defaultVal = fmt.Sprintf("%v", input.Default)
+		}
+		inputType := generics.ValOrDefault(input.Type, "string")
+
+		inputs = append(inputs, app.RunbookInput{
+			Idx:         idx,
+			Name:        input.Name,
+			DisplayName: input.DisplayName,
+			Description: input.Description,
+			Default:     defaultVal,
+			Required:    input.Required,
+			Sensitive:   input.Sensitive,
+			Type:        app.RunbookInputType(inputType),
+		})
+	}
+
 	rbc := app.RunbookConfig{
 		AppConfigID: s.appConfigID,
 		RunbookID:   rbk.ID,
 		AppID:       s.appID,
 		Readme:      runbook.Readme,
 		Steps:       steps,
+		Inputs:      inputs,
 	}
 
 	res := s.db.WithContext(ctx).Create(&rbc)

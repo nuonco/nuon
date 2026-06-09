@@ -51,6 +51,9 @@ func (s *service) GetRunbookConfigs(ctx *gin.Context) {
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
+		Preload("Inputs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
 		Where(app.RunbookConfig{OrgID: org.ID, RunbookID: runbookID}).
 		Order("created_at DESC").
 		Find(&configs)

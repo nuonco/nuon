@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -31,12 +32,13 @@ type RunbookConfig struct {
 	Readme      string               `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
 	Labels      map[string]string    `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	Steps       []*RunbookStepConfig `mapstructure:"steps" toml:"steps" jsonschema:"required"`
+	Inputs      []RunbookInput       `mapstructure:"input,omitempty" toml:"input"`
 
 	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
 	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 
 	// DeprecationWarnings collects messages about legacy field usage observed during parse().
-	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the user.
+	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the
 	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
 }
 
@@ -81,6 +83,8 @@ func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./release-notes.md").
 		Field("steps").Short("ordered steps to execute in the runbook").Required().
 		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions")
+	// Field("input").Short("inputs collected when the runbook is run").
+	// Long("List of inputs prompted for when running the runbook. Values are templated into step fields (command, inline_contents, env_vars, role) via {{.runbook_inputs.input_name}}")
 }
 
 func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -150,6 +154,24 @@ func (r *RunbookConfig) parse() error {
 		if step.Type == RunbookStepTypeDeployLegacy {
 			step.Type = RunbookStepTypeComponentDeploy
 			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: type 'deploy' is deprecated, use 'component_deploy' instead", r.Name, step.Name))
+		}
+	}
+
+	for _, input := range r.Inputs {
+		if input.Type == "json" && input.Default != nil {
+			str, ok := input.Default.(string)
+			if !ok {
+				return ErrConfig{
+					Description: fmt.Sprintf("runbook %q input %q default value must be a json string", r.Name, input.Name),
+					Err:         fmt.Errorf("input %s default value must be a json string", input.Name),
+				}
+			}
+			if !json.Valid([]byte(str)) {
+				return ErrConfig{
+					Description: fmt.Sprintf("runbook %q input %q has an invalid JSON string default", r.Name, input.Name),
+					Err:         fmt.Errorf("input %s default value is not valid JSON", input.Name),
+				}
+			}
 		}
 	}
 
