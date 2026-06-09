@@ -32,6 +32,8 @@ type SandboxModeJobConfig struct {
 	Panic           bool `json:"panic"`
 	TriggerShutdown bool `json:"trigger_shutdown"`
 
+	ErrorMessage string `json:"error_message,omitempty" gorm:"default:''"`
+
 	// Template references (keys into the templates package)
 	LogTemplate         string `json:"log_template,omitempty"`
 	PlanTemplate        string `json:"plan_template,omitempty"`
