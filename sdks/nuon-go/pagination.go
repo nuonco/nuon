@@ -4,30 +4,27 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func handlePagination[T any](items []T, offset, limit int64) ([]T, bool) {
-	hasMore := false
+const pageNextHeader = "X-Nuon-Page-Next"
 
-	if limit == 0 {
-		limit = 10
+// applyPaginationQuery returns the offset/limit pointers for a paginated
+// request. The server over-fetches by one internally and reports whether more
+// pages exist via the X-Nuon-Page-Next header (see hasNextPage), so the client
+// sends the caller's limit unchanged — adding one here would exceed the API's
+// maximum allowed limit of 100.
+func applyPaginationQuery(query *models.GetPaginatedQuery) (offset, limit *int64) {
+	if query == nil {
+		return nil, nil
 	}
 
-	limit--
-
-	if len(items) > int(limit) {
-		items = items[:len(items)-1]
-		hasMore = true
+	l := int64(query.Limit)
+	if l == 0 {
+		l = 10
 	}
-
-	return items, hasMore
+	o := int64(query.Offset)
+	return &o, &l
 }
 
-// handlePaginationQuery use to adjust query parameters for pagination.
-func handlePaginationQuery(query *models.GetPaginatedQuery) *models.GetPaginatedQuery {
-	if query != nil {
-		// increase by one so we can determine if there are more items
-		query.Limit += 1
-		return query
-	}
-
-	return nil
+// hasNextPage reports whether the server indicated more results are available.
+func hasNextPage(hr *responseHeaderReader) bool {
+	return hr.GetHeader(pageNextHeader) == "true"
 }
