@@ -38,23 +38,18 @@ func (c *client) GetInstallWorkflows(ctx context.Context, installID string, quer
 	if limit == 0 {
 		limit = 10
 	}
-	l := int64(limit + 1)
+	l := int64(limit)
 	o := int64(offset)
 	params.Limit = &l
 	params.Offset = &o
 
-	resp, err := c.genClient.Operations.GetWorkflows(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetWorkflowsReader{})
+	resp, err := c.genClient.Operations.GetWorkflows(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	hasMore := false
-	items := resp.Payload
-	if len(items) > limit {
-		items = items[:limit]
-		hasMore = true
-	}
-	return items, hasMore, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetWorkflows(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppWorkflow, bool, error) {
@@ -63,26 +58,15 @@ func (c *client) GetWorkflows(ctx context.Context, installID string, query *mode
 		Context:   ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetWorkflows(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetWorkflowsReader{})
+	resp, err := c.genClient.Operations.GetWorkflows(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetWorkflow(ctx context.Context, workflowID string) (*models.AppWorkflow, error) {
