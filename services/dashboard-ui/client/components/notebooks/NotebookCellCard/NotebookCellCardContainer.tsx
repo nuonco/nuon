@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
@@ -30,7 +31,18 @@ const DeleteCellModal = ({
   ...props
 }: IDeleteCellModal) => (
   <Modal
-    heading="Delete cell?"
+    heading={
+      <Text
+        flex
+        className="gap-4"
+        variant="h3"
+        weight="strong"
+        theme="error"
+      >
+        <Icon variant="TrashIcon" size="24" />
+        Delete cell?
+      </Text>
+    }
     primaryActionTrigger={{
       children: 'Delete cell',
       onClick: onConfirm,
@@ -189,7 +201,6 @@ export const NotebookCellCardContainer = ({
       isRunning={isRunning}
       isDeleting={isDeleting}
       runStatus={runStatus}
-      runStatusDescription={run_?.status_v2?.status_human_description}
       runCreatedAt={run_?.created_at}
       onNameChange={setName}
       onScriptChange={setScript}

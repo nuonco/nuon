@@ -21,6 +21,7 @@ import (
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
+	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -48,6 +49,7 @@ func testDomainServices(ea *api.EndpointAudit) []api.Service {
 		generalservice.New(generalservice.Params{EndpointAudit: ea}),
 		identityprovidersservice.New(identityprovidersservice.Params{}),
 		installsservice.New(installsservice.Params{EndpointAudit: ea}),
+		notebooksservice.New(notebooksservice.Params{EndpointAudit: ea}),
 		orgsservice.New(orgsservice.Params{EndpointAudit: ea}),
 		policyreportsservice.New(policyreportsservice.Params{EndpointAudit: ea}),
 		queuesservice.New(queuesservice.Params{}),
