@@ -13,26 +13,15 @@ func (c *client) GetActionWorkflows(ctx context.Context, appID string, query *mo
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetActionWorkflows(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetActionWorkflowsReader{})
+	resp, err := c.genClient.Operations.GetActionWorkflows(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 // deprecated
@@ -142,26 +131,15 @@ func (c *client) GetInstallActionWorkflows(ctx context.Context, installID string
 		Context:   ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetInstallActionWorkflows(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetInstallActionWorkflowsReader{})
+	resp, err := c.genClient.Operations.GetInstallActionWorkflows(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, installID, actionWorkflowID string, query *models.GetPaginatedQuery) (*models.AppInstallActionWorkflow, bool, error) {
@@ -171,27 +149,15 @@ func (c *client) GetInstallActionWorkflowRecentRuns(ctx context.Context, install
 		Context:          ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetInstallActionWorkflowRecentRuns(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetInstallActionWorkflowRecentRunsReader{})
+	resp, err := c.genClient.Operations.GetInstallActionWorkflowRecentRuns(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		runs, hasMore := handlePagination(resp.Payload.Runs, int64(query.Offset), int64(query.Limit))
-		resp.Payload.Runs = runs
-		return resp.Payload, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) CreateInstallActionWorkflowRun(ctx context.Context, installID string, req *models.ServiceCreateInstallActionWorkflowRunRequest) error {
