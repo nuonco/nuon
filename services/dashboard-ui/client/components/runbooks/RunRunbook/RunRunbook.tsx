@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
@@ -95,6 +95,7 @@ export const RunRunbookModal = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const formRef = useRef<HTMLFormElement>(null)
+  const [page, setPage] = useState<0 | 1>(0)
 
   const runbookName = installRunbook.runbook?.name ?? 'runbook'
   const runbookId = installRunbook.runbook_id ?? installRunbook.id
@@ -138,12 +139,29 @@ export const RunRunbookModal = ({
     },
   })
 
-  const handleRun = () => {
-    if (inputs.length === 0) {
-      mutate(undefined)
-      return
-    }
+  const hasInputs = inputs.length > 0
+  const onReview = !hasInputs || page === 1
 
+  const collectInputs = (): Record<string, string> => {
+    const form = formRef.current
+    if (!form) return {}
+    const formData = Object.fromEntries(new FormData(form))
+    return Object.keys(formData).reduce(
+      (acc, key) => {
+        if (key.startsWith('inputs:')) {
+          let value = formData[key] as string
+          if (value === 'on' || value === 'off') {
+            value = String(value === 'on')
+          }
+          acc[key.replace('inputs:', '')] = value
+        }
+        return acc
+      },
+      {} as Record<string, string>
+    )
+  }
+
+  const handleNext = () => {
     const form = formRef.current
     if (!form) return
 
@@ -157,28 +175,15 @@ export const RunRunbookModal = ({
       return
     }
 
-    const formData = Object.fromEntries(new FormData(form))
-    const values = Object.keys(formData).reduce(
-      (acc, key) => {
-        if (key.startsWith('inputs:')) {
-          let value = formData[key] as string
-          if (value === 'on' || value === 'off') {
-            value = String(value === 'on')
-          }
-          acc[key.replace('inputs:', '')] = value
-        }
-        return acc
-      },
-      {} as Record<string, string>
-    )
-
-    mutate({ inputs: values })
+    setPage(1)
   }
 
-  return (
-    <Modal
-      heading={`Run ${runbookName}?`}
-      primaryActionTrigger={{
+  const handleRun = () => {
+    mutate(hasInputs ? { inputs: collectInputs() } : undefined)
+  }
+
+  const primaryActionTrigger: IButtonAsButton = onReview
+    ? {
         children: isPending ? (
           <>
             <Icon variant="Loading" className="animate-spin" />
@@ -193,35 +198,65 @@ export const RunRunbookModal = ({
         disabled: isPending,
         onClick: handleRun,
         variant: 'primary',
-      }}
+      }
+    : {
+        children: 'Next',
+        onClick: handleNext,
+        variant: 'primary',
+      }
+
+  return (
+    <Modal
+      heading={`Run ${runbookName}${onReview ? '?' : ''}`}
+      primaryActionTrigger={primaryActionTrigger}
+      secondaryActionTrigger={
+        hasInputs && onReview
+          ? {
+              children: 'Back',
+              onClick: () => setPage(0),
+              disabled: isPending,
+              variant: 'secondary',
+            }
+          : undefined
+      }
       {...props}
     >
       <div className="flex flex-col gap-4">
-        <Text>
-          This will execute {steps.length} step{steps.length !== 1 ? 's' : ''} in
-          order:
-        </Text>
-        <ol className="flex flex-col gap-1">
-          {steps
-            .slice()
-            .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
-            .map((step, i) => (
-              <li key={step.id ?? i} className="flex items-center gap-2">
-                <Text as="span" variant="body">
-                  {i + 1}. {step.name}
-                </Text>
-                <Badge variant="code" size="sm" theme="neutral">
-                  {step.type}
-                </Badge>
-              </li>
-            ))}
-        </ol>
-        {inputs.length > 0 ? (
-          <form ref={formRef} className="flex flex-col gap-4">
+        {/* Inputs page — kept mounted (hidden on review) so form values persist. */}
+        {hasInputs ? (
+          <form
+            ref={formRef}
+            className={onReview ? 'hidden' : 'flex flex-col gap-4'}
+          >
+            <Text>Provide inputs for {runbookName}:</Text>
             {inputs.map((input) => (
               <RunbookInputField key={input.id ?? input.name} input={input} />
             ))}
           </form>
+        ) : null}
+
+        {onReview ? (
+          <>
+            <Text>
+              This will execute {steps.length} step
+              {steps.length !== 1 ? 's' : ''} in order:
+            </Text>
+            <ol className="flex flex-col gap-1">
+              {steps
+                .slice()
+                .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
+                .map((step, i) => (
+                  <li key={step.id ?? i} className="flex items-center gap-2">
+                    <Text as="span" variant="body">
+                      {i + 1}. {step.name}
+                    </Text>
+                    <Badge variant="code" size="sm" theme="neutral">
+                      {step.type}
+                    </Badge>
+                  </li>
+                ))}
+            </ol>
+          </>
         ) : null}
       </div>
     </Modal>
