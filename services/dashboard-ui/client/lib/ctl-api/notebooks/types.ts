@@ -51,6 +51,8 @@ export type TNotebook = {
   description?: string
   status?: TNotebookStatus
   cells?: TNotebookCell[]
+  cell_count?: number
+  latest_run_at?: string
 }
 
 export interface IInstallScoped {
