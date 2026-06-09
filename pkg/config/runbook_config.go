@@ -82,9 +82,9 @@ func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Markdown file with runbook documentation and instructions. Supports Go templating and external file sources: HTTP(S) URLs, git repositories, file paths, and relative paths").
 		Example("./release-notes.md").
 		Field("steps").Short("ordered steps to execute in the runbook").Required().
-		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions").
-		Field("input").Short("inputs collected when the runbook is run").
-		Long("List of inputs prompted for when running the runbook. Values are templated into step fields (command, inline_contents, env_vars, role) via {{.runbook_inputs.input_name}}")
+		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions")
+	// Field("input").Short("inputs collected when the runbook is run").
+	// Long("List of inputs prompted for when running the runbook. Values are templated into step fields (command, inline_contents, env_vars, role) via {{.runbook_inputs.input_name}}")
 }
 
 func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
