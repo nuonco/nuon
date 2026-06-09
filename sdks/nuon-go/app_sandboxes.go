@@ -38,27 +38,15 @@ func (c *client) GetAppSandboxConfigs(ctx context.Context, appID string, query *
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetAppSandboxConfigs(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetAppSandboxConfigsReader{})
+	resp, err := c.genClient.Operations.GetAppSandboxConfigs(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetAppSandboxBuilds(ctx context.Context, appID string, query *models.GetPaginatedQuery) ([]*models.AppAppSandboxBuild, bool, error) {
@@ -67,25 +55,13 @@ func (c *client) GetAppSandboxBuilds(ctx context.Context, appID string, query *m
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetAppSandboxBuilds(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetAppSandboxBuildsReader{})
+	resp, err := c.genClient.Operations.GetAppSandboxBuilds(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
