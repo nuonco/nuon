@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/nuonco/nuon/pkg/labels"
+	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -18,25 +19,18 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/links"
 )
 
-type InstallLifecycleStatus string
-
-const (
-	InstallLifecycleStatusProvisioning   InstallLifecycleStatus = "provisioning"
-	InstallLifecycleStatusProvisioned    InstallLifecycleStatus = "provisioned"
-	InstallLifecycleStatusDeprovisioning InstallLifecycleStatus = "deprovisioning"
-	InstallLifecycleStatusDeprovisioned  InstallLifecycleStatus = "deprovisioned"
-	InstallLifecycleStatusReprovisioning InstallLifecycleStatus = "reprovisioning"
-)
+// Deprecated: Use lifecyclephase.Phase constants directly.
+type InstallLifecycleStatus = lifecyclephase.Phase
 
 type Install struct {
-	ID              string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
-	CreatedByID     string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
-	CreatedBy       Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
-	CreatedAt       time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
-	UpdatedAt       time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt       soft_delete.DeletedAt `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
-	Metadata        pgtype.Hstore         `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
-	LifecycleStatus CompositeStatus       `json:"lifecycle_status,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_status,omitzero,omitempty"`
+	ID             string                        `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
+	CreatedByID    string                        `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
+	CreatedBy      Account                       `json:"-" temporaljson:"created_by,omitzero,omitempty"`
+	CreatedAt      time.Time                     `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
+	UpdatedAt      time.Time                     `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
+	DeletedAt      soft_delete.DeletedAt         `gorm:"index:idx_app_install_name,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	Metadata       pgtype.Hstore                 `json:"metadata,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"metadata,omitzero,omitempty"`
+	LifecyclePhase lifecyclephase.LifecyclePhase `json:"lifecycle_phase,omitzero" gorm:"type:jsonb" swaggertype:"object" temporaljson:"lifecycle_phase,omitzero,omitempty"`
 	labels.Labeled
 
 	// used for RLS
@@ -104,10 +98,6 @@ type Install struct {
 
 	// WorkflowID is populated by handlers that create a workflow. Not persisted.
 	WorkflowID *string `json:"workflow_id,omitempty" gorm:"-"`
-
-	// TODO(jm): deprecate these fields once the terraform provider has been updated
-	Status            string `json:"status,omitzero" gorm:"-" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string `json:"status_description,omitzero" gorm:"-" temporaljson:"status_description,omitzero,omitempty"`
 }
 
 func (i *Install) UseView() bool {
@@ -173,9 +163,6 @@ func (i *Install) AfterQuery(tx *gorm.DB) error {
 	// get the composite status of all the components
 	i.CompositeComponentStatus = compositeComponentStatus(i.ComponentStatuses)
 	i.CompositeComponentStatusDescription = compositeComponentStatusDescription(i.ComponentStatuses)
-
-	i.Status = "deprecated"
-	i.StatusDescription = "deprecated, please use individual runner, sandbox and component statuses instead"
 
 	// If sandbox mode not explicitly set on the install, inherit from org.
 	if !i.SandboxMode.Valid {
