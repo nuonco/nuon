@@ -19,26 +19,15 @@ func (c *client) GetInstallComponents(ctx context.Context, installID string, que
 		Context:   ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetInstallComponents(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetInstallComponentsReader{})
+	resp, err := c.genClient.Operations.GetInstallComponents(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetInstallComponentDeploys(ctx context.Context, installID string, componentID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error) {
@@ -48,26 +37,15 @@ func (c *client) GetInstallComponentDeploys(ctx context.Context, installID strin
 		Context:     ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetInstallComponentDeploys(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetInstallComponentDeploysReader{})
+	resp, err := c.genClient.Operations.GetInstallComponentDeploys(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetInstallComponentLatestDeploy(ctx context.Context, installID string, componentID string) (*models.AppInstallDeploy, error) {
