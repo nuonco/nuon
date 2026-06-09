@@ -3835,7 +3835,7 @@ export interface components {
       install_stack?: components["schemas"]["app.InstallStack"];
       install_states?: components["schemas"]["app.InstallState"][];
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
-      lifecycle_status?: Record<string, never>;
+      lifecycle_phase?: Record<string, never>;
       links?: {
         [key: string]: unknown;
       };
@@ -3852,9 +3852,6 @@ export interface components {
       sandbox_mode?: components["schemas"]["sql.NullBool"];
       sandbox_status?: string;
       sandbox_status_description?: string;
-      /** @description TODO(jm): deprecate these fields once the terraform provider has been updated */
-      status?: string;
-      status_description?: string;
       updated_at?: string;
       /** @description WorkflowID is populated by handlers that create a workflow. Not persisted. */
       workflow_id?: string;
