@@ -93,6 +93,14 @@ func (r *RunnerProcess) AfterQuery(tx *gorm.DB) error {
 		}
 	}
 
+	// External (customer-initiated) VM termination. The terminating beacon
+	// stamps termination_reason into the composite status metadata, which
+	// propagates forward across subsequent status transitions, so this
+	// indicator survives even after the process drops to offline/inactive.
+	if reason, ok := r.CompositeStatus.Metadata["termination_reason"].(string); ok && reason == "external" {
+		r.Labels = append(r.Labels, "Terminated by customer")
+	}
+
 	// Label local runners
 	if r.Version == "development" {
 		r.Labels = append(r.Labels, "Local Runner")
