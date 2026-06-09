@@ -378,6 +378,26 @@ internal/ui/v3/<feature>/
 └── selector/        # Sub-components if needed
 ```
 
+### Output format (`--output table|json|agent`)
+
+The global `--output` flag selects the output format (default `table`). `--json`/`-j` is a **deprecated** shorthand for
+`--output json` (still works, warns on use, removed in a future release). `resolveOutput` in `cmd/cli.go` resolves the
+format with precedence `--output` → `--json` → `NUON_OUTPUT` → `NUON_AGENT` → default, then sets `PrintJSON` and/or
+`internal/agentmode` accordingly.
+
+`agent` is the machine-friendly format for LLM/agent callers: it forces non-interactive and turns on
+`internal/agentmode`. When on, **stdout carries exactly one JSON envelope** and all progress/human output is routed to
+stderr:
+
+- Success: `{"ok":true,"data":<command output>}` — wraps whatever the command passes to `ui.PrintJSON`.
+- Error: `{"ok":false,"error":{"code":"<code>","message":"..."}}` with a non-zero exit. Codes come from
+  `classifyError` in `internal/ui/agent.go` (`not_found`, `unauthorized`, `forbidden`, `invalid_request`,
+  `server_error`, `user_error`, `api_error`, `error`).
+
+Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabled). Any new command output must go
+through `ui.PrintJSON` / `ui.PrintError` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass
+the envelope. `--output json` is unchanged from the old `--json` — raw output, no envelope.
+
 ### No-TTY / Non-Interactive Support
 
 The CLI supports non-interactive environments (CI, pipes, cron). All `tea.NewProgram` call sites check `cfg.Interactive`
