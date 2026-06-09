@@ -5,7 +5,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -62,6 +64,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		return fmt.Errorf("unable to update run with VCS commit: %w", err)
+	}
+
+	// Update step metadata with commit details for the UI
+	if s.StepID != "" {
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.StepID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusSuccess,
+				StatusHumanDescription: fmt.Sprintf("fetched commit %s", vcsCommit.SHA[:8]),
+				Metadata: map[string]any{
+					"commit_sha":     vcsCommit.SHA,
+					"commit_message": vcsCommit.Message,
+					"author_name":    vcsCommit.AuthorName,
+					"author_email":   vcsCommit.AuthorEmail,
+				},
+			},
+		})
 	}
 
 	logger.Info("successfully fetched and stored commit",

@@ -900,6 +900,8 @@ type ClientService interface {
 
 	WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error)
 
+	WriteWebhookEvent(params *WriteWebhookEventParams, opts ...ClientOption) (*WriteWebhookEventOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -19006,7 +19008,7 @@ func (a *Client) ValidateToken(params *ValidateTokenParams, authInfo runtime.Cli
 /*
 WriteVCSEvent writes a v c s webhook event
 
-Writes incoming webhook events for a VCS connection
+Writes incoming webhook events for a VCS connection (legacy endpoint)
 */
 func (a *Client) WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption) (*WriteVCSEventOK, error) {
 	// NOTE: parameters are not validated before sending
@@ -19045,6 +19047,51 @@ func (a *Client) WriteVCSEvent(params *WriteVCSEventParams, opts ...ClientOption
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for WriteVCSEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+WriteWebhookEvent writes a v c s webhook event shared per subscription
+
+Receives webhook events for a webhook subscription and creates a GithubEvent for processing
+*/
+func (a *Client) WriteWebhookEvent(params *WriteWebhookEventParams, opts ...ClientOption) (*WriteWebhookEventOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewWriteWebhookEventParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "WriteWebhookEvent",
+		Method:             "POST",
+		PathPattern:        "/v1/vcs/webhooks/{subscription_id}/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &WriteWebhookEventReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*WriteWebhookEventOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for WriteWebhookEvent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

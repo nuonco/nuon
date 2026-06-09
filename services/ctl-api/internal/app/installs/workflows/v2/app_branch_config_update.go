@@ -9,6 +9,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
@@ -32,6 +33,17 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
+	// Step 1: Compute config diff between current and new app config
+	sg.nextGroupEager()
+	step, err := sg.installSignalStep(ctx, installID, "config diff", pgtype.Hstore{}, &installconfigdiff.Signal{
+		InstallID:      installID,
+		NewAppConfigID: newAppConfigID,
+	}, flw.PlanOnly, WithSkippable(false))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to create config diff step")
+	}
+	steps = append(steps, step)
+
 	// Generate install state
 	sg.nextGroupEager()
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
@@ -52,7 +64,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	// Wait for runner healthy
 	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -95,7 +107,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 
 	// Deploy changed components
-	deploySteps, err := getComponentDeploySteps(ctx, installID, flw, deployComponentIDs, sg, newAppCfg, awData)
+	dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
+	deploySteps, err := getComponentDeploySteps(ctx, dg, deployComponentIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")
 	}

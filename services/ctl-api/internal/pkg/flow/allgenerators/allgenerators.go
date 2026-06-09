@@ -1,4 +1,11 @@
-package executeflow
+// Package allgenerators registers all workflow step generators into the
+// generateworkflowsteps registry. Import this package in any binary that
+// needs the full set of generators.
+//
+// This is intentionally separate from executeflow to avoid import cycles:
+// executeflow is imported by signal packages that are also referenced by
+// the workflow generator packages.
+package allgenerators
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"

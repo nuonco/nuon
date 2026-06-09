@@ -1,11 +1,15 @@
 import { useParams } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Toast } from '@/components/surfaces/Toast'
+import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -14,10 +18,11 @@ import { WorkflowStepDetail } from '@/components/branches/WorkflowStepDetail'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
+import { useToast } from '@/hooks/use-toast'
 import { BranchProvider } from '@/providers/branch-provider'
-import { getBranchWorkflowRun } from '@/lib'
+import { getBranchWorkflowRun, cancelWorkflow } from '@/lib'
 import { useEffect, useState } from 'react'
-import type { TInstallWorkflowStep } from '@/types'
+import type { TAPIError, TInstallWorkflowStep } from '@/types'
 
 function statusTheme(status?: string) {
   if (status === 'success') return 'success'
@@ -37,6 +42,9 @@ const BranchRunDetailContent = () => {
   const runId = params.runId as string
   const [selectedStep, setSelectedStep] = useState<TInstallWorkflowStep | null>(null)
 
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+
   const { data: run, isLoading } = useQuery({
     queryKey: ['branch-run', orgId, appId, branchId, runId],
     queryFn: () => getBranchWorkflowRun({ orgId, appId, branchId, runId }),
@@ -44,7 +52,28 @@ const BranchRunDetailContent = () => {
     refetchInterval: 5000,
   })
 
-  const steps = run?.steps || []
+  const { mutate: cancel, isPending: isCancelling } = useMutation({
+    mutationFn: () => cancelWorkflow({ orgId, workflowId: runId }),
+    onSuccess: () => {
+      addToast(
+        <Toast heading="Workflow cancelled" theme="success">
+          <Text>The workflow run has been cancelled.</Text>
+        </Toast>
+      )
+      queryClient.invalidateQueries({ queryKey: ['branch-run', orgId, appId, branchId, runId] })
+    },
+    onError: (err: TAPIError) => {
+      addToast(
+        <Toast heading="Cancel failed" theme="error">
+          <Text>{err?.error || 'Unable to cancel workflow.'}</Text>
+        </Toast>
+      )
+    },
+  })
+
+  // Filter out build sub-steps (owner_type "components") — their status
+  // is tracked via the parent builds step's metadata instead.
+  const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
 
   useEffect(() => {
     if (steps.length > 0 && !selectedStep) {
@@ -67,6 +96,8 @@ const BranchRunDetailContent = () => {
 
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
+  const branchRun = (run as any)?.app_branch_runs?.[0]
+  const commit = branchRun?.vcs_connection_commit
 
   return (
     <PageSection className="max-w-full">
@@ -98,22 +129,64 @@ const BranchRunDetailContent = () => {
             )}
           </div>
         </HeadingGroup>
-        <div className="flex flex-col items-end gap-1">
-          <Text variant="subtext" theme="neutral">
-            Created <Time time={run.created_at} format="relative" />
-          </Text>
-          {run.started_at && (
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col items-end gap-1">
             <Text variant="subtext" theme="neutral">
-              Started <Time time={run.started_at} format="relative" />
+              Created <Time time={run.created_at} format="relative" />
             </Text>
-          )}
-          {run.finished_at && (
-            <Text variant="subtext" theme="neutral">
-              Finished <Time time={run.finished_at} format="relative" />
-            </Text>
-          )}
+            {run.started_at && (
+              <Text variant="subtext" theme="neutral">
+                Started <Time time={run.started_at} format="relative" />
+              </Text>
+            )}
+            {run.finished_at && (
+              <Text variant="subtext" theme="neutral">
+                Finished <Time time={run.finished_at} format="relative" />
+              </Text>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <AdminDashboardLink path={`/workflows/${runId}`} label="View in admin" />
+            {['pending', 'queued', 'in-progress'].includes(status) && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => cancel()}
+                disabled={isCancelling}
+              >
+                <Icon variant="XCircleIcon" size={16} />
+                {isCancelling ? 'Cancelling...' : 'Cancel run'}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
+
+      {commit && (
+        <div className="flex items-start gap-3 p-4 bg-cool-grey-50 dark:bg-dark-grey-850 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
+          <Icon variant="GitCommitIcon" size={20} className="text-cool-grey-500 dark:text-dark-grey-300 mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <Text variant="base" weight="strong" className="truncate">
+              {commit.message?.split('\n')[0] || 'No message'}
+            </Text>
+            <div className="flex items-center gap-3 mt-1">
+              <Text variant="subtext" theme="neutral" family="mono">
+                {commit.sha?.substring(0, 8)}
+              </Text>
+              {commit.author_name && (
+                <Text variant="subtext" theme="neutral">
+                  by {commit.author_name}
+                </Text>
+              )}
+              {branchRun?.event_type && (
+                <Badge theme="neutral" size="sm">
+                  {branchRun.event_type}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card>
         <div className="p-6 min-w-0">

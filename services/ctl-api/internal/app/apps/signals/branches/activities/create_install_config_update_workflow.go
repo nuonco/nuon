@@ -5,14 +5,18 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 type CreateInstallConfigUpdateWorkflowInput struct {
-	InstallID      string `json:"install_id"`
-	NewAppConfigID string `json:"new_app_config_id"`
-	AppBranchRunID string `json:"app_branch_run_id"`
-	InstallGroupID string `json:"install_group_id"`
-	PlanOnly       bool   `json:"plan_only"`
+	InstallID      string       `json:"install_id"`
+	NewAppConfigID string       `json:"new_app_config_id"`
+	AppBranchRunID string       `json:"app_branch_run_id"`
+	InstallGroupID string       `json:"install_group_id"`
+	PlanOnly       bool         `json:"plan_only"`
+	Callback       callback.Ref `json:"callback,omitempty"`
 }
 
 type CreateInstallConfigUpdateWorkflowOutput struct {
@@ -36,7 +40,7 @@ func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, inpu
 		"install_group_id":  input.InstallGroupID,
 	}
 
-	workflow, err := a.installHelpers.CreateWorkflow(
+	wf, err := a.installHelpers.CreateWorkflow(
 		ctx,
 		input.InstallID,
 		app.WorkflowTypeAppBranchConfigUpdate,
@@ -54,15 +58,29 @@ func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, inpu
 		InstallID:      input.InstallID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
-		WorkflowID:     &workflow.ID,
-		Status:         "pending",
+		WorkflowID:     &wf.ID,
+		Status:         app.NewCompositeStatus(ctx, app.StatusPending),
 	}
 	if err := a.db.WithContext(ctx).Create(&update).Error; err != nil {
 		return nil, fmt.Errorf("unable to create install config update: %w", err)
 	}
 
+	// Enqueue the workflow for execution on the install's queue.
+	queue, err := a.queueClient.GetQueueByOwner(ctx, input.InstallID, "installs")
+	if err != nil {
+		return nil, fmt.Errorf("unable to find queue for install %s: %w", input.InstallID, err)
+	}
+
+	if _, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:  queue.ID,
+		Signal:   &executeflow.Signal{WorkflowID: wf.ID},
+		Callback: input.Callback,
+	}); err != nil {
+		return nil, fmt.Errorf("unable to enqueue workflow for install %s: %w", input.InstallID, err)
+	}
+
 	return &CreateInstallConfigUpdateWorkflowOutput{
-		WorkflowID:            workflow.ID,
+		WorkflowID:            wf.ID,
 		InstallConfigUpdateID: update.ID,
 	}, nil
 }

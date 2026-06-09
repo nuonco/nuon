@@ -29,11 +29,12 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 	}
 
 	_, err = helpers.CreateComponent(ctx, &componenthelpers.CreateComponentParams{
-		AppID:        appID,
-		Name:         comp.Name,
-		VarName:      comp.VarName,
-		Dependencies: comp.Dependencies,
-		Labels:       comp.Labels,
+		AppID:            appID,
+		Name:             comp.Name,
+		VarName:          comp.VarName,
+		Dependencies:     comp.Dependencies,
+		Labels:           comp.Labels,
+		SkipDependencies: true,
 	})
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -137,6 +138,47 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		ConfigID: configID,
 		Checksum: checksum,
 	})
+
+	return nil
+}
+
+// EnsureComponentDependencies resolves and sets dependencies for a component.
+// This must be called after all components have been created (via EnsureComponent)
+// so that dependency names can be resolved to IDs.
+func EnsureComponentDependencies(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID string) error {
+	if len(comp.Dependencies) == 0 {
+		return nil
+	}
+
+	apiComp, err := getComponent(ctx, db, comp.Name, appID)
+	if err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to get component %s for dependency resolution", comp.Name),
+			Err:         err,
+		}
+	}
+
+	depIDs, err := helpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+	if err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+			Err:         err,
+		}
+	}
+
+	if err := helpers.ClearComponentDependencies(ctx, apiComp.ID); err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to clear existing dependencies for component %s", comp.Name),
+			Err:         err,
+		}
+	}
+
+	if err := helpers.CreateComponentDependencies(ctx, apiComp.ID, depIDs); err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to create dependencies for component %s", comp.Name),
+			Err:         err,
+		}
+	}
 
 	return nil
 }

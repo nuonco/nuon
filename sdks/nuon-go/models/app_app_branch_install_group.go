@@ -8,6 +8,7 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -32,6 +33,12 @@ type AppAppBranchInstallGroup struct {
 	// install ids
 	InstallIds []string `json:"install_ids"`
 
+	// LabelSelector dynamically resolves installs at deploy time by matching labels.
+	// Mutually exclusive with InstallIDs — set one or the other, not both.
+	LabelSelector struct {
+		GithubComNuoncoNuonPkgLabelsSelector
+	} `json:"label_selector,omitempty"`
+
 	// max parallel
 	MaxParallel int64 `json:"max_parallel,omitempty"`
 
@@ -52,15 +59,49 @@ type AppAppBranchInstallGroup struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
+	UseForPreviews bool `json:"use_for_previews,omitempty"`
 }
 
 // Validate validates this app app branch install group
 func (m *AppAppBranchInstallGroup) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateLabelSelector(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app app branch install group based on context it is used
+func (m *AppAppBranchInstallGroup) validateLabelSelector(formats strfmt.Registry) error {
+	if swag.IsZero(m.LabelSelector) { // not required
+		return nil
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app app branch install group based on the context it is used
 func (m *AppAppBranchInstallGroup) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLabelSelector(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppAppBranchInstallGroup) contextValidateLabelSelector(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 

@@ -39,13 +39,8 @@ export const BranchDetailActionsContainer = ({
       }),
     onSuccess: (_, planOnly) => {
       addToast(
-<<<<<<< HEAD
-        <Toast theme="success" heading="Run triggered">
-          <Text>Your app branch run has been queued.</Text>
-=======
-        <Toast theme="success" heading={planOnly ? 'Preview run triggered' : 'Run triggered successfully'}>
+        <Toast theme="success" heading={planOnly ? 'Preview run triggered' : 'Run triggered'}>
           <Text>{planOnly ? 'A plan-only preview run has been queued.' : 'Your app branch run has been queued.'}</Text>
->>>>>>> 9fb091ac2 (chore: update ui for branches)
         </Toast>
       )
       refresh()

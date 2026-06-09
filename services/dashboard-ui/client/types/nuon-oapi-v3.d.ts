@@ -5847,6 +5847,7 @@ export interface components {
     };
     "github_com_nuonco_nuon_pkg_labels.Selector": {
       match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
+      not_match_labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
     };
     "github_com_nuonco_nuon_pkg_types_state.State": {
       actions?: components["schemas"]["state.ActionsState"];

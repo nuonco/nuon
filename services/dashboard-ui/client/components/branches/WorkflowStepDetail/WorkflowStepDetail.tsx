@@ -15,118 +15,209 @@ function statusTheme(status?: string) {
   return 'neutral'
 }
 
+function miniStatusIcon(status?: string) {
+  if (status === 'success') return 'CheckCircleIcon'
+  if (status === 'error') return 'XCircleIcon'
+  if (status === 'in-progress') return 'CircleNotchIcon'
+  if (status === 'skipped') return 'MinusCircleIcon'
+  return 'ClockIcon'
+}
+
+function miniStatusColor(status?: string) {
+  if (status === 'success') return 'text-green-500'
+  if (status === 'error') return 'text-red-500'
+  if (status === 'in-progress') return 'text-blue-500 animate-spin'
+  if (status === 'skipped') return 'text-cool-grey-400'
+  return 'text-cool-grey-400'
+}
+
 interface IWorkflowStepDetail {
   step: TInstallWorkflowStep
   onClose: () => void
 }
 
 export const WorkflowStepDetail = ({ step, onClose }: IWorkflowStepDetail) => {
+  const metadata = step.status?.metadata || {}
+
+  // Detect step type from name
+  const isCommitStep = step.name?.toLowerCase().includes('commit')
+  const isBuildStep = step.name?.toLowerCase().includes('build')
+  const isConfigStep = step.name?.toLowerCase().includes('config') && !step.name?.toLowerCase().includes('diff')
+
+  // Build data from metadata (set by builds signal)
+  const builds = (metadata.builds as any[]) || []
+
+  // Commit data from metadata (set by fetchcommit signal)
+  const commitSha = metadata.commit_sha as string | undefined
+  const commitMessage = metadata.commit_message as string | undefined
+  const authorName = metadata.author_name as string | undefined
+  const authorEmail = metadata.author_email as string | undefined
+
   return (
     <Card>
       <div className="p-6">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <Text variant="h3" weight="strong">
-            Step details
-          </Text>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <Icon variant="XIcon" size={20} />
-          </Button>
+          <div className="flex items-center gap-3">
+            <Text variant="h3" weight="strong">
+              {step.name || 'Step details'}
+            </Text>
+            <Badge theme={statusTheme(step.status?.status)}>
+              {step.status?.status || 'pending'}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-3">
+            {step.execution_time ? (
+              <Text variant="subtext" theme="neutral" family="mono">
+                {(step.execution_time / 1000000000).toFixed(1)}s
+              </Text>
+            ) : null}
+            {step.started_at && (
+              <Text variant="subtext" theme="neutral">
+                <Time time={step.started_at} format="relative" />
+              </Text>
+            )}
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <Icon variant="XIcon" size={20} />
+            </Button>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <Text variant="base" weight="strong" className="mb-2">
-                {step.name || 'Unknown step'}
+        {/* Status description */}
+        {step.status?.status_human_description && !isCommitStep && !isBuildStep && (
+          <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md mb-4">
+            <Text variant="base">
+              {step.status.status_human_description}
+            </Text>
+          </div>
+        )}
+
+        {/* ===== COMMIT STEP: show commit details ===== */}
+        {isCommitStep && commitSha && (
+          <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-850 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700 mb-4">
+            <div className="flex items-start gap-3">
+              <Icon variant="GitCommitIcon" size={20} className="text-cool-grey-500 dark:text-dark-grey-300 mt-0.5 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <Text variant="base" weight="strong">
+                  {commitMessage?.split('\n')[0] || 'No message'}
+                </Text>
+                {commitMessage?.includes('\n') && (
+                  <Text variant="subtext" theme="neutral" className="mt-1 whitespace-pre-wrap">
+                    {commitMessage.split('\n').slice(1).join('\n').trim()}
+                  </Text>
+                )}
+                <div className="flex items-center gap-3 mt-2">
+                  <Text variant="subtext" theme="neutral" family="mono">
+                    {commitSha.substring(0, 12)}
+                  </Text>
+                  {authorName && (
+                    <Text variant="subtext" theme="neutral">
+                      {authorName}
+                    </Text>
+                  )}
+                  {authorEmail && (
+                    <Text variant="subtext" theme="neutral">
+                      &lt;{authorEmail}&gt;
+                    </Text>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isCommitStep && !commitSha && step.status?.status === 'pending' && (
+          <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-850 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700 mb-4">
+            <Text variant="subtext" theme="neutral">
+              Waiting to fetch commit from VCS...
+            </Text>
+          </div>
+        )}
+
+        {/* ===== CONFIG STEP: show config summary ===== */}
+        {isConfigStep && (
+          <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-850 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700 mb-4">
+            <Text variant="base" theme="neutral">
+              {step.status?.status === 'success'
+                ? 'Cloned repository, parsed configuration, and synced components.'
+                : step.status?.status === 'in-progress'
+                ? 'Cloning repository and parsing configuration...'
+                : 'Waiting to fetch app configuration...'}
+            </Text>
+          </div>
+        )}
+
+        {/* ===== BUILD STEP: show individual builds ===== */}
+        {isBuildStep && builds.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <Text variant="label" theme="neutral">
+                Component builds
               </Text>
-              <div className="flex items-center gap-3">
-                <Badge theme={statusTheme(step.status?.status)}>
-                  {step.status?.status || 'pending'}
-                </Badge>
-                {step.group_idx !== undefined && (
-                  <Badge theme="neutral">
-                    Group {step.group_idx}
+              <div className="flex items-center gap-2">
+                {builds.filter((b: any) => b.status === 'success').length > 0 && (
+                  <Badge theme="success" size="sm">
+                    {builds.filter((b: any) => b.status === 'success').length} passed
+                  </Badge>
+                )}
+                {builds.filter((b: any) => b.status === 'error').length > 0 && (
+                  <Badge theme="error" size="sm">
+                    {builds.filter((b: any) => b.status === 'error').length} failed
+                  </Badge>
+                )}
+                {builds.filter((b: any) => b.status === 'in-progress').length > 0 && (
+                  <Badge theme="info" size="sm">
+                    {builds.filter((b: any) => b.status === 'in-progress').length} running
+                  </Badge>
+                )}
+                {builds.filter((b: any) => b.status === 'skipped').length > 0 && (
+                  <Badge theme="neutral" size="sm">
+                    {builds.filter((b: any) => b.status === 'skipped').length} skipped
                   </Badge>
                 )}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              {step.started_at && (
-                <Text variant="subtext" theme="neutral">
-                  Started <Time time={step.started_at} format="relative" />
-                </Text>
-              )}
-              {step.finished_at && (
-                <Text variant="subtext" theme="neutral">
-                  Finished <Time time={step.finished_at} format="relative" />
-                </Text>
-              )}
-              {step.execution_time && (
-                <Text variant="subtext" theme="neutral">
-                  Duration: {(step.execution_time / 1000000000).toFixed(2)}s
-                </Text>
-              )}
+            <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-lg divide-y divide-cool-grey-200 dark:divide-dark-grey-700 overflow-hidden">
+              {builds.map((build: any, i: number) => (
+                <div
+                  key={build.component_id || i}
+                  className="flex items-center justify-between px-4 py-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon
+                      variant={miniStatusIcon(build.status) as any}
+                      size={16}
+                      className={miniStatusColor(build.status)}
+                    />
+                    <Text variant="base">
+                      {build.component_name || build.component_id}
+                    </Text>
+                  </div>
+                  <Badge theme={statusTheme(build.status)} size="sm">
+                    {build.status || 'pending'}
+                  </Badge>
+                </div>
+              ))}
             </div>
           </div>
+        )}
 
-          {step.status?.status_human_description && (
-            <div className="p-4 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
-              <Text variant="label" theme="neutral" className="mb-1">
-                Status
-              </Text>
-              <Text variant="base">
-                {step.status.status_human_description}
-              </Text>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Text variant="label" theme="neutral" className="mb-1">
-                Step ID
-              </Text>
-              <ID>{step.id}</ID>
-            </div>
-            {step.idx !== undefined && (
-              <div>
-                <Text variant="label" theme="neutral" className="mb-1">
-                  Index
-                </Text>
-                <Text variant="base">{step.idx}</Text>
-              </div>
-            )}
-            {step.execution_type && (
-              <div>
-                <Text variant="label" theme="neutral" className="mb-1">
-                  Execution type
-                </Text>
-                <Text variant="base">{step.execution_type}</Text>
-              </div>
-            )}
-            {step.retryable !== undefined && (
-              <div>
-                <Text variant="label" theme="neutral" className="mb-1">
-                  Retryable
-                </Text>
-                <Badge theme={step.retryable ? 'success' : 'neutral'}>
-                  {step.retryable ? 'Yes' : 'No'}
-                </Badge>
-              </div>
-            )}
+        {isBuildStep && builds.length === 0 && step.status?.status === 'pending' && (
+          <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-850 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700 mb-4">
+            <Text variant="subtext" theme="neutral">
+              Waiting to start component builds...
+            </Text>
           </div>
+        )}
 
+        {/* Footer metadata */}
+        <div className="flex items-center gap-4 pt-2 border-t border-cool-grey-200 dark:border-dark-grey-700">
+          <ID>{step.id}</ID>
           {step.install_workflow_id && (
-            <div>
-              <Text variant="label" theme="neutral" className="mb-2">
-                Quick links
-              </Text>
-              <div className="flex flex-wrap gap-2">
-                <AdminDashboardLink
-                  path={`/workflows/${step.install_workflow_id}`}
-                  label="Admin panel"
-                />
-              </div>
-            </div>
+            <AdminDashboardLink
+              path={`/workflows/${step.install_workflow_id}`}
+              label="Admin panel"
+            />
           )}
         </div>
       </div>

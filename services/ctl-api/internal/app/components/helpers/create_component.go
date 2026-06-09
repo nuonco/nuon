@@ -10,11 +10,12 @@ import (
 )
 
 type CreateComponentParams struct {
-	AppID        string
-	Name         string
-	VarName      string
-	Dependencies []string
-	Labels       map[string]string
+	AppID            string
+	Name             string
+	VarName          string
+	Dependencies     []string
+	Labels           map[string]string
+	SkipDependencies bool
 }
 
 func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentParams) (*app.Component, error) {
@@ -35,12 +36,14 @@ func (h *Helpers) CreateComponent(ctx context.Context, params *CreateComponentPa
 		return nil, fmt.Errorf("unable to create queues for component: %w", err)
 	}
 
-	depIDs, err := h.GetComponentIDs(ctx, params.AppID, params.Dependencies)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get component ids")
-	}
-	if err := h.CreateComponentDependencies(ctx, component.ID, depIDs); err != nil {
-		return nil, fmt.Errorf("unable to create component dependencies: %w", err)
+	if !params.SkipDependencies {
+		depIDs, err := h.GetComponentIDs(ctx, params.AppID, params.Dependencies)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get component ids")
+		}
+		if err := h.CreateComponentDependencies(ctx, component.ID, depIDs); err != nil {
+			return nil, fmt.Errorf("unable to create component dependencies: %w", err)
+		}
 	}
 
 	if err := h.EnsureInstallComponents(ctx, params.AppID, nil); err != nil {

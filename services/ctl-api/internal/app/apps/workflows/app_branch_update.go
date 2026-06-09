@@ -8,7 +8,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
-	deploygrouptoqueue "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/deploygrouptoqueue"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
 // AppBranchUpdate generates workflow steps for updating specific installs to a
@@ -49,7 +49,7 @@ func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStep
 	if installID != "" {
 		// Single install update: create one install config update workflow
 		sg.nextGroup()
-		step, err := sg.appBranchSignalStep(ctx, appBranchID, "update install", pgtype.Hstore{}, &deploygrouptoqueue.Signal{
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "update install", pgtype.Hstore{}, &updateinstallgroup.Signal{
 			InstallGroupID: installGroupID,
 			AppBranchID:    appBranchID,
 			RunID:          runID,
@@ -61,7 +61,7 @@ func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStep
 	} else if installGroupID != "" {
 		// Single group update
 		sg.nextGroup()
-		step, err := sg.appBranchSignalStep(ctx, appBranchID, "deploy install group", pgtype.Hstore{}, &deploygrouptoqueue.Signal{
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "deploy install group", pgtype.Hstore{}, &updateinstallgroup.Signal{
 			InstallGroupID: installGroupID,
 			AppBranchID:    appBranchID,
 			RunID:          runID,
@@ -84,7 +84,7 @@ func AppBranchUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStep
 
 		for _, group := range installGroups {
 			sg.nextGroup()
-			step, err := sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &deploygrouptoqueue.Signal{
+			step, err := sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &updateinstallgroup.Signal{
 				InstallGroupID: group.ID,
 				AppBranchID:    appBranchID,
 				RunID:          runID,

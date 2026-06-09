@@ -25,10 +25,10 @@ type InstallConfigUpdate struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppBranchRunID string       `json:"app_branch_run_id,omitzero" gorm:"not null" temporaljson:"app_branch_run_id,omitzero,omitempty"`
+	AppBranchRunID string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
 	AppBranchRun   AppBranchRun `faker:"-" json:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
 
-	InstallGroupID string                `json:"install_group_id,omitzero" gorm:"not null" temporaljson:"install_group_id,omitzero,omitempty"`
+	InstallGroupID string                `json:"install_group_id,omitempty" temporaljson:"install_group_id,omitzero,omitempty"`
 	InstallGroup   AppBranchInstallGroup `faker:"-" json:"-" temporaljson:"install_group,omitzero,omitempty"`
 
 	InstallID string  `json:"install_id,omitzero" gorm:"not null" temporaljson:"install_id,omitzero,omitempty"`
@@ -47,9 +47,7 @@ type InstallConfigUpdate struct {
 	// Diff stores the serialized config diff result.
 	Diff *blobstore.Blob `json:"diff,omitempty" temporaljson:"diff,omitzero,omitempty"`
 
-	// Status mirrors the install workflow status for queryability.
-	Status            string `json:"status,omitzero" gorm:"notnull;default:'pending'" temporaljson:"status,omitzero,omitempty"`
-	StatusDescription string `json:"status_description,omitempty" temporaljson:"status_description,omitzero,omitempty"`
+	Status CompositeStatus `json:"status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
 }
 
 func (i *InstallConfigUpdate) Indexes(db *gorm.DB) []migrations.Index {

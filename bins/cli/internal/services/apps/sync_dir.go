@@ -109,8 +109,6 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		}
 	}
 
-	syncer := apisyncer.New(s.api, appID, version, cfg)
-
 	var syncerOpts []apisyncer.SyncerOption
 	if opts.Branch != "" {
 		branchID, branchErr := s.resolveAppBranchID(ctx, appID, opts.Branch)
