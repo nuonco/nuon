@@ -252,6 +252,10 @@ type ClientService interface {
 
 	CreateKubernetesManifestComponentConfig(params *CreateKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateKubernetesManifestComponentConfigCreated, error)
 
+	CreateNotebook(params *CreateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNotebookCreated, error)
+
+	CreateNotebookCell(params *CreateNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNotebookCellCreated, error)
+
 	CreateOnboarding(params *CreateOnboardingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOnboardingCreated, error)
 
 	CreateOrg(params *CreateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateOrgCreated, error)
@@ -305,6 +309,10 @@ type ClientService interface {
 	DeleteCurrentOrgWebhook(params *DeleteCurrentOrgWebhookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteCurrentOrgWebhookNoContent, error)
 
 	DeleteInstall(params *DeleteInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteInstallOK, error)
+
+	DeleteNotebook(params *DeleteNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookNoContent, error)
+
+	DeleteNotebookCell(params *DeleteNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookCellNoContent, error)
 
 	DeleteOrg(params *DeleteOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteOrgOK, error)
 
@@ -612,6 +620,14 @@ type ClientService interface {
 
 	GetLogStream(params *GetLogStreamParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetLogStreamOK, error)
 
+	GetNotebook(params *GetNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebookOK, error)
+
+	GetNotebookCellRun(params *GetNotebookCellRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebookCellRunOK, error)
+
+	GetNotebookCellRuns(params *GetNotebookCellRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebookCellRunsOK, error)
+
+	GetNotebooks(params *GetNotebooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebooksOK, error)
+
 	GetOnboardingExampleApps(params *GetOnboardingExampleAppsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOnboardingExampleAppsOK, error)
 
 	GetOrg(params *GetOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetOrgOK, error)
@@ -782,6 +798,8 @@ type ClientService interface {
 
 	RemoveUser(params *RemoveUserParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RemoveUserCreated, error)
 
+	ReorderNotebookCells(params *ReorderNotebookCellsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReorderNotebookCellsOK, error)
+
 	ReprovisionInstall(params *ReprovisionInstallParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallCreated, error)
 
 	ReprovisionInstallSandbox(params *ReprovisionInstallSandboxParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReprovisionInstallSandboxCreated, error)
@@ -797,6 +815,8 @@ type ClientService interface {
 	RetryWorkflowStep(params *RetryWorkflowStepParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RetryWorkflowStepCreated, error)
 
 	RevokeOrgInvite(params *RevokeOrgInviteParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RevokeOrgInviteOK, error)
+
+	RunNotebookCell(params *RunNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunNotebookCellAccepted, error)
 
 	ShutDownRunnerMng(params *ShutDownRunnerMngParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ShutDownRunnerMngOK, error)
 
@@ -853,6 +873,10 @@ type ClientService interface {
 	UpdateInstallRole(params *UpdateInstallRoleParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallRoleOK, error)
 
 	UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateInstallWorkflowOK, error)
+
+	UpdateNotebook(params *UpdateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookOK, error)
+
+	UpdateNotebookCell(params *UpdateNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookCellOK, error)
 
 	UpdateOrg(params *UpdateOrgParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateOrgOK, error)
 
@@ -4066,6 +4090,94 @@ func (a *Client) CreateKubernetesManifestComponentConfig(params *CreateKubernete
 }
 
 /*
+CreateNotebook creates a notebook for an install
+*/
+func (a *Client) CreateNotebook(params *CreateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNotebookCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateNotebookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateNotebook",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/notebooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateNotebookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateNotebookCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateNotebook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateNotebookCell adds a cell to a notebook
+*/
+func (a *Client) CreateNotebookCell(params *CreateNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateNotebookCellCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateNotebookCellParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateNotebookCell",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/cells",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateNotebookCellReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateNotebookCellCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateNotebookCell: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateOnboarding starts a new onboarding session
 
 Creates a new active onboarding session for the current account
@@ -5293,6 +5405,94 @@ func (a *Client) DeleteInstall(params *DeleteInstallParams, authInfo runtime.Cli
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteInstall: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteNotebook deletes a notebook
+*/
+func (a *Client) DeleteNotebook(params *DeleteNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteNotebookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteNotebook",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteNotebookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteNotebookNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteNotebook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteNotebookCell deletes a cell
+*/
+func (a *Client) DeleteNotebookCell(params *DeleteNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteNotebookCellNoContent, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteNotebookCellParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteNotebookCell",
+		Method:             "DELETE",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteNotebookCellReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteNotebookCellNoContent)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteNotebookCell: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -12430,6 +12630,182 @@ func (a *Client) GetLogStream(params *GetLogStreamParams, authInfo runtime.Clien
 }
 
 /*
+GetNotebook gets a notebook with its ordered cells and each cell s latest run
+*/
+func (a *Client) GetNotebook(params *GetNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetNotebookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetNotebook",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetNotebookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetNotebookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetNotebook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetNotebookCellRun gets a single cell run includes log stream id for tailing
+*/
+func (a *Client) GetNotebookCellRun(params *GetNotebookCellRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebookCellRunOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetNotebookCellRunParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetNotebookCellRun",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/runs/{run_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetNotebookCellRunReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetNotebookCellRunOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetNotebookCellRun: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetNotebookCellRuns lists a cell s run history newest first
+*/
+func (a *Client) GetNotebookCellRuns(params *GetNotebookCellRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebookCellRunsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetNotebookCellRunsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetNotebookCellRuns",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}/runs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetNotebookCellRunsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetNotebookCellRunsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetNotebookCellRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetNotebooks lists notebooks for an install
+*/
+func (a *Client) GetNotebooks(params *GetNotebooksParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetNotebooksOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetNotebooksParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetNotebooks",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/notebooks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetNotebooksReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetNotebooksOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetNotebooks: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetOnboardingExampleApps gets example apps catalog
 
 Returns the list of available example applications for onboarding
@@ -16339,6 +16715,52 @@ func (a *Client) RemoveUser(params *RemoveUserParams, authInfo runtime.ClientAut
 }
 
 /*
+ReorderNotebookCells reorders a notebook s cells
+
+accepts the full ordered list of cell IDs and assigns positions
+*/
+func (a *Client) ReorderNotebookCells(params *ReorderNotebookCellsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReorderNotebookCellsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReorderNotebookCellsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReorderNotebookCells",
+		Method:             "PUT",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/reorder",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReorderNotebookCellsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReorderNotebookCellsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReorderNotebookCells: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 ReprovisionInstall reprovisions an install
 
 Reprovision an install sandbox.
@@ -16705,6 +17127,52 @@ func (a *Client) RevokeOrgInvite(params *RevokeOrgInviteParams, authInfo runtime
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RevokeOrgInvite: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+RunNotebookCell runs a notebook cell on the install s runner
+
+dispatches the cell to the notebook's warm Temporal workflow and records a NotebookCellRun linking to the underlying execution + log stream. Returns once the run is queued, not when it finishes.
+*/
+func (a *Client) RunNotebookCell(params *RunNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunNotebookCellAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewRunNotebookCellParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "RunNotebookCell",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}/runs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RunNotebookCellReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*RunNotebookCellAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for RunNotebookCell: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -17968,6 +18436,94 @@ func (a *Client) UpdateInstallWorkflow(params *UpdateInstallWorkflowParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for UpdateInstallWorkflow: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateNotebook updates a notebook
+*/
+func (a *Client) UpdateNotebook(params *UpdateNotebookParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateNotebookParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateNotebook",
+		Method:             "PATCH",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateNotebookReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateNotebookOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateNotebook: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+UpdateNotebookCell edits a cell bumps its revision
+*/
+func (a *Client) UpdateNotebookCell(params *UpdateNotebookCellParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UpdateNotebookCellOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewUpdateNotebookCellParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "UpdateNotebookCell",
+		Method:             "PATCH",
+		PathPattern:        "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateNotebookCellReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*UpdateNotebookCellOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for UpdateNotebookCell: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

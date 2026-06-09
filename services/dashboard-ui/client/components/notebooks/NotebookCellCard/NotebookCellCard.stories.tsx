@@ -39,7 +39,6 @@ export const WithLastRun = () => (
     isRunning={false}
     isDeleting={false}
     runStatus="active"
-    runStatusDescription="Cell is running"
     runCreatedAt={new Date().toISOString()}
     onNameChange={noop}
     onScriptChange={noop}
