@@ -205,19 +205,20 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	toggleSyncCmd.MarkFlagsMutuallyExclusive("enable", "disable")
 	installsCmds.AddCommand(toggleSyncCmd)
 
+	var compOffset, compLimit int
 	componentsCmd := &cobra.Command{
 		Use:   "components",
 		Short: "Get install components",
 		Long:  "Get all components on an install",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.Components(cmd.Context(), id, offset, limit, PrintJSON)
+			return svc.Components(cmd.Context(), id, compOffset, compLimit, PrintJSON)
 		}),
 	}
 	componentsCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	componentsCmd.MarkFlagRequired("install-id")
-	componentsCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	componentsCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Maximum components to return")
+	componentsCmd.Flags().IntVarP(&compOffset, "offset", "o", 0, "Offset for pagination")
+	componentsCmd.Flags().IntVarP(&compLimit, "limit", "l", 0, "Maximum components to return (0 returns all)")
 
 	componentsOutputsCmd := &cobra.Command{
 		Use:         "outputs",
