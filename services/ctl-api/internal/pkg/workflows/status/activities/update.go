@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 
+	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -704,19 +705,28 @@ type UpdateInstallLifecycleStatusV2Request struct {
 // @temporal-gen-v2 activity
 // @by-field InstallID
 func (a *Activities) UpdateInstallLifecycleStatusV2(ctx context.Context, req UpdateInstallLifecycleStatusV2Request) error {
-	obj := app.Install{ID: req.InstallID}
-
-	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.Install
-		if err := a.getStatus(ctx, &obj, req.InstallID); err != nil {
-			return app.CompositeStatus{}, err
-		}
-		return obj.LifecycleStatus, nil
+	var install app.Install
+	if err := a.getStatus(ctx, &install, req.InstallID); err != nil {
+		return err
 	}
 
-	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
-	status.StatusHumanDescription = req.StatusDescription
-	return a.updateStatusCommon(ctx, &obj, status, getter, "lifecycle_status")
+	transitioned := lifecyclephase.Transition(install.LifecyclePhase, req.Status, req.StatusDescription)
+
+	createdBy, err := cctx.AccountIDFromContext(ctx)
+	if err == nil {
+		transitioned.UpdatedBy = createdBy
+	}
+
+	res := a.db.WithContext(ctx).Model(&app.Install{ID: req.InstallID}).Updates(map[string]any{
+		"lifecycle_phase": transitioned,
+	})
+	if res.Error != nil {
+		return errors.Wrap(res.Error, "unable to update lifecycle phase")
+	}
+	if res.RowsAffected < 1 {
+		return errors.New("no install found to update lifecycle phase")
+	}
+	return nil
 }
 
 type UpdateQueueSignalStatusV2Request struct {

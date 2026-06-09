@@ -21,7 +21,7 @@ func (s *service) InstallComponentStatus(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"install_id": install.ID,
-		"status":     install.Status,
+		"install_id":      install.ID,
+		"lifecycle_phase": install.LifecyclePhase.Phase,
 	})
 }
