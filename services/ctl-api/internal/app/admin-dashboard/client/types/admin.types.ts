@@ -264,6 +264,7 @@ export type TSandboxModeJobConfig = {
   job_type: string
   duration: number
   should_error: boolean
+  error_message?: string
   panic: boolean
   trigger_shutdown: boolean
   created_at: string

@@ -22,6 +22,7 @@ const defaultJobForm = {
   duration_ms: 1000,
   sleep_duration_ms: 0,
   should_error: false,
+  error_message: '',
   panic: false,
   trigger_shutdown: false,
   log_template: '',
@@ -115,6 +116,7 @@ export const SandboxMode = () => {
       duration_ms: config.duration ? config.duration / 1_000_000 : 0,
       sleep_duration_ms: config.sleep_duration ? config.sleep_duration / 1_000_000 : 0,
       should_error: config.should_error ?? false,
+      error_message: config.error_message || '',
       panic: config.panic ?? false,
       trigger_shutdown: config.trigger_shutdown ?? false,
       log_template: config.log_template || '',
@@ -450,6 +452,17 @@ function JobFormPanel({
         <Field label="Should error">
           <input type="checkbox" checked={form.should_error} onChange={(e) => setForm((f) => ({ ...f, should_error: e.target.checked }))} className="mt-1" />
         </Field>
+        {form.should_error && (
+          <Field label="Error message">
+            <textarea
+              value={form.error_message}
+              onChange={(e) => setForm((f) => ({ ...f, error_message: e.target.value }))}
+              rows={3}
+              placeholder="Overrides the default &quot;sandbox error&quot;. e.g. AccessDenied: User: arn:aws:iam::123:role/nuon-runner is not authorized to perform: s3:CreateBucket on resource: arn:aws:s3:::acme-prod"
+              className="w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm py-1.5 px-2 font-mono"
+            />
+          </Field>
+        )}
         <Field label="Panic">
           <input type="checkbox" checked={form.panic} onChange={(e) => setForm((f) => ({ ...f, panic: e.target.checked }))} className="mt-1" />
         </Field>
