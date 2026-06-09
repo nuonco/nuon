@@ -55,6 +55,12 @@ type AppInstallRunbookRun struct {
 	// runbook config id
 	RunbookConfigID string `json:"runbook_config_id,omitempty"`
 
+	// runbook inputs
+	RunbookInputs map[string]string `json:"runbook_inputs,omitempty"`
+
+	// runbook inputs redacted
+	RunbookInputsRedacted map[string]string `json:"runbook_inputs_redacted,omitempty"`
+
 	// status
 	Status string `json:"status,omitempty"`
 
