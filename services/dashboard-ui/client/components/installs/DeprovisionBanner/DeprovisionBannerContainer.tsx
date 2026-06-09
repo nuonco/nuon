@@ -10,7 +10,7 @@ export const DeprovisionBannerContainer = () => {
   const { org } = useOrg()
   const { install } = useInstall()
 
-  const lifecycleStatus = install?.lifecycle_status?.status
+  const lifecycleStatus = install?.lifecycle_phase?.phase
   const showBanner = !!lifecycleStatus && BANNER_STATUSES.includes(lifecycleStatus)
 
   const { data: workflows } = useQuery({

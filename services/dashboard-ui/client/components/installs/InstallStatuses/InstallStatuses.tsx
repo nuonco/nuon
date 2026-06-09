@@ -93,7 +93,7 @@ export const InstallStatuses = ({
   stack,
   ...props
 }: IInstallStatuses) => {
-  const lifecycleStatus = install?.lifecycle_status?.status
+  const lifecycleStatus = install?.lifecycle_phase?.phase
   const isDeprovisioning = lifecycleStatus === 'deprovisioning'
   const isDeprovisioned = lifecycleStatus === 'deprovisioned'
 
@@ -185,7 +185,7 @@ export const InstallStatuses = ({
           subtitle: getInstallStatusTitle(
             'runner_status',
             install?.runner_status,
-            install?.lifecycle_status?.status
+            install?.lifecycle_phase?.phase
           ),
           leftContent: (
             <Status
@@ -226,7 +226,7 @@ export const InstallStatuses = ({
           subtitle: getInstallStatusTitle(
             'sandbox_status',
             install?.sandbox_status,
-            install?.lifecycle_status?.status
+            install?.lifecycle_phase?.phase
           ),
           leftContent: (
             <Status
@@ -260,12 +260,12 @@ export const InstallStatuses = ({
       title={getInstallStatusTitle(
         'composite_component_status',
         install?.composite_component_status,
-        install?.lifecycle_status?.status
+        install?.lifecycle_phase?.phase
       )}
       componentSummaries={getContextTooltipItemsFromInstallComponents(
         install?.install_components as TInstallComponent[],
         `/${install.org_id}/installs/${install.id}/components`,
-        install?.lifecycle_status?.status
+        install?.lifecycle_phase?.phase
       )}
       position={tooltipPosition}
     >
@@ -384,7 +384,7 @@ export const InstallStatuses = ({
     {
       id: 'runner',
       title: 'Runner',
-      subtitle: getInstallStatusTitle('runner_status', install?.runner_status, install?.lifecycle_status?.status),
+      subtitle: getInstallStatusTitle('runner_status', install?.runner_status, install?.lifecycle_phase?.phase),
       href: `/${install.org_id}/installs/${install.id}/runner`,
       leftContent: (
         <Status
@@ -401,7 +401,7 @@ export const InstallStatuses = ({
       subtitle: getInstallStatusTitle(
         'sandbox_status',
         install?.sandbox_status,
-        install?.lifecycle_status?.status
+        install?.lifecycle_phase?.phase
       ),
       href: `/${install.org_id}/installs/${install.id}/sandbox`,
       leftContent: (
@@ -419,7 +419,7 @@ export const InstallStatuses = ({
       subtitle: getInstallStatusTitle(
         'composite_component_status',
         install?.composite_component_status,
-        install?.lifecycle_status?.status
+        install?.lifecycle_phase?.phase
       ),
       href: `/${install.org_id}/installs/${install.id}/components`,
       leftContent: (
