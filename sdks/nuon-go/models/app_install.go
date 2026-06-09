@@ -98,8 +98,8 @@ type AppInstall struct {
 	// labels
 	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
 
-	// lifecycle status
-	LifecycleStatus any `json:"lifecycle_status,omitempty"`
+	// lifecycle phase
+	LifecyclePhase any `json:"lifecycle_phase,omitempty"`
 
 	// links
 	Links map[string]any `json:"links,omitempty"`
@@ -136,12 +136,6 @@ type AppInstall struct {
 
 	// sandbox status description
 	SandboxStatusDescription string `json:"sandbox_status_description,omitempty"`
-
-	// TODO(jm): deprecate these fields once the terraform provider has been updated
-	Status string `json:"status,omitempty"`
-
-	// status description
-	StatusDescription string `json:"status_description,omitempty"`
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
