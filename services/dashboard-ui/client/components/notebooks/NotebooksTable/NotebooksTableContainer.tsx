@@ -2,18 +2,12 @@ import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getInstallRunbooks } from '@/lib'
-import { InstallRunbooksTable, parseInstallRunbooksToTableData } from './InstallRunbooksTable'
+import { getNotebooks } from '@/lib'
+import { NotebooksTable, parseNotebooksToTableData } from './NotebooksTable'
 
 const LIMIT = 20
 
-export const InstallRunbooksTableContainer = ({
-  pollInterval = 20000,
-  shouldPoll,
-}: {
-  pollInterval?: number
-  shouldPoll?: boolean
-} = {}) => {
+export const NotebooksTableContainer = () => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
   const { install } = useInstall()
@@ -21,9 +15,9 @@ export const InstallRunbooksTableContainer = ({
   const q = searchParams.get('q') || undefined
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['install-runbooks', org?.id, install?.id, offset, q],
+    queryKey: ['notebooks', org?.id, install?.id, offset, q],
     queryFn: () =>
-      getInstallRunbooks({
+      getNotebooks({
         orgId: org!.id,
         installId: install!.id,
         offset,
@@ -31,13 +25,12 @@ export const InstallRunbooksTableContainer = ({
         q,
       }),
     placeholderData: keepPreviousData,
-    refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
   })
 
   return (
-    <InstallRunbooksTable
-      data={parseInstallRunbooksToTableData(
+    <NotebooksTable
+      data={parseNotebooksToTableData(
         result?.data ?? [],
         org?.id ?? '',
         install?.id ?? ''
