@@ -29,26 +29,15 @@ func (c *client) GetAppInstalls(ctx context.Context, appID string, query *models
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetAppInstalls(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetAppInstallsReader{})
+	resp, err := c.genClient.Operations.GetAppInstalls(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetAllInstalls(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppInstall, bool, error) {
@@ -56,26 +45,15 @@ func (c *client) GetAllInstalls(ctx context.Context, query *models.GetPaginatedQ
 		Context: ctx,
 	}
 
-	query = handlePaginationQuery(query)
+	params.Offset, params.Limit = applyPaginationQuery(query)
 
-	if query != nil {
-		offset := int64(query.Offset)
-		limit := int64(query.Limit)
-		params.Offset = &offset
-		params.Limit = &limit
-	}
-
-	resp, err := c.genClient.Operations.GetOrgInstalls(params, c.getOrgIDAuthInfo())
+	hr := newResponseHeaderReader(&operations.GetOrgInstallsReader{})
+	resp, err := c.genClient.Operations.GetOrgInstalls(params, c.getOrgIDAuthInfo(), hr.ClientOption())
 	if err != nil {
 		return nil, false, err
 	}
 
-	if query != nil {
-		items, hasMore := handlePagination(resp.Payload, int64(query.Offset), int64(query.Limit))
-		return items, hasMore, nil
-	}
-
-	return resp.Payload, false, nil
+	return resp.Payload, hasNextPage(hr), nil
 }
 
 func (c *client) GetInstall(ctx context.Context, installID string) (*models.AppInstall, error) {
