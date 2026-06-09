@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -11,7 +12,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	notebookstart "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/signals/start"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -117,6 +120,9 @@ func (s *service) startNotebookWorkflow(ctx context.Context, nb *app.Notebook) e
 // @Security		APIKey
 // @Security		OrgID
 // @Param			install_id	path	string	true	"install ID"
+// @Param			offset		query	int		false	"offset"	Default(0)
+// @Param			limit		query	int		false	"limit"		Default(10)
+// @Param			q			query	string	false	"search by name or ID"
 // @Success		200			{array}	app.Notebook
 // @Router			/v1/installs/{install_id}/notebooks [get]
 func (s *service) GetNotebooks(ctx *gin.Context) {
@@ -126,15 +132,30 @@ func (s *service) GetNotebooks(ctx *gin.Context) {
 		return
 	}
 
-	notebooks := []*app.Notebook{}
-	res := s.db.WithContext(ctx).
+	q := ctx.Query("q")
+
+	tx := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Where(app.Notebook{OrgID: org.ID, InstallID: install.ID}).
-		Order("updated_at DESC").
-		Find(&notebooks)
-	if res.Error != nil {
+		Order("updated_at DESC")
+
+	if q != "" {
+		tx = tx.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)
+	}
+
+	notebooks := []*app.Notebook{}
+	if res := tx.Find(&notebooks); res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to list notebooks: %w", res.Error))
 		return
 	}
+
+	notebooks, err = db.HandlePaginatedResponse(ctx, notebooks)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to handle paginated response: %w", err))
+		return
+	}
+
+	s.attachListSummaries(ctx, org.ID, notebooks)
 
 	ctx.JSON(http.StatusOK, notebooks)
 }
@@ -265,6 +286,57 @@ func (s *service) DeleteNotebook(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+// attachListSummaries populates CellCount and LatestRunAt for a list of notebooks.
+func (s *service) attachListSummaries(ctx *gin.Context, orgID string, notebooks []*app.Notebook) {
+	if len(notebooks) == 0 {
+		return
+	}
+
+	notebookIDs := make([]string, len(notebooks))
+	idx := map[string]*app.Notebook{}
+	for i, nb := range notebooks {
+		notebookIDs[i] = nb.ID
+		idx[nb.ID] = nb
+	}
+
+	type cellCount struct {
+		NotebookID string `gorm:"column:notebook_id"`
+		Count      int    `gorm:"column:count"`
+	}
+	var counts []cellCount
+	s.db.WithContext(ctx).
+		Model(&app.NotebookCell{}).
+		Select("notebook_id, count(*) as count").
+		Where("notebook_id IN ? AND org_id = ?", notebookIDs, orgID).
+		Where(app.NotebookCell{}).
+		Group("notebook_id").
+		Find(&counts)
+	for _, c := range counts {
+		if nb, ok := idx[c.NotebookID]; ok {
+			nb.CellCount = c.Count
+		}
+	}
+
+	type latestRun struct {
+		NotebookID  string    `gorm:"column:notebook_id"`
+		LatestRunAt time.Time `gorm:"column:latest_run_at"`
+	}
+	var runs []latestRun
+	s.db.WithContext(ctx).
+		Model(&app.NotebookCellRun{}).
+		Select("notebook_id, max(created_at) as latest_run_at").
+		Where("notebook_id IN ? AND org_id = ?", notebookIDs, orgID).
+		Where(app.NotebookCellRun{}).
+		Group("notebook_id").
+		Find(&runs)
+	for _, r := range runs {
+		if nb, ok := idx[r.NotebookID]; ok {
+			t := r.LatestRunAt
+			nb.LatestRunAt = &t
+		}
+	}
 }
 
 // attachLatestRuns populates each cell's LatestRun with its most recent run.
