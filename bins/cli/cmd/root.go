@@ -12,6 +12,7 @@ import (
 
 var (
 	PrintJSON             bool = false
+	Output                string
 	ConfigFile            string
 	DefaultConfigFilePath string = "~/.nuon"
 )
@@ -39,7 +40,9 @@ nuon sync
 		PersistentPreRunE: c.persistentPreRunE,
 	}
 
-	rootCmd.PersistentFlags().BoolVarP(&PrintJSON, "json", "j", false, "print output as json")
+	rootCmd.PersistentFlags().BoolVarP(&PrintJSON, "json", "j", false, "print output as json (shorthand for --output json)")
+	_ = rootCmd.PersistentFlags().MarkDeprecated("json", "use --output json instead; --json will be removed in a future release")
+	rootCmd.PersistentFlags().StringVar(&Output, "output", "table", "output format: table, json, or agent. 'agent' is machine-friendly for LLM/agent use (non-interactive, results wrapped in a stable {ok,data,error} envelope on stdout). Can also be set with NUON_OUTPUT.")
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "f", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
 	// alias so we can migrate from -f to -C
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config-file", "C", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
