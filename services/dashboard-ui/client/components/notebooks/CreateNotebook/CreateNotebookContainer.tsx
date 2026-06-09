@@ -13,7 +13,7 @@ import { createNotebook, type ICreateNotebookBody } from '@/lib'
 import type { TAPIError } from '@/types'
 import { CreateNotebookModal } from './CreateNotebook'
 
-const CreateNotebookModalContainer = ({ ...props }: IModal) => {
+const CreateNotebookModalContainer = ({ onSubmit: _, ...props }: IModal) => {
   const navigate = useNavigate()
   const { org } = useOrg()
   const { install } = useInstall()
