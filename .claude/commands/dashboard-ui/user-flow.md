@@ -18,21 +18,23 @@ This skill enforces the two-component (Button + Modal) pattern using useSurfaces
      mutationFn: () => myApiCall({ itemId: item.id, orgId: org.id }),
      onSuccess: () => {
        queryClient.invalidateQueries({ queryKey: ['relevant-list', org.id] })
-       addToast(<Toast heading="Done" theme="success"><Text>Done.</Text></Toast>)
+       addToast(<Toast heading="Workflow canceled" theme="success"><Text>Canceled the workflow for {item.name}.</Text></Toast>)
        removeModal(props.modalId)
      },
      onError: (err: TAPIError) => {
-       addToast(<Toast heading="Failed" theme="error"><Text>{err.error}</Text></Toast>)
+       addToast(<Toast heading="Workflow cancellation failed" theme="error"><Text>{err?.error || 'An unknown error occurred.'}</Text></Toast>)
      },
    })
    ```
    Find the right `queryKey` by checking the `useQuery` call in the container of the component that displays the data you're mutating.
 
-4. Pass the action via `primaryActionTrigger` prop on `<Modal>`, not as a child button:
+   Toast headings are plain strings (no JSX/Badge) following `services/dashboard-ui/COPY_STYLE.md`: past tense for instant completions ("Plan approved"), present progressive for kicked-off jobs ("Deploying component"), "[thing] failed" for errors. Entity names and context go in the `<Text>` description.
+
+4. Pass the action via `primaryActionTrigger` prop on `<Modal>`, not as a child button. Per `COPY_STYLE.md`: confirmation headings are a question ("Cancel workflow?"), button labels are verb + object (never "Confirm"/"OK"), gerund while pending, `variant: 'danger'` for destructive actions:
    ```typescript
    <Modal
-     heading="Confirm"
-     primaryActionTrigger={{ children: isPending ? 'Working...' : 'Confirm', disabled: isPending, onClick: () => execute(), variant: 'primary' }}
+     heading="Cancel workflow?"
+     primaryActionTrigger={{ children: isPending ? 'Canceling workflow' : 'Cancel workflow', disabled: isPending, onClick: () => execute(), variant: 'danger' }}
      {...props}
    >
    ```
