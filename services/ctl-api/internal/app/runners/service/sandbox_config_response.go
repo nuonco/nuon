@@ -85,9 +85,14 @@ func convertToSandboxConfigResponse(cfg app.SandboxModeJobConfig) SandboxConfigR
 		}
 	}
 
-	// Map failure modes to error message
+	// Map failure modes to error message. A custom ErrorMessage overrides the
+	// generic default, letting a sandbox deploy fail with a controllable string
+	// (e.g. an AWS IAM permission denial) for exercising error-parsing locally.
 	if cfg.ShouldError {
 		resp.ErrorMessage = "sandbox error"
+		if cfg.ErrorMessage != "" {
+			resp.ErrorMessage = cfg.ErrorMessage
+		}
 	}
 	if cfg.Panic {
 		resp.ErrorMessage = "sandbox: panic requested"
