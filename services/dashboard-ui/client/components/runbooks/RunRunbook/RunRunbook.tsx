@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
+import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { CodeInput } from '@/components/common/form/CodeInput'
 import { Input } from '@/components/common/form/Input'
+import { WizardNavComponent } from '@/components/onboarding/WizardNav'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { Toast } from '@/components/surfaces/Toast'
 import { useInstall } from '@/hooks/use-install'
@@ -16,7 +18,10 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { runRunbook } from '@/lib'
 import type { TRunbookInput } from '@/lib/ctl-api/apps/runbooks'
-import type { TInstallRunbook } from '@/lib/ctl-api/installs/runbooks'
+import type {
+  TInstallRunbook,
+  TRunRunbookBody,
+} from '@/lib/ctl-api/installs/runbooks'
 
 interface IRunRunbookModal extends IModal {
   installRunbook: TInstallRunbook
@@ -46,41 +51,36 @@ const RunbookInputField = ({ input }: { input: TRunbookInput }) => {
     )
   }
 
+  const labelText = `${label}${input.required ? ' *' : ' (optional)'}`
+
+  if (input.type === 'json') {
+    return (
+      <CodeInput
+        name={name}
+        language="json"
+        defaultValue={input.default ?? ''}
+        required={input.required}
+        labelProps={{ labelText }}
+        helperText={input.description}
+      />
+    )
+  }
+
   return (
-    <label className="flex flex-col gap-1">
-      <span className="flex flex-col gap-0">
-        <Text variant="body" weight="strong">
-          {label}{' '}
-          <Text as="span" variant="subtext" theme={input.required ? 'error' : 'neutral'}>
-            {input.required ? '*' : '(optional)'}
-          </Text>
-        </Text>
-        {input.description ? (
-          <Text variant="subtext">{input.description}</Text>
-        ) : null}
-      </span>
-      {input.type === 'json' ? (
-        <CodeInput
-          name={name}
-          language="json"
-          defaultValue={input.default ?? ''}
-          required={input.required}
-        />
-      ) : (
-        <Input
-          name={name}
-          type={
-            input.sensitive
-              ? 'password'
-              : input.type === 'number'
-                ? 'number'
-                : 'text'
-          }
-          defaultValue={input.default ?? ''}
-          required={input.required}
-        />
-      )}
-    </label>
+    <Input
+      name={name}
+      type={
+        input.sensitive
+          ? 'password'
+          : input.type === 'number'
+            ? 'number'
+            : 'text'
+      }
+      defaultValue={input.default ?? ''}
+      required={input.required}
+      labelProps={{ labelText }}
+      helperText={input.description}
+    />
   )
 }
 
@@ -95,18 +95,27 @@ export const RunRunbookModal = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const formRef = useRef<HTMLFormElement>(null)
-  const [page, setPage] = useState<0 | 1>(0)
+  const [page, setPage] = useState<0 | 1 | 2>(0)
+  const [reviewValues, setReviewValues] = useState<Record<string, string>>({})
 
   const runbookName = installRunbook.runbook?.name ?? 'runbook'
   const runbookId = installRunbook.runbook_id ?? installRunbook.id
   const config = installRunbook.runbook?.configs?.[0]
-  const steps = config?.steps ?? []
+  const steps = (config?.steps ?? [])
+    .slice()
+    .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
   const inputs = (config?.inputs ?? [])
     .slice()
     .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
 
+  const [stepEnabled, setStepEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(steps.map((s) => [s.id ?? '', true]))
+  )
+  const isStepEnabled = (id?: string) => stepEnabled[id ?? ''] ?? true
+  const enabledCount = steps.filter((s) => isStepEnabled(s.id)).length
+
   const { mutate, isPending } = useMutation({
-    mutationFn: (body?: { inputs?: Record<string, string> }) =>
+    mutationFn: (body?: TRunRunbookBody) =>
       runRunbook({
         installId: install!.id,
         runbookId,
@@ -140,7 +149,13 @@ export const RunRunbookModal = ({
   })
 
   const hasInputs = inputs.length > 0
-  const onReview = !hasInputs || page === 1
+
+  // View per wizard page. With inputs: 0=inputs form, 1=steps summary, 2=inputs summary (+submit).
+  // Without inputs: a single steps summary (+submit).
+  const showInputsForm = hasInputs && page === 0
+  const showStepsSummary = !hasInputs || page === 1
+  const showInputsSummary = hasInputs && page === 2
+  const isSubmitView = !hasInputs || page === 2
 
   const collectInputs = (): Record<string, string> => {
     const form = formRef.current
@@ -175,14 +190,23 @@ export const RunRunbookModal = ({
       return
     }
 
+    setReviewValues(collectInputs())
     setPage(1)
   }
 
   const handleRun = () => {
-    mutate(hasInputs ? { inputs: collectInputs() } : undefined)
+    mutate({
+      ...(hasInputs ? { inputs: collectInputs() } : {}),
+      steps: steps.map((s) => ({
+        step_id: s.id ?? '',
+        enabled: isStepEnabled(s.id),
+      })),
+    })
   }
 
-  const primaryActionTrigger: IButtonAsButton = onReview
+  const noStepsEnabled = enabledCount === 0
+
+  const primaryActionTrigger: IButtonAsButton = isSubmitView
     ? {
         children: isPending ? (
           <>
@@ -195,38 +219,62 @@ export const RunRunbookModal = ({
             <Icon variant="PlayIcon" />
           </>
         ),
-        disabled: isPending,
+        disabled: isPending || noStepsEnabled,
         onClick: handleRun,
         variant: 'primary',
       }
     : {
         children: 'Next',
-        onClick: handleNext,
+        onClick: showInputsForm ? handleNext : () => setPage(2),
+        disabled: showInputsForm ? false : noStepsEnabled,
         variant: 'primary',
       }
 
+  const secondaryActionTrigger: IButtonAsButton | undefined =
+    hasInputs && page > 0
+      ? {
+          children: 'Back',
+          onClick: () => setPage(page === 2 ? 1 : 0),
+          disabled: isPending,
+          variant: 'secondary',
+        }
+      : undefined
+
   return (
     <Modal
-      heading={`Run ${runbookName}${onReview ? '?' : ''}`}
+      size="lg"
+      heading={`Run ${runbookName}${isSubmitView ? '?' : ''}`}
       primaryActionTrigger={primaryActionTrigger}
-      secondaryActionTrigger={
-        hasInputs && onReview
-          ? {
-              children: 'Back',
-              onClick: () => setPage(0),
-              disabled: isPending,
-              variant: 'secondary',
-            }
-          : undefined
-      }
+      secondaryActionTrigger={secondaryActionTrigger}
       {...props}
     >
       <div className="flex flex-col gap-4">
-        {/* Inputs page — kept mounted (hidden on review) so form values persist. */}
+        {hasInputs ? (
+          <WizardNavComponent
+            steps={[
+              { id: 'inputs', title: 'Inputs' },
+              { id: 'steps', title: 'Steps' },
+              { id: 'confirm', title: 'Confirm' },
+            ]}
+            currentStepIndex={page}
+            completedSteps={
+              new Set(
+                ['inputs', 'steps'].slice(0, page) as string[]
+              )
+            }
+            onboardingV2={false}
+            skipHref={null}
+            onGoToStep={(index) => {
+              if (index <= page) setPage(index as 0 | 1 | 2)
+            }}
+          />
+        ) : null}
+
+        {/* Inputs form — kept mounted (hidden off the inputs page) so values persist. */}
         {hasInputs ? (
           <form
             ref={formRef}
-            className={onReview ? 'hidden' : 'flex flex-col gap-4'}
+            className={showInputsForm ? 'flex flex-col gap-4' : 'hidden'}
           >
             <Text>Provide inputs for {runbookName}:</Text>
             {inputs.map((input) => (
@@ -235,27 +283,113 @@ export const RunRunbookModal = ({
           </form>
         ) : null}
 
-        {onReview ? (
+        {/* Steps selection page — toggle which steps run. */}
+        {showStepsSummary ? (
+          <Expand
+            id="runbook-select-steps"
+            isOpen
+            heading={
+              <Text weight="strong">
+                Steps ({enabledCount}/{steps.length})
+              </Text>
+            }
+          >
+            <div className="flex flex-col gap-1 p-2">
+              {steps.map((step, i) => (
+                <div
+                  key={step.id ?? i}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <CheckboxInput
+                    checked={isStepEnabled(step.id)}
+                    onChange={(e) =>
+                      setStepEnabled((prev) => ({
+                        ...prev,
+                        [step.id ?? '']: e.target.checked,
+                      }))
+                    }
+                    labelProps={{ labelText: `${i + 1}. ${step.name}` }}
+                  />
+                  <Badge variant="code" size="sm" theme="neutral">
+                    {step.type}
+                  </Badge>
+                </div>
+              ))}
+              {noStepsEnabled ? (
+                <Text variant="subtext" theme="error">
+                  Enable at least one step to run the runbook.
+                </Text>
+              ) : null}
+            </div>
+          </Expand>
+        ) : null}
+
+        {/* Confirm page — inputs summary + steps summary. */}
+        {showInputsSummary ? (
           <>
-            <Text>
-              This will execute {steps.length} step
-              {steps.length !== 1 ? 's' : ''} in order:
-            </Text>
-            <ol className="flex flex-col gap-1">
-              {steps
-                .slice()
-                .sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
-                .map((step, i) => (
-                  <li key={step.id ?? i} className="flex items-center gap-2">
-                    <Text as="span" variant="body">
-                      {i + 1}. {step.name}
-                    </Text>
-                    <Badge variant="code" size="sm" theme="neutral">
-                      {step.type}
-                    </Badge>
-                  </li>
-                ))}
-            </ol>
+            <Expand
+              id="runbook-review-inputs"
+              isOpen
+              heading={<Text weight="strong">Inputs ({inputs.length})</Text>}
+            >
+              <dl className="flex flex-col gap-2 p-2">
+                {inputs.map((input) => {
+                  const value = reviewValues[input.name] ?? ''
+                  return (
+                    <div
+                      key={input.id ?? input.name}
+                      className="grid grid-cols-2 gap-2"
+                    >
+                      <Text as="dt" variant="subtext">
+                        {input.display_name || input.name}
+                      </Text>
+                      <Text as="dd" variant="body">
+                        {input.sensitive
+                          ? '••••••••'
+                          : value !== ''
+                            ? value
+                            : '—'}
+                      </Text>
+                    </div>
+                  )
+                })}
+              </dl>
+            </Expand>
+
+            <Expand
+              id="runbook-review-steps"
+              isOpen
+              heading={
+                <Text weight="strong">
+                  Steps ({enabledCount}/{steps.length})
+                </Text>
+              }
+            >
+              <ol className="flex flex-col gap-1 p-2">
+                {steps.map((step, i) => {
+                  const on = isStepEnabled(step.id)
+                  return (
+                    <li key={step.id ?? i} className="flex items-center gap-2">
+                      <Text
+                        as="span"
+                        variant="body"
+                        className={on ? undefined : 'line-through opacity-60'}
+                      >
+                        {i + 1}. {step.name}
+                      </Text>
+                      <Badge variant="code" size="sm" theme="neutral">
+                        {step.type}
+                      </Badge>
+                      {!on ? (
+                        <Badge size="sm" theme="neutral">
+                          skipped
+                        </Badge>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ol>
+            </Expand>
           </>
         ) : null}
       </div>

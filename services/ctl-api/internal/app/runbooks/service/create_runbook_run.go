@@ -9,12 +9,19 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 )
 
 type CreateRunbookRunRequest struct {
-	Inputs map[string]*string `json:"inputs,omitempty"`
+	Inputs map[string]*string              `json:"inputs,omitempty"`
+	Steps  []CreateRunbookRunStepSelection `json:"steps,omitempty"`
+}
+
+type CreateRunbookRunStepSelection struct {
+	StepID  string `json:"step_id" validate:"required"`
+	Enabled bool   `json:"enabled"`
 }
 
 // @ID				CreateRunbookRun
@@ -127,6 +134,12 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	}
 	runbookInputs := mergeRunbookInputs(&runbookConfig, req.Inputs)
 
+	stepSelections, err := buildStepSelections(&runbookConfig, req.Steps)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	// Create the run record
 	run := app.InstallRunbookRun{
 		OrgID:            org.ID,
@@ -134,6 +147,7 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 		InstallRunbookID: installRunbook.ID,
 		RunbookConfigID:  runbookConfig.ID,
 		RunbookInputs:    runbookInputs,
+		StepSelections:   stepSelections,
 		Status:           app.InstallRunbookRunStatusQueued,
 		TriggeredByID:    account.ID,
 	}
@@ -181,6 +195,49 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	run.InstallWorkflow = workflow
 
 	ctx.JSON(http.StatusCreated, run)
+}
+
+// buildStepSelections validates the supplied step selections against the config's steps
+// and returns the persisted selections. Unknown step IDs are rejected; an empty request
+// means all steps run. At least one step must remain enabled.
+func buildStepSelections(rbConfig *app.RunbookConfig, supplied []CreateRunbookRunStepSelection) ([]app.RunbookStepSelection, error) {
+	if len(supplied) == 0 {
+		return nil, nil
+	}
+
+	stepByID := make(map[string]app.RunbookStepConfig, len(rbConfig.Steps))
+	for _, step := range rbConfig.Steps {
+		stepByID[step.ID] = step
+	}
+
+	selections := make([]app.RunbookStepSelection, 0, len(supplied))
+	enabledCount := 0
+	for _, sel := range supplied {
+		step, ok := stepByID[sel.StepID]
+		if !ok {
+			return nil, stderr.ErrUser{
+				Err:         fmt.Errorf("step %s does not exist in runbook config", sel.StepID),
+				Description: "step " + sel.StepID + " selected for the run does not exist in the runbook",
+			}
+		}
+		if sel.Enabled {
+			enabledCount++
+		}
+		selections = append(selections, app.RunbookStepSelection{
+			StepID:  step.ID,
+			Name:    step.Name,
+			Enabled: sel.Enabled,
+		})
+	}
+
+	if enabledCount == 0 {
+		return nil, stderr.ErrUser{
+			Err:         fmt.Errorf("no steps enabled for runbook run"),
+			Description: "at least one step must be enabled to run the runbook",
+		}
+	}
+
+	return selections, nil
 }
 
 // mergeRunbookInputs overlays the supplied values over each declared input's default,

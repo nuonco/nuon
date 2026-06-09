@@ -1,8 +1,14 @@
 import { api } from '@/lib/api'
 import type { TInstallRunbookRun } from './get-install-runbooks'
 
+export type TRunRunbookStepSelection = {
+  step_id: string
+  enabled: boolean
+}
+
 export type TRunRunbookBody = {
   inputs?: Record<string, string>
+  steps?: TRunRunbookStepSelection[]
 }
 
 export async function runRunbook({
