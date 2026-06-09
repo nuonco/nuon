@@ -287,6 +287,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	runners.PATCH("/processes/:process_id", s.UpdateRunnerProcess)
 	runners.GET("/processes/:process_id/shutdowns", s.GetRunnerProcessShutdowns)
 	runners.POST("/processes/:process_id/shutdowns/:shutdown_id/complete", s.CompleteRunnerProcessShutdown)
+	runners.POST("/processes/:process_id/terminating", s.ReportRunnerProcessTerminating)
 
 	runnerJobs := api.Group("/v1/runner-jobs/:runner_job_id")
 	s.GET(runnerJobs, "", s.GetRunnerJob, apiPkg.APIContextTypeRunner, true)
