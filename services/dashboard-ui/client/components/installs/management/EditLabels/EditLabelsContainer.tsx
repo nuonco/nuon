@@ -47,6 +47,7 @@ export const EditLabelsModalContainer = ({ ...props }: IModal) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['install', install.id] })
+      queryClient.invalidateQueries({ queryKey: ['installs'] })
       addToast(
         <Toast heading="Labels updated" theme="success">
           <Text>Labels updated for {install.name}.</Text>

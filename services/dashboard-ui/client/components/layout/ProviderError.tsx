@@ -6,7 +6,7 @@ import type { TAPIError } from '@/types'
 export const ProviderError = ({ error }: { error: TAPIError }) => {
   const isNotFound = error.status === 404 || error.status === 403
   return (
-    <div className="flex items-center justify-center w-full h-screen">
+    <div className="flex items-center justify-center w-full flex-1">
       <EmptyState
         variant={isNotFound ? '404' : 'diagram'}
         emptyTitle={isNotFound ? 'Not found' : 'Something went wrong'}
