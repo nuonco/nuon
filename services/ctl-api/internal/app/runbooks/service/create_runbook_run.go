@@ -63,11 +63,9 @@ func (s *service) CreateRunbookRun(ctx *gin.Context) {
 	}
 
 	var req CreateRunbookRunRequest
-	if ctx.Request.ContentLength != 0 {
-		if err := ctx.ShouldBindJSON(&req); err != nil {
-			ctx.Error(fmt.Errorf("unable to parse request: %w", err))
-			return
-		}
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(fmt.Errorf("unable to parse request: %w", err))
+		return
 	}
 
 	// Find the install to get its app config version

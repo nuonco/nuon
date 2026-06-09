@@ -51,28 +51,29 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		return nil, errors.Wrap(err, "unable to get runbook config")
 	}
 
-	// Drop steps explicitly disabled for this run so we never generate them.
 	stepSelections, err := activities.AwaitGetRunbookStepSelections(ctx, activities.GetRunbookStepSelectionsRequest{
 		InstallWorkflowID: flw.ID,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get runbook step selections")
 	}
+
+	// filter out disabled steps to not add them to final workflow
 	disabledSteps := make(map[string]struct{})
 	for _, sel := range stepSelections {
 		if !sel.Enabled {
 			disabledSteps[sel.StepID] = struct{}{}
 		}
 	}
+
+	var runbookSteps []app.RunbookStepConfig
 	if len(disabledSteps) > 0 {
-		enabledSteps := make([]app.RunbookStepConfig, 0, len(rbConfig.Steps))
 		for _, stepCfg := range rbConfig.Steps {
 			if _, off := disabledSteps[stepCfg.ID]; off {
 				continue
 			}
-			enabledSteps = append(enabledSteps, stepCfg)
+			runbookSteps = append(runbookSteps, stepCfg)
 		}
-		rbConfig.Steps = enabledSteps
 	}
 
 	install, err := activities.AwaitGetByInstallID(ctx, installID)
@@ -99,7 +100,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	}
 
 	// Generate steps for each runbook step
-	for _, stepCfg := range rbConfig.Steps {
+	for _, stepCfg := range runbookSteps {
 		switch stepCfg.Type {
 		case app.RunbookStepTypeComponentDeploy:
 			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, flw)

@@ -38,7 +38,7 @@ type RunbookConfig struct {
 	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 
 	// DeprecationWarnings collects messages about legacy field usage observed during parse().
-	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the user.
+	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the 
 	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
 }
 
