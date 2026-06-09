@@ -158,10 +158,16 @@ func AllModels() []any {
 		&app.InstallActionWorkflowManualTrigger{},
 		&app.InstallActionWorkflowRunStep{},
 
+		// notebooks
+		&app.Notebook{},
+		&app.NotebookCell{},
+		&app.NotebookCellRun{},
+
 		// runbooks
 		&app.Runbook{},
 		&app.RunbookConfig{},
 		&app.RunbookStepConfig{},
+		&app.RunbookInput{},
 		&app.InstallRunbook{},
 		&app.InstallRunbookRun{},
 

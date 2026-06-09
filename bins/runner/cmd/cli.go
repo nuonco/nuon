@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/metrics"
 	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
+	ociresolve "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/resolve"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
@@ -48,6 +49,7 @@ func (c *cli) providers() []fx.Option {
 		c.commonProviders(),
 		[]fx.Option{
 			fx.Provide(ocicopy.New),
+			fx.Provide(ociresolve.New),
 			fx.Provide(registry.New),
 
 			// NOTE(jm): we plan to deprecate the default loggers, so each logger is forced to be depended on via

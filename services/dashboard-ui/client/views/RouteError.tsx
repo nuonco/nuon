@@ -15,7 +15,7 @@ export const RouteError = () => {
         emptyMessage={
           is404
             ? "The page you're looking for doesn't exist or has been moved."
-            : 'An unexpected error occurred. Please try again.'
+            : 'An unexpected error occurred. Try again.'
         }
         action={
           <Text variant="subtext">

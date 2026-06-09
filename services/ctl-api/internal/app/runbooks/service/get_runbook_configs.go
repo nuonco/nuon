@@ -25,6 +25,11 @@ import (
 // @Param			offset		query	int		false	"offset"	Default(0)
 // @Param			limit		query	int		false	"limit"		Default(10)
 // @Success		200			{array}	app.RunbookConfig
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks/{runbook_id}/configs [get]
 func (s *service) GetRunbookConfigs(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
@@ -44,6 +49,9 @@ func (s *service) GetRunbookConfigs(ctx *gin.Context) {
 	res := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("Steps", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
+		Preload("Inputs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
 		Where(app.RunbookConfig{OrgID: org.ID, RunbookID: runbookID}).

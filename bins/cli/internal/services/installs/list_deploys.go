@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/pkg/oci/imageref"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -33,6 +34,7 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, offset, lim
 			"STATUS",
 			"TYPE",
 			"BUILD ID",
+			"IMAGE",
 			"CREATED AT",
 			"COMPONENT ID",
 			"COMPONENT NAME",
@@ -40,11 +42,21 @@ func (s *Service) ListDeploys(ctx context.Context, installID string, offset, lim
 		},
 	}
 	for _, deploy := range deploys {
+		var image string
+		if b := deploy.ComponentBuild; b != nil && b.SourceDigest != "" {
+			image = imageref.DisplayRef(imageref.Source{
+				SourceImage:  b.SourceImage,
+				SourceRef:    b.SourceRef,
+				ResolvedTag:  b.ResolvedTag,
+				SourceDigest: b.SourceDigest,
+			})
+		}
 		data = append(data, []string{
 			deploy.ID,
 			deploy.Status,
 			string(deploy.InstallDeployType),
 			deploy.BuildID,
+			image,
 			deploy.CreatedAt,
 			deploy.ComponentID,
 			deploy.ComponentName,

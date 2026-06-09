@@ -25,14 +25,16 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 
 	if containerImage.AWSECRImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.AWSECRImageConfig.ImageURL)
-		configRequest.Tag = generics.ToPtr(containerImage.AWSECRImageConfig.Tag)
+		configRequest.Tag = containerImage.AWSECRImageConfig.Tag
+		configRequest.UpdatePolicy = containerImage.AWSECRImageConfig.UpdatePolicy
 		configRequest.AwsEcrImageConfig = &models.ServiceAwsECRImageConfigRequest{
 			AwsRegion:  containerImage.AWSECRImageConfig.AWSRegion,
 			IamRoleArn: containerImage.AWSECRImageConfig.IAMRoleARN,
 		}
 	} else if containerImage.GCPGARImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.GCPGARImageConfig.ImageURL)
-		configRequest.Tag = generics.ToPtr(containerImage.GCPGARImageConfig.Tag)
+		configRequest.Tag = containerImage.GCPGARImageConfig.Tag
+		configRequest.UpdatePolicy = containerImage.GCPGARImageConfig.UpdatePolicy
 		configRequest.GcpGarImageConfig = &models.ServiceGcpGARImageConfigRequest{
 			GcpProjectID:             containerImage.GCPGARImageConfig.GCPProjectID,
 			GcpRegion:                containerImage.GCPGARImageConfig.GCPRegion,
@@ -41,7 +43,8 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 		}
 	} else if containerImage.PublicImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.PublicImageConfig.ImageURL)
-		configRequest.Tag = generics.ToPtr(containerImage.PublicImageConfig.Tag)
+		configRequest.Tag = containerImage.PublicImageConfig.Tag
+		configRequest.UpdatePolicy = containerImage.PublicImageConfig.UpdatePolicy
 	}
 
 	if len(comp.OperationRoles) > 0 {

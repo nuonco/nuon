@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/processjob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
 
@@ -48,6 +49,13 @@ func (s *service) UpdateRunnerJobExecution(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to update runner job execution status: %w", err))
 		return
+	}
+
+	// On a terminal status, wake the process_job workflow so it finalizes
+	// (stamps finished_at) on this request instead of on its next poll tick.
+	// Intermediate transitions still drive the workflow via its poll loop.
+	if !req.Status.IsRunning() {
+		s.wakeProcessJobWorkflow(ctx, runnerJobID, processjob.TerminalSignalName(runnerJobID))
 	}
 
 	ctx.JSON(http.StatusOK, jobExecution)

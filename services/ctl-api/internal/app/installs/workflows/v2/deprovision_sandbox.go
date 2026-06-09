@@ -37,6 +37,8 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+
 	sg.nextGroupEager() // generate install state
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
@@ -63,7 +65,7 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err := getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePreDeprovisionSandbox, sg, appCfg, awData)
+	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreDeprovisionSandbox)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +97,7 @@ func DeprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 	}
 	steps = append(steps, step)
 
-	lifecycleSteps, err = getLifecycleActionsSteps(ctx, installID, flw, app.ActionWorkflowTriggerTypePostDeprovisionSandbox, sg, appCfg, awData)
+	lifecycleSteps, err = getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePostDeprovisionSandbox)
 	if err != nil {
 		return nil, err
 	}

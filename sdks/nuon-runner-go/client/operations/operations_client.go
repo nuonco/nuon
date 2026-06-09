@@ -178,6 +178,8 @@ type ClientService interface {
 
 	PublishMetrics(params *PublishMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*PublishMetricsOK, error)
 
+	ReportRunnerProcessTerminating(params *ReportRunnerProcessTerminatingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReportRunnerProcessTerminatingAccepted, error)
+
 	RunnerAuthAWS(params *RunnerAuthAWSParams, opts ...ClientOption) (*RunnerAuthAWSOK, error)
 
 	RunnerAuthAWSIID(params *RunnerAuthAWSIIDParams, opts ...ClientOption) (*RunnerAuthAWSIIDOK, error)
@@ -189,6 +191,8 @@ type ClientService interface {
 	RunnerOtelWriteMetrics(params *RunnerOtelWriteMetricsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteMetricsCreated, error)
 
 	RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*RunnerOtelWriteTracesOK, error)
+
+	TailRunnerJobs(params *TailRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailRunnerJobsOK, error)
 
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
 
@@ -2001,6 +2005,63 @@ func (a *Client) PublishMetrics(params *PublishMetricsParams, authInfo runtime.C
 }
 
 /*
+	ReportRunnerProcessTerminating reports that a runner process is terminating because its host VM is shutting down
+
+	Reports that a runner process is terminating because its host VM is shutting down.
+
+Runners send this best-effort beacon when they observe an operating-system
+shutdown (e.g. an ACPI power event triggered by a customer stopping or
+terminating the VM from their cloud portal). The runner only knows that the VM
+is going away; the control plane attributes the cause: if Nuon issued the
+shutdown there is an open shutdown record for the process, otherwise the
+termination was initiated externally.
+
+The endpoint takes no body and is idempotent. Because it races VM/network
+teardown, delivery is not guaranteed — absence of a beacon is handled by the
+existing offline-check fallback.
+*/
+func (a *Client) ReportRunnerProcessTerminating(params *ReportRunnerProcessTerminatingParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ReportRunnerProcessTerminatingAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewReportRunnerProcessTerminatingParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ReportRunnerProcessTerminating",
+		Method:             "POST",
+		PathPattern:        "/v1/runners/{runner_id}/processes/{process_id}/terminating",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ReportRunnerProcessTerminatingReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ReportRunnerProcessTerminatingAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ReportRunnerProcessTerminating: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 RunnerAuthAWS authenticates a runner using a w s presigned requests
 
 Validates runner identity by executing presigned AWS STS and EC2 requests
@@ -2273,6 +2334,52 @@ func (a *Client) RunnerOtelWriteTraces(params *RunnerOtelWriteTracesParams, auth
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for RunnerOtelWriteTraces: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+TailRunnerJobs longs poll for an available runner job
+
+Returns the next available job for this runner, holding the request up to ~25s when the queue is empty. Behind the `runner-job-long-poll` org feature flag; returns 404 when the flag is off so the runner can fall back to legacy 5s polling.
+*/
+func (a *Client) TailRunnerJobs(params *TailRunnerJobsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TailRunnerJobsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewTailRunnerJobsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "TailRunnerJobs",
+		Method:             "GET",
+		PathPattern:        "/v1/runners/{runner_id}/jobs/tail",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &TailRunnerJobsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*TailRunnerJobsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for TailRunnerJobs: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

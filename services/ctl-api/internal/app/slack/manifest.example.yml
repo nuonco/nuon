@@ -88,6 +88,8 @@ settings:
   #     affected rows so audit logs / pickers stay readable.
   #   - channel_archive / channel_left → soft-delete subs targeting that
   #     channel (we cannot post into archived / left channels).
+  #   - member_joined_channel → when the joining member is our bot, post a
+  #     one-time welcome message (once per membership; re-add re-welcomes).
   event_subscriptions:
     request_url: https://<your-public-host>/slack/events
     bot_events:
@@ -96,3 +98,4 @@ settings:
       - channel_rename
       - channel_archive
       - channel_left
+      - member_joined_channel

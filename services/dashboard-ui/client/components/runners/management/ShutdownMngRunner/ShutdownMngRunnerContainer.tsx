@@ -66,7 +66,7 @@ export const ShutdownMngRunnerModalContainer = ({ runnerId, processId, showRunne
     onSuccess: () => {
       addToast(
         <Toast heading="Shutdown managed runner process started" theme="success">
-          <Text>Shutdown managed runner process initiated successfully.</Text>
+          <Text>Shutdown managed runner process initiated.</Text>
         </Toast>
       )
       removeModal(props.modalId)

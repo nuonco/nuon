@@ -1,4 +1,6 @@
 import { BackLink } from '@/components/common/BackLink'
+import { Badge } from '@/components/common/Badge'
+import { ClickToCopy } from '@/components/common/ClickToCopy'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
@@ -14,6 +16,7 @@ import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
 import { CancelRunnerJobButton } from '@/components/runners/CancelRunnerJob'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import type { TApp, TBuild, TComponent } from '@/types'
+import { isImageBuild } from '@/utils/image-ref'
 import { toSentenceCase } from '@/utils/string-utils'
 
 interface IBuildHeader {
@@ -77,6 +80,11 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
           <Text variant="base" weight="strong">
             {component?.name} build
           </Text>
+          {build?.no_op ? (
+            <Badge variant="code" size="sm" theme="neutral">
+              no-op
+            </Badge>
+          ) : null}
         </span>
         <ID>{build?.id}</ID>
         <div className="flex items-center justify-between mt-1">
@@ -118,6 +126,55 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
           </div>
         </div>
       </div>
+
+      {isImageBuild(build) ? <BuildImageSourceDetails build={build} /> : null}
     </header>
+  )
+}
+
+const BuildImageSourceDetails = ({ build }: { build: TBuild }) => {
+  return (
+    <div className="flex flex-col gap-3 pt-4 border-t">
+      <Text variant="subtext" weight="strong">
+        Image source
+      </Text>
+      <div className="grid gap-4 md:grid-cols-2">
+        {build.source_ref ? (
+          <LabeledValue label="Source ref">
+            <Text variant="subtext" family="mono" className="break-all">
+              {build.source_ref}
+            </Text>
+          </LabeledValue>
+        ) : null}
+        {build.resolved_tag ? (
+          <LabeledValue label="Resolved tag">
+            <Text variant="subtext" family="mono">
+              {build.resolved_tag}
+            </Text>
+          </LabeledValue>
+        ) : null}
+        {build.source_digest ? (
+          <LabeledValue label="Digest" className="md:col-span-2">
+            <ClickToCopy>
+              <Text variant="subtext" family="mono" className="break-all">
+                {build.source_digest}
+              </Text>
+            </ClickToCopy>
+          </LabeledValue>
+        ) : null}
+        {build.source_media_type ? (
+          <LabeledValue label="Media type" className="md:col-span-2">
+            <Text variant="subtext" family="mono" className="break-all">
+              {build.source_media_type}
+            </Text>
+          </LabeledValue>
+        ) : null}
+        {build.resolved_at ? (
+          <LabeledValue label="Resolved">
+            <Time variant="subtext" time={build.resolved_at} />
+          </LabeledValue>
+        ) : null}
+      </div>
+    </div>
   )
 }

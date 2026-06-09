@@ -1,4 +1,4 @@
-FROM public.ecr.aws/p7e3r5y0/mirror/golang:1.25-alpine
+FROM 821160992543.dkr.ecr.us-west-2.amazonaws.com/docker.io/library/golang:1.25-alpine
 
 ENV CGO_ENABLED=0
 

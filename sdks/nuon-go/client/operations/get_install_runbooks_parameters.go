@@ -82,6 +82,12 @@ type GetInstallRunbooksParams struct {
 	*/
 	Offset *int64
 
+	/* Q.
+
+	   search by runbook name or ID
+	*/
+	Q *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -182,6 +188,17 @@ func (o *GetInstallRunbooksParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
+// WithQ adds the q to the get install runbooks params
+func (o *GetInstallRunbooksParams) WithQ(q *string) *GetInstallRunbooksParams {
+	o.SetQ(q)
+	return o
+}
+
+// SetQ adds the q to the get install runbooks params
+func (o *GetInstallRunbooksParams) SetQ(q *string) {
+	o.Q = q
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetInstallRunbooksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -224,6 +241,23 @@ func (o *GetInstallRunbooksParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Q != nil {
+
+		// query param q
+		var qrQ string
+
+		if o.Q != nil {
+			qrQ = *o.Q
+		}
+		qQ := qrQ
+		if qQ != "" {
+
+			if err := r.SetQueryParam("q", qQ); err != nil {
 				return err
 			}
 		}

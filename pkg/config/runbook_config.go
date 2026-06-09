@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -14,8 +15,15 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeDeploy RunbookStepType = "deploy"
-	RunbookStepTypeAction RunbookStepType = "action"
+	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
+	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
+	RunbookStepTypeAction             RunbookStepType = "action"
+	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
+	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+
+	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
+	// as input and canonicalized to component_deploy at parse/ingress time.
+	RunbookStepTypeDeployLegacy RunbookStepType = "deploy"
 )
 
 type RunbookConfig struct {
@@ -24,18 +32,32 @@ type RunbookConfig struct {
 	Readme      string               `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
 	Labels      map[string]string    `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	Steps       []*RunbookStepConfig `mapstructure:"steps" toml:"steps" jsonschema:"required"`
+	Inputs      []RunbookInput       `mapstructure:"input,omitempty" toml:"input"`
 
 	References   []refs.Ref `mapstructure:"-" jsonschema:"-"`
 	Dependencies []string   `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
+
+	// DeprecationWarnings collects messages about legacy field usage observed during parse().
+	// Populated by parse(); consumed by callers (e.g. the CLI sync) to surface to the
+	DeprecationWarnings []string `mapstructure:"-" toml:"-" jsonschema:"-"`
 }
 
 type RunbookStepConfig struct {
 	Name string          `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Type RunbookStepType `mapstructure:"type" toml:"type" jsonschema:"required"`
 
-	// For type = "deploy"
+	// For type = "component_deploy" / "component_tear_down"
 	ComponentName      string `mapstructure:"component_name,omitempty" toml:"component_name,omitempty"`
-	DeployDependencies bool   `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
+	DeployDependents   bool   `mapstructure:"deploy_dependents,omitempty" toml:"deploy_dependents,omitempty"`
+	TearDownDependents bool   `mapstructure:"tear_down_dependents,omitempty" toml:"tear_down_dependents,omitempty"`
+
+	// Legacy alias for DeployDependents — kept for back-compat with TOML configs
+	// written before the rename. Folded into DeployDependents in parse().
+	DeployDependenciesLegacy bool `mapstructure:"deploy_dependencies,omitempty" toml:"deploy_dependencies,omitempty"`
+
+	// For type = "sandbox_reprovision" — when true, only run the sandbox infra plan + apply
+	// and do NOT redeploy components on top.
+	SkipComponentDeploys bool `mapstructure:"skip_component_deploys,omitempty" toml:"skip_component_deploys,omitempty"`
 
 	// For type = "action" — reference existing action
 	ActionName string `mapstructure:"action_name,omitempty" toml:"action_name,omitempty"`
@@ -61,6 +83,8 @@ func (r RunbookConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("./release-notes.md").
 		Field("steps").Short("ordered steps to execute in the runbook").Required().
 		Long("Sequential list of deploy and action steps. Each step executes in order. Deploy steps can include dependency deployment. Action steps can reference existing actions or define inline actions")
+	// Field("input").Short("inputs collected when the runbook is run").
+	// Long("List of inputs prompted for when running the runbook. Values are templated into step fields (command, inline_contents, env_vars, role) via {{.runbook_inputs.input_name}}")
 }
 
 func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -70,15 +94,21 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("Either 'deploy' for deploying a component, or 'action' for running an action").
-		Example("deploy").
+		Long("One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down' (tear down a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
+		Example("component_deploy").
+		Example("component_tear_down").
 		Example("action").
-		Field("component_name").Short("component to deploy (for deploy steps)").
-		Long("Name of the component to deploy. Required when type is 'deploy'").
+		Example("sandbox_reprovision").
+		Field("component_name").Short("component to deploy or tear down (for component steps)").
+		Long("Name of the component to deploy or tear down. Required when type is 'component_deploy' or 'component_tear_down'").
 		Example("database").
 		Example("api-server").
-		Field("deploy_dependencies").Short("also deploy transitive dependencies").
-		Long("When true, deploys the component and all its transitive dependencies in dependency order. Only applies to deploy steps").
+		Field("deploy_dependents").Short("also deploy transitive dependents").
+		Long("When true, deploys the component and all components that transitively depend on it (downstream), in dependency order. Only applies to component_deploy steps").
+		Field("deploy_dependencies").Short("legacy alias for deploy_dependents").
+		Deprecated("use 'deploy_dependents' instead").
+		Field("tear_down_dependents").Short("also tear down transitive dependents").
+		Long("When true, tears down the component and all components that transitively depend on it (downstream), with dependents torn down first. Only applies to component_tear_down steps").
 		Field("action_name").Short("existing action to run (for action steps)").
 		Long("Name of a previously defined action workflow to execute. Mutually exclusive with inline action fields (command, inline_contents)").
 		Example("database-migration").
@@ -95,7 +125,9 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("30s").
 		Example("5m").
 		Field("role").Short("IAM role for inline action execution").
-		Long("IAM role name to use when executing the inline action step")
+		Long("IAM role name to use when executing the inline action step").
+		Field("skip_component_deploys").Short("skip component deployments after sandbox reprovision").
+		Long("Only applies to 'sandbox_reprovision' steps. When true, only the sandbox infrastructure is reprovisioned and components are NOT redeployed on top. Matches the dashboard's 'Skip component deployments' option")
 }
 
 func (r *RunbookConfig) parse() error {
@@ -110,6 +142,34 @@ func (r *RunbookConfig) parse() error {
 				return ErrConfig{
 					Description: fmt.Sprintf("unable to parse timeout %s for step %s", step.Timeout, step.Name),
 					Err:         err,
+				}
+			}
+		}
+		// Fold the legacy alias into the canonical field. New code should only read DeployDependents.
+		if step.DeployDependenciesLegacy {
+			step.DeployDependents = true
+			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: 'deploy_dependencies' is deprecated, use 'deploy_dependents' instead", r.Name, step.Name))
+		}
+		// Canonicalize the legacy "deploy" type to "component_deploy".
+		if step.Type == RunbookStepTypeDeployLegacy {
+			step.Type = RunbookStepTypeComponentDeploy
+			r.DeprecationWarnings = append(r.DeprecationWarnings, fmt.Sprintf("runbook %q step %q: type 'deploy' is deprecated, use 'component_deploy' instead", r.Name, step.Name))
+		}
+	}
+
+	for _, input := range r.Inputs {
+		if input.Type == "json" && input.Default != nil {
+			str, ok := input.Default.(string)
+			if !ok {
+				return ErrConfig{
+					Description: fmt.Sprintf("runbook %q input %q default value must be a json string", r.Name, input.Name),
+					Err:         fmt.Errorf("input %s default value must be a json string", input.Name),
+				}
+			}
+			if !json.Valid([]byte(str)) {
+				return ErrConfig{
+					Description: fmt.Sprintf("runbook %q input %q has an invalid JSON string default", r.Name, input.Name),
+					Err:         fmt.Errorf("input %s default value is not valid JSON", input.Name),
 				}
 			}
 		}

@@ -94,7 +94,7 @@ export const EditBranchNameModal = ({
     }
 
     if (useVcs && !selectedRepo) {
-      setValidationError('Please select a repository')
+      setValidationError('Select a repository')
       return
     }
 
@@ -159,7 +159,7 @@ export const EditBranchNameModal = ({
           <>
             {vcsConnections.length === 0 ? (
               <Banner theme="warn">
-                No VCS connections found. Please connect your GitHub account first.
+                No VCS connections found. Connect your GitHub account first.
               </Banner>
             ) : (
               <>
@@ -195,7 +195,7 @@ export const EditBranchNameModal = ({
                   <Banner theme="error">Failed to load repositories</Banner>
                 ) : repos.length === 0 ? (
                   <Banner theme="warn">
-                    No connected repositories found. Please update your GitHub connection
+                    No connected repositories found. Update your GitHub connection
                     to grant access to repositories.
                   </Banner>
                 ) : (

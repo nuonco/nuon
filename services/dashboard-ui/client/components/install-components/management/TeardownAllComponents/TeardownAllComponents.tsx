@@ -39,7 +39,7 @@ export const TeardownAllComponentsModal = ({
             <Icon variant="Loading" /> Starting teardown
           </span>
         ) : (
-          'Teardown components'
+          'Teardown all components'
         ),
         disabled: isKickedOff || isPending,
         onClick: onSubmit,
@@ -53,12 +53,8 @@ export const TeardownAllComponentsModal = ({
             {(error as any)?.error || 'Unable to teardown components'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to teardown all components?
-        </Text>
         <Text variant="base">
-          This action will remove all running component deployments from your
-          install.
+          This will remove all running component deployments from your install.
         </Text>
       </div>
     </Modal>

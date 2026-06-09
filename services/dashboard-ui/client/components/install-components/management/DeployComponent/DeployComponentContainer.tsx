@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
+import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { RoleSelector } from '@/components/roles/RoleSelector'
@@ -54,7 +55,9 @@ export const DeployComponentModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{component.name}</Badge> deploy started</span>} theme="info" />
+        <Toast heading="Deploying component" theme="info">
+          <Text>Deploying <Badge variant="code" size="md">{component.name}</Badge> to <Badge variant="code" size="md">{install.name}</Badge>. This may take a few minutes.</Text>
+        </Toast>
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
@@ -79,7 +82,9 @@ export const DeployComponentModalContainer = ({
         },
       })
       addToast(
-        <Toast heading={<span className="inline-flex items-center gap-1.5"><Badge variant="code" size="md">{component.name}</Badge> deploy failed</span>} theme="error" />
+        <Toast heading="Deploy failed" theme="error">
+          <Text>Unable to deploy <Badge variant="code" size="md">{component.name}</Badge>.</Text>
+        </Toast>
       )
     },
   })

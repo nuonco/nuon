@@ -1,19 +1,33 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/invopop/jsonschema"
+
+	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 )
 
 type AWSECRConfig struct {
 	IAMRoleARN string `mapstructure:"iam_role_arn,omitempty" toml:"iam_role_arn,omitempty" jsonschema:"required"`
 	AWSRegion  string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 	ImageURL   string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
+	Tag        string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+	// matching tag from the registry at build time. Either tag or
+	// update_policy must be set.
+	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type PublicImageConfig struct {
 	ImageURL string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required" `
-	Tag      string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
+	Tag      string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+	// matching tag from the registry at build time. Either tag or
+	// update_policy must be set.
+	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 // NOTE(jm): components are parsed using mapstructure. Please refer to the wiki entry for more.
@@ -21,9 +35,14 @@ type GCPGARConfig struct {
 	GCPProjectID             string `mapstructure:"gcp_project_id,omitempty" toml:"gcp_project_id,omitempty" jsonschema:"required"`
 	GCPRegion                string `mapstructure:"region,omitempty" toml:"region,omitempty" jsonschema:"required"`
 	ImageURL                 string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
-	Tag                      string `mapstructure:"tag,omitempty" toml:"tag,omitempty" jsonschema:"required"`
+	Tag                      string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
 	ServiceAccountEmail      string `mapstructure:"service_account_email,omitempty" toml:"service_account_email,omitempty"`
 	WorkloadIdentityProvider string `mapstructure:"workload_identity_provider,omitempty" toml:"workload_identity_provider,omitempty"`
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+	// matching tag from the registry at build time. Either tag or
+	// update_policy must be set.
+	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
 type ExternalImageComponentConfig struct {
@@ -49,11 +68,18 @@ func (a AWSECRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Full URL to the ECR image (without tag). Format: <account-id>.dkr.ecr.<region>.amazonaws.com/<repository-name>/<image-name>").
 		Example("123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp/api").
 		Example("123456789012.dkr.ecr.us-west-2.amazonaws.com/myapp/worker").
-		Field("tag").Short("image tag").Required().
-		Long("Tag or version of the container image to deploy. Supports templating (e.g., {{.nuon.install.id}})").
+		Field("tag").Short("image tag").
+		Long("Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., {{.nuon.install.id}})").
 		Example("v1.0.0").
 		Example("latest").
-		Example("{{.nuon.install.id}}")
+		Example("{{.nuon.install.id}}").
+		Field("update_policy").Short("semver constraint for tag resolution").
+		Long("Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and satisfy the constraint, and selects the highest matching tag. Tags that aren't valid semver (e.g. \"latest\", \"stable\", branch names) are skipped. Either tag or update_policy must be set. Supported constraint shapes: tilde (~1.25.0 → >=1.25.0 <1.26.0), caret (^2.3.1 → >=2.3.1 <3.0.0), comparators joined with AND (>=1.0.0,<2.0.0), wildcard ranges (1.2.x, 1.x), inclusive hyphen ranges (1.0.0 - 2.0.0), OR (^1.0 || ^2.0), and exact match (=1.25.5).").
+		Example("~1.25.0").
+		Example("^2.0.0").
+		Example(">=1.0.0,<2.0.0").
+		Example("1.x").
+		Example("^1.0 || ^2.0")
 }
 
 func (p PublicImageConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -64,11 +90,18 @@ func (p PublicImageConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("docker.io/library/postgres").
 		Example("quay.io/myorg/myapp").
 		Example("gcr.io/myproject/myapp").
-		Field("tag").Short("image tag").Required().
-		Long("Tag or version of the container image to deploy. Supports templating (e.g., {{.nuon.install.id}})").
+		Field("tag").Short("image tag").
+		Long("Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., {{.nuon.install.id}})").
 		Example("v1.0.0").
 		Example("latest").
-		Example("{{.nuon.install.id}}")
+		Example("{{.nuon.install.id}}").
+		Field("update_policy").Short("semver constraint for tag resolution").
+		Long("Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and satisfy the constraint, and selects the highest matching tag. Tags that aren't valid semver (e.g. \"latest\", \"stable\", branch names) are skipped. Either tag or update_policy must be set. Supported constraint shapes: tilde (~1.25.0 → >=1.25.0 <1.26.0), caret (^2.3.1 → >=2.3.1 <3.0.0), comparators joined with AND (>=1.0.0,<2.0.0), wildcard ranges (1.2.x, 1.x), inclusive hyphen ranges (1.0.0 - 2.0.0), OR (^1.0 || ^2.0), and exact match (=1.25.5).").
+		Example("~1.25.0").
+		Example("^2.0.0").
+		Example(">=1.0.0,<2.0.0").
+		Example("1.x").
+		Example("^1.0 || ^2.0")
 }
 
 func (g GCPGARConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -84,11 +117,18 @@ func (g GCPGARConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("image_url").Short("GAR image URL").Required().
 		Long("Full URL to the GAR image (without tag). Format: <region>-docker.pkg.dev/<project>/<repository>/<image>").
 		Example("us-central1-docker.pkg.dev/my-project/my-repo/my-image").
-		Field("tag").Short("image tag").Required().
-		Long("Tag or version of the container image to deploy. Supports templating (e.g., {{.nuon.install.id}})").
+		Field("tag").Short("image tag").
+		Long("Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., {{.nuon.install.id}})").
 		Example("v1.0.0").
 		Example("latest").
 		Example("{{.nuon.install.id}}").
+		Field("update_policy").Short("semver constraint for tag resolution").
+		Long("Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and satisfy the constraint, and selects the highest matching tag. Tags that aren't valid semver (e.g. \"latest\", \"stable\", branch names) are skipped. Either tag or update_policy must be set. Supported constraint shapes: tilde (~1.25.0 → >=1.25.0 <1.26.0), caret (^2.3.1 → >=2.3.1 <3.0.0), comparators joined with AND (>=1.0.0,<2.0.0), wildcard ranges (1.2.x, 1.x), inclusive hyphen ranges (1.0.0 - 2.0.0), OR (^1.0 || ^2.0), and exact match (=1.25.5).").
+		Example("~1.25.0").
+		Example("^2.0.0").
+		Example(">=1.0.0,<2.0.0").
+		Example("1.x").
+		Example("^1.0 || ^2.0").
 		Field("service_account_email").Short("GCP service account for impersonation").
 		Long("Optional service account email to impersonate when pulling from GAR. If not set, uses application default credentials").
 		Example("my-sa@my-project.iam.gserviceaccount.com")
@@ -115,6 +155,35 @@ func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema
 }
 
 func (t *ExternalImageComponentConfig) Validate() error {
+	// Every image source must declare either a literal tag or an
+	// `update_policy` semver constraint (or both); update_policy syntax is
+	// validated up-front so users get a clear error before the API ever
+	// rejects the sync.
+	type imageSource struct {
+		name         string
+		tag          string
+		updatePolicy string
+	}
+	var sources []imageSource
+	if t.PublicImageConfig != nil {
+		sources = append(sources, imageSource{"public", t.PublicImageConfig.Tag, t.PublicImageConfig.UpdatePolicy})
+	}
+	if t.AWSECRImageConfig != nil {
+		sources = append(sources, imageSource{"aws_ecr", t.AWSECRImageConfig.Tag, t.AWSECRImageConfig.UpdatePolicy})
+	}
+	if t.GCPGARImageConfig != nil {
+		sources = append(sources, imageSource{"gcp_gar", t.GCPGARImageConfig.Tag, t.GCPGARImageConfig.UpdatePolicy})
+	}
+	for _, s := range sources {
+		if s.tag == "" && s.updatePolicy == "" {
+			return fmt.Errorf("%s: either tag or update_policy must be set", s.name)
+		}
+		if s.updatePolicy != "" {
+			if err := updatepolicy.Validate(s.updatePolicy); err != nil {
+				return fmt.Errorf("%s: %w", s.name, err)
+			}
+		}
+	}
 	return nil
 }
 

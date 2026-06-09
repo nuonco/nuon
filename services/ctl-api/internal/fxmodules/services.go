@@ -12,6 +12,7 @@ import (
 	generalservice "github.com/nuonco/nuon/services/ctl-api/internal/app/general/service"
 	identityprovidersservice "github.com/nuonco/nuon/services/ctl-api/internal/app/identity-providers/service"
 	installsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/service"
+	notebooksservice "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/service"
 	onboardingservice "github.com/nuonco/nuon/services/ctl-api/internal/app/onboarding/service"
 	orgsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/service"
 	policyreportsservice "github.com/nuonco/nuon/services/ctl-api/internal/app/policy_reports/service"
@@ -47,6 +48,7 @@ var sharedServices = fx.Options(
 	fx.Provide(api.AsService(generalservice.New)),
 	fx.Provide(api.AsService(identityprovidersservice.New)),
 	fx.Provide(api.AsService(installsservice.New)),
+	fx.Provide(api.AsService(notebooksservice.New)),
 	fx.Provide(api.AsService(orgsservice.New)),
 	fx.Provide(api.AsService(policyreportsservice.New)),
 	fx.Provide(api.AsService(queuesservice.New)),

@@ -2,9 +2,11 @@ package apisyncer
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	nuon "github.com/nuonco/nuon/sdks/nuon-go"
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
@@ -20,8 +22,8 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 		}
 
 		isNew = true
-		savedRunbook, err = s.apiClient.CreateRunbook(ctx, s.appID, &nuon.CreateRunbookRequest{
-			Name:        runbook.Name,
+		savedRunbook, err = s.apiClient.CreateRunbook(ctx, s.appID, &models.ServiceCreateRunbookRequest{
+			Name:        generics.ToPtr(runbook.Name),
 			Description: runbook.Description,
 			Labels:      runbook.Labels,
 		})
@@ -34,7 +36,7 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 	}
 
 	if !isNew {
-		_, err = s.apiClient.UpdateRunbook(ctx, savedRunbook.ID, &nuon.UpdateRunbookRequest{
+		_, err = s.apiClient.UpdateRunbook(ctx, savedRunbook.ID, &models.ServiceUpdateRunbookRequest{
 			Name:        runbook.Name,
 			Description: runbook.Description,
 			Labels:      runbook.Labels,
@@ -47,8 +49,8 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 		}
 	}
 
-	request := &nuon.CreateRunbookConfigRequest{
-		AppConfigID: generics.ToPtr(s.state.CfgID),
+	request := &models.ServiceCreateRunbookConfigRequest{
+		AppConfigID: s.state.CfgID,
 		Readme:      runbook.Readme,
 	}
 
@@ -58,18 +60,37 @@ func (s *syncer) syncRunbook(ctx context.Context, resource string, runbook *conf
 			timeout, _ = time.ParseDuration(step.Timeout)
 		}
 
-		request.Steps = append(request.Steps, &nuon.CreateRunbookStepConfigRequest{
-			Name:               step.Name,
-			Type:               string(step.Type),
-			Idx:                int64(idx),
-			ComponentName:      step.ComponentName,
-			DeployDependencies: step.DeployDependencies,
-			ActionName:         step.ActionName,
-			Command:            step.Command,
-			InlineContents:     step.InlineContents,
-			EnvVars:            step.EnvVarMap,
-			Timeout:            timeout.Nanoseconds(),
-			Role:               step.Role,
+		request.Steps = append(request.Steps, &models.ServiceCreateRunbookStepConfigRequest{
+			Name:                 generics.ToPtr(step.Name),
+			Type:                 generics.ToPtr(string(step.Type)),
+			Idx:                  int64(idx),
+			ComponentName:        step.ComponentName,
+			DeployDependents:     step.DeployDependents,
+			TearDownDependents:   step.TearDownDependents,
+			SkipComponentDeploys: step.SkipComponentDeploys,
+			ActionName:           step.ActionName,
+			Command:              step.Command,
+			InlineContents:       step.InlineContents,
+			EnvVars:              step.EnvVarMap,
+			Timeout:              timeout.Nanoseconds(),
+			Role:                 step.Role,
+		})
+	}
+
+	for _, input := range runbook.Inputs {
+		var defaultVal string
+		if input.Default != nil {
+			defaultVal = fmt.Sprintf("%v", input.Default)
+		}
+
+		request.Inputs = append(request.Inputs, &models.ServiceCreateRunbookInputRequest{
+			Name:        generics.ToPtr(input.Name),
+			DisplayName: input.DisplayName,
+			Description: input.Description,
+			Default:     defaultVal,
+			Required:    input.Required,
+			Sensitive:   input.Sensitive,
+			Type:        input.Type,
 		})
 	}
 

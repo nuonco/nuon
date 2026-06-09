@@ -1067,6 +1067,7 @@ export interface paths {
      * - container_image
      * - helm
      * - terraform
+     * - runbook
      * - job
      */
     get: operations["GetConfigSchema"];
@@ -1647,6 +1648,10 @@ export interface paths {
     /**
      * Updates install input config for app
      * @description Update input values for an install.
+     *
+     * This endpoint accepts a partial subset of inputs and merges them with the install's existing
+     * inputs, so callers only need to send the inputs they want to change. Inputs sourced from the
+     * `install_stack` (customer source) are managed by the install stack and are rejected if supplied.
      */
     patch: operations["UpdateInstallInputs"];
   };
@@ -3480,12 +3485,59 @@ export interface components {
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
       log_stream?: components["schemas"]["app.LogStream"];
+      /**
+       * @description NoOp is true when the runner detected SourceDigest matches the previous
+       * build's SourceDigest and skipped the artifact push.
+       *
+       * Downstream contract:
+       *   - The build is still marked Active because the bytes it represents
+       *     are deployable (they live in the install registry under the prior
+       *     build that pushed them).
+       *   - No new install deploys are auto-queued for a NoOp build; the
+       *     dep-aware deploy path handles fan-out for installs that depend
+       *     on the underlying image.
+       *   - pollForDeployableBuild treats NoOp builds as Active without any
+       *     special-casing because the deployable artifact at the same
+       *     SourceDigest is already present in the install registry from the
+       *     prior build.
+       */
+      no_op?: boolean;
       policy_reports?: components["schemas"]["app.PolicyReport"][];
       /** @description QueueSignal is the signal enqueued when this build was created via the queue path */
       queue_signal?: components["schemas"]["app.QueueSignal"];
       releases?: components["schemas"]["app.ComponentRelease"][];
+      /** @description ResolvedAt is when the runner resolved SourceRef to SourceDigest. */
+      resolved_at?: string;
+      /**
+       * @description ResolvedTag is the tag the runner actually pulled from. For digest-pinned
+       * refs this is empty. For mutable/semver refs this is the concrete tag the
+       * runner selected (e.g. "1.25.5" even if SourceRef pinned "1.25.3" with a
+       * "~1.25.0" update_policy constraint).
+       */
+      resolved_tag?: string;
       /** @description runner details */
       runner_job?: components["schemas"]["app.RunnerJob"];
+      /**
+       * @description SourceDigest is the manifest list digest of the resolved source ref,
+       * e.g. "sha256:abc...". This is the canonical content address of what was
+       * pulled and is used for build dedup.
+       */
+      source_digest?: string;
+      /** @description SourceImage is the repository portion of SourceRef without tag/digest, e.g. "nginx". */
+      source_image?: string;
+      /**
+       * @description SourceMediaType records the media type of the resolved manifest (image,
+       * image index, OCI artifact, etc.) for downstream rendering decisions.
+       */
+      source_media_type?: string;
+      /**
+       * @description Source identity for image-type builds.
+       *
+       * SourceRef is what the user wrote in the spec, e.g. "nginx:1.25.3" or
+       * "myimage@sha256:...". Always populated for image-type builds so we have a
+       * permanent record of what was requested at build time.
+       */
+      source_ref?: string;
       status?: string;
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
@@ -3626,6 +3678,17 @@ export interface components {
       id?: string;
       image_url?: string;
       tag?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0", "^2", ">=1.0.0,<2.0.0") that, when set, causes the
+       * runner to list tags from the source registry, filter to those that
+       * parse as semver and satisfy the constraint, and pick the highest
+       * matching tag at build time. Tag is then ignored as the source ref;
+       * the resolved tag is recorded on ComponentBuild.ResolvedTag.
+       *
+       * When empty, the runner uses Tag literally.
+       */
+      update_policy?: string;
       updated_at?: string;
     };
     "app.GCPAccount": {
@@ -4039,9 +4102,20 @@ export interface components {
       install_workflow_id?: string;
       runbook_config?: components["schemas"]["app.RunbookConfig"];
       runbook_config_id?: string;
+      runbook_inputs?: {
+        [key: string]: string;
+      };
+      runbook_inputs_redacted?: {
+        [key: string]: string;
+      };
       status?: string;
       status_description?: string;
       status_v2?: components["schemas"]["app.CompositeStatus"];
+      /**
+       * @description StepSelections records which runbook steps are enabled/disabled for this run.
+       * Steps explicitly disabled here are not generated by the runbook workflow.
+       */
+      step_selections?: components["schemas"]["app.RunbookStepSelection"][];
       triggered_by_id?: string;
       updated_at?: string;
     };
@@ -4621,9 +4695,25 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      inputs?: components["schemas"]["app.RunbookInput"][];
       readme?: string;
       runbook_id?: string;
       steps?: components["schemas"]["app.RunbookStepConfig"][];
+      updated_at?: string;
+    };
+    "app.RunbookInput": {
+      created_at?: string;
+      created_by_id?: string;
+      default?: string;
+      description?: string;
+      display_name?: string;
+      id?: string;
+      idx?: number;
+      name?: string;
+      required?: boolean;
+      runbook_config_id?: string;
+      sensitive?: boolean;
+      type?: string;
       updated_at?: string;
     };
     "app.RunbookStepConfig": {
@@ -4631,11 +4721,11 @@ export interface components {
       action_workflow_id?: string;
       /** @description inline action fields */
       command?: string;
-      /** @description deploy fields */
+      /** @description deploy / tear-down fields */
       component_name?: string;
       created_at?: string;
       created_by_id?: string;
-      deploy_dependencies?: boolean;
+      deploy_dependents?: boolean;
       env_vars?: {
         [key: string]: string;
       };
@@ -4645,9 +4735,17 @@ export interface components {
       name?: string;
       role?: string;
       runbook_config_id?: string;
+      /** @description sandbox lifecycle fields */
+      skip_component_deploys?: boolean;
+      tear_down_dependents?: boolean;
       timeout?: number;
       type?: string;
       updated_at?: string;
+    };
+    "app.RunbookStepSelection": {
+      enabled?: boolean;
+      name?: string;
+      step_id?: string;
     };
     "app.Runner": {
       created_at?: string;
@@ -4720,6 +4818,13 @@ export interface components {
       };
       local_aws_iam_role_arn?: string;
       logging_level?: string;
+      /**
+       * @description LongPollJobs mirrors the org's `runner-job-long-poll` feature flag
+       * so the runner can choose between the legacy idle-poll loop and the
+       * new long-poll endpoint at boot. Not persisted; populated by the
+       * runner-settings handler.
+       */
+      long_poll_jobs?: boolean;
       /** @description Metadata is used as both log and metric tags/attributes in the runner when emitting data */
       metadata?: {
         [key: string]: string;
@@ -5737,8 +5842,28 @@ export interface components {
     };
     "plantypes.ContainerImagePullPlan": {
       image?: string;
+      /**
+       * @description PreviousSourceDigest is the SourceDigest of the most recent prior Active
+       * ComponentBuild for the same component, used by the runner as a dedup
+       * hint. When the resolver returns a manifest descriptor whose digest matches
+       * this value, the runner skips the Copy step and reports NoOp=true.
+       *
+       * Empty when there is no prior active build, or when the prior build has
+       * no SourceDigest recorded (legacy builds).
+       */
+      previous_source_digest?: string;
       repo_config?: components["schemas"]["configs.OCIRegistryRepository"];
       tag?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0") propagated from the user's component config. When
+       * non-empty, the runner lists tags from the source registry, filters to
+       * those satisfying the constraint, and selects the highest matching
+       * tag at build time. Tag is then ignored as the source ref.
+       *
+       * Empty for components that don't use update_policy.
+       */
+      update_policy?: string;
     };
     "plantypes.DeployPlan": {
       app_config_id?: string;
@@ -5755,6 +5880,15 @@ export interface components {
       noop?: components["schemas"]["plantypes.NoopDeployPlan"];
       pulumi?: components["schemas"]["plantypes.PulumiDeployPlan"];
       sandbox_mode?: components["schemas"]["plantypes.SandboxMode"];
+      /**
+       * @description SrcDigest is the manifest digest of the source artifact in the install
+       * registry, e.g. "sha256:abc...". Populated for image-type component
+       * builds with source identity recorded; empty for
+       * non-image builds and legacy image builds. When non-empty, runners
+       * should prefer this over SrcTag for content-addressed pulls and for
+       * rendering digest-pinned image references in pod specs.
+       */
+      src_digest?: string;
       src_registry: components["schemas"]["configs.OCIRegistryRepository"];
       src_tag: string;
       terraform?: components["schemas"]["plantypes.TerraformDeployPlan"];
@@ -6504,7 +6638,14 @@ export interface components {
       };
       references?: string[];
       skip_noops?: boolean;
-      tag: string;
+      tag?: string;
+      /**
+       * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
+       * (e.g. "~1.25.0", "^2"). When set, the runner lists tags from the
+       * source registry, filters to those satisfying the constraint, and
+       * uses the highest matching tag. Tag becomes optional in this case.
+       */
+      update_policy?: string;
     };
     "service.CreateHelmComponentConfigRequest": {
       app_config_id?: string;
@@ -6706,8 +6847,18 @@ export interface components {
     };
     "service.CreateRunbookConfigRequest": {
       app_config_id?: string;
+      inputs?: components["schemas"]["service.CreateRunbookInputRequest"][];
       readme?: string;
       steps: components["schemas"]["service.CreateRunbookStepConfigRequest"][];
+    };
+    "service.CreateRunbookInputRequest": {
+      default?: string;
+      description?: string;
+      display_name?: string;
+      name: string;
+      required?: boolean;
+      sensitive?: boolean;
+      type?: string;
     };
     "service.CreateRunbookRequest": {
       description?: string;
@@ -6716,11 +6867,21 @@ export interface components {
       };
       name: string;
     };
+    "service.CreateRunbookRunRequest": {
+      inputs?: {
+        [key: string]: string;
+      };
+      steps?: components["schemas"]["service.CreateRunbookRunStepSelection"][];
+    };
+    "service.CreateRunbookRunStepSelection": {
+      enabled?: boolean;
+      step_id: string;
+    };
     "service.CreateRunbookStepConfigRequest": {
       action_name?: string;
       command?: string;
       component_name?: string;
-      deploy_dependencies?: boolean;
+      deploy_dependents?: boolean;
       env_vars?: {
         [key: string]: string;
       };
@@ -6728,6 +6889,8 @@ export interface components {
       inline_contents?: string;
       name: string;
       role?: string;
+      skip_component_deploys?: boolean;
+      tear_down_dependents?: boolean;
       timeout?: number;
       type: string;
     };
@@ -13250,6 +13413,36 @@ export interface operations {
           "application/json": components["schemas"]["app.Runbook"][];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** create a runbook for an app */
@@ -13322,6 +13515,36 @@ export interface operations {
           "application/json": components["schemas"]["app.Runbook"];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** delete a runbook */
@@ -13339,6 +13562,36 @@ export interface operations {
       200: {
         content: {
           "application/json": boolean;
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -13421,6 +13674,36 @@ export interface operations {
           "application/json": components["schemas"]["app.RunbookConfig"][];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** create a runbook config */
@@ -13444,6 +13727,36 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.RunbookConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -15921,6 +16234,7 @@ export interface operations {
    * - container_image
    * - helm
    * - terraform
+   * - runbook
    * - job
    */
   GetConfigSchema: {
@@ -19627,6 +19941,10 @@ export interface operations {
   /**
    * Updates install input config for app
    * @description Update input values for an install.
+   *
+   * This endpoint accepts a partial subset of inputs and merges them with the install's existing
+   * inputs, so callers only need to send the inputs they want to change. Inputs sourced from the
+   * `install_stack` (customer source) are managed by the install stack and are rejected if supplied.
    */
   UpdateInstallInputs: {
     parameters: {
@@ -20362,6 +20680,8 @@ export interface operations {
   GetInstallRunbookRuns: {
     parameters: {
       query?: {
+        /** @description filter by runbook ID or name */
+        runbook_id?: string;
         /** @description offset */
         offset?: number;
         /** @description limit */
@@ -20377,6 +20697,36 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallRunbookRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -20396,6 +20746,36 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.InstallRunbookRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };
@@ -20421,6 +20801,36 @@ export interface operations {
           "application/json": components["schemas"]["app.InstallRunbook"][];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** get an install runbook */
@@ -20429,7 +20839,7 @@ export interface operations {
       path: {
         /** @description install ID */
         install_id: string;
-        /** @description runbook ID */
+        /** @description runbook ID or name */
         runbook_id: string;
       };
     };
@@ -20440,6 +20850,36 @@ export interface operations {
           "application/json": components["schemas"]["app.InstallRunbook"];
         };
       };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
     };
   };
   /** run a runbook on an install */
@@ -20448,8 +20888,14 @@ export interface operations {
       path: {
         /** @description install ID */
         install_id: string;
-        /** @description runbook ID */
+        /** @description runbook ID or name */
         runbook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.CreateRunbookRunRequest"];
       };
     };
     responses: {
@@ -20457,6 +20903,36 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.InstallRunbookRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
         };
       };
     };

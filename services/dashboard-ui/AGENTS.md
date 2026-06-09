@@ -155,7 +155,7 @@ export const DeployDetail = () => (
 - Add `isScrollable` to any component — it's ignored (kept for backwards compat only)
 - Create `CONTAINER_ID` constants or pass `id` props to scroll containers
 - Import or render `<BackToTop />` in view files — PageLayout handles it
-- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead
+- Use `className="!p-0 !gap-0"` on PageSection — use the `flush` prop instead. (This rule is PageSection-specific: `Card` has no padding prop, so overriding it with paired values like `!p-4 !gap-4` is fine — always change padding and gap together so the spacing rhythm stays consistent.)
 
 ### Mobile Sidebar
 
@@ -460,6 +460,29 @@ Browse Phosphor icons at https://phosphoricons.com. Custom icons for cloud provi
 
 A dev-mode console warning will tell you when a variant is missing from the map.
 
+### Links & Navigation
+
+**Never import `Link` from `react-router` directly.** Use the common components instead:
+
+- For inline text links: `Link` from `@/components/common/Link` (uses `href`, not `to`)
+- For navigation buttons (icon buttons, ghost nav actions): `Button` with `href` and `variant="ghost"`
+
+```tsx
+// ✅ Correct — text link
+import { Link } from '@/components/common/Link'
+<Link href={`/${org.id}/connections/vcs/${id}`}>View</Link>
+
+// ✅ Correct — nav button
+import { Button } from '@/components/common/Button'
+<Button href={`/${org.id}/connections/vcs/${id}`} variant="ghost" size="xs">
+  <Icon variant="ArrowRightIcon" size={16} />
+</Button>
+
+// ❌ Wrong
+import { Link } from 'react-router'
+<Link to={`/${org.id}/connections/vcs/${id}`}>View</Link>
+```
+
 ### Admin Tool Links
 
 **Never create ad-hoc links to admin tooling (admin dashboard, Temporal UI).** Always use the dedicated components in `client/components/admin/`. These components handle auth checks and demo mode internally — they render nothing for non-admin users, so consumers don't need any conditional logic.
@@ -648,52 +671,68 @@ export const DeleteButton = ({ item, ...props }: { item: TItem } & IButtonAsButt
 - Create the modal instance before passing to `addModal`: `const modal = <MyModal />` then `addModal(modal)`
 - Close modals on success via `removeModal(props.modalId)`
 
+## Design & Visual Conventions
+
+**See [DESIGN.md](./DESIGN.md) for the design system guide** — Stratus tokens (colors, type, motion), spacing rhythm, anti-slop rules, interaction patterns, accessibility baseline, and the Figma link. Read it before doing visual work. That doc owns visual/design guidance; this file owns code conventions; [COPY_STYLE.md](./COPY_STYLE.md) owns user-facing copy.
+
 ## Text & Copy Style
 
-**Always use sentence case, never title case.** This applies to all UI text: headings, buttons, labels, tab labels, empty states, tooltips, and any other copy.
+**See [COPY_STYLE.md](./COPY_STYLE.md) for the full copy style guide** — voice, tone, patterns for every UI context (buttons, modals, empty states, errors, toasts, forms), and a word list. Read it before writing any user-facing text.
 
-- ✅ "Create your org" / "Connect a cloud account" / "Generate random name"
-- ❌ "Create Your Org" / "Connect A Cloud Account" / "Generate Random Name"
+**Key rules (quick reference):**
 
-The only exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
+- **Sentence case everywhere** — capitalize the first word and proper nouns only. Never title case.
+- **Buttons: verb + object** — "Build component", "Create webhook", "Remove user". Loading state: gerund form ("Building component", "Creating...").
+- **Modal headings** — question for confirmations ("Delete webhook?"), statement for actions ("Create webhook").
+- **Empty states** — "No [things] yet" + explain what will make things appear.
+- **Errors** — "[thing] failed" for headings everywhere. "Unable to [action]" only in longer descriptions. No "Oops!" or humor.
+- **Toasts** — heading (plain string, what happened) + description (specific context with entity names). Async: "Deploying component" + "Deploying {name} to {install}." Instant: "Plan approved" + "Approved changes for {name}."
+- **No exclamation marks, no emoji, no "please", no "successfully".**
+
+The only capitalization exceptions are proper nouns (AWS, Nuon, Terraform, etc.) and acronyms.
 
 ## Toast Patterns
 
-### Mutation toasts (action triggered)
-
-When a mutation kicks off a long-running job (build, deploy, reprovision, etc.), show a **heading-only** toast with `theme="info"`. Use a `Badge variant="code" size="md"` for the entity name when one exists. No body copy.
+Every toast uses **heading + description**. The heading is a plain string saying what happened. The description (children) adds specific context — entity names, what to expect, duration hints. See [COPY_STYLE.md](./COPY_STYLE.md#toasts) for the full pattern reference.
 
 ```tsx
+// Async action (job kicked off) — present progressive heading, info theme
 addToast(
-  <Toast
-    heading={
-      <span className="inline-flex items-center gap-1.5">
-        <Badge variant="code" size="md">{component.name}</Badge> build started
-      </span>
-    }
-    theme="info"
-  />
+  <Toast heading="Deploying component" theme="info">
+    <Text>Deploying {component.name} to {install.name}. This may take a few minutes.</Text>
+  </Toast>
+)
+
+// Instant completion — past tense heading, success theme
+addToast(
+  <Toast heading="Plan approved" theme="success">
+    <Text>Approved changes for {component.name} on {install.name}.</Text>
+  </Toast>
+)
+
+// Error — "[thing] failed" heading, error theme, API error in description
+addToast(
+  <Toast heading="Build failed" theme="error">
+    <Text>{err?.error || 'Unable to start the build.'}</Text>
+  </Toast>
 )
 ```
 
-For actions without a named entity (sandbox operations), use a plain string heading:
-
-```tsx
-addToast(<Toast heading="Sandbox reprovision started" theme="info" />)
-```
-
-For mutation errors use `theme="error"` with the same pattern.
+**Rules:**
+- Heading is always a **plain string** — no JSX, no Badge components, no inline markup
+- Description is always a `<Text>` child with entity names and context
+- Don't say "successfully" — the success theme communicates that
+- Add "This may take a few minutes." for builds, deploys, and provisions
 
 ### Completion toasts (status transition)
 
 Use the `useStatusToast` hook (`client/hooks/use-status-toast.tsx`) in providers that poll for status. The hook watches a status string and fires a toast once when it transitions from a non-terminal status to a terminal one (success/error). It will NOT fire if the page loads with an already-terminal status.
 
 ```tsx
-// In a provider that polls
 useStatusToast({
   status: build?.status_v2?.status,
-  label: build?.component_name,  // optional — shown in a Badge
-  resourceType: 'build',         // e.g. "build succeeded" / "deploy failed"
+  label: build?.component_name,
+  resourceType: 'build',
 })
 ```
 
@@ -707,7 +746,7 @@ The hook uses `getStatusTheme()` from `client/utils/status-utils.ts` to determin
 
 **Use the existing components for rendering:**
 
-- **`<Time>`** (`client/components/common/Time.tsx`) — Renders timestamps. Supports `format="relative"` (e.g., "2 hours ago" with tooltip), `"short-datetime"`, `"long-datetime"`, `"time-only"`, `"log-datetime"`.
+- **`<Time>`** (`client/components/common/Time.tsx`) — Renders timestamps. Supports `format="relative"` (e.g., "2 hours ago" with tooltip), `"short-datetime"`, `"long-datetime"`, `"time-only"`, `"log-datetime"`. Add `shouldTick` to auto-update a relative timestamp every 30s (opt-in, off by default).
 - **`<Duration>`** (`client/components/common/Duration.tsx`) — Renders durations between two times. Pass `beginTime` and optionally `endTime` (defaults to now). Supports `durationUnits`, `unitDisplay`, and `format` props.
 
 ```tsx

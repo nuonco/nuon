@@ -37,6 +37,9 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 
+	// Register notebook queue signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/notebooks/signals/start"
+
 	// Register VCS queue signals
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"

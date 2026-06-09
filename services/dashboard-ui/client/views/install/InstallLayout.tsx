@@ -45,6 +45,7 @@ const InstallTemplate = () => {
   const { org } = useOrg()
   const { install } = useInstall()
   const hasRunbooks = !!org?.features?.runbooks
+  const hasNotebooks = !!org?.features?.notebooks
 
   const navLinks: TNavItem[] = [
     { type: 'section', label: 'Overview' },
@@ -88,6 +89,15 @@ const InstallTemplate = () => {
           },
         ]
       : []),
+    ...(hasNotebooks
+      ? [
+          {
+            path: `/notebooks`,
+            iconVariant: 'NotebookIcon' as const,
+            text: 'Notebooks',
+          },
+        ]
+      : []),
     { type: 'section', label: 'Customer' },
     {
       path: `/stacks`,
@@ -124,8 +134,7 @@ const InstallTemplate = () => {
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   return (
-    <PageLayout>
-      <DeprovisionBanner />
+    <PageLayout>    
       {isChildRoute ? (
         <PageContent className="border-t" variant="row">
           <SubNav
@@ -139,6 +148,7 @@ const InstallTemplate = () => {
       ) : (
         <>
           <PageHeader>
+                          <DeprovisionBanner />
             <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
               <HeadingGroup className="gap-1.5">
                 <div className="flex items-center gap-2 flex-wrap">

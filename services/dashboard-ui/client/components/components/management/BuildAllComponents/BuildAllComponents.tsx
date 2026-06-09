@@ -51,7 +51,7 @@ export const BuildAllComponentsModal = ({
             <Icon variant="Loading" /> Building components
           </span>
         ) : (
-          'Build components'
+          'Build all components'
         ),
         disabled: isLoading,
         onClick: onBuild,
@@ -65,12 +65,9 @@ export const BuildAllComponentsModal = ({
             {error?.error || 'Unable to build components'}
           </Banner>
         ) : null}
-        <Text variant="base" weight="stronger">
-          Are you sure you want to build all components?
-        </Text>
         <Text variant="base">
           This will build all components in the application. This process may
-          take several minutes to complete.
+          take several minutes.
         </Text>
         <Text variant="subtext" theme="neutral">
           You can monitor the progress of each component build in the components

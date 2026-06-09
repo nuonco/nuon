@@ -21,8 +21,13 @@ import (
 // @Security		APIKey
 // @Security		OrgID
 // @Param			install_id	path	string	true	"install ID"
-// @Param			runbook_id	path	string	true	"runbook ID"
+// @Param			runbook_id	path	string	true	"runbook ID or name"
 // @Success		200			{object}	app.InstallRunbook
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbooks/{runbook_id} [get]
 func (s *service) GetInstallRunbook(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
@@ -32,7 +37,7 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 	}
 
 	installID := ctx.Param("install_id")
-	runbookID := ctx.Param("runbook_id")
+	runbookIDOrName := ctx.Param("runbook_id")
 	org, err := cctx.OrgFromContext(ctx)
 	if err != nil {
 		ctx.Error(err)
@@ -61,13 +66,17 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
+		Preload("Runbook.Configs.Inputs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("created_at DESC").Limit(10)
 		}).
 		Preload("Runs.InstallWorkflow").
+		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
-		Where("install_runbooks.runbook_id IN (?)", currentRunbookIDs).
-		First(&installRunbook, "runbook_id = ?", runbookID)
+		Where("install_runbooks.runbook_id = ? OR runbooks.name = ?", runbookIDOrName, runbookIDOrName).
+		First(&installRunbook)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install runbook: %w", res.Error))
 		return

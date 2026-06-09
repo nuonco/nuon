@@ -7,27 +7,27 @@ import { DeprovisionBanner } from './DeprovisionBanner'
 const mockProvisioning = {
   id: 'inst123',
   name: 'test-install',
-  lifecycle_status: {
-    status: 'provisioning',
-    status_human_description: 'Install is being provisioned',
+  lifecycle_phase: {
+    phase: 'provisioning',
+    description: 'Setting up runner and sandbox resources',
   },
 } as any
 
 const mockDeprovisioning = {
   id: 'inst123',
   name: 'test-install',
-  lifecycle_status: {
-    status: 'deprovisioning',
-    status_human_description: 'Install is being deprovisioned',
+  lifecycle_phase: {
+    phase: 'deprovisioning',
+    description: 'Tearing down components and cloud resources',
   },
 } as any
 
 const mockDeprovisioned = {
   id: 'inst123',
   name: 'test-install',
-  lifecycle_status: {
-    status: 'deprovisioned',
-    status_human_description: 'Install has been deprovisioned',
+  lifecycle_phase: {
+    phase: 'deprovisioned',
+    description: 'Deprovision workflow completed',
   },
 } as any
 

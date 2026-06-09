@@ -27,6 +27,11 @@ import (
 // @Param			offset	query	int		false	"offset"	Default(0)
 // @Param			limit	query	int		false	"limit"		Default(10)
 // @Success		200		{array}	app.Runbook
+// @Failure		400		{object}	stderr.ErrResponse
+// @Failure		401		{object}	stderr.ErrResponse
+// @Failure		403		{object}	stderr.ErrResponse
+// @Failure		404		{object}	stderr.ErrResponse
+// @Failure		500		{object}	stderr.ErrResponse
 // @Router			/v1/apps/{app_id}/runbooks [get]
 func (s *service) GetRunbooks(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
@@ -61,7 +66,6 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Select("runbook_id").
 		Where(app.RunbookConfig{AppConfigID: currentAppConfig.ID})
 
-	runbooks := []*app.Runbook{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("labels", lbls)).
@@ -71,13 +75,17 @@ func (s *service) GetRunbooks(ctx *gin.Context) {
 		Preload("Configs.Steps", func(tx2 *gorm.DB) *gorm.DB {
 			return tx2.Order("idx ASC")
 		}).
+    Preload("Configs.Inputs", func(tx2 *gorm.DB) *gorm.DB {
+			return tx2.Order("idx ASC")
+		}).
 		Where(app.Runbook{OrgID: org.ID, AppID: appID}).
 		Where("id IN (?)", currentRunbookIDs)
 
 	if q != "" {
 		tx = tx.Where("name ILIKE ? OR id = ?", "%"+q+"%", q)
 	}
-
+  
+	runbooks := []*app.Runbook{}
 	res := tx.Find(&runbooks)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get runbooks: %w", res.Error))

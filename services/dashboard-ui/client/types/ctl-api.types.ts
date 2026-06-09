@@ -183,9 +183,9 @@ export type TInstall = Omit<components['schemas']['app.Install'], 'sandbox'> & {
   app?: components['schemas']['app.App']
   created_by?: components['schemas']['app.Account']
   gcp_account?: { project_id?: string; region?: string }
-  lifecycle_status?: {
-    status?: string
-    status_human_description?: string
+  lifecycle_phase?: {
+    phase?: string
+    description?: string
   }
   org_id?: string
   sandbox?: TInstallSandbox

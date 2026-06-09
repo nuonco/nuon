@@ -17,11 +17,12 @@ This skill enforces useMutation for form submission, FormData extraction from th
    const { mutate, isPending, error } = useMutation({
      mutationFn: (body: TMyBody) => myApiCall({ body, orgId: org.id }),
      onSuccess: () => {
-       addToast(<Toast heading="Success" theme="success"><Text>Done.</Text></Toast>)
+       addToast(<Toast heading="Webhook created" theme="success"><Text>Created {name} for this org.</Text></Toast>)
        removeModal(props.modalId)
      },
    })
    ```
+   Toast headings are plain strings (no JSX) per `services/dashboard-ui/COPY_STYLE.md` — past tense naming the thing that happened ("Webhook created"), never generic "Success"; entity names go in the `<Text>` description.
 
 3. In the modal's `primaryActionTrigger.onClick`, call `formRef.current?.requestSubmit()` — NOT `mutate(...)` directly. This fires the form's `onSubmit` and triggers HTML5 `required` field validation before the mutation runs.
 

@@ -23,7 +23,13 @@ import (
 // @Param			install_id	path	string	true	"install ID"
 // @Param			offset		query	int		false	"offset"	Default(0)
 // @Param			limit		query	int		false	"limit"		Default(10)
+// @Param			q			query	string	false	"search by runbook name or ID"
 // @Success		200			{array}	app.InstallRunbook
+// @Failure		400			{object}	stderr.ErrResponse
+// @Failure		401			{object}	stderr.ErrResponse
+// @Failure		403			{object}	stderr.ErrResponse
+// @Failure		404			{object}	stderr.ErrResponse
+// @Failure		500			{object}	stderr.ErrResponse
 // @Router			/v1/installs/{install_id}/runbooks [get]
 func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 	enabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureRunbooks)
@@ -38,7 +44,7 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
-
+  
 	var install app.Install
 	if err := s.db.WithContext(ctx).
 		Where(app.Install{OrgID: org.ID}).
@@ -53,7 +59,10 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Where(app.RunbookConfig{AppConfigID: install.AppConfigID})
 
 	installRunbooks := []*app.InstallRunbook{}
-	res := s.db.WithContext(ctx).
+
+	q := ctx.Query("q")
+
+	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Joins("JOIN runbooks ON runbooks.id = install_runbooks.runbook_id AND runbooks.deleted_at = 0").
 		Preload("Runbook").
@@ -63,13 +72,22 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
+		Preload("Runbook.Configs.Inputs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
 		Where("install_runbooks.runbook_id IN (?)", currentRunbookIDs).
-		Order("install_runbooks.created_at DESC").
-		Find(&installRunbooks)
+		Order("install_runbooks.created_at DESC")
+
+	if q != "" {
+		tx = tx.Where("runbooks.name ILIKE ? OR install_runbooks.id = ?", "%"+q+"%", q)
+	}
+
+	installRunbooks := []*app.InstallRunbook{}
+	res := tx.Find(&installRunbooks)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install runbooks: %w", res.Error))
 		return
