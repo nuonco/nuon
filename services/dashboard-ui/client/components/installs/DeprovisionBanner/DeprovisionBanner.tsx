@@ -16,15 +16,15 @@ const LIFECYCLE_CONFIG: Record<
   { heading: string; theme: TBannerTheme }
 > = {
   provisioning: {
-    heading: 'This install is being provisioned',
+    heading: 'Provisioning install',
     theme: 'info',
   },
   deprovisioning: {
-    heading: 'This install is being deprovisioned',
+    heading: 'Deprovisioning install',
     theme: 'warn',
   },
   deprovisioned: {
-    heading: 'This install has been deprovisioned',
+    heading: 'Install deprovisioned',
     theme: 'warn',
   },
 }
@@ -34,19 +34,19 @@ export const DeprovisionBanner = ({
   orgId,
   workflowId,
 }: IDeprovisionBanner) => {
-  const status = install?.lifecycle_status?.status ?? ''
-  const config = LIFECYCLE_CONFIG[status]
+  const phase = install?.lifecycle_phase?.phase ?? ''
+  const config = LIFECYCLE_CONFIG[phase]
   if (!config) return null
+
+  const description = install?.lifecycle_phase?.description
 
   return (
     <Banner theme={config.theme}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-0.5">
           <Text weight="strong">{config.heading}</Text>
-          {install?.lifecycle_status?.status_human_description && (
-            <Text variant="subtext">
-              {install.lifecycle_status.status_human_description}
-            </Text>
+          {description && (
+            <Text variant="subtext">{description}</Text>
           )}
         </div>
         {workflowId && (

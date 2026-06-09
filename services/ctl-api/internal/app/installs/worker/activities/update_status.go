@@ -2,10 +2,6 @@ package activities
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"gorm.io/gorm"
 )
 
 type UpdateStatusRequest struct {
@@ -14,19 +10,8 @@ type UpdateStatusRequest struct {
 	StatusDescription string `validate:"required"`
 }
 
-func (a *Activities) UpdateStatus(ctx context.Context, req UpdateStatusRequest) error {
-	install := app.Install{
-		ID: req.InstallID,
-	}
-	res := a.db.WithContext(ctx).Model(&install).Updates(app.Install{
-		Status:            req.Status,
-		StatusDescription: req.StatusDescription,
-	})
-	if res.Error != nil {
-		return fmt.Errorf("unable to update install: %w", res.Error)
-	}
-	if res.RowsAffected < 1 {
-		return fmt.Errorf("no install found: %s %w", req.InstallID, gorm.ErrRecordNotFound)
-	}
+// Deprecated: Status and StatusDescription fields have been removed from Install.
+// This activity is retained for backward compatibility with in-flight workflows.
+func (a *Activities) UpdateStatus(_ context.Context, _ UpdateStatusRequest) error {
 	return nil
 }
