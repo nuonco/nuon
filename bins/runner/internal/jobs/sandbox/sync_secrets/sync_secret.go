@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
@@ -21,6 +22,7 @@ import (
 	"google.golang.org/api/impersonate"
 	"google.golang.org/api/option"
 
+	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/kube/secret"
@@ -88,9 +90,16 @@ func (p *handler) execSyncSecretV1(ctx context.Context, secr plantypes.Kubernete
 // execSyncSecretV2 fans the shared source value out across every target × namespace, upserting one Kubernetes secret
 // per destination and recording one output per destination.
 func (p *handler) execSyncSecretV2(ctx context.Context, secr plantypes.KubernetesSecretSync, val string, ts *time.Time, exists bool) error {
+	l, err := pkgctx.Logger(ctx)
+	if err != nil {
+		return err
+	}
+
 	for _, target := range secr.Targets {
 		for _, namespace := range target.Namespaces {
 			if exists {
+
+				l.Info(fmt.Sprintf("upserting secret value into %s:%s.%s", namespace, target.Name, target.Key), zap.String("name", target.Name), zap.String("namespace", namespace), zap.String("key", target.Key))
 				if err := p.upsertSecret(ctx, namespace, target.Name, target.Key, val); err != nil {
 					return err
 				}

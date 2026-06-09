@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"github.com/pkg/errors"
@@ -29,7 +30,7 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	ctx = pkgctx.SetLogger(ctx, l)
 
 	for _, secret := range p.state.plan.KubernetesSecrets {
-		l.Info("syncing secret " + secret.Name)
+		l.Info(fmt.Sprintf("preparing to sync secret: %s", secret.SecretName), zap.String("name", secret.SecretName))
 		opCtx, end := op.Tool(ctx, "sync_secrets", "sync")
 		err := p.execSyncSecret(opCtx, secret)
 		end(err)
