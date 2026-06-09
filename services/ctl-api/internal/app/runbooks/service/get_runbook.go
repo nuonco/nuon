@@ -50,6 +50,9 @@ func (s *service) GetRunbook(ctx *gin.Context) {
 		Preload("Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
+		Preload("Configs.Inputs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
 		Where(app.Runbook{OrgID: org.ID, AppID: appID}).
 		Where("id = ? OR name = ?", runbookIDOrName, runbookIDOrName).
 		First(&runbook)

@@ -113,6 +113,7 @@ func (s *service) GetInstallRunbookRun(ctx *gin.Context) {
 		Preload("InstallRunbook.Runbook").
 		Preload("RunbookConfig").
 		Preload("RunbookConfig.Steps").
+		Preload("RunbookConfig.Inputs").
 		Preload("InstallWorkflow").
 		Where(app.InstallRunbookRun{OrgID: org.ID}).
 		First(&run, "id = ?", runID)

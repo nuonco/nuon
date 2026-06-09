@@ -53,6 +53,9 @@ func (s *service) GetInstallRunbook(ctx *gin.Context) {
 		Preload("Runbook.Configs.Steps", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("idx ASC")
 		}).
+		Preload("Runbook.Configs.Inputs", func(tx *gorm.DB) *gorm.DB {
+			return tx.Order("idx ASC")
+		}).
 		Preload("Runs", func(tx *gorm.DB) *gorm.DB {
 			return tx.Order("created_at DESC").Limit(10)
 		}).
