@@ -1674,6 +1674,50 @@ export interface paths {
      */
     delete: operations["RemoveInstallLabels"];
   };
+  "/v1/installs/{install_id}/notebooks": {
+    /** list notebooks for an install */
+    get: operations["GetNotebooks"];
+    /** create a notebook for an install */
+    post: operations["CreateNotebook"];
+  };
+  "/v1/installs/{install_id}/notebooks/{notebook_id}": {
+    /** get a notebook with its ordered cells and each cell's latest run */
+    get: operations["GetNotebook"];
+    /** delete a notebook */
+    delete: operations["DeleteNotebook"];
+    /** update a notebook */
+    patch: operations["UpdateNotebook"];
+  };
+  "/v1/installs/{install_id}/notebooks/{notebook_id}/cells": {
+    /** add a cell to a notebook */
+    post: operations["CreateNotebookCell"];
+  };
+  "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/reorder": {
+    /**
+     * reorder a notebook's cells
+     * @description accepts the full ordered list of cell IDs and assigns positions
+     */
+    put: operations["ReorderNotebookCells"];
+  };
+  "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}": {
+    /** delete a cell */
+    delete: operations["DeleteNotebookCell"];
+    /** edit a cell (bumps its revision) */
+    patch: operations["UpdateNotebookCell"];
+  };
+  "/v1/installs/{install_id}/notebooks/{notebook_id}/cells/{cell_id}/runs": {
+    /** list a cell's run history (newest first) */
+    get: operations["GetNotebookCellRuns"];
+    /**
+     * run a notebook cell on the install's runner
+     * @description dispatches the cell to the notebook's warm Temporal workflow and records a NotebookCellRun linking to the underlying execution + log stream. Returns once the run is queued, not when it finishes.
+     */
+    post: operations["RunNotebookCell"];
+  };
+  "/v1/installs/{install_id}/notebooks/{notebook_id}/runs/{run_id}": {
+    /** get a single cell run (includes log_stream_id for tailing) */
+    get: operations["GetNotebookCellRun"];
+  };
   "/v1/installs/{install_id}/phone-home/{phone_home_id}": {
     /**
      * phone home for an install
@@ -4306,6 +4350,86 @@ export interface components {
       updated_at?: string;
       write_token?: string;
     };
+    "app.Notebook": {
+      cell_count?: number;
+      cells?: components["schemas"]["app.NotebookCell"][];
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      description?: string;
+      id?: string;
+      install_id?: string;
+      latest_run_at?: string;
+      name?: string;
+      /**
+       * @description Queue owns the lifecycle of the notebook's warm Temporal workflow: a
+       * notebook-start signal enqueued at create time starts NotebookWorkflow,
+       * and the queue can re-dispatch it for recovery. Cell runs still dispatch
+       * to the workflow directly via update-with-start.
+       */
+      queue?: components["schemas"]["app.Queue"];
+      status?: string;
+      updated_at?: string;
+    };
+    "app.NotebookCell": {
+      command?: string;
+      created_at?: string;
+      created_by_id?: string;
+      enable_kube_config?: components["schemas"]["sql.NullBool"];
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      inline_contents?: string;
+      /**
+       * @description LatestRun is populated on read so the UI can show the most recent run's
+       * status and log stream directly below the cell. Not persisted.
+       */
+      latest_run?: components["schemas"]["app.NotebookCellRun"];
+      name?: string;
+      notebook_id?: string;
+      /** @description Position is the 0-based ordering of this cell within the notebook. */
+      position?: number;
+      /** @description Revision increments on every edit; runs snapshot the revision they ran. */
+      revision?: number;
+      role?: string;
+      timeout?: number;
+      updated_at?: string;
+    };
+    "app.NotebookCellRun": {
+      cell_id?: string;
+      /** @description CellRevision records which revision of the cell this run executed. */
+      cell_revision?: number;
+      command?: string;
+      created_at?: string;
+      created_by?: components["schemas"]["app.Account"];
+      created_by_id?: string;
+      env_vars?: {
+        [key: string]: string;
+      };
+      id?: string;
+      /**
+       * @description IdempotencyKey deduplicates run requests (HTTP retries / update retries).
+       * A server-side key is always generated, so the composite unique index on
+       * (notebook_id, idempotency_key) in Indexes() never sees an empty key.
+       */
+      idempotency_key?: string;
+      inline_contents?: string;
+      /** @description Link to the existing execution/audit artifacts. */
+      install_action_workflow_run_id?: string;
+      install_id?: string;
+      log_stream_id?: string;
+      /** @description Cell config snapshot at run time. */
+      name?: string;
+      notebook_id?: string;
+      runner_job_id?: string;
+      status?: string;
+      status_description?: string;
+      status_v2?: components["schemas"]["app.CompositeStatus"];
+      triggered_by_id?: string;
+      triggered_by_type?: string;
+      updated_at?: string;
+    };
     "app.NotificationsConfig": {
       created_at?: string;
       created_by_id?: string;
@@ -6528,6 +6652,17 @@ export interface components {
       type: components["schemas"]["app.StackType"];
       vpc_nested_template_url?: string;
     };
+    "service.CreateCellRequest": {
+      command?: string;
+      enable_kube_config?: boolean | null;
+      env_vars?: {
+        [key: string]: string;
+      };
+      inline_contents?: string;
+      name?: string;
+      role?: string;
+      timeout?: number;
+    };
     "service.CreateChannelSubscriptionRequest": {
       channel_id: string;
       channel_name?: string;
@@ -6769,6 +6904,10 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       skip_noops?: boolean;
+    };
+    "service.CreateNotebookRequest": {
+      description?: string;
+      name?: string;
     };
     "service.CreateOrgInviteRequest": {
       email: string;
@@ -7092,6 +7231,9 @@ export interface components {
     "service.RemoveOrgUserRequest": {
       user_id?: string;
     };
+    "service.ReorderCellsRequest": {
+      cell_ids: string[];
+    };
     "service.ReprovisionInstallRequest": {
       plan_only?: boolean;
       role?: string;
@@ -7114,6 +7256,13 @@ export interface components {
     "service.RetryWorkflowStepResponse": {
       retryable?: boolean;
       workflow_id?: string;
+    };
+    "service.RunCellRequest": {
+      /**
+       * @description IdempotencyKey deduplicates retried run requests. Optional; a server-side
+       * key is generated when empty.
+       */
+      idempotency_key?: string;
     };
     "service.RunnerCardDetailsResponse": {
       latest_heart_beat?: components["schemas"]["app.RunnerHeartBeat"];
@@ -7191,6 +7340,17 @@ export interface components {
       name?: string;
       slack_webhook_url?: string;
     };
+    "service.UpdateCellRequest": {
+      command?: string;
+      enable_kube_config?: boolean | null;
+      env_vars?: {
+        [key: string]: string;
+      };
+      inline_contents?: string;
+      name?: string;
+      role?: string;
+      timeout?: number;
+    };
     "service.UpdateChannelSubscriptionRequest": {
       channel_id?: string;
       channel_name?: string;
@@ -7233,6 +7393,12 @@ export interface components {
     };
     "service.UpdateInstallRoleRequest": {
       enabled: boolean;
+    };
+    "service.UpdateNotebookRequest": {
+      description?: string;
+      name?: string;
+      /** @enum {string} */
+      status?: "active" | "archived";
     };
     "service.UpdateOrgFeaturesRequest": {
       features: {
@@ -20105,6 +20271,292 @@ export interface operations {
       };
     };
   };
+  /** list notebooks for an install */
+  GetNotebooks: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+        /** @description search by name or ID */
+        q?: string;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Notebook"][];
+        };
+      };
+    };
+  };
+  /** create a notebook for an install */
+  CreateNotebook: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateNotebookRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.Notebook"];
+        };
+      };
+    };
+  };
+  /** get a notebook with its ordered cells and each cell's latest run */
+  GetNotebook: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Notebook"];
+        };
+      };
+    };
+  };
+  /** delete a notebook */
+  DeleteNotebook: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+    };
+  };
+  /** update a notebook */
+  UpdateNotebook: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateNotebookRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Notebook"];
+        };
+      };
+    };
+  };
+  /** add a cell to a notebook */
+  CreateNotebookCell: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.CreateCellRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.NotebookCell"];
+        };
+      };
+    };
+  };
+  /**
+   * reorder a notebook's cells
+   * @description accepts the full ordered list of cell IDs and assigns positions
+   */
+  ReorderNotebookCells: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ReorderCellsRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.Notebook"];
+        };
+      };
+    };
+  };
+  /** delete a cell */
+  DeleteNotebookCell: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+        /** @description cell ID */
+        cell_id: string;
+      };
+    };
+    responses: {
+      /** @description No Content */
+      204: {
+        content: never;
+      };
+    };
+  };
+  /** edit a cell (bumps its revision) */
+  UpdateNotebookCell: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+        /** @description cell ID */
+        cell_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.UpdateCellRequest"];
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.NotebookCell"];
+        };
+      };
+    };
+  };
+  /** list a cell's run history (newest first) */
+  GetNotebookCellRuns: {
+    parameters: {
+      query?: {
+        /** @description offset */
+        offset?: number;
+        /** @description limit */
+        limit?: number;
+      };
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+        /** @description cell ID */
+        cell_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.NotebookCellRun"][];
+        };
+      };
+    };
+  };
+  /**
+   * run a notebook cell on the install's runner
+   * @description dispatches the cell to the notebook's warm Temporal workflow and records a NotebookCellRun linking to the underlying execution + log stream. Returns once the run is queued, not when it finishes.
+   */
+  RunNotebookCell: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+        /** @description cell ID */
+        cell_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody?: {
+      content: {
+        "application/json": components["schemas"]["service.RunCellRequest"];
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
+        content: {
+          "application/json": components["schemas"]["app.NotebookCellRun"];
+        };
+      };
+    };
+  };
+  /** get a single cell run (includes log_stream_id for tailing) */
+  GetNotebookCellRun: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description notebook ID */
+        notebook_id: string;
+        /** @description run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.NotebookCellRun"];
+        };
+      };
+    };
+  };
   /**
    * phone home for an install
    * @description A public endpoint for phoning home from a runner AWS cloudformation stack upon successfully processing it.
@@ -20733,6 +21185,8 @@ export interface operations {
         offset?: number;
         /** @description limit */
         limit?: number;
+        /** @description search by runbook name or ID */
+        q?: string;
       };
       path: {
         /** @description install ID */

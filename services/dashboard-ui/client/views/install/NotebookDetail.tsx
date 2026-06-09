@@ -68,6 +68,11 @@ export const NotebookDetail = () => {
         <Text variant="h3" weight="strong">
           {notebook?.name || 'Untitled notebook'}
         </Text>
+        {notebook?.description ? (
+          <Text variant="subtext" theme="neutral">
+            {notebook.description}
+          </Text>
+        ) : null}
         {notebookId ? <ID>{notebookId}</ID> : null}
       </HeadingGroup>
 
