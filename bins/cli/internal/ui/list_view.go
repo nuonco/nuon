@@ -28,6 +28,10 @@ func (v *ListView) RenderPagingWithContext(data [][]string, offset, limit int, h
 	v.tableView.RenderPagingWithContext(data, offset, limit, hasMore, contextLabel, contextValue)
 }
 
+func (v *ListView) RenderTotal(data [][]string, total int) {
+	v.tableView.RenderTotal(data, total)
+}
+
 func (v *ListView) Error(err error) error {
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)
