@@ -37,6 +37,7 @@ type Params struct {
 	Heartbeater          *heartbeater.Heartbeater
 	FeaturesClient       *features.Features
 	TemporalClient       temporalclient.Client
+	RunnerJobWake        *RunnerJobWakeRegistry
 }
 
 type service struct {
@@ -53,6 +54,7 @@ type service struct {
 	heartbeater          *heartbeater.Heartbeater
 	featuresClient       *features.Features
 	temporalClient       temporalclient.Client
+	runnerJobWake        *RunnerJobWakeRegistry
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -370,6 +372,7 @@ func New(params Params) *service {
 		heartbeater:          params.Heartbeater,
 		featuresClient:       params.FeaturesClient,
 		temporalClient:       params.TemporalClient,
+		runnerJobWake:        params.RunnerJobWake,
 		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}
 }
