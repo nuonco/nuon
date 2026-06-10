@@ -1,9 +1,7 @@
-import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
 import { getInstallSandboxRuns } from '@/lib'
 import { SandboxRunsTimeline } from './SandboxRunsTimeline'
 
@@ -20,40 +18,15 @@ export const SandboxRunsTimelineContainer = ({
 }: ISandboxRunsTimelineContainer) => {
   const { org } = useOrg()
   const { install } = useInstall()
-  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
-  const queryKey = useMemo(
-    () => ['install-sandbox-runs', org?.id, install?.id, offset],
-    [org?.id, install?.id, offset]
-  )
-
-  const sseUrl =
-    org?.id && install?.id
-      ? `/api/orgs/${org.id}/installs/${install.id}/sandbox-runs/sse?limit=${LIMIT}&offset=${offset}`
-      : undefined
-
-  const listeners = useMemo(
-    () => ({
-      'sandbox-runs': (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data)
-          queryClient.setQueryData(queryKey, data)
-        } catch {}
-      },
-    }),
-    [queryKey, queryClient]
-  )
-
-  const { connected: sseConnected } = useResourceSSE({
-    url: sseUrl,
-    enabled: shouldPoll,
-    listeners,
-  })
-
-  const { data: result } = useQuery({
-    queryKey,
+  const { data: result } = useSSETimelineQuery({
+    sseUrl:
+      org?.id && install?.id
+        ? `/api/orgs/${org.id}/installs/${install.id}/sandbox-runs/sse?limit=${LIMIT}&offset=${offset}`
+        : undefined,
+    queryKey: ['install-sandbox-runs', org?.id, install?.id, offset],
     queryFn: () =>
       getInstallSandboxRuns({
         orgId: org.id,
@@ -61,9 +34,10 @@ export const SandboxRunsTimelineContainer = ({
         limit: LIMIT,
         offset,
       }),
-    refetchOnMount: 'always',
-    refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
+    shouldPoll,
+    pollInterval,
+    eventName: 'sandbox-runs',
   })
 
   const runs = result?.data ?? []

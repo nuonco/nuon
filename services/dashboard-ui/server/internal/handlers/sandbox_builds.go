@@ -1,13 +1,11 @@
 package handlers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -23,13 +21,6 @@ type SandboxBuildsHandler struct {
 func NewSandboxBuildsHandler(cfg *internal.Config, l *zap.Logger) *SandboxBuildsHandler {
 	return &SandboxBuildsHandler{cfg: cfg, l: l}
 }
-
-const (
-	sandboxBuildPollInterval         = 2 * time.Second
-	sandboxBuildFinishedPollInterval = 30 * time.Second
-	sandboxBuildErrorRetryDelay      = 5 * time.Second
-	sandboxBuildFinishedGracePeriod  = 2 * time.Minute
-)
 
 func (h *SandboxBuildsHandler) RegisterRoutes(e *gin.Engine) error {
 	e.GET("/api/orgs/:orgId/apps/:appId/sandbox-builds/:buildId/sse", h.StreamSandboxBuild)
@@ -47,30 +38,15 @@ func (h *SandboxBuildsHandler) StreamSandboxBuild(c *gin.Context) {
 	appID := c.Param("appId")
 	buildID := c.Param("buildId")
 
-	token, err := c.Cookie(authCookie)
-	if err != nil || token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	token, ok := sseToken(c)
+	if !ok {
 		return
 	}
 
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("X-Accel-Buffering", "no")
-	c.Writer.WriteHeader(http.StatusOK)
-	c.Writer.Flush()
-
-	ctx := c.Request.Context()
 	httpClient := &http.Client{}
-	var lastHash string
-	var finishedAt time.Time
 
-	sendEvent := func(event string, data string) {
-		fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", event, data)
-		c.Writer.Flush()
-	}
-
-	fetchBuild := func() ([]byte, error) {
+	// The sandbox build endpoint isn't exposed by nuon-go, so fetch it raw.
+	fetchBuild := func(ctx context.Context) ([]byte, error) {
 		url := fmt.Sprintf("%s/v1/apps/%s/sandbox/builds/%s", h.cfg.APIUrl, appID, buildID)
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		if err != nil {
@@ -92,59 +68,26 @@ func (h *SandboxBuildsHandler) StreamSandboxBuild(c *gin.Context) {
 		return io.ReadAll(resp.Body)
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		data, err := fetchBuild()
-		if err != nil {
-			h.l.Error("failed to fetch sandbox build", zap.String("appID", appID), zap.String("buildID", buildID), zap.Error(err))
-			sendEvent("fetch-error", `{"error":"failed to fetch sandbox build"}`)
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(sandboxBuildErrorRetryDelay):
+	runSSEStream(c, sseStreamConfig{
+		ClientErrMsg:        "failed to fetch sandbox build",
+		FinishedGracePeriod: sseFinishedGracePeriod,
+		Log:                 h.l,
+		Fetch: func(ctx context.Context) (sseFetchResult, error) {
+			data, err := fetchBuild(ctx)
+			if err != nil {
+				return sseFetchResult{}, err
 			}
-			continue
-		}
 
-		hash := sha256.Sum256(data)
-		hashStr := hex.EncodeToString(hash[:])
-
-		if hashStr != lastHash {
-			lastHash = hashStr
-			sendEvent("sandbox-build", string(data))
-
+			finished := false
 			var s sandboxBuildStatus
-			if json.Unmarshal(data, &s) == nil && s.StatusV2 != nil && deployTerminalStatuses[s.StatusV2.Status] {
-				sendEvent("finished", "true")
-				if finishedAt.IsZero() {
-					finishedAt = time.Now()
-				}
-			} else if !finishedAt.IsZero() {
-				finishedAt = time.Time{}
+			if json.Unmarshal(data, &s) == nil && s.StatusV2 != nil {
+				finished = terminalStatuses[s.StatusV2.Status]
 			}
-		}
 
-		if !finishedAt.IsZero() && time.Since(finishedAt) > sandboxBuildFinishedGracePeriod {
-			return
-		}
-
-		fmt.Fprintf(c.Writer, ": keepalive\n\n")
-		c.Writer.Flush()
-
-		interval := sandboxBuildPollInterval
-		if !finishedAt.IsZero() {
-			interval = sandboxBuildFinishedPollInterval
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(interval):
-		}
-	}
+			return sseFetchResult{
+				Events:   []sseEvent{{Name: "sandbox-build", Data: data}},
+				Finished: finished,
+			}, nil
+		},
+	})
 }
