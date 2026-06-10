@@ -84,6 +84,10 @@ func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := guardReadOnly(cmd); err != nil {
+		return err
+	}
+
 	if err := c.initConfig(); err != nil {
 		return errors.Wrap(err, "unable to initialize config")
 	}
