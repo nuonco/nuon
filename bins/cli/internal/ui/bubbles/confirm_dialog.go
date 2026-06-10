@@ -12,6 +12,7 @@ import (
 // ConfirmDialogModel represents an interactive confirmation dialog
 type ConfirmDialogModel struct {
 	message   string
+	note      string // optional highlighted note rendered before the question
 	confirmed bool
 	cancelled bool
 	quitting  bool
@@ -23,6 +24,15 @@ func NewConfirmDialog(message string) ConfirmDialogModel {
 	return ConfirmDialogModel{
 		message: message,
 		cursor:  0, // Default to "Yes"
+	}
+}
+
+// NewConfirmDialogWithNote creates a confirmation dialog with an additional highlighted note
+func NewConfirmDialogWithNote(message, note string) ConfirmDialogModel {
+	return ConfirmDialogModel{
+		message: message,
+		note:    note,
+		cursor:  0,
 	}
 }
 
@@ -86,6 +96,16 @@ func (m ConfirmDialogModel) View() tea.View {
 
 	var b strings.Builder
 
+	// Optional warning note
+	if m.note != "" {
+		noteStyle := lipgloss.NewStyle().
+			Foreground(styles.WarningColor).
+			Bold(true).
+			Margin(0, 0, 1, 0)
+		b.WriteString(noteStyle.Render("⚠ " + m.note))
+		b.WriteString("\n")
+	}
+
 	// Question
 	questionStyle := lipgloss.NewStyle().
 		Foreground(styles.PrimaryColor).
@@ -140,11 +160,18 @@ func (m ConfirmDialogModel) Result() (bool, bool) {
 // Show displays the confirmation dialog and returns the result
 // This provides a pterm-compatible API for easy migration
 func ShowConfirmDialog(message string, interactive bool) (bool, error) {
+	return showDialog(NewConfirmDialog(message), interactive)
+}
+
+// ShowConfirmDialogWithNote displays a confirmation dialog with a highlighted warning note above the question.
+func ShowConfirmDialogWithNote(message, note string, interactive bool) (bool, error) {
+	return showDialog(NewConfirmDialogWithNote(message, note), interactive)
+}
+
+func showDialog(model ConfirmDialogModel, interactive bool) (bool, error) {
 	if !interactive {
 		return false, fmt.Errorf("interactive terminal required for confirmation; use --yes flag to auto-approve")
 	}
-
-	model := NewConfirmDialog(message)
 
 	program := tea.NewProgram(model)
 	finalModel, err := program.Run()
