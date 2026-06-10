@@ -4,13 +4,33 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+// fakeAPI embeds the client interface so only the methods under test need
+// implementations; anything else panics.
+type fakeAPI struct {
+	nuon.Client
+	user *models.AppAccount
+	org  *models.AppOrg
+	apps []*models.AppApp
+}
+
+func (f *fakeAPI) GetCurrentUser(ctx context.Context) (*models.AppAccount, error) {
+	return f.user, nil
+}
+
+func (f *fakeAPI) GetOrg(ctx context.Context) (*models.AppOrg, error) {
+	return f.org, nil
+}
+
+func (f *fakeAPI) GetApps(ctx context.Context, query *models.GetPaginatedQuery) ([]*models.AppApp, bool, error) {
+	return f.apps, false, nil
+}
 
 func connect(t *testing.T, api nuon.Client, allowWrites bool) *mcp.ClientSession {
 	t.Helper()
@@ -31,8 +51,7 @@ func connect(t *testing.T, api nuon.Client, allowWrites bool) *mcp.ClientSession
 }
 
 func TestToolRegistration(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	api := nuon.NewMockClient(ctrl)
+	api := &fakeAPI{}
 
 	readOnly := connect(t, api, false)
 	res, err := readOnly.ListTools(context.Background(), nil)
@@ -60,10 +79,10 @@ func TestToolRegistration(t *testing.T) {
 }
 
 func TestWhoami(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	api := nuon.NewMockClient(ctrl)
-	api.EXPECT().GetCurrentUser(gomock.Any()).Return(&models.AppAccount{ID: "acc1", Email: "amit@nuon.co"}, nil)
-	api.EXPECT().GetOrg(gomock.Any()).Return(&models.AppOrg{ID: "org1", Name: "test-org"}, nil)
+	api := &fakeAPI{
+		user: &models.AppAccount{ID: "acc1", Email: "amit@nuon.co"},
+		org:  &models.AppOrg{ID: "org1", Name: "test-org"},
+	}
 
 	cs := connect(t, api, false)
 	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: "whoami"})
@@ -77,11 +96,9 @@ func TestWhoami(t *testing.T) {
 }
 
 func TestListApps(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	api := nuon.NewMockClient(ctrl)
-	api.EXPECT().GetApps(gomock.Any(), gomock.Any()).Return([]*models.AppApp{
-		{ID: "app1", Name: "uptime-monitor"},
-	}, false, nil)
+	api := &fakeAPI{
+		apps: []*models.AppApp{{ID: "app1", Name: "uptime-monitor"}},
+	}
 
 	cs := connect(t, api, false)
 	res, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: "list_apps"})
