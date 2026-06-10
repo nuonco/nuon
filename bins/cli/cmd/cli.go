@@ -65,14 +65,18 @@ func (c *cli) resolveOutput(cmd *cobra.Command) error {
 
 	out = strings.ToLower(strings.TrimSpace(out))
 	switch out {
-	case "table":
-	case "json":
+	case OutputTable:
+	case OutputJSON:
 		PrintJSON = true
-	case "agent":
+	case OutputAgent:
 		PrintJSON = true
 		agentmode.SetEnabled(true)
 	default:
 		return &ui.CLIUserError{Msg: fmt.Sprintf("invalid --output %q: must be one of table, json, agent", out)}
+	}
+
+	if !supportsOutput(cmd, out) {
+		return &ui.CLIUserError{Msg: fmt.Sprintf("`%s` does not support --output %s (supported: %s)", cmd.CommandPath(), out, strings.Join(supportedOutputs(cmd), ", "))}
 	}
 
 	Output = out
