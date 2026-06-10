@@ -48,7 +48,7 @@ func (a *Activities) RecordDeployCompositeError(ctx context.Context, req RecordD
 
 	ce := deployerrors.Parse(raw)
 	if ce == nil {
-		l.Info("no structured composite error recognised for deploy failure")
+		l.Debug("no structured composite error recognised for deploy failure")
 		return nil
 	}
 
@@ -59,6 +59,9 @@ func (a *Activities) RecordDeployCompositeError(ctx context.Context, req RecordD
 		Updates(app.InstallDeploy{CompositeError: data})
 	if res.Error != nil {
 		return fmt.Errorf("unable to record deploy composite error: %w", res.Error)
+	}
+	if res.RowsAffected < 1 {
+		return fmt.Errorf("no deploy found for id %s: %w", req.DeployID, gorm.ErrRecordNotFound)
 	}
 
 	l.Info("recorded composite error on deploy", zap.String("composite_error_type", string(data.Type)))
@@ -73,7 +76,7 @@ func (a *Activities) latestJobErrorMessage(ctx context.Context, runnerJobID stri
 	var job app.RunnerJob
 	res := a.db.WithContext(ctx).
 		Preload("Executions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("runner_job_executions.created_at DESC").Limit(1)
+			return db.Order("runner_job_executions.created_at DESC, runner_job_executions.id DESC").Limit(1)
 		}).
 		Preload("Executions.Result").
 		Where(app.RunnerJob{ID: runnerJobID}).

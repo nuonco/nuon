@@ -372,11 +372,13 @@ func (s *Signal) execApplyPlan(ctx workflow.Context, install *app.Install, insta
 		msg := job.JobErrorMessage(err, "apply job failed")
 		s.updateDeployStatus(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
 		if s.runnerJobID != "" {
-			_ = activities.AwaitRecordDeployCompositeError(ctx, activities.RecordDeployCompositeErrorRequest{
+			if rerr := activities.AwaitRecordDeployCompositeError(ctx, activities.RecordDeployCompositeErrorRequest{
 				DeployID:        installDeploy.ID,
 				RunnerJobID:     s.runnerJobID,
 				FallbackMessage: msg,
-			})
+			}); rerr != nil {
+				l.Warn("unable to record deploy composite error", zap.Error(rerr))
+			}
 		}
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)

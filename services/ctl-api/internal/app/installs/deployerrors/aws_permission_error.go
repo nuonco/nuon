@@ -16,6 +16,10 @@ import (
 // surfaced from a terraform plan/apply during a component deploy.
 const AWSPermissionErrorType compositeerrors.Type = "terraform.aws_permission"
 
+// defaultIAMPolicyVersion is the IAM policy language version embedded in the
+// remediation policy statement we recommend to users.
+const defaultIAMPolicyVersion string = "2012-10-17"
+
 // AWSPermissionError is the typed payload for an AWS API call that failed with
 // AccessDenied / UnauthorizedOperation because the deploy's IAM principal is
 // missing a permission. It implements compositeerrors.CompositeError so it can
@@ -61,7 +65,7 @@ func (e *AWSPermissionError) Sections() []compositeerrors.Section {
 	sections := []compositeerrors.Section{
 		{
 			Heading: "Why",
-			Body:    "The IAM principal used by this deployment is missing a permission required to perform the operation. Grant the permission to the principal and retry.",
+			Body:    "The IAM principal used by this deployment was denied a permission required to perform the operation. This usually means the permission is not granted, but it can also be an explicit deny, a service control policy (SCP), or a permissions boundary. Grant or unblock the permission for the principal and retry.",
 		},
 	}
 
@@ -73,16 +77,16 @@ func (e *AWSPermissionError) Sections() []compositeerrors.Section {
 	}
 
 	if e.Principal != "" || e.Resource != "" {
-		var b strings.Builder
+		var lines []string
 		if e.Principal != "" {
-			fmt.Fprintf(&b, "Principal: `%s`\n", e.Principal)
+			lines = append(lines, fmt.Sprintf("Principal: `%s`", e.Principal))
 		}
 		if e.Resource != "" {
-			fmt.Fprintf(&b, "Resource: `%s`\n", e.Resource)
+			lines = append(lines, fmt.Sprintf("Resource: `%s`", e.Resource))
 		}
 		sections = append(sections, compositeerrors.Section{
 			Heading: "Context",
-			Body:    strings.TrimRight(b.String(), "\n"),
+			Body:    strings.Join(lines, "\n\n"),
 		})
 	}
 
@@ -104,7 +108,7 @@ func (e *AWSPermissionError) policyStatementJSON() string {
 		resource = "*"
 	}
 	stmt := map[string]any{
-		"Version": "2012-10-17",
+		"Version": defaultIAMPolicyVersion,
 		"Statement": []map[string]any{
 			{
 				"Effect":   "Allow",

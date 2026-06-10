@@ -46,6 +46,46 @@ func TestParse_AccessDenied(t *testing.T) {
 	}
 }
 
+func TestParse_AccessDeniedException_PassRole(t *testing.T) {
+	ce := Parse(readFixture(t, "iam_passrole_access_denied_exception.txt"))
+	if ce == nil {
+		t.Fatal("expected a composite error, got nil")
+	}
+	e := ce.(*AWSPermissionError)
+	if e.Action != "iam:PassRole" {
+		t.Errorf("action = %q, want iam:PassRole", e.Action)
+	}
+	if e.AWSErrorCode != "AccessDeniedException" {
+		t.Errorf("code = %q, want AccessDeniedException", e.AWSErrorCode)
+	}
+	if e.Principal != "arn:aws:sts::123456789012:assumed-role/nuon-runner/session" {
+		t.Errorf("principal = %q", e.Principal)
+	}
+	if e.Resource != "arn:aws:iam::123456789012:role/acme-task-role" {
+		t.Errorf("resource = %q", e.Resource)
+	}
+}
+
+func TestParse_NoErrorCodePrefix(t *testing.T) {
+	// Some SDK clients emit the "is not authorized to perform" sentence with no
+	// AccessDenied/Exception code prefix.
+	raw := "User: arn:aws:sts::123:assumed-role/foo/bar is not authorized to perform: iam:PassRole on resource: arn:aws:iam::123:role/baz"
+	ce := Parse(raw)
+	if ce == nil {
+		t.Fatal("expected a composite error, got nil")
+	}
+	e := ce.(*AWSPermissionError)
+	if e.Action != "iam:PassRole" {
+		t.Errorf("action = %q, want iam:PassRole", e.Action)
+	}
+	if e.AWSErrorCode != "" {
+		t.Errorf("code = %q, want empty (no prefix)", e.AWSErrorCode)
+	}
+	if e.Resource != "arn:aws:iam::123:role/baz" {
+		t.Errorf("resource = %q", e.Resource)
+	}
+}
+
 func TestParse_UnauthorizedOperation(t *testing.T) {
 	ce := Parse(readFixture(t, "ec2_unauthorized_operation.txt"))
 	if ce == nil {
