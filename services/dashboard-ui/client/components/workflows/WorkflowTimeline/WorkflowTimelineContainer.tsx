@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
 import { getInstallWorkflows } from '@/lib'
+import { createSSEQueryListener } from '@/lib/sse-listeners'
 import { WorkflowTimeline, WorkflowTimelineSkeleton } from './WorkflowTimeline'
 
 export { WorkflowTimelineSkeleton }
@@ -34,47 +35,23 @@ export const WorkflowTimelineContainer = ({
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
-  const queryKey = useMemo(
-    () => ['install-workflows', org?.id, installId, offset, planonly, type, search],
-    [org?.id, installId, offset, planonly, type, search]
-  )
-
-  const sseUrl =
-    org?.id && installId
-      ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}&search=${encodeURIComponent(search)}`
-      : undefined
-
-  const activeWorkflowsQueryKey = useMemo(
-    () => ['install-active-workflows', org?.id, install?.id],
-    [org?.id, install?.id]
-  )
-
-  const listeners = useMemo(
+  const extraListeners = useMemo(
     () => ({
-      workflows: (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data)
-          queryClient.setQueryData(queryKey, data)
-        } catch {}
-      },
-      'active-workflows': (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data)
-          queryClient.setQueryData(activeWorkflowsQueryKey, { data })
-        } catch {}
-      },
+      'active-workflows': createSSEQueryListener(
+        queryClient,
+        ['install-active-workflows', org?.id, install?.id],
+        { transform: (data) => ({ data }) }
+      ),
     }),
-    [queryKey, activeWorkflowsQueryKey, queryClient]
+    [queryClient, org?.id, install?.id]
   )
 
-  const { connected: sseConnected } = useResourceSSE({
-    url: sseUrl,
-    enabled: shouldPoll,
-    listeners,
-  })
-
-  const { data: result, isLoading } = useQuery({
-    queryKey,
+  const { data: result, isLoading } = useSSETimelineQuery({
+    sseUrl:
+      org?.id && installId
+        ? `/api/orgs/${org.id}/installs/${installId}/workflows/sse?limit=${LIMIT}&offset=${offset}&planonly=${planonly}&type=${type}&search=${encodeURIComponent(search)}`
+        : undefined,
+    queryKey: ['install-workflows', org?.id, installId, offset, planonly, type, search],
     queryFn: () =>
       getInstallWorkflows({
         orgId: org.id,
@@ -85,9 +62,11 @@ export const WorkflowTimelineContainer = ({
         type,
         search,
       }),
-    refetchOnMount: 'always',
-    refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,
     enabled: !!org?.id && !!installId,
+    shouldPoll,
+    pollInterval,
+    eventName: 'workflows',
+    extraListeners,
   })
 
   const workflows = result?.data ?? []
