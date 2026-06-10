@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/paginate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -15,7 +16,19 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 	}
 	view := ui.NewListView()
 
-	components, hasMore, err := s.listComponents(ctx, installID, offset, limit)
+	fetch := func(off, lim int) ([]*models.AppInstallComponent, bool, error) {
+		return s.listComponents(ctx, installID, off, lim)
+	}
+
+	var (
+		components []*models.AppInstallComponent
+		hasMore    bool
+	)
+	if limit <= 0 {
+		components, err = paginate.All(fetch)
+	} else {
+		components, hasMore, err = fetch(offset, limit)
+	}
 	if err != nil {
 		return view.Error(err)
 	}
@@ -55,7 +68,11 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 
 		data = append(data, args)
 	}
-	view.RenderPaging(data, offset, limit, hasMore)
+	if limit <= 0 {
+		view.RenderTotal(data, len(components))
+	} else {
+		view.RenderPaging(data, offset, limit, hasMore)
+	}
 	return nil
 }
 
