@@ -39,6 +39,15 @@ type nodePoolValues struct {
 	NodeClassRef nodeClassRefValues `mapstructure:"node_class_ref"`
 }
 
+type resourceRequests struct {
+	CPU    string `mapstructure:"cpu"`
+	Memory string `mapstructure:"memory"`
+}
+
+type resourceValues struct {
+	Requests resourceRequests `mapstructure:"requests"`
+}
+
 type helmValues struct {
 	Image helmValuesImage `mapstructure:"image"`
 	Env   helmValuesEnv   `mapstructure:"env"`
@@ -46,6 +55,7 @@ type helmValues struct {
 	ServiceAccount serviceAccountValues `mapstructure:"serviceAccount"`
 	PodLabels      map[string]string    `mapstructure:"podLabels"`
 	NodePool       nodePoolValues       `mapstructure:"node_pool"`
+	Resources      resourceValues       `mapstructure:"resources"`
 }
 
 func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
@@ -107,6 +117,12 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 				Name: req.InstanceTypeName,
 			},
 			NodeClassRef: nodeClassRef,
+		},
+		Resources: resourceValues{
+			Requests: resourceRequests{
+				CPU:    "750m",
+				Memory: "1.5Gi",
+			},
 		},
 	}
 }
