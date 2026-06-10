@@ -10,6 +10,7 @@ import { Error } from '@/views/Error'
 import { NotFound } from '@/views/NotFound'
 import { RouteError } from '@/views/RouteError'
 import { Onboarding } from '@/views/Onboarding'
+import { BYOCSetup } from '@/views/BYOCSetup'
 import { orgRoutes } from '@/views/org/routes'
 
 const BFFRedirect = () => {
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
     children: [
       { path: '/error', element: <Error /> },
       { path: '/onboarding', element: <Onboarding /> },
+      { path: '/byoc-setup', element: <BYOCSetup /> },
       ...orgRoutes,
       { path: '*', element: <NotFound /> },
     ],

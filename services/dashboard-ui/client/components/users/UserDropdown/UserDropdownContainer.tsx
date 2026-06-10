@@ -7,6 +7,7 @@ import { UserDropdown, type IUserDropdown } from './UserDropdown'
 
 type IUserDropdownContainerProps = Omit<
   IUserDropdown,
+  | 'isByoc'
   | 'isAdmin'
   | 'isNuonEmployee'
   | 'isDev'
@@ -26,13 +27,14 @@ type IUserDropdownContainerProps = Omit<
 
 export const UserDropdownContainer = (props: IUserDropdownContainerProps) => {
   const { isAdmin, isNuonEmployee, user, isLoading } = useAuth()
-  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev } = useConfig()
+  const { apiUrl, authServiceUrl, adminDashboardUrl, isDev, isByoc } = useConfig()
   const { addPanel } = useSurfaces()
   const { addToast } = useToast()
   const { permission, requestPermission, isSupported, muted, toggleMute } = useNotifications()
 
   return (
     <UserDropdown
+      isByoc={!!isByoc}
       isAdmin={!!isAdmin}
       isNuonEmployee={!!isNuonEmployee}
       isDev={!!isDev}
