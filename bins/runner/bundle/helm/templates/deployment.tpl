@@ -38,6 +38,10 @@ spec:
           command:
             - /bin/runner
             - org
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "common.fullname" . }}
