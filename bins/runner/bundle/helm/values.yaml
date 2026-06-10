@@ -23,15 +23,10 @@ autoscaling:
   targetCPUUtilizationPercentage: 100
   targetMemoryUtilizationPercentage: 100
 
-# limits should be based on the instance_types
-# docs: https://karpenter.sh/v0.37/reference/instance-types/#t3amedium
 resources:
   requests:
-    cpu: 1500m
-    memory: 1536Mi
-  limit:
-    cpu: 1750m
-    memory: 3072Mi
+    cpu: 750m
+    memory: 1.5Gi
 
 node_pool:
   # if we want the deployment to create and run on its own NodePool, we must enable this
