@@ -1,15 +1,11 @@
-import { createContext, useState, useMemo, useEffect, type ReactNode } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { createContext, useState, type ReactNode } from 'react'
 import { useWorkflowMetrics } from '@/hooks/use-workflow-metrics'
 import { useOrg } from '@/hooks/use-org'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
-import { useToast } from '@/hooks/use-toast'
+import { useSSEResourceQuery } from '@/hooks/use-sse-resource-query'
 import { getWorkflow } from '@/lib'
-import { Text } from '@/components/common/Text'
-import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TAPIError, TWorkflow } from '@/types'
+import type { TWorkflow } from '@/types'
 
 interface WorkflowContextValue {
   workflow: TWorkflow
@@ -31,9 +27,6 @@ interface WorkflowContextValue {
 
 export const WorkflowContext = createContext<WorkflowContextValue | undefined>(undefined)
 
-const FALLBACK_POLL_MS = 4000
-const FINISHED_POLL_MS = 30_000
-
 export const WorkflowProvider = ({
   children,
   workflowId,
@@ -44,51 +37,22 @@ export const WorkflowProvider = ({
   shouldPoll?: boolean
 }) => {
   const { org } = useOrg()
-  const queryClient = useQueryClient()
-  const { addToast } = useToast()
   const [sseEnabled, setSseEnabled] = useState(shouldPoll)
-  const queryKey = ['workflow', org?.id, workflowId]
 
-  const sseUrl = org?.id && workflowId
-    ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
-    : undefined
-
-  const onMessage = useMemo(() => (event: MessageEvent) => {
-    try {
-      const data: TWorkflow = JSON.parse(event.data)
-      queryClient.setQueryData(queryKey, data)
-    } catch {}
-  }, [org?.id, workflowId])
-
-  const { connected: sseConnected, disconnect } = useResourceSSE({
-    url: sseUrl,
-    enabled: sseEnabled,
-    onMessage,
-  })
-
-  const { data: workflow, isLoading, error } = useQuery({
-    queryKey,
+  const { data: workflow, isLoading, error, disconnect } = useSSEResourceQuery<TWorkflow>({
+    sseUrl: org?.id && workflowId
+      ? `/api/orgs/${org.id}/workflows/${workflowId}/sse`
+      : undefined,
+    queryKey: ['workflow', org?.id, workflowId],
     queryFn: () => getWorkflow({ orgId: org!.id, workflowId }),
-    refetchInterval: (query) => {
-      if (sseConnected) return false
-      if (!shouldPoll) return false
-      if (query.state.data?.finished) return FINISHED_POLL_MS
-      return FALLBACK_POLL_MS
-    },
     enabled: !!org?.id && !!workflowId,
+    shouldPoll,
+    sseEnabled,
+    eventName: 'workflow',
+    isFinished: (data) => !!data?.finished,
   })
 
   const metrics = useWorkflowMetrics(workflow)
-
-  useEffect(() => {
-    if (error && workflow) {
-      addToast(
-        <Toast heading="Refresh failed" theme="warn">
-          <Text>{(error as TAPIError)?.error ?? 'Connection issue'}</Text>
-        </Toast>
-      )
-    }
-  }, [error])
 
   if (error && !workflow) return <ProviderError error={error} />
   if (isLoading || !workflow) return <ProviderLoading />
