@@ -59,6 +59,8 @@ func (s *service) GetRunnerJobs(ctx *gin.Context) {
 		return
 	}
 
+	s.emitRunnerJobPickupAge(runnerJobs, pickupPathLegacy)
+
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
