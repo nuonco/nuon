@@ -340,7 +340,8 @@ mode" for details). When running `nuon` commands from a Claude session, prefer:
   Use it by default unless the task explicitly requires writes.
 - **`nuon mcp`** — stdio MCP server with read tools (`whoami`, `list_apps`, `get_app`, `list_installs`,
   `get_install`, `list_install_components`, `list_components`); `--allow-writes` adds `create_install` /
-  `deploy_component`. Auth comes from `~/.nuon` (run `nuon auth login` first).
+  `deploy_component`. Auth comes from `~/.nuon` (run `nuon auth login` first). Tools default to the selected
+  app/install context (what `nuon -h` shows); `whoami` reports it; pass `all=true` to list tools for org-wide.
 - The dev build lives at `~/bin/nuon-dev`; rebuild with `cd bins/cli && go build -o ~/bin/nuon-dev .`
 
 ## User Journey & Onboarding System
