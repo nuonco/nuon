@@ -196,7 +196,7 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 									"properties": map[string]any{
 										"publisher":               "Microsoft.ManagedServices",
 										"type":                    "ApplicationHealthLinux",
-										"typeHandlerVersion":      "2.0",
+										"typeHandlerVersion":      "1.0", // Binary Health States (v1.0): a 200 from the probe
 										"autoUpgradeMinorVersion": true,
 										"settings": map[string]any{
 											"protocol":    "http",
