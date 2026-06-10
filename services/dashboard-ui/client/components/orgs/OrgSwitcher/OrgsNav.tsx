@@ -99,7 +99,7 @@ export const OrgsNav = ({
             <Link
               key={o?.id}
               className="!h-fit !block w-full"
-              href={`/${o?.id}/apps`}
+              href={`/${o?.id}`}
               variant="ghost"
               onKeyDown={(e) => handleLinkKeyDown(e, idx)}
             >

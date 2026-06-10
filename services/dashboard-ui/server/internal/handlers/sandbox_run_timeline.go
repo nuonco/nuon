@@ -1,25 +1,13 @@
 package handlers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"strconv"
-	"time"
+	"context"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	nuon "github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
-)
-
-const (
-	sandboxRunTimelinePollInterval    = 3 * time.Second
-	sandboxRunTimelineErrorRetryDelay = 5 * time.Second
 )
 
 type SandboxRunTimelineHandler struct {
@@ -37,94 +25,21 @@ func (h *SandboxRunTimelineHandler) RegisterRoutes(e *gin.Engine) error {
 }
 
 func (h *SandboxRunTimelineHandler) StreamSandboxRunTimeline(c *gin.Context) {
-	orgID := c.Param("orgId")
 	installID := c.Param("installId")
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+	limit, offset := timelineQuery(c)
 
-	token, err := c.Cookie(authCookie)
-	if err != nil || token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	client, _, ok := sseAuth(c, h.cfg, h.l)
+	if !ok {
 		return
 	}
 
-	client, err := nuon.New(
-		nuon.WithURL(h.cfg.APIUrl),
-		nuon.WithAuthToken(token),
-		nuon.WithOrgID(orgID),
-	)
-	if err != nil {
-		h.l.Error("failed to create nuon client", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create client"})
-		return
-	}
-
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("X-Accel-Buffering", "no")
-	c.Writer.WriteHeader(http.StatusOK)
-	c.Writer.Flush()
-
-	ctx := c.Request.Context()
-	var lastHash string
-
-	sendEvent := func(event string, data string) {
-		fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", event, data)
-		c.Writer.Flush()
-	}
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
-		runs, hasMore, err := client.GetInstallSandboxRuns(ctx, installID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
-		if err != nil {
-			if isNotFoundErr(err) {
-				runs = nil
-				hasMore = false
-			} else {
-				h.l.Error("failed to fetch sandbox runs", zap.String("installID", installID), zap.Error(err))
-				sendEvent("fetch-error", `{"error":"failed to fetch sandbox runs"}`)
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(sandboxRunTimelineErrorRetryDelay):
-				}
-				continue
-			}
-		}
-
-		payload := timelinePayload{Data: runs, Pagination: paginationInfo{HasNext: hasMore}}
-		data, err := json.Marshal(payload)
-		if err != nil {
-			h.l.Error("failed to marshal sandbox runs", zap.Error(err))
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(sandboxRunTimelineErrorRetryDelay):
-			}
-			continue
-		}
-
-		hash := sha256.Sum256(data)
-		hashStr := hex.EncodeToString(hash[:])
-
-		if hashStr != lastHash {
-			lastHash = hashStr
-			sendEvent("sandbox-runs", string(data))
-		}
-
-		fmt.Fprintf(c.Writer, ": keepalive\n\n")
-		c.Writer.Flush()
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(sandboxRunTimelinePollInterval):
-		}
-	}
+	runSSEStream(c, sseStreamConfig{
+		ClientErrMsg: "failed to fetch sandbox runs",
+		PollInterval: sseTimelinePollInterval,
+		Log:          h.l,
+		Fetch: timelineFetcher("sandbox-runs", func(ctx context.Context) (any, bool, error) {
+			runs, hasMore, err := client.GetInstallSandboxRuns(ctx, installID, &models.GetPaginatedQuery{Limit: limit, Offset: offset})
+			return runs, hasMore, err
+		}),
+	})
 }
