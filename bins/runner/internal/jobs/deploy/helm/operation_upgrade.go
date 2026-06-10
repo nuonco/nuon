@@ -43,7 +43,7 @@ func (h *handler) upgrade(ctx context.Context, l *zap.Logger, actionCfg *action.
 
 	l.Debug("found default chart values", zap.Any("values", chart.Values))
 	l.Debug("loading provided values")
-	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values, h.state.plan.HelmDeployPlan.ValuesOverride)
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}

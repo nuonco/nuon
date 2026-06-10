@@ -33,7 +33,7 @@ func (h *handler) upgrade_diff(ctx context.Context, l *zap.Logger, actionCfg *ac
 
 	l.Info("found default chart values", zap.Any("values", chart.Values))
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values, h.state.plan.HelmDeployPlan.ValuesOverride)
 	if err != nil {
 		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
@@ -105,7 +105,7 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 	l.Info("found default chart values", zap.Any("values", chart.Values))
 
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values, h.state.plan.HelmDeployPlan.ValuesOverride)
 	if err != nil {
 		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
@@ -181,7 +181,7 @@ func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *a
 	l.Info("found default chart values", zap.Any("values", chart.Values))
 
 	l.Info("loading provided values")
-	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values)
+	values, err := helm.ChartValues(h.state.plan.HelmDeployPlan.ValuesFiles, h.state.plan.HelmDeployPlan.Values, h.state.plan.HelmDeployPlan.ValuesOverride)
 	if err != nil {
 		return "", nil, "", fmt.Errorf("unable to load helm values: %w", err)
 	}
