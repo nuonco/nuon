@@ -84,3 +84,15 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
   </div>
 
 </div>
+
+## Quickstart at a glance
+
+The fastest way to try Nuon is to deploy one of our [example apps](https://github.com/nuonco/example-app-configs) into a **test cloud account** (AWS, Azure, or GCP). See the [full quickstart](/get-started/quickstart) for detail.
+
+1. **Create your account** — [sign up for the free trial](https://app.nuon.co/).
+2. **Install the CLI** — `brew install nuonco/tap/nuon`
+3. **Log in** — `nuon auth login`
+4. **Grab an example app** — `git clone https://github.com/nuonco/example-app-configs`, then `cd example-app-configs/eks-simple`
+5. **Define and deploy it** — `nuon apps create --name eks-simple`, `nuon apps sync`, then `nuon installs create --name <install-name> --region <region>`
+
+Apps are defined in TOML config files and applied with `nuon apps sync` — not through CLI flags or YAML. Deployments start with `nuon installs create`; there is no `nuon installs deploy` command. To deploy your own software instead, wrap your existing Terraform, Helm, and Docker assets — see [Apps](/concepts/apps).
