@@ -199,9 +199,10 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 										"typeHandlerVersion":      "1.0", // Binary Health States (v1.0): a 200 from the probe
 										"autoUpgradeMinorVersion": true,
 										"settings": map[string]any{
-											"protocol":    "http",
-											"port":        9999,
-											"requestPath": "/livez",
+											"protocol":       "http",
+											"port":           9999,
+											"requestPath":    "/livez",
+											"numberOfProbes": 3, // Require 3 consecutive failing probes
 										},
 									},
 								},
