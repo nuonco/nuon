@@ -1,15 +1,13 @@
-import { createContext, useMemo, useEffect, type ReactNode } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { createContext, useMemo, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
-import { useToast } from '@/hooks/use-toast'
+import { useSSEResourceQuery, isTerminalStatusV2 } from '@/hooks/use-sse-resource-query'
 import { getInstallActionRun } from '@/lib'
-import { Text } from '@/components/common/Text'
-import { Toast } from '@/components/surfaces/Toast'
+import { createSSEQueryListener } from '@/lib/sse-listeners'
 import { ProviderError } from '@/components/layout/ProviderError'
 import { ProviderLoading } from '@/components/layout/ProviderLoading'
-import type { TAPIError, TInstallActionRun, TWorkflow } from '@/types'
+import type { TInstallActionRun, TWorkflow } from '@/types'
 
 type InstallActionRunContextValue = {
   installActionRun: TInstallActionRun
@@ -19,9 +17,6 @@ type InstallActionRunContextValue = {
 export const InstallActionRunContext = createContext<
   InstallActionRunContextValue | undefined
 >(undefined)
-
-const FALLBACK_POLL_MS = 4000
-const FINISHED_POLL_MS = 30_000
 
 export function InstallActionRunProvider({
   children,
@@ -35,59 +30,27 @@ export function InstallActionRunProvider({
 }) {
   const { org } = useOrg()
   const { install } = useInstall()
-  const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const queryKey = ['install-action-run', org?.id, install?.id, runId]
 
-  const sseUrl = org?.id && install?.id && runId
-    ? `/api/orgs/${org.id}/installs/${install.id}/action-runs/${runId}/sse`
-    : undefined
+  const extraListeners = useMemo(() => ({
+    workflow: createSSEQueryListener<TWorkflow>(
+      queryClient,
+      (data) => ['workflow', org?.id, data?.id]
+    ),
+  }), [queryClient, org?.id])
 
-  const listeners = useMemo(() => ({
-    'action-run': (event: MessageEvent) => {
-      try {
-        const data: TInstallActionRun = JSON.parse(event.data)
-        queryClient.setQueryData(queryKey, data)
-      } catch {}
-    },
-    workflow: (event: MessageEvent) => {
-      try {
-        const data: TWorkflow = JSON.parse(event.data)
-        queryClient.setQueryData(['workflow', org?.id, data?.id], data)
-      } catch {}
-    },
-  }), [org?.id, install?.id, runId])
-
-  const { connected: sseConnected } = useResourceSSE({
-    url: sseUrl,
-    enabled: shouldPoll,
-    listeners,
-  })
-
-  const { data: installActionRun, isLoading, error, refetch } = useQuery({
-    queryKey,
+  const { data: installActionRun, isLoading, error, refetch } = useSSEResourceQuery<TInstallActionRun>({
+    sseUrl: org?.id && install?.id && runId
+      ? `/api/orgs/${org.id}/installs/${install.id}/action-runs/${runId}/sse`
+      : undefined,
+    queryKey: ['install-action-run', org?.id, install?.id, runId],
     queryFn: () => getInstallActionRun({ orgId: org!.id, installId: install!.id, runId }),
-    refetchInterval: (query) => {
-      if (sseConnected) return false
-      if (!shouldPoll) return false
-      const status = query.state.data?.status_v2?.status
-      if (status === 'success' || status === 'error' || status === 'cancelled' || status === 'not-attempted') {
-        return FINISHED_POLL_MS
-      }
-      return FALLBACK_POLL_MS
-    },
     enabled: !!org?.id && !!install?.id && !!runId,
+    shouldPoll,
+    eventName: 'action-run',
+    extraListeners,
+    isFinished: isTerminalStatusV2,
   })
-
-  useEffect(() => {
-    if (error && installActionRun) {
-      addToast(
-        <Toast heading="Refresh failed" theme="warn">
-          <Text>{(error as TAPIError)?.error ?? 'Connection issue'}</Text>
-        </Toast>
-      )
-    }
-  }, [error])
 
   if (error && !installActionRun) return <ProviderError error={error} />
   if (isLoading || !installActionRun) return <ProviderLoading />
