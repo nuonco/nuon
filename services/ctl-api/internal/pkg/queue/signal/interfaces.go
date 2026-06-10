@@ -97,6 +97,19 @@ type SignalWithRetryGroup interface {
 	RetryGroup() bool
 }
 
+// SignalWithInlineValidate is implemented by signals whose Validate phase runs
+// entirely inline on the workflow task — no activities, no awaits — performing
+// only idempotent, side-effect-free checks (e.g. required-field validation).
+// For such signals the handler skips the validate-phase abandonment stamps
+// (validate_started_at / validate_finished_at): an inline Validate runs to
+// completion within a single workflow task, so it can never be abandoned
+// mid-phase and re-running it on recovery is safe. The stamps then serve no
+// purpose and only add status-write round-trips to the dispatch hot path.
+// Note: Validate still runs in full — only the two success-path stamps are skipped.
+type SignalWithInlineValidate interface {
+	InlineValidate() bool
+}
+
 // ---------------------------------------------------------------------------
 // Step Execution Capabilities
 // ---------------------------------------------------------------------------
