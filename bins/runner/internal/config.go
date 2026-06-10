@@ -18,6 +18,7 @@ func init() {
 	config.RegisterDefault("registry_port", "5001")
 	config.RegisterDefault("sandbox_job_duration", "5s")
 	config.RegisterDefault("sandbox_control_port", "9095")
+	config.RegisterDefault("health_port", "9999")
 	config.RegisterDefault("git_ref", "dev")
 }
 
@@ -38,6 +39,11 @@ type Config struct {
 	BundleDir    string `config:"bundle_dir" validate:"required"`
 	RegistryDir  string `config:"registry_dir" validate:"required"`
 	RegistryPort int    `config:"registry_port" validate:"required"`
+
+	// HealthPort is the port the mng process serves its /healthz endpoint on.
+	// Azure's VMSS Application Health extension probes this to drive automatic
+	// instance repair (the self-heal analog to the AWS ASG EC2 health check).
+	HealthPort int `config:"health_port" validate:"required"`
 
 	// kubernetes pod identity and self-deletion
 	PodName             string `config:"pod_name"`
