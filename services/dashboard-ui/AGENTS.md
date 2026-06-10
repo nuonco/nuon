@@ -33,6 +33,54 @@ The BFF exposes its own `/api/*` endpoints (separate from the `/v1/*` reverse pr
 
 **User vs internal logs**: The runner emits logs with two OTEL scope names — `oteljob` for job execution output (builds, deploys, actions) and `system` for internal runner logs. The `user_output=true` filter keeps only records where `ScopeName == "oteljob"`.
 
+### SSE Resource Endpoints (server-side pattern)
+
+The BFF exposes ~13 `/api/orgs/:orgId/.../sse` endpoints that push resource updates to the SPA. There is no eventing backend — each endpoint is a server-side poll loop against ctl-api that converts polling into push: fetch the resource, SHA-256 hash the JSON, and emit a named SSE event only when the hash changes.
+
+**All shared plumbing lives in `server/internal/handlers/sse.go`. Never hand-roll an SSE loop in a handler.** A handler is just auth + a `Fetch` closure:
+
+```go
+func (h *DeploysHandler) StreamDeploy(c *gin.Context) {
+	installID := c.Param("installId")
+	deployID := c.Param("deployId")
+
+	client, _, ok := sseAuth(c, h.cfg, h.l) // cookie auth + nuon client; writes 401/500 JSON on failure
+	if !ok {
+		return
+	}
+
+	runSSEStream(c, sseStreamConfig{
+		ClientErrMsg:        "failed to fetch deploy",       // payload for fetch-error events
+		FinishedGracePeriod: sseFinishedGracePeriod,         // omit for streams that never self-close
+		Log:                 h.l,
+		Fetch: func(ctx context.Context) (sseFetchResult, error) {
+			deploy, err := client.GetInstallDeploy(ctx, installID, deployID)
+			if err != nil {
+				return sseFetchResult{}, err // loop emits fetch-error + retries
+			}
+			ev, err := marshalEvent("deploy", deploy)
+			if err != nil {
+				return sseFetchResult{}, fmt.Errorf("marshal deploy: %v: %w", err, errSSESilentRetry)
+			}
+			status := ""
+			if deploy.StatusV2 != nil {
+				status = string(deploy.StatusV2.Status)
+			}
+			return sseFetchResult{Events: []sseEvent{ev}, Finished: terminalStatuses[status]}, nil
+		},
+	})
+}
+```
+
+**What `runSSEStream` handles for you**: SSE headers, per-event-name hash dedupe, `fetch-error` events with retry delay, `finished` events + slow-poll + grace-period close for terminal resources, `: keepalive` comments, and context cancellation. It is covered by `sse_test.go`.
+
+**Contract rules**:
+- The **first event in `Events` is the primary resource** — `Finished` detection keys off its hash changing. Secondary resources (e.g. a deploy's `component`/`workflow`) go after it, fetched best-effort (skip silently on error; their previous hash stays intact).
+- `sseAuth` must run **before** `runSSEStream` — once SSE headers are flushed, errors can only be reported as `fetch-error` events, never JSON.
+- Wrap errors that should retry **without** a client-visible `fetch-error` event (e.g. marshal failures) with `errSSESilentRetry`.
+- Paginated list endpoints use `timelineQuery(c)` + `timelineFetcher(eventName, fetch)` from `timeline.go` (handles limit/offset defaults, `timelinePayload` wrapping, and 404 → empty payload). Poll cadence: `sseWatchPollInterval` (2s) for single resources, `sseTimelinePollInterval` (3s) for timelines.
+- `log_streams.go` is intentionally different (long-poll tail, catch-up/complete state machine) — don't try to fold it into `runSSEStream`.
+
 ## Client SPA (`client/`)
 
 ### Directory Structure
@@ -365,6 +413,45 @@ const { install } = useInstall()
 const config = useConfig()
 const { addModal, removeModal } = useSurfaces()
 ```
+
+## SSE / Real-Time Updates (client-side pattern)
+
+Live resource updates come from the BFF's `/api/orgs/:orgId/.../sse` endpoints (see the server-side pattern above). The client design: **SSE events are written straight into the TanStack Query cache** via `queryClient.setQueryData`, so components just `useQuery` and never know about SSE. While SSE is connected, browser polling is off; when it drops, `refetchInterval` polling takes over automatically.
+
+**Use the shared hooks — never wire up `EventSource` or `useResourceSSE` + `useQuery` by hand in a provider/container.**
+
+**`useSSEResourceQuery`** (`client/hooks/use-sse-resource-query.ts`) — for single-resource providers (build, deploy, workflow, sandbox run, etc.). Bundles the EventSource, the cache-writing listener, sse-gated fallback polling (4s active / 30s finished), and the "Refresh failed" toast:
+
+```typescript
+const { data: deploy, isLoading, error } = useSSEResourceQuery<TDeploy>({
+  sseUrl: org?.id ? `/api/orgs/${org.id}/installs/${installId}/deploys/${deployId}/sse` : undefined,
+  queryKey: ['deploy', org?.id, installId, deployId],
+  queryFn: () => getDeploy({ orgId: org!.id, installId, deployId }),
+  enabled: !!org?.id && !!installId && !!deployId,
+  shouldPoll,
+  eventName: 'deploy',                  // primary SSE event name from the BFF handler
+  onPrimaryEvent: invalidateTabQueries, // optional: side effects on primary updates
+  extraListeners,                       // optional: secondary events (component/workflow)
+  isFinished: isTerminalStatusV2,       // gates the 30s finished poll interval
+})
+```
+
+**`useSSETimelineQuery`** (`client/hooks/use-sse-timeline-query.ts`) — for paginated list containers (build/deploy/workflow timelines). Same idea with the simpler binary poll gate and `refetchOnMount: 'always'`; pass the container's `pollInterval` and optionally `transform`/`extraListeners`.
+
+**`createSSEQueryListener`** (`client/lib/sse-listeners.ts`) — builds the parse → `setQueryData` listener for secondary events. The query key can be a function of the payload:
+
+```typescript
+const extraListeners = useMemo(() => ({
+  workflow: createSSEQueryListener<TWorkflow>(queryClient, (data) => ['workflow', org?.id, data?.id]),
+}), [queryClient, org?.id])
+```
+
+**Rules**:
+- `isTerminalStatusV2` (exported from `use-sse-resource-query.ts`) is the shared terminal-status predicate — don't re-list status strings.
+- Memoize `extraListeners` at the call site. Every value a listener closes over must co-vary with `sseUrl`/`queryKey`.
+- The base hook `useResourceSSE` handles reconnection with exponential backoff and **stops reconnecting after the server's `finished` event** (the server closes terminal-resource streams after a grace period; fallback polling takes over). Don't "fix" the lack of reconnect on finished streams.
+- Adding a new SSE-backed view means both sides: a Go handler on `runSSEStream` and a client call site on one of these hooks, with matching event names.
+- `log-stream-provider.tsx` is intentionally bespoke (accumulating log state, dedupe, catch-up/complete) — not a candidate for these hooks.
 
 ## Authentication
 

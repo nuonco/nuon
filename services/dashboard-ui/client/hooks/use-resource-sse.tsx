@@ -18,6 +18,7 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
   const eventSourceRef = useRef<EventSource | null>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttemptRef = useRef(0)
+  const finishedRef = useRef(false)
   const onMessageRef = useRef(onMessage)
   onMessageRef.current = onMessage
   const listenersRef = useRef(listeners)
@@ -42,17 +43,20 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
     eventSourceRef.current = eventSource
 
     if (onMessageRef.current) {
-      const handler = onMessageRef.current
-      eventSource.onmessage = handler
+      eventSource.onmessage = (event) => onMessageRef.current?.(event)
     }
 
     if (listenersRef.current) {
-      for (const [event, handler] of Object.entries(listenersRef.current)) {
-        eventSource.addEventListener(event, handler)
+      for (const event of Object.keys(listenersRef.current)) {
+        eventSource.addEventListener(event, (e: MessageEvent) =>
+          listenersRef.current?.[event]?.(e)
+        )
       }
     }
 
-    eventSource.addEventListener('finished', () => {})
+    eventSource.addEventListener('finished', () => {
+      finishedRef.current = true
+    })
 
     eventSource.addEventListener('fetch-error', (event: MessageEvent) => {
       try {
@@ -72,6 +76,10 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
       eventSourceRef.current = null
       setConnected(false)
 
+      // The server closes finished resources for good after a grace period;
+      // fallback polling takes over instead of reconnecting forever.
+      if (finishedRef.current) return
+
       const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 30000)
       reconnectAttemptRef.current += 1
 
@@ -87,6 +95,7 @@ export function useResourceSSE({ url, enabled, onMessage, listeners }: UseResour
   }, [url])
 
   useEffect(() => {
+    finishedRef.current = false
     if (enabled && url) {
       connect()
     }

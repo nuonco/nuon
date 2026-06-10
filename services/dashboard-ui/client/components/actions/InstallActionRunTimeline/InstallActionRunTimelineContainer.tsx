@@ -1,9 +1,7 @@
-import { useMemo } from 'react'
 import { useSearchParams } from 'react-router'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { useSSETimelineQuery } from '@/hooks/use-sse-timeline-query'
 import { getInstallAction } from '@/lib'
 import { InstallActionRunTimeline } from './InstallActionRunTimeline'
 
@@ -24,40 +22,15 @@ export const InstallActionRunTimelineContainer = ({
 }: IInstallActionRunTimelineContainer) => {
   const { install } = useInstall()
   const { org } = useOrg()
-  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const offset = Number(searchParams.get('offset') ?? 0)
 
-  const queryKey = useMemo(
-    () => ['install-action', org?.id, install?.id, actionId, offset],
-    [org?.id, install?.id, actionId, offset]
-  )
-
-  const sseUrl =
-    org?.id && install?.id && actionId
-      ? `/api/orgs/${org.id}/installs/${install.id}/actions/${actionId}/runs/sse?limit=${LIMIT}&offset=${offset}`
-      : undefined
-
-  const listeners = useMemo(
-    () => ({
-      'action-runs': (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data)
-          queryClient.setQueryData(queryKey, data?.data)
-        } catch {}
-      },
-    }),
-    [queryKey, queryClient]
-  )
-
-  const { connected: sseConnected } = useResourceSSE({
-    url: sseUrl,
-    enabled: shouldPoll,
-    listeners,
-  })
-
-  const { data: action } = useQuery({
-    queryKey,
+  const { data: action } = useSSETimelineQuery({
+    sseUrl:
+      org?.id && install?.id && actionId
+        ? `/api/orgs/${org.id}/installs/${install.id}/actions/${actionId}/runs/sse?limit=${LIMIT}&offset=${offset}`
+        : undefined,
+    queryKey: ['install-action', org?.id, install?.id, actionId, offset],
     queryFn: () =>
       getInstallAction({
         orgId: org.id,
@@ -66,9 +39,11 @@ export const InstallActionRunTimelineContainer = ({
         limit: LIMIT,
         offset,
       }),
-    refetchOnMount: 'always',
-    refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,
     enabled: !!org?.id && !!install?.id && !!actionId,
+    shouldPoll,
+    pollInterval,
+    eventName: 'action-runs',
+    transform: (data) => data?.data,
   })
 
   const runs = action?.runs ?? []
