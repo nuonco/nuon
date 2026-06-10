@@ -398,6 +398,20 @@ Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabl
 through `ui.PrintJSON` / `ui.PrintError` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass
 the envelope. `--output json` is unchanged from the old `--json` — raw output, no envelope.
 
+#### Output annotations (REQUIRED when adding commands)
+
+Commands declare which `--output` formats they support via the annotations system (`cmd/annotations.go`). No
+annotation = supports all of `table,json,agent`. A command that can't honor a format (TUI-only, raw text, protocol
+on stdout like `nuon mcp`) MUST declare what it does support:
+
+```go
+Annotations: outputsAnnotation(OutputTable)                          // table only
+Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable, OutputJSON))
+```
+
+`resolveOutput` enforces this — requesting an unsupported format errors with the supported list. **When adding or
+changing a command, set this annotation; it is metadata LLMs and completion rely on and is not inferred.**
+
 ### Read-only mode (`--read-only` / `NUON_READ_ONLY=1`)
 
 Safety guardrail for agent-driven use: blocks any command that may mutate remote state. Enforced in

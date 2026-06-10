@@ -23,6 +23,7 @@ Example Claude Code config (.mcp.json):
   {"mcpServers": {"nuon": {"command": "nuon", "args": ["mcp"]}}}`,
 		PersistentPreRunE: c.persistentPreRunE,
 		GroupID:           AdditionalGroup.ID,
+		Annotations:       outputsAnnotation(OutputTable),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			if ReadOnly || readOnlyFromEnv() {
 				allowWrites = false
