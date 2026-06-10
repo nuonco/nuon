@@ -7,25 +7,38 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
+	"github.com/nuonco/nuon/bins/cli/internal/paginate"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit int, asJSON bool) error {
 	view := ui.NewListView()
 
+	var appID string
+	if appNameOrID != "" {
+		resolved, err := lookup.AppID(ctx, s.api, appNameOrID)
+		if err != nil {
+			return view.Error(err)
+		}
+		appID = resolved
+	}
+
+	fetch := func(off, lim int) ([]*models.AppComponent, bool, error) {
+		if appID != "" {
+			return s.listAppComponents(ctx, appID, off, lim)
+		}
+		return s.listComponents(ctx, off, lim)
+	}
+
 	var (
 		components []*models.AppComponent
 		err        error
 		hasMore    bool
 	)
-	if appNameOrID != "" {
-		appID, err := lookup.AppID(ctx, s.api, appNameOrID)
-		if err != nil {
-			return view.Error(err)
-		}
-		components, hasMore, err = s.listAppComponents(ctx, appID, offset, limit)
+	if limit <= 0 {
+		components, err = paginate.All(fetch)
 	} else {
-		components, hasMore, err = s.listComponents(ctx, offset, limit)
+		components, hasMore, err = fetch(offset, limit)
 	}
 	if err != nil {
 		return view.Error(err)
@@ -56,7 +69,11 @@ func (s *Service) List(ctx context.Context, appNameOrID string, offset, limit in
 			strconv.Itoa(int(component.ConfigVersions)),
 		})
 	}
-	view.RenderPaging(data, offset, limit, hasMore)
+	if limit <= 0 {
+		view.RenderTotal(data, len(components))
+	} else {
+		view.RenderPaging(data, offset, limit, hasMore)
+	}
 	return nil
 }
 

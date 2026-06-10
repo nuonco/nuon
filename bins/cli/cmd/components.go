@@ -21,6 +21,7 @@ func (c *cli) componentsCmd() *cobra.Command {
 		GroupID:           AdditionalGroup.ID,
 	}
 
+	var listOffset, listLimit int
 	listCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -28,12 +29,12 @@ func (c *cli) componentsCmd() *cobra.Command {
 		Long:    "List your app's components",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := components.New(c.apiClient, c.cfg)
-			return svc.List(cmd.Context(), appID, offset, limit, PrintJSON)
+			return svc.List(cmd.Context(), appID, listOffset, listLimit, PrintJSON)
 		}),
 	}
 	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app to filter components by")
-	listCmd.Flags().IntVarP(&offset, "offset", "o", 0, "Offset for pagination")
-	listCmd.Flags().IntVarP(&limit, "limit", "l", 20, "Limit for pagination")
+	listCmd.Flags().IntVarP(&listOffset, "offset", "o", 0, "Offset for pagination")
+	listCmd.Flags().IntVarP(&listLimit, "limit", "l", 0, "Limit for pagination (0 returns all)")
 	componentsCmd.AddCommand(listCmd)
 
 	getCmd := &cobra.Command{
