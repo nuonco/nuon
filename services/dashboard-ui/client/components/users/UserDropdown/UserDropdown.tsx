@@ -15,6 +15,7 @@ export interface IUserDropdown
   collapsible?: boolean
   isCollapsed?: boolean
   hideOrgSettings?: boolean
+  isByoc: boolean
   isAdmin: boolean
   isNuonEmployee: boolean
   isDev: boolean
@@ -37,6 +38,7 @@ export const UserDropdown = ({
   collapsible,
   isCollapsed,
   hideOrgSettings,
+  isByoc,
   isAdmin,
   isNuonEmployee,
   isDev,
@@ -70,8 +72,8 @@ export const UserDropdown = ({
         )}
         {!hideOrgSettings && <InviteUserButton isMenuButton />}
         {!hideOrgSettings && (
-          <Link href="/onboarding">
-            Re-open onboarding <Icon variant="SignpostIcon" />
+          <Link href={isByoc ? '/byoc-setup' : '/onboarding'}>
+            {isByoc ? 'Setup guide' : 'Re-open onboarding'} <Icon variant="SignpostIcon" />
           </Link>
         )}
         {!hideOrgSettings && <hr />}

@@ -18,7 +18,7 @@ function Step({ number, title, children }: { number: number; title: string; chil
         <div className="w-7 h-7 rounded-full bg-primary-600 dark:bg-primary-400 flex items-center justify-center flex-shrink-0">
           <Text variant="label" weight="strong" className="text-white dark:text-black">{number}</Text>
         </div>
-        <Text variant="heading-3">{title}</Text>
+        <Text variant="h3">{title}</Text>
       </div>
       <div className="pl-10 flex flex-col gap-3">
         {children}
@@ -55,7 +55,7 @@ export function BYOCSetup() {
       <div className="flex-1 overflow-y-auto px-6 pt-14 pb-8">
         <div className="max-w-2xl mx-auto w-full flex flex-col gap-10">
           <div className="flex flex-col gap-2">
-            <Text variant="heading-1">Get started</Text>
+            <Text variant="h1">Get started</Text>
             <Text variant="body" theme="neutral">
               Set up the Nuon CLI, create your organization, and sync your first app.
             </Text>
@@ -191,7 +191,7 @@ export function BYOCSetup() {
               </div>
             ) : (
               <div className="flex items-center gap-3 p-4 rounded-lg border">
-                <Icon variant="SpinnerGapIcon" size={16} className="animate-spin text-cool-grey-500" />
+                <Icon variant="Loading" size={16} />
                 <Text variant="body" theme="neutral">
                   Waiting for an organization to be created...
                 </Text>
