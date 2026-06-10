@@ -111,37 +111,36 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
+// InlineValidate marks process_job's Validate as inline and activity-free
+// (the runner/active-process/job checks moved to Execute), so the handler can
+// skip the validate-phase abandonment stamps on the dispatch hot path.
+func (s *Signal) InlineValidate() bool {
+	return true
+}
+
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return err
 	}
 
-	l.Info("fetching runner to ensure it is healthy")
-	runner, err := activities.AwaitGet(ctx, activities.GetRequest{
+	l.Info("fetching runner and job to ensure runner is healthy")
+	execData, err := activities.AwaitGetRunnerJobForExecution(ctx, activities.GetRunnerJobForExecutionRequest{
 		RunnerID: s.RunnerID,
+		JobID:    s.JobID,
 	})
 	if err != nil {
-		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "unable to fetch runner from database")
-		return fmt.Errorf("unable to get runner: %w", err)
+		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "unable to fetch runner and job from database")
+		return fmt.Errorf("unable to get runner job execution data: %w", err)
 	}
+	runner := execData.Runner
+	runnerJob := execData.Job
 
 	// Check if runner has any active process
-	resp, err := activities.AwaitHasActiveRunnerProcess(ctx, activities.HasActiveRunnerProcessRequest{
-		RunnerID: s.RunnerID,
-	})
-	if err != nil || !resp.HasActive {
+	if !execData.HasActiveProcess {
 		l.Warn("runner has no active process, not attempting")
 		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "no active runner process available")
 		return errors.New("runner has no active process")
-	}
-
-	runnerJob, err := activities.AwaitGetJob(ctx, activities.GetJobRequest{
-		ID: s.JobID,
-	})
-	if err != nil {
-		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusNotAttempted, "unable to get job from database")
-		return fmt.Errorf("unable to update runner job: %w", err)
 	}
 
 	if runnerJob.Status == app.RunnerJobStatusCancelled {
