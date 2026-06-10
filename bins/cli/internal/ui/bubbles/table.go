@@ -232,6 +232,19 @@ func (v *TableView) RenderPagingWithContext(data [][]string, offset, limit int, 
 	fmt.Println(footerStyle.Render(textStyle.Render(pagingInfo)))
 }
 
+// RenderTotal renders a table with a total-count footer, for when all results are shown.
+func (v *TableView) RenderTotal(data [][]string, total int) {
+	v.Render(data)
+
+	textStyle := lipgloss.NewStyle().
+		Foreground(styles.SubtleColor).
+		Italic(true)
+	footerStyle := lipgloss.NewStyle().
+		Margin(1, 0, 0, 0)
+
+	fmt.Println(footerStyle.Render(textStyle.Render(fmt.Sprintf("%d total", total))))
+}
+
 // RenderInteractive displays an interactive table that users can navigate.
 // When interactive is false, it falls back to rendering a static table.
 func (v *TableView) RenderInteractive(data [][]string, interactive bool) error {
