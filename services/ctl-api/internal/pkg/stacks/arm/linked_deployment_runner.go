@@ -122,6 +122,16 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 					"upgradePolicy": map[string]any{
 						"mode": "Manual",
 					},
+					// Self-heal the runner instance when it goes unhealthy (e.g.
+					// the mng process powers the VM off on shutdown). This is the
+					// Azure analog to the AWS ASG EC2 health check, which is what
+					// brings a shut-down AWS runner back automatically. Health is
+					// sourced from the Application Health extension below.
+					"automaticRepairsPolicy": map[string]any{
+						"enabled":      true,
+						"gracePeriod":  "PT10M",
+						"repairAction": "Replace",
+					},
 					"virtualMachineProfile": map[string]any{
 						"osProfile": map[string]any{
 							"computerNamePrefix": "[parameters('nuonInstallID')]",
@@ -169,6 +179,29 @@ func (t *Templates) getDefaultRunnerTemplate() map[string]any {
 													},
 												},
 											},
+										},
+									},
+								},
+							},
+						},
+						// Reports instance health to the VMSS by probing the mng
+						// process's /livez endpoint. When the runner is down
+						// (or the VM is powered off on shutdown) the probe fails,
+						// the instance is marked unhealthy, and automaticRepairsPolicy
+						// replaces it.
+						"extensionProfile": map[string]any{
+							"extensions": []map[string]any{
+								{
+									"name": "ApplicationHealth",
+									"properties": map[string]any{
+										"publisher":               "Microsoft.ManagedServices",
+										"type":                    "ApplicationHealthLinux",
+										"typeHandlerVersion":      "2.0",
+										"autoUpgradeMinorVersion": true,
+										"settings": map[string]any{
+											"protocol":    "http",
+											"port":        9999,
+											"requestPath": "/livez",
 										},
 									},
 								},
