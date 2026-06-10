@@ -119,7 +119,11 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	}
 
 	if !autoApprove {
-		ok, err := bubbles.ShowConfirmDialog("Do you want to proceed with creating this install?", s.interactive)
+		ok, err := bubbles.ShowConfirmDialogWithNote(
+			"Do you want to proceed with creating this install?",
+			fmt.Sprintf("Install %q does not exist and will be created.", installCfg.Name),
+			s.interactive,
+		)
 		if err != nil {
 			ui.PrintSuccess(fmt.Sprintf("skipping install %s, sync aborted by user", installCfg.Name))
 			return nil, nil
