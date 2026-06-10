@@ -14,15 +14,16 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// Long-poll tuning for job pickup. The shape mirrors log_stream_tail_logs.go.
-// Probes hit Postgres instead of ClickHouse so the fast path is cheaper, but
-// the steady-state idle rate (~1 probe/sec/subscriber) and 25s hold window
-// are deliberately the same so dashboards/alerts read consistently across the
-// two long-poll endpoints.
+// Long-poll tuning for job pickup. Pickup is event-driven: a Postgres trigger
+// (migration 112) fires NOTIFY on the queued→available transition, which the
+// pod-level RunnerJobNotifyListener fans out to parked handlers via the wake
+// registry, so the common case returns in ~ms. jobTailBackstopInterval is the
+// sparse safety poll that bounds worst-case latency when a notify is dropped
+// (listener reconnect, pod restart, RDS failover) — it is NOT the primary
+// mechanism, so it's deliberately slow (and cheaper than the old 1s loop).
 const (
 	jobTailMaxWait             = 25 * time.Second
-	jobTailMinBackoff          = 250 * time.Millisecond
-	jobTailMaxBackoff          = 1 * time.Second
+	jobTailBackstopInterval    = 5 * time.Second
 	jobTailMaxConcurrentProbes = 50
 	jobTailProbeQueryTimeout   = 2 * time.Second
 )
@@ -30,12 +31,9 @@ const (
 var jobTailProbeSem = make(chan struct{}, jobTailMaxConcurrentProbes)
 
 const (
-	metricJobTailProbe         = "runner_job_tail.probe"
-	metricJobTailEmptyProbeMs  = "runner_job_tail.empty_probe_ms"
-	metricJobTailHotProbeMs    = "runner_job_tail.hot_probe_ms"
-	metricJobTailOutcome       = "runner_job_tail.outcome"
-	metricJobTailSessionMs     = "runner_job_tail.session_ms"
-	metricJobTailProbesPerSess = "runner_job_tail.probes_per_session"
+	metricJobTailHotProbeMs = "runner_job_tail.hot_probe_ms"
+	metricJobTailOutcome    = "runner_job_tail.outcome"
+	metricJobTailNotifyWake = "runner_job_tail.notify_wake_probe"
 )
 
 const (
@@ -98,17 +96,18 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 
 	startedAt := time.Now()
 	deadline := startedAt.Add(wait)
-	backoff := jobTailMinBackoff
 	firstIter := true
-	probes := 0
+	// Subscribe BEFORE the first probe so a NOTIFY that fires between our probe
+	// and entering the select isn't missed — the buffered wake channel holds it
+	// and the next select drains it immediately.
+	wakeCh, unsubscribe := s.runnerJobWake.Subscribe(runnerID)
+	defer unsubscribe()
 
 	for {
 		probeStart := time.Now()
 		job, qerr := s.tailJobProbe(ctx.Request.Context(), runnerID, grp)
-		probes++
-		s.mw.Count(metricJobTailProbe, 1, nil)
 		if qerr != nil {
-			s.emitJobTailExit(jobTailOutcomeError, startedAt, probes)
+			s.emitJobTailExit(jobTailOutcomeError)
 			ctx.Error(errors.Wrap(qerr, "unable to probe runner job tail"))
 			return
 		}
@@ -119,51 +118,41 @@ func (s *service) TailRunnerJobs(ctx *gin.Context) {
 				s.mw.Timing(metricJobTailHotProbeMs, time.Since(probeStart), nil)
 				outcome = jobTailOutcomeHotHit
 			}
-			s.emitJobTailExit(outcome, startedAt, probes)
+			s.emitJobTailExit(outcome)
+			s.emitRunnerJobPickupAge([]*app.RunnerJob{job}, pickupPathLongPoll)
 			ctx.JSON(http.StatusOK, []*app.RunnerJob{job})
 			return
 		}
 
-		s.mw.Timing(metricJobTailEmptyProbeMs, time.Since(probeStart), nil)
 		firstIter = false
-
-		select {
-		case <-ctx.Request.Context().Done():
-			s.emitJobTailExit(jobTailOutcomeClientCancel, startedAt, probes)
-			return
-		default:
-		}
 
 		remaining := time.Until(deadline)
 		if remaining <= 0 {
-			s.emitJobTailExit(jobTailOutcomeTimeoutEmpty, startedAt, probes)
+			s.emitJobTailExit(jobTailOutcomeTimeoutEmpty)
 			ctx.JSON(http.StatusOK, []*app.RunnerJob{})
 			return
 		}
 
-		sleep := backoff + jitter(backoff)
+		// Wait for whichever comes first: a NOTIFY wake (re-probe in ~ms), the
+		// sparse backstop tick, or the client/deadline going away. No exponential
+		// backoff — the notify carries the hot path.
+		sleep := jobTailBackstopInterval + jitter(jobTailBackstopInterval)
 		if sleep > remaining {
 			sleep = remaining
 		}
 		select {
 		case <-ctx.Request.Context().Done():
-			s.emitJobTailExit(jobTailOutcomeClientCancel, startedAt, probes)
+			s.emitJobTailExit(jobTailOutcomeClientCancel)
 			return
+		case <-wakeCh:
+			s.mw.Count(metricJobTailNotifyWake, 1, nil)
 		case <-time.After(sleep):
-		}
-
-		backoff *= 2
-		if backoff > jobTailMaxBackoff {
-			backoff = jobTailMaxBackoff
 		}
 	}
 }
 
-func (s *service) emitJobTailExit(result string, startedAt time.Time, probes int) {
-	tags := []string{"result:" + result}
-	s.mw.Count(metricJobTailOutcome, 1, tags)
-	s.mw.Timing(metricJobTailSessionMs, time.Since(startedAt), tags)
-	s.mw.Distribution(metricJobTailProbesPerSess, float64(probes), tags)
+func (s *service) emitJobTailExit(result string) {
+	s.mw.Count(metricJobTailOutcome, 1, []string{"result:" + result})
 }
 
 // tailJobProbe runs a single bounded Postgres query for the next available

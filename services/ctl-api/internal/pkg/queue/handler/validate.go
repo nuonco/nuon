@@ -48,13 +48,15 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	// mark the signal as in-progress in the DB
-	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
-		QueueSignalID: h.queueSignalID,
-		Status:        app.StatusInProgress,
-		Metadata: map[string]any{
-			"validate_started_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
-		},
-	})
+	if !h.skipValidateStamps() {
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID: h.queueSignalID,
+			Status:        app.StatusInProgress,
+			Metadata: map[string]any{
+				"validate_started_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
+		})
+	}
 
 	event := h.buildSignalPhaseEvent(signal.SignalPhaseValidate)
 
@@ -115,15 +117,28 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 	}
 
 	// record validate completion timestamp
-	_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
-		QueueSignalID: h.queueSignalID,
-		Status:        app.StatusInProgress,
-		Metadata: map[string]any{
-			"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
-		},
-	})
+	if !h.skipValidateStamps() {
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(ctx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID: h.queueSignalID,
+			Status:        app.StatusInProgress,
+			Metadata: map[string]any{
+				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
+			},
+		})
+	}
 
 	return nil, nil
+}
+
+// skipValidateStamps reports whether the validate-phase abandonment stamps
+// should be skipped for this handler's signal. Signals that implement
+// SignalWithInlineValidate (idempotent, activity-free Validate) opt out: the
+// stamps can never detect a real mid-validate abandonment for them and only add
+// status-write round-trips to the dispatch hot path. Error-path status writes
+// are unaffected — only the two success-path metadata stamps are skipped.
+func (h *handler) skipValidateStamps() bool {
+	iv, ok := h.sig.(signal.SignalWithInlineValidate)
+	return ok && iv.InlineValidate()
 }
 
 // runSignalValidate calls the user-provided signal Validate in a panic-safe boundary.
