@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/management"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
@@ -61,6 +62,9 @@ func (c *cli) runMng(cmd *cobra.Command, _ []string) {
 			fx.Invoke(func(*process.Registrar) {}),
 			fx.Invoke(func(*process.ShutdownPoller) {}),
 			fx.Invoke(func(*shutdownbeacon.Beacon) {}),
+			// serve /healthz for the Azure VMSS Application Health extension
+			fx.Provide(health.New),
+			fx.Invoke(func(*health.Server) {}),
 		}...,
 	)
 	// run
