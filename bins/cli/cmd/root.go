@@ -13,6 +13,7 @@ import (
 var (
 	PrintJSON             bool = false
 	Output                string
+	ReadOnly              bool = false
 	ConfigFile            string
 	DefaultConfigFilePath string = "~/.nuon"
 )
@@ -43,6 +44,7 @@ nuon sync
 	rootCmd.PersistentFlags().BoolVarP(&PrintJSON, "json", "j", false, "print output as json (shorthand for --output json)")
 	_ = rootCmd.PersistentFlags().MarkDeprecated("json", "use --output json instead; --json will be removed in a future release")
 	rootCmd.PersistentFlags().StringVar(&Output, "output", "table", "output format: table, json, or agent. 'agent' is machine-friendly for LLM/agent use (non-interactive, results wrapped in a stable {ok,data,error} envelope on stdout). Can also be set with NUON_OUTPUT.")
+	rootCmd.PersistentFlags().BoolVar(&ReadOnly, "read-only", false, "block commands that modify state; safe default when driving the CLI with an agent. Can also be set with NUON_READ_ONLY=1.")
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config", "f", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
 	// alias so we can migrate from -f to -C
 	rootCmd.PersistentFlags().StringVarP(&ConfigFile, "config-file", "C", DefaultConfigFilePath, "path to custom config file. Can also be set using the NUON_CONFIG_FILE env var.")
@@ -82,6 +84,7 @@ nuon sync
 		c.loginCmd(),
 		c.extensionsCmd(),
 		c.runbooksCmd(),
+		c.mcpCmd(),
 	}
 
 	for _, cmd := range cmds {

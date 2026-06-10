@@ -398,6 +398,31 @@ Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabl
 through `ui.PrintJSON` / `ui.PrintError` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass
 the envelope. `--output json` is unchanged from the old `--json` — raw output, no envelope.
 
+### Read-only mode (`--read-only` / `NUON_READ_ONLY=1`)
+
+Safety guardrail for agent-driven use: blocks any command that may mutate remote state. Enforced in
+`guardReadOnly` (`cmd/readonly.go`) via a **default-deny allowlist** of read-only leaf command names — a new read
+command must be added to `readOnlyCommands` or it will be blocked in this mode. Local-only operations (`select`,
+`config`-style targeting, `init`, `generate-config`) are allowed; anything that creates/updates/deletes remote
+resources exits 2 with a clear error.
+
+### MCP server (`nuon mcp`)
+
+`nuon mcp` runs a stdio Model Context Protocol server (official `modelcontextprotocol/go-sdk`) so LLM clients
+(Claude Code, Claude Desktop) can drive Nuon. Implementation: `internal/services/mcpserver/`. Auth reuses the
+standard CLI config (`~/.nuon`).
+
+- **Read-only by default**: `whoami`, `list_apps`, `get_app`, `list_installs`, `get_install`,
+  `list_install_components`, `list_components`.
+- `--allow-writes` additionally exposes `create_install` and `deploy_component` (resolves the component's latest
+  build when `build_id` is omitted).
+- Tools return **trimmed summaries** (see `toolsummary` structs in `tools.go`) — full API models are far too large
+  for LLM context; keep new tools trimmed the same way.
+- stdout carries the MCP protocol: tool handlers must never print; call the SDK directly (not the CLI services,
+  which write to stdout).
+
+Claude Code config: `{"mcpServers": {"nuon": {"command": "nuon", "args": ["mcp"]}}}`
+
 ### No-TTY / Non-Interactive Support
 
 The CLI supports non-interactive environments (CI, pipes, cron). All `tea.NewProgram` call sites check `cfg.Interactive`
