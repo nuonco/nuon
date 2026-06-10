@@ -2,6 +2,7 @@ import { createContext, useMemo, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useResourceSSE } from '@/hooks/use-resource-sse'
+import { createSSEQueryListener } from '@/lib/sse-listeners'
 import type { TPaginatedResult } from '@/lib/api'
 import type {
   TOrg,
@@ -30,27 +31,21 @@ export function OrgStatusSSEProvider({
     : undefined
 
   const listeners = useMemo(() => ({
-    org: (event: MessageEvent) => {
-      try {
-        const data: TOrg = JSON.parse(event.data)
-        queryClient.setQueryData(['org', org?.id], data)
-      } catch {}
-    },
-    'active-workflows': (event: MessageEvent) => {
-      try {
-        const data: TWorkflow[] = JSON.parse(event.data)
-        queryClient.setQueryData<TPaginatedResult<TWorkflow[]>>(
-          ['active-workflows', org?.id],
-          { data, pagination: { hasNext: false, offset: 0, limit: 50 } },
-        )
-      } catch {}
-    },
-    'pending-approvals': (event: MessageEvent) => {
-      try {
-        const data: TWorkflowStepApproval[] = JSON.parse(event.data)
-        queryClient.setQueryData(['workflow-approvals', org?.id], data)
-      } catch {}
-    },
+    org: createSSEQueryListener<TOrg>(queryClient, ['org', org?.id]),
+    'active-workflows': createSSEQueryListener<TWorkflow[]>(
+      queryClient,
+      ['active-workflows', org?.id],
+      {
+        transform: (data): TPaginatedResult<TWorkflow[]> => ({
+          data,
+          pagination: { hasNext: false, offset: 0, limit: 50 },
+        }),
+      }
+    ),
+    'pending-approvals': createSSEQueryListener<TWorkflowStepApproval[]>(
+      queryClient,
+      ['workflow-approvals', org?.id]
+    ),
     'runner-heartbeat': (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data)
