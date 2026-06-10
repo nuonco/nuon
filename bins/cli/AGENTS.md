@@ -414,6 +414,8 @@ standard CLI config (`~/.nuon`).
 
 - **Read-only by default**: `whoami`, `list_apps`, `get_app`, `list_installs`, `get_install`,
   `list_install_components`, `list_components`.
+- **Context-aware**: tools default to the CLI's selected app/install (`nuon apps select` / `nuon installs select`,
+  same context `nuon -h` shows); `whoami` reports it; list tools take `all=true` for org-wide.
 - `--allow-writes` additionally exposes `create_install` and `deploy_component` (resolves the component's latest
   build when `build_id` is omitted).
 - Tools return **trimmed summaries** (see `toolsummary` structs in `tools.go`) — full API models are far too large

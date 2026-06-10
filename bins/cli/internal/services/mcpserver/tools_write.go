@@ -11,14 +11,14 @@ import (
 )
 
 type createInstallInput struct {
-	App    string            `json:"app" jsonschema:"app name or ID to create the install for"`
+	App    string            `json:"app,omitempty" jsonschema:"app name or ID to create the install for; defaults to the currently selected app"`
 	Name   string            `json:"name" jsonschema:"name for the new install"`
 	Region string            `json:"region,omitempty" jsonschema:"cloud region to provision in"`
 	Inputs map[string]string `json:"inputs,omitempty" jsonschema:"app input values"`
 }
 
 type deployComponentInput struct {
-	Install   string `json:"install" jsonschema:"install name or ID to deploy to"`
+	Install   string `json:"install,omitempty" jsonschema:"install name or ID to deploy to; defaults to the currently selected install"`
 	Component string `json:"component" jsonschema:"component name or ID to deploy"`
 	BuildID   string `json:"build_id,omitempty" jsonschema:"build to deploy; omit to use the component's latest build"`
 }
@@ -28,7 +28,7 @@ func (s *Service) registerWriteTools(server *mcp.Server) {
 		Name:        "create_install",
 		Description: "Create a new install of an app. Mutates state; only available when the server runs with --allow-writes.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in createInstallInput) (*mcp.CallToolResult, any, error) {
-		appID, err := lookup.AppID(ctx, s.api, in.App)
+		appID, err := s.resolveApp(ctx, in.App)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -49,7 +49,7 @@ func (s *Service) registerWriteTools(server *mcp.Server) {
 		Name:        "deploy_component",
 		Description: "Deploy a component build to an install. Mutates state; only available when the server runs with --allow-writes.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in deployComponentInput) (*mcp.CallToolResult, any, error) {
-		installID, err := lookup.InstallID(ctx, s.api, in.Install)
+		installID, err := s.resolveInstall(ctx, in.Install)
 		if err != nil {
 			return nil, nil, err
 		}

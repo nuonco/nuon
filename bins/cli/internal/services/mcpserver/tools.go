@@ -108,21 +108,38 @@ func toInstallComponentSummary(c *models.AppInstallComponent) installComponentSu
 type emptyInput struct{}
 
 type appInput struct {
-	App string `json:"app" jsonschema:"app name or ID"`
+	App string `json:"app,omitempty" jsonschema:"app name or ID; defaults to the currently selected app"`
 }
 
 type optionalAppInput struct {
-	App string `json:"app,omitempty" jsonschema:"app name or ID; omit to list across the org"`
+	App string `json:"app,omitempty" jsonschema:"app name or ID; defaults to the currently selected app"`
+	All bool   `json:"all,omitempty" jsonschema:"set true to list across the whole org, ignoring the selected app"`
 }
 
 type installInput struct {
-	Install string `json:"install" jsonschema:"install name or ID"`
+	Install string `json:"install,omitempty" jsonschema:"install name or ID; defaults to the currently selected install"`
+}
+
+// resolveApp falls back to the CLI's selected app (nuon apps select) when no
+// app is given, matching CLI command behavior.
+func (s *Service) resolveApp(ctx context.Context, app string) (string, error) {
+	if app == "" && s.cfg != nil {
+		app = s.cfg.AppID
+	}
+	return lookup.AppID(ctx, s.api, app)
+}
+
+func (s *Service) resolveInstall(ctx context.Context, install string) (string, error) {
+	if install == "" && s.cfg != nil {
+		install = s.cfg.InstallID
+	}
+	return lookup.InstallID(ctx, s.api, install)
 }
 
 func (s *Service) registerReadTools(server *mcp.Server) {
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "whoami",
-		Description: "Get the current authenticated user and selected org.",
+		Description: "Get the current authenticated user, org, and the selected app/install context. Other tools default to this context when their app/install argument is omitted.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, _ emptyInput) (*mcp.CallToolResult, any, error) {
 		user, err := s.api.GetCurrentUser(ctx)
 		if err != nil {
@@ -132,10 +149,27 @@ func (s *Service) registerReadTools(server *mcp.Server) {
 		if err != nil {
 			return nil, nil, err
 		}
-		return jsonResult(map[string]any{
+		out := map[string]any{
 			"user": map[string]string{"id": user.ID, "email": user.Email},
 			"org":  map[string]string{"id": org.ID, "name": org.Name},
-		})
+		}
+		if s.cfg != nil && s.cfg.AppID != "" {
+			selected := map[string]string{"id": s.cfg.AppID}
+			if app, err := s.api.GetApp(ctx, s.cfg.AppID); err == nil {
+				selected["id"] = app.ID
+				selected["name"] = app.Name
+			}
+			out["selected_app"] = selected
+		}
+		if s.cfg != nil && s.cfg.InstallID != "" {
+			selected := map[string]string{"id": s.cfg.InstallID}
+			if install, err := s.api.GetInstall(ctx, s.cfg.InstallID); err == nil {
+				selected["id"] = install.ID
+				selected["name"] = install.Name
+			}
+			out["selected_install"] = selected
+		}
+		return jsonResult(out)
 	})
 
 	mcp.AddTool(server, &mcp.Tool{
@@ -157,9 +191,9 @@ func (s *Service) registerReadTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_app",
-		Description: "Get an app by name or ID.",
+		Description: "Get an app by name or ID; defaults to the currently selected app.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in appInput) (*mcp.CallToolResult, any, error) {
-		appID, err := lookup.AppID(ctx, s.api, in.App)
+		appID, err := s.resolveApp(ctx, in.App)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -172,18 +206,18 @@ func (s *Service) registerReadTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_installs",
-		Description: "List installs, optionally filtered to an app.",
+		Description: "List installs for the selected app (or the app given); pass all=true for every install in the org.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in optionalAppInput) (*mcp.CallToolResult, any, error) {
 		fetch := func(off, lim int) ([]*models.AppInstall, bool, error) {
 			return s.api.GetAllInstalls(ctx, &models.GetPaginatedQuery{Offset: off, Limit: lim})
 		}
-		if in.App != "" {
-			appID, err := lookup.AppID(ctx, s.api, in.App)
-			if err != nil {
+		if !in.All {
+			if appID, err := s.resolveApp(ctx, in.App); err == nil {
+				fetch = func(off, lim int) ([]*models.AppInstall, bool, error) {
+					return s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{Offset: off, Limit: lim})
+				}
+			} else if in.App != "" {
 				return nil, nil, err
-			}
-			fetch = func(off, lim int) ([]*models.AppInstall, bool, error) {
-				return s.api.GetAppInstalls(ctx, appID, &models.GetPaginatedQuery{Offset: off, Limit: lim})
 			}
 		}
 		installs, err := paginate.All(fetch)
@@ -199,9 +233,9 @@ func (s *Service) registerReadTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_install",
-		Description: "Get an install by name or ID, including sandbox/runner/component status.",
+		Description: "Get an install by name or ID (defaults to the currently selected install), including sandbox/runner/component status.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in installInput) (*mcp.CallToolResult, any, error) {
-		installID, err := lookup.InstallID(ctx, s.api, in.Install)
+		installID, err := s.resolveInstall(ctx, in.Install)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -214,9 +248,9 @@ func (s *Service) registerReadTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_install_components",
-		Description: "List the components on an install with their latest deploy status.",
+		Description: "List the components on an install (defaults to the currently selected install) with their latest deploy status.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in installInput) (*mcp.CallToolResult, any, error) {
-		installID, err := lookup.InstallID(ctx, s.api, in.Install)
+		installID, err := s.resolveInstall(ctx, in.Install)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -235,18 +269,18 @@ func (s *Service) registerReadTools(server *mcp.Server) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "list_components",
-		Description: "List components, optionally filtered to an app.",
+		Description: "List components for the selected app (or the app given); pass all=true for every component in the org.",
 	}, func(ctx context.Context, _ *mcp.CallToolRequest, in optionalAppInput) (*mcp.CallToolResult, any, error) {
 		fetch := func(off, lim int) ([]*models.AppComponent, bool, error) {
 			return s.api.GetAllComponents(ctx, &models.GetPaginatedQuery{Offset: off, Limit: lim})
 		}
-		if in.App != "" {
-			appID, err := lookup.AppID(ctx, s.api, in.App)
-			if err != nil {
+		if !in.All {
+			if appID, err := s.resolveApp(ctx, in.App); err == nil {
+				fetch = func(off, lim int) ([]*models.AppComponent, bool, error) {
+					return s.api.GetAppComponents(ctx, appID, &models.GetPaginatedQuery{Offset: off, Limit: lim})
+				}
+			} else if in.App != "" {
 				return nil, nil, err
-			}
-			fetch = func(off, lim int) ([]*models.AppComponent, bool, error) {
-				return s.api.GetAppComponents(ctx, appID, &models.GetPaginatedQuery{Offset: off, Limit: lim})
 			}
 		}
 		comps, err := paginate.All(fetch)
