@@ -3,14 +3,7 @@
 // Azure VMSS automatic instance repair needs an application-level health
 // signal. The VMSS Application Health extension probes this endpoint; while the
 // mng process is up it returns 200 and the instance is Healthy.
-//
-// Unlike the AWS ASG EC2 health check, Azure does NOT mark a powered-off
-// instance Unhealthy — a Stopped/deallocated VM retains its last-known health
-// state (Healthy) and is never repaired. So before the runner powers the VM
-// off on shutdown (see vm_shutdown), it calls SetUnhealthy to make this probe
-// fail while the VM is still running. The extension then marks the instance
-// Unhealthy and automaticRepairsPolicy replaces it — the Azure analog to the
-// AWS behavior that brings a shut-down runner back automatically.
+
 package health
 
 import (
@@ -53,8 +46,7 @@ func New(params Params) (*Server, error) {
 
 	s.srv = &http.Server{
 		// Bind to loopback only: the Azure VMSS Application Health extension
-		// runs inside the guest and probes 127.0.0.1, so the endpoint never
-		// needs to be reachable off-host.
+		// runs inside the vm and probes 127.0.0.1
 		Addr:              fmt.Sprintf("127.0.0.1:%d", params.Cfg.HealthPort),
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -94,9 +86,7 @@ func (s *Server) handleLivez(w http.ResponseWriter, _ *http.Request) {
 
 // SetUnhealthy flips the /livez probe to fail (503) so the Azure VMSS
 // Application Health extension marks the instance Unhealthy and automatic
-// instance repair replaces it. Called right before a VM shutdown so the
-// instance is recycled rather than left Stopped — a Stopped instance keeps its
-// last-known Healthy state and is never repaired.
+// instance repair replaces it.
 func (s *Server) SetUnhealthy() {
 	s.unhealthy.Store(true)
 	s.l.Info("health probe set to unhealthy")

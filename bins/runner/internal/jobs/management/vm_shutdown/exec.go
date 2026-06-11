@@ -31,13 +31,8 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 			return err
 		}
 
-		// On Azure, don't power the VM off. A Stopped instance keeps its
-		// last-known Healthy state and resets the repair grace period, so it
-		// lingers instead of being recycled. Instead, fail the health probe and
-		// let the VMSS Application Health extension mark the instance Unhealthy —
-		// automaticRepairsPolicy then deletes and recreates it. The mng process
-		// stays up serving 503 so the probe keeps failing until Azure replaces
-		// the instance.
+		// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
+		// Keep the VM on and let the Azure control planereplace it.
 		if h.settings.Platform == "azure" {
 			l.Info("draining health probe; letting azure vmss repair (replace) the instance")
 			h.health.SetUnhealthy()
