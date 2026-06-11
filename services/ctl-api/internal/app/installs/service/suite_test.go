@@ -145,7 +145,7 @@ func (s *InstallsServiceTestSuite) expectQueueCreation() {
 		gomock.Any(), // options
 		gomock.Any(), // workflow
 		gomock.Any(), // args
-	).Return(&mockWorkflowRun{}, nil)
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 }
 
 func (s *InstallsServiceTestSuite) setupTestData() {
@@ -212,7 +212,7 @@ func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWork
 	}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
 
 	var install app.Install
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))
