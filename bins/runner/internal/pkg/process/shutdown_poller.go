@@ -144,7 +144,7 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 				// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
 				// Keep the VM on and let the Azure control plane replace it.
 				if sp.settings.Platform == "azure" {
-					sp.l.Info("mng process shutdown on azure: draining health probe, letting vmss replace the instance")
+					sp.l.Info("mng process shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
 					if sp.health != nil {
 						sp.health.SetUnhealthy()
 					}
