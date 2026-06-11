@@ -7,8 +7,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	pkgmetrics "github.com/nuonco/nuon/pkg/metrics"
 	temporalclient "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	accountshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/accounts/helpers"
@@ -17,6 +19,7 @@ import (
 	componentshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
+	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
@@ -28,6 +31,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/ch"
 	dblog "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
@@ -35,6 +39,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/metrics"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
@@ -46,6 +52,20 @@ import (
 )
 
 func NopFxLogger() fxevent.Logger { return fxevent.NopLogger }
+
+type noopLifecycle struct{}
+
+func (noopLifecycle) Append(fx.Hook) {}
+
+type testEnqueuerParams struct {
+	fx.In
+
+	DB      *gorm.DB `name:"psql"`
+	Cfg     *internal.Config
+	TClient temporalclient.Client
+	L       *zap.Logger
+	MW      pkgmetrics.Writer
+}
 
 // TestMocks holds optional mock/fake clients that tests can supply to CtlApiFXOptionsWithMocks.
 // Tests create their own mock instances and pass them in; FX registers them as the interface types.
@@ -118,6 +138,12 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(dataconverter.New),
 
 		// Databases
+		fx.Provide(func(cfg *internal.Config) *querycollector.Collector {
+			if cfg.DebugEnableQueryCollector {
+				return querycollector.NewCollector(5000)
+			}
+			return nil
+		}),
 		fx.Provide(psql.AsPSQL(psql.New)),
 		fx.Provide(ch.AsCH(ch.New)),
 
@@ -126,8 +152,26 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(analytics.New),
 		fx.Provide(account.New),
 
-		// Queue client (uses mock temporal client)
+		// Queue client (uses mock temporal client). The enqueuer gets a no-op
+		// lifecycle so its background workers and sweep workflow never start.
+		// NOTE: flowclient is intentionally NOT provided here — it imports
+		// executeflow, whose import tree reaches back into packages (e.g.
+		// config/syncer) whose tests import this package, creating an import
+		// cycle. Suites that need it (installs service) provide it locally.
+		fx.Provide(func(p testEnqueuerParams) *enqueuer.Enqueuer {
+			return enqueuer.New(enqueuer.Params{
+				DB:      p.DB,
+				Cfg:     p.Cfg,
+				TClient: p.TClient,
+				L:       p.L,
+				MW:      p.MW,
+				LC:      noopLifecycle{},
+			})
+		}),
 		fx.Provide(queueclient.New),
+
+		// Queue emitter client (uses mock temporal client)
+		fx.Provide(emitterclient.New),
 
 		// Helpers (order matters due to dependencies)
 		fx.Provide(accountshelpers.New),
@@ -136,6 +180,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 		fx.Provide(componentshelpers.New),
 		fx.Provide(appshelpers.New),
 		fx.Provide(runnershelpers.New),
+		fx.Provide(runbookshelpers.New),
 		fx.Provide(installshelpers.New),
 		fx.Provide(orgshelpers.New),
 
