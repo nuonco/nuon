@@ -3,7 +3,6 @@
 // Azure VMSS automatic instance repair needs an application-level health
 // signal. The VMSS Application Health extension probes this endpoint; while the
 // mng process is up it returns 200 and the instance is Healthy.
-
 package health
 
 import (

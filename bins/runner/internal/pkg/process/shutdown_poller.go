@@ -144,16 +144,21 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 				// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
 				// Keep the VM on and let the Azure control plane replace it.
 				if sp.settings.Platform == "azure" {
-					sp.l.Info("mng process shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
 					if sp.health != nil {
+						sp.l.Info("mng process shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
 						sp.health.SetUnhealthy()
+						return
 					}
-					return
-				}
-
-				sp.l.Info("mng process shutdown: powering off VM")
-				if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
-					sp.l.Warn("VM shutdown failed", zap.Error(err))
+					// should never happen: the mng process always wires the health server. fall back to poweroff.
+					sp.l.Error("mng process shutdown on azure but health server is nil; falling back to vm poweroff")
+					if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
+						sp.l.Warn("VM shutdown failed", zap.Error(err))
+					}
+				} else {
+					sp.l.Info("mng process shutdown: powering off VM")
+					if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
+						sp.l.Warn("VM shutdown failed", zap.Error(err))
+					}
 				}
 			}
 
