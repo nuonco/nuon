@@ -32,7 +32,7 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 		}
 
 		// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
-		// Keep the VM on and let the Azure control planereplace it.
+		// Keep the VM on and let the Azure control plane replace it.
 		if h.settings.Platform == "azure" {
 			l.Info("draining health probe; letting azure vmss repair (replace) the instance")
 			h.health.SetUnhealthy()

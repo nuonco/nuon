@@ -11,6 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	pkgshutdown "github.com/nuonco/nuon/bins/runner/internal/pkg/shutdown"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
@@ -32,6 +33,9 @@ type ShutdownPollerParams struct {
 	Settings   *settings.Settings
 	Shutdowner fx.Shutdowner
 	V          *validator.Validate
+
+	// only provided in the mng process; nil in the install/run process.
+	Health *health.Server `optional:"true"`
 }
 
 type ShutdownPoller struct {
@@ -40,6 +44,8 @@ type ShutdownPoller struct {
 	v          *validator.Validate
 	registrar  *Registrar
 	shutdowner fx.Shutdowner
+	settings   *settings.Settings
+	health     *health.Server
 
 	podShutdown *podShutdown
 
@@ -57,6 +63,8 @@ func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 		v:           params.V,
 		registrar:   params.Registrar,
 		shutdowner:  params.Shutdowner,
+		settings:    params.Settings,
+		health:      params.Health,
 		podShutdown: newPodShutdown(params.Cfg, params.Settings, params.L),
 		ctx:         ctx,
 		cancelFn:    cancelFn,
@@ -133,6 +141,16 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			}
 
 			if sp.registrar.ProcessType() == "mng" {
+				// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
+				// Keep the VM on and let the Azure control plane replace it.
+				if sp.settings.Platform == "azure" {
+					sp.l.Info("mng process shutdown on azure: draining health probe, letting vmss replace the instance")
+					if sp.health != nil {
+						sp.health.SetUnhealthy()
+					}
+					return
+				}
+
 				sp.l.Info("mng process shutdown: powering off VM")
 				if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
 					sp.l.Warn("VM shutdown failed", zap.Error(err))
