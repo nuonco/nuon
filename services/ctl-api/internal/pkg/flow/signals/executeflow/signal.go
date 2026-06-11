@@ -75,6 +75,12 @@ type Signal struct {
 	// awaitingResume: true while the main loop is parked awaiting resume/cancel.
 	awaitingResume bool
 
+	// executeStarted: true once executeFlow() has begun running. A retry-step
+	// update that lands on a freshly re-warmed resident host (before the loop
+	// reaches its parked state) must still clone+queue the retry, so the retry
+	// handler treats "not started yet" like the parked case.
+	executeStarted bool
+
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.
 	pauseRequested bool
@@ -91,6 +97,7 @@ var (
 	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ qsignal.SignalWithParams           = (*Signal)(nil)
+	_ qsignal.AutoExecuteOnTerminalStart = (*Signal)(nil)
 )
 
 func (s *Signal) WithParams(p *qsignal.Params) {
@@ -128,8 +135,25 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Type() qsignal.SignalType  { return SignalType }
-func (s *Signal) SleepAfter() time.Duration { return time.Second }
+func (s *Signal) Type() qsignal.SignalType { return SignalType }
+
+// SleepAfter caches a finished non-resident Handler briefly so a follow-up
+// signal can reuse it via update-with-start. A resident host returns 0: once its
+// Execute() returns the conductor loop is gone, so keeping the Handler alive
+// would let an append-step/retry-step land on a finished run that can never
+// consume it — the re-warm path (AutoExecuteOnTerminalStart) handles reuse
+// instead.
+func (s *Signal) SleepAfter() time.Duration {
+	if s.Resident {
+		return 0
+	}
+	return time.Second
+}
+
+// AutoExecuteOnTerminalStart re-enters Execute when a resident host is
+// (re)started by update-with-start after it idled out and completed. See the
+// queue handler's re-warm path.
+func (s *Signal) AutoExecuteOnTerminalStart() bool { return s.Resident }
 
 // LifecycleContext exposes the workflow identity + owner so lifecycle hooks
 // can emit workflow.lifecycle.* webhook events without leaking inner-signal

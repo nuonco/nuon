@@ -27,6 +27,10 @@ const residentIdleTimeout = 15 * time.Minute
 // Each execution segment (initial, retry, skip, resume) is tracked as a WorkflowRun.
 // The flow pauses at approval points and errors, waiting for update handlers to resume.
 func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
+	// Mark the conductor as started so a retry-step update that lands during a
+	// re-warm (before the loop reaches its parked state) is still cloned+queued.
+	s.executeStarted = true
+
 	// Initialize temporal metrics writer if the underlying metrics writer was injected.
 	if s.mw != nil && s.v != nil {
 		tmw, err := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))
@@ -54,13 +58,22 @@ func (s *Signal) executeFlow(ctx workflow.Context) (retErr error) {
 	// historical (terminal) steps from earlier steps; start the initial run at
 	// the first pending group so completed groups are never replayed. If none
 	// are pending the run is a no-op and the loop parks for the next append.
+	initialRunType := app.WorkflowRunTypeInitial
 	initialStartIdx := 0
+	initialStepID := ""
 	if s.Resident {
-		if pos, ok := s.firstPendingGroupPosition(ctx); ok {
+		if s.resumeRequested {
+			// A retry-step update raced ahead of the conductor during re-warm:
+			// honor its resume so the retry runs instead of being dropped.
+			initialRunType = s.resumeRunType
+			initialStartIdx = s.resumeStartIdx
+			initialStepID = s.resumeStepID
+			s.resumeRequested = false
+		} else if pos, ok := s.firstPendingGroupPosition(ctx); ok {
 			initialStartIdx = pos
 		}
 	}
-	run, err := s.createRun(ctx, app.WorkflowRunTypeInitial, "", initialStartIdx)
+	run, err := s.createRun(ctx, initialRunType, initialStepID, initialStartIdx)
 	if err != nil {
 		return err
 	}
