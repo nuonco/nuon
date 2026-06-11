@@ -34,7 +34,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/querycollector"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/psql"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
-	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	ghpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/github"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/loops"
@@ -155,6 +154,10 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// Queue client (uses mock temporal client). The enqueuer gets a no-op
 		// lifecycle so its background workers and sweep workflow never start.
+		// NOTE: flowclient is intentionally NOT provided here — it imports
+		// executeflow, whose import tree reaches back into packages (e.g.
+		// config/syncer) whose tests import this package, creating an import
+		// cycle. Suites that need it (installs service) provide it locally.
 		fx.Provide(func(p testEnqueuerParams) *enqueuer.Enqueuer {
 			return enqueuer.New(enqueuer.Params{
 				DB:      p.DB,
@@ -166,9 +169,6 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 			})
 		}),
 		fx.Provide(queueclient.New),
-
-		// Flow client (uses mock temporal client)
-		fx.Provide(flowclient.New),
 
 		// Queue emitter client (uses mock temporal client)
 		fx.Provide(emitterclient.New),
