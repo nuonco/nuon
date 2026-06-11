@@ -59,11 +59,13 @@ func (a AppInput) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("sensitive").Short("whether input is sensitive").
 		Long("If true, the value will be masked/hidden in the UI and logs after the install is created. Use for passwords, tokens, and API keys").
 		Field("type").Short("input type").
-		Long("Data type for the input. Supported types: string, number, list, json, bool").
+		Long("Data type for the input. Supported types: string, number, list, json, bool, yaml, hcl").
 		Example("string").
 		Example("number").
 		Example("json").
 		Example("bool").
+		Example("yaml").
+		Example("hcl").
 		Field("internal").Short("Deprecated: this field has no effect and will be ignored.").
 		Field("user_configurable").Short("whether input is user configurable").
 		Long("If true, input can be modified by end users after installation")
@@ -146,6 +148,13 @@ func (a *AppInputConfig) ValidateInputs() error {
 	}
 
 	for _, input := range a.Inputs {
+		if IsComponentOverrideInputName(input.Name) {
+			return ErrConfig{
+				Description: fmt.Sprintf("input %s uses the reserved prefix %q", input.Name, ComponentOverrideInputPrefix),
+				Err:         fmt.Errorf("input name %s is reserved for per-component install overrides", input.Name),
+			}
+		}
+
 		if input.Group != "" && !generics.SliceContains(input.Group, grps) {
 			return ErrConfig{
 				Description: fmt.Sprintf("input %s specified a group that does not exist %s", input.Name, input.Group),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 )
@@ -22,15 +23,28 @@ func (s *Helpers) ValidateInstallInputs(ctx context.Context, appInputCfg *app.Ap
 
 	// verify all of the inputs are defined in the app input config
 	appInputNames := map[string]struct{}{}
+	inputTypes := map[string]app.AppInputType{}
 	for _, input := range appInputCfg.AppInputs {
 		appInputNames[input.Name] = struct{}{}
+		inputTypes[input.Name] = input.Type
 	}
 
-	for name := range inputs {
+	for name, val := range inputs {
 		if _, ok := appInputNames[name]; !ok {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("input name %s does not exist in app inputs", name),
 				Description: "input " + name + " defined for install does not exist in the app inputs",
+			}
+		}
+
+		// structured inputs (yaml/hcl) must parse cleanly so a malformed
+		// override is rejected here rather than failing mid-deploy.
+		if val != nil {
+			if err := config.ValidateInputValueSyntax(string(inputTypes[name]), *val); err != nil {
+				return stderr.ErrUser{
+					Err:         err,
+					Description: fmt.Sprintf("input %s has an invalid value: %s", name, err.Error()),
+				}
 			}
 		}
 	}

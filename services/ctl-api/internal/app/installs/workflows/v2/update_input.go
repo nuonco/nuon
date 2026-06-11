@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -91,7 +92,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 
 	// Get all components that reference the changed inputs
 	var componentIDs []string
-	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs) {
+	for _, comp := range getComponentsForChangedInputs(appConfig, &changedRefs, changedInputs) {
 		componentIDs = append(componentIDs, comp.ID)
 
 		if deployDependents {
@@ -138,10 +139,25 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 	return sg.Result(steps), nil
 }
 
-func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs.Ref) []app.Component {
+func getComponentsForChangedInputs(appConfig *app.AppConfig, changedRefs *[]refs.Ref, changedInputs []string) []app.Component {
 	components := make([]app.Component, 0)
 
+	// Per-component install-level overrides (Helm values / Terraform vars) are
+	// carried as reserved synthetic inputs that target a single component by name
+	// rather than via config refs. Decode the targeted component names so editing
+	// an override redeploys exactly that component (no ref injection required).
+	overrideTargets := make(map[string]struct{})
+	for _, name := range changedInputs {
+		if _, comp, ok := config.ParseComponentOverrideInputName(name); ok {
+			overrideTargets[comp] = struct{}{}
+		}
+	}
+
 	for _, conConfigs := range appConfig.ComponentConfigConnections {
+		if _, ok := overrideTargets[conConfigs.Component.Name]; ok {
+			components = append(components, conConfigs.Component)
+			continue
+		}
 		for _, ref := range conConfigs.Refs {
 			for _, changedRef := range *changedRefs {
 				if ref.Name == changedRef.Name && ref.Type == changedRef.Type {

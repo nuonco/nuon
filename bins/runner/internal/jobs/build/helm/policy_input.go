@@ -35,7 +35,7 @@ func (h *handler) buildPolicyInput(ctx context.Context, l *zap.Logger) ([]Admiss
 		return nil, errors.Wrap(err, "unable to load chart")
 	}
 
-	values, err := helm.ChartValues(h.state.cfg.ValuesFiles, h.state.cfg.Values)
+	values, err := helm.ChartValues(h.state.cfg.ValuesFiles, h.state.cfg.Values, "")
 	if err != nil {
 		return nil, fmt.Errorf("unable to load helm values: %w", err)
 	}

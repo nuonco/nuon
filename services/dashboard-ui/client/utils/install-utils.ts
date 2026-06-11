@@ -1,3 +1,58 @@
+// Reserved prefix for auto-generated per-component install-level override
+// inputs (Helm values / Terraform vars). Must match the Go constant
+// config.ComponentOverrideInputPrefix. Synthetic input names have the shape:
+//
+//   nuon_component_override_v1_<kind>_<hex(componentName)>
+//
+// where <kind> is "helm_values" or "tf_vars" and the component name is
+// hex-encoded to keep the key safe and reversible.
+const COMPONENT_OVERRIDE_INPUT_PREFIX = 'nuon_component_override_v1_'
+const COMPONENT_OVERRIDE_KINDS = ['helm_values', 'tf_vars'] as const
+
+function decodeHex(encoded: string): string | null {
+  if (!/^(?:[0-9a-fA-F]{2})+$/.test(encoded)) return null
+  const bytes = new Uint8Array(
+    encoded.match(/../g)!.map((pair) => Number.parseInt(pair, 16))
+  )
+  try {
+    // Recover UTF-8 multibyte component names produced by Go's hex.EncodeToString.
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return null
+  }
+}
+
+export type TComponentOverrideKind = (typeof COMPONENT_OVERRIDE_KINDS)[number]
+
+// getComponentOverrideKind returns the override axis ("helm_values" / "tf_vars")
+// for a reserved synthetic input name, or null when the name is a normal input.
+export function getComponentOverrideKind(
+  name: string
+): TComponentOverrideKind | null {
+  if (!name.startsWith(COMPONENT_OVERRIDE_INPUT_PREFIX)) return null
+  const rest = name.slice(COMPONENT_OVERRIDE_INPUT_PREFIX.length)
+  for (const kind of COMPONENT_OVERRIDE_KINDS) {
+    if (rest.startsWith(`${kind}_`)) return kind
+  }
+  return null
+}
+
+// getInputDisplayName maps a reserved synthetic component-override input name to
+// a user-facing key like "components.<name>.helm_values". Non-override input
+// names are returned unchanged. Mirrors the CLI installDiffKey helper.
+export function getInputDisplayName(name: string): string {
+  if (!name.startsWith(COMPONENT_OVERRIDE_INPUT_PREFIX)) return name
+  const rest = name.slice(COMPONENT_OVERRIDE_INPUT_PREFIX.length)
+  for (const kind of COMPONENT_OVERRIDE_KINDS) {
+    const prefix = `${kind}_`
+    if (!rest.startsWith(prefix)) continue
+    const component = decodeHex(rest.slice(prefix.length))
+    if (component === null) return name
+    return `components.${component}.${kind}`
+  }
+  return name
+}
+
 type TTitleMap = Record<string, string>
 
 const RUNNER_STATUS_TITLES: TTitleMap = {

@@ -613,3 +613,132 @@ enabled = "true"
 		})
 	}
 }
+
+func TestInstallComponentOverrides_ParseAndFlatten(t *testing.T) {
+	rawTOML := `name = "prod"
+
+[components.vpc]
+tf_vars = """
+cidr = "10.0.0.0/16"
+"""
+
+[components.clickhouse]
+helm_values = """
+replicas: 3
+"""
+`
+
+	var install Install
+	require.NoError(t, toml.Unmarshal([]byte(rawTOML), &install))
+	require.NoError(t, install.Parse())
+
+	require.Len(t, install.Components, 2)
+	assert.Contains(t, install.Components["vpc"].TFVars, "cidr")
+	assert.Contains(t, install.Components["clickhouse"].HelmValues, "replicas")
+
+	flat := install.FlattenedInputs()
+	assert.Equal(t, install.Components["vpc"].TFVars, flat[TFVarsOverrideInputName("vpc")])
+	assert.Equal(t, install.Components["clickhouse"].HelmValues, flat[HelmValuesOverrideInputName("clickhouse")])
+}
+
+func TestInstallValidate_ComponentOverrideSyntax(t *testing.T) {
+	t.Run("valid overrides pass", func(t *testing.T) {
+		install := Install{
+			Components: map[string]ComponentOverride{
+				"vpc":        {TFVars: "cidr = \"10.0.0.0/16\"\n"},
+				"clickhouse": {HelmValues: "replicas: 3\n"},
+			},
+		}
+		require.NoError(t, install.Validate())
+	})
+
+	t.Run("invalid helm yaml is rejected", func(t *testing.T) {
+		install := Install{
+			Components: map[string]ComponentOverride{
+				"clickhouse": {HelmValues: "replicas: [3\n"},
+			},
+		}
+		err := install.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "helm_values")
+	})
+
+	t.Run("invalid tf_vars is rejected", func(t *testing.T) {
+		install := Install{
+			Components: map[string]ComponentOverride{
+				"vpc": {TFVars: "cidr = =\n"},
+			},
+		}
+		err := install.Validate()
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "tf_vars")
+	})
+
+	t.Run("empty overrides pass", func(t *testing.T) {
+		install := Install{
+			Components: map[string]ComponentOverride{
+				"vpc": {},
+			},
+		}
+		require.NoError(t, install.Validate())
+	})
+}
+
+func TestInstallComponentOverrides_EmptyNotFlattened(t *testing.T) {
+	install := Install{
+		Components: map[string]ComponentOverride{
+			"vpc": {}, // both fields empty
+		},
+	}
+	flat := install.FlattenedInputs()
+	_, hasTF := flat[TFVarsOverrideInputName("vpc")]
+	_, hasHelm := flat[HelmValuesOverrideInputName("vpc")]
+	assert.False(t, hasTF, "empty tf_vars should not be flattened")
+	assert.False(t, hasHelm, "empty helm_values should not be flattened")
+}
+
+func TestInstallDiff_OverrideRemovalDetected(t *testing.T) {
+	upstream := &Install{
+		AWSAccount: &AWSAccount{},
+		Components: map[string]ComponentOverride{
+			"vpc":   {TFVars: "cidr = \"10.0.0.0/16\"\n"},
+			"redis": {HelmValues: "replicas: 3\n"},
+		},
+	}
+
+	// Local config drops the vpc override entirely but keeps redis.
+	local := &Install{
+		AWSAccount: &AWSAccount{},
+		Components: map[string]ComponentOverride{
+			"redis": {HelmValues: "replicas: 3\n"},
+		},
+	}
+
+	d, err := local.Diff(upstream)
+	require.NoError(t, err)
+
+	summary := d.Summary()
+	assert.True(t, summary.HasChanged, "removing an override must be detected as a change")
+	assert.Equal(t, 1, summary.Removed, "the cleared vpc tf_vars should count as one removal")
+}
+
+func TestInstallDiff_OverrideRemovalIgnoresNormalInputs(t *testing.T) {
+	upstream := &Install{
+		AWSAccount: &AWSAccount{},
+		InputGroups: []InputGroup{
+			{Inputs: map[string]string{"domain": "nuon.run"}},
+		},
+	}
+
+	// Local omits the normal "domain" input; this must NOT be treated as a
+	// removal (normal inputs are additive).
+	local := &Install{
+		AWSAccount:  &AWSAccount{},
+		InputGroups: []InputGroup{},
+	}
+
+	d, err := local.Diff(upstream)
+	require.NoError(t, err)
+
+	assert.Equal(t, 0, d.Summary().Removed, "omitting a normal input must not be a removal")
+}

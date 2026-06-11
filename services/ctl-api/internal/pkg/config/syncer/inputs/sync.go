@@ -23,6 +23,8 @@ var (
 		"list":   true,
 		"number": true,
 		"string": true,
+		"yaml":   true,
+		"hcl":    true,
 	}
 )
 
@@ -183,7 +185,7 @@ func validateInputs(cfg *config.AppConfig) error {
 		if !validInputTypes[inputType] {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("invalid input type: %s", inputType),
-				Description: fmt.Sprintf("Input '%s' has invalid type '%s'. Valid types are: bool, json, list, number, string", input.Name, inputType),
+				Description: fmt.Sprintf("Input '%s' has invalid type '%s'. Valid types are: bool, json, list, number, string, yaml, hcl", input.Name, inputType),
 			}
 		}
 	}

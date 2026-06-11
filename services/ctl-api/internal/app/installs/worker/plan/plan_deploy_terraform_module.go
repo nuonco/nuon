@@ -12,6 +12,7 @@ import (
 
 	_ "embed"
 
+	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -94,6 +95,21 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to render environment variables")
 	}
 
+	// Install-level Terraform vars override, carried via a reserved synthetic
+	// input. Appended as the final var-file so it wins over the vendor's vars map
+	// and var_files (last -var-file wins). Empty is a no-op.
+	varsFiles := []string(cfg.VariablesFiles)
+	tfVarsOverride, err := p.installComponentOverride(
+		state, stateData,
+		config.TFVarsOverrideInputName(installDeploy.ComponentName),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to render terraform vars override")
+	}
+	if tfVarsOverride != "" {
+		varsFiles = append(varsFiles, tfVarsOverride)
+	}
+
 	cloudAuth, err := p.getAuthForDeploy(
 		ctx,
 		installDeploy,
@@ -116,7 +132,7 @@ func (p *Planner) createTerraformDeployPlan(
 	return &plantypes.TerraformDeployPlan{
 		Vars:      vars,
 		EnvVars:   envVars,
-		VarsFiles: cfg.VariablesFiles,
+		VarsFiles: varsFiles,
 		State:     state,
 
 		TerraformBackend: &plantypes.TerraformBackend{
