@@ -9,10 +9,12 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { EditInputsButton } from '@/components/installs/management/EditInputs'
+import { InputValue } from '@/components/installs/management/InputValue'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getInstallCurrentInputs } from '@/lib'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
+import { getInputDisplayName } from '@/utils/install-utils'
 
 export const CurrentInputs = () => {
   const { org } = useOrg()
@@ -125,38 +127,20 @@ export const CurrentInputs = () => {
                               family="mono"
                               theme="neutral"
                             >
-                              {input.name}
+                              {input.name
+                                ? getInputDisplayName(input.name)
+                                : null}
                             </Text>
                           </span>
                         ),
-                        value:
-                          input.name && redacted[input.name] != null ? (
-                            String(redacted[input.name]) === '' ? (
-                              <Text
-                                variant="subtext"
-                                family="mono"
-                                theme="neutral"
-                              >
-                                &quot;&quot;
-                              </Text>
-                            ) : (
-                              <Text
-                                variant="subtext"
-                                family="mono"
-                                weight="strong"
-                              >
-                                {String(redacted[input.name])}
-                              </Text>
-                            )
-                          ) : (
-                            <Text
-                              variant="subtext"
-                              family="mono"
-                              theme="neutral"
-                            >
-                              —
-                            </Text>
-                          ),
+                        value: (
+                          <InputValue
+                            name={input.name}
+                            value={
+                              input.name ? redacted[input.name] : undefined
+                            }
+                          />
+                        ),
                         default: (
                           <Text variant="label" family="mono" theme="neutral">
                             {input?.default}
@@ -173,8 +157,8 @@ export const CurrentInputs = () => {
       ) : hasInputs ? (
         <PropertyGrid
           values={Object.entries(redacted).map(([key, value]) => ({
-            key,
-            value,
+            key: getInputDisplayName(key),
+            value: <InputValue name={key} value={String(value)} />,
           }))}
         />
       ) : (

@@ -121,8 +121,39 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 	}
 
 	installCfg.InputGroups = s.buildInputGroupsFromInputs(appInputCfg.AppInputs, installInputs.Values, s.l)
+	installCfg.Components = buildComponentOverridesFromInputs(installInputs.Values)
 
 	return &installCfg, nil
+}
+
+// buildComponentOverridesFromInputs reconstructs the install config's
+// [components.<name>] sections from the reserved synthetic override inputs, so a
+// generated config round-trips symmetrically with what the user authored.
+// Empty override values are omitted.
+func buildComponentOverridesFromInputs(installInputValues map[string]*string) map[string]config.ComponentOverride {
+	components := make(map[string]config.ComponentOverride)
+	for name, val := range installInputValues {
+		kind, compName, ok := config.ParseComponentOverrideInputName(name)
+		if !ok {
+			continue
+		}
+		v := generics.FromPtrStr(val)
+		if v == "" {
+			continue
+		}
+		override := components[compName]
+		switch kind {
+		case config.ComponentOverrideKindHelmValues:
+			override.HelmValues = v
+		case config.ComponentOverrideKindTFVars:
+			override.TFVars = v
+		}
+		components[compName] = override
+	}
+	if len(components) == 0 {
+		return nil
+	}
+	return components
 }
 
 // buildInputGroupsFromInputs constructs input groups from app inputs and install input values.
@@ -133,6 +164,13 @@ func (s *service) buildInputGroupsFromInputs(appInputs []app.AppInput, installIn
 	inputGroupsMap := make(map[string]*config.InputGroup)
 
 	for _, inp := range appInputs {
+		// Skip reserved per-component override inputs - they are emitted under
+		// [components.<name>] instead of as flat inputs (see
+		// buildComponentOverridesFromInputs).
+		if config.IsComponentOverrideInputName(inp.Name) {
+			continue
+		}
+
 		// Initialize input group if it doesn't exist
 		if inputGroupsMap[inp.AppInputGroup.Name] == nil {
 			inputGroupsMap[inp.AppInputGroup.Name] = &config.InputGroup{

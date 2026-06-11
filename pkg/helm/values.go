@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	chartcommon "helm.sh/helm/v4/pkg/chart/common"
@@ -11,7 +12,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 )
 
-func ChartValues(values []string, helmSet []plantypes.HelmValue) (map[string]interface{}, error) {
+func ChartValues(values []string, helmSet []plantypes.HelmValue, override string) (map[string]interface{}, error) {
 	// Next get all our set configs
 	base := map[string]interface{}{}
 
@@ -46,6 +47,18 @@ func ChartValues(values []string, helmSet []plantypes.HelmValue) (map[string]int
 		default:
 			return nil, fmt.Errorf("unexpected type: %s", valueType)
 		}
+	}
+
+	// Finally, apply the install-level values override as the highest-precedence
+	// layer. It is coalesced override-authoritative, so it deep-merges over the
+	// values files AND the inline --set values and wins on any overlapping key.
+	// An empty override is an exact no-op.
+	if strings.TrimSpace(override) != "" {
+		overrideVals, err := chartcommon.ReadValues([]byte(override))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to read install override values")
+		}
+		base = chartutil.CoalesceTables(overrideVals.AsMap(), base)
 	}
 
 	return base, nil
