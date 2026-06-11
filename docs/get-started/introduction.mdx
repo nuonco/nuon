@@ -84,3 +84,33 @@ export const FeatureTile = ({ src, eyebrow, title, description, href, reverse })
   </div>
 
 </div>
+
+<div className="relative z-10 px-4 pb-12 max-w-4xl mx-auto text-gray-900 dark:text-white">
+
+  <h2 className="text-center text-2xl lg:text-3xl font-medium tracking-tight" style={{ color: 'inherit' }}>
+    Quickstart at a glance
+  </h2>
+
+  <p className="text-center opacity-70" style={{ marginTop: '0.5rem' }}>
+    The fastest way to try Nuon is to deploy an <a href="https://github.com/nuonco/example-app-configs" style={{ color: '#256A7F' }}>example app</a> into a test cloud account (AWS, Azure, or GCP) — see the <a href="/get-started/quickstart" style={{ color: '#256A7F' }}>full quickstart</a> for detail.
+  </p>
+
+  <Steps>
+    <Step title="Create your account">
+      [Sign up for the free trial](https://app.nuon.co/).
+    </Step>
+    <Step title="Install the CLI">
+      Run `brew install nuonco/tap/nuon`.
+    </Step>
+    <Step title="Log in">
+      Run `nuon auth login`.
+    </Step>
+    <Step title="Grab an example app">
+      Run `git clone https://github.com/nuonco/example-app-configs`, then `cd example-app-configs/eks-simple`.
+    </Step>
+    <Step title="Define and deploy it">
+      Run `nuon apps create --name eks-simple`, then `nuon apps sync`, then `nuon installs create --name <install-name> --region <region>`.
+    </Step>
+  </Steps>
+
+</div>

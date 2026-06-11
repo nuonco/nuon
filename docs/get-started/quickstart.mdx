@@ -1,13 +1,36 @@
 ---
 title: 'Quickstart'
-description: "Get up and running with Nuon in a few minutes."
+description: "Deploy your first app with Nuon in a few minutes by shipping an example app into a test cloud account."
 boost: 5
-keywords: ["getting started", "first deployment", "prerequisites", "demo environment", "try Nuon", "hello world Nuon", "install guide"]
+keywords: ["getting started", "first deployment", "example app", "try Nuon", "deploy example app", "test account", "install guide", "nuon apps sync", "nuon installs create", "nuon auth login"]
 ---
 
 <Note>
-You must already have signed up for the trial which creates an organization for your apps before you can complete this guide. Please [signup here](https://app.nuon.co/).
+You'll need two things before you start:
+- A Nuon account — [sign up for the free trial](https://app.nuon.co/).
+- A **test cloud account** (AWS, Azure, or GCP) to deploy into. A throwaway or sandbox account is ideal for your first install.
 </Note>
+
+The fastest way to see Nuon work is to deploy one of our example apps into a test cloud account. Copy and paste the flow below, or follow the walkthrough underneath for detail on each step.
+
+```sh
+# 1. Install the CLI
+brew install nuonco/tap/nuon
+
+# 2. Log in
+nuon auth login
+
+# 3. Grab the example apps and pick one (Kubernetes on AWS shown here)
+git clone https://github.com/nuonco/example-app-configs
+cd example-app-configs/eks-simple
+
+# 4. Define the app from its TOML config
+nuon apps create --name eks-simple
+nuon apps sync
+
+# 5. Deploy it into your test cloud account
+nuon installs create --name <install-name> --region <region>
+```
 
 ## Install the CLI
 
@@ -23,48 +46,47 @@ The Nuon CLI changes frequently. To ensure you have the latest version, run `bre
 
 ## Authenticate
 
-Once you have installed the Nuon CLI, log in.
-
 ```sh
 nuon auth login
 ```
 
-Follow the prompts in the browser and log in using a Google account. Once you've logged in, you can verify your API token with the `nuon orgs api-token` command. You should also now have a config file at `~/.nuon`. Values saved to this file will be used as CLI flag defaults.
+Follow the prompts in the browser and log in with a Google account.
 
-## Select Your Organization
+## Deploy an Example App
 
-Now that you are logged in, you can select your organization to start using it.
-
-```sh
-nuon orgs select
-```
-
-Confirm you have selected the correct organization.
+The quickest path is to deploy one of our [example apps](https://github.com/nuonco/example-app-configs) into a test cloud account. Clone the repo and pick one — `eks-simple` (Kubernetes on AWS) is a good starting point:
 
 ```sh
-nuon orgs current
+git clone https://github.com/nuonco/example-app-configs
+cd example-app-configs/eks-simple
+
+nuon apps create --name eks-simple
+nuon apps sync
 ```
-
-## Connect Your GitHub Account
-
-To deploy code from private repositories, you will need to connect to your GitHub account or organization. 
 
 <Note>
-This step is not required if you are only using public repositories.
+Apps are defined in TOML config files and applied with `nuon apps sync` — not through CLI flags or YAML values. `nuon apps create` registers the app in the control plane; `nuon apps sync` uploads the TOML config from the current directory and builds it. The app name should match the directory name.
 </Note>
 
-```sh
-nuon orgs connect-github
-```
-
-Confirm the repository is connected.
+Now create an install to deploy the app into your test cloud account:
 
 ```sh
-nuon orgs list-vcs-connections
+nuon installs create --name <install-name> --region <region>
 ```
 
-Alternatively, you can connect your GitHub account via the Nuon web dashboard. Click your organization name in the top left, then click Add next to GitHub Connections.
+- `--name` (`-n`) names this install.
+- `--region` (`-r`) is the cloud region to provision into, for example `us-west-2`.
 
-## Create an App
+<Note>
+Deployments are started with `nuon installs create` — there is no `nuon installs deploy` command. To redeploy components to an existing install later, use `nuon installs deploy-components`.
+</Note>
 
-Now that you are set up, the next step is to [configure and deploy an app](/get-started/create-your-first-app).
+For guided, per-cloud walkthroughs (AWS EKS, EC2, and Lambda) with prerequisites and timings, see [Create Your First App](/get-started/create-your-first-app).
+
+## Deploy Your Own App
+
+When you're ready to package your own software, wrap your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app — the commands are the same (`nuon apps create`, `nuon apps sync`, then `nuon installs create`).
+
+<Card title="Ready to deploy your own app?" icon="rocket" href="/concepts/apps#how-do-you-configure-an-app">
+  Learn how Nuon apps are configured — including connecting a private GitHub repository — then follow [Create Your First App](/get-started/create-your-first-app) for a full walkthrough.
+</Card>

@@ -5,7 +5,7 @@ description:
   "Package your existing application code and infrastructure to create Bring
   Your Own Cloud installable versions of your product."
 boost: 10
-keywords: ["config", "configuration", "app config", "app configuration", "configure an app", "how to configure an app", "how do you configure an app", "apps", "what is an app", "application packaging", "nuon apps sync", "app directory", "lift and shift", "multi-cloud deployment", "metadata.toml"]
+keywords: ["config", "configuration", "app config", "app configuration", "configure an app", "how to configure an app", "how do you configure an app", "apps", "what is an app", "application packaging", "nuon apps sync", "app directory", "lift and shift", "multi-cloud deployment", "metadata.toml", "connect github", "private repository", "nuon orgs connect-github"]
 ---
 
 Apps are versions of your application code and infrastructure that can be
@@ -27,6 +27,10 @@ into your customer's cloud account.
 
 Each app is represented as multiple configuration TOML files.
 
+<Tip>
+New to app config? [App Initialization](/guides/app-init) scaffolds a new app you can edit and sync.
+</Tip>
+
 Each app consists of the following parts:
 
 - `Sandbox` - The base infrastructure layer e.g., AWS EKS, Azure AKS
@@ -36,17 +40,37 @@ Each app consists of the following parts:
 - `Components` - Your application e.g., Helm, manifests, load balancers,
   certificates, Terraform
 
+Components can pull from your own Git repositories. To use **private** repositories, connect your GitHub account or organization to your Nuon org first — public repositories need no connection:
+
+```sh
+nuon orgs connect-github
+```
+
+Confirm the connection:
+
+```sh
+nuon orgs list-vcs-connections
+```
+
+You can also connect from the dashboard: click your organization name in the top left, then **Add** next to GitHub Connections. See [Connect GitHub](/guides/vcs) for the full walkthrough.
+
 ## Sandbox
 
-The sandbox is the base layer of each App and is responsible for setting up any
-shared infrastructure to configure an install. In most cases, sandboxes consist
-of the following resources:
+The sandbox sets up your application's base **compute** environment, such as a Kubernetes (EKS, AKS, GKE) or ECS cluster. It gives your app a consistent, isolated place to run across every install. In a shared-responsibility model, the sandbox can also build on infrastructure a customer already provides, such as an existing cluster.
 
-- Basic cloud account access and controls (such as IAM on AWS)
-- Basic network infrastructure (such as an AWS VPC)
-- Compute infrastructure (such as a Kubernetes or ECS cluster)
+Read more about the [Sandbox](/concepts/sandboxes) concept, or follow the [Configuring Sandboxes](/guides/configuring-sandboxes) guide to set one up.
 
-Read more about sandbox configuration [here](/concepts/sandboxes).
+## Networking
+
+Networking is provisioned by the install [Stack](/concepts/stacks): the Terraform or CloudFormation/Bicep that the customer deploys first.
+
+The Stack creates:
+
+- The network the app runs in (a VPC on AWS, a VNet on Azure)
+- The [Runner](/concepts/runners) that deploys and operates your app
+- The [permissions](/concepts/operation-roles) the Runner needs
+
+The sandbox then runs inside this network. The Stack can create a fresh network or reuse resources the customer already has. See [Stacks](/concepts/stacks) for the available patterns.
 
 ## Inputs
 
@@ -62,7 +86,7 @@ Inputs are commonly used to:
 - Re-use existing infrastructure, such as providing a `vpc_id` that has been
   granted access
 
-Read more about inputs [here](/concepts/app-inputs).
+Read more about [Inputs](/concepts/app-inputs), and see [Configuring Inputs & Secrets](/guides/configuring-inputs-and-secrets) for a step-by-step walkthrough.
 
 ## Components
 
@@ -80,12 +104,21 @@ Components allow you to:
 Common components include certificates, load balancers, Kubernetes operators or
 Helm to deploy an app or database, etc.
 
-Apps allow you to create dependencies between components and expose a rich
+Apps allow you to create [dependencies between components](/guides/component-dependencies) and expose a rich
 configuration language to share outputs between components for configuration.
 You can use [variables](/guides/using-variables) to configure components with
 the outputs of other components.
 
-Read more about components [here](/concepts/components).
+Read more about the [Components](/concepts/components) concept, or get hands-on with [Managing Components](/guides/managing-components). Jump straight to your component type:
+
+<CardGroup cols={2}>
+  <Card title="Helm Chart Components" icon="helmet-safety" href="/guides/helm-chart-components" />
+  <Card title="Kubernetes Manifest Components" icon="file-code" href="/guides/kubernetes-manifest-components" />
+  <Card title="Terraform Components" icon="cubes" href="/guides/terraform-components" />
+  <Card title="Docker Build Components" icon="hammer" href="/guides/docker-build-components" />
+  <Card title="Container Image Components" icon="box" href="/guides/container-image-components" />
+  <Card title="Image Update Policies" icon="arrows-rotate" href="/guides/image-update-policies" />
+</CardGroup>
 
 ## READMEs
 
@@ -108,7 +141,7 @@ See the [Using READMEs](/guides/using-readmes) guide for more details.
 
 ## App Management
 
-The [CLI](/cli) exposes many operational commands to manage apps. The dashboard can also provide limited app management functionality.
+The [CLI](/cli) exposes many operational commands to manage apps. The dashboard can also provide limited app management functionality. See the [Managing Apps](/guides/managing-apps) guide for common workflows.
 
 To see all available commands, run: `nuon apps --help`.
 

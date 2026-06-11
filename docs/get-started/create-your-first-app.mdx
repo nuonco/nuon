@@ -1,40 +1,48 @@
 ---
 title: "Create Your First App"
-description: "Learn how to package an app to install into AWS"
-keywords: ["first app", "package an app", "wrap existing Terraform", "wrap existing Helm chart", "AWS first install"]
+description: "Deploy an example app to learn Nuon, then package a version of your own product into a test cloud account."
+keywords: ["first app", "example app", "package an app", "wrap existing Terraform", "wrap existing Helm chart", "deploy to test account", "deploy your own app", "first install"]
 ---
 
-<Note>
-If you are new to Nuon, we recommend understanding the life cycle of packaging your app, installing your app into a cloud account, and updating, monitoring and remediating the installs by reading our [App and Install Life Cycle guide](../guides/app-install-life-cycle).
-</Note>
+Your first app can take one of two forms, and both deploy into a **test cloud account**:
 
-## Choose An Example App
+- **An example app** — the fastest way to see Nuon work end to end. Deploy one of our pre-built [example app configs](https://github.com/nuonco/example-app-configs) without writing any config yourself.
+- **Your own app** — a real version of your product, packaged from your existing Terraform, Helm, Kubernetes, and Docker assets.
 
-Choose one of the following example app guides to get started:
+If you're new to Nuon, start with an example app.
+
+<Tip>
+Want the bigger picture first? The [App & Install Life Cycle](/guides/app-install-life-cycle) guide walks through packaging, installing, and operating an app.
+</Tip>
+
+## Deploy an Example App
+
+Each guide below deploys a working example into a test AWS account:
 
 - [eks-simple](/get-started/app-aws-k8s): An AWS EKS (Kubernetes) Traefik `whoami` application (~35 min)
-- [cde](/get-started/app-aws-ec2): An AWS EC2 VM and connect with `ssh` and VS Code Web (~31 min)
+- [cde](/get-started/app-aws-ec2): An AWS EC2 VM you connect to with `ssh` and VS Code Web (~31 min)
 - [aws-lambda](/get-started/app-aws-lambda): A Lambda function with DynamoDB and API Gateway (~26 min)
 
 Estimated times above include creating the initial VPC, Subnets, Nat Gateway, ASG, EC2 VM, and a healthy Nuon runner (~11 min). For the fastest duration, approve all workflow steps when the app install begins.
 
-## Other Apps to Explore
-
-For these and other app examples, clone the
-[example-app-configs repository](https://github.com/nuonco/example-app-configs).
-Then run the following commands:
+For these and other examples, clone the [example-app-configs repository](https://github.com/nuonco/example-app-configs) and run:
 
 ```sh
 brew install nuonco/tap/nuon
 nuon auth login
-nuon orgs select
 cd example-app-configs/<app directory>
 nuon apps create --name <app directory>
 nuon apps sync
+nuon installs create --name <install-name> --region <region>
 ```
+
+## Deploy Your Own App
+
+When you're ready to deploy a real version of your own product, package your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app — then install it into a **test cloud account** before going anywhere near production. The CLI commands are the same as the example above.
+
+See [how apps are configured](/concepts/apps#how-do-you-configure-an-app) to structure your app, including connecting a private GitHub repository.
 
 ## Prerequisites
 
-- [Signup for the self-service free trial](https://app.nuon.co). You will need a login and an org in Nuon's cloud.
-- [Set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html).
-  This is the account you will install the app in.
+- [Sign up for the self-service free trial](https://app.nuon.co). You'll get a login and an org in Nuon's cloud.
+- A **test cloud account** to install into. The example apps above use AWS — [set up an AWS account](https://docs.aws.amazon.com/SetUp/latest/UserGuide/setup-overview.html) if you don't have one. Nuon also supports Azure and GCP.
