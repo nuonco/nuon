@@ -90,16 +90,13 @@ func (s *service) getWorkflow(ctx *gin.Context, orgID, workflowID string) (*app.
 				Order("group_idx, group_retry_idx, idx, created_at asc")
 		}).
 		Preload("Steps.CreatedBy").
-		Preload("Steps.Approval").
+		Preload("Steps.Approval", func(db *gorm.DB) *gorm.DB {
+			return db.Omit("contents")
+		}).
 		Preload("Steps.Approval.Response").
 		Preload("StepGroups", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_idx asc")
 		}).
-		Preload("StepGroups.Steps", func(db *gorm.DB) *gorm.DB {
-			return db.Order("group_retry_idx, idx, created_at asc")
-		}).
-		Preload("StepGroups.Steps.Approval").
-		Preload("StepGroups.Steps.Approval.Response").
 		Where("id = ? AND org_id = ?", workflowID, orgID).
 		First(&installWorkflow)
 	if res.Error != nil {

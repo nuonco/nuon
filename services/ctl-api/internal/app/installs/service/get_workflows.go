@@ -105,10 +105,6 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("CreatedBy").
-		Preload("Steps").
-		Preload("Steps.CreatedBy").
-		Preload("Steps.Approval").
-		Preload("Steps.Approval.Response").
 		Where("owner_id = ?", installID).
 		Order("created_at desc")
 

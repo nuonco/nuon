@@ -103,10 +103,6 @@ func (s *service) getOrgWorkflows(ctx *gin.Context, orgID string, excludePlanOnl
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("CreatedBy").
-		Preload("Steps").
-		Preload("Steps.CreatedBy").
-		Preload("Steps.Approval").
-		Preload("Steps.Approval.Response").
 		Joins("LEFT JOIN installs ON installs.id = install_workflows.owner_id AND install_workflows.owner_type = 'installs'").
 		Where("(install_workflows.owner_type != 'installs' OR installs.deleted_at = 0)").
 		Where("install_workflows.org_id = ?", orgID).

@@ -20,6 +20,7 @@ func BuildAppConfig(appID string) *app.AppConfig {
 		AppID:       appID,
 		CreatedByID: acct.ID,
 		Status:      app.AppConfigStatusActive,
+		StatusV2:    app.NewCompositeStatus(context.Background(), app.Status(app.AppConfigStatusActive)),
 		CLIVersion:  "development",
 	}
 }
@@ -31,6 +32,7 @@ func (s *Seeder) CreateBareAppConfig(ctx context.Context, t *testing.T, appID st
 	cfg := &app.AppConfig{
 		AppID:      appID,
 		Status:     app.AppConfigStatusActive,
+		StatusV2:   app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive)),
 		CLIVersion: "development",
 	}
 	res := s.db.WithContext(ctx).Create(cfg)
@@ -340,10 +342,13 @@ func (s *Seeder) CreateAppConfig(ctx context.Context, t *testing.T, appID string
 		helmComp.ID, tfComp.ID, dockerComp.ID,
 		k8sComp.ID, extImageComp.ID, jobComp.ID,
 	}
+	activeStatusV2 := app.NewCompositeStatus(ctx, app.Status(app.AppConfigStatusActive))
 	cfg.Status = app.AppConfigStatusActive
+	cfg.StatusV2 = activeStatusV2
 	cfg.ComponentIDs = componentIDs
 	require.NoError(t, s.db.WithContext(ctx).Model(cfg).Updates(map[string]any{
 		"status":        app.AppConfigStatusActive,
+		"status_v2":     activeStatusV2,
 		"component_ids": componentIDs,
 	}).Error)
 
