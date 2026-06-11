@@ -9,7 +9,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
@@ -106,12 +105,6 @@ func (s *service) getWorkflows(ctx *gin.Context, installID string, excludePlanOn
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("CreatedBy").
-		Preload("Steps").
-		Preload("Steps.CreatedBy").
-		Preload("Steps.Approval", func(db *gorm.DB) *gorm.DB {
-			return db.Omit("contents")
-		}).
-		Preload("Steps.Approval.Response").
 		Where("owner_id = ?", installID).
 		Order("created_at desc")
 

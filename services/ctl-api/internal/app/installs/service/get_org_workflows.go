@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -104,12 +103,6 @@ func (s *service) getOrgWorkflows(ctx *gin.Context, orgID string, excludePlanOnl
 	query := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Preload("CreatedBy").
-		Preload("Steps").
-		Preload("Steps.CreatedBy").
-		Preload("Steps.Approval", func(db *gorm.DB) *gorm.DB {
-			return db.Omit("contents")
-		}).
-		Preload("Steps.Approval.Response").
 		Joins("LEFT JOIN installs ON installs.id = install_workflows.owner_id AND install_workflows.owner_type = 'installs'").
 		Where("(install_workflows.owner_type != 'installs' OR installs.deleted_at = 0)").
 		Where("install_workflows.org_id = ?", orgID).

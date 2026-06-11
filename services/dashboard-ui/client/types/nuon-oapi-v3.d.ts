@@ -6065,12 +6065,6 @@ export interface components {
       take_ownership?: boolean;
       values?: components["schemas"]["plantypes.HelmValue"][];
       values_files?: string[];
-      /**
-       * @description ValuesOverride is the install-level Helm values override (raw YAML). It is
-       * merged as the highest-precedence layer at deploy time, winning over both
-       * ValuesFiles and Values. Empty means no override (exact no-op).
-       */
-      values_override?: string;
     };
     "plantypes.HelmSandboxMode": {
       plan_contents?: string;

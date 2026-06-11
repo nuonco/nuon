@@ -12,8 +12,9 @@ import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import type { TInstall, TWorkflow } from '@/types'
 import {
   getWorkflowBadge,
-  getPendingApprovalCount,
+  getWorkflowPendingApprovals,
 } from '@/utils/workflow-utils'
+import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { CancelWorkflowButton } from '../CancelWorkflow'
 
 export interface IWorkflowTimeline {
@@ -33,6 +34,8 @@ export const WorkflowTimeline = ({
   install,
   isLoading,
 }: IWorkflowTimeline) => {
+  const { approvals } = useWorkflowApprovals()
+
   if (isLoading) return <WorkflowTimelineSkeleton />
 
   return workflows?.length ? (
@@ -55,7 +58,7 @@ export const WorkflowTimeline = ({
             ) : null}
             {workflow?.approval_option === 'prompt' &&
             workflow?.status?.status !== 'approval-awaiting' &&
-            getPendingApprovalCount(workflow) ? (
+            getWorkflowPendingApprovals(approvals, workflow?.id).length ? (
               <Badge size="sm" theme="warn">
                 Pending approval
               </Badge>

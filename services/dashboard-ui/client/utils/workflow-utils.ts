@@ -1,6 +1,6 @@
 import type { TBadgeTheme } from '@/components/common/Badge'
 import type { TBannerTheme } from '@/components/common/Banner'
-import type { TWorkflow, TWorkflowStep } from '@/types'
+import type { TWorkflow, TWorkflowStep, TWorkflowStepApproval } from '@/types'
 
 export type TBadgeCfg = {
   children?: string
@@ -320,14 +320,14 @@ export function getPolicyViolationCounts(
   }
 }
 
-export function getPendingApprovalCount(workflow: TWorkflow): number {
+export function getWorkflowPendingApprovals(
+  approvals: TWorkflowStepApproval[] | undefined,
+  workflowId: string | undefined
+): TWorkflowStepApproval[] {
+  if (!workflowId) return []
   return (
-    workflow?.steps?.filter(
-      (s) =>
-        s?.execution_type === 'approval' &&
-        s?.status?.status === 'approval-awaiting' &&
-        s?.approval &&
-        !s?.approval?.response
-    )?.length || 0
+    approvals?.filter(
+      (a) => a?.workflow_step?.install_workflow_id === workflowId
+    ) ?? []
   )
 }

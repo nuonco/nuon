@@ -2,8 +2,18 @@ export default {
   title: 'Workflows/WorkflowTimeline',
 }
 
+import type { ReactNode } from 'react'
+import { WorkflowApprovalsContext } from '@/providers/workflow-approvals-provider'
 import { WorkflowTimeline, WorkflowTimelineSkeleton } from './WorkflowTimeline'
 import type { TWorkflow } from '@/types'
+
+const ApprovalsProvider = ({ children }: { children: ReactNode }) => (
+  <WorkflowApprovalsContext.Provider
+    value={{ approvals: [], isLoading: false, refresh: () => {} }}
+  >
+    {children}
+  </WorkflowApprovalsContext.Provider>
+)
 
 const mockWorkflow: TWorkflow = {
   id: 'wf-123',
@@ -30,21 +40,25 @@ const completedWorkflow: TWorkflow = {
 } as TWorkflow
 
 export const Default = () => (
-  <WorkflowTimeline
-    workflows={[mockWorkflow, completedWorkflow]}
-    pagination={{ hasNext: false, offset: 0, limit: 10 }}
-    orgId="org-123"
-    installId="inst-456"
-  />
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[mockWorkflow, completedWorkflow]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      installId="inst-456"
+    />
+  </ApprovalsProvider>
 )
 
 export const Empty = () => (
-  <WorkflowTimeline
-    workflows={[]}
-    pagination={{ hasNext: false, offset: 0, limit: 10 }}
-    orgId="org-123"
-    installId="inst-456"
-  />
+  <ApprovalsProvider>
+    <WorkflowTimeline
+      workflows={[]}
+      pagination={{ hasNext: false, offset: 0, limit: 10 }}
+      orgId="org-123"
+      installId="inst-456"
+    />
+  </ApprovalsProvider>
 )
 
 export const Loading = () => <WorkflowTimelineSkeleton />
