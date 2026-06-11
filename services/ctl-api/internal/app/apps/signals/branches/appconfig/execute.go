@@ -182,16 +182,40 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Update step metadata with config info for the UI
 	if s.StepID != "" {
+		meta := map[string]any{
+			"app_config_id":   syncResp.AppConfigID,
+			"component_count": len(syncResp.ComponentIDs),
+			"action_count":    len(syncResp.ActionIDs),
+		}
+
+		// Best-effort: compute structured config diff for the UI
+		var oldConfigID string
+		if run.PreviousRunID != nil && *run.PreviousRunID != "" {
+			prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+			if prevErr == nil && prevRun.AppConfigID != "" {
+				oldConfigID = prevRun.AppConfigID
+			}
+		}
+
+		configDiff, diffErr := activities.AwaitComputeAppConfigDiff(ctx, &activities.ComputeAppConfigDiffInput{
+			AppID:       branch.AppID,
+			NewConfigID: syncResp.AppConfigID,
+			OldConfigID: oldConfigID,
+		})
+		if diffErr == nil && configDiff != nil {
+			meta["config_file"] = configDiff.ConfigFile
+			meta["diff_additions"] = configDiff.Additions
+			meta["diff_removals"] = configDiff.Removals
+			meta["diff_changed"] = configDiff.Changed
+			meta["diff_sections"] = configDiff.Sections
+		}
+
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
 			ID: s.StepID,
 			Status: app.CompositeStatus{
 				Status:                 app.StatusSuccess,
 				StatusHumanDescription: fmt.Sprintf("synced %d components, %d actions", len(syncResp.ComponentIDs), len(syncResp.ActionIDs)),
-				Metadata: map[string]any{
-					"app_config_id":   syncResp.AppConfigID,
-					"component_count": len(syncResp.ComponentIDs),
-					"action_count":    len(syncResp.ActionIDs),
-				},
+				Metadata:               meta,
 			},
 		})
 	}

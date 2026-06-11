@@ -20,10 +20,13 @@ const buildBatchSize = 5
 
 // buildEntry tracks a single component build for metadata updates.
 type buildEntry struct {
-	ComponentID   string `json:"component_id"`
-	ComponentName string `json:"component_name"`
-	Status        string `json:"status"`
-	Skipped       bool   `json:"skipped,omitempty"`
+	ComponentID   string  `json:"component_id"`
+	ComponentName string  `json:"component_name"`
+	Status        string  `json:"status"`
+	Skipped       bool    `json:"skipped,omitempty"`
+	CacheStatus   string  `json:"cache_status,omitempty"` // "cache hit", "partial cache", "no cache"
+	ImageDigest   string  `json:"image_digest,omitempty"` // sha256:...
+	Duration      float64 `json:"duration,omitempty"`     // seconds
 }
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -132,15 +135,21 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 					ComponentName: name,
 					Status:        "skipped",
 					Skipped:       true,
+					CacheStatus:   "cache hit",
 				})
 				continue
 			}
 		}
 
+		cacheStatus := "no cache"
+		if previousAppConfigID != "" {
+			cacheStatus = "partial cache"
+		}
 		builds = append(builds, buildEntry{
 			ComponentID:   componentID,
 			ComponentName: name,
 			Status:        "pending",
+			CacheStatus:   cacheStatus,
 		})
 		toBuild = append(toBuild, componentID)
 	}
@@ -241,12 +250,20 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 	// Convert builds to a slice of map[string]any for JSON serialization
 	buildList := make([]any, 0, len(builds))
 	for _, b := range builds {
-		buildList = append(buildList, map[string]any{
+		entry := map[string]any{
 			"component_id":   b.ComponentID,
 			"component_name": b.ComponentName,
 			"status":         b.Status,
 			"skipped":        b.Skipped,
-		})
+			"cache_status":   b.CacheStatus,
+		}
+		if b.ImageDigest != "" {
+			entry["image_digest"] = b.ImageDigest
+		}
+		if b.Duration > 0 {
+			entry["duration"] = b.Duration
+		}
+		buildList = append(buildList, entry)
 	}
 
 	status := app.CompositeStatus{

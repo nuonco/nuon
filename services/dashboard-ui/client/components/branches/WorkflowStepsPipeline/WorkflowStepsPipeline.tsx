@@ -130,7 +130,7 @@ export const WorkflowStepsPipeline = ({
           }
 
           return (
-            <div key={step.id || idx} className="flex items-center gap-2">
+            <div key={step.id || idx} className="flex items-center gap-2 flex-1 min-w-0">
               {idx > 0 && <Arrow filled={prevSuccess} />}
 
               <div
