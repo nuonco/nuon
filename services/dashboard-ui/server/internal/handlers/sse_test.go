@@ -201,6 +201,23 @@ func TestRunSSEStreamUnnamedEvent(t *testing.T) {
 	}
 }
 
+func TestRunSSEStreamMaxLifetime(t *testing.T) {
+	// 200 steps at 1ms polls comfortably outlast a 20ms lifetime; the stream
+	// must expire on its own before the script exhausts.
+	steps := make([]sseScriptStep, 200)
+	for i := range steps {
+		steps[i] = sseScriptStep{res: sseFetchResult{Events: []sseEvent{event("build", `{"v":1}`)}}}
+	}
+
+	body := runScriptedStream(t, steps, func(cfg *sseStreamConfig) {
+		cfg.MaxLifetime = 20 * time.Millisecond
+	})
+
+	if got := strings.Count(body, "event: expired\ndata: true"); got != 1 {
+		t.Errorf("expired events = %d, want 1\nbody:\n%s", got, body)
+	}
+}
+
 func TestRunSSEStreamKeepalive(t *testing.T) {
 	body := runScriptedStream(t, []sseScriptStep{
 		{res: sseFetchResult{Events: []sseEvent{event("build", `{"v":1}`)}}},
