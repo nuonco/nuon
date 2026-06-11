@@ -24,6 +24,7 @@ const (
 	sseFinishedPollInterval  = 30 * time.Second
 	sseErrorRetryDelay       = 5 * time.Second
 	sseFinishedGracePeriod   = 2 * time.Minute
+	sseMaxStreamLifetime     = 30 * time.Minute
 )
 
 var terminalStatuses = map[string]bool{
@@ -105,7 +106,11 @@ type sseStreamConfig struct {
 	ErrorRetryDelay time.Duration
 	// FinishedGracePeriod of zero means the stream never self-closes.
 	FinishedGracePeriod time.Duration
-	Log                 *zap.Logger
+	// MaxLifetime defaults to sseMaxStreamLifetime. The stream emits an
+	// expired event and closes once exceeded; the client decides whether to
+	// reconnect based on recent user activity.
+	MaxLifetime time.Duration
+	Log         *zap.Logger
 }
 
 // runSSEStream writes SSE headers and runs the poll loop: fetch, emit events
@@ -121,6 +126,9 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 	if cfg.ErrorRetryDelay == 0 {
 		cfg.ErrorRetryDelay = sseErrorRetryDelay
 	}
+	if cfg.MaxLifetime == 0 {
+		cfg.MaxLifetime = sseMaxStreamLifetime
+	}
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
@@ -131,6 +139,7 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 
 	ctx := c.Request.Context()
 	hashes := map[string]string{}
+	start := time.Now()
 	var finishedAt time.Time
 
 	sendEvent := func(ev sseEvent) {
@@ -147,6 +156,11 @@ func runSSEStream(c *gin.Context, cfg sseStreamConfig) {
 		case <-ctx.Done():
 			return
 		default:
+		}
+
+		if time.Since(start) >= cfg.MaxLifetime {
+			sendEvent(sseEvent{Name: "expired", Data: []byte("true")})
+			return
 		}
 
 		res, fetchErr := cfg.Fetch(ctx)

@@ -268,6 +268,14 @@ goimports -w ./pkg/plans/types/
 - Add appropriate logging with structured fields
 - Ensure proper imports and avoid unused dependencies
 
+### Comments
+
+Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code
+does (no "// loop through items", "// close modal", "// fetch data" style comments). Let clear naming and structure
+document the code.
+
+This applies to ALL code in this monorepo — Go, TypeScript, Terraform, everything.
+
 ### GORM Query Conventions
 
 **Always use struct-based `Where` clauses instead of raw SQL strings.** This applies to all GORM queries throughout the
@@ -317,6 +325,8 @@ receiver.
 - Infrastructure code is in `/infra/` with Terraform modules
 - Example applications and templates are in `/seed/`
 - **CRITICAL**: Always run `go fmt` after making any changes to Go files
+- **CRITICAL**: Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe
+  what the code does. Let clear naming and structure document the code.
 
 ## User Journey & Onboarding System
 
