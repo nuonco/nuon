@@ -56,13 +56,11 @@ You can also connect from the dashboard: click your organization name in the top
 
 ## Sandbox
 
-The sandbox is the base layer of each App and is responsible for setting up any
-shared infrastructure to configure an install. In most cases, sandboxes consist
-of the following resources:
+The sandbox sets up your application's base **compute** environment — for example a Kubernetes (EKS, AKS, GKE) or ECS cluster — so your app has a consistent, isolated place to run across every install. In a shared-responsibility model, the sandbox can also build on infrastructure a customer already provides, such as an existing cluster.
 
-- Basic cloud account access and controls (such as IAM on AWS)
-- Basic network infrastructure (such as an AWS VPC)
-- Compute infrastructure (such as a Kubernetes or ECS cluster)
+<Note>
+The install's **network (VPC/VNet), the [Runner](/concepts/runners), and the Runner's permissions are provisioned by the install [Stack](/concepts/stacks)** — the Terraform or CloudFormation/Bicep the customer deploys first — not by the sandbox. The sandbox runs inside the network the Stack creates.
+</Note>
 
 Read more about the [Sandbox](/concepts/sandboxes) concept, or follow the [Configuring Sandboxes](/guides/configuring-sandboxes) guide to set one up.
 
