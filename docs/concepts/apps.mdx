@@ -56,13 +56,21 @@ You can also connect from the dashboard: click your organization name in the top
 
 ## Sandbox
 
-The sandbox sets up your application's base **compute** environment — for example a Kubernetes (EKS, AKS, GKE) or ECS cluster — so your app has a consistent, isolated place to run across every install. In a shared-responsibility model, the sandbox can also build on infrastructure a customer already provides, such as an existing cluster.
-
-<Note>
-The install's **network (VPC/VNet), the [Runner](/concepts/runners), and the Runner's permissions are provisioned by the install [Stack](/concepts/stacks)** — the Terraform or CloudFormation/Bicep the customer deploys first — not by the sandbox. The sandbox runs inside the network the Stack creates.
-</Note>
+The sandbox sets up your application's base **compute** environment, such as a Kubernetes (EKS, AKS, GKE) or ECS cluster. It gives your app a consistent, isolated place to run across every install. In a shared-responsibility model, the sandbox can also build on infrastructure a customer already provides, such as an existing cluster.
 
 Read more about the [Sandbox](/concepts/sandboxes) concept, or follow the [Configuring Sandboxes](/guides/configuring-sandboxes) guide to set one up.
+
+## Networking
+
+The network is **not** created by the sandbox. It is provisioned by the install [Stack](/concepts/stacks): the Terraform or CloudFormation/Bicep that the customer deploys first.
+
+The Stack creates:
+
+- The network the app runs in (a VPC on AWS, a VNet on Azure)
+- The [Runner](/concepts/runners) that deploys and operates your app
+- The [permissions](/concepts/operation-roles) the Runner needs
+
+The sandbox then runs inside this network. The Stack can create a fresh network or reuse resources the customer already has. See [Stacks](/concepts/stacks) for the available patterns.
 
 ## Inputs
 
