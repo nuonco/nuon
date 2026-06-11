@@ -3,6 +3,7 @@ package installs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"time"
@@ -212,12 +213,25 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	definedInputs := installCfg.FlattenedInputs()
+	var inputErrs []error
 	for _, ic := range appConfig.Input.Inputs {
-		if ic.Required {
-			if _, ok := definedInputs[ic.Name]; !ok {
-				return nil, fmt.Errorf("missing required input %s", ic.Name)
+		_, defined := definedInputs[ic.Name]
+
+		// user_configurable (source=customer) inputs are owned by the customer/install
+		// stack, not the install config, so they cannot be set via sync.
+		if ic.Source == string(models.AppAppInputSourceCustomer) {
+			if defined {
+				inputErrs = append(inputErrs, fmt.Errorf("refusing to set user_configurable input %s", ic.Name))
 			}
+			continue
 		}
+
+		if ic.Required && !defined {
+			inputErrs = append(inputErrs, fmt.Errorf("missing required input %s", ic.Name))
+		}
+	}
+	if len(inputErrs) > 0 {
+		return nil, fmt.Errorf("\n%w", errors.Join(inputErrs...))
 	}
 
 	upstreamRawConfig, err := s.api.GenerateCLIInstallConfig(ctx, appInstall.ID)
