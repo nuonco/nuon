@@ -8,12 +8,17 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID							GetWorkflowSteps
 // @Summary						get all of the steps for a given workflow
 // @Description.markdown		get_workflow_steps.md
 // @Param workflow_id	path	string true "workflow ID"
+// @Param				offset	query	int		false	"offset of results to return"	Default(0)
+// @Param				limit	query	int		false	"limit of results to return"	Default(10)
+// @Param				page	query	int		false	"page number of results to return"	Default(0)
 // @Tags						installs
 // @Accept						json
 // @Produce						json
@@ -43,6 +48,9 @@ func (s *service) GetWorkflowSteps(ctx *gin.Context) {
 // @Summary						get all of the steps for a given install workflow
 // @Description.markdown		get_workflow_steps.md
 // @Param install_workflow_id	path	string true "install workflow ID"
+// @Param				offset	query	int		false	"offset of results to return"	Default(0)
+// @Param				limit	query	int		false	"limit of results to return"	Default(10)
+// @Param				page	query	int		false	"page number of results to return"	Default(0)
 // @Tags						installs
 // @Accept						json
 // @Produce						json
@@ -72,12 +80,13 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 	var steps []app.WorkflowStep
 
 	res := s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Where(app.WorkflowStep{
 			InstallWorkflowID: workflowID,
 		}).
 		Preload("CreatedBy").
-		Preload("Approval", func(db *gorm.DB) *gorm.DB {
-			return db.Omit("contents")
+		Preload("Approval", func(gdb *gorm.DB) *gorm.DB {
+			return gdb.Omit("contents")
 		}).
 		Preload("Approval.Response").
 		Preload("PolicyValidation").
@@ -85,6 +94,11 @@ func (s *service) getWorkflowSteps(ctx *gin.Context, workflowID string) ([]app.W
 		Find(&steps)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to get workflow steps")
+	}
+
+	steps, err := db.HandlePaginatedResponse(ctx, steps)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to handle paginated response")
 	}
 
 	stepPtrs := make([]*app.WorkflowStep, len(steps))

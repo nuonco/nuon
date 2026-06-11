@@ -45,7 +45,7 @@ function useOnboardingWorkflow(onboarding: TOnboarding | undefined, setSharedDat
 
   const { data: steps = [] } = useQuery({
     queryKey: ['onboarding-workflow-steps', effectiveWorkflowId],
-    queryFn: () => getWorkflowSteps({ workflowId: effectiveWorkflowId!, orgId: orgId!, limit: 100, offset: 0 }),
+    queryFn: () => getWorkflowSteps({ workflowId: effectiveWorkflowId!, orgId: orgId! }),
     enabled: !!effectiveWorkflowId && !!orgId,
     refetchInterval: () => {
       return workflow?.finished ? false : 4000

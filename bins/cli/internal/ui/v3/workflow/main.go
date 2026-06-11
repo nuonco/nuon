@@ -656,6 +656,12 @@ func workflowPlainText(ctx context.Context, api nuon.Client, workflowID string) 
 		return
 	}
 
+	wf.Steps, err = api.GetWorkflowSteps(ctx, workflowID)
+	if err != nil {
+		fmt.Printf("Error fetching workflow steps: %v\n", err)
+		return
+	}
+
 	status := ""
 	if wf.Status != nil {
 		status = string(wf.Status.Status)

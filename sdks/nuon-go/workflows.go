@@ -106,16 +106,41 @@ func (c *client) UpdateWorkflow(ctx context.Context, workflowID string, req *mod
 	return resp.Payload, nil
 }
 
+// GetWorkflowSteps returns every step for a workflow. The endpoint is
+// paginated (max 100 per page), so this pages through the full set following
+// the X-Nuon-Page-Next header rather than loading everything in one query.
 func (c *client) GetWorkflowSteps(ctx context.Context, workflowID string) ([]*models.AppWorkflowStep, error) {
-	resp, err := c.genClient.Operations.GetWorkflowSteps(&operations.GetWorkflowStepsParams{
-		WorkflowID: workflowID,
-		Context:    ctx,
-	}, c.getOrgIDAuthInfo())
-	if err != nil {
-		return nil, err
+	const pageLimit = int64(100)
+
+	var (
+		steps  []*models.AppWorkflowStep
+		offset int64
+	)
+	for {
+		limit := pageLimit
+		off := offset
+		params := &operations.GetWorkflowStepsParams{
+			WorkflowID: workflowID,
+			Limit:      &limit,
+			Offset:     &off,
+			Context:    ctx,
+		}
+
+		hr := newResponseHeaderReader(&operations.GetWorkflowStepsReader{})
+		resp, err := c.genClient.Operations.GetWorkflowSteps(params, c.getOrgIDAuthInfo(), hr.ClientOption())
+		if err != nil {
+			return nil, err
+		}
+
+		steps = append(steps, resp.Payload...)
+
+		if len(resp.Payload) == 0 || !hasNextPage(hr) {
+			break
+		}
+		offset += pageLimit
 	}
 
-	return resp.Payload, nil
+	return steps, nil
 }
 
 func (c *client) GetWorkflowStep(ctx context.Context, workflowID, stepID string) (*models.AppWorkflowStep, error) {
