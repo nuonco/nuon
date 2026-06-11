@@ -55,7 +55,7 @@ export function useSSEResourceQuery<TData>({
     [queryClient, eventName, onPrimaryEvent, extraListeners, ...queryKey]
   )
 
-  const { connected: sseConnected, disconnect } = useResourceSSE({
+  const { connected: sseConnected, suspended: sseSuspended, disconnect } = useResourceSSE({
     url: sseUrl,
     enabled: sseEnabled ?? shouldPoll,
     listeners,
@@ -67,7 +67,8 @@ export function useSSEResourceQuery<TData>({
     refetchInterval: (query) => {
       if (sseConnected) return false
       if (!shouldPoll) return false
-      return isFinished?.(query.state.data) ? finishedPollMs : fallbackPollMs
+      if (isFinished?.(query.state.data)) return finishedPollMs
+      return sseSuspended ? finishedPollMs : fallbackPollMs
     },
     enabled,
   })

@@ -3,6 +3,8 @@ import { useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query'
 import { useResourceSSE } from '@/hooks/use-resource-sse'
 import { createSSEQueryListener, type TSSEListenerMap } from '@/lib/sse-listeners'
 
+const SUSPENDED_POLL_MS = 30_000
+
 interface IUseSSETimelineQuery<TData> {
   sseUrl: string | undefined
   queryKey: QueryKey
@@ -36,7 +38,7 @@ export function useSSETimelineQuery<TData>({
     [queryClient, eventName, transform, extraListeners, ...queryKey]
   )
 
-  const { connected: sseConnected } = useResourceSSE({
+  const { connected: sseConnected, suspended: sseSuspended } = useResourceSSE({
     url: sseUrl,
     enabled: shouldPoll,
     listeners,
@@ -46,7 +48,12 @@ export function useSSETimelineQuery<TData>({
     queryKey,
     queryFn,
     refetchOnMount: 'always',
-    refetchInterval: shouldPoll && !sseConnected ? pollInterval : false,
+    refetchInterval:
+      !shouldPoll || sseConnected
+        ? false
+        : sseSuspended
+          ? SUSPENDED_POLL_MS
+          : pollInterval,
     enabled,
   })
 
