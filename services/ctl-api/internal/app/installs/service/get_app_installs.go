@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
@@ -82,7 +83,10 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string
 		Scopes(labels.WithLabels("labels", lbls))
 
 	if q != "" {
-		tx = tx.Where("name ILIKE ? OR installs.id = ?", "%"+q+"%", q)
+		nameCol := views.TableOrViewName(s.db, &app.Install{}, ".name")
+		idCol := views.TableOrViewName(s.db, &app.Install{}, ".id")
+		queryPattern := "%" + q + "%"
+		tx = tx.Where(nameCol+" ILIKE ? OR "+idCol+" ILIKE ?", queryPattern, queryPattern)
 	}
 
 	tx = tx.Where("app_id = ? AND org_id = ?", appID, orgID).
