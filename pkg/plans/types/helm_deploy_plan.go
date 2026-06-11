@@ -32,4 +32,9 @@ type HelmDeployPlan struct {
 	ValuesFiles   []string    `json:"values_files"`
 	Values        []HelmValue `json:"values"`
 	TakeOwnership bool        `json:"take_ownership"`
+
+	// ValuesOverride is the install-level Helm values override (raw YAML). It is
+	// merged as the highest-precedence layer at deploy time, winning over both
+	// ValuesFiles and Values. Empty means no override (exact no-op).
+	ValuesOverride string `json:"values_override,omitempty"`
 }

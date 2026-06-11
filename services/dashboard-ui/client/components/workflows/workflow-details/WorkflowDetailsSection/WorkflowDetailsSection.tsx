@@ -10,6 +10,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Modal } from '@/components/surfaces/Modal'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
+import { getInputDisplayName } from '@/utils/install-utils'
 import type { TWorkflow, TInstall } from '@/types'
 import { WorkflowMetadata } from '../WorkflowMetadata'
 
@@ -43,7 +44,7 @@ export const WorkflowDetailsSection = ({
       ) as Record<string, { old: string; new: string }>
       return Object.entries(parsed).map(
         ([name, { old: oldVal, new: newVal }]) => ({
-          name,
+          name: getInputDisplayName(name),
           old: oldVal || '(empty)',
           new: newVal || '(empty)',
         })

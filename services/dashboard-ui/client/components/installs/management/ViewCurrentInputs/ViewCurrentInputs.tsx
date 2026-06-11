@@ -11,6 +11,8 @@ import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { InputValue } from '@/components/installs/management/InputValue'
+import { getInputDisplayName } from '@/utils/install-utils'
 
 type TAttributeFilter = 'required' | 'sensitive'
 type TSourceFilter = 'vendor' | 'customer'
@@ -353,26 +355,16 @@ export const ViewCurrentInputsModal = ({
                             {input.display_name}
                           </Text>
                           <Text variant="label" family="mono" theme="neutral">
-                            {input.name}
+                            {input.name ? getInputDisplayName(input.name) : null}
                           </Text>
                         </span>
                       ),
-                      value:
-                        input.name && redacted[input.name] != null ? (
-                          String(redacted[input.name]) === '' ? (
-                            <Text variant="subtext" family="mono" theme="neutral">
-                              ""
-                            </Text>
-                          ) : (
-                            <Text variant="subtext" family="mono" weight="strong">
-                              {String(redacted[input.name])}
-                            </Text>
-                          )
-                        ) : (
-                          <Text variant="subtext" family="mono" theme="neutral">
-                            —
-                          </Text>
-                        ),
+                      value: (
+                        <InputValue
+                          name={input.name}
+                          value={input.name ? redacted[input.name] : undefined}
+                        />
+                      ),
                       default: (
                         <Text variant="label" family="mono" theme="neutral">
                           {input?.default}
@@ -419,8 +411,8 @@ export const ViewCurrentInputsModal = ({
         ) : (
           <PropertyGrid
             values={filteredFlatInputs.map(([key, value]) => ({
-              key,
-              value,
+              key: getInputDisplayName(key),
+              value: <InputValue name={key} value={String(value)} />,
             }))}
           />
         )

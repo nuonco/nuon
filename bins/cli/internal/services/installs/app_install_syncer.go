@@ -331,6 +331,23 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
+	// Clearing a component override means reverting that component to its
+	// app-config values. The inputs API merges, so an omitted key is left
+	// untouched; to actually clear it we must send the reserved synthetic key
+	// with an empty value. Re-add override keys that exist on the install but
+	// are no longer set in the config.
+	for k, cur := range currInputs.Values {
+		if cur == "" {
+			continue
+		}
+		if _, ok := definedInputs[k]; ok {
+			continue
+		}
+		if config.IsComponentOverrideInputName(k) {
+			definedInputs[k] = ""
+		}
+	}
+
 	// Only send the inputs explicitly defined in the install config file. The API
 	// merges them with the install's existing values server-side, so we don't
 	// re-send the full set — in particular install_stack sourced inputs, which the
@@ -483,7 +500,7 @@ func installDiffToString(d *diff.Diff, indent string) string {
 	}
 
 	if d.Diff != nil {
-		str := fmt.Sprintf("%s: %s", d.Key, d.Diff.Diff)
+		str := fmt.Sprintf("%s: %s", installDiffKey(d.Key), d.Diff.Diff)
 		switch d.Diff.Op {
 		case diff.OpAdd:
 			str = bubbles.Green(str)
@@ -495,9 +512,21 @@ func installDiffToString(d *diff.Diff, indent string) string {
 		return indent + str + "\n"
 	}
 
-	diff := indent + d.Key + ":\n"
+	diff := indent + installDiffKey(d.Key) + ":\n"
 	for _, child := range d.Children {
 		diff = diff + installDiffToString(child, indent+"\t")
 	}
 	return diff
+}
+
+// installDiffKey maps a raw diff key to its user-facing form. Per-component
+// override inputs are stored under reserved synthetic names
+// (nuon_component_override_v1_<kind>_<hex>); decode those back to the
+// components.<name>.<kind> form the user wrote in the install config so the diff
+// never leaks the reserved keys.
+func installDiffKey(key string) string {
+	if kind, component, ok := config.ParseComponentOverrideInputName(key); ok {
+		return fmt.Sprintf("components.%s.%s", component, kind)
+	}
+	return key
 }
