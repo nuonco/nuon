@@ -83,7 +83,7 @@ export function parseComponentToTableData(
       ),
       labels: (() => {
         const lbls = component.labels
-        if (!lbls || Object.keys(lbls).length === 0) return null
+        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
