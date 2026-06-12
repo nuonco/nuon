@@ -47,10 +47,10 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 			Name:            "runner-healthcheck",
 			Description:     "Periodic runner-level health check",
 			Mode:            app.QueueEmitterModeCron,
-			CronSchedule:    "*/15 * * * *",
+			CronSchedule:    runnerHealthcheckSchedule(h.cfg.Env),
 			JitterWindow:    30 * time.Second,
 			SignalType:      "runner_healthcheck",
-			SignalExpiresIn: 15 * time.Minute,
+			SignalExpiresIn: runnerHealthcheckSignalExpiry,
 			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
 				"runner_id": runnerID,
 			}),

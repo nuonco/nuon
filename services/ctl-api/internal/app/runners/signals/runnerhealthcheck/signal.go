@@ -2,12 +2,12 @@ package runnerhealthcheck
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
@@ -238,14 +238,12 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 }
 
 func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description string, metadata map[string]any) error {
-	if runner.Status != status {
-		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-			RunnerID:          s.RunnerID,
-			Status:            status,
-			StatusDescription: description,
-		}); err != nil {
-			return errors.Wrap(err, "unable to update runner status")
-		}
+	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+		RunnerID:          s.RunnerID,
+		Status:            status,
+		StatusDescription: description,
+	}); err != nil {
+		return errors.Wrap(err, "unable to update runner status")
 	}
 
 	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
@@ -259,7 +257,11 @@ func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, st
 }
 
 func isNotFound(err error) bool {
-	return strings.Contains(err.Error(), "not found")
+	var appErr *temporal.ApplicationError
+	if errors.As(err, &appErr) && appErr.NonRetryable() {
+		return true
+	}
+	return false
 }
 
 func isSkippableStatus(status app.RunnerStatus) bool {

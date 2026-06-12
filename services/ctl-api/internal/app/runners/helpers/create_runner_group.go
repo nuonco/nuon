@@ -103,6 +103,10 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 		return nil, res.Error
 	}
 
+	if err := h.EnsureRunnerSignalsQueue(ctx, runnerGroup.Runners[0].ID); err != nil {
+		return nil, fmt.Errorf("unable to create runner signals queue: %w", err)
+	}
+
 	parallelJobs, err := h.featuresClient.OrgHasFeature(ctx, install.OrgID, app.OrgFeatureParallelRunnerJobs)
 	if err != nil {
 		return nil, fmt.Errorf("unable to check parallel runner jobs feature: %w", err)
@@ -212,10 +216,10 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		Name:            "runner-healthcheck",
 		Description:     "Periodic runner-level health check",
 		Mode:            app.QueueEmitterModeCron,
-		CronSchedule:    "*/15 * * * *",
+		CronSchedule:    runnerHealthcheckSchedule(h.cfg.Env),
 		JitterWindow:    30 * time.Second,
 		SignalType:      "runner_healthcheck",
-		SignalExpiresIn: 15 * time.Minute,
+		SignalExpiresIn: runnerHealthcheckSignalExpiry,
 		SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
 			"runner_id": runnerGroup.Runners[0].ID,
 		}),
