@@ -9,6 +9,19 @@ import (
 // defaultAzureVNetTemplateURL is the default VNet ARM template URL.
 const defaultAzureVNetTemplateURL = "https://raw.githubusercontent.com/nuonco/sandboxes/main/azure-aks/vnet-template.json"
 
+// azureVNetAPIVersion is correctness-critical and must stay >= 2023-09-01.
+//
+// We declare subnets as standalone Microsoft.Network/virtualNetworks/subnets
+// child resources and omit properties.subnets on the VNet itself. Prior to API
+// version 2023-09-01, a VNet PUT that omits subnets PRUNES every subnet not
+// listed inline. On reprovision that prune tries to delete in-use subnets
+// (live NICs from the runner VMSS / AKS) and fails with
+// InUseSubnetCannotBeDeleted. From 2023-09-01 onward, omitting subnets on a
+// VNet PUT preserves the existing subnets, so the reprovision is non-destructive
+// while still never touching foreign/out-of-band subnets (e.g. AGIC ingress).
+// See https://techcommunity.microsoft.com/blog/azurenetworkingblog/azure-virtual-network-now-supports-updates-without-subnet-property/4067952
+const azureVNetAPIVersion = "2023-11-01"
+
 // vnetHoistAllowlist lists VNet template parameters that are intentionally
 // customer-configurable. Only these are surfaced in the parent template.
 var vnetHoistAllowlist = map[string]bool{
@@ -206,7 +219,7 @@ func (t *Templates) getDefaultVNetTemplate() map[string]any {
 		// that ARM does not delete externally-created subnets on re-deploy.
 		map[string]any{
 			"type":       "Microsoft.Network/virtualNetworks",
-			"apiVersion": "2023-04-01",
+			"apiVersion": azureVNetAPIVersion,
 			"name":       "[format('{0}-vnet', parameters('nuonInstallID'))]",
 			"location":   "[parameters('location')]",
 			"tags":       "[parameters('commonTags')]",
