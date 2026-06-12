@@ -1,23 +1,18 @@
 package state
 
 type OCIArtifactOutputs struct {
-	// Repository is the canonical pull reference for the synced artifact.
-	// When the runner has resolved a manifest digest, Repository is
-	// rewritten to the digest-pinned form (`<full_repo>@sha256:<digest>`)
-	// so user templates of the form `image: "{{.outputs.image.repository}}"`
-	// are automatically digest-pinned without any user opt-in.
-	//
-	// Without a resolved digest the original bare-repository form is
-	// preserved.
+	// Repository is the bare repository of the synced artifact (no tag, no
+	// digest). Long-standing public output contract: user templates compose
+	// it as `image: "{{.repository}}:{{.tag}}"`, so it must never carry a
+	// digest suffix — use Ref for a digest-pinned pull reference.
 	Repository string `mapstructure:"repository"`
-	// Tag is the resolved image tag. Intentionally cleared to `""` whenever
-	// Repository has been rewritten to a digest-pinned form, so legacy
-	// `image: "{{.repository}}:{{.tag}}"` templates surface as obviously
-	// invalid trailing-colon refs (rather than silently deploying a mutable
-	// tag). Use DisplayTag for the human-friendly tag.
+	// Tag is the resolved image tag, composed with Repository by user
+	// templates. Never cleared: charts default an empty tag to their
+	// appVersion, which silently produces invalid refs when combined with
+	// any non-bare repository.
 	Tag string `mapstructure:"tag"`
-	// Ref is the canonical digest-pinned pull reference, kept as a stable
-	// alias of Repository for clarity:
+	// Ref is the canonical digest-pinned pull reference for templates that
+	// opt in to digest-pinned pulls:
 	//
 	//   <login_server>/<repository>@sha256:<digest>
 	//
