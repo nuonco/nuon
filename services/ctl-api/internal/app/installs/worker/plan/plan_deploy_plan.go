@@ -199,6 +199,17 @@ func (p *Planner) defaultRoleForInstallWorkflow(
 ) string {
 	fallback := appCfg.PermissionsConfig.MaintenanceRole.Name
 
+	enabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureWorkflowDefaultRole))
+	if err != nil {
+		l.Warn("unable to check workflow-default-role feature; using maintenance role",
+			zap.Error(err),
+		)
+		return fallback
+	}
+	if !enabled {
+		return fallback
+	}
+
 	if installWorkflowID == "" {
 		l.Warn("install workflow ID missing for role default; using maintenance role")
 		return fallback
