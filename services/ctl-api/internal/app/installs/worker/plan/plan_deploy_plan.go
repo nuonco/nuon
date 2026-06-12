@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/pkg/generics"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -63,7 +64,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	// we get same information.
 	// unless, we change response models like appcfg, installdeploy, build, stack etc somewhere in middle, which should
 	// not happen ideally.
-	roleSelection, _, err := p.getRoleForDeploy(l, appCfg, installDeploy, build, stack, installState)
+	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, installDeploy, build, stack, installState)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
 	}
@@ -174,6 +175,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 }
 
 func (p *Planner) getRoleForDeploy(
+	ctx workflow.Context,
 	l *zap.Logger,
 	appCfg *app.AppConfig,
 	installDeploy *app.InstallDeploy,
@@ -181,7 +183,37 @@ func (p *Planner) getRoleForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState)
+	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, generics.FromPtrStr(installDeploy.InstallWorkflowID))
+	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, defaultRole)
+}
+
+// defaultRoleForInstallWorkflow resolves the lowest-precedence default role for
+// a step based on its parent install workflow type. It falls back to the
+// maintenance role when the workflow can't be resolved so planning never fails
+// on role defaulting.
+func (p *Planner) defaultRoleForInstallWorkflow(
+	ctx workflow.Context,
+	l *zap.Logger,
+	appCfg *app.AppConfig,
+	installWorkflowID string,
+) string {
+	fallback := appCfg.PermissionsConfig.MaintenanceRole.Name
+
+	if installWorkflowID == "" {
+		l.Warn("install workflow ID missing for role default; using maintenance role")
+		return fallback
+	}
+
+	flw, err := activities.AwaitGetInstallWorkflowByID(ctx, installWorkflowID)
+	if err != nil {
+		l.Warn("unable to get install workflow for role default; using maintenance role",
+			zap.String("install_workflow_id", installWorkflowID),
+			zap.Error(err),
+		)
+		return fallback
+	}
+
+	return operationroles.DefaultRoleForWorkflowType(appCfg, flw.Type)
 }
 
 func (p *Planner) getAuthForDeploy(
@@ -199,6 +231,7 @@ func (p *Planner) getAuthForDeploy(
 	}
 
 	roleSelection, operation, err := p.getRoleForDeploy(
+		ctx,
 		l,
 		appCfg,
 		installDeploy,

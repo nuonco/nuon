@@ -18,10 +18,15 @@ func GetRoleForDeploy(
 	compCfgConn *app.ComponentConfigConnection,
 	stack *app.InstallStack,
 	installState *state.State,
+	defaultRole string,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationDeploy
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		operation = app.OperationTeardown
+	}
+
+	if defaultRole == "" {
+		defaultRole = appCfg.PermissionsConfig.MaintenanceRole.Name
 	}
 
 	selectionCtx := &SelectionContext{
@@ -33,7 +38,7 @@ func GetRoleForDeploy(
 			compCfgConn.OperationRoles,
 		),
 		MatrixRules:  appCfg.OperationRoleConfig.Rules,
-		DefaultRole:  appCfg.PermissionsConfig.MaintenanceRole.Name,
+		DefaultRole:  defaultRole,
 		AppConfig:    appCfg,
 		StackOutputs: &stack.InstallStackOutputs,
 		InstallState: installState,
@@ -142,8 +147,13 @@ func GetRoleForAction(
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
 	installState *state.State,
+	defaultRole string,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationTrigger
+
+	if defaultRole == "" {
+		defaultRole = appCfg.PermissionsConfig.MaintenanceRole.Name
+	}
 
 	var entityRoles map[app.OperationType]string
 	if run.ActionWorkflowConfig.Role != "" {
@@ -164,7 +174,7 @@ func GetRoleForAction(
 		RuntimeRole:    run.Role,
 		EntityRoles:    entityRoles,
 		MatrixRules:    appCfg.OperationRoleConfig.Rules,
-		DefaultRole:    appCfg.PermissionsConfig.MaintenanceRole.Name,
+		DefaultRole:    defaultRole,
 		AppConfig:      appCfg,
 		StackOutputs:   &stack.InstallStackOutputs,
 		BreakGlassRole: breakGlassRole,
