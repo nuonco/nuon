@@ -129,6 +129,8 @@ export const CreateInstallForm = forwardRef<
             />
           </div>
 
+          {/* Nested CloudFormation template overrides only apply to AWS install stacks */}
+          {platform === 'aws' && (
           <Expand
             id="advanced-stack-overrides"
             heading="Advanced"
@@ -175,6 +177,7 @@ export const CreateInstallForm = forwardRef<
               </div>
             </div>
           </Expand>
+          )}
 
           {inputConfig && (
             <InputConfigFields

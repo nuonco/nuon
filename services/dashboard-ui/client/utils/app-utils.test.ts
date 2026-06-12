@@ -180,7 +180,7 @@ describe('app-utils', () => {
       ])
     })
 
-    test('should handle groups with no matching inputs', () => {
+    test('should omit groups with no matching inputs', () => {
       const groups: TAppConfig['input']['input_groups'] = [
         {
           id: 'group-1',
@@ -202,15 +202,7 @@ describe('app-utils', () => {
 
       const result = normalizeAppInputGroups(groups, inputs)
 
-      expect(result).toEqual([
-        {
-          id: 'group-1',
-          name: 'Empty Group',
-          description: 'Group with no inputs',
-          index: 1,
-          app_inputs: [],
-        },
-      ])
+      expect(result).toEqual([])
     })
 
     test('should handle empty groups array', () => {
@@ -243,15 +235,7 @@ describe('app-utils', () => {
 
       const result = normalizeAppInputGroups(groups, inputs)
 
-      expect(result).toEqual([
-        {
-          id: 'group-1',
-          name: 'Test Group',
-          description: 'Test description',
-          index: 1,
-          app_inputs: [],
-        },
-      ])
+      expect(result).toEqual([])
     })
 
     test('should handle both empty arrays', () => {
@@ -275,7 +259,15 @@ describe('app-utils', () => {
         } as any,
       ]
 
-      const inputs: TAppConfig['input']['inputs'] = []
+      const inputs: TAppConfig['input']['inputs'] = [
+        {
+          id: 'input-1',
+          name: 'test_input',
+          type: 'string',
+          group_id: 'group-1',
+          required: true,
+        },
+      ]
 
       const result = normalizeAppInputGroups(groups, inputs)
 
@@ -285,8 +277,8 @@ describe('app-utils', () => {
         description: 'Advanced configuration options',
         index: 10,
         custom_field: 'custom_value',
-        app_inputs: [],
       }))
+      expect(result[0].app_inputs).toHaveLength(1)
     })
   })
 })
