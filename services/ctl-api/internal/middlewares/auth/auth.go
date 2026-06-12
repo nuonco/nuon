@@ -3,7 +3,6 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/gin-gonic/gin"
@@ -19,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/useragent"
 )
 
 type Params struct {
@@ -112,29 +112,10 @@ func (m *middleware) Handler() gin.HandlerFunc {
 	}
 }
 
-// isCLIUserAgent checks if the User-Agent indicates CLI usage
-func isCLIUserAgent(userAgent string) bool {
-	ua := strings.ToLower(userAgent)
-	cliPatterns := []string{
-		"nuon-cli",
-		"nuon/",
-		"go-http-client",
-		"curl",
-		"wget",
-		"postman",
-	}
-	for _, pattern := range cliPatterns {
-		if strings.Contains(ua, pattern) {
-			return true
-		}
-	}
-	return false
-}
-
 // detectCLIUsage checks if the request is from CLI and updates the journey step
 func (m *middleware) detectCLIUsage(ctx *gin.Context, acct *app.Account) {
 	userAgent := ctx.Request.UserAgent()
-	if !isCLIUserAgent(userAgent) {
+	if !useragent.IsCLI(userAgent) {
 		return
 	}
 

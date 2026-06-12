@@ -6065,6 +6065,12 @@ export interface components {
       take_ownership?: boolean;
       values?: components["schemas"]["plantypes.HelmValue"][];
       values_files?: string[];
+      /**
+       * @description ValuesOverride is the install-level Helm values override (raw YAML). It is
+       * merged as the highest-precedence layer at deploy time, winning over both
+       * ValuesFiles and Values. Empty means no override (exact no-op).
+       */
+      values_override?: string;
     };
     "plantypes.HelmSandboxMode": {
       plan_contents?: string;
@@ -16676,6 +16682,14 @@ export interface operations {
    */
   GetInstallWorkflowSteps: {
     parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
       path: {
         /** @description install workflow ID */
         install_workflow_id: string;
@@ -27701,6 +27715,14 @@ export interface operations {
    */
   GetWorkflowSteps: {
     parameters: {
+      query?: {
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
       path: {
         /** @description workflow ID */
         workflow_id: string;

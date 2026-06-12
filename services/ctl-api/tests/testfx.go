@@ -42,6 +42,7 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/blob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal/dataconverter/gzip"
@@ -122,6 +123,7 @@ func CtlApiFXOptionsWithMocks(opts TestOpts) []fx.Option {
 
 		// External services
 		fx.Provide(loops.New),
+		fx.Provide(salesforce.New),
 		fx.Provide(ghpkg.New),
 		fx.Provide(metrics.New),
 		fx.Provide(propagator.New),

@@ -411,6 +411,10 @@ type Config struct {
 	// slack-auto-link label seeding in CreateOrg.
 	InternalEmailDomains []string `config:"internal_email_domains"`
 
+	// SFTrialEndpoint posts a Salesforce trial-signup record when a user creates
+	// their first org. Empty disables the integration (e.g. BYOC/self-hosted).
+	SFTrialEndpoint string `config:"sf_trial_access_endpoint"`
+
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
