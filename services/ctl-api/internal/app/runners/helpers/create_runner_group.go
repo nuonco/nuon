@@ -12,6 +12,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const (
@@ -193,7 +195,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 		return nil, res.Error
 	}
 
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerGroup.Runners[0].ID,
 		OwnerType:   "runners",
 		Namespace:   "runners",
@@ -203,6 +205,22 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create runner queue: %w", err)
+	}
+
+	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+		QueueID:         q.ID,
+		Name:            "runner-healthcheck",
+		Description:     "Periodic runner-level health check",
+		Mode:            app.QueueEmitterModeCron,
+		CronSchedule:    "*/15 * * * *",
+		JitterWindow:    30 * time.Second,
+		SignalType:      "runner_healthcheck",
+		SignalExpiresIn: 15 * time.Minute,
+		SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
+			"runner_id": runnerGroup.Runners[0].ID,
+		}),
+	}); err != nil {
+		return nil, fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
 	}
 
 	if err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {
