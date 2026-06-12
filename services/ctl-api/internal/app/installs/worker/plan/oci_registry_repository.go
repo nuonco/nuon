@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) getInstallRegistryRepositoryConfig(
@@ -30,6 +31,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
+	roleSelection *operationroles.RoleSelection,
 ) (*configs.OCIRegistryRepository, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -42,7 +44,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	sessionName := fmt.Sprintf("oci-sync-%s-%s", installDeploy.InstallID, installDeploy.ID)
-	cloudAuth, err := p.getAuthForDeploy(ctx, installDeploy, compBuild, appCfg, stack, installState, sessionName)
+	cloudAuth, err := p.getAuthForDeploy(ctx, roleSelection, stack, sessionName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for install registry")
 	}

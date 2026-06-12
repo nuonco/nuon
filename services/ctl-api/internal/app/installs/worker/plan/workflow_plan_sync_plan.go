@@ -8,6 +8,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanRequest) (*plantypes.SyncOCIPlan, error) {
@@ -48,7 +49,17 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get logger")
+	}
+
+	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, deploy, compBuild, stack, installState)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get role for deploy")
+	}
+
+	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState, roleSelection)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}

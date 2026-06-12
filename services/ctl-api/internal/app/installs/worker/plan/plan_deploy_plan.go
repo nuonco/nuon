@@ -69,7 +69,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
 	}
 
-	ociConfig, err := p.getInstallRegistryRepositoryConfig(ctx, installDeploy, build, appCfg, stack, installState)
+	ociConfig, err := p.getInstallRegistryRepositoryConfig(ctx, installDeploy, build, appCfg, stack, installState, roleSelection)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get install registry repository config")
 	}
@@ -109,7 +109,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.NoopDeployPlan = p.createNoopDeployPlan()
 	case app.ComponentTypeTerraformModule:
 		l.Info("generating terraform plan")
-		tfPlan, err := p.createTerraformDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+		tfPlan, err := p.createTerraformDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
 		if err != nil {
 			l.Info("error generating terraform plan", zap.Error(err))
 			return nil, nil, errors.Wrap(err, "unable to create terraform deploy plan")
@@ -117,7 +117,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.TerraformDeployPlan = tfPlan
 	case app.ComponentTypeHelmChart:
 		l.Info("generating helm plan")
-		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+		helmPlan, err := p.createHelmDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
 		if err != nil {
 			l.Error("error generating helm plan", zap.Error(err))
 			return nil, nil, errors.Wrap(err, "unable to helm deploy plan")
@@ -125,7 +125,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.HelmDeployPlan = helmPlan
 	case app.ComponentTypeKubernetesManifest:
 		l.Info("generating kubernetes manifest plan")
-		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+		kubernetesManifestPlan, err := p.createKubernetesManifestDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
 		if err != nil {
 			l.Error("error generating kubernetes manifest plan", zap.Error(err))
 			return nil, nil, errors.Wrap(err, "unable to kubernets manifest deploy plan")
@@ -133,7 +133,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 		plan.KubernetesManifestDeployPlan = kubernetesManifestPlan
 	case app.ComponentTypePulumi:
 		l.Info("generating pulumi plan")
-		pulumiPlan, err := p.createPulumiDeployPlan(ctx, req, appCfg, stack, installState, installDeploy)
+		pulumiPlan, err := p.createPulumiDeployPlan(ctx, req, appCfg, stack, installState, installDeploy, roleSelection)
 		if err != nil {
 			l.Error("error generating pulumi plan", zap.Error(err))
 			return nil, nil, errors.Wrap(err, "unable to create pulumi deploy plan")
@@ -227,13 +227,14 @@ func (p *Planner) defaultRoleForInstallWorkflow(
 	return operationroles.DefaultRoleForWorkflowType(appCfg, flw.Type)
 }
 
+// getAuthForDeploy builds cloud auth from an already-resolved role selection.
+// The role is selected once per deploy/sync plan and threaded through so the
+// auth embedded in the runner plan can never diverge from the recorded role
+// selection, and the role-default activities only run once per plan.
 func (p *Planner) getAuthForDeploy(
 	ctx workflow.Context,
-	installDeploy *app.InstallDeploy,
-	compBuild *app.ComponentBuild,
-	appCfg *app.AppConfig,
+	roleSelection *operationroles.RoleSelection,
 	stack *app.InstallStack,
-	installState *state.State,
 	sessionName string,
 ) (*CloudAuth, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -241,25 +242,11 @@ func (p *Planner) getAuthForDeploy(
 		return nil, err
 	}
 
-	roleSelection, operation, err := p.getRoleForDeploy(
-		ctx,
-		l,
-		appCfg,
-		installDeploy,
-		compBuild,
-		stack,
-		installState,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	l.Info("selected role for component deploy plan",
+	l.Info("using selected role for component deploy auth",
 		zap.String("role_name", roleSelection.RoleName),
 		zap.String("role_arn", roleSelection.RoleARN),
 		zap.String("source", string(roleSelection.Source)),
-		zap.String("operation", string(operation)),
-		zap.String("deploy_type", string(installDeploy.Type)),
+		zap.String("session_name", sessionName),
 	)
 
 	return getCloudAuth(roleSelection, &stack.InstallStackOutputs, sessionName)
