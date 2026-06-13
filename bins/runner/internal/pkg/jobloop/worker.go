@@ -36,6 +36,11 @@ func (j *jobLoop) runWorker() {
 		l.Warn("job loop stopped due to error", zap.Error(err))
 	}
 
+	if j.drainer.IsDraining() {
+		l.Info("worker exited cleanly due to drain")
+		return
+	}
+
 	l.Warn("shutting down runner due to closing job loop")
 	os.Exit(155)
 	if err := j.shutdowner.Shutdown(fx.ExitCode(1)); err != nil {
@@ -44,15 +49,15 @@ func (j *jobLoop) runWorker() {
 }
 
 func (j *jobLoop) worker() error {
-	// useTail flips to false once the org returns 404 from the tail
-	// endpoint so we don't keep re-probing a known-disabled endpoint
-	// every iteration; falls back to the legacy poll for the lifetime
-	// of this process.
 	useTail := j.settings != nil && j.settings.LongPollJobs
 
 	for {
 		select {
-		case <-j.ctx.Done():
+		case <-j.pollCtx.Done():
+			close(j.jobDoneCh)
+			return nil
+		case <-j.drainer.DrainCh():
+			close(j.jobDoneCh)
 			return nil
 		default:
 		}
@@ -66,22 +71,18 @@ func (j *jobLoop) worker() error {
 			}
 			j.l.Error("unable to fetch jobs", zap.Error(err))
 
-			if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
-				return err
+			if err := smithytime.SleepWithContext(j.pollCtx, defaultJobPollBackoff); err != nil {
+				close(j.jobDoneCh)
+				return nil
 			}
 			continue
 		}
 
 		if len(jobs) < 1 {
-			// On the tail path the server has already held the
-			// request open up to `tailJobPollWait`, so reissue
-			// immediately instead of sleeping `starvedJobPollBackoff`
-			// and reintroducing the 5s pickup latency we just
-			// removed. The legacy GetJobs path keeps the old
-			// backoff to avoid hammering the API.
 			if !useTail {
-				if err := smithytime.SleepWithContext(j.ctx, starvedJobPollBackoff); err != nil {
-					return err
+				if err := smithytime.SleepWithContext(j.pollCtx, starvedJobPollBackoff); err != nil {
+					close(j.jobDoneCh)
+					return nil
 				}
 			}
 			continue
@@ -89,16 +90,14 @@ func (j *jobLoop) worker() error {
 
 		job := jobs[0]
 
-		// execute the job
 		var pc panics.Catcher
 		pc.Try(func() {
-			err = j.executeJob(j.ctx, job)
+			err = j.executeJob(j.jobCtx, job)
 		})
 		if err != nil {
 			j.errRecorder.Record("job failed", err)
 		}
 
-		// if a panic is _recorded_ we do not restart the runner automatically.
 		if rc := pc.Recovered(); rc != nil {
 			j.l.Error("job panic",
 				zap.String("stack-trace", rc.String()),
@@ -107,9 +106,17 @@ func (j *jobLoop) worker() error {
 			)
 		}
 
-		// iterate for the next loop
-		if err := smithytime.SleepWithContext(j.ctx, defaultJobPollBackoff); err != nil {
-			return err
+		select {
+		case <-j.drainer.DrainCh():
+			j.l.Info("drain requested, exiting worker after completing job")
+			close(j.jobDoneCh)
+			return nil
+		default:
+		}
+
+		if err := smithytime.SleepWithContext(j.pollCtx, defaultJobPollBackoff); err != nil {
+			close(j.jobDoneCh)
+			return nil
 		}
 	}
 }
@@ -120,12 +127,12 @@ func (j *jobLoop) worker() error {
 // open. The legacy path keeps the original 5s ceiling.
 func (j *jobLoop) fetchAvailableJobs(useTail bool) ([]*models.AppRunnerJob, error) {
 	if useTail {
-		tctx, cancel := context.WithTimeoutCause(j.ctx, tailJobPollTimeout, errors.Wrapf(context.DeadlineExceeded, "tail poll for jobs in group %s timed out", j.jobGroup))
+		tctx, cancel := context.WithTimeoutCause(j.pollCtx, tailJobPollTimeout, errors.Wrapf(context.DeadlineExceeded, "tail poll for jobs in group %s timed out", j.jobGroup))
 		defer cancel()
 		return j.apiClient.TailJobs(tctx, j.jobGroup, tailJobPollWait)
 	}
 
-	tctx, cancel := context.WithTimeoutCause(j.ctx, 5*time.Second, errors.Wrapf(context.DeadlineExceeded, "polling for jobs in group %s timed out", j.jobGroup))
+	tctx, cancel := context.WithTimeoutCause(j.pollCtx, 5*time.Second, errors.Wrapf(context.DeadlineExceeded, "polling for jobs in group %s timed out", j.jobGroup))
 	defer cancel()
 	var lim *int64
 	return j.apiClient.GetJobs(tctx, j.jobGroup, j.jobStatus, lim)

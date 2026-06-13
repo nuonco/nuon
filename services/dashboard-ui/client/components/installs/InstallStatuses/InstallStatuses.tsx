@@ -332,37 +332,15 @@ export const InstallStatuses = ({
     )
 
   const allStatuses = [
-    install?.drifted_objects?.length ? 'warn' : 'active',
     stackStatus,
     effectiveStatus(install?.runner_status),
     effectiveStatus(install?.sandbox_status),
     effectiveStatus(install?.composite_component_status),
+    install?.drifted_objects?.length ? 'warn' : 'active',
   ]
   const { worstStatus } = getWorstStatusTheme(allStatuses)
 
   const compositeItems = [
-    ...(install?.drifted_objects
-      ? [
-          {
-            id: 'drift',
-            title: 'Drift detection',
-            subtitle: install.drifted_objects.length
-              ? 'Drift detected'
-              : 'No drift',
-            href: install.drifted_objects.length
-              ? `/${install.org_id}/installs/${install.id}/workflows`
-              : undefined,
-            leftContent: (
-              <Status
-                status={install.drifted_objects.length ? 'warn' : 'active'}
-                isWithoutText
-                variant="timeline"
-                iconSize={16}
-              />
-            ),
-          },
-        ]
-      : []),
     ...(stackStatus
       ? [
           {
@@ -431,15 +409,37 @@ export const InstallStatuses = ({
         />
       ),
     },
+    ...(install?.drifted_objects
+      ? [
+          {
+            id: 'drift',
+            title: 'Drift detection',
+            subtitle: install.drifted_objects.length
+              ? 'Drift detected'
+              : 'No drift',
+            href: install.drifted_objects.length
+              ? `/${install.org_id}/installs/${install.id}/workflows`
+              : undefined,
+            leftContent: (
+              <Status
+                status={install.drifted_objects.length ? 'warn' : 'active'}
+                isWithoutText
+                variant="timeline"
+                iconSize={16}
+              />
+            ),
+          },
+        ]
+      : []),
   ]
 
   const expandedContent = (
     <div className={cn('flex items-center flex-wrap gap-2', { 'hidden @5xl:flex': collapsible })}>
-      {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
       {stackContent ? wrap('Stack', stackContent) : null}
       {wrap('Runner', runnerContent)}
       {wrap('Sandbox', sandboxContent)}
       {wrap('Components', componentsContent)}
+      {install?.drifted_objects ? wrap('Drift detection', driftContent) : null}
     </div>
   )
 

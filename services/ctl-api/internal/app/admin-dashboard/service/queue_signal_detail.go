@@ -397,6 +397,31 @@ func (s *service) getWorkflowInfo(c *gin.Context, namespace, workflowID string) 
 	// Extract enqueued signals from EnqueueSignal activities
 	info.EnqueuedSignals = s.extractEnqueuedSignals(c, activities)
 
+	// Also extract enqueued signals from child workflows (e.g. ExecuteJob enqueues process_job)
+	seen := map[string]bool{}
+	for _, es := range info.EnqueuedSignals {
+		seen[es.QueueSignalID] = true
+	}
+	for _, cw := range childWorkflows {
+		if cw.WorkflowID == "" {
+			continue
+		}
+		cwNS := cw.Namespace
+		if cwNS == "" {
+			cwNS = namespace
+		}
+		childInfo := s.getWorkflowInfo(c, cwNS, cw.WorkflowID)
+		if childInfo == nil {
+			continue
+		}
+		for _, es := range childInfo.EnqueuedSignals {
+			if !seen[es.QueueSignalID] {
+				seen[es.QueueSignalID] = true
+				info.EnqueuedSignals = append(info.EnqueuedSignals, es)
+			}
+		}
+	}
+
 	// Build update executions by associating activities with updates based on event ID ranges
 	if len(updates) > 0 {
 		info.UpdateExecutions, info.OrphanActivities = s.buildUpdateExecutions(updates, activities, info.AwaitedSignals, info.EnqueuedSignals)
