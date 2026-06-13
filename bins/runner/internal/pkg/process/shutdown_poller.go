@@ -11,15 +11,18 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/bins/runner/internal"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	pkgshutdown "github.com/nuonco/nuon/bins/runner/internal/pkg/shutdown"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
+	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 
 const (
 	shutdownPollInterval = 5 * time.Second
 	forceExitTimeout     = 5 * time.Second
+	drainTimeout         = 30 * time.Minute
 )
 
 type ShutdownPollerParams struct {
@@ -33,6 +36,7 @@ type ShutdownPollerParams struct {
 	Settings   *settings.Settings
 	Shutdowner fx.Shutdowner
 	V          *validator.Validate
+	Drainer    *drain.Drainer
 
 	// only provided in the mng process; nil in the install/run process.
 	Health *health.Server `optional:"true"`
@@ -46,6 +50,7 @@ type ShutdownPoller struct {
 	shutdowner fx.Shutdowner
 	settings   *settings.Settings
 	health     *health.Server
+	drainer    *drain.Drainer
 
 	podShutdown *podShutdown
 
@@ -65,6 +70,7 @@ func NewShutdownPoller(params ShutdownPollerParams) *ShutdownPoller {
 		shutdowner:  params.Shutdowner,
 		settings:    params.Settings,
 		health:      params.Health,
+		drainer:     params.Drainer,
 		podShutdown: newPodShutdown(params.Cfg, params.Settings, params.L),
 		ctx:         ctx,
 		cancelFn:    cancelFn,
@@ -119,16 +125,43 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 		}
 
 		if shutdown.Status == "requested" {
-			sp.l.Info("shutdown requested, marking as completed and initiating graceful shutdown",
+			sp.l.Info("shutdown requested, entering drain mode",
 				zap.String("process_id", processID),
 				zap.String("shutdown_id", shutdown.ID),
 				zap.String("shutdown_type", string(shutdown.Type)),
 			)
 
+			status := "pending-shutdown"
+			if _, err := sp.apiClient.UpdateProcess(ctx, processID, &models.ServiceUpdateRunnerProcessRequest{
+				Status:            &status,
+				StatusDescription: "draining in-flight jobs before shutdown",
+			}); err != nil {
+				sp.l.Warn("unable to update process status to pending-shutdown", zap.Error(err))
+			}
+
+			sp.drainer.Drain()
+
+			if err := sp.drainer.Wait(drainTimeout); err != nil {
+				sp.l.Warn("drain timeout exceeded, proceeding with shutdown",
+					zap.Error(err),
+					zap.Duration("timeout", drainTimeout),
+				)
+			} else {
+				sp.l.Info("all in-flight jobs completed, proceeding with shutdown")
+			}
+
+			status = "shutting-down"
+			if _, err := sp.apiClient.UpdateProcess(ctx, processID, &models.ServiceUpdateRunnerProcessRequest{
+				Status:            &status,
+				StatusDescription: "all jobs drained, shutting down",
+			}); err != nil {
+				sp.l.Warn("unable to update process status to shutting-down", zap.Error(err))
+			}
+
 			if _, err := sp.apiClient.CompleteShutdown(ctx, processID, shutdown.ID); err != nil {
 				sp.l.Warn("unable to mark shutdown as completed", zap.Error(err))
 			} else {
-				sp.l.Info("shutdown completed successfully, initiating process exit",
+				sp.l.Info("shutdown marked as completed",
 					zap.String("process_id", processID),
 					zap.String("shutdown_id", shutdown.ID),
 				)
@@ -141,15 +174,12 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 			}
 
 			if sp.registrar.ProcessType() == "mng" {
-				// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
-				// Keep the VM on and let the Azure control plane replace it.
 				if sp.settings.Platform == "azure" {
 					if sp.health != nil {
 						sp.l.Info("mng process shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
 						sp.health.SetUnhealthy()
 						return
 					}
-					// should never happen: the mng process always wires the health server. fall back to poweroff.
 					sp.l.Error("mng process shutdown on azure but health server is nil; falling back to vm poweroff")
 					if err := pkgshutdown.Shutdown(ctx, sp.l, sp.v); err != nil {
 						sp.l.Warn("VM shutdown failed", zap.Error(err))
@@ -162,7 +192,6 @@ func (sp *ShutdownPoller) check(ctx context.Context) {
 				}
 			}
 
-			// Force-kill the process if fx.Shutdown doesn't complete in time.
 			go func() {
 				time.Sleep(forceExitTimeout)
 				sp.l.Warn("graceful shutdown did not complete in time, forcing exit",
