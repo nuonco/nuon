@@ -17,11 +17,29 @@ type HasOpenProcessShutdownResponse struct {
 // @temporal-gen-v2 activity
 // @by-field RunnerID
 func (a *Activities) HasOpenProcessShutdown(ctx context.Context, req HasOpenProcessShutdownRequest) (*HasOpenProcessShutdownResponse, error) {
-	var count int64
+	var processIDs []string
 	res := a.db.WithContext(ctx).
+		Model(&app.RunnerProcess{}).
+		Where(app.RunnerProcess{RunnerID: req.RunnerID}).
+		Where("composite_status->>'status' IN ?", []string{
+			string(app.RunnerProcessStatusActive),
+			string(app.RunnerProcessStatusPendingShutdown),
+			string(app.RunnerProcessStatusShuttingDown),
+		}).
+		Pluck("id", &processIDs)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	if len(processIDs) == 0 {
+		return &HasOpenProcessShutdownResponse{HasOpenShutdown: false}, nil
+	}
+
+	var count int64
+	res = a.db.WithContext(ctx).
 		Model(&app.RunnerProcessShutdown{}).
-		Joins("JOIN runner_processes ON runner_processes.id = runner_process_shutdowns.runner_process_id AND runner_processes.runner_id = ?", req.RunnerID).
-		Where("runner_process_shutdowns.composite_status->>'status' IN ?", []string{
+		Where("runner_process_id IN ?", processIDs).
+		Where("composite_status->>'status' IN ?", []string{
 			string(app.RunnerProcessShutdownStatusRequested),
 			string(app.RunnerProcessShutdownStatusInProgress),
 		}).

@@ -106,23 +106,23 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {
 	_, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{
 		RunnerID:    s.RunnerID,
-		ProcessType: string(app.RunnerProcessTypeOrg),
+		ProcessType: string(app.RunnerProcessTypeBuild),
 	})
 
-	tags["missing_org_process"] = "false"
+	tags["missing_build_process"] = "false"
 	if err != nil {
 		if isNotFound(err) {
-			l.Warn("org runner has no active org process",
+			l.Warn("org runner has no active build process",
 				zap.String("runner_id", s.RunnerID),
 			)
-			tags["missing_org_process"] = "true"
+			tags["missing_build_process"] = "true"
 			tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)
 			if runner.Status == app.RunnerStatusActive {
-				s.emitOfflineEvent(ctx, runner, "no active org process")
+				s.emitOfflineEvent(ctx, runner, "no active build process")
 			}
-			return s.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active org process", nil)
+			return s.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active build process", nil)
 		}
-		return errors.Wrap(err, "unable to get current org process")
+		return errors.Wrap(err, "unable to get current build process")
 	}
 
 	tmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)
