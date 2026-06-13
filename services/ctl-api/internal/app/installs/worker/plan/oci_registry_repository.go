@@ -119,8 +119,9 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			)
 			return nil, errors.Wrap(err, "unable to render gar repository url")
 		}
-		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE
-		cfg.Repository = repositoryStr + "/app"
+		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE.
+		// Per-component paths so resolved-version tags can't collide across components.
+		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", stateData)
 		if err != nil {
 			l.Error("error rendering registy url",
@@ -135,6 +136,29 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	return cfg, nil
+}
+
+// imageNameSegment reduces a component name to a valid docker image path
+// segment / tag prefix: lowercase, invalid runs collapsed to a single "-",
+// no leading or trailing separators.
+func imageNameSegment(componentName string) string {
+	var b strings.Builder
+	lastDash := false
+	for _, r := range strings.ToLower(componentName) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '.', r == '_':
+			b.WriteRune(r)
+			lastDash = false
+		case !lastDash:
+			b.WriteRune('-')
+			lastDash = true
+		}
+	}
+	segment := strings.Trim(b.String(), "._-")
+	if segment == "" {
+		return "app"
+	}
+	return segment
 }
 
 func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {

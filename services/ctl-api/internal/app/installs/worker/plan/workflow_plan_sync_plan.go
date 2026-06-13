@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
 
@@ -75,6 +76,11 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		dstTag = compBuild.ResolvedTag
 		if dstTag == "" {
 			dstTag = compBuild.ID
+		} else if dstCfg.RegistryType == configs.OCIRegistryTypeECR {
+			// ECR keeps one shared repo (repos must be pre-created), so
+			// prefix the tag to keep resolved versions from colliding
+			// across components.
+			dstTag = imageNameSegment(deploy.ComponentName) + "-" + dstTag
 		}
 	}
 
