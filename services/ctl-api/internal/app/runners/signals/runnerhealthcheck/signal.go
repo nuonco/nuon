@@ -238,12 +238,14 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 }
 
 func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description string, metadata map[string]any) error {
-	if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
-		RunnerID:          s.RunnerID,
-		Status:            status,
-		StatusDescription: description,
-	}); err != nil {
-		return errors.Wrap(err, "unable to update runner status")
+	if runner.Status != status {
+		if err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{
+			RunnerID:          s.RunnerID,
+			Status:            status,
+			StatusDescription: description,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update runner status")
+		}
 	}
 
 	statusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{
