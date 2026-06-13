@@ -138,15 +138,15 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	return cfg, nil
 }
 
-// imageNameSegment reduces a component name to a valid docker image path
-// segment / tag prefix: lowercase, invalid runs collapsed to a single "-",
-// no leading or trailing separators.
+// imageNameSegment reduces a component name to a docker image path segment /
+// tag prefix: lowercase, every run of non-alphanumerics (including "_")
+// collapsed to a single "-", no leading or trailing separator.
 func imageNameSegment(componentName string) string {
 	var b strings.Builder
 	lastDash := false
 	for _, r := range strings.ToLower(componentName) {
 		switch {
-		case r >= 'a' && r <= 'z', r >= '0' && r <= '9', r == '.', r == '_':
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
 			b.WriteRune(r)
 			lastDash = false
 		case !lastDash:
@@ -154,7 +154,7 @@ func imageNameSegment(componentName string) string {
 			lastDash = true
 		}
 	}
-	segment := strings.Trim(b.String(), "._-")
+	segment := strings.Trim(b.String(), "-")
 	if segment == "" {
 		return "app"
 	}
