@@ -84,6 +84,7 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		app.WorkflowTypeAppBranchesRun,
 		map[string]string{
 			"run_id":        run.ID,
+			"app_id":        branch.AppID,
 			"config_id":     appBranchConfigID,
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         "false",

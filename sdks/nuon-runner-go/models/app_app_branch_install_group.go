@@ -51,12 +51,6 @@ type AppAppBranchInstallGroup struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
-	// requires approval
-	RequiresApproval bool `json:"requires_approval,omitempty"`
-
-	// rollback on failure
-	RollbackOnFailure bool `json:"rollback_on_failure,omitempty"`
-
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 

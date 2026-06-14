@@ -36,9 +36,7 @@ type AppBranchInstallGroup struct {
 	// Mutually exclusive with InstallIDs — set one or the other, not both.
 	LabelSelector *labels.Selector `json:"label_selector,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"label_selector,omitzero,omitempty"`
 
-	RequiresApproval  bool `json:"requires_approval,omitzero" gorm:"default:false" temporaljson:"requires_approval,omitzero,omitempty"`
-	RollbackOnFailure bool `json:"rollback_on_failure,omitzero" gorm:"default:true" temporaljson:"rollback_on_failure,omitzero,omitempty"`
-	MaxParallel       int  `json:"max_parallel,omitzero" gorm:"default:5" temporaljson:"max_parallel,omitzero,omitempty"`
+	MaxParallel int `json:"max_parallel,omitzero" gorm:"default:5" temporaljson:"max_parallel,omitzero,omitempty"`
 
 	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
 	UseForPreviews bool `json:"use_for_previews,omitzero" gorm:"default:false" temporaljson:"use_for_previews,omitzero,omitempty"`

@@ -22,6 +22,8 @@ const buildBatchSize = 5
 type buildEntry struct {
 	ComponentID   string  `json:"component_id"`
 	ComponentName string  `json:"component_name"`
+	ComponentType string  `json:"component_type,omitempty"`
+	IsNew         bool    `json:"is_new,omitempty"`
 	Status        string  `json:"status"`
 	Skipped       bool    `json:"skipped,omitempty"`
 	CacheStatus   string  `json:"cache_status,omitempty"` // "cache hit", "partial cache", "no cache"
@@ -102,23 +104,28 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string) error {
 	componentIDs := appConfig.ComponentIDs
 
-	// Resolve component names up front
-	componentNames := make(map[string]string, len(componentIDs))
+	type componentInfo struct {
+		Name string
+		Type string
+	}
+	components := make(map[string]componentInfo, len(componentIDs))
 	for _, componentID := range componentIDs {
 		cmp, err := activities.AwaitGetComponentByIDByComponentID(ctx, componentID)
 		if err == nil {
-			componentNames[componentID] = cmp.Name
+			components[componentID] = componentInfo{Name: cmp.Name, Type: string(cmp.Type)}
 		}
 	}
 
-	// Check which components actually need building (build diffing)
 	builds := make([]buildEntry, 0, len(componentIDs))
 	var toBuild []string
 	for _, componentID := range componentIDs {
-		name := componentNames[componentID]
+		info := components[componentID]
+		name := info.Name
 		if name == "" {
 			name = componentID
 		}
+
+		isNew := previousAppConfigID == ""
 
 		if previousAppConfigID != "" {
 			check, err := activities.AwaitCheckBuildNeeded(ctx, &activities.CheckBuildNeededInput{
@@ -133,11 +140,16 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 				builds = append(builds, buildEntry{
 					ComponentID:   componentID,
 					ComponentName: name,
+					ComponentType: info.Type,
+					IsNew:         false,
 					Status:        "skipped",
 					Skipped:       true,
 					CacheStatus:   "cache hit",
 				})
 				continue
+			}
+			if err != nil {
+				isNew = true
 			}
 		}
 
@@ -148,6 +160,8 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		builds = append(builds, buildEntry{
 			ComponentID:   componentID,
 			ComponentName: name,
+			ComponentType: info.Type,
+			IsNew:         isNew,
 			Status:        "pending",
 			CacheStatus:   cacheStatus,
 		})
@@ -196,8 +210,9 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 				SignalOwnerID:   componentID,
 				SignalOwnerType: "components",
 				Signal: &queuebuild.Signal{
-					ComponentID: componentID,
-					AppConfigID: appConfigID,
+					ComponentID:    componentID,
+					AppConfigID:    appConfigID,
+					AppBranchRunID: s.RunID,
 				},
 				Callback: cb,
 			})
@@ -253,6 +268,8 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 		entry := map[string]any{
 			"component_id":   b.ComponentID,
 			"component_name": b.ComponentName,
+			"component_type": b.ComponentType,
+			"is_new":         b.IsNew,
 			"status":         b.Status,
 			"skipped":        b.Skipped,
 			"cache_status":   b.CacheStatus,

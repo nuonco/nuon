@@ -386,33 +386,31 @@ func (c *cli) branchesCmd() *cobra.Command {
 		force    bool
 	)
 	triggerCmd := &cobra.Command{
-		Use:   "trigger",
-		Short: "Trigger a branch run",
+		Use:         "trigger",
+		Short:       "Trigger a branch run",
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.TriggerBranchRun(cmd.Context(), appID, branchID, planOnly, force, PrintJSON)
 		}),
 	}
 	triggerCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
-	triggerCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID of the branch")
+	triggerCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
 	triggerCmd.Flags().BoolVar(&planOnly, "preview", false, "Plan-only preview mode (no apply)")
 	triggerCmd.Flags().BoolVar(&force, "force", false, "Force rebuild all components")
-	triggerCmd.MarkFlagRequired("app-id")
-	triggerCmd.MarkFlagRequired("branch-id")
 	branchesCmd.AddCommand(triggerCmd)
 
 	runsCmd := &cobra.Command{
-		Use:   "runs",
-		Short: "List branch runs",
+		Use:         "runs",
+		Short:       "List branch runs and monitor a selected workflow",
+		Annotations: tuiAnnotation(TUIAltScreen),
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.ListBranchRuns(cmd.Context(), appID, branchID, PrintJSON)
 		}),
 	}
 	runsCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
-	runsCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID of the branch")
-	runsCmd.MarkFlagRequired("app-id")
-	runsCmd.MarkFlagRequired("branch-id")
+	runsCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
 	branchesCmd.AddCommand(runsCmd)
 
 	return branchesCmd

@@ -152,26 +152,6 @@ export const GroupEditor = ({
         </div>
 
         <CheckboxInput
-          id={`group-requires-approval-${group.id}`}
-          checked={group.requires_approval ?? false}
-          onChange={(e) =>
-            onUpdate({ requires_approval: e.target.checked })
-          }
-          disabled={disabled}
-          labelProps={{ labelText: 'Requires approval' }}
-        />
-
-        <CheckboxInput
-          id={`group-rollback-${group.id}`}
-          checked={group.rollback_on_failure ?? false}
-          onChange={(e) =>
-            onUpdate({ rollback_on_failure: e.target.checked })
-          }
-          disabled={disabled}
-          labelProps={{ labelText: 'Rollback on failure' }}
-        />
-
-        <CheckboxInput
           id={`group-preview-${group.id}`}
           checked={group.use_for_previews ?? false}
           onChange={(e) =>

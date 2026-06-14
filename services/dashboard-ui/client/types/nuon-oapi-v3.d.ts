@@ -3111,8 +3111,6 @@ export interface components {
       name?: string;
       order?: number;
       org_id?: string;
-      requires_approval?: boolean;
-      rollback_on_failure?: boolean;
       updated_at?: string;
       /** @description UseForPreviews marks this group for plan-only preview runs (e.g., PR previews). */
       use_for_previews?: boolean;
@@ -7269,8 +7267,6 @@ export interface components {
       max_parallel?: number;
       name: string;
       order?: number;
-      requires_approval?: boolean;
-      rollback_on_failure?: boolean;
       use_for_previews?: boolean;
     };
     "service.InstallPermissionsRoleStatus": {

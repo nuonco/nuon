@@ -12,7 +12,5 @@ export interface IInstallGroup {
   selection_mode: InstallSelectionMode
   order: number
   max_parallel: number
-  requires_approval: boolean
-  rollback_on_failure: boolean
   use_for_previews: boolean
 }

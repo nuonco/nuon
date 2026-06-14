@@ -41,12 +41,6 @@ type ServiceInstallGroupRequest struct {
 	// Minimum: 0
 	Order *int64 `json:"order,omitempty"`
 
-	// requires approval
-	RequiresApproval bool `json:"requires_approval,omitempty"`
-
-	// rollback on failure
-	RollbackOnFailure bool `json:"rollback_on_failure,omitempty"`
-
 	// use for previews
 	UseForPreviews bool `json:"use_for_previews,omitempty"`
 }

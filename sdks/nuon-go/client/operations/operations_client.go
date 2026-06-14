@@ -238,6 +238,8 @@ type ClientService interface {
 
 	CreateInstallActionWorkflowRun(params *CreateInstallActionWorkflowRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallActionWorkflowRunCreated, error)
 
+	CreateInstallAppConfigUpdate(params *CreateInstallAppConfigUpdateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallAppConfigUpdateCreated, error)
+
 	CreateInstallComponentDeploy(params *CreateInstallComponentDeployParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallComponentDeployCreated, error)
 
 	CreateInstallConfig(params *CreateInstallConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallConfigCreated, error)
@@ -376,6 +378,10 @@ type ClientService interface {
 
 	GetAppBranchLatestConfig(params *GetAppBranchLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchLatestConfigOK, error)
 
+	GetAppBranchRunBuilds(params *GetAppBranchRunBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunBuildsOK, error)
+
+	GetAppBranchRunInstallGroups(params *GetAppBranchRunInstallGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunInstallGroupsOK, error)
+
 	GetAppBranchRuns(params *GetAppBranchRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunsOK, error)
 
 	GetAppBranches(params *GetAppBranchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchesOK, error)
@@ -403,6 +409,8 @@ type ClientService interface {
 	GetAppComponents(params *GetAppComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppComponentsOK, error)
 
 	GetAppConfig(params *GetAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigOK, error)
+
+	GetAppConfigDiff(params *GetAppConfigDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigDiffOK, error)
 
 	GetAppConfigGraph(params *GetAppConfigGraphParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigGraphOK, error)
 
@@ -3770,6 +3778,52 @@ func (a *Client) CreateInstallActionWorkflowRun(params *CreateInstallActionWorkf
 }
 
 /*
+CreateInstallAppConfigUpdate triggers an app config update for an install
+
+Creates a workflow to diff and deploy a new app config to an install.
+*/
+func (a *Client) CreateInstallAppConfigUpdate(params *CreateInstallAppConfigUpdateParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateInstallAppConfigUpdateCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateInstallAppConfigUpdateParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateInstallAppConfigUpdate",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/app-config-updates",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateInstallAppConfigUpdateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateInstallAppConfigUpdateCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateInstallAppConfigUpdate: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 CreateInstallComponentDeploy deploys a build to an install
 
 Create a new deployment for an install.
@@ -6978,6 +7032,98 @@ func (a *Client) GetAppBranchLatestConfig(params *GetAppBranchLatestConfigParams
 }
 
 /*
+GetAppBranchRunBuilds gets builds for an app branch run
+
+Returns component builds triggered by a specific app branch run
+*/
+func (a *Client) GetAppBranchRunBuilds(params *GetAppBranchRunBuildsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunBuildsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBranchRunBuildsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBranchRunBuilds",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/builds",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBranchRunBuildsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBranchRunBuildsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBranchRunBuilds: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppBranchRunInstallGroups gets install group deployments for an app branch run
+
+Returns install config updates triggered by a specific app branch run, grouped by install group
+*/
+func (a *Client) GetAppBranchRunInstallGroups(params *GetAppBranchRunInstallGroupsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppBranchRunInstallGroupsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppBranchRunInstallGroupsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppBranchRunInstallGroups",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-groups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppBranchRunInstallGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppBranchRunInstallGroupsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppBranchRunInstallGroups: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetAppBranchRuns gets app branch workflow runs
 
 Returns workflow runs for an app branch ordered by creation time (descending)
@@ -7618,6 +7764,52 @@ func (a *Client) GetAppConfig(params *GetAppConfigParams, authInfo runtime.Clien
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetAppConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetAppConfigDiff diffs two app configs
+
+Compares a new app config against an old one and returns a hierarchical diff.
+*/
+func (a *Client) GetAppConfigDiff(params *GetAppConfigDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppConfigDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppConfigDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppConfigDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/configs/{config_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppConfigDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppConfigDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppConfigDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

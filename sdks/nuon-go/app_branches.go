@@ -112,3 +112,31 @@ func (c *client) GetAppBranchRuns(ctx context.Context, appID, appBranchID string
 
 	return resp.Payload, nil
 }
+
+func (c *client) GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppComponentBuild, error) {
+	resp, err := c.genClient.Operations.GetAppBranchRunBuilds(&operations.GetAppBranchRunBuildsParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+		RunID:       runID,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallConfigUpdate, error) {
+	resp, err := c.genClient.Operations.GetAppBranchRunInstallGroups(&operations.GetAppBranchRunInstallGroupsParams{
+		Context:     ctx,
+		AppID:       appID,
+		AppBranchID: appBranchID,
+		RunID:       runID,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}

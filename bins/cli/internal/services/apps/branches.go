@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
+	"github.com/nuonco/nuon/bins/cli/internal/ui/v3/workflow"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
@@ -67,7 +69,17 @@ func (s *Service) CreateBranch(ctx context.Context, appID, name string, asJSON b
 	return nil
 }
 
-func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, planOnly, force bool, asJSON bool) error {
+func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, planOnly, force, asJSON bool) error {
+	appID, err := s.resolveAppID(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	branchID, err = s.selectBranchID(ctx, appID, branchID)
+	if err != nil {
+		return err
+	}
+
 	run, err := s.api.TriggerAppBranchRun(ctx, appID, branchID, &models.ServiceTriggerAppBranchRunRequest{
 		Force:    force,
 		PlanOnly: planOnly,
@@ -81,16 +93,29 @@ func (s *Service) TriggerBranchRun(ctx context.Context, appID, branchID string, 
 		return nil
 	}
 
-	fmt.Printf("Triggered run %s (workflow: %s)\n", run.ID, run.WorkflowID)
+	if run.WorkflowID == "" {
+		fmt.Printf("Triggered run %s\n", run.ID)
+		return nil
+	}
+
+	workflow.WorkflowApp(ctx, s.cfg, s.api, "", run.WorkflowID, false)
 	return nil
 }
 
 func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, asJSON bool) error {
-	view := ui.NewListView()
+	appID, err := s.resolveAppID(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	branchID, err = s.selectBranchID(ctx, appID, branchID)
+	if err != nil {
+		return err
+	}
 
 	workflows, err := s.api.GetAppBranchRuns(ctx, appID, branchID)
 	if err != nil {
-		return view.Error(err)
+		return err
 	}
 
 	if asJSON {
@@ -98,21 +123,68 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 		return nil
 	}
 
-	data := [][]string{
-		{"ID", "TYPE", "STATUS", "CREATED"},
+	if len(workflows) == 0 {
+		fmt.Println("No runs found for this branch.")
+		return nil
 	}
-	for _, wf := range workflows {
+
+	options := make([]bubbles.WorkflowOption, len(workflows))
+	for i, wf := range workflows {
 		status := ""
 		if wf.Status != nil {
 			status = string(wf.Status.Status)
 		}
-		data = append(data, []string{
-			wf.ID,
-			string(wf.Type),
-			status,
-			wf.CreatedAt,
-		})
+		options[i] = bubbles.WorkflowOption{
+			ID:     wf.ID,
+			Name:   wf.CreatedAt,
+			Type:   string(wf.Type),
+			Status: status,
+		}
 	}
-	view.Render(data)
+
+	selectedID, err := bubbles.SelectWorkflow(options, s.cfg.Interactive)
+	if err != nil {
+		return err
+	}
+
+	workflow.WorkflowApp(ctx, s.cfg, s.api, "", selectedID, false)
 	return nil
+}
+
+func (s *Service) selectBranchID(ctx context.Context, appID, branchID string) (string, error) {
+	if branchID != "" {
+		return s.resolveAppBranchID(ctx, appID, branchID)
+	}
+
+	if !s.cfg.Interactive {
+		return "", fmt.Errorf("interactive terminal required for branch selection; use --branch-id flag to specify directly")
+	}
+
+	branches, err := s.api.GetAppBranches(ctx, appID)
+	if err != nil {
+		return "", fmt.Errorf("unable to list app branches: %w", err)
+	}
+	if len(branches) == 0 {
+		return "", fmt.Errorf("no branches found for this app; create one with: nuon apps branches create")
+	}
+
+	options := make([]bubbles.BranchOption, len(branches))
+	for i, b := range branches {
+		options[i] = bubbles.BranchOption{ID: b.ID, Name: b.Name}
+	}
+
+	return bubbles.SelectBranch(options, s.cfg.Interactive)
+}
+
+func (s *Service) resolveAppID(ctx context.Context, appID string) (string, error) {
+	if appID != "" {
+		return appID, nil
+	}
+
+	configured := s.getAppID()
+	if configured != "" {
+		return configured, nil
+	}
+
+	return "", fmt.Errorf("no app specified; use --app-id or select an app with: nuon config app")
 }

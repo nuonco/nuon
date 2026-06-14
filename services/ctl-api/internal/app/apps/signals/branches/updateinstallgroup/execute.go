@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 type enqueuedInstall struct {
@@ -39,6 +40,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err != nil {
 		return err
 	}
+
+	s.updateInstallMetadata(ctx, enqueued, nil)
 
 	// Wait for all install workflows to complete.
 	return s.awaitInstallUpdates(ctx, enqueued)
@@ -133,12 +136,18 @@ func (s *Signal) enqueueInstallUpdates(
 func (s *Signal) awaitInstallUpdates(ctx workflow.Context, enqueued []enqueuedInstall) error {
 	logger := workflow.GetLogger(ctx)
 
+	results := make(map[string]string, len(enqueued))
 	var errs []error
 	for _, e := range enqueued {
 		if _, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout); err != nil {
 			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
+			results[e.installID] = "error"
+			s.updateInstallMetadata(ctx, enqueued, results)
 			continue
 		}
+
+		results[e.installID] = "success"
+		s.updateInstallMetadata(ctx, enqueued, results)
 
 		logger.Info("install config update completed",
 			"install_id", e.installID,
@@ -151,4 +160,58 @@ func (s *Signal) awaitInstallUpdates(ctx workflow.Context, enqueued []enqueuedIn
 	}
 
 	return nil
+}
+
+func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueuedInstall, results map[string]string) {
+	if s.StepID == "" {
+		return
+	}
+
+	installs := make([]any, 0, len(enqueued))
+	for _, e := range enqueued {
+		status := "in-progress"
+		if results != nil {
+			if s, ok := results[e.installID]; ok {
+				status = s
+			}
+		}
+
+		installs = append(installs, map[string]any{
+			"install_id":  e.installID,
+			"workflow_id": e.workflowID,
+			"status":      status,
+		})
+	}
+
+	completed := 0
+	failed := 0
+	if results != nil {
+		for _, s := range results {
+			switch s {
+			case "success":
+				completed++
+			case "error":
+				failed++
+			}
+		}
+	}
+
+	desc := fmt.Sprintf("deploying to %d installs", len(enqueued))
+	if completed > 0 || failed > 0 {
+		desc = fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
+		if failed > 0 {
+			desc += fmt.Sprintf(" (%d failed)", failed)
+		}
+	}
+
+	_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+		ID: s.StepID,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: desc,
+			Metadata: map[string]any{
+				"installs": installs,
+			},
+		},
+	})
 }

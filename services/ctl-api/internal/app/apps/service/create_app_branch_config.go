@@ -16,13 +16,11 @@ import (
 )
 
 type InstallGroupRequest struct {
-	Name              string   `json:"name" validate:"required,min=1"`
-	Order             int      `json:"order" validate:"min=0"`
-	InstallIDs        []string `json:"install_ids"`
-	RequiresApproval  bool     `json:"requires_approval"`
-	RollbackOnFailure bool     `json:"rollback_on_failure"`
-	MaxParallel       int      `json:"max_parallel" validate:"min=1"`
-	UseForPreviews    bool     `json:"use_for_previews"`
+	Name           string   `json:"name" validate:"required,min=1"`
+	Order          int      `json:"order" validate:"min=0"`
+	InstallIDs     []string `json:"install_ids"`
+	MaxParallel    int      `json:"max_parallel" validate:"min=1"`
+	UseForPreviews bool     `json:"use_for_previews"`
 
 	// LabelSelector dynamically resolves installs at deploy time.
 	// Mutually exclusive with InstallIDs.
@@ -186,14 +184,12 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 			maxParallel = 5 // default
 		}
 		installGroups[i] = app.AppBranchInstallGroup{
-			Name:              g.Name,
-			Order:             g.Order,
-			InstallIDs:        g.InstallIDs,
-			LabelSelector:     g.LabelSelector,
-			RequiresApproval:  g.RequiresApproval,
-			RollbackOnFailure: g.RollbackOnFailure,
-			MaxParallel:       maxParallel,
-			UseForPreviews:    g.UseForPreviews,
+			Name:           g.Name,
+			Order:          g.Order,
+			InstallIDs:     g.InstallIDs,
+			LabelSelector:  g.LabelSelector,
+			MaxParallel:    maxParallel,
+			UseForPreviews: g.UseForPreviews,
 		}
 	}
 
