@@ -302,6 +302,20 @@ export interface paths {
      */
     post: operations["TriggerAppBranchRun"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/builds": {
+    /**
+     * get builds for an app branch run
+     * @description Returns component builds triggered by a specific app branch run
+     */
+    get: operations["GetAppBranchRunBuilds"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-groups": {
+    /**
+     * get install group deployments for an app branch run
+     * @description Returns install config updates triggered by a specific app branch run, grouped by install group
+     */
+    get: operations["GetAppBranchRunInstallGroups"];
+  };
   "/v1/apps/{app_id}/break-glass-configs": {
     /** @description Create a break glass config for an app. */
     post: operations["CreateAppBreakGlassConfig"];
@@ -3556,6 +3570,7 @@ export interface components {
       var_name?: string;
     };
     "app.ComponentBuild": {
+      app_branch_run_id?: string;
       /** @description checksum of our intermediate component config */
       checksum?: string;
       component_config_connection?: components["schemas"]["app.ComponentConfigConnection"];
@@ -10205,6 +10220,114 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppBranchRun"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get builds for an app branch run
+   * @description Returns component builds triggered by a specific app branch run
+   */
+  GetAppBranchRunBuilds: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get install group deployments for an app branch run
+   * @description Returns install config updates triggered by a specific app branch run, grouped by install group
+   */
+  GetAppBranchRunInstallGroups: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfigUpdate"][];
         };
       };
       /** @description Bad Request */

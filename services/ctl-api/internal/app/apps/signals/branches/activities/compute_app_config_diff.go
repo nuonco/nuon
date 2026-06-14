@@ -102,7 +102,10 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 }
 
 // collectEntries recursively walks a diff subtree and collects leaf entries.
-func collectEntries(node *diff.Diff, parentKey string, section *ConfigDiffSection) {
+// itemName is the top-level item name (e.g., "ctl-api" for a component) that
+// persists through the entire recursion so leaf entries are attributed to the
+// right parent regardless of nesting depth.
+func collectEntries(node *diff.Diff, itemName string, section *ConfigDiffSection) {
 	if node == nil {
 		return
 	}
@@ -112,8 +115,8 @@ func collectEntries(node *diff.Diff, parentKey string, section *ConfigDiffSectio
 			Op:   string(node.Diff.Op),
 			Name: node.Key,
 		}
-		if parentKey != "" {
-			entry.Name = parentKey
+		if itemName != "" {
+			entry.Name = itemName
 			entry.Description = node.Key + ": " + node.Diff.Diff
 		} else {
 			entry.Description = node.Diff.Diff
@@ -132,42 +135,20 @@ func collectEntries(node *diff.Diff, parentKey string, section *ConfigDiffSectio
 		return
 	}
 
-	// For named items (e.g., a component named "api-service"), collect their child diffs
-	if len(node.Children) > 0 {
-		// Check if this is a named item with leaf diffs inside
-		hasLeafChildren := false
-		for _, c := range node.Children {
-			if c.Diff != nil && c.Diff.Op != diff.OpNoop {
-				hasLeafChildren = true
-				break
-			}
-		}
+	if len(node.Children) == 0 {
+		return
+	}
 
-		if hasLeafChildren {
-			// Summarize the item's changes into a single entry per change
-			for _, c := range node.Children {
-				if c.Diff != nil && c.Diff.Op != diff.OpNoop {
-					entry := ConfigDiffEntry{
-						Op:          string(c.Diff.Op),
-						Name:        node.Key,
-						Description: c.Diff.Diff,
-					}
-					switch c.Diff.Op {
-					case diff.OpAdd:
-						section.Additions++
-					case diff.OpRemove:
-						section.Removals++
-					case diff.OpChange:
-						section.Changed++
-					}
-					section.Entries = append(section.Entries, entry)
-				}
-			}
-		} else {
-			for _, c := range node.Children {
-				collectEntries(c, node.Key, section)
-			}
-		}
+	// Collect all leaf diffs from the subtree, preserving itemName through
+	// the recursion so deeply nested changes (e.g., step env vars) are still
+	// attributed to the top-level item (e.g., the action name).
+	resolvedName := itemName
+	if resolvedName == "" {
+		resolvedName = node.Key
+	}
+
+	for _, c := range node.Children {
+		collectEntries(c, resolvedName, section)
 	}
 }
 

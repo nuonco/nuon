@@ -672,11 +672,70 @@ func diffHelmChart(old, new *HelmChartComponentConfig) []*diff.Diff {
 		diffs = append(diffs, d)
 	}
 
+	if d := diffHelmValuesFiles(old.ValuesFiles, new.ValuesFiles); d != nil {
+		diffs = append(diffs, d)
+	}
+
 	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
 	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
 	diffs = append(diffs, diffHelmRepo(old.HelmRepo, new.HelmRepo)...)
 
 	return diffs
+}
+
+func diffHelmValuesFiles(old, new []HelmValuesFile) *diff.Diff {
+	if len(old) == 0 && len(new) == 0 {
+		return nil
+	}
+
+	oldByPath := make(map[string]HelmValuesFile, len(old))
+	for _, f := range old {
+		key := f.Path
+		if key == "" {
+			key = f.Source
+		}
+		oldByPath[key] = f
+	}
+
+	var children []*diff.Diff
+	seen := make(map[string]bool)
+
+	for _, f := range new {
+		key := f.Path
+		if key == "" {
+			key = f.Source
+		}
+		seen[key] = true
+
+		of := oldByPath[key]
+		if of.Contents != f.Contents {
+			op := diff.OpChange
+			label := "modified"
+			if of.Contents == "" {
+				op = diff.OpAdd
+				label = "added"
+			}
+			children = append(children, diff.NewDiff(diff.WithKey(key), withFixedDiff(label, op)))
+		}
+	}
+
+	for key, f := range oldByPath {
+		if !seen[key] {
+			_ = f
+			children = append(children, diff.NewDiff(diff.WithKey(key), withFixedDiff("removed", diff.OpRemove)))
+		}
+	}
+
+	if len(children) == 0 {
+		return nil
+	}
+	return diff.NewDiff(diff.WithKey("values_files"), diff.WithChildren(children...))
+}
+
+func withFixedDiff(label string, op diff.Op) diff.DiffOption {
+	return func(dt *diff.Diff) {
+		dt.Diff = &diff.DiffKey{Op: op, Diff: label}
+	}
 }
 
 func diffTerraformModule(old, new *TerraformModuleComponentConfig) []*diff.Diff {
