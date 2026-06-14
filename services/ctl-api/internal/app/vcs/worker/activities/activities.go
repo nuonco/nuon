@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -27,6 +28,7 @@ type Params struct {
 	DB          *gorm.DB `name:"psql"`
 	GhClient    GithubClient
 	QueueClient *queueclient.Client
+	BlobService blobstore.Service
 }
 
 type Activities struct {
@@ -34,6 +36,7 @@ type Activities struct {
 	db          *gorm.DB
 	ghClient    GithubClient
 	queueClient *queueclient.Client
+	blobSvc     blobstore.Service
 }
 
 func New(params Params) *Activities {
@@ -42,5 +45,6 @@ func New(params Params) *Activities {
 		db:          params.DB,
 		ghClient:    params.GhClient,
 		queueClient: params.QueueClient,
+		blobSvc:     params.BlobService,
 	}
 }

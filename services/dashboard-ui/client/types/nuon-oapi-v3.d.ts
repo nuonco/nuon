@@ -309,6 +309,20 @@ export interface paths {
      */
     get: operations["GetAppBranchRunBuilds"];
   };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-group-runs": {
+    /**
+     * list install group runs for an app branch run
+     * @description Returns all install group runs for a specific app branch run
+     */
+    get: operations["GetInstallGroupRuns"];
+  };
+  "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-group-runs/{install_group_run_id}": {
+    /**
+     * get a specific install group run
+     * @description Returns a single install group run with full details
+     */
+    get: operations["GetInstallGroupRun"];
+  };
   "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-groups": {
     /**
      * get install group deployments for an app branch run
@@ -2729,6 +2743,18 @@ export interface paths {
       };
     };
   };
+  "/v1/vcs/connections/{connection_id}/webhook-subscription": {
+    /**
+     * returns the webhook subscription for a vcs connection
+     * @description Returns the webhook subscription associated with a VCS connection.
+     */
+    get: operations["GetVCSConnectionWebhookSubscription"];
+    /**
+     * creates a webhook subscription for a vcs connection
+     * @description Creates a webhook subscription for a VCS connection. This enqueues a signal that will register a GitHub webhook for receiving push and pull request events.
+     */
+    post: operations["CreateVCSConnectionWebhookSubscription"];
+  };
   "/v1/vcs/webhooks/{subscription_id}/events": {
     /**
      * Write a VCS webhook event (shared per subscription)
@@ -3121,7 +3147,6 @@ export interface components {
        * Mutually exclusive with InstallIDs — set one or the other, not both.
        */
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
-      max_parallel?: number;
       name?: string;
       order?: number;
       org_id?: string;
@@ -4154,6 +4179,29 @@ export interface components {
         [key: string]: string;
       };
       updated_at?: string;
+    };
+    "app.InstallGroupRun": {
+      app_branch_run_id?: string;
+      completed_at?: string;
+      completed_installs?: number;
+      created_at?: string;
+      created_by_id?: string;
+      failed_installs?: number;
+      id?: string;
+      install_group?: components["schemas"]["app.AppBranchInstallGroup"];
+      install_group_id?: string;
+      install_group_name?: string;
+      installs?: components["schemas"]["app.InstallGroupRunInstall"][];
+      org_id?: string;
+      started_at?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      total_installs?: number;
+      updated_at?: string;
+    };
+    "app.InstallGroupRunInstall": {
+      install_id?: string;
+      status?: string;
+      workflow_id?: string;
     };
     "app.InstallInputs": {
       app_input_config_id?: string;
@@ -5452,6 +5500,17 @@ export interface components {
       sha?: string;
       updated_at?: string;
       vcs_connection_id?: string;
+    };
+    "app.VCSWebhookSubscription": {
+      created_at?: string;
+      created_by_id?: string;
+      github_hook_id?: number;
+      github_install_id?: string;
+      id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      vcs_connection_id?: string;
+      webhook_url?: string;
     };
     "app.Waitlist": {
       created_at?: string;
@@ -7279,7 +7338,6 @@ export interface components {
        * Mutually exclusive with InstallIDs.
        */
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
-      max_parallel?: number;
       name: string;
       order?: number;
       use_for_previews?: boolean;
@@ -10274,6 +10332,116 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.ComponentBuild"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list install group runs for an app branch run
+   * @description Returns all install group runs for a specific app branch run
+   */
+  GetInstallGroupRuns: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID */
+        run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallGroupRun"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get a specific install group run
+   * @description Returns a single install group run with full details
+   */
+  GetInstallGroupRun: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+        /** @description app branch run ID */
+        run_id: string;
+        /** @description install group run ID */
+        install_group_run_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallGroupRun"];
         };
       };
       /** @description Bad Request */
@@ -27544,6 +27712,104 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["service.VCSConnectionStatusResponse"];
         };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * returns the webhook subscription for a vcs connection
+   * @description Returns the webhook subscription associated with a VCS connection.
+   */
+  GetVCSConnectionWebhookSubscription: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.VCSWebhookSubscription"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * creates a webhook subscription for a vcs connection
+   * @description Creates a webhook subscription for a VCS connection. This enqueues a signal that will register a GitHub webhook for receiving push and pull request events.
+   */
+  CreateVCSConnectionWebhookSubscription: {
+    parameters: {
+      path: {
+        /** @description connection ID */
+        connection_id: string;
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: never;
       };
       /** @description Bad Request */
       400: {

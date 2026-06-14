@@ -19,7 +19,6 @@ type InstallGroupRequest struct {
 	Name           string   `json:"name" validate:"required,min=1"`
 	Order          int      `json:"order" validate:"min=0"`
 	InstallIDs     []string `json:"install_ids"`
-	MaxParallel    int      `json:"max_parallel" validate:"min=1"`
 	UseForPreviews bool     `json:"use_for_previews"`
 
 	// LabelSelector dynamically resolves installs at deploy time.
@@ -179,16 +178,11 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 	// Convert request install groups to model
 	installGroups := make([]app.AppBranchInstallGroup, len(req.InstallGroups))
 	for i, g := range req.InstallGroups {
-		maxParallel := g.MaxParallel
-		if maxParallel == 0 {
-			maxParallel = 5 // default
-		}
 		installGroups[i] = app.AppBranchInstallGroup{
 			Name:           g.Name,
 			Order:          g.Order,
 			InstallIDs:     g.InstallIDs,
 			LabelSelector:  g.LabelSelector,
-			MaxParallel:    maxParallel,
 			UseForPreviews: g.UseForPreviews,
 		}
 	}

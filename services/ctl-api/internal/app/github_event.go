@@ -39,5 +39,12 @@ func (g *GithubEvent) BeforeCreate(tx *gorm.DB) error {
 	if g.CreatedByID == "" {
 		g.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	}
+
+	if g.Payload != nil {
+		if err := g.Payload.BeforeCreate(tx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

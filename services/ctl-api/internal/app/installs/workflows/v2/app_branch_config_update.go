@@ -7,16 +7,15 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitinstallstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
 
-// AppBranchConfigUpdate generates workflow steps for updating an install's app config
-// as part of an app branch run. It diffs the install's current config against the new
-// config and deploys only the changed components.
 func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
 	installID := generics.FromPtrStr(flw.Metadata["install_id"])
 	newAppConfigID := generics.FromPtrStr(flw.Metadata["new_app_config_id"])
@@ -31,22 +30,19 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
+	var diff *app.InstallConfigDiff
+	if installConfigUpdateID != "" {
+		diff, err = activities.AwaitGetInstallConfigUpdateDiff(ctx, &activities.GetInstallConfigUpdateDiffInput{
+			InstallConfigUpdateID: installConfigUpdateID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get pre-computed config diff")
+		}
+	}
+
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup(flw)
 
-	// Step 1: Compute config diff between current and new app config
-	sg.nextGroupEager()
-	step, err := sg.installSignalStep(ctx, installID, "config diff", pgtype.Hstore{}, &installconfigdiff.Signal{
-		InstallID:             installID,
-		NewAppConfigID:        newAppConfigID,
-		InstallConfigUpdateID: installConfigUpdateID,
-	}, flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create config diff step")
-	}
-	steps = append(steps, step)
-
-	// Generate install state
 	sg.nextGroupEager()
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
@@ -64,9 +60,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		steps = append(steps, step)
 	}
 
-	// Wait for runner healthy
 	sg.nextGroupEager()
-	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
 	if err != nil {
@@ -74,7 +69,35 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	}
 	steps = append(steps, step)
 
-	// Load new app config to get the target component set
+	if diff != nil && diff.StackChanged {
+		stackSteps, err := getStackReprovisionSteps(ctx, sg, installID, flw.PlanOnly)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to generate stack reprovision steps")
+		}
+		steps = append(steps, stackSteps...)
+	}
+
+	if diff != nil && diff.SandboxChanged {
+		newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get new app config")
+		}
+
+		awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+			InstallID: installID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get action workflows")
+		}
+
+		dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
+		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
+		}
+		steps = append(steps, sandboxSteps...)
+	}
+
 	newAppCfg, err := activities.AwaitGetAppConfigByID(ctx, newAppConfigID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get new app config")
@@ -87,7 +110,6 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	// Get component IDs in dependency order
 	componentIDs, err := activities.AwaitGetAppGraph(ctx, activities.GetAppGraphRequest{
 		InstallID: install.ID,
 	})
@@ -95,20 +117,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	// Filter to only components present in the new config
-	newComponentSet := make(map[string]bool, len(newAppCfg.ComponentIDs))
-	for _, id := range newAppCfg.ComponentIDs {
-		newComponentSet[id] = true
-	}
+	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
 
-	var deployComponentIDs []string
-	for _, id := range componentIDs {
-		if newComponentSet[id] {
-			deployComponentIDs = append(deployComponentIDs, id)
-		}
-	}
-
-	// Deploy changed components
 	dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
 	deploySteps, err := getComponentDeploySteps(ctx, dg, deployComponentIDs)
 	if err != nil {
@@ -117,4 +127,75 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 	steps = append(steps, deploySteps...)
 
 	return sg.Result(steps), nil
+}
+
+func filterComponentsByDiff(componentIDs []string, newAppCfg *app.AppConfig, diff *app.InstallConfigDiff) []string {
+	newComponentSet := make(map[string]bool, len(newAppCfg.ComponentIDs))
+	for _, id := range newAppCfg.ComponentIDs {
+		newComponentSet[id] = true
+	}
+
+	if diff == nil {
+		var filtered []string
+		for _, id := range componentIDs {
+			if newComponentSet[id] {
+				filtered = append(filtered, id)
+			}
+		}
+		return filtered
+	}
+
+	changedSet := make(map[string]bool)
+	for _, e := range diff.Added {
+		changedSet[e.ComponentID] = true
+	}
+	for _, e := range diff.Changed {
+		changedSet[e.ComponentID] = true
+	}
+
+	var filtered []string
+	for _, id := range componentIDs {
+		if newComponentSet[id] && changedSet[id] {
+			filtered = append(filtered, id)
+		}
+	}
+	return filtered
+}
+
+func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, installID string, planOnly bool) ([]*app.WorkflowStep, error) {
+	stack, err := activities.AwaitGetInstallStackByInstallID(ctx, installID)
+	if err != nil {
+		return nil, err
+	}
+
+	var steps []*app.WorkflowStep
+
+	sg.nextGroupEager()
+
+	step, err := sg.installSignalStep(ctx, installID, "generate install stack", pgtype.Hstore{}, &generateinstallstackversion.Signal{
+		InstallStackID: stack.ID,
+	}, planOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = sg.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
+		InstallStackID: stack.ID,
+	}, planOnly, WithSkippable(false))
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	step, err = sg.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &updateinstallstackoutputs.Signal{
+		InstallStackID:          stack.ID,
+		SkipInputUpdateWorkflow: true,
+	}, planOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	return steps, nil
 }

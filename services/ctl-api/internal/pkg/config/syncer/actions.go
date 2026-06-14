@@ -192,7 +192,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 		steps = append(steps, app.ActionWorkflowStepConfig{
 			AppID:                    s.appID,
-			AppConfigID:             s.appConfigID,
+			AppConfigID:              s.appConfigID,
 			Name:                     step.Name,
 			EnvVars:                  envVars,
 			Command:                  step.Command,

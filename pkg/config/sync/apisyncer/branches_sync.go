@@ -95,10 +95,6 @@ func (s *syncer) syncSingleBranch(ctx context.Context, resource string, branchCf
 	}
 
 	for i, group := range branchCfg.InstallGroups {
-		maxParallel := int64(group.MaxParallel)
-		if maxParallel == 0 {
-			maxParallel = 5
-		}
 		order := int64(group.Order)
 		if order == 0 {
 			order = int64(i)
@@ -107,7 +103,6 @@ func (s *syncer) syncSingleBranch(ctx context.Context, resource string, branchCf
 		igReq := &models.ServiceInstallGroupRequest{
 			Name:           generics.ToPtr(group.Name),
 			Order:          &order,
-			MaxParallel:    maxParallel,
 			UseForPreviews: group.UseForPreviews,
 			InstallIds:     group.InstallIDs,
 		}

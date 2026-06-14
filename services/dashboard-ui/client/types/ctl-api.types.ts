@@ -357,6 +357,17 @@ export type TVCSConnectionReposResponse = {
   total_count: number
 }
 
+export type TVCSWebhookSubscription = {
+  id: string
+  created_at: string
+  updated_at: string
+  vcs_connection_id: string
+  github_install_id: string
+  github_hook_id?: number
+  webhook_url?: string
+  status?: TCompositeStatus
+}
+
 // OTEL logs
 export type TOTELLog = components['schemas']['app.OtelLogRecord']
 

@@ -55,6 +55,8 @@ func AllModels() []any {
 		&app.AppBranchConfig{},
 		&app.AppBranchInstallGroup{},
 		&app.AppBranchRun{},
+		&app.InstallGroupRun{},
+		&app.InstallConfigUpdate{},
 		&app.AppSandboxConfig{},
 		&app.AppSandboxBuild{},
 		&app.AppRunnerConfig{},

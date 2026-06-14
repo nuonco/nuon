@@ -38,6 +38,10 @@ func NewInstallConfigUpdateID() string {
 	return shortid.NewNanoID("icu")
 }
 
+func NewInstallGroupRunID() string {
+	return shortid.NewNanoID("igr")
+}
+
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }

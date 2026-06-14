@@ -45,21 +45,11 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 	return nil
 }
 
-// ComponentDiffEntry represents a single component in the diff result.
-type ComponentDiffEntry struct {
-	ComponentID   string `json:"component_id"`
-	ComponentName string `json:"component_name,omitempty"`
-	OldChecksum   string `json:"old_checksum,omitempty"`
-	NewChecksum   string `json:"new_checksum,omitempty"`
-}
+// ComponentDiffEntry is an alias for the shared type.
+type ComponentDiffEntry = app.ComponentDiffEntry
 
-// ConfigDiff represents the diff between two app configs.
-type ConfigDiff struct {
-	Added     []ComponentDiffEntry `json:"added"`
-	Removed   []ComponentDiffEntry `json:"removed"`
-	Changed   []ComponentDiffEntry `json:"changed"`
-	Unchanged []ComponentDiffEntry `json:"unchanged"`
-}
+// ConfigDiff is an alias for the shared type.
+type ConfigDiff = app.InstallConfigDiff
 
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VCS Webhook Event Flow</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; padding: 40px; }
+  h1 { text-align: center; margin-bottom: 8px; color: #58a6ff; font-size: 24px; }
+  .subtitle { text-align: center; margin-bottom: 40px; color: #8b949e; font-size: 14px; }
+
+  .flow { display: flex; flex-direction: column; align-items: center; gap: 0; max-width: 900px; margin: 0 auto; }
+
+  .stage { width: 100%; border: 1px solid #30363d; border-radius: 8px; padding: 20px 24px; background: #161b22; position: relative; }
+  .stage-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .stage-number { background: #58a6ff; color: #0d1117; font-weight: 700; font-size: 13px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stage-title { font-weight: 600; font-size: 16px; color: #f0f6fc; }
+  .stage-location { font-size: 12px; color: #8b949e; font-family: monospace; margin-left: auto; }
+
+  .detail { margin-left: 38px; }
+  .detail-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 13px; line-height: 1.5; }
+  .detail-row .label { color: #8b949e; min-width: 100px; flex-shrink: 0; }
+  .detail-row .value { color: #c9d1d9; }
+  .detail-row code { background: #21262d; padding: 1px 6px; border-radius: 4px; font-size: 12px; color: #79c0ff; }
+  .detail-row .file { color: #d2a8ff; font-family: monospace; font-size: 12px; }
+
+  .arrow { display: flex; flex-direction: column; align-items: center; padding: 4px 0; }
+  .arrow-line { width: 2px; height: 20px; background: #30363d; }
+  .arrow-head { width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #30363d; }
+  .arrow-label { font-size: 11px; color: #8b949e; margin-top: 2px; margin-bottom: 2px; }
+
+  .fan-out { display: flex; gap: 16px; width: 100%; }
+  .fan-out .stage { flex: 1; }
+
+  .fan-out-header { width: 100%; text-align: center; padding: 8px 0; }
+  .fan-out-header .bracket { display: flex; align-items: center; gap: 8px; justify-content: center; }
+  .fan-out-header .line { height: 2px; background: #30363d; flex: 1; max-width: 200px; }
+  .fan-out-header .text { font-size: 12px; color: #f0883e; font-weight: 600; white-space: nowrap; }
+
+  .data-box { background: #21262d; border: 1px solid #30363d; border-radius: 6px; padding: 10px 14px; margin: 8px 0 8px 38px; font-size: 12px; font-family: monospace; line-height: 1.6; }
+  .data-box .key { color: #7ee787; }
+  .data-box .val { color: #79c0ff; }
+  .data-box .comment { color: #8b949e; }
+
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+  .tag-http { background: #1f6feb33; color: #58a6ff; border: 1px solid #1f6feb55; }
+  .tag-db { background: #23863633; color: #7ee787; border: 1px solid #23863655; }
+  .tag-signal { background: #f0883e33; color: #f0883e; border: 1px solid #f0883e55; }
+  .tag-temporal { background: #bc8cff33; color: #d2a8ff; border: 1px solid #bc8cff55; }
+  .tag-s3 { background: #da368833; color: #f78166; border: 1px solid #da368855; }
+</style>
+</head>
+<body>
+
+<h1>VCS Webhook Event Flow</h1>
+<p class="subtitle">GitHub Push/PR &rarr; GithubEvent &rarr; VCS Connection Signal (per org) &rarr; App Branch Run</p>
+
+<!-- ===== SVG Architecture Diagram ===== -->
+<svg viewBox="0 0 1000 820" style="max-width:940px; margin:0 auto 48px; display:block;" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#58a6ff"/></marker>
+    <marker id="ah-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#f0883e"/></marker>
+    <marker id="ah-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#d2a8ff"/></marker>
+    <marker id="ah-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6Z" fill="#7ee787"/></marker>
+  </defs>
+
+  <!-- ==================== SYNC ZONE ==================== -->
+  <rect x="0" y="0" width="1000" height="390" rx="0" fill="#161b22" opacity="0.5"/>
+  <text x="16" y="24" fill="#8b949e" font-size="11" font-weight="600" letter-spacing="1">SYNCHRONOUS  (HTTP handler &mdash; write_webhook_event.go)</text>
+
+  <!-- ==================== ROW 1: GitHub -> Handler -> GithubEvent ==================== -->
+
+  <rect x="30" y="50" width="130" height="56" rx="10" fill="#21262d" stroke="#30363d"/>
+  <text x="95" y="74" text-anchor="middle" fill="#f0f6fc" font-size="13" font-weight="600">GitHub</text>
+  <text x="95" y="92" text-anchor="middle" fill="#8b949e" font-size="10">push / PR webhook</text>
+
+  <line x1="160" y1="78" x2="218" y2="78" stroke="#58a6ff" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="189" y="70" text-anchor="middle" fill="#58a6ff" font-size="10">POST</text>
+
+  <rect x="222" y="46" width="220" height="64" rx="8" fill="#1f6feb22" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="332" y="68" text-anchor="middle" fill="#58a6ff" font-size="12" font-weight="700">WriteWebhookEvent</text>
+  <text x="332" y="84" text-anchor="middle" fill="#8b949e" font-size="10">verify HMAC &bull; extract install_id</text>
+  <text x="332" y="98" text-anchor="middle" fill="#8b949e" font-size="10">store event + payload blob</text>
+
+  <line x1="442" y1="78" x2="518" y2="78" stroke="#7ee787" stroke-width="2" marker-end="url(#ah-green)"/>
+  <text x="480" y="70" text-anchor="middle" fill="#7ee787" font-size="9">CREATE</text>
+
+  <rect x="522" y="50" width="170" height="56" rx="8" fill="#23863622" stroke="#238636" stroke-width="1.5"/>
+  <text x="607" y="74" text-anchor="middle" fill="#7ee787" font-size="13" font-weight="600">GithubEvent</text>
+  <text x="607" y="92" text-anchor="middle" fill="#8b949e" font-size="10">payload in S3 blob</text>
+
+  <rect x="706" y="56" width="50" height="44" rx="6" fill="#da368822" stroke="#da3688" stroke-width="1"/>
+  <text x="731" y="78" text-anchor="middle" fill="#f78166" font-size="11" font-weight="600">S3</text>
+  <text x="731" y="92" text-anchor="middle" fill="#8b949e" font-size="9">blob</text>
+  <line x1="692" y1="78" x2="706" y2="78" stroke="#f78166" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <!-- ==================== ROW 2: Fan-out query ==================== -->
+
+  <line x1="332" y1="110" x2="332" y2="132" stroke="#58a6ff" stroke-width="2" marker-end="url(#ah)"/>
+
+  <rect x="202" y="136" width="260" height="26" rx="6" fill="#21262d" stroke="#30363d"/>
+  <text x="332" y="154" text-anchor="middle" fill="#c9d1d9" font-size="11">Query: <tspan fill="#79c0ff" font-family="monospace" font-size="10">vcs_connections WHERE github_install_id</tspan></text>
+
+  <!-- ==================== ROW 3: VCSConnectionEvent creation (per org) ==================== -->
+
+  <line x1="332" y1="162" x2="332" y2="192" stroke="#f0883e" stroke-width="2"/>
+  <line x1="332" y1="192" x2="130" y2="192" stroke="#f0883e" stroke-width="2"/>
+  <line x1="332" y1="192" x2="540" y2="192" stroke="#f0883e" stroke-width="2"/>
+  <line x1="130" y1="192" x2="130" y2="210" stroke="#f0883e" stroke-width="2" marker-end="url(#ah-orange)"/>
+  <line x1="332" y1="192" x2="332" y2="210" stroke="#f0883e" stroke-width="2" marker-end="url(#ah-orange)"/>
+  <line x1="540" y1="192" x2="540" y2="210" stroke="#f0883e" stroke-width="2" marker-end="url(#ah-orange)"/>
+
+  <rect x="620" y="182" width="250" height="22" rx="4" fill="#f0883e22" stroke="#f0883e55"/>
+  <text x="745" y="197" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="600">FOR EACH VCS Connection (per org)</text>
+
+  <!-- VCSConnectionEvent boxes (created in handler) -->
+  <rect x="40" y="214" width="180" height="66" rx="8" fill="#23863622" stroke="#238636" stroke-width="1.5"/>
+  <text x="130" y="236" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">VCSConnectionEvent</text>
+  <text x="130" y="252" text-anchor="middle" fill="#8b949e" font-size="10">Org A</text>
+  <text x="130" y="266" text-anchor="middle" fill="#8b949e" font-size="9">FK &rarr; GithubEvent</text>
+
+  <rect x="242" y="214" width="180" height="66" rx="8" fill="#23863622" stroke="#238636" stroke-width="1.5"/>
+  <text x="332" y="236" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">VCSConnectionEvent</text>
+  <text x="332" y="252" text-anchor="middle" fill="#8b949e" font-size="10">Org B</text>
+  <text x="332" y="266" text-anchor="middle" fill="#8b949e" font-size="9">FK &rarr; GithubEvent</text>
+
+  <rect x="450" y="214" width="180" height="66" rx="8" fill="#23863622" stroke="#23863688" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="540" y="236" text-anchor="middle" fill="#7ee78788" font-size="11" font-weight="600">VCSConnectionEvent</text>
+  <text x="540" y="252" text-anchor="middle" fill="#8b949e" font-size="10">Org N ...</text>
+  <text x="540" y="266" text-anchor="middle" fill="#8b949e" font-size="9">FK &rarr; GithubEvent</text>
+
+  <!-- ==================== ROW 4: Enqueue signal per VCSConnectionEvent ==================== -->
+
+  <line x1="130" y1="280" x2="130" y2="304" stroke="#d2a8ff" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <line x1="332" y1="280" x2="332" y2="304" stroke="#d2a8ff" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <line x1="540" y1="280" x2="540" y2="304" stroke="#d2a8ff" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ah-purple)"/>
+
+  <rect x="40" y="308" width="180" height="56" rx="8" fill="#bc8cff18" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="130" y="328" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="600">github_event signal</text>
+  <text x="130" y="344" text-anchor="middle" fill="#8b949e" font-size="10">vcs_connection_event_id</text>
+  <text x="130" y="358" text-anchor="middle" fill="#8b949e" font-size="9" font-style="italic">enqueued to conn queue</text>
+
+  <rect x="242" y="308" width="180" height="56" rx="8" fill="#bc8cff18" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="332" y="328" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="600">github_event signal</text>
+  <text x="332" y="344" text-anchor="middle" fill="#8b949e" font-size="10">vcs_connection_event_id</text>
+  <text x="332" y="358" text-anchor="middle" fill="#8b949e" font-size="9" font-style="italic">enqueued to conn queue</text>
+
+  <rect x="450" y="308" width="180" height="56" rx="8" fill="#bc8cff18" stroke="#bc8cff44" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="540" y="338" text-anchor="middle" fill="#d2a8ff66" font-size="11">...</text>
+
+  <!-- HTTP returns label -->
+  <text x="500" y="384" text-anchor="middle" fill="#8b949e" font-size="10" font-style="italic">HTTP returns 200 &mdash; processing continues async below</text>
+
+  <!-- ==================== ASYNC ZONE ==================== -->
+  <line x1="0" y1="390" x2="1000" y2="390" stroke="#30363d" stroke-dasharray="6,4"/>
+  <rect x="0" y="390" width="1000" height="430" rx="0" fill="#0d1117"/>
+  <text x="16" y="414" fill="#8b949e" font-size="11" font-weight="600" letter-spacing="1">ASYNCHRONOUS  (Temporal workflow &mdash; signals/github_event/execute.go)</text>
+
+  <!-- ==================== Signal Execute detail (zoomed into one path) ==================== -->
+
+  <rect x="20" y="430" width="720" height="370" rx="10" fill="#161b2288" stroke="#30363d" stroke-dasharray="6,4"/>
+  <text x="36" y="450" fill="#8b949e" font-size="11" font-weight="600">Signal Execute (showing Org A path)</text>
+
+  <!-- Step 1: Load VCSConnectionEvent + GithubEvent -->
+  <rect x="40" y="466" width="280" height="70" rx="8" fill="#bc8cff18" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="180" y="488" text-anchor="middle" fill="#d2a8ff" font-size="12" font-weight="600">GetVCSConnectionEvent</text>
+  <text x="180" y="504" text-anchor="middle" fill="#8b949e" font-size="10">load VCSConnectionEvent from DB</text>
+  <text x="180" y="518" text-anchor="middle" fill="#8b949e" font-size="10">follow FK &rarr; load GithubEvent + S3 payload</text>
+
+  <!-- Arrow to parse -->
+  <line x1="320" y1="501" x2="376" y2="501" stroke="#d2a8ff" stroke-width="2" marker-end="url(#ah-purple)"/>
+
+  <!-- Step 2: Parse payload -->
+  <rect x="380" y="474" width="200" height="54" rx="8" fill="#bc8cff18" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="480" y="496" text-anchor="middle" fill="#d2a8ff" font-size="12" font-weight="600">parsePushEvent</text>
+  <text x="480" y="512" text-anchor="middle" fill="#8b949e" font-size="10">extract repo, branch from payload</text>
+
+  <!-- Arrow down to FindMatchingAppBranches -->
+  <line x1="180" y1="536" x2="180" y2="560" stroke="#d2a8ff" stroke-width="2" marker-end="url(#ah-purple)"/>
+
+  <!-- Step 3: Find matching app branches -->
+  <rect x="40" y="564" width="280" height="54" rx="8" fill="#bc8cff18" stroke="#bc8cff88" stroke-width="1.5"/>
+  <text x="180" y="586" text-anchor="middle" fill="#d2a8ff" font-size="11" font-weight="600">FindMatchingAppBranches</text>
+  <text x="180" y="602" text-anchor="middle" fill="#8b949e" font-size="10">repo + branch + vcs_connection_id</text>
+
+  <!-- Fan out to app branches -->
+  <line x1="320" y1="591" x2="370" y2="591" stroke="#f0883e" stroke-width="2"/>
+  <line x1="370" y1="591" x2="370" y2="570" stroke="#f0883e" stroke-width="2"/>
+  <line x1="370" y1="591" x2="370" y2="612" stroke="#f0883e" stroke-width="2"/>
+  <line x1="370" y1="570" x2="396" y2="570" stroke="#f0883e" stroke-width="2" marker-end="url(#ah-orange)"/>
+  <line x1="370" y1="612" x2="396" y2="612" stroke="#f0883e" stroke-width="2" marker-end="url(#ah-orange)"/>
+
+  <rect x="630" y="558" width="90" height="22" rx="4" fill="#f0883e22" stroke="#f0883e55"/>
+  <text x="675" y="573" text-anchor="middle" fill="#f0883e" font-size="10" font-weight="600">FOR EACH</text>
+
+  <!-- vcs-push signal boxes -->
+  <rect x="400" y="554" width="160" height="34" rx="6" fill="#f0883e18" stroke="#f0883e88"/>
+  <text x="480" y="568" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="600">vcs-push signal</text>
+  <text x="480" y="582" text-anchor="middle" fill="#8b949e" font-size="9">App Branch A1</text>
+
+  <rect x="400" y="596" width="160" height="34" rx="6" fill="#f0883e18" stroke="#f0883e88"/>
+  <text x="480" y="610" text-anchor="middle" fill="#f0883e" font-size="11" font-weight="600">vcs-push signal</text>
+  <text x="480" y="624" text-anchor="middle" fill="#8b949e" font-size="9">App Branch A2</text>
+
+  <!-- Arrows to Branch Runs -->
+  <line x1="560" y1="571" x2="596" y2="571" stroke="#7ee787" stroke-width="2" marker-end="url(#ah-green)"/>
+  <line x1="560" y1="613" x2="596" y2="613" stroke="#7ee787" stroke-width="2" marker-end="url(#ah-green)"/>
+
+  <!-- App Branch Run boxes -->
+  <rect x="600" y="556" width="120" height="30" rx="6" fill="#23863622" stroke="#238636"/>
+  <text x="660" y="576" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">Branch Run</text>
+
+  <rect x="600" y="598" width="120" height="30" rx="6" fill="#23863622" stroke="#238636"/>
+  <text x="660" y="618" text-anchor="middle" fill="#7ee787" font-size="11" font-weight="600">Branch Run</text>
+
+  <!-- Data flow annotation: VCSConnectionEvent -> GithubEvent FK -->
+  <rect x="40" y="650" width="690" height="140" rx="8" fill="#21262d" stroke="#30363d"/>
+  <text x="60" y="674" fill="#f0f6fc" font-size="12" font-weight="600">Data flow through the signal</text>
+  <text x="60" y="698" fill="#8b949e" font-size="11" font-family="monospace">
+    <tspan fill="#d2a8ff">Signal{vcs_connection_event_id}</tspan>
+  </text>
+  <text x="60" y="716" fill="#8b949e" font-size="11" font-family="monospace">
+    <tspan fill="#8b949e">  &rarr; </tspan><tspan fill="#7ee787">VCSConnectionEvent</tspan><tspan fill="#8b949e"> (has vcs_connection_id, org_id, github_event_id FK)</tspan>
+  </text>
+  <text x="60" y="734" fill="#8b949e" font-size="11" font-family="monospace">
+    <tspan fill="#8b949e">    &rarr; </tspan><tspan fill="#7ee787">GithubEvent</tspan><tspan fill="#8b949e"> (has payload blob in S3, event_type)</tspan>
+  </text>
+  <text x="60" y="752" fill="#8b949e" font-size="11" font-family="monospace">
+    <tspan fill="#8b949e">      &rarr; </tspan><tspan fill="#79c0ff">parsePushEvent(payload)</tspan><tspan fill="#8b949e"> &rarr; repo + branch</tspan>
+  </text>
+  <text x="60" y="770" fill="#8b949e" font-size="11" font-family="monospace">
+    <tspan fill="#8b949e">        &rarr; </tspan><tspan fill="#f0883e">FindMatchingAppBranches(conn_id, repo, branch)</tspan><tspan fill="#8b949e"> &rarr; </tspan><tspan fill="#f0883e">vcs-push</tspan><tspan fill="#8b949e"> per match</tspan>
+  </text>
+
+  <!-- Legend -->
+  <rect x="760" y="430" width="220" height="170" rx="8" fill="#161b22" stroke="#30363d"/>
+  <text x="780" y="454" fill="#f0f6fc" font-size="12" font-weight="600">Legend</text>
+
+  <line x1="780" y1="472" x2="810" y2="472" stroke="#58a6ff" stroke-width="2" marker-end="url(#ah)"/>
+  <text x="820" y="476" fill="#8b949e" font-size="11">HTTP / sync flow</text>
+
+  <line x1="780" y1="496" x2="810" y2="496" stroke="#7ee787" stroke-width="2" marker-end="url(#ah-green)"/>
+  <text x="820" y="500" fill="#8b949e" font-size="11">DB write / CREATE</text>
+
+  <line x1="780" y1="520" x2="810" y2="520" stroke="#f0883e" stroke-width="2" marker-end="url(#ah-orange)"/>
+  <text x="820" y="524" fill="#8b949e" font-size="11">Fan-out (1:N)</text>
+
+  <line x1="780" y1="544" x2="810" y2="544" stroke="#d2a8ff" stroke-width="2" marker-end="url(#ah-purple)"/>
+  <text x="820" y="548" fill="#8b949e" font-size="11">Temporal activity</text>
+
+  <rect x="780" y="560" width="30" height="16" rx="3" fill="#bc8cff18" stroke="#bc8cff88"/>
+  <text x="820" y="573" fill="#8b949e" font-size="11">Signal enqueued</text>
+
+  <rect x="780" y="584" width="30" height="16" rx="3" fill="#23863622" stroke="#238636"/>
+  <text x="820" y="597" fill="#8b949e" font-size="11">DB record</text>
+</svg>
+
+<div class="flow">
+
+  <!-- Stage 1: GitHub sends webhook -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">1</div>
+      <div class="stage-title">GitHub sends webhook</div>
+      <span class="tag tag-http">HTTP</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Endpoint:</span>
+        <span class="value"><code>POST /v1/vcs/webhooks/:subscription_id/events</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Headers:</span>
+        <span class="value"><code>X-GitHub-Event: push</code> &nbsp; <code>X-Hub-Signature-256: sha256=...</code> &nbsp; <code>X-GitHub-Hook-Installation-Target-ID: 12345</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Body:</span>
+        <span class="value">Raw JSON payload (ref, repository.full_name, commits, etc.)</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Auth:</span>
+        <span class="value">HMAC-SHA256 signature verified against <code>VCSWebhookSubscription.WebhookSecret</code></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">signature verified</div></div>
+
+  <!-- Stage 2: Lookup subscription + store event -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">2</div>
+      <div class="stage-title">Store GithubEvent</div>
+      <span class="tag tag-db">DB</span>
+      <span class="tag tag-s3">S3</span>
+      <span class="stage-location">write_webhook_event.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Lookup:</span>
+        <span class="value"><code>VCSWebhookSubscription</code> by <code>subscription_id</code> path param</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Extract:</span>
+        <span class="value"><code>github_install_id</code> from <code>X-GitHub-Hook-Installation-Target-ID</code> header (fallback: subscription's value)</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Blob upload:</span>
+        <span class="value">Raw body &rarr; <code>blobstore.Blob</code> &rarr; S3 at <code>blobs/github_events/{blob_id}</code></span>
+      </div>
+    </div>
+    <div class="data-box">
+      <span class="comment">// GithubEvent record created in DB:</span><br>
+      <span class="key">ID:</span> <span class="val">"ghevt..."</span><br>
+      <span class="key">GithubInstallID:</span> <span class="val">"12345"</span><br>
+      <span class="key">EventType:</span> <span class="val">"push"</span><br>
+      <span class="key">Payload:</span> <span class="val">*blobstore.Blob{s3_key: "blobs/github_events/blob_..."}</span><br>
+      <span class="key">Status:</span> <span class="val">"success"</span>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">event stored</div></div>
+
+  <!-- Stage 3: Batch-create VCSConnectionEvents -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">3</div>
+      <div class="stage-title">Batch-create VCSConnectionEvents</div>
+      <span class="tag tag-db">DB</span>
+      <span class="stage-location">write_webhook_event.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Query:</span>
+        <span class="value"><code>SELECT * FROM vcs_connections WHERE github_install_id = '12345'</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Why multiple:</span>
+        <span class="value">Same GitHub App installation can be connected by multiple Nuon orgs</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Per connection:</span>
+        <span class="value">Create a <code>VCSConnectionEvent</code> record with FK to the <code>GithubEvent</code>, scoped to <code>conn.OrgID</code></span>
+      </div>
+    </div>
+    <div class="data-box">
+      <span class="comment">// VCSConnectionEvent record (per connection):</span><br>
+      <span class="key">ID:</span> <span class="val">"vcsconnevt..."</span><br>
+      <span class="key">VCSConnectionID:</span> <span class="val">"vcsconn..."</span><br>
+      <span class="key">GithubEventID:</span> <span class="val">"ghevt..."</span> <span class="comment">// FK</span><br>
+      <span class="key">OrgID:</span> <span class="val">"org..."</span><br>
+      <span class="key">Status:</span> <span class="val">"queued"</span>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+  <div class="fan-out-header">
+    <div class="bracket">
+      <div class="line"></div>
+      <div class="text">FOR EACH VCSConnectionEvent created</div>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <!-- Stage 4: Enqueue signal per VCSConnectionEvent -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">4</div>
+      <div class="stage-title">Enqueue github_event signal per VCSConnectionEvent</div>
+      <span class="tag tag-signal">SIGNAL</span>
+      <span class="stage-location">write_webhook_event.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Queue lookup:</span>
+        <span class="value"><code>queueClient.GetQueueByOwner(conn.ID, "vcs_connections")</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Enqueue:</span>
+        <span class="value"><code>queueClient.EnqueueSignal()</code> with <code>github_event</code> signal</span>
+      </div>
+    </div>
+    <div class="data-box">
+      <span class="comment">// Signal payload enqueued:</span><br>
+      <span class="key">type:</span> <span class="val">"github_event"</span><br>
+      <span class="key">vcs_connection_event_id:</span> <span class="val">"vcsconnevt..."</span>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div><div class="arrow-label">HTTP returns 200 &mdash; async from here</div></div>
+
+  <!-- Stage 5: Temporal picks up signal -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">5</div>
+      <div class="stage-title">Signal Execute: load event chain + parse payload</div>
+      <span class="tag tag-temporal">TEMPORAL</span>
+      <span class="stage-location">signals/github_event/execute.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Activity:</span>
+        <span class="value"><code>GetVCSConnectionEvent</code> &mdash; loads VCSConnectionEvent, follows FK to GithubEvent, downloads payload from S3</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Parse:</span>
+        <span class="value"><code>parsePushEvent(payload)</code> &rarr; extracts <code>repo</code> (owner/name) and <code>branch</code> from <code>ref</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Context:</span>
+        <span class="value">All routing info comes from the <code>VCSConnectionEvent</code> record (connection ID, org ID, github event FK)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+  <!-- Stage 6: Find matching app branches -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">6</div>
+      <div class="stage-title">Find matching App Branches</div>
+      <span class="tag tag-temporal">TEMPORAL</span>
+      <span class="tag tag-db">DB</span>
+      <span class="stage-location">activities/find_matching_app_branches.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Activity:</span>
+        <span class="value"><code>FindMatchingAppBranches</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Query:</span>
+        <span class="value">
+          <code>connected_github_vcs_configs</code>
+          WHERE <code>vcs_connection_id</code> AND <code>repo = "owner/name"</code> AND <code>branch = "main"</code>
+          <br>JOIN <code>app_branch_configs</code> (latest config per app branch, deduped)
+        </span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Returns:</span>
+        <span class="value">List of <code>{AppBranchID, AppBranchConfigID}</code> matches</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+  <div class="fan-out-header">
+    <div class="bracket">
+      <div class="line"></div>
+      <div class="text">FOR EACH matching App Branch</div>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <!-- Stage 7: Enqueue vcs-push signal -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">7</div>
+      <div class="stage-title">Enqueue vcs-push signal to App Branch queue</div>
+      <span class="tag tag-signal">SIGNAL</span>
+      <span class="stage-location">signals/github_event/execute.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Activity:</span>
+        <span class="value"><code>EnqueueSignalToOwner</code> &mdash; resolves queue by <code>(AppBranchID, "app_branches")</code></span>
+      </div>
+    </div>
+    <div class="data-box">
+      <span class="comment">// vcs-push signal payload:</span><br>
+      <span class="key">type:</span> <span class="val">"vcs-push"</span><br>
+      <span class="key">app_branch_id:</span> <span class="val">"appbr..."</span><br>
+      <span class="key">app_branch_config_id:</span> <span class="val">"appbrcfg..."</span><br>
+      <span class="key">event_type:</span> <span class="val">"push"</span> <span class="comment">// or "pull_request"</span><br>
+      <span class="key">plan_only:</span> <span class="val">false</span> <span class="comment">// true for PRs</span><br>
+      <span class="key">head_sha:</span> <span class="val">""</span> <span class="comment">// set for PRs</span><br>
+      <span class="key">pr_number:</span> <span class="val">null</span> <span class="comment">// set for PRs</span>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-head"></div></div>
+
+  <!-- Stage 8: vcs-push signal triggers app branch run -->
+  <div class="stage">
+    <div class="stage-header">
+      <div class="stage-number">8</div>
+      <div class="stage-title">App Branch Run triggered</div>
+      <span class="tag tag-temporal">TEMPORAL</span>
+      <span class="stage-location">signals/branches/vcspush/signal.go</span>
+    </div>
+    <div class="detail">
+      <div class="detail-row">
+        <span class="label">Signal type:</span>
+        <span class="value"><code>vcs-push</code></span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Execute:</span>
+        <span class="value"><code>TriggerAppBranchRunFromVCSPush</code> activity &mdash; creates an App Branch Run with the push/PR metadata</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Result:</span>
+        <span class="value">New App Branch Run created, which orchestrates component builds for the branch</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="max-width: 900px; margin: 40px auto 0; border-top: 1px solid #30363d; padding-top: 20px;">
+  <h2 style="font-size: 16px; color: #58a6ff; margin-bottom: 12px;">Key Models</h2>
+  <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 8px; color: #7ee787; font-family: monospace;">VCSWebhookSubscription</td>
+      <td style="padding: 8px;">Per GitHub App installation. Holds webhook secret for HMAC verification. Created when VCS connection is set up.</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 8px; color: #7ee787; font-family: monospace;">GithubEvent</td>
+      <td style="padding: 8px;">Raw webhook event. Payload stored in S3 via blobstore. Not org-scoped (shared across connections with same install ID).</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 8px; color: #7ee787; font-family: monospace;">VCSConnection</td>
+      <td style="padding: 8px;">Org-scoped link to a GitHub App installation. Matched by <code style="color:#79c0ff">github_install_id</code>. Has its own signal queue.</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 8px; color: #7ee787; font-family: monospace;">VCSConnectionEvent</td>
+      <td style="padding: 8px;">Junction: links a GithubEvent to a specific VCSConnection + OrgID. Created during signal execution.</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 8px; color: #7ee787; font-family: monospace;">ConnectedGithubVCSConfig</td>
+      <td style="padding: 8px;">Links a VCSConnection to an AppBranchConfig with repo + branch matching rules.</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px; color: #7ee787; font-family: monospace;">AppBranchRun</td>
+      <td style="padding: 8px;">The final output: a run that builds/deploys components for the matched branch.</td>
+    </tr>
+  </table>
+</div>
+
+<div style="max-width: 900px; margin: 24px auto 0; border-top: 1px solid #30363d; padding-top: 20px;">
+  <h2 style="font-size: 16px; color: #58a6ff; margin-bottom: 12px;">File Reference</h2>
+  <table style="width: 100%; font-size: 12px; border-collapse: collapse; font-family: monospace;">
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 6px; color: #d2a8ff;">vcs/service/write_webhook_event.go</td>
+      <td style="padding: 6px; color: #8b949e;">HTTP handler: verify signature, store event, fan out signals per VCS connection</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 6px; color: #d2a8ff;">vcs/signals/github_event/signal.go</td>
+      <td style="padding: 6px; color: #8b949e;">Signal struct with GithubEventID, VCSConnectionID, OrgID</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 6px; color: #d2a8ff;">vcs/signals/github_event/execute.go</td>
+      <td style="padding: 6px; color: #8b949e;">Signal execution: parse payload, create VCSConnectionEvent, find matching app branches, enqueue vcs-push</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 6px; color: #d2a8ff;">vcs/signals/github_event/parse.go</td>
+      <td style="padding: 6px; color: #8b949e;">Parse push/PR payloads: extract repo, branch, PR metadata</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 6px; color: #d2a8ff;">vcs/worker/activities/get_github_event.go</td>
+      <td style="padding: 6px; color: #8b949e;">Temporal activity: load GithubEvent + download payload from S3</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #21262d;">
+      <td style="padding: 6px; color: #d2a8ff;">vcs/worker/activities/find_matching_app_branches.go</td>
+      <td style="padding: 6px; color: #8b949e;">Temporal activity: query ConnectedGithubVCSConfigs JOIN AppBranchConfigs</td>
+    </tr>
+    <tr>
+      <td style="padding: 6px; color: #d2a8ff;">apps/signals/branches/vcspush/signal.go</td>
+      <td style="padding: 6px; color: #8b949e;">vcs-push signal: triggers TriggerAppBranchRunFromVCSPush activity</td>
+    </tr>
+  </table>
+</div>
+
+</body>
+</html>

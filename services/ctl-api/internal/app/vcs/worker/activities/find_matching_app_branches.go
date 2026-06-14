@@ -33,7 +33,7 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 		Where("connected_github_vcs_configs.branch = ?", req.Branch).
 		Where("connected_github_vcs_configs.deleted_at = 0").
 		Where("app_branch_configs.deleted_at = 0").
-		Order("app_branch_configs.config_number DESC").
+		Order("app_branch_configs.created_at DESC").
 		Scan(&results).Error
 	if err != nil {
 		return nil, fmt.Errorf("unable to find matching app branches: %w", err)

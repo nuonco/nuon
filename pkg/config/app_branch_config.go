@@ -9,7 +9,6 @@ import (
 type AppBranchInstallGroupConfig struct {
 	Name           string `mapstructure:"name" toml:"name" jsonschema:"required"`
 	Order          int    `mapstructure:"order" toml:"order"`
-	MaxParallel    int    `mapstructure:"max_parallel,omitempty" toml:"max_parallel,omitempty"`
 	UseForPreviews bool   `mapstructure:"use_for_previews,omitempty" toml:"use_for_previews,omitempty"`
 
 	InstallIDs    []string          `mapstructure:"install_ids,omitempty" toml:"install_ids,omitempty"`
@@ -20,7 +19,6 @@ type AppBranchInstallGroupConfig struct {
 func (c AppBranchInstallGroupConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	addDescription(schema, "name", "name of the install group")
 	addDescription(schema, "order", "deployment order (lower runs first)")
-	addDescription(schema, "max_parallel", "max parallel deploys within this group")
 	addDescription(schema, "use_for_previews", "use this group for plan-only preview runs")
 	addDescription(schema, "install_ids", "static list of install IDs")
 	addDescription(schema, "install_names", "static list of install names, resolved to IDs at sync time")

@@ -3,6 +3,7 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
@@ -25,18 +26,22 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 		MaxInFlight: 1,
 		MaxDepth:    5,
 	})
+	if err == nil {
+		h.db.WithContext(ctx).Model(q).Update("idle_timeout", int64(5*time.Second))
+	}
 	if err != nil {
 		return nil, fmt.Errorf("unable to create vcs connection queue: %w", err)
 	}
 
 	// Cron emitter: health check every minute
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
-		QueueID:      q.ID,
-		Name:         fmt.Sprintf("vcs-connection-%s-health-check", vcsConn.ID),
-		Description:  "Periodic VCS connection health check",
-		Mode:         app.QueueEmitterModeCron,
-		CronSchedule: "*/5 * * * *",
-		SignalType:   healthcheck.SignalType,
+		QueueID:         q.ID,
+		Name:            fmt.Sprintf("vcs-connection-%s-health-check", vcsConn.ID),
+		Description:     "Periodic VCS connection health check",
+		Mode:            app.QueueEmitterModeCron,
+		CronSchedule:    "0 * * * *",
+		SignalExpiresIn: 5 * time.Minute,
+		SignalType:      healthcheck.SignalType,
 		SignalTemplate: &healthcheck.Signal{
 			VCSConnectionID: vcsConn.ID,
 		},

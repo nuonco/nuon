@@ -11,7 +11,7 @@ import (
 const SignalType signal.SignalType = "github_event"
 
 type Signal struct {
-	GithubEventID string `json:"github_event_id"`
+	VCSConnectionEventID string `json:"vcs_connection_event_id"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -21,16 +21,15 @@ func (s *Signal) Type() signal.SignalType {
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
-	if s.GithubEventID == "" {
-		return errors.New("github_event_id is required")
+	if s.VCSConnectionEventID == "" {
+		return errors.New("vcs_connection_event_id is required")
 	}
 
-	// Validate the event exists.
-	_, err := activities.AwaitGetGithubEvent(ctx, activities.GetGithubEventRequest{
-		GithubEventID: s.GithubEventID,
+	_, err := activities.AwaitGetVCSConnectionEvent(ctx, activities.GetVCSConnectionEventRequest{
+		VCSConnectionEventID: s.VCSConnectionEventID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "github event not found")
+		return errors.Wrap(err, "vcs connection event not found")
 	}
 
 	return nil

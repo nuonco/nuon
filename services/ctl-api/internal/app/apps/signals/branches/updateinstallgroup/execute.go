@@ -2,6 +2,7 @@ package updateinstallgroup
 
 import (
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/workflow"
 
@@ -25,7 +26,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
-	installIDs, err := s.resolveInstallIDs(ctx)
+	installIDs, groupName, err := s.resolveInstallIDs(ctx)
 	if err != nil {
 		return err
 	}
@@ -35,26 +36,72 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Create and enqueue all install config update workflows.
+	groupRunResult, err := activities.AwaitCreateInstallGroupRun(ctx, &activities.CreateInstallGroupRunInput{
+		AppBranchRunID:   s.RunID,
+		InstallGroupID:   s.InstallGroupID,
+		InstallGroupName: groupName,
+		TotalInstalls:    len(installIDs),
+	})
+	if err != nil {
+		return fmt.Errorf("unable to create install group run: %w", err)
+	}
+
 	enqueued, err := s.enqueueInstallUpdates(ctx, installIDs, run)
 	if err != nil {
 		return err
 	}
 
+	installEntries := make([]app.InstallGroupRunInstall, 0, len(enqueued))
+	for _, e := range enqueued {
+		installEntries = append(installEntries, app.InstallGroupRunInstall{
+			InstallID:  e.installID,
+			WorkflowID: e.workflowID,
+			Status:     "in-progress",
+		})
+	}
+
+	_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
+		InstallGroupRunID: groupRunResult.InstallGroupRunID,
+		Installs:          installEntries,
+		Status: app.CompositeStatus{
+			Status:                 app.StatusInProgress,
+			StatusHumanDescription: fmt.Sprintf("deploying to %d installs", len(enqueued)),
+		},
+	})
+
 	s.updateInstallMetadata(ctx, enqueued, nil)
 
-	// Wait for all install workflows to complete.
-	return s.awaitInstallUpdates(ctx, enqueued)
+	completed, failed, awaitErr := s.awaitInstallUpdates(ctx, enqueued, groupRunResult.InstallGroupRunID, installEntries)
+
+	now := time.Now()
+	finalStatus := app.StatusSuccess
+	desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
+	if failed > 0 {
+		finalStatus = app.StatusError
+		desc += fmt.Sprintf(" (%d failed)", failed)
+	}
+
+	_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
+		InstallGroupRunID: groupRunResult.InstallGroupRunID,
+		Installs:          installEntries,
+		CompletedInstalls: completed,
+		FailedInstalls:    failed,
+		CompletedAt:       &now,
+		Status: app.CompositeStatus{
+			Status:                 finalStatus,
+			StatusHumanDescription: desc,
+		},
+	})
+
+	return awaitErr
 }
 
-// resolveInstallIDs returns the install IDs for this group, resolving via
-// label selector if configured.
-func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, error) {
+func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, string, error) {
 	logger := workflow.GetLogger(ctx)
 
 	group, err := activities.AwaitGetInstallGroupByID(ctx, s.InstallGroupID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get install group: %w", err)
+		return nil, "", fmt.Errorf("unable to get install group: %w", err)
 	}
 
 	if group.LabelSelector == nil {
@@ -63,12 +110,12 @@ func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, error) {
 			"install_group_name", group.Name,
 			"install_count", len(group.InstallIDs),
 		)
-		return group.InstallIDs, nil
+		return group.InstallIDs, group.Name, nil
 	}
 
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to get app branch for label resolution: %w", err)
+		return nil, "", fmt.Errorf("unable to get app branch for label resolution: %w", err)
 	}
 
 	resolved, err := activities.AwaitResolveInstallGroupInstalls(ctx, &activities.ResolveInstallGroupInstallsInput{
@@ -77,7 +124,7 @@ func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, error) {
 		Selector: group.LabelSelector,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("unable to resolve install group labels: %w", err)
+		return nil, "", fmt.Errorf("unable to resolve install group labels: %w", err)
 	}
 
 	logger.Info("updating install group",
@@ -87,12 +134,9 @@ func (s *Signal) resolveInstallIDs(ctx workflow.Context) ([]string, error) {
 		"resolved_via", "label_selector",
 	)
 
-	return resolved.InstallIDs, nil
+	return resolved.InstallIDs, group.Name, nil
 }
 
-// enqueueInstallUpdates creates an install config update workflow for each
-// install and enqueues it for execution. All workflows are created and
-// enqueued before any awaiting begins.
 func (s *Signal) enqueueInstallUpdates(
 	ctx workflow.Context,
 	installIDs []string,
@@ -132,34 +176,60 @@ func (s *Signal) enqueueInstallUpdates(
 	return enqueued, nil
 }
 
-// awaitInstallUpdates waits for all enqueued install workflows to complete.
-func (s *Signal) awaitInstallUpdates(ctx workflow.Context, enqueued []enqueuedInstall) error {
+func (s *Signal) awaitInstallUpdates(
+	ctx workflow.Context,
+	enqueued []enqueuedInstall,
+	groupRunID string,
+	installEntries []app.InstallGroupRunInstall,
+) (int, int, error) {
 	logger := workflow.GetLogger(ctx)
 
+	completed := 0
+	failed := 0
 	results := make(map[string]string, len(enqueued))
 	var errs []error
-	for _, e := range enqueued {
+
+	for i, e := range enqueued {
 		if _, err := callback.AwaitWithTimeout(ctx, e.cb, callback.FallbackAwaitTimeout); err != nil {
 			errs = append(errs, fmt.Errorf("install %s workflow %s: %w", e.installID, e.workflowID, err))
 			results[e.installID] = "error"
-			s.updateInstallMetadata(ctx, enqueued, results)
-			continue
+			failed++
+			installEntries[i].Status = "error"
+		} else {
+			results[e.installID] = "success"
+			completed++
+			installEntries[i].Status = "success"
+
+			logger.Info("install config update completed",
+				"install_id", e.installID,
+				"workflow_id", e.workflowID,
+			)
 		}
 
-		results[e.installID] = "success"
-		s.updateInstallMetadata(ctx, enqueued, results)
+		desc := fmt.Sprintf("%d/%d installs deployed", completed, len(enqueued))
+		if failed > 0 {
+			desc += fmt.Sprintf(" (%d failed)", failed)
+		}
 
-		logger.Info("install config update completed",
-			"install_id", e.installID,
-			"workflow_id", e.workflowID,
-		)
+		_ = activities.AwaitUpdateInstallGroupRun(ctx, &activities.UpdateInstallGroupRunInput{
+			InstallGroupRunID: groupRunID,
+			Installs:          installEntries,
+			CompletedInstalls: completed,
+			FailedInstalls:    failed,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusInProgress,
+				StatusHumanDescription: desc,
+			},
+		})
+
+		s.updateInstallMetadata(ctx, enqueued, results)
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("update install group had %d errors: %v", len(errs), errs)
+		return completed, failed, fmt.Errorf("update install group had %d errors: %v", len(errs), errs)
 	}
 
-	return nil
+	return completed, failed, nil
 }
 
 func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueuedInstall, results map[string]string) {

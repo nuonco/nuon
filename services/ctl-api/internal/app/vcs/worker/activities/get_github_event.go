@@ -21,8 +21,8 @@ type GetGithubEventResponse struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) GetGithubEvent(ctx context.Context, req GetGithubEventRequest) (*GetGithubEventResponse, error) {
-	// Enable blob auto-load so the payload is fetched from S3.
-	dbCtx := blobstore.WithBlobAutoLoad(ctx, true)
+	dbCtx := blobstore.WithBlobService(ctx, a.blobSvc)
+	dbCtx = blobstore.WithBlobAutoLoad(dbCtx, true)
 
 	var event app.GithubEvent
 	if err := a.db.WithContext(dbCtx).First(&event, "id = ?", req.GithubEventID).Error; err != nil {
@@ -32,7 +32,7 @@ func (a *Activities) GetGithubEvent(ctx context.Context, req GetGithubEventReque
 	// Parse the blob payload into a map for use in workflows.
 	var payload map[string]any
 	if event.Payload != nil && event.Payload.IsSet() {
-		payloadStr, err := event.Payload.Get(ctx)
+		payloadStr, err := event.Payload.Get(dbCtx)
 		if err != nil {
 			return nil, fmt.Errorf("unable to load github event payload from blob: %w", err)
 		}
