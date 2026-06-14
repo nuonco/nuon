@@ -1,5 +1,5 @@
 import { createContext, useState, useCallback, useEffect } from 'react'
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
 
 export interface IWizardStepComponentProps {
   isComplete: boolean
@@ -14,7 +14,7 @@ export interface IWizardStepDef<TData = unknown> {
   id: string
   title: string
   navLabel?: string
-  description?: string
+  description?: ReactNode
   hideTitle?: boolean
   component: ComponentType<IWizardStepComponentProps>
   data?: TData

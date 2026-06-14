@@ -1,34 +1,34 @@
 ---
 title: 'Quickstart'
-description: "Deploy your first app with Nuon in a few minutes by shipping an example app into a test cloud account."
+description: "Deploy your first app with Nuon in a few minutes by shipping an example Kubernetes app into an AWS account."
 boost: 5
 keywords: ["getting started", "first deployment", "example app", "try Nuon", "deploy example app", "test account", "install guide", "nuon apps sync", "nuon installs create", "nuon auth login"]
 ---
 
 <Note>
 You'll need two things before you start:
-- A Nuon account — [sign up for the free trial](https://app.nuon.co/).
-- A **test cloud account** (AWS, Azure, or GCP) to deploy into. A throwaway or sandbox account is ideal for your first install.
+- A Nuon Cloud account — [sign up for the free trial](https://app.nuon.co/).
+- An AWS account to deploy the app into.
 </Note>
 
-The fastest way to see Nuon work is to deploy one of our example apps into a test cloud account. Copy and paste the flow below, or follow the walkthrough underneath for detail on each step.
+Copy and paste the flow below, or follow the walkthrough underneath for detail on each step of the Quickstart.
 
 ```sh
 # 1. Install the CLI
 brew install nuonco/tap/nuon
 
-# 2. Log in
+# 2. Authenticate with Nuon Cloud
 nuon auth login
 
-# 3. Grab the example apps and pick one (Kubernetes on AWS shown here)
+# 3. Clone Nuon's example apps repo 
 git clone https://github.com/nuonco/example-app-configs
-cd example-app-configs/eks-simple
 
-# 4. Define the app from its TOML config
+# 4. Create the app and sync it with Nuon Cloud. (Kubernetes on AWS shown here)
+cd example-app-configs/eks-simple
 nuon apps create --name eks-simple
 nuon apps sync
 
-# 5. Deploy it into your test cloud account
+# 5. Install the app in your AWS account
 nuon installs create --name <install-name> --region <region>
 ```
 
@@ -40,53 +40,54 @@ brew install nuonco/tap/nuon
 
 If you are not using Homebrew, refer to our [CLI](/cli) documentation for other installation options.
 
-<Note>
-The Nuon CLI changes frequently. To ensure you have the latest version, run `brew upgrade nuonco/tap/nuon` regularly. If you encounter any CLI command errors, please check you are using the latest version.
-</Note>
-
-## Authenticate
+## Authenticate to Nuon Cloud
 
 ```sh
 nuon auth login
 ```
 
-Follow the prompts in the browser and log in with a Google account.
+Follow the prompt in the browser and log in with a Google account.
 
-## Deploy an Example App
+## Clone the Example Apps Repo
 
-The quickest path is to deploy one of our [example apps](https://github.com/nuonco/example-app-configs) into a test cloud account. Clone the repo and pick one — `eks-simple` (Kubernetes on AWS) is a good starting point:
+Nuon maintains a [example apps](https://github.com/nuonco/example-app-configs) repo to demonstrate how to package various apps on AWS, Azure and GCP with various architectures like Kubernetes, VM and serverless.
 
 ```sh
 git clone https://github.com/nuonco/example-app-configs
-cd example-app-configs/eks-simple
+```
 
+## Create and Sync the Example App
+
+For the Quickstart, we're using an AWS EKS (Kubernetes) app called eks-simple with a whoami Helm component, an ACM certificate, and an Application Load Balancer to access the whoami service. View the app configuration in the [example apps repo](https://github.com/nuonco/example-app-configs/tree/main/eks-simple) or with your IDE and the cloned repo.
+
+Use the Nuon CLI to create the app then sync its contents into Nuon Cloud. The sync triggers the app's components (e.g., images, Helm, Kubernetes manifests, Terraform) to be built into OCI artifacts that are stored in your org's container registry. Nuon will use these artifacts when installing your app.
+
+The app name should match the directory name.
+
+```sh
+cd example-app-configs/eks-simple
 nuon apps create --name eks-simple
 nuon apps sync
 ```
 
-<Note>
-Apps are defined in TOML config files and applied with `nuon apps sync` — not through CLI flags or YAML values. `nuon apps create` registers the app in the control plane; `nuon apps sync` uploads the TOML config from the current directory and builds it. The app name should match the directory name.
-</Note>
+## Install the Example App in AWS
 
-Now create an install to deploy the app into your test cloud account:
+Now create an install to deploy the app into your AWS account:
 
 ```sh
 nuon installs create --name <install-name> --region <region>
 ```
 
 - `--name` (`-n`) names this install.
-- `--region` (`-r`) is the cloud region to provision into, for example `us-west-2`.
+- `--region` (`-r`) is the AWS region to provision into, for example `us-east-1`.
 
-<Note>
-Deployments are started with `nuon installs create` — there is no `nuon installs deploy` command. To redeploy components to an existing install later, use `nuon installs deploy-components`.
-</Note>
 
-For guided, per-cloud walkthroughs (AWS EKS, EC2, and Lambda) with prerequisites and timings, see [Create Your First App](/get-started/create-your-first-app).
+## Guided Walkthroughs
+
+For guided walkthroughs including this eks-simple app and EC2 and serverless apps, see [Create Your First App](/get-started/create-your-first-app).
 
 ## Deploy Your Own App
 
-When you're ready to package your own software, wrap your existing Terraform, Helm, Kubernetes, and Docker assets into a Nuon app — the commands are the same (`nuon apps create`, `nuon apps sync`, then `nuon installs create`).
+When you're ready to package your own software, wrap your existing Terraform, Helm, Kubernetes manifest, and container image assets into a Nuon app — the commands are the same (`nuon apps create`, `nuon apps sync`, then `nuon installs create`).
 
-<Card title="Ready to deploy your own app?" icon="rocket" href="/concepts/apps#how-do-you-configure-an-app">
-  Learn how Nuon apps are configured — including connecting a private GitHub repository — then follow [Create Your First App](/get-started/create-your-first-app) for a full walkthrough.
-</Card>
+Use agents like Claude Code to build your app by learning from Nuon's example apps. See our [AI and Apps Building docs](/guides/ai-and-apps) for more info.

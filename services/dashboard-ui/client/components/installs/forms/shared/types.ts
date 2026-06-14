@@ -11,6 +11,8 @@ export interface ICreateInstallForm {
   isLoading?: boolean
   error?: any
   onRegisterClearDraft?: (clearFn: () => void) => void
+  defaultAutoApprove?: boolean
+  autoApproveDescription?: React.ReactNode
 }
 
 export interface IUpdateInstallForm {

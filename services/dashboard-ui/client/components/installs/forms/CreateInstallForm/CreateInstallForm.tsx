@@ -18,6 +18,8 @@ interface ICreateInstallFormPresentation {
   onSubmit?: (formData: FormData) => Promise<any>
   onSuccess?: (result: any) => void
   onCancel: () => void
+  defaultAutoApprove?: boolean
+  autoApproveDescription?: React.ReactNode
 }
 
 export const CreateInstallForm = forwardRef<
@@ -34,6 +36,8 @@ export const CreateInstallForm = forwardRef<
       clearDraft,
       onSubmit,
       onSuccess,
+      defaultAutoApprove,
+      autoApproveDescription,
     },
     ref
   ) => {
@@ -110,7 +114,7 @@ export const CreateInstallForm = forwardRef<
             <CheckboxInput
               name="auto-approve"
               className="mt-[6px]"
-              defaultChecked={draftValues?.['auto-approve'] === 'on' || false}
+              defaultChecked={draftValues ? draftValues['auto-approve'] === 'true' : Boolean(defaultAutoApprove)}
               labelProps={{
                 className: 'items-start',
                 labelText: (
@@ -119,9 +123,13 @@ export const CreateInstallForm = forwardRef<
                       Auto-approve changes
                     </Text>
                     <Text variant="subtext" theme="neutral">
-                      Automatically approve and apply all future changes without
-                      manual confirmation. You can change this later in the
-                      install settings.
+                      {autoApproveDescription ?? (
+                        <>
+                          Automatically approve and apply all future changes
+                          without manual confirmation. You can change this later
+                          in the install settings.
+                        </>
+                      )}
                     </Text>
                   </div>
                 ),
