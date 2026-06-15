@@ -431,7 +431,7 @@ func TestGetRoleForDeploy(t *testing.T) {
 				&compBuild.ComponentConfigConnection,
 				stack,
 				installState,
-				"",
+				nil,
 			)
 
 			require.NoError(t, err, "getRoleForDeploy should not return error for test: %s", tt.description)

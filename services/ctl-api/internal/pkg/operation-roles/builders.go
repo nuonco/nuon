@@ -18,16 +18,14 @@ func GetRoleForDeploy(
 	compCfgConn *app.ComponentConfigConnection,
 	stack *app.InstallStack,
 	installState *state.State,
-	defaultRole string,
+	flw *app.Workflow,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationDeploy
 	if installDeploy.Type == app.InstallDeployTypeTeardown {
 		operation = app.OperationTeardown
 	}
 
-	if defaultRole == "" {
-		defaultRole = appCfg.PermissionsConfig.MaintenanceRole.Name
-	}
+	defaultRole := defaultRoleForWorkflow(appCfg, flw)
 
 	selectionCtx := &SelectionContext{
 		Operation:     operation,
@@ -147,13 +145,11 @@ func GetRoleForAction(
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
 	installState *state.State,
-	defaultRole string,
+	flw *app.Workflow,
 ) (*RoleSelection, app.OperationType, error) {
 	operation := app.OperationTrigger
 
-	if defaultRole == "" {
-		defaultRole = appCfg.PermissionsConfig.MaintenanceRole.Name
-	}
+	defaultRole := defaultRoleForWorkflow(appCfg, flw)
 
 	var entityRoles map[app.OperationType]string
 	if run.ActionWorkflowConfig.Role != "" {

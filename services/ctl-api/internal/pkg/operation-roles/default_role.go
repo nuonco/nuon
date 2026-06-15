@@ -25,3 +25,14 @@ func DefaultRoleForWorkflowType(appCfg *app.AppConfig, workflowType app.Workflow
 		return appCfg.PermissionsConfig.MaintenanceRole.Name
 	}
 }
+
+// defaultRoleForWorkflow returns the lowest-precedence default role for a step.
+// A nil workflow means workflow-type defaulting does not apply (the config flag
+// is off, or the parent workflow could not be resolved), so it falls back to the
+// maintenance role.
+func defaultRoleForWorkflow(appCfg *app.AppConfig, flw *app.Workflow) string {
+	if flw == nil {
+		return appCfg.PermissionsConfig.MaintenanceRole.Name
+	}
+	return DefaultRoleForWorkflowType(appCfg, flw.Type)
+}

@@ -183,39 +183,35 @@ func (p *Planner) getRoleForDeploy(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, generics.FromPtrStr(installDeploy.InstallWorkflowID))
-	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, defaultRole)
+	flw := p.installWorkflowForRoleDefault(ctx, l, generics.FromPtrStr(installDeploy.InstallWorkflowID))
+	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, flw)
 }
 
-// defaultRoleForInstallWorkflow resolves the lowest-precedence default role for
-// a step based on its parent install workflow type. It falls back to the
-// maintenance role when the workflow can't be resolved so planning never fails
-// on role defaulting.
-func (p *Planner) defaultRoleForInstallWorkflow(
+// installWorkflowForRoleDefault returns the parent install workflow used to
+// derive a step's lowest-precedence default role, or nil when workflow-type
+// defaulting should not apply. It returns nil when the global config flag is
+// off (WORKFLOW_DEFAULT_ROLE_ENABLED) or the workflow can't be resolved, so the
+// operation-roles package falls back to the maintenance role and planning never
+// fails on role defaulting.
+func (p *Planner) installWorkflowForRoleDefault(
 	ctx workflow.Context,
 	l *zap.Logger,
-	appCfg *app.AppConfig,
 	installWorkflowID string,
-) string {
-	fallback := appCfg.PermissionsConfig.MaintenanceRole.Name
-
-	// Gate on the global server-side config flag (set via the
-	// WORKFLOW_DEFAULT_ROLE_ENABLED env var). When disabled, every workflow keeps
-	// the legacy maintenance-role default.
+) *app.Workflow {
 	enabled, err := activities.AwaitWorkflowDefaultRoleEnabled(ctx, activities.WorkflowDefaultRoleEnabledRequest{})
 	if err != nil {
 		l.Warn("unable to check workflow-default-role config; using maintenance role",
 			zap.Error(err),
 		)
-		return fallback
+		return nil
 	}
 	if !enabled {
-		return fallback
+		return nil
 	}
 
 	if installWorkflowID == "" {
 		l.Warn("install workflow ID missing for role default; using maintenance role")
-		return fallback
+		return nil
 	}
 
 	flw, err := activities.AwaitGetInstallWorkflowByID(ctx, installWorkflowID)
@@ -224,10 +220,10 @@ func (p *Planner) defaultRoleForInstallWorkflow(
 			zap.String("install_workflow_id", installWorkflowID),
 			zap.Error(err),
 		)
-		return fallback
+		return nil
 	}
 
-	return operationroles.DefaultRoleForWorkflowType(appCfg, flw.Type)
+	return flw
 }
 
 // getAuthForDeploy builds cloud auth from an already-resolved role selection.

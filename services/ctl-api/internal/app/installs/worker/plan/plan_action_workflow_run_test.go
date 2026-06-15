@@ -429,7 +429,7 @@ func TestGetRoleForAction(t *testing.T) {
 				run,
 				stack,
 				installState,
-				"",
+				nil,
 			)
 
 			require.NoError(t, err, "getRoleForAction should not return error for test: %s", tt.description)

@@ -45,3 +45,30 @@ func TestDefaultRoleForWorkflowType(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultRoleForWorkflow(t *testing.T) {
+	appCfg := &app.AppConfig{
+		PermissionsConfig: app.AppPermissionsConfig{
+			ProvisionRole:   app.AppAWSIAMRoleConfig{Name: "provision"},
+			DeprovisionRole: app.AppAWSIAMRoleConfig{Name: "deprovision"},
+			MaintenanceRole: app.AppAWSIAMRoleConfig{Name: "maintenance"},
+		},
+	}
+
+	tests := []struct {
+		name     string
+		flw      *app.Workflow
+		expected string
+	}{
+		{"nil workflow falls back to maintenance", nil, "maintenance"},
+		{"provision workflow uses provision role", &app.Workflow{Type: app.WorkflowTypeProvision}, "provision"},
+		{"deprovision workflow uses deprovision role", &app.Workflow{Type: app.WorkflowTypeDeprovision}, "deprovision"},
+		{"manual deploy uses maintenance role", &app.Workflow{Type: app.WorkflowTypeManualDeploy}, "maintenance"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, defaultRoleForWorkflow(appCfg, tt.flw))
+		})
+	}
+}

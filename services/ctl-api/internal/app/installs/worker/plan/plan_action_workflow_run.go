@@ -159,8 +159,8 @@ func (p *Planner) getRoleForAction(
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, generics.FromPtrStr(run.InstallWorkflowID))
-	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState, defaultRole)
+	flw := p.installWorkflowForRoleDefault(ctx, l, generics.FromPtrStr(run.InstallWorkflowID))
+	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState, flw)
 }
 
 func (p *Planner) getAuthForActionWorkflowRun(
