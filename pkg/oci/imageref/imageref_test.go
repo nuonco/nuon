@@ -155,3 +155,62 @@ func TestShortDigest(t *testing.T) {
 		}
 	}
 }
+
+func TestSpecPullRef(t *testing.T) {
+	const digest = "sha256:6b600461cdb1f1ffc311da10c80c423262f2c9edd9e5d74b519f20e004d49ef6"
+
+	cases := []struct {
+		name     string
+		spec     Spec
+		selected string
+		want     string
+	}{
+		{"plain tag", Spec{Image: "nginx", Tag: "1.25.3"}, "", "1.25.3"},
+		{"bare digest tag", Spec{Image: "nginx", Tag: digest}, "", digest},
+		{"full ref in tag", Spec{Image: "nginx", Tag: "nginx@" + digest}, "", digest},
+		{"digest baked in image, empty tag", Spec{Image: "nginx@" + digest}, "", digest},
+		{"digest in image, tag still wins", Spec{Image: "nginx@" + digest, Tag: "1.25.3"}, "", "1.25.3"},
+		{"empty tag, no digest", Spec{Image: "nginx"}, "", ""},
+		{"registry path tag", Spec{Image: "ghcr.io/foo/bar", Tag: "1.0"}, "", "1.0"},
+		{"update_policy uses selected tag", Spec{Image: "nginx", UpdatePolicy: "~1.25.0"}, "1.25.5", "1.25.5"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.spec.PullRef(tc.selected); got != tc.want {
+				t.Errorf("Spec%+v.PullRef(%q) = %q, want %q", tc.spec, tc.selected, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestSpecIdentity(t *testing.T) {
+	const digest = "sha256:6b600461cdb1f1ffc311da10c80c423262f2c9edd9e5d74b519f20e004d49ef6"
+
+	cases := []struct {
+		name         string
+		spec         Spec
+		selected     string
+		wantImage    string
+		wantRef      string
+		wantResolved string
+	}{
+		{"plain tag", Spec{Image: "nginx", Tag: "1.25.3"}, "", "nginx", "nginx:1.25.3", "1.25.3"},
+		{"bare digest tag", Spec{Image: "nginx", Tag: digest}, "", "nginx", "nginx@" + digest, ""},
+		{"full ref in tag", Spec{Image: "nginx", Tag: "nginx@" + digest}, "", "nginx", "nginx@" + digest, ""},
+		{"full ref in tag, empty image", Spec{Tag: "nginx@" + digest}, "", "nginx", "nginx@" + digest, ""},
+		{"digest baked in image", Spec{Image: "nginx@" + digest}, "", "nginx", "nginx@" + digest, ""},
+		{"update_policy records constraint", Spec{Image: "nginx", UpdatePolicy: "~1.25.0"}, "1.25.5", "nginx", "nginx:~1.25.0", "1.25.5"},
+		{"registry path tag", Spec{Image: "ghcr.io/foo/bar", Tag: "1.0"}, "", "ghcr.io/foo/bar", "ghcr.io/foo/bar:1.0", "1.0"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.spec.Identity(tc.selected)
+			if got.SourceImage != tc.wantImage || got.SourceRef != tc.wantRef || got.ResolvedTag != tc.wantResolved {
+				t.Errorf("Spec%+v.Identity(%q) = {Image:%q Ref:%q Resolved:%q}, want {Image:%q Ref:%q Resolved:%q}",
+					tc.spec, tc.selected, got.SourceImage, got.SourceRef, got.ResolvedTag, tc.wantImage, tc.wantRef, tc.wantResolved)
+			}
+		})
+	}
+}
