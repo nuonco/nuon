@@ -18,6 +18,8 @@ func (w *worker) getClient() (client.Client, func(), error) {
 		temporalclient.WithAddr(w.Config.TemporalHost),
 		temporalclient.WithLogger(l),
 		temporalclient.WithNamespace(w.Config.TemporalNamespace),
+		temporalclient.WithTLS(w.Config.TemporalTLSEnabled),
+		temporalclient.WithAPIKey(w.Config.TemporalAPIKey),
 		temporalclient.WithContextPropagators(w.propagators),
 		temporalclient.WithMetricsWriter(w.mw),
 	)

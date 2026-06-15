@@ -2,6 +2,7 @@ package temporal
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 
 	enumspb "go.temporal.io/api/enums/v1"
@@ -102,6 +103,12 @@ func (t *temporal) getOpts() tclient.Options {
 	}
 	if t.tallyScope != nil {
 		opts.MetricsHandler = sdktally.NewMetricsHandler(t.tallyScope)
+	}
+	if t.TLSEnabled {
+		opts.ConnectionOptions.TLS = &tls.Config{MinVersion: tls.VersionTLS12}
+	}
+	if t.APIKey != "" {
+		opts.Credentials = tclient.NewAPIKeyStaticCredentials(t.APIKey)
 	}
 
 	return opts

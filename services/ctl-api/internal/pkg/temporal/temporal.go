@@ -30,6 +30,8 @@ func New(params Params) (temporalclient.Client, error) {
 		temporalclient.WithAddr(params.Cfg.TemporalHost),
 		temporalclient.WithLogger(params.L),
 		temporalclient.WithNamespace(params.Cfg.TemporalNamespace),
+		temporalclient.WithTLS(params.Cfg.TemporalTLSEnabled),
+		temporalclient.WithAPIKey(params.Cfg.TemporalAPIKey),
 		temporalclient.WithDataConverter(params.DataConverter),
 		temporalclient.WithContextPropagator(params.Propagator),
 		temporalclient.WithMetricsWriter(params.MW),

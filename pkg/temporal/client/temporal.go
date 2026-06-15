@@ -27,6 +27,8 @@ type temporal struct {
 	Namespace   string
 	Logger      *zap.Logger `validate:"required"`
 	LazyLoad    bool
+	TLSEnabled  bool
+	APIKey      string
 	Converter   converter.DataConverter
 	TallyCloser io.Closer
 	tallyScope  tally.Scope
@@ -116,6 +118,20 @@ func WithContextPropagator(propagator workflow.ContextPropagator) temporalOption
 func WithContextPropagators(propagators []workflow.ContextPropagator) temporalOption {
 	return func(t *temporal) error {
 		t.propagators = propagators
+		return nil
+	}
+}
+
+func WithTLS(enabled bool) temporalOption {
+	return func(t *temporal) error {
+		t.TLSEnabled = enabled
+		return nil
+	}
+}
+
+func WithAPIKey(key string) temporalOption {
+	return func(t *temporal) error {
+		t.APIKey = key
 		return nil
 	}
 }
