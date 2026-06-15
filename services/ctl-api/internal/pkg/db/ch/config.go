@@ -22,7 +22,8 @@ func (c *database) chOptions() *clickhousecore.Options {
 	var tlsCfg *tls.Config
 	if c.UseTLS {
 		tlsCfg = &tls.Config{
-			InsecureSkipVerify: true,
+			ServerName:         c.Host,
+			InsecureSkipVerify: c.TLSInsecure,
 		}
 	}
 

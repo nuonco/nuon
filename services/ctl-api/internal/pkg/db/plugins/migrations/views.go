@@ -59,13 +59,13 @@ func (m *Migrator) applyView(ctx context.Context, obj any, view View) error {
 			zap.String("sql", dropSQL),
 		)
 		if res := m.db.WithContext(ctx).
-			Exec(dropSQL); res.Error != nil {
+			Exec(m.rewriteSQL(dropSQL)); res.Error != nil {
 			return errors.Wrap(res.Error, "unable to drop view "+view.Name)
 		}
 	}
 
 	applySQLTmpl := m.opts.CreateViewSQLTmpl
-	applySQL := fmt.Sprintf(applySQLTmpl, view.Name, view.SQL)
+	applySQL := m.rewriteSQL(fmt.Sprintf(applySQLTmpl, view.Name, view.SQL))
 	m.l.Debug("creating view",
 		zap.String("name", plugins.TableName(m.db, obj)),
 		zap.String("sql", applySQL),

@@ -200,7 +200,7 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 			return err
 		}
 
-		res := a.db.WithContext(ctx).Exec(sql)
+		res := a.db.WithContext(ctx).Exec(a.rewriteSQL(sql))
 		if res.Error != nil {
 			statusDescription = "unable_to_exec_sql_fn_sql"
 			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {
@@ -212,7 +212,7 @@ func (a *Migrator) execMigration(ctx context.Context, migration Migration) error
 	}
 
 	if migration.SQL != "" {
-		res := a.db.WithContext(ctx).Exec(migration.SQL)
+		res := a.db.WithContext(ctx).Exec(a.rewriteSQL(migration.SQL))
 		if res.Error != nil {
 			statusDescription = "unable_to_exec_sql"
 			if updateErr := a.updateMigrationStatus(ctx, migration.Name, MigrationStatusError); updateErr != nil {

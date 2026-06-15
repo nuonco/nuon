@@ -17,6 +17,12 @@ type Opts struct {
 	CreateUniqueIndexTmpl string
 	CreatePKIndexTmpl     string
 	DropIndexTmpl         string
+
+	// SQLRewriter, if set, is applied to every raw SQL string the migrator
+	// executes (Migration.SQL, Migration.SQLFn output, and view templates).
+	// Used by the ClickHouse migrator to strip ON CLUSTER clauses and
+	// downgrade Replicated engines when running against ClickHouse Cloud.
+	SQLRewriter func(string) string
 }
 
 func NewOpts() *Opts {
@@ -78,6 +84,13 @@ type Migrator struct {
 	mw               metrics.Writer
 	l                *zap.Logger
 	allowDestroy     bool
+}
+
+func (m *Migrator) rewriteSQL(sql string) string {
+	if m.opts == nil || m.opts.SQLRewriter == nil {
+		return sql
+	}
+	return m.opts.SQLRewriter(sql)
 }
 
 func (m *Migrator) log(obj any) *zap.Logger {

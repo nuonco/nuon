@@ -34,7 +34,8 @@ type database struct {
 	Host     string `validate:"required"`
 	Port     string `validate:"required"`
 	Name     string `validate:"required"`
-	UseTLS   bool
+	UseTLS      bool
+	TLSInsecure bool
 
 	ReadTimeout  time.Duration `validate:"required"`
 	WriteTimeout time.Duration `validate:"required"`
@@ -63,6 +64,8 @@ func New(params Params, lc fx.Lifecycle) (*gorm.DB, error) {
 		User:           params.Cfg.ClickhouseDBUser,
 		Password:       params.Cfg.ClickhouseDBPassword,
 		Port:           params.Cfg.ClickhouseDBPort,
+		UseTLS:         params.Cfg.ClickhouseDBUseTLS,
+		TLSInsecure:    params.Cfg.ClickhouseDBTLSInsecure,
 		MetricsWriter:  params.MetricsWriter,
 		QueryCollector: params.QueryCollector,
 		Debug:          params.Cfg.LogLevel == "DEBUG",

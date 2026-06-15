@@ -205,6 +205,8 @@ type Config struct {
 	ClickhouseDBPassword     string        `config:"clickhouse_db_password" validate:"required"`
 	ClickhouseDBPort         string        `config:"clickhouse_db_port" validate:"required"`
 	ClickhouseDBUseTLS       bool          `config:"clickhouse_db_use_tls"`
+	ClickhouseDBTLSInsecure  bool          `config:"clickhouse_db_tls_insecure"`
+	ClickhouseDBClusterName  string        `config:"clickhouse_db_cluster"`
 	ClickhouseDBReadTimeout  time.Duration `config:"clickhouse_db_read_timeout" validate:"required"`
 	ClickhouseDBWriteTimeout time.Duration `config:"clickhouse_db_write_timeout" validate:"required"`
 	ClickhouseDBDialTimeout  time.Duration `config:"clickhouse_db_dial_timeout" validate:"required"`
