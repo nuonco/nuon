@@ -80,7 +80,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		attrs["action.id"] = run.ID
 	}
 
-	cloudAuth, roleSelection, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, stack, state)
+	cloudAuth, roleSelection, err := p.getAuthForActionWorkflowRun(ctx, stack.InstallStackOutputs, run, appCfg, &install.Org, stack, state)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get auth for action workflow run")
 	}
@@ -155,11 +155,12 @@ func (p *Planner) getRoleForAction(
 	ctx workflow.Context,
 	l *zap.Logger,
 	appCfg *app.AppConfig,
+	org *app.Org,
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, generics.FromPtrStr(run.InstallWorkflowID))
+	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, org, generics.FromPtrStr(run.InstallWorkflowID))
 	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState, defaultRole)
 }
 
@@ -168,6 +169,7 @@ func (p *Planner) getAuthForActionWorkflowRun(
 	outputs app.InstallStackOutputs,
 	run *app.InstallActionWorkflowRun,
 	appCfg *app.AppConfig,
+	org *app.Org,
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*CloudAuth, *operationroles.RoleSelection, error) {
@@ -176,7 +178,7 @@ func (p *Planner) getAuthForActionWorkflowRun(
 		return nil, nil, err
 	}
 
-	roleSelection, operation, err := p.getRoleForAction(ctx, l, appCfg, run, stack, installState)
+	roleSelection, operation, err := p.getRoleForAction(ctx, l, appCfg, org, run, stack, installState)
 	if err != nil {
 		return nil, nil, err
 	}

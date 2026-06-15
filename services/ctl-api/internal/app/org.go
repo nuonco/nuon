@@ -236,6 +236,13 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// HasFeature reports whether the given feature flag is enabled for the org.
+// It reads the already-loaded Features map (normalized in AfterQuery), so it
+// performs no database or activity calls.
+func (o *Org) HasFeature(feature OrgFeature) bool {
+	return o.Features[string(feature)]
+}
+
 // active feature flags for an orgs
 func GetFeatures() []OrgFeature {
 	return []OrgFeature{
