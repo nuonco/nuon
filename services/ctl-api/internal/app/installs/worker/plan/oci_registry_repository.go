@@ -92,7 +92,9 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			)
 			return nil, errors.Wrap(err, "unable to render acr repository name")
 		}
-		cfg.Repository = repositoryStr
+		// Per-component paths so resolved-version tags can't collide across
+		// components. ACR creates nested repositories implicitly on push.
+		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.login_server}}", stateData)
 		if err != nil {
 			l.Error("error rendering registy url",
