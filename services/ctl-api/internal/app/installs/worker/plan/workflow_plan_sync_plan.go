@@ -109,11 +109,13 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 			Outputs: map[string]any{
 				"image": map[string]interface{}{
 					// Sandbox outputs mirror the live runner sync outputs
-					// shape: `repository` and `ref` are the auto-rendered
-					// digest-pinned forms; `tag` is intentionally empty;
-					// `display_tag` carries the human-friendly tag.
-					"repository":    "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
-					"tag":           "",
+					// shape: `repository` and `tag` are the bare repo and
+					// resolved tag that user templates compose as
+					// `{{.repository}}:{{.tag}}`; `ref` is the additive
+					// digest-pinned form; `display_tag` carries the
+					// human-friendly tag.
+					"repository":    "registry.example.com/nuon/app-service",
+					"tag":           "v1.2.3",
 					"ref":           "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
 					"display_tag":   "v1.2.3",
 					"media_type":    "application/vnd.docker.distribution.manifest.v2+json",

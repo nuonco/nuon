@@ -290,17 +290,24 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			// per-AppConfig-version pinning — a deploy of an install
 			// pinned to ACV vN may pick up a build created against vN+1
 			// or vN-1. Cross-ACV correctness is a deferred fix.
+			//
+			// When no Active build exists yet (e.g. the build is still
+			// in-flight), leave BuildID empty: the signal falls back to
+			// resolving the latest build at run time. This keeps a single
+			// component without an active build from aborting generation of
+			// the entire deploy workflow.
 			latestBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, comp.ID)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to resolve latest active build for image component %s", comp.Name)
 			}
-			if latestBuild == nil {
-				return nil, errors.Errorf("no active build for image component %s (build still in-flight?)", comp.Name)
+			var buildID string
+			if latestBuild != nil {
+				buildID = latestBuild.ID
 			}
 			deployStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync "+comp.Name, pgtype.Hstore{}, &componentsyncimage.Signal{
 				InstallComponentID: installComponentID,
 				ComponentID:        comp.ID,
-				BuildID:            latestBuild.ID,
+				BuildID:            buildID,
 				Role:               dg.flw.Role,
 			}, dg.flw.PlanOnly)
 			if err != nil {
@@ -315,19 +322,22 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 
 			// Resolve the build to deploy using the global heuristic.
 			// Same caveat as the image-sync branch above — cross-ACV
-			// build leakage is possible.
+			// build leakage is possible. When no Active build exists yet,
+			// leave BuildID empty so the signal resolves the latest build
+			// at run time rather than aborting the whole workflow.
 			latestBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, comp.ID)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to resolve latest active build for component %s", comp.Name)
 			}
-			if latestBuild == nil {
-				return nil, errors.Errorf("no active build for component %s (build still in-flight?)", comp.Name)
+			var buildID string
+			if latestBuild != nil {
+				buildID = latestBuild.ID
 			}
 			planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "sync and plan "+comp.Name, pgtype.Hstore{}, &componentdeploysyncandplan.Signal{
 				InstallComponentID: installComponentID,
 				InstallID:          dg.installID,
 				ComponentID:        comp.ID,
-				BuildID:            latestBuild.ID,
+				BuildID:            buildID,
 				Role:               dg.flw.Role,
 			}, dg.flw.PlanOnly, WithSkippable(false))
 			if err != nil {

@@ -27,6 +27,95 @@ import (
 	"strings"
 )
 
+// Spec is the raw image source a build planner hands the runner: the
+// image_url, the literal tag (which may itself be a bare "sha256:..." digest
+// or a full "repo@sha256:..." reference), and an optional update_policy semver
+// constraint. The same `@sha256:` shapes are parsed once here so the pull
+// reference and the recorded [Source] identity never disagree.
+type Spec struct {
+	// Image is the image_url. It may carry a "@sha256:..." digest when the
+	// user pinned by digest in the image field rather than the tag.
+	Image string
+	// Tag is the literal tag. It may be a plain tag ("1.25.3"), a bare
+	// digest ("sha256:..."), or a full "repo@sha256:..." reference.
+	Tag string
+	// UpdatePolicy is the semver constraint. When set it takes precedence:
+	// the runner selects a concrete tag at build time and passes it back as
+	// selectedTag.
+	UpdatePolicy string
+}
+
+// parseSpec decomposes a planner-provided image+tag into its bare repository,
+// literal tag, and digest. At most one of tag/digest is set. A "@sha256:..."
+// substring in either field marks a digest-pinned reference.
+func parseSpec(image, tag string) (repo, literalTag, digest string) {
+	repo = image
+	switch {
+	case strings.Contains(tag, "@sha256:"):
+		// User wrote "repo@sha256:..." and the planner kept it in the tag.
+		parts := strings.SplitN(tag, "@sha256:", 2)
+		if image == "" {
+			repo = parts[0]
+		}
+		digest = "sha256:" + parts[1]
+	case strings.HasPrefix(tag, "sha256:"):
+		digest = tag
+	case tag != "":
+		literalTag = tag
+	case strings.Contains(image, "@sha256:"):
+		// Digest baked into the image field; tag (if any) is ignored.
+		parts := strings.SplitN(image, "@sha256:", 2)
+		repo = parts[0]
+		digest = "sha256:" + parts[1]
+	}
+	return repo, literalTag, digest
+}
+
+// PullRef returns the repo-relative reference to hand the OCI resolver and
+// copier: the update_policy-selected tag when a policy is set, otherwise a
+// plain tag or a bare "sha256:..." digest. The source repository config is
+// already scoped to the repository, so any "repo@" prefix is stripped to the
+// bare digest. Returns "" only when the spec carries no tag and no digest, in
+// which case the resolver surfaces a clear error.
+func (sp Spec) PullRef(selectedTag string) string {
+	if sp.UpdatePolicy != "" {
+		return selectedTag
+	}
+	_, literalTag, digest := parseSpec(sp.Image, sp.Tag)
+	if digest != "" {
+		return digest
+	}
+	return literalTag
+}
+
+// Identity returns the source-identity fields to record on the ComponentBuild
+// row. SourceDigest is left empty: the caller fills it in after resolving the
+// manifest. selectedTag is the update_policy-selected tag (ignored when no
+// policy is set).
+//
+//   - SourceRef is what the user asked for: "repo:tag" for tag-based refs,
+//     "repo@sha256:..." for digest-pinned refs, or "repo:<update_policy>" when
+//     a semver constraint is set (the constraint, not the tag we happened to
+//     select on this build).
+//   - SourceImage is the bare repository.
+//   - ResolvedTag is the tag the runner pulled: the selected tag for
+//     update_policy, the literal tag for tag-based refs, empty for digest pins.
+func (sp Spec) Identity(selectedTag string) Source {
+	repo, literalTag, digest := parseSpec(sp.Image, sp.Tag)
+	s := Source{SourceImage: repo}
+	switch {
+	case sp.UpdatePolicy != "":
+		s.SourceRef = fmt.Sprintf("%s:%s", repo, sp.UpdatePolicy)
+		s.ResolvedTag = selectedTag
+	case digest != "":
+		s.SourceRef = fmt.Sprintf("%s@%s", repo, digest)
+	default:
+		s.SourceRef = fmt.Sprintf("%s:%s", repo, literalTag)
+		s.ResolvedTag = literalTag
+	}
+	return s
+}
+
 // shortDigestLen is the number of hex characters of the digest payload
 // included in display-form references. Matches the convention used by Docker
 // and oras (12 chars by Docker, 7 by oras/git short SHAs — we use 7 to keep
