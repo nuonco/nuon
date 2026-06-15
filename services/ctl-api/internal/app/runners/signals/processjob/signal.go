@@ -236,149 +236,32 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 		return false, false, err
 	}
 
+	availableStart := workflow.Now(ctx)
+	l.Info("marking job as available for runner to pick up")
+	s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusAvailable, "waiting for runner to reserve job")
+
+	start := workflow.Now(ctx)
 	overallTimeout := job.CreatedAt.Add(job.OverallTimeout)
+	availableTimeout := start.Add(job.AvailableTimeout)
 
 	var jobExecutionFound bool
 	var runnerStatus app.RunnerStatus
 
-	// Outer loop: health-wait → mark available → pickup-wait.
-	// If the pickup-wait times out because the runner is shutting down,
-	// we loop back to health-wait until a new process comes up.
-	for !jobExecutionFound {
-		availableStart := workflow.Now(ctx)
-		availableTimeout := availableStart.Add(job.AvailableTimeout)
-
-		if job.Group != app.RunnerJobGroupOperations {
-			// Wait until the runner is healthy AND has no pending shutdown.
-			for attempt := 0; ; attempt++ {
-				runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
-				if err != nil {
-					l.Warn("unable to determine runner status", zap.Error(err))
-					return false, false, err
-				}
-
-				shutdownResp, shutdownErr := activities.AwaitHasOpenProcessShutdown(ctx, activities.HasOpenProcessShutdownRequest{
-					RunnerID: job.RunnerID,
-				})
-				hasOpenShutdown := shutdownErr == nil && shutdownResp.HasOpenShutdown
-
-				if runnerStatus == app.RunnerStatusActive && !hasOpenShutdown {
-					break
-				}
-
-				if hasOpenShutdown {
-					l.Info("runner has pending shutdown, waiting for new process",
-						zap.String("runner_id", job.RunnerID),
-					)
-				}
-				etags["runner_status"] = string(runnerStatus)
-
-				jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
-				if err != nil {
-					return false, false, nil
-				}
-				if jobStatus == app.RunnerJobStatusCancelled {
-					l.Error("job was cancelled")
-					tags["status"] = "job_cancelled"
-					return false, false, nil
-				}
-
-				now := workflow.Now(ctx)
-				if now.After(overallTimeout) {
-					l.Error("overall job timeout reached")
-					s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout waiting for runner to be healthy")
-					tags["status"] = "runner_unhealthy"
-
-					s.mw.Event(ctx, &statsd.Event{
-						Title:          "Overall job timeout reached waiting for runner to become healthy",
-						Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
-						Tags:           metrics.ToTags(etags),
-						SourceTypeName: "nuon-jobsys",
-						Priority:       statsd.Normal,
-						AlertType:      statsd.Error,
-						AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
-					})
-					return false, false, nil
-				}
-
-				if now.After(availableTimeout) {
-					l.Error("timeout waiting for job to be picked up")
-					s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to become healthy")
-					tags["status"] = "runner_unhealthy"
-
-					s.mw.Event(ctx, &statsd.Event{
-						Title:          "Available timeout reached waiting for runner to become healthy",
-						Text:           "Job is ready for execution, but runner did not become healthy within the available timeout",
-						Tags:           metrics.ToTags(etags),
-						SourceTypeName: "nuon-jobsys",
-						Priority:       statsd.Low,
-						AlertType:      statsd.Warning,
-						AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
-					})
-					return true, false, nil
-				}
-
-				workflow.Sleep(ctx, pollPeriod(attempt))
+	if job.Group != app.RunnerJobGroupOperations {
+		// Check the runner's health before sleeping. The common case is that the
+		// runner is already active when the job is enqueued, so checking first
+		// lets us proceed with zero wait instead of always burning a full
+		// pollPeriod on a bare workflow.Sleep before the first status check.
+		for attempt := 0; ; attempt++ {
+			runnerStatus, err = activities.AwaitGetRunnerStatusByID(ctx, job.RunnerID)
+			if err != nil {
+				l.Warn("unable to determine runner status", zap.Error(err))
+				return false, false, err
 			}
-		}
-
-		// Runner is healthy — mark job available and reset the available timeout.
-		availableStart = workflow.Now(ctx)
-		availableTimeout = availableStart.Add(job.AvailableTimeout)
-		l.Info("marking job as available for runner to pick up")
-		s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusAvailable, "waiting for runner to reserve job")
-
-		// Poll until the job is picked up and an execution exists.
-		pickupCh := workflow.GetSignalChannel(ctx, PickupSignalName(job.ID))
-		retryHealthWait := false
-		for attempt := 0; !jobExecutionFound; attempt++ {
-			sleepOrSignal(ctx, pickupCh, pollPeriod(attempt))
-
-			now := workflow.Now(ctx)
-			if now.After(overallTimeout) {
-				l.Error("overall job timeout reached")
-				s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
-				tags["status"] = "overall_timeout"
-
-				etags["status"] = "overall_timeout"
-				s.mw.Event(ctx, &statsd.Event{
-					Title:          "Overall job timeout reached without job starting",
-					Text:           "Overall end-to-end job execution timeout reached without ever having been picked up",
-					Tags:           metrics.ToTags(etags),
-					SourceTypeName: "nuon-jobsys",
-					Priority:       statsd.Normal,
-					AlertType:      statsd.Error,
-					AggregationKey: "runner-job-timeout-awaiting-job-pickup",
-				})
-				return false, false, nil
+			if runnerStatus == app.RunnerStatusActive {
+				break
 			}
-
-			if now.After(availableTimeout) {
-				shutdownResp, shutdownErr := activities.AwaitHasOpenProcessShutdown(ctx, activities.HasOpenProcessShutdownRequest{
-					RunnerID: job.RunnerID,
-				})
-				if shutdownErr == nil && shutdownResp.HasOpenShutdown {
-					l.Info("available timeout reached but runner has pending shutdown, waiting for new process before retrying")
-					retryHealthWait = true
-					break
-				}
-
-				l.Error("timeout waiting for job to be picked up")
-				s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to pick up job")
-				tags["status"] = "available_timeout"
-
-				etags["status"] = "available_timeout"
-				s.mw.Event(ctx, &statsd.Event{
-					Title:          "Timeout waiting for runner job to be picked up",
-					Text:           "Job was marked as ready for execution, and runner appears to be in a healthy state, but runner did not pick up the job within the available timeout",
-					Tags:           metrics.ToTags(etags),
-					SourceTypeName: "nuon-jobsys",
-					Priority:       statsd.Normal,
-					AlertType:      statsd.Error,
-					AggregationKey: "runner-job-timeout-awaiting-job-pickup",
-				})
-				return true, false, nil
-			}
+			etags["runner_status"] = string(runnerStatus)
 
 			jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
 			if err != nil {
@@ -390,19 +273,109 @@ func (s *Signal) startJobExecution(ctx workflow.Context, job *app.RunnerJob) (bo
 				return false, false, nil
 			}
 
-			jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{
-				JobID:       job.ID,
-				AvailableAt: availableStart,
-			})
-			if err != nil {
-				return false, false, fmt.Errorf("error fetching latest job execution: %w", err)
+			now := workflow.Now(ctx)
+			if now.After(overallTimeout) {
+				l.Error("overall job timeout reached")
+				s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout waiting for runner to be healthy")
+				tags["status"] = "runner_unhealthy"
+
+				s.mw.Event(ctx, &statsd.Event{
+					Title:          "Overall job timeout reached waiting for runner to become healthy",
+					Text:           "Overall end-to-end job execution timeout reached while waiting for job to bewcome healthy",
+					Tags:           metrics.ToTags(etags),
+					SourceTypeName: "nuon-jobsys",
+					Priority:       statsd.Normal,
+					AlertType:      statsd.Error,
+					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
+				})
+				return false, false, nil
 			}
-			jobExecutionFound = jobExecutionResp.Found
+
+			if now.After(availableTimeout) {
+				l.Error("timeout waiting for job to be picked up")
+				s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to become healthy")
+				tags["status"] = "runner_unhealthy"
+
+				s.mw.Event(ctx, &statsd.Event{
+					Title:          "Available timeout reached waiting for runner to become healthy",
+					Text:           "Job is ready for execution, but runner did not become healthy within the available timeout",
+					Tags:           metrics.ToTags(etags),
+					SourceTypeName: "nuon-jobsys",
+					Priority:       statsd.Low,
+					AlertType:      statsd.Warning,
+					AggregationKey: "runner-job-timeout-waiting-for-healthy-runner",
+				})
+				return true, false, nil
+			}
+
+			// Runner not yet healthy — wait out a poll tick before re-checking.
+			workflow.Sleep(ctx, pollPeriod(attempt))
+		}
+	}
+
+	// poll until the job is picked up, and an execution exists. The
+	// CreateRunnerJobExecution handler signals this channel the moment the
+	// runner reserves the job, so we usually wake on the first tick instead
+	// of sleeping out a full pollPeriod.
+	pickupCh := workflow.GetSignalChannel(ctx, PickupSignalName(job.ID))
+	for attempt := 0; !jobExecutionFound; attempt++ {
+		sleepOrSignal(ctx, pickupCh, pollPeriod(attempt))
+
+		now := workflow.Now(ctx)
+		if now.After(overallTimeout) {
+			l.Error("overall job timeout reached")
+			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "overall timeout")
+			tags["status"] = "overall_timeout"
+
+			etags["status"] = "overall_timeout"
+			s.mw.Event(ctx, &statsd.Event{
+				Title:          "Overall job timeout reached without job starting",
+				Text:           "Overall end-to-end job execution timeout reached without ever having been picked up",
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
+			})
+			return false, false, nil
 		}
 
-		if retryHealthWait {
-			continue
+		if now.After(availableTimeout) {
+			l.Error("timeout waiting for job to be picked up")
+			s.updateJobStatus(ctx, job.ID, app.RunnerJobStatusTimedOut, "timeout waiting for runner to pick up job")
+			tags["status"] = "available_timeout"
+
+			etags["status"] = "available_timeout"
+			s.mw.Event(ctx, &statsd.Event{
+				Title:          "Timeout waiting for runner job to be picked up",
+				Text:           "Job was marked as ready for execution, and runner appears to be in a healthy state, but runner did not pick up the job within the available timeout",
+				Tags:           metrics.ToTags(etags),
+				SourceTypeName: "nuon-jobsys",
+				Priority:       statsd.Normal,
+				AlertType:      statsd.Error,
+				AggregationKey: "runner-job-timeout-awaiting-job-pickup",
+			})
+			return true, false, nil
 		}
+
+		jobStatus, err := activities.AwaitGetJobStatusByID(ctx, job.ID)
+		if err != nil {
+			return false, false, nil
+		}
+		if jobStatus == app.RunnerJobStatusCancelled {
+			l.Error("job was cancelled")
+			tags["status"] = "job_cancelled"
+			return false, false, nil
+		}
+
+		jobExecutionResp, err := activities.AwaitGetLatestJobExecution(ctx, activities.GetLatestJobExecutionRequest{
+			JobID:       job.ID,
+			AvailableAt: availableStart,
+		})
+		if err != nil {
+			return false, false, fmt.Errorf("error fetching latest job execution: %w", err)
+		}
+		jobExecutionFound = jobExecutionResp.Found
 	}
 
 	l.Info("job picked up by runner and is in progress")
