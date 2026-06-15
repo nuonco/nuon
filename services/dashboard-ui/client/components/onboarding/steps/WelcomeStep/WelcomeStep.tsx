@@ -18,7 +18,7 @@ export const WelcomeStep = ({ isPending, nextStepTitle, onSubmit, onAdvance }: I
     <form onSubmit={onSubmit} className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <Text variant="body" theme="neutral">
-          Before we get started, tell us a bit about yourself.
+          Tell us a bit about yourself (optional).
         </Text>
         <UserProfile />
       </div>
@@ -26,19 +26,17 @@ export const WelcomeStep = ({ isPending, nextStepTitle, onSubmit, onAdvance }: I
         <Input
           id="jobTitle"
           name="jobTitle"
-          placeholder="e.g. Platform Engineer"
           labelProps={{ labelText: 'Job Title' }}
         />
         <Input
           id="companyName"
           name="companyName"
-          placeholder="e.g. Acme Corp"
           labelProps={{ labelText: 'Company Name' }}
         />
         <Textarea
           id="tellUsMore"
           name="tellUsMore"
-          placeholder="Tell us about your use case..."
+          placeholder="How did you find us? What is your use case, app architecture, cloud providers?"
           labelProps={{ labelText: 'Tell us more' }}
           rows={3}
         />

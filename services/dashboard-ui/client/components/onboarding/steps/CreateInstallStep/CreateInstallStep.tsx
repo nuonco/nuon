@@ -105,6 +105,8 @@ export const CreateInstallStepContent = ({
         inputConfig={app.input_config}
         onSubmit={(formData: FormData) => onSubmit(formData)}
         onCancel={() => {}}
+        defaultAutoApprove
+        autoApproveDescription="Automatically approve and apply all future changes without manual confirmation. Defaulted to on for a faster trial flow."
       />
 
       <div className="flex justify-end">

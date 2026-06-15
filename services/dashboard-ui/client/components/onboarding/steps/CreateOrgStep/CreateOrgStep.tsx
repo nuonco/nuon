@@ -66,7 +66,7 @@ export const CreateOrgStep = ({
             <Input
               id="org-name"
               name="orgName"
-              placeholder="e.g. swift-harbor-ridge"
+              placeholder="swift-harbor-ridge"
               required
               value={orgName}
               onChange={(e) => onOrgNameChange(e.target.value)}

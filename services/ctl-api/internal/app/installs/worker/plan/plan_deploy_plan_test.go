@@ -13,8 +13,6 @@ import (
 )
 
 func TestGetRoleForDeploy(t *testing.T) {
-	p := &Planner{}
-
 	tests := []struct {
 		name               string
 		installDeployType  app.InstallDeployType
@@ -426,13 +424,14 @@ func TestGetRoleForDeploy(t *testing.T) {
 				Name: "test-install",
 			}
 
-			roleSelection, operation, err := p.getRoleForDeploy(
+			roleSelection, operation, err := operationroles.GetRoleForDeploy(
 				zap.NewNop(),
 				appConfig,
 				installDeploy,
-				compBuild,
+				&compBuild.ComponentConfigConnection,
 				stack,
 				installState,
+				nil,
 			)
 
 			require.NoError(t, err, "getRoleForDeploy should not return error for test: %s", tt.description)

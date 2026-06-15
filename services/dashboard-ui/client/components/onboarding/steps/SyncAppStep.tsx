@@ -13,6 +13,7 @@ export const SyncAppStep = ({ onAdvance, nextStepTitle }: IWizardStepComponentPr
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
+        <Text variant="body" weight="strong">Sync your app (required to proceed)</Text>
         <div className="relative">
           <ClickToCopyButton className="w-fit !absolute right-2 top-3" textToCopy="nuon apps sync" />
           <CodeBlock language="bash">nuon apps sync</CodeBlock>

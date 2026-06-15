@@ -176,7 +176,7 @@ func (s *service) getDefaultRoleName(
 		if operationType == app.OperationTeardown {
 			installDeploy.Type = app.InstallDeployTypeTeardown
 		}
-		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState)
+		roleSelection, _, err := operationroles.GetRoleForDeploy(s.l, appCfg, installDeploy, latestConfig, installStack, installState, nil)
 		if err != nil {
 			return "", err
 		}
@@ -219,7 +219,7 @@ func (s *service) getDefaultRoleName(
 		run := &app.InstallActionWorkflowRun{
 			ActionWorkflowConfig: *actionWorkflowCfg,
 		}
-		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState)
+		roleSelection, _, err := operationroles.GetRoleForAction(s.l, appCfg, run, installStack, installState, nil)
 		if err != nil {
 			return "", err
 		}

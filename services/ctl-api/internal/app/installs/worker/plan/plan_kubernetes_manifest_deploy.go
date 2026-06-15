@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createKubernetesManifestDeployPlan(
@@ -28,6 +29,7 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 	stack *app.InstallStack,
 	state *statepkg.State,
 	installDeploy *app.InstallDeploy,
+	roleSelection *operationroles.RoleSelection,
 ) (*plantypes.KubernetesManifestDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -90,11 +92,8 @@ func (p *Planner) createKubernetesManifestDeployPlan(
 
 	cloudAuth, err := p.getAuthForDeploy(
 		ctx,
-		installDeploy,
-		compBuild,
-		appCfg,
+		roleSelection,
 		stack,
-		state,
 		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
 	)
 	if err != nil {

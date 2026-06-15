@@ -47,7 +47,7 @@ export const DownloadCliStep = ({
 
       <div className="flex flex-col gap-2">
         <Text variant="body" weight="strong">
-          Authenticate
+          Authenticate (required to proceed)
         </Text>
         <div className="relative">
           <ClickToCopyButton

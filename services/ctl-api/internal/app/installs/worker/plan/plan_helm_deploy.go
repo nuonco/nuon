@@ -18,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 //go:embed fake_helm_plan.json
@@ -33,6 +34,7 @@ func (p *Planner) createHelmDeployPlan(
 	stack *app.InstallStack,
 	state *state.State,
 	installDeploy *app.InstallDeploy,
+	roleSelection *operationroles.RoleSelection,
 ) (*plantypes.HelmDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -119,11 +121,8 @@ func (p *Planner) createHelmDeployPlan(
 
 	cloudAuth, err := p.getAuthForDeploy(
 		ctx,
-		installDeploy,
-		compBuild,
-		appCfg,
+		roleSelection,
 		stack,
-		state,
 		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
 	)
 	if err != nil {
