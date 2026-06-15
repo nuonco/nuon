@@ -41,7 +41,7 @@ type WorkerParams struct {
 }
 
 func New(params WorkerParams) (*Worker, error) {
-	client, err := params.Tclient.GetNamespaceClient(TemporalNamespace)
+	client, err := params.Tclient.GetNamespaceClient(params.Cfg.NamespaceFor(TemporalNamespace))
 	if err != nil {
 		return nil, fmt.Errorf("unable to get namespace client: %w", err)
 	}

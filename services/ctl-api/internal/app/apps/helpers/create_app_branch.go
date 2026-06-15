@@ -28,7 +28,7 @@ func (h *Helpers) CreateAppBranch(
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     branch.ID,
 		OwnerType:   plugins.TableName(h.db, app.AppBranch{}),
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		MaxInFlight: 2,
 		MaxDepth:    50,
 	})

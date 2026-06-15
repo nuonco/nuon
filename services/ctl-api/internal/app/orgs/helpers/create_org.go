@@ -93,7 +93,7 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		OrgID:       &org.ID,
 		OwnerID:     org.ID,
 		OwnerType:   plugins.TableName(h.db, app.Org{}),
-		Namespace:   "orgs",
+		Namespace:   h.cfg.NamespaceFor("orgs"),
 		Name:        OrgSignalsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,

@@ -15,7 +15,7 @@ func (h *Helpers) CreateAppSandboxQueue(ctx context.Context, appID string) error
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   plugins.TableName(h.db, app.App{}),
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		MaxInFlight: 1,
 		MaxDepth:    50,
 	})

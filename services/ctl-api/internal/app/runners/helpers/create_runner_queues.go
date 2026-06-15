@@ -28,7 +28,7 @@ func (h *Helpers) CreateRunnerQueues(ctx context.Context, runner *app.Runner, se
 		if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     runner.ID,
 			OwnerType:   "runners",
-			Namespace:   "runners",
+			Namespace:   h.cfg.NamespaceFor("runners"),
 			Name:        string(group),
 			MaxInFlight: settings.MaxInFlightForGroup(group),
 			MaxDepth:    100,

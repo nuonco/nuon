@@ -16,7 +16,7 @@ func (h *Helpers) EnsureOrgQueue(ctx context.Context, orgID string) error {
 		OrgID:       &orgID,
 		OwnerID:     orgID,
 		OwnerType:   plugins.TableName(h.db, app.Org{}),
-		Namespace:   "orgs",
+		Namespace:   h.cfg.NamespaceFor("orgs"),
 		Name:        OrgSignalsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,

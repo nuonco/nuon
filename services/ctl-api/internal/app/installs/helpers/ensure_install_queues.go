@@ -34,7 +34,7 @@ func (s *Helpers) EnsureInstallQueues(ctx context.Context, installID string) err
 		existing, err := s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     installID,
 			OwnerType:   ownerType,
-			Namespace:   "installs",
+			Namespace:   s.cfg.NamespaceFor("installs"),
 			Name:        q.Name,
 			MaxInFlight: q.MaxInFlight,
 			MaxDepth:    50,

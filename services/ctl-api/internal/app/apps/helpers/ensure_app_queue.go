@@ -27,7 +27,7 @@ func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		Name:        AppWorkflowsQueueName,
 		MaxInFlight: 2,
 		MaxDepth:    50,
@@ -39,7 +39,7 @@ func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		Name:        AppSignalsQueueName,
 		MaxInFlight: 20,
 		MaxDepth:    50,
@@ -51,7 +51,7 @@ func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		Name:        AppWorkflowStepGroupsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,
@@ -63,7 +63,7 @@ func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		Name:        AppWorkflowStepsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,
@@ -75,7 +75,7 @@ func (h *Helpers) EnsureAppQueue(ctx context.Context, appID string) error {
 	if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     appID,
 		OwnerType:   ownerType,
-		Namespace:   "apps",
+		Namespace:   h.cfg.NamespaceFor("apps"),
 		Name:        AppGenerateStepsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,

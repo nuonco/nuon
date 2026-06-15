@@ -202,7 +202,7 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerGroup.Runners[0].ID,
 		OwnerType:   "runners",
-		Namespace:   "runners",
+		Namespace:   h.cfg.NamespaceFor("runners"),
 		Name:        "runner-signals",
 		MaxInFlight: 10,
 		MaxDepth:    50,

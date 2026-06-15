@@ -29,7 +29,7 @@ func (h *Helpers) EnsureComponentQueues(ctx context.Context, componentID string)
 	defaultQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     componentID,
 		OwnerType:   ownerType,
-		Namespace:   "components",
+		Namespace:   h.cfg.NamespaceFor("components"),
 		MaxInFlight: 1,
 		MaxDepth:    50,
 	})
@@ -40,7 +40,7 @@ func (h *Helpers) EnsureComponentQueues(ctx context.Context, componentID string)
 	stepsQueue, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     componentID,
 		OwnerType:   ownerType,
-		Namespace:   "components",
+		Namespace:   h.cfg.NamespaceFor("components"),
 		Name:        ComponentWorkflowStepsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,

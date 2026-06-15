@@ -19,7 +19,7 @@ func (h *Helpers) CreateConnectionQueue(ctx context.Context, vcsConn *app.VCSCon
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     vcsConn.ID,
 		OwnerType:   "vcs_connections",
-		Namespace:   vcsTemporalNamespace,
+		Namespace:   h.cfg.NamespaceFor(vcsTemporalNamespace),
 		Name:        fmt.Sprintf("vcs-connection-%s", vcsConn.ID),
 		MaxInFlight: 1,
 		MaxDepth:    5,

@@ -58,7 +58,7 @@ func (s *service) CreateOnboarding(ctx *gin.Context) {
 	_, err = s.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     onboarding.ID,
 		OwnerType:   plugins.TableName(s.db, app.Onboarding{}),
-		Namespace:   "onboardings",
+		Namespace:   s.cfg.NamespaceFor("onboardings"),
 		MaxInFlight: 1,
 		MaxDepth:    10,
 	})

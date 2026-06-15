@@ -19,7 +19,7 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   "runners",
+		Namespace:   h.cfg.NamespaceFor("runners"),
 		Name:        runnerSignalsQueueName,
 		MaxInFlight: 10,
 		MaxDepth:    50,
@@ -70,7 +70,7 @@ func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Ru
 		if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 			OwnerID:     runner.ID,
 			OwnerType:   "runners",
-			Namespace:   "runners",
+			Namespace:   h.cfg.NamespaceFor("runners"),
 			Name:        string(group),
 			MaxInFlight: settings.MaxInFlightForGroup(group),
 			MaxDepth:    100,

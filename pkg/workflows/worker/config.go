@@ -34,6 +34,7 @@ type Config struct {
 	// temporal configuration
 	TemporalHost                                   string `config:"temporal_host" validate:"required"`
 	TemporalNamespace                              string `config:"temporal_namespace"`
+	TemporalNamespacePrefix                        string `config:"temporal_namespace_prefix"`
 	TemporalTLSEnabled                             bool   `config:"temporal_tls_enabled"`
 	TemporalAPIKey                                 string `config:"temporal_api_key"`
 	TemporalTaskQueue                              string `config:"temporal_task_queue" validate:"required"`
@@ -46,4 +47,16 @@ type Config struct {
 	HostIP               string `config:"host_ip" validate:"required"`
 	LogLevel             string `config:"log_level"`
 	SlowQueryThresholdMS int    `config:"slow_query_threshold_ms"`
+}
+
+// NamespaceFor resolves a short logical namespace (e.g. "installs", "orgs")
+// to the fully-qualified Temporal namespace. Empty TemporalNamespacePrefix
+// returns the short name unchanged (in-cluster Temporal). When set (e.g.
+// "<install-name>"), returns "<prefix>-<short>", matching the nuon-lite
+// Temporal Cloud naming scheme created by the temporal-namespaces component.
+func (c Config) NamespaceFor(short string) string {
+	if c.TemporalNamespacePrefix == "" {
+		return short
+	}
+	return c.TemporalNamespacePrefix + "-" + short
 }

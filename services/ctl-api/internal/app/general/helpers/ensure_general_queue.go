@@ -16,7 +16,7 @@ func (h *Helpers) EnsureGeneralQueue(ctx context.Context) (*app.Queue, error) {
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     "general",
 		OwnerType:   "general",
-		Namespace:   "general",
+		Namespace:   h.cfg.NamespaceFor("general"),
 		Name:        GeneralSignalsQueueName,
 		MaxInFlight: 5,
 		MaxDepth:    50,

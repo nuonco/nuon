@@ -26,7 +26,7 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
-		Namespace:   "runners",
+		Namespace:   h.cfg.NamespaceFor("runners"),
 		Name:        fmt.Sprintf("runner-process-%s", process.ID),
 		MaxInFlight: 1,
 		MaxDepth:    10,
