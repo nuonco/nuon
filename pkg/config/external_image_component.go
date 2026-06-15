@@ -45,10 +45,24 @@ type GCPGARConfig struct {
 	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
 }
 
+type AzureACRConfig struct {
+	ImageURL    string `mapstructure:"image_url,omitempty" toml:"image_url,omitempty" jsonschema:"required"`
+	Tag         string `mapstructure:"tag,omitempty" toml:"tag,omitempty"`
+	RegistryURL string `mapstructure:"registry_url,omitempty" toml:"registry_url,omitempty" jsonschema:"required"`
+	TenantID    string `mapstructure:"tenant_id,omitempty" toml:"tenant_id,omitempty"`
+	ClientID    string `mapstructure:"client_id,omitempty" toml:"client_id,omitempty"`
+	// UpdatePolicy is an optional Masterminds-compatible semver constraint
+	// (e.g. "~1.25.0", "^2"). When set, the runner picks the highest
+	// matching tag from the registry at build time. Either tag or
+	// update_policy must be set.
+	UpdatePolicy string `mapstructure:"update_policy,omitempty" toml:"update_policy,omitempty"`
+}
+
 type ExternalImageComponentConfig struct {
-	AWSECRImageConfig *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=ecr_source"`
-	GCPGARImageConfig *GCPGARConfig      `mapstructure:"gcp_gar,omitempty" toml:"gcp_gar,omitempty" jsonschema:"oneof_required=gar_source"`
-	PublicImageConfig *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=public_source"`
+	AWSECRImageConfig   *AWSECRConfig      `mapstructure:"aws_ecr,omitempty" toml:"aws_ecr,omitempty" jsonschema:"oneof_required=ecr_source"`
+	GCPGARImageConfig   *GCPGARConfig      `mapstructure:"gcp_gar,omitempty" toml:"gcp_gar,omitempty" jsonschema:"oneof_required=gar_source"`
+	AzureACRImageConfig *AzureACRConfig    `mapstructure:"azure_acr,omitempty" toml:"azure_acr,omitempty" jsonschema:"oneof_required=acr_source"`
+	PublicImageConfig   *PublicImageConfig `mapstructure:"public,omitempty" toml:"public,omitempty" jsonschema:"oneof_required=public_source"`
 
 	BuildTimeout  string `mapstructure:"build_timeout,omitempty" toml:"build_timeout,omitempty" features:"template" nuonhash:"omitempty"`
 	DeployTimeout string `mapstructure:"deploy_timeout,omitempty" toml:"deploy_timeout,omitempty" features:"template" nuonhash:"omitempty"`
@@ -134,12 +148,42 @@ func (g GCPGARConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("my-sa@my-project.iam.gserviceaccount.com")
 }
 
+func (a AzureACRConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("image_url").Short("ACR image URL").Required().
+		Long("Full URL to the ACR image (without tag). Format: <registry>.azurecr.io/<repository>/<image>").
+		Example("myregistry.azurecr.io/myapp/api").
+		Field("registry_url").Short("ACR login server").Required().
+		Long("Azure Container Registry login server. Format: <registry>.azurecr.io").
+		Example("myregistry.azurecr.io").
+		Field("tag").Short("image tag").
+		Long("Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., {{.nuon.install.id}})").
+		Example("v1.0.0").
+		Example("latest").
+		Example("{{.nuon.install.id}}").
+		Field("update_policy").Short("semver constraint for tag resolution").
+		Long("Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and satisfy the constraint, and selects the highest matching tag. Tags that aren't valid semver (e.g. \"latest\", \"stable\", branch names) are skipped. Either tag or update_policy must be set. Supported constraint shapes: tilde (~1.25.0 → >=1.25.0 <1.26.0), caret (^2.3.1 → >=2.3.1 <3.0.0), comparators joined with AND (>=1.0.0,<2.0.0), wildcard ranges (1.2.x, 1.x), inclusive hyphen ranges (1.0.0 - 2.0.0), OR (^1.0 || ^2.0), and exact match (=1.25.5).").
+		Example("~1.25.0").
+		Example("^2.0.0").
+		Example(">=1.0.0,<2.0.0").
+		Example("1.x").
+		Example("^1.0 || ^2.0").
+		Field("tenant_id").Short("Azure tenant ID for service principal auth").
+		Long("Optional Azure AD tenant ID. If set with client_id, the runner uses service principal credentials; otherwise it uses default Azure credentials").
+		Example("00000000-0000-0000-0000-000000000000").
+		Field("client_id").Short("Azure client ID for service principal auth").
+		Long("Optional Azure AD client (application) ID. If set with tenant_id, the runner uses service principal credentials; otherwise it uses default Azure credentials").
+		Example("00000000-0000-0000-0000-000000000000")
+}
+
 func (e ExternalImageComponentConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
 		Field("aws_ecr").Short("AWS ECR image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories").
 		Field("gcp_gar").Short("GCP Artifact Registry image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from Google Artifact Registry. Use when deploying images from private GAR repositories").
+		Field("azure_acr").Short("Azure Container Registry image configuration").OneOfRequired("image_source").
+		Long("Configuration for pulling images from Azure Container Registry. Use when deploying images from private ACR repositories").
 		Field("public").Short("public registry image configuration").OneOfRequired("image_source").
 		Long("Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc)").
 		Field("build_timeout").Short("build operation timeout").
@@ -173,6 +217,9 @@ func (t *ExternalImageComponentConfig) Validate() error {
 	}
 	if t.GCPGARImageConfig != nil {
 		sources = append(sources, imageSource{"gcp_gar", t.GCPGARImageConfig.Tag, t.GCPGARImageConfig.UpdatePolicy})
+	}
+	if t.AzureACRImageConfig != nil {
+		sources = append(sources, imageSource{"azure_acr", t.AzureACRImageConfig.Tag, t.AzureACRImageConfig.UpdatePolicy})
 	}
 	for _, s := range sources {
 		if s.tag == "" && s.updatePolicy == "" {

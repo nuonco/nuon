@@ -93,19 +93,19 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get install component")
 	}
 
-	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreDeployComponent)
-	if err != nil {
-		return nil, err
-	}
-	if !flw.PlanOnly {
-		steps = append(steps, preDeploySteps...)
-	}
-
 	// When the primary is a non-image component, walk its image deps and
 	// prepend sync steps for any whose latest Active build differs from
 	// what's currently deployed. The deploy_components path does this
 	// inside getComponentDeploySteps; the manual_deploy path emits the
 	// primary inline, so we have to drive the same logic here.
+	//
+	// This MUST run before the pre-deploy actions below: those actions can
+	// read the dependency's image outputs, so the new image bytes have to
+	// land in the install registry first (matches deploy_components
+	// ordering). When dep syncs are emitted they occupy their own step
+	// group, and we start a fresh group so pre-deploy actions run strictly
+	// after them. When nothing needs syncing we leave the group untouched
+	// so pre-deploy actions stay in the existing group (no empty group).
 	//
 	// dg.addedImageDepSyncs is shared with the dependents call below so a
 	// shared image dep is only synced once across both call sites.
@@ -114,7 +114,18 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to prepend image-dep sync steps for primary")
 		}
-		steps = append(steps, depSyncSteps...)
+		if len(depSyncSteps) > 0 {
+			steps = append(steps, depSyncSteps...)
+			sg.nextGroup()
+		}
+	}
+
+	preDeploySteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreDeployComponent)
+	if err != nil {
+		return nil, err
+	}
+	if !flw.PlanOnly {
+		steps = append(steps, preDeploySteps...)
 	}
 
 	// sync image

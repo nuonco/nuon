@@ -152,13 +152,15 @@ func hstoreToMap(hstore pgtype.Hstore) map[string]string {
 }
 
 func (p *Planner) getRoleForAction(
+	ctx workflow.Context,
 	l *zap.Logger,
 	appCfg *app.AppConfig,
 	run *app.InstallActionWorkflowRun,
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState)
+	flw := p.installWorkflowForRoleDefault(ctx, l, generics.FromPtrStr(run.InstallWorkflowID))
+	return operationroles.GetRoleForAction(l, appCfg, run, stack, installState, flw)
 }
 
 func (p *Planner) getAuthForActionWorkflowRun(
@@ -174,7 +176,7 @@ func (p *Planner) getAuthForActionWorkflowRun(
 		return nil, nil, err
 	}
 
-	roleSelection, operation, err := p.getRoleForAction(l, appCfg, run, stack, installState)
+	roleSelection, operation, err := p.getRoleForAction(ctx, l, appCfg, run, stack, installState)
 	if err != nil {
 		return nil, nil, err
 	}
