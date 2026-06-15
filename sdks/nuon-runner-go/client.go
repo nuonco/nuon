@@ -142,6 +142,7 @@ type client struct {
 	genClient    *genclient.NuonRunnerAPI
 	appTransport *appTransport
 	httpClient   *http.Client
+	unauthClient *http.Client
 	retryer      Retryer
 }
 
@@ -171,9 +172,10 @@ func New(opts ...clientOption) (*client, error) {
 		return nil, fmt.Errorf("unable to parse api url: %w", err)
 	}
 
+	base := newDefaultTransport()
 	appTransport := &appTransport{
 		authToken: c.APIToken,
-		transport: newDefaultTransport(),
+		transport: base,
 	}
 	c.appTransport = appTransport
 
@@ -182,6 +184,15 @@ func New(opts ...clientOption) (*client, error) {
 	// deadline still wins if shorter.
 	c.httpClient = &http.Client{
 		Transport: appTransport,
+		Timeout:   c.RequestTimeout,
+	}
+
+	// unauthClient shares the tuned base transport (timeouts, HTTP/2 pings,
+	// connection pool) but skips appTransport's Authorization injection. It is
+	// used for endpoints that are public by design — runner-auth bootstrap and
+	// shutdown polling — so SDK requests to those routes carry no auth header.
+	c.unauthClient = &http.Client{
+		Transport: base,
 		Timeout:   c.RequestTimeout,
 	}
 
