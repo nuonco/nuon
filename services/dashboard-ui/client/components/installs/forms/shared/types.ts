@@ -12,7 +12,7 @@ export interface ICreateInstallForm {
   error?: any
   onRegisterClearDraft?: (clearFn: () => void) => void
   defaultAutoApprove?: boolean
-  autoApproveDescription?: React.ReactNode
+  autoApproveDescription?: string
 }
 
 export interface IUpdateInstallForm {

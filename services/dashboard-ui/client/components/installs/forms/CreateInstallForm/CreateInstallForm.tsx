@@ -19,7 +19,7 @@ interface ICreateInstallFormPresentation {
   onSuccess?: (result: any) => void
   onCancel: () => void
   defaultAutoApprove?: boolean
-  autoApproveDescription?: React.ReactNode
+  autoApproveDescription?: string
 }
 
 export const CreateInstallForm = forwardRef<
