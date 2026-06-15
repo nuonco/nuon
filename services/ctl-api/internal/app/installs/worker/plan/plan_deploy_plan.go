@@ -64,7 +64,7 @@ func (p *Planner) createDeployPlan(ctx workflow.Context, req *CreateDeployPlanRe
 	// we get same information.
 	// unless, we change response models like appcfg, installdeploy, build, stack etc somewhere in middle, which should
 	// not happen ideally.
-	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, &install.Org, installDeploy, build, stack, installState)
+	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, installDeploy, build, stack, installState)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get role for deploy")
 	}
@@ -178,13 +178,12 @@ func (p *Planner) getRoleForDeploy(
 	ctx workflow.Context,
 	l *zap.Logger,
 	appCfg *app.AppConfig,
-	org *app.Org,
 	installDeploy *app.InstallDeploy,
 	compBuild *app.ComponentBuild,
 	stack *app.InstallStack,
 	installState *state.State,
 ) (*operationroles.RoleSelection, app.OperationType, error) {
-	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, org, generics.FromPtrStr(installDeploy.InstallWorkflowID))
+	defaultRole := p.defaultRoleForInstallWorkflow(ctx, l, appCfg, generics.FromPtrStr(installDeploy.InstallWorkflowID))
 	return operationroles.GetRoleForDeploy(l, appCfg, installDeploy, &compBuild.ComponentConfigConnection, stack, installState, defaultRole)
 }
 
@@ -196,14 +195,21 @@ func (p *Planner) defaultRoleForInstallWorkflow(
 	ctx workflow.Context,
 	l *zap.Logger,
 	appCfg *app.AppConfig,
-	org *app.Org,
 	installWorkflowID string,
 ) string {
 	fallback := appCfg.PermissionsConfig.MaintenanceRole.Name
 
-	// Gate on the already-loaded org features so orgs that have not opted in
-	// pay no extra activity cost and keep the legacy maintenance-role default.
-	if org == nil || !org.HasFeature(app.OrgFeatureWorkflowDefaultRole) {
+	// Gate on the global server-side config flag (set via the
+	// WORKFLOW_DEFAULT_ROLE_ENABLED env var). When disabled, every workflow keeps
+	// the legacy maintenance-role default.
+	enabled, err := activities.AwaitWorkflowDefaultRoleEnabled(ctx, activities.WorkflowDefaultRoleEnabledRequest{})
+	if err != nil {
+		l.Warn("unable to check workflow-default-role config; using maintenance role",
+			zap.Error(err),
+		)
+		return fallback
+	}
+	if !enabled {
 		return fallback
 	}
 

@@ -54,7 +54,7 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get logger")
 	}
 
-	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, &install.Org, deploy, compBuild, stack, installState)
+	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, deploy, compBuild, stack, installState)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get role for deploy")
 	}
