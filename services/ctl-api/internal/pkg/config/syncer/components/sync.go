@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
 // EnsureComponent creates a component if it doesn't exist, using the shared helpers
@@ -47,7 +48,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 }
 
 // SyncComponent updates a component and creates its configuration based on type.
-func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, comp *config.Component, appID, appConfigID string, state *sync.State) error {
+func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, vcsHelper *vcshelpers.Helpers, comp *config.Component, appID, appConfigID string, state *sync.State) error {
 	apiComp, err := getComponent(ctx, db, comp.Name, appID)
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -80,17 +81,17 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 
 	switch comp.Type.APIType() {
 	case "docker_build":
-		configID, checksum, err = SyncDockerBuildComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncDockerBuildComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
 	case "helm_chart":
-		configID, checksum, err = SyncHelmComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncHelmComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
 	case "terraform_module":
-		configID, checksum, err = SyncTerraformModuleComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncTerraformModuleComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
@@ -115,12 +116,16 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 				Err:         qErr,
 			}
 		}
+	case "pulumi":
+		configID, checksum, err = SyncPulumiComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
+		if err != nil {
+			return err
+		}
 	case "job":
-		// TODO: Implement job component sync
 		configID = ""
 		checksum = ""
 	case "kubernetes_manifest":
-		configID, checksum, err = SyncKubernetesManifestComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncKubernetesManifestComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}

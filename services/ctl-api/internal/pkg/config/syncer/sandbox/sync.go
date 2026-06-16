@@ -18,7 +18,7 @@ import (
 
 // Sync creates the app sandbox configuration.
 // Duplicates logic from services/ctl-api/internal/app/apps/service/create_app_sandbox_config.go
-func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appConfigID string, state *sync.State) error {
+func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *config.AppConfig, appID, appConfigID string, state *sync.State) error {
 	if cfg.Sandbox == nil {
 		return sync.SyncErr{
 			Resource:    "app-sandbox",
@@ -55,7 +55,6 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 	}
 
 	// Build VCS configs using helpers
-	vcsHelper := vcshelpers.New(vcshelpers.Params{})
 
 	var githubVCSConfig *app.ConnectedGithubVCSConfig
 	var publicGitConfig *app.PublicGitVCSConfig

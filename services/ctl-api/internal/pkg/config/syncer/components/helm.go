@@ -20,7 +20,7 @@ import (
 
 // SyncHelmComponent creates or updates a Helm component configuration.
 // Duplicates logic from services/ctl-api/internal/app/components/service/create_helm_component_config.go
-func SyncHelmComponent(ctx context.Context, db *gorm.DB, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	// Validate Helm component
 	if err := validateHelmComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
@@ -44,7 +44,6 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, comp *config.Component,
 	}
 
 	// Build VCS configs using helpers (optional for Helm with repo config)
-	vcsHelper := vcshelpers.New(vcshelpers.Params{})
 
 	var githubVCSConfig *app.ConnectedGithubVCSConfig
 	var publicGitConfig *app.PublicGitVCSConfig

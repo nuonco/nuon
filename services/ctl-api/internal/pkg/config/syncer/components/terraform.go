@@ -20,7 +20,7 @@ import (
 
 // SyncTerraformModuleComponent creates or updates a Terraform module component configuration.
 // Duplicates logic from services/ctl-api/internal/app/components/service/create_terraform_module_component_config.go
-func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	// Validate Terraform component
 	if err := validateTerraformComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
@@ -44,7 +44,6 @@ func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, comp *config
 	}
 
 	// Build VCS configs using helpers
-	vcsHelper := vcshelpers.New(vcshelpers.Params{})
 
 	var githubVCSConfig *app.ConnectedGithubVCSConfig
 	var publicGitConfig *app.PublicGitVCSConfig

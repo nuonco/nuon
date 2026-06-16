@@ -2,13 +2,27 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v50/github"
+	"go.temporal.io/sdk/temporal"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
+
+func nonRetryableGitHubError(err error) error {
+	var ghErr *github.ErrorResponse
+	if errors.As(err, &ghErr) && ghErr.Response.StatusCode >= 400 && ghErr.Response.StatusCode < 500 {
+		return temporal.NewNonRetryableApplicationError(
+			ghErr.Message,
+			fmt.Sprintf("github_%d", ghErr.Response.StatusCode),
+			err,
+		)
+	}
+	return nil
+}
 
 type FetchCommitPRInfoInput struct {
 	VcsConfigID string `json:"vcs_config_id" validate:"required"`
@@ -40,6 +54,9 @@ func (a *Activities) FetchCommitPRInfo(ctx context.Context, input *FetchCommitPR
 		},
 	})
 	if err != nil {
+		if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+			return nil, nrErr
+		}
 		return nil, fmt.Errorf("unable to list PRs: %w", err)
 	}
 
@@ -109,6 +126,9 @@ func (a *Activities) FetchCommitDiffStats(ctx context.Context, input *FetchCommi
 
 	comparison, _, err := client.Repositories.CompareCommits(ctx, owner, repo, base, input.CommitSHA, &github.ListOptions{PerPage: 100})
 	if err != nil {
+		if nrErr := nonRetryableGitHubError(err); nrErr != nil {
+			return nil, nrErr
+		}
 		return nil, fmt.Errorf("unable to compare commits: %w", err)
 	}
 

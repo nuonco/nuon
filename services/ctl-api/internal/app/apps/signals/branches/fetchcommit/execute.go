@@ -127,7 +127,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				meta["files_changed"] = diffStats.FilesChanged
 				meta["additions"] = diffStats.Additions
 				meta["deletions"] = diffStats.Deletions
-				meta["changed_files"] = diffStats.ChangedFiles
+				files := make([]map[string]any, len(diffStats.ChangedFiles))
+				for i, f := range diffStats.ChangedFiles {
+					files[i] = map[string]any{
+						"path":      f.Path,
+						"additions": f.Additions,
+						"deletions": f.Deletions,
+					}
+				}
+				meta["changed_files"] = files
 			}
 		}
 
