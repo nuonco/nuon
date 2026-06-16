@@ -64,7 +64,15 @@ instances and are sized independently through the inputs.
 
 You'll need a GCP project. The install stack provisions a VPC and other network primitives, so make sure your account
 has IAM permissions to create those resources and the project has not hit quota limits for VPCs, Cloud SQL instances, or
-GKE clusters.
+GKE clusters. Additionally, ensure the following APIs are enabled.
+
+- Secrets Manager API
+- Compute Engine API
+- IAM Service Account Credentials API
+- Cloud Resource Manager API
+- Kubernetes Engine API
+- Cloud DNS API
+- Artifact Registry API
 
 ## Provision the Install Stack
 
