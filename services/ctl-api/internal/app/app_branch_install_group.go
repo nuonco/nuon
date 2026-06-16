@@ -34,6 +34,7 @@ type AppBranchInstallGroup struct {
 
 	// LabelSelector dynamically resolves installs at deploy time by matching labels.
 	// Mutually exclusive with InstallIDs — set one or the other, not both.
+
 	LabelSelector *labels.Selector `json:"label_selector,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"label_selector,omitzero,omitempty"`
 
 	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
