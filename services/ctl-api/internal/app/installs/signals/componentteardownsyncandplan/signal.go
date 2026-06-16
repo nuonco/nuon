@@ -563,7 +563,17 @@ func (s *Signal) execPlan(ctx workflow.Context, install *app.Install, installDep
 		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, job.JobErrorMessage(err, "teardown plan job failed"))
+		msg := job.JobErrorMessage(err, "teardown plan job failed")
+		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, msg)
+		if s.runnerJobID != "" {
+			if rerr := activities.AwaitRecordDeployCompositeError(ctx, activities.RecordDeployCompositeErrorRequest{
+				DeployID:        installDeploy.ID,
+				RunnerJobID:     s.runnerJobID,
+				FallbackMessage: msg,
+			}); rerr != nil {
+				l.Warn("unable to record deploy composite error", zap.Error(rerr))
+			}
+		}
 		l.Error("job did not succeed", zap.Error(err))
 		return fmt.Errorf("unable to get install: %w", err)
 	}

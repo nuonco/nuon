@@ -210,6 +210,14 @@ export type TInstallComponentOutputs = Record<string, string>
 export type TInstallConfig = components['schemas']['app.InstallConfig']
 export type TInstallAuditLog = components['schemas']['app.InstallAuditLog']
 export type TDriftedObject = components['schemas']['app.DriftedObject']
+// composite errors
+export type TCompositeErrorSeverity =
+  components['schemas']['compositeerrors.Severity']
+export type TCompositeErrorSection =
+  components['schemas']['compositeerrors.Section']
+export type TCompositeError =
+  components['schemas']['compositeerrors.CompositeErrorData']
+
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string

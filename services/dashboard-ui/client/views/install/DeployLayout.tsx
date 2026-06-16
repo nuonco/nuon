@@ -1,6 +1,7 @@
 import { Outlet, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
+import { CompositeError } from '@/components/common/CompositeError'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -130,6 +131,10 @@ const DeployLayoutInner = () => {
       />
 
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
+
+      {deploy?.composite_error ? (
+        <CompositeError error={deploy.composite_error} />
+      ) : null}
 
       {pendingApproval && !isAutoApprove ? (
         <ApprovalBanner step={step} />
