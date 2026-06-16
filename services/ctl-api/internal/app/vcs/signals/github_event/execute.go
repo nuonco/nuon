@@ -77,9 +77,9 @@ func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, con
 
 func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch string) error {
 	matches, err := activities.AwaitFindMatchingAppBranches(ctx, activities.FindMatchingAppBranchesRequest{
-		VCSConnectionID: connEvent.VCSConnectionID,
-		Repo:            repo,
-		Branch:          branch,
+		OrgID:  connEvent.OrgID,
+		Repo:   repo,
+		Branch: branch,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to find matching app branches")

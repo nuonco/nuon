@@ -137,6 +137,8 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 			"config_id":     config.ID,
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         strconv.FormatBool(req.Force),
+			"event_type":    "manual",
+			"commit_sha":    run.CommitSHA,
 		},
 		req.PlanOnly,
 	)

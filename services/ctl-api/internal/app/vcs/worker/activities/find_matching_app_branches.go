@@ -9,9 +9,9 @@ import (
 )
 
 type FindMatchingAppBranchesRequest struct {
-	VCSConnectionID string `json:"vcs_connection_id" validate:"required"`
-	Repo            string `json:"repo" validate:"required"`
-	Branch          string `json:"branch" validate:"required"`
+	OrgID  string `json:"org_id" validate:"required"`
+	Repo   string `json:"repo" validate:"required"`
+	Branch string `json:"branch" validate:"required"`
 }
 
 type MatchingAppBranch struct {
@@ -24,11 +24,13 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 	appBranchConfigTable := plugins.TableName(a.db, app.AppBranchConfig{})
 
 	var results []MatchingAppBranch
+
+	// Match via connected_github_vcs_configs.
 	err := a.db.WithContext(ctx).
 		Table("connected_github_vcs_configs").
 		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = connected_github_vcs_configs.component_config_id AND connected_github_vcs_configs.component_config_type = ?", appBranchConfigTable).
-		Where("connected_github_vcs_configs.vcs_connection_id = ?", req.VCSConnectionID).
+		Where("connected_github_vcs_configs.org_id = ?", req.OrgID).
 		Where("connected_github_vcs_configs.repo = ?", req.Repo).
 		Where("connected_github_vcs_configs.branch = ?", req.Branch).
 		Where("connected_github_vcs_configs.deleted_at = 0").
@@ -36,8 +38,27 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 		Order("app_branch_configs.created_at DESC").
 		Scan(&results).Error
 	if err != nil {
-		return nil, fmt.Errorf("unable to find matching app branches: %w", err)
+		return nil, fmt.Errorf("unable to find matching app branches (connected): %w", err)
 	}
+
+	// Match via public_git_vcs_configs.
+	var publicResults []MatchingAppBranch
+	err = a.db.WithContext(ctx).
+		Table("public_git_vcs_configs").
+		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
+		Joins("JOIN app_branch_configs ON app_branch_configs.id = public_git_vcs_configs.component_config_id AND public_git_vcs_configs.component_config_type = ?", appBranchConfigTable).
+		Where("app_branch_configs.org_id = ?", req.OrgID).
+		Where("public_git_vcs_configs.repo = ?", req.Repo).
+		Where("public_git_vcs_configs.branch = ?", req.Branch).
+		Where("public_git_vcs_configs.deleted_at = 0").
+		Where("app_branch_configs.deleted_at = 0").
+		Order("app_branch_configs.created_at DESC").
+		Scan(&publicResults).Error
+	if err != nil {
+		return nil, fmt.Errorf("unable to find matching app branches (public): %w", err)
+	}
+
+	results = append(results, publicResults...)
 
 	// Deduplicate: keep only the latest config per app branch
 	seen := make(map[string]bool)

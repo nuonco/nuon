@@ -78,17 +78,30 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 	}
 
 	// Create workflow
+	metadata := map[string]string{
+		"run_id":        run.ID,
+		"app_id":        branch.AppID,
+		"config_id":     appBranchConfigID,
+		"config_number": strconv.Itoa(config.ConfigNumber),
+		"force":         "false",
+		"event_type":    req.EventType,
+		"commit_sha":    run.CommitSHA,
+	}
+	if req.PRNumber != nil {
+		metadata["pr_number"] = strconv.Itoa(*req.PRNumber)
+	}
+	if req.HeadSHA != "" {
+		metadata["head_sha"] = req.HeadSHA
+	}
+	if req.BaseBranch != "" {
+		metadata["base_branch"] = req.BaseBranch
+	}
+
 	wf, err := a.helpers.CreateWorkflow(
 		ctx,
 		appBranchID,
 		app.WorkflowTypeAppBranchesRun,
-		map[string]string{
-			"run_id":        run.ID,
-			"app_id":        branch.AppID,
-			"config_id":     appBranchConfigID,
-			"config_number": strconv.Itoa(config.ConfigNumber),
-			"force":         "false",
-		},
+		metadata,
 		req.PlanOnly,
 	)
 	if err != nil {

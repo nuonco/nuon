@@ -70,14 +70,29 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}
 
 	// Build all components — tracks progress via parent step metadata
-	if err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID); err != nil {
+	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID)
+	if err != nil {
 		return fmt.Errorf("component builds failed: %w", err)
 	}
 
 	// Build sandbox infrastructure (terraform)
+	sandboxEntry := buildEntry{
+		ComponentID:   "sandbox",
+		ComponentName: "Sandbox infrastructure",
+		ComponentType: "sandbox",
+		Status:        "in-progress",
+		CacheStatus:   "no cache",
+	}
+	builds = append(builds, sandboxEntry)
+	s.updateBuildMetadata(ctx, builds)
+
 	if err := s.buildSandboxInfra(ctx, l); err != nil {
+		s.setBuildStatus(builds, "sandbox", "error")
+		s.updateBuildMetadata(ctx, builds)
 		return fmt.Errorf("sandbox infrastructure build failed: %w", err)
 	}
+	s.setBuildStatus(builds, "sandbox", "success")
+	s.updateBuildMetadata(ctx, builds)
 
 	// Deploy components to sandbox installs using built artifacts
 	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
@@ -101,7 +116,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 // buildComponents enqueues queuebuild signals directly to component queues
 // (batched, parallel within each batch) and tracks progress via the parent
 // step's status metadata — no sub-steps or sub-groups are created.
-func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string) error {
+func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *app.AppConfig, appConfigID, previousAppConfigID string) ([]buildEntry, error) {
 	componentIDs := appConfig.ComponentIDs
 
 	type componentInfo struct {
@@ -173,7 +188,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 
 	if len(toBuild) == 0 {
 		l.Info("all components unchanged, no builds needed")
-		return nil
+		return builds, nil
 	}
 
 	// Enqueue builds in batches and await each batch
@@ -219,7 +234,7 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 			if err != nil {
 				s.setBuildStatus(builds, componentID, "error")
 				s.updateBuildMetadata(ctx, builds)
-				return fmt.Errorf("component %s: enqueue failed: %w", componentID, err)
+				return builds, fmt.Errorf("component %s: enqueue failed: %w", componentID, err)
 			}
 			pending = append(pending, pendingBuild{componentID: componentID, cb: cb})
 		}
@@ -237,12 +252,12 @@ func (s *Signal) buildComponents(ctx workflow.Context, l log.Logger, appConfig *
 		s.updateBuildMetadata(ctx, builds)
 
 		if len(errs) > 0 {
-			return fmt.Errorf("batch had %d error(s): %v", len(errs), errs)
+			return builds, fmt.Errorf("batch had %d error(s): %v", len(errs), errs)
 		}
 	}
 
 	l.Info("all component builds completed successfully")
-	return nil
+	return builds, nil
 }
 
 // setBuildStatus updates a build entry's status in the builds list.
