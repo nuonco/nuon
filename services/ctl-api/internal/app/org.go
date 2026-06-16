@@ -201,8 +201,6 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureRunbooks:                true,
 		OrgFeaturePulumiSandbox:           false,
 		OrgFeaturePulumiUpdatePlans:       false,
-		OrgFeatureLogTailLongPoll:         false,
-		OrgFeatureRunnerJobLongPoll:       false,
 		OrgFeatureNotebooks:               false,
 
 		// Enabled by default
@@ -212,6 +210,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureOrgRunner:          true,
 		OrgFeatureOrgSettings:        true,
 		OrgFeatureAppBranches:        true,
+		OrgFeatureLogTailLongPoll:    true,
+		OrgFeatureRunnerJobLongPoll:  true,
 	}
 	for _, feature := range GetFeatures() {
 		if _, ok := o.Features[string(feature)]; !ok {
