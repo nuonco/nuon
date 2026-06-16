@@ -12,11 +12,14 @@ import (
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/appconfig"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/branches"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/operationroles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/policies"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/runner"
@@ -34,6 +37,7 @@ type syncer struct {
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
 	runbooksHelpers  *runbookshelpers.Helpers
+	vcsHelpers       *vcshelpers.Helpers
 
 	appID       string
 	appConfigID string
@@ -55,17 +59,16 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
+func NewDBSyncer(db *gorm.DB, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, vcsHelpers *vcshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
 	return &syncer{
 		db:               db,
 		cfg:              cfg,
 		componentHelpers: componentHelpers,
 		actionsHelpers:   actionsHelpers,
 		runbooksHelpers:  runbooksHelpers,
+		vcsHelpers:       vcsHelpers,
 		appID:            appID,
 		appConfigID:      appConfigID,
-		state:            nil, // will be populated by fetchState()
-		prevState:        nil,
 	}
 }
 
@@ -150,6 +153,12 @@ func (s *syncer) syncSteps() []syncStep {
 			},
 		},
 		{
+			Resource: "app-branches",
+			Method: func(ctx context.Context) error {
+				return branches.Sync(ctx, s.db, s.vcsHelpers, s.cfg, s.appID)
+			},
+		},
+		{
 			Resource: "app-inputs",
 			Method: func(ctx context.Context) error {
 				return inputs.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.orgID, s.state)
@@ -158,7 +167,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-sandbox",
 			Method: func(ctx context.Context) error {
-				return sandbox.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID, s.state)
+				return sandbox.Sync(ctx, s.db, s.vcsHelpers, s.cfg, s.appID, s.appConfigID, s.state)
 			},
 		},
 		{
@@ -171,6 +180,12 @@ func (s *syncer) syncSteps() []syncStep {
 			Resource: "app-permissions",
 			Method: func(ctx context.Context) error {
 				return permissions.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+			},
+		},
+		{
+			Resource: "app-operations-roles",
+			Method: func(ctx context.Context) error {
+				return operationroles.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
 			},
 		},
 		{
@@ -229,7 +244,7 @@ func (s *syncer) syncSteps() []syncStep {
 		steps = append(steps, syncStep{
 			Resource: fmt.Sprintf("component-sync-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return components.SyncComponent(ctx, s.db, s.componentHelpers, c, s.appID, s.appConfigID, s.state)
+				return components.SyncComponent(ctx, s.db, s.componentHelpers, s.vcsHelpers, c, s.appID, s.appConfigID, s.state)
 			},
 		})
 	}
