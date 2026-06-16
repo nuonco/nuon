@@ -13,6 +13,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	orgshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
+	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -28,6 +29,7 @@ type Params struct {
 	ComponentHelpers *componenthelpers.Helpers
 	ActionsHelpers   *actionshelpers.Helpers
 	RunbooksHelpers  *runbookshelpers.Helpers
+	VCSHelpers       *vcshelpers.Helpers
 	InstallsHelpers  *installshelpers.Helpers
 	OrgsHelpers      *orgshelpers.Helpers
 	QueueClient      *queueclient.Client
@@ -43,6 +45,7 @@ type Activities struct {
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
 	runbooksHelpers  *runbookshelpers.Helpers
+	vcsHelpers       *vcshelpers.Helpers
 	installsHelpers  *installshelpers.Helpers
 	orgsHelpers      *orgshelpers.Helpers
 	queueClient      *queueclient.Client
@@ -59,6 +62,7 @@ func New(params Params) (*Activities, error) {
 		componentHelpers: params.ComponentHelpers,
 		actionsHelpers:   params.ActionsHelpers,
 		runbooksHelpers:  params.RunbooksHelpers,
+		vcsHelpers:       params.VCSHelpers,
 		installsHelpers:  params.InstallsHelpers,
 		orgsHelpers:      params.OrgsHelpers,
 		queueClient:      params.QueueClient,

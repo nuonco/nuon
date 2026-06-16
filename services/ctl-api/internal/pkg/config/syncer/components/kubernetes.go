@@ -16,7 +16,7 @@ import (
 )
 
 // SyncKubernetesManifestComponent creates or updates a Kubernetes manifest component configuration.
-func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	if comp.KubernetesManifest == nil {
 		return "", "", sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
@@ -39,7 +39,6 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, comp *con
 	}
 
 	// Build VCS configs
-	vcsHelper := vcshelpers.New(vcshelpers.Params{})
 
 	var githubVCSConfig *app.ConnectedGithubVCSConfig
 	var publicGitConfig *app.PublicGitVCSConfig

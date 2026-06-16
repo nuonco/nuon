@@ -142,7 +142,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 	}
 
 	// Build steps
-	vcsHelper := vcshelpers.New(vcshelpers.Params{})
+	vcsHelper := s.vcsHelpers
 	steps := make([]app.ActionWorkflowStepConfig, 0, len(action.Steps))
 
 	for _, step := range action.Steps {

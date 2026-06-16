@@ -3143,11 +3143,11 @@ export interface components {
       id?: string;
       install_ids?: string[];
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
+      max_parallel?: number;
       name?: string;
       order?: number;
       org_id?: string;
       updated_at?: string;
-      max_parallel?: number;
       /** @description UseForPreviews marks this group for plan-only preview runs (e.g., PR previews). */
       use_for_previews?: boolean;
     };

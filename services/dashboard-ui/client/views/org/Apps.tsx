@@ -1,3 +1,4 @@
+import { CreateAppButton } from '@/components/apps/CreateAppModal'
 import { AppsTable } from '@/components/apps/AppsTable'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Text } from '@/components/common/Text'
@@ -11,6 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 
 export const Apps = () => {
   const { org } = useOrg()
+  const hasAppBranchesUI = !!org?.features?.['app-branches-ui']
 
   return (
     <PageLayout>
@@ -35,6 +37,7 @@ export const Apps = () => {
           </Text>
           <Text theme="neutral">Manage your applications here.</Text>
         </HeadingGroup>
+        {hasAppBranchesUI && <CreateAppButton />}
       </PageHeader>
 
       <PageContent>

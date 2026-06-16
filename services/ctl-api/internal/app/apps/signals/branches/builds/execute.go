@@ -78,7 +78,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Build sandbox infrastructure (terraform)
 	sandboxEntry := buildEntry{
 		ComponentID:   "sandbox",
-		ComponentName: "Sandbox infrastructure",
+		ComponentName: "Sandbox",
 		ComponentType: "sandbox",
 		Status:        "in-progress",
 		CacheStatus:   "no cache",
