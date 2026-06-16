@@ -201,7 +201,7 @@ func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reas
 		metrics.ToTag("org_name", runner.Org.Name),
 	}
 
-	title := fmt.Sprintf("Runner %s went offline", runner.DisplayName)
+	title := fmt.Sprintf("Runner went offline (type: %s)", string(runner.RunnerGroup.Type))
 	text := fmt.Sprintf(
 		"Runner %s (org: %s) transitioned from active to offline.\nReason: %s",
 		s.RunnerID, runner.Org.Name, reason,
