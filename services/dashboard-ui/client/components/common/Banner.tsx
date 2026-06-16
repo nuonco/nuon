@@ -54,7 +54,7 @@ export const Banner = ({
       {...props}
     >
       <div className="flex mt-0.5 self-start">{ICONS[theme]}</div>
-      <div className="!w-full">
+      <div className="min-w-0 flex-1">
         {typeof children === 'string' ? (
           <Text weight="strong">{children}</Text>
         ) : (

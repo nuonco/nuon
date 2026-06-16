@@ -120,6 +120,11 @@ func (p *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	if err != nil {
 		l.Error("terraform run errored", zap.Error(err))
+		// Persist the full, untruncated terraform error onto the job execution
+		// result so ctl-api can parse it into a structured composite error
+		// (e.g. a missing AWS IAM permission). The per-execution status
+		// description is capped, so this is the authoritative error message.
+		p.writeErrorResult(ctx, fmt.Sprintf("terraform %s", job.Operation), err)
 		return fmt.Errorf("unable to execute %s run: %w", job.Operation, err)
 	}
 

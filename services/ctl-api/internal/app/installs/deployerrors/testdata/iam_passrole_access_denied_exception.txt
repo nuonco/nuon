@@ -1,0 +1,10 @@
+module.app.aws_iam_role.task: Creating...
+╷
+│ Error: creating ECS Service (acme-api): AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/nuon-runner/session is not authorized to perform: iam:PassRole on resource: arn:aws:iam::123456789012:role/acme-task-role
+│ 	status code: 403, request id: A1B2C3D4-5678
+│
+│   with module.app.aws_ecs_service.api,
+│   on main.tf line 88, in resource "aws_ecs_service" "api":
+│   88: resource "aws_ecs_service" "api" {
+│
+╵

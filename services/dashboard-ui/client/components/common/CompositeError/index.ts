@@ -1,0 +1,1 @@
+export { CompositeError } from './CompositeError'
