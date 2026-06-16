@@ -355,6 +355,33 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		}
 	}
 
+	if len(i.Labels) > 0 || len(upstreamInstall.Labels) > 0 {
+		labelDiffs := make([]*diff.Diff, 0)
+		seen := make(map[string]bool)
+		for k, v := range i.Labels {
+			seen[k] = true
+			labelDiffs = append(labelDiffs, diff.NewDiff(
+				diff.WithKey(k),
+				diff.WithStringDiff(upstreamInstall.Labels[k], v),
+			))
+		}
+		for k, v := range upstreamInstall.Labels {
+			if seen[k] {
+				continue
+			}
+			labelDiffs = append(labelDiffs, diff.NewDiff(
+				diff.WithKey(k),
+				diff.WithStringDiff(v, ""),
+			))
+		}
+		if len(labelDiffs) > 0 {
+			diffs = append(diffs, diff.NewDiff(
+				diff.WithKey("labels"),
+				diff.WithChildren(labelDiffs...),
+			))
+		}
+	}
+
 	if i.AWSAccount != nil {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("aws_account"), diff.WithChildren(diff.NewDiff(
