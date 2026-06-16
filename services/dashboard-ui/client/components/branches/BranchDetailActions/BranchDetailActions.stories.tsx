@@ -29,6 +29,7 @@ export const Default = () => (
     hasConfig={true}
     isTriggerPending={false}
     onTriggerRun={noop}
+    onTriggerPreview={noop}
   />
 )
 
@@ -39,6 +40,7 @@ export const NoConfig = () => (
     hasConfig={false}
     isTriggerPending={false}
     onTriggerRun={noop}
+    onTriggerPreview={noop}
   />
 )
 
@@ -49,5 +51,6 @@ export const TriggerPending = () => (
     hasConfig={true}
     isTriggerPending={true}
     onTriggerRun={noop}
+    onTriggerPreview={noop}
   />
 )

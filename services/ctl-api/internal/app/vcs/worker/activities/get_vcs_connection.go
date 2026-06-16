@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetVCSConnectionRequest struct {
@@ -18,7 +18,7 @@ func (a *Activities) GetVCSConnection(ctx context.Context, req GetVCSConnectionR
 	res := a.db.WithContext(ctx).
 		First(&vcsConn, "id = ?", req.VCSConnectionID)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get vcs connection: %w", res.Error)
+		return nil, generics.TemporalGormError(res.Error, "unable to get vcs connection")
 	}
 	return &vcsConn, nil
 }

@@ -14,9 +14,10 @@ import (
 )
 
 type Signal struct {
-	ComponentID string `json:"component_id" validate:"required"`
-	AppConfigID string `json:"app_config_id"` // optional; if set, use branch VCS commit when component shares same VCS config
-	BuildID     string `json:"build_id"`      // optional; if set, skip build creation and trigger pre-created build
+	ComponentID    string `json:"component_id" validate:"required"`
+	AppConfigID    string `json:"app_config_id"`     // optional; if set, use branch VCS commit when component shares same VCS config
+	BuildID        string `json:"build_id"`          // optional; if set, skip build creation and trigger pre-created build
+	AppBranchRunID string `json:"app_branch_run_id"` // optional; links build to branch run for querying
 }
 
 var (
@@ -51,8 +52,9 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 
 		req := activities.CreateComponentBuildRecordRequest{
-			ComponentID: s.ComponentID,
-			OrgID:       cmp.OrgID,
+			ComponentID:    s.ComponentID,
+			OrgID:          cmp.OrgID,
+			AppBranchRunID: s.AppBranchRunID,
 		}
 
 		// If AppConfigID is provided, try to use the branch's VCS commit when the

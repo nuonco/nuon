@@ -21,9 +21,11 @@ type VCSWebhookSubscription struct {
 	OrgID string `json:"org_id,omitzero" swaggerignore:"true" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `swaggerignore:"true" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	VCSConnectionID string `json:"vcs_connection_id" gorm:"uniqueIndex:idx_vcs_webhook_sub_conn_id;not null" temporaljson:"vcs_connection_id,omitzero,omitempty"`
+	VCSConnectionID string `json:"vcs_connection_id" gorm:"not null" temporaljson:"vcs_connection_id,omitzero,omitempty"`
+	GithubInstallID string `json:"github_install_id" gorm:"uniqueIndex:idx_vcs_webhook_sub_install_id;not null;default:''" temporaljson:"github_install_id,omitzero,omitempty"`
 	GithubHookID    int64  `json:"github_hook_id,omitempty" gorm:"default:null" temporaljson:"github_hook_id,omitzero,omitempty"`
 	WebhookURL      string `json:"webhook_url,omitempty" gorm:"not null;default:''" temporaljson:"webhook_url,omitzero,omitempty"`
+	WebhookSecret   string `json:"-" gorm:"not null;default:''" temporaljson:"webhook_secret,omitzero,omitempty"`
 
 	Status *CompositeStatus `json:"status,omitempty" gorm:"column:status;type:jsonb;default:null" temporaljson:"status,omitzero,omitempty"`
 }
@@ -33,6 +35,10 @@ func (v *VCSWebhookSubscription) Indexes(db *gorm.DB) []migrations.Index {
 		{
 			Name:    indexes.Name(db, &VCSWebhookSubscription{}, "vcs_connection_id"),
 			Columns: []string{"vcs_connection_id"},
+		},
+		{
+			Name:    indexes.Name(db, &VCSWebhookSubscription{}, "github_install_id"),
+			Columns: []string{"github_install_id"},
 		},
 	}
 }

@@ -19,6 +19,7 @@ title: 'Container Image'
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
 | **`aws_ecr`**<br/>[AWSECRConfig](#aws_ecr) | AWS ECR image configuration Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories | **Optional** | - |
 | **`gcp_gar`**<br/>[GCPGARConfig](#gcp_gar) | GCP Artifact Registry image configuration Configuration for pulling images from Google Artifact Registry. Use when deploying images from private GAR repositories | **Optional** | - |
+| **`azure_acr`**<br/>[AzureACRConfig](#azure_acr) | Azure Container Registry image configuration Configuration for pulling images from Azure Container Registry. Use when deploying images from private ACR repositories | **Optional** | - |
 | **`public`**<br/>[PublicImageConfig](#public) | public registry image configuration Configuration for pulling images from public container registries (Docker Hub, Quay.io, GCR, etc) | **Optional** | - |
 | **`build_timeout`**<br/>string | build operation timeout Duration string for build operations (e.g., "30m", "1h"). Default: 15m. Max: 1h | **Optional**<br/>Default: `"15m"` | `"30m"`, `"1h"` |
 | **`deploy_timeout`**<br/>string | deploy operation timeout Duration string for deploy operations (e.g., "30m", "1h"). Default: 5m. Max: 1h | **Optional**<br/>Default: `"5m"` | `"30m"`, `"1h"` |
@@ -50,6 +51,17 @@ title: 'Container Image'
 | **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **Optional** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
 | **`service_account_email`**<br/>string | GCP service account for impersonation Optional service account email to impersonate when pulling from GAR. If not set, uses application default credentials | **Optional** | `"my-sa@my-project.iam.gserviceaccount.com"` |
 | **`workload_identity_provider`**<br/>string | - | **Optional** | - |
+| **`update_policy`**<br/>string | semver constraint for tag resolution Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and sa... | **Optional** | `"~1.25.0"`, `"^2.0.0"`, `"\u003e=1.0.0,\u003c2.0.0"`, `"1.x"`, `"^1.0 || ^2.0"` |
+
+### `azure_acr`
+
+| Property | Description | Values | Example |
+|----------|----------|----------|----------|
+| **`image_url`**<br/>string | ACR image URL Full URL to the ACR image (without tag). Format: \<registry\>.azurecr.io/\<repository\>/\<image\> | **✅ Required** | `"myregistry.azurecr.io/myapp/api"` |
+| **`registry_url`**<br/>string | ACR login server Azure Container Registry login server. Format: \<registry\>.azurecr.io | **✅ Required** | `"myregistry.azurecr.io"` |
+| **`tag`**<br/>string | image tag Tag or version of the container image to deploy. Either tag or update_policy must be set. Supports templating (e.g., \{\{.nuon.install.id\}\}) | **Optional** | `"v1.0.0"`, `"latest"`, `"{{.nuon.install.id}}"` |
+| **`tenant_id`**<br/>string | Azure tenant ID for service principal auth Optional Azure AD tenant ID. If set with client_id, the runner uses service principal credentials; otherwise it uses default Azure credentials | **Optional** | `"00000000-0000-0000-0000-000000000000"` |
+| **`client_id`**<br/>string | Azure client ID for service principal auth Optional Azure AD client (application) ID. If set with tenant_id, the runner uses service principal credentials; otherwise it uses default Azure credentials | **Optional** | `"00000000-0000-0000-0000-000000000000"` |
 | **`update_policy`**<br/>string | semver constraint for tag resolution Semver constraint for picking a tag at build time. When set, at each build the runner lists tags from the registry, filters to those that parse as semver and sa... | **Optional** | `"~1.25.0"`, `"^2.0.0"`, `"\u003e=1.0.0,\u003c2.0.0"`, `"1.x"`, `"^1.0 || ^2.0"` |
 
 ### `public`

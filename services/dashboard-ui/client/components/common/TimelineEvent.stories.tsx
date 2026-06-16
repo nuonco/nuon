@@ -5,7 +5,6 @@ export default {
 import { TimelineEvent } from './TimelineEvent'
 import { Text } from './Text'
 import { Badge } from './Badge'
-import { Button } from './Button'
 
 export const BasicUsage = () => (
   <div className="space-y-6">

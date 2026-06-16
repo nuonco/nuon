@@ -91,6 +91,11 @@ type model struct {
 	// 3. for the footer
 	status common.StatusBarRequest
 
+	// branch config diff navigation
+	expandedDiffSections map[int]bool
+	diffSectionCursor    int
+	diffSectionCount     int
+
 	// approval confirmations
 	stepApprovalConf        bool
 	workflowApprovalConf    bool
@@ -147,9 +152,10 @@ func initialModel(
 		workflowID: workflowID,
 
 		// data
-		approvalContents: approvalContents,
-		policyNames:      map[string]string{},
-		helmDiffExplorer: newHelmDiffExplorerModel(minRequiredWidth - 4),
+		approvalContents:     approvalContents,
+		policyNames:          map[string]string{},
+		expandedDiffSections: map[int]bool{},
+		helmDiffExplorer:     newHelmDiffExplorerModel(minRequiredWidth - 4),
 
 		header:     viewport.New(viewport.WithWidth(minRequiredWidth), viewport.WithHeight(2)),
 		stepsList:  stepsList,
@@ -177,6 +183,41 @@ func (m model) PolicyNameByID(id string) string {
 		return name
 	}
 	return id
+}
+
+func (m *model) hasDiffSectionsExpanded() bool {
+	for _, v := range m.expandedDiffSections {
+		if v {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *model) collapseDiffSections() {
+	m.expandedDiffSections = map[int]bool{}
+}
+
+func (m *model) scrollDiffCursorIntoView() {
+	// Estimate the line offset of the cursor item in the step detail viewport.
+	// Header (title + summary + hint) takes ~12 lines, then each section takes
+	// ~4 lines collapsed or ~8+ expanded. We scroll so the cursor item is
+	// roughly in the upper third of the viewport.
+	headerLines := 12
+	lineEstimate := headerLines
+	for i := 0; i < m.diffSectionCursor; i++ {
+		if m.expandedDiffSections[i] {
+			lineEstimate += 8
+		} else {
+			lineEstimate += 4
+		}
+	}
+	vpHeight := m.stepDetail.Height()
+	targetOffset := lineEstimate - vpHeight/3
+	if targetOffset < 0 {
+		targetOffset = 0
+	}
+	m.stepDetail.SetYOffset(targetOffset)
 }
 
 func (m *model) toggleShowJson() {
@@ -215,6 +256,9 @@ func (m *model) resetSelected() {
 	m.selectedStep = nil
 	m.selectedIndex = -1
 	m.showJson = false
+	m.expandedDiffSections = map[int]bool{}
+	m.diffSectionCursor = 0
+	m.diffSectionCount = 0
 	m.approvalContents = approvalContents{loading: false, error: nil}
 	m.helmDiffExplorer.Reset()
 
@@ -455,6 +499,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.resetWorkflowCancelationConf()
 			} else if m.workflowApprovalConf {
 				m.resetWorkflowApprovalConf()
+			} else if m.selectedStep != nil && m.hasDiffSectionsExpanded() {
+				m.collapseDiffSections()
+				m.populateStepDetailView(false)
 			} else if m.selectedStep != nil {
 				m.resetSelected()
 			} else {

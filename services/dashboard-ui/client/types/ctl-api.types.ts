@@ -221,6 +221,7 @@ export type TCompositeError =
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
+  composite_error?: TCompositeError
 }
 export type TDeploy = TInstallDeploy
 export type TInstallDeployPlanIntermediateData = {
@@ -355,6 +356,17 @@ export type TVCSConnectionRepo = {
 export type TVCSConnectionReposResponse = {
   repositories: TVCSConnectionRepo[]
   total_count: number
+}
+
+export type TVCSWebhookSubscription = {
+  id: string
+  created_at: string
+  updated_at: string
+  vcs_connection_id: string
+  github_install_id: string
+  github_hook_id?: number
+  webhook_url?: string
+  status?: TCompositeStatus
 }
 
 // OTEL logs

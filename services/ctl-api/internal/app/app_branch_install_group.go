@@ -8,6 +8,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -31,9 +32,13 @@ type AppBranchInstallGroup struct {
 	Order      int            `json:"order,omitzero" gorm:"not null;uniqueIndex:idx_app_branch_install_group_order" temporaljson:"order,omitzero,omitempty"`
 	InstallIDs pq.StringArray `gorm:"type:text[]" json:"install_ids,omitzero" temporaljson:"install_ids,omitzero,omitempty" swaggertype:"array,string"`
 
-	RequiresApproval  bool `json:"requires_approval,omitzero" gorm:"default:false" temporaljson:"requires_approval,omitzero,omitempty"`
-	RollbackOnFailure bool `json:"rollback_on_failure,omitzero" gorm:"default:true" temporaljson:"rollback_on_failure,omitzero,omitempty"`
-	MaxParallel       int  `json:"max_parallel,omitzero" gorm:"default:5" temporaljson:"max_parallel,omitzero,omitempty"`
+	// LabelSelector dynamically resolves installs at deploy time by matching labels.
+	// Mutually exclusive with InstallIDs — set one or the other, not both.
+
+	LabelSelector *labels.Selector `json:"label_selector,omitempty" gorm:"type:jsonb;serializer:json;default:null" temporaljson:"label_selector,omitzero,omitempty"`
+
+	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
+	UseForPreviews bool `json:"use_for_previews,omitzero" gorm:"default:false" temporaljson:"use_for_previews,omitzero,omitempty"`
 }
 
 func (a *AppBranchInstallGroup) Indexes(db *gorm.DB) []migrations.Index {

@@ -41,6 +41,13 @@ type AppInstallDeploy struct {
 	// component name
 	ComponentName string `json:"component_name,omitempty"`
 
+	// CompositeError holds a typed, structured error (e.g. a missing AWS IAM
+	// permission) frozen at write time when a deploy plan/apply fails. It is
+	// nil for successful or non-enriched failures.
+	CompositeError struct {
+		CompositeerrorsCompositeErrorData
+	} `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -123,6 +130,10 @@ func (m *AppInstallDeploy) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateComponentBuild(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCompositeError(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -216,6 +227,14 @@ func (m *AppInstallDeploy) validateComponentBuild(formats strfmt.Registry) error
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallDeploy) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
 	}
 
 	return nil
@@ -459,6 +478,10 @@ func (m *AppInstallDeploy) ContextValidate(ctx context.Context, formats strfmt.R
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -551,6 +574,11 @@ func (m *AppInstallDeploy) contextValidateComponentBuild(ctx context.Context, fo
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *AppInstallDeploy) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }

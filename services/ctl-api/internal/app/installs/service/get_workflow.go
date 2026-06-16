@@ -94,6 +94,9 @@ func (s *service) getWorkflow(ctx *gin.Context, orgID, workflowID string) (*app.
 			return db.Omit("contents")
 		}).
 		Preload("Steps.Approval.Response").
+		Preload("AppBranchRuns").
+		Preload("AppBranchRuns.VCSConnectionCommit").
+		Preload("AppBranchRuns.AppBranchConfig").
 		Preload("StepGroups", func(db *gorm.DB) *gorm.DB {
 			return db.Order("group_idx asc")
 		}).

@@ -17,24 +17,31 @@ type Diffable interface {
 }
 
 type DiffKey struct {
-	Op   Op
-	Diff string
+	Op   Op     `json:"op"`
+	Diff string `json:"diff"`
 }
 
 type Diff struct {
-	Key      string
-	Diff     *DiffKey
-	Children []*Diff
+	Key      string   `json:"key"`
+	Diff     *DiffKey `json:"diff,omitempty"`
+	Children []*Diff  `json:"children,omitempty"`
 }
 
+// String returns the full diff tree with +/-/~ prefixes indicating
+// added, removed, changed, and unchanged fields.
+// Empty unchanged fields (both old and new are "") are suppressed.
 func (d *Diff) String(indent string) string {
 	if d == nil {
 		return ""
 	}
 
 	if d.Diff != nil {
+		if d.Diff.Op == OpNoop && d.Diff.Diff == "'' (unchanged)" {
+			return ""
+		}
 		return fmt.Sprintf(indent+"%s: %s\n", d.Key, d.Diff.Diff)
 	}
+
 	diff := indent + d.Key + ":\n"
 	for _, child := range d.Children {
 		diff = diff + child.String(indent+"\t")
@@ -42,12 +49,50 @@ func (d *Diff) String(indent string) string {
 	return diff
 }
 
+// FormatChanged returns only the parts of the diff tree that have changes
+// (added, removed, or changed). Unchanged fields and sections are omitted entirely.
+func (d *Diff) FormatChanged(indent string) string {
+	if d == nil {
+		return ""
+	}
+
+	if d.Diff != nil {
+		if d.Diff.Op == OpNoop {
+			return ""
+		}
+		prefix := opPrefix(d.Diff.Op)
+		return fmt.Sprintf("%s%s%s: %s\n", prefix, indent, d.Key, d.Diff.Diff)
+	}
+
+	var childOutput string
+	for _, child := range d.Children {
+		childOutput += child.FormatChanged(indent + "\t")
+	}
+	if childOutput == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s%s:\n%s", indent, d.Key, childOutput)
+}
+
+func opPrefix(op Op) string {
+	switch op {
+	case OpAdd:
+		return "+ "
+	case OpRemove:
+		return "- "
+	case OpChange:
+		return "~ "
+	default:
+		return "  "
+	}
+}
+
 type DiffSummary struct {
-	HasChanged bool
-	Added      int
-	Removed    int
-	Changed    int
-	Unchanged  int
+	HasChanged bool `json:"has_changed"`
+	Added      int  `json:"added"`
+	Removed    int  `json:"removed"`
+	Changed    int  `json:"changed"`
+	Unchanged  int  `json:"unchanged"`
 }
 
 func (d *Diff) Summary() DiffSummary {

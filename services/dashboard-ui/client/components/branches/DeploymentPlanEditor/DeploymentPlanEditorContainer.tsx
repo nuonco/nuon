@@ -16,15 +16,19 @@ import { DeploymentPlanEditor } from './DeploymentPlanEditor'
 import type { IInstallGroup } from './types'
 
 const toEditorGroups = (config?: TAppBranchConfig): IInstallGroup[] =>
-  config?.install_groups?.map((g, idx) => ({
-    id: g.id || `group-${idx}`,
-    name: g.name || '',
-    install_ids: g.install_ids || [],
-    order: g.order ?? idx,
-    max_parallel: g.max_parallel || 1,
-    requires_approval: g.requires_approval || false,
-    rollback_on_failure: g.rollback_on_failure || false,
-  })) || []
+  config?.install_groups?.map((g, idx) => {
+    const hasLabelSelector = !!g.label_selector?.match_labels && Object.keys(g.label_selector.match_labels).length > 0
+    return {
+      id: g.id || `group-${idx}`,
+      name: g.name || '',
+      install_ids: g.install_ids || [],
+      label_selector: g.label_selector || null,
+      selection_mode: hasLabelSelector ? 'labels' as const : 'manual' as const,
+      order: g.order ?? idx,
+      max_parallel: g.max_parallel || 1,
+      use_for_previews: g.use_for_previews || false,
+    }
+  }) || []
 
 interface IDeploymentPlanEditorContainer extends IModal {
   branch: TAppBranch
@@ -61,11 +65,11 @@ export const DeploymentPlanEditorContainer = ({
     mutationFn: async (groups: IInstallGroup[]) => {
       const installGroupsForApi = groups.map((group, index) => ({
         name: group.name,
-        install_ids: group.install_ids || [],
+        install_ids: group.selection_mode === 'manual' ? (group.install_ids || []) : [],
+        label_selector: group.selection_mode === 'labels' ? group.label_selector : undefined,
         order: index,
         max_parallel: group.max_parallel || 1,
-        requires_approval: group.requires_approval || false,
-        rollback_on_failure: group.rollback_on_failure || false,
+        use_for_previews: group.use_for_previews || false,
       }))
 
       const request: TCreateBranchConfigRequest = {
