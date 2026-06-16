@@ -4340,6 +4340,12 @@ export interface components {
       app_sandbox_config?: components["schemas"]["app.AppSandboxConfig"];
       /** @description AppliedAt is set when the apply runner job completes successfully. */
       applied_at?: string;
+      /**
+       * @description CompositeError holds a typed, structured error (e.g. a missing AWS IAM
+       * permission) frozen at write time when a sandbox plan/apply fails. It is
+       * nil for successful or non-enriched failures.
+       */
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
