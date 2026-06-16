@@ -5,7 +5,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -62,6 +64,81 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	})
 	if err != nil {
 		return fmt.Errorf("unable to update run with VCS commit: %w", err)
+	}
+
+	// Update step metadata with commit details for the UI
+	if s.StepID != "" {
+		meta := map[string]any{
+			"commit_sha":     vcsCommit.SHA,
+			"commit_message": vcsCommit.Message,
+			"author_name":    vcsCommit.AuthorName,
+			"author_email":   vcsCommit.AuthorEmail,
+		}
+
+		var vcsConfigID string
+		if cfg.ConnectedGithubVCSConfig != nil {
+			meta["repo"] = cfg.ConnectedGithubVCSConfig.Repo
+			meta["branch"] = cfg.ConnectedGithubVCSConfig.Branch
+			vcsConfigID = cfg.ConnectedGithubVCSConfig.ID
+		}
+		if cfg.PublicGitVCSConfig != nil {
+			meta["repo"] = cfg.PublicGitVCSConfig.Repo
+			meta["branch"] = cfg.PublicGitVCSConfig.Branch
+			vcsConfigID = cfg.PublicGitVCSConfig.ID
+		}
+
+		// Get the run's base branch info
+		run, runErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
+		if runErr == nil && run.BaseBranch != "" {
+			meta["base_branch"] = run.BaseBranch
+		}
+
+		// Best-effort: fetch PR info for the branch
+		if vcsConfigID != "" {
+			branchName := ""
+			if b, ok := meta["branch"].(string); ok {
+				branchName = b
+			}
+			if branchName != "" {
+				prInfo, prErr := activities.AwaitFetchCommitPRInfo(ctx, &activities.FetchCommitPRInfoInput{
+					VcsConfigID: vcsConfigID,
+					Branch:      branchName,
+				})
+				if prErr == nil && prInfo != nil {
+					meta["pr_number"] = prInfo.PRNumber
+					meta["pr_title"] = prInfo.PRTitle
+					meta["pr_status"] = prInfo.PRStatus
+					meta["pr_reviewer_count"] = prInfo.ReviewerCount
+					meta["pr_url"] = prInfo.PRURL
+				}
+			}
+
+			// Best-effort: fetch diff stats
+			baseBranch := ""
+			if b, ok := meta["base_branch"].(string); ok {
+				baseBranch = b
+			}
+			diffStats, diffErr := activities.AwaitFetchCommitDiffStats(ctx, &activities.FetchCommitDiffStatsInput{
+				VcsConfigID: vcsConfigID,
+				CommitSHA:   vcsCommit.SHA,
+				BaseBranch:  baseBranch,
+			})
+			if diffErr == nil && diffStats != nil {
+				meta["files_changed"] = diffStats.FilesChanged
+				meta["additions"] = diffStats.Additions
+				meta["deletions"] = diffStats.Deletions
+				meta["changed_files"] = diffStats.ChangedFiles
+			}
+		}
+
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.StepID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusSuccess,
+				StatusHumanDescription: fmt.Sprintf("fetched commit %s", vcsCommit.SHA[:8]),
+				Metadata:               meta,
+			},
+		})
 	}
 
 	logger.Info("successfully fetched and stored commit",

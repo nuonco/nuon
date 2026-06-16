@@ -20,7 +20,12 @@ func (a *Activities) HasActiveRunnerProcess(ctx context.Context, req HasActiveRu
 	var count int64
 	res := a.db.WithContext(ctx).
 		Model(&app.RunnerProcess{}).
-		Where("runner_id = ? AND composite_status->>'status' = ?", req.RunnerID, string(app.RunnerProcessStatusActive)).
+		Where("runner_id = ?", req.RunnerID).
+		Where("composite_status->>'status' IN ?", []string{
+			string(app.RunnerProcessStatusActive),
+			string(app.RunnerProcessStatusPendingShutdown),
+			string(app.RunnerProcessStatusShuttingDown),
+		}).
 		Count(&count)
 	if res.Error != nil {
 		return nil, res.Error

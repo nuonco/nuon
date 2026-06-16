@@ -509,6 +509,33 @@ To add new types, extract them in `ctl-api.types.ts`:
 export type TNewResource = components['schemas']['app.NewResource']
 ```
 
+## Comments (CRITICAL)
+
+Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code does. Let clear naming and structure document the code.
+
+```typescript
+// ❌ Wrong — comments that restate the code
+// Fetch the installs for the org
+const installs = await getInstalls(orgId)
+
+// Close the modal
+setIsOpen(false)
+
+// Loop through items and render a row for each
+{items.map((item) => (
+  <Row key={item.id} item={item} />
+))}
+
+// ✅ Correct — no comments needed, the code says it all
+const installs = await getInstalls(orgId)
+setIsOpen(false)
+{items.map((item) => (
+  <Row key={item.id} item={item} />
+))}
+```
+
+The only acceptable comments explain **why**, not **what** — a non-obvious constraint, workaround, or gotcha that the code itself cannot express. If a comment would just narrate what the next line does, delete it.
+
 ## Component Patterns
 
 ### Always Check Existing Components First
@@ -848,8 +875,6 @@ return `${minutes} minutes ago`
 ```
 
 **For utility functions** that need date logic (not rendering), use Luxon's `DateTime` and `Duration` classes directly. Place shared helpers in `client/utils/time-utils.ts`.
-
-Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe what the code does (no "// loop through items", "// close modal", "// fetch data" style comments). Let clear naming and structure document the code.
 
 ## Key Scripts
 

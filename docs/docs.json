@@ -1,428 +1,428 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "aspen",
-  "name": "Nuon documentation",
-  "description": "Nuon is the BYOC (bring-your-own-cloud) deployment platform for software vendors. Deploy applications — Terraform, Helm, Kubernetes manifests, container images — into customer AWS, Azure, or GCP accounts with no cross-account IAM. Includes runners, operation roles for least-privilege IAM, drift detection, approval workflows, and policies for compliance.",
-  "seo": {
-    "indexing": "all",
-    "metatags": {
-      "og:site_name": "Nuon Documentation",
-      "og:type": "website",
-      "twitter:card": "summary_large_image",
-      "twitter:site": "@nuonco"
-    }
-  },
-  "contextual": {
-    "options": ["copy", "view", "cursor", "chatgpt", "claude"]
-  },
-  "colors": {
-    "primary": "#256A7F",
-    "light": "#4CC9F0",
-    "dark": "#256A7F"
-  },
-  "background": {
-    "color": {
-      "light": "#FAFAFA"
-    }
-  },
-  "favicon": "/favicon.svg",
-  "custom": {
-    "css": "/style.css"
-  },
-  "fonts": {
-    "family": "Inter"
-  },
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Quickstart",
-        "icon": "rocket",
-        "pages": [
-          "get-started/quickstart",
-          "get-started/introduction",
-          "get-started/create-your-first-app",
-          {
-            "group": "Deployment Options",
-            "root": "guides/deployment-options",
-            "boost": 5,
-            "expanded": true,
-            "pages": [
-              "guides/nuon-cloud",
-              {
-                "group": "Install Nuon BYOC",
-                "root": "guides/byoc",
-                "expanded": false,
-                "pages": [
-                  "guides/byoc/requirements",
-                  "guides/byoc/aws",
-                  "guides/byoc/azure",
-                  "guides/byoc/gcp"
-                ]
-              },
-              {
-                "group": "Self-Hosted Nuon",
-                "root": "guides/self-hosted",
-                "expanded": false,
-                "pages": [
-                  "guides/self-hosted/supported-platforms"
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "How it Works",
-        "icon": "lightbulb",
-        "groups": [
-          {
-            "group": "Overview",
-            "boost": 3,
-            "pages": ["concepts/overview", "concepts/glossary"]
-          },
-          {
-            "group": "Connect Your App",
-            "boost": 3,
-            "pages": [
-              "concepts/apps",
-              {
-                "group": "Components",
-                "root": "concepts/components",
-                "icon": "object-group",
-                "boost": 3,
-                "pages": [
-                  "concepts/components/auto-retries"
-                ]
-              },
-              "concepts/sandboxes",
-              "concepts/app-inputs",
-              "concepts/app-secrets",
-              "concepts/app-variables",
-              "concepts/runners"
-            ]
-          },
-          {
-            "group": "Customer installs",
-            "boost": 3,
-            "pages": [
-              "guides/app-install-life-cycle",
-              {
-                "group": "Stacks",
-                "root": "concepts/stacks",
-                "icon": "layer-group",
-                "expanded": true,
-                "pages": [
-                  "concepts/stacks/stand-alone-vpc",
-                  "concepts/stacks/customer-vpc",
-                  "concepts/stacks/customer-cluster"
-                ]
-              },
-              "concepts/cli"
-            ]
-          },
-          {
-            "group": "Continuous Delivery",
-            "boost": 3,
-            "pages": ["get-started/day-2-operations", "concepts/workflows", "concepts/actions", "concepts/policies", "concepts/operation-roles"]
-          }
-        ]
-      },
-      {
-        "tab": "How-tos",
-        "icon": "screwdriver-wrench",
-        "groups": [
-          {
-            "group": "Connect Your App",
-            "boost": 3,
-            "pages": [
-              "guides/app-init",
-              "guides/managing-apps",
-              "guides/managing-components",
-              "guides/component-dependencies",
-              "guides/configuring-inputs-and-secrets",
-              "guides/configuring-sandboxes",
-              "guides/using-variables",
-              "guides/vcs",
-              {
-                "group": "Components",
-                "pages": [
-                  "guides/docker-build-components",
-                  "guides/container-image-components",
-                  "guides/image-update-policies",
-                  "guides/helm-chart-components",
-                  "guides/kubernetes-manifest-components",
-                  "guides/terraform-components"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Install with a Customer",
-            "boost": 3,
-            "pages": [
-              "guides/vendor-customers",
-              "guides/install-configs",
-              "guides/runner-kill-switch",
-              "guides/custom-domains"
-            ]
-          },
-          {
-            "group": "Day 2 Operations",
-            "boost": 3,
-            "pages": [
-              "guides/actions",
-              "guides/adhoc-actions",
-              "guides/configuring-policies",
-              "guides/operation-roles",
-              "guides/runner-management-mode",
-              "guides/team-management"
-            ]
-          },
-          {
-            "group": "Integrations",
-            "boost": 2,
-            "pages": [
-              "guides/control-plane-integration",
-              "guides/github-actions",
-              "guides/webhooks",
-              "guides/slack",
-              "guides/ai-and-apps"
-            ]
-          },
-          {
-            "group": "Advanced",
-            "boost": 2,
-            "pages": [
-              "guides/using-readmes",
-              "guides/programmable-readmes",
-              "guides/runbooks",
-              "guides/custom-nested-stacks",
-              "guides/customizing-terraform-stack-templates",
-              "guides/cli-extensions",
-              "guides/external-image-policies",
-              "guides/terraform-cli"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Reference",
-        "icon": "book",
-        "pages": [
-          {
-            "group": "Cloud Reference",
-            "boost": 1,
-            "pages": [
-              "platform-support/introduction",
-              "platform-support/aws",
-              "platform-support/azure",
-              "platform-support/gcp"
-            ]
-          },
-          {
-            "group": "Interface Reference",
-            "pages": [
-              {
-                "group": "CLI",
-                "root": "cli",
-                "pages": [
-                  "cli-commands"
-                ]
-              },
-              "tui",
-              "nuon-api",
-              "sdks"
-            ]
-          },
-          {
-            "group": "Config Reference",
-            "root": "config-ref/index",
-            "boost": 0.25,
-            "expanded": true,
-            "pages": [
-              "configuration-files",
-              {
-                "group": "Component Types",
-                "pages": [
-                  "config-ref/container-image",
-                  "config-ref/docker-build",
-                  "config-ref/helm",
-                  "config-ref/kubernetes-manifest",
-                  "config-ref/terraform"
-                ]
-              },
-              {
-                "group": "Configuration Types",
-                "pages": [
-                  "config-ref/action",
-                  "config-ref/break-glass",
-                  "config-ref/inputs",
-                  "config-ref/install",
-                  "config-ref/installer",
-                  "config-ref/metadata",
-                  "config-ref/permissions",
-                  "config-ref/policies",
-                  "config-ref/runner",
-                  "config-ref/sandbox",
-                  "config-ref/secrets",
-                  "config-ref/stack"
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Architecture Reference",
-            "boost": 1.5,
-            "pages": [
-              "architecture/platform",
-              "architecture/app-deployment",
-              "architecture/runner-auth",
-              "security"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Changelog",
-        "icon": "clock-rotate-left",
-        "pages": [
-          "updates/updates",
-          "updates/035-runbooks-and-readmes",
-          "updates/034-aws-terraform-install-stack",
-          "updates/033-Workflow-Policy-and-improved-cloud-support",
-          "updates/032-extensions-and-roles",
-          "updates/031-operation-roles",
-          "updates/030-policies",
-          "updates/029-auth-inputs-better-nested-templates",
-          "updates/028-open-source",
-          "updates/027-install-config-toggle",
-          "updates/026-helm-repository-support",
-          "updates/025-temporal-stability",
-          "updates/024-install-inputs-ui-redesign",
-          "updates/023-drift-workflow-improvements",
-          "updates/022-nuon-cli-github-actions",
-          "updates/021-drift-detection",
-          "updates/020-break-glass-actions",
-          "updates/019-self-service",
-          "updates/018-management-mode",
-          "updates/017-noop-approvals-stability-updates",
-          "updates/016-enhanced-install-config-files-and-improved-plans",
-          "updates/015-azure-support",
-          "updates/014-install-config-files",
-          "updates/013-kubernetes-manifest-component",
-          "updates/012-approval-diffs-plan-only",
-          "updates/011-approval-updates",
-          "updates/010-approvals",
-          "updates/009-action-triggers-secrets-configs",
-          "updates/008-vcs-stacks-fixes",
-          "updates/007-secret-formats",
-          "updates/006-secrets-workflows",
-          "updates/005-developer-experience",
-          "updates/004-secrets",
-          "updates/003-install-deletes-cancel-improvements",
-          "updates/002-inputs-dependencies",
-          "updates/001-install-workflows-actions"
-        ]
-      },
-      {
-        "tab": "Knowledge Base",
-        "icon": "book-open",
-        "href": "https://support.nuon.co"
-      }
-    ],
-    "global": {
-      "anchors": []
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg",
-    "href": "/get-started/introduction"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "GitHub",
-        "href": "https://github.com/nuonco/nuon",
-        "icon": "github",
-        "iconType": "brands"
-      },
-      {
-        "label": "Slack",
-        "href": "https://nuon-byoc.slack.com/join/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA#/shared-invite/email",
-        "icon": "slack",
-        "iconType": "brands"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Sign up",
-      "href": "https://app.nuon.co/"
-    }
-  },
-  "api": {
-    "openapi": "https://api.nuon.co/oapi/v3"
-  },
-  "footer": {
-    "socials": {
-      "website": "https://www.nuon.co",
-      "x": "https://twitter.com/nuoninc",
-      "linkedin": "https://www.linkedin.com/company/nuonco/"
-    }
-  },
-  "integrations": {
-    "plausible": {
-      "domain": "docs.nuon.co"
-    }
-  },
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/get-started/introduction"
-    },
-    {
-      "source": "/api-ref",
-      "destination": "/nuon-api"
-    },
-    {
-      "source": "/api-ref/getting-started",
-      "destination": "/nuon-api"
-    },
-    {
-      "source": "/changelog",
-      "destination": "/updates/updates"
-    },
-    {
-      "source": "/faq",
-      "destination": "/support/support"
-    },
-    {
-      "source": "/runner-architecture",
-      "destination": "/architecture/platform"
-    },
-    {
-      "source": "/architecture/byoc",
-      "destination": "/architecture/app-deployment"
-    },
-    {
-      "source": "/concepts/installs",
-      "destination": "/guides/app-install-life-cycle"
-    },
-    {
-      "source": "/deployment-options",
-      "destination": "/guides/deployment-options"
-    },
-    {
-      "source": "/guides/self-hosting",
-      "destination": "/guides/self-hosted"
-    },
-    {
-      "source": "/guides/programmatic-install-config",
-      "destination": "/guides/install-configs"
-    },
-    {
-      "source": "/guides/notifications",
-      "destination": "/guides/slack"
-    }
-  ]
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "aspen",
+	"name": "Nuon documentation",
+	"description": "Nuon is the BYOC (bring-your-own-cloud) deployment platform for software vendors. Deploy applications — Terraform, Helm, Kubernetes manifests, container images — into customer AWS, Azure, or GCP accounts with no cross-account IAM. Includes runners, operation roles for least-privilege IAM, drift detection, approval workflows, and policies for compliance.",
+	"seo": {
+		"indexing": "all",
+		"metatags": {
+			"og:site_name": "Nuon Documentation",
+			"og:type": "website",
+			"twitter:card": "summary_large_image",
+			"twitter:site": "@nuonco"
+		}
+	},
+	"contextual": {
+		"options": ["copy", "view", "cursor", "chatgpt", "claude"]
+	},
+	"colors": {
+		"primary": "#256A7F",
+		"light": "#4CC9F0",
+		"dark": "#256A7F"
+	},
+	"background": {
+		"color": {
+			"light": "#FAFAFA"
+		}
+	},
+	"favicon": "/favicon.svg",
+	"custom": {
+		"css": "/style.css"
+	},
+	"fonts": {
+		"family": "Inter"
+	},
+	"navigation": {
+		"tabs": [
+			{
+				"tab": "Quickstart",
+				"icon": "rocket",
+				"pages": [
+					"get-started/quickstart",
+					"get-started/create-your-first-app",
+					"get-started/introduction",
+					{
+						"group": "Deployment Options",
+						"root": "guides/deployment-options",
+						"boost": 5,
+						"expanded": true,
+						"pages": [
+							"guides/nuon-cloud",
+							{
+								"group": "Install Nuon BYOC",
+								"root": "guides/byoc",
+								"expanded": false,
+								"pages": [
+									"guides/byoc/requirements",
+									"guides/byoc/aws",
+									"guides/byoc/azure",
+									"guides/byoc/gcp"
+								]
+							},
+							{
+								"group": "Self-Hosted Nuon",
+								"root": "guides/self-hosted",
+								"expanded": false,
+								"pages": ["guides/self-hosted/supported-platforms"]
+							}
+						]
+					}
+				]
+			},
+			{
+				"tab": "How it Works",
+				"icon": "lightbulb",
+				"groups": [
+					{
+						"group": "Overview",
+						"boost": 3,
+						"pages": ["concepts/overview", "concepts/glossary"]
+					},
+					{
+						"group": "Connect Your App",
+						"boost": 3,
+						"pages": [
+							"concepts/apps",
+							{
+								"group": "Components",
+								"root": "concepts/components",
+								"icon": "object-group",
+								"boost": 3,
+								"pages": ["concepts/components/auto-retries"]
+							},
+							"concepts/sandboxes",
+							"concepts/app-inputs",
+							"concepts/app-secrets",
+							"concepts/app-variables",
+							"concepts/runners"
+						]
+					},
+					{
+						"group": "Customer installs",
+						"boost": 3,
+						"pages": [
+							"guides/app-install-life-cycle",
+							{
+								"group": "Stacks",
+								"root": "concepts/stacks",
+								"icon": "layer-group",
+								"expanded": true,
+								"pages": [
+									"concepts/stacks/stand-alone-vpc",
+									"concepts/stacks/customer-vpc",
+									"concepts/stacks/customer-cluster"
+								]
+							},
+							"concepts/cli"
+						]
+					},
+					{
+						"group": "Continuous Delivery",
+						"boost": 3,
+						"pages": [
+							"get-started/day-2-operations",
+							"concepts/workflows",
+							"concepts/actions",
+							"concepts/policies",
+							"concepts/operation-roles"
+						]
+					}
+				]
+			},
+			{
+				"tab": "How-tos",
+				"icon": "screwdriver-wrench",
+				"groups": [
+					{
+						"group": "Connect Your App",
+						"boost": 3,
+						"pages": [
+							"guides/app-init",
+							"guides/managing-apps",
+							"guides/managing-components",
+							"guides/component-dependencies",
+							"guides/configuring-inputs-and-secrets",
+							"guides/configuring-sandboxes",
+							"guides/using-variables",
+							"guides/vcs",
+							{
+								"group": "Components",
+								"pages": [
+									"guides/docker-build-components",
+									"guides/container-image-components",
+									"guides/image-update-policies",
+									"guides/helm-chart-components",
+									"guides/kubernetes-manifest-components",
+									"guides/terraform-components"
+								]
+							}
+						]
+					},
+					{
+						"group": "Install with a Customer",
+						"boost": 3,
+						"pages": [
+							"guides/vendor-customers",
+							"guides/install-configs",
+							"guides/runner-kill-switch",
+							"guides/custom-domains"
+						]
+					},
+					{
+						"group": "Day 2 Operations",
+						"boost": 3,
+						"pages": [
+							"guides/actions",
+							"guides/adhoc-actions",
+							"guides/configuring-policies",
+							"guides/operation-roles",
+							"guides/runner-management-mode",
+							"guides/team-management"
+						]
+					},
+					{
+						"group": "Integrations",
+						"boost": 2,
+						"pages": [
+							"guides/control-plane-integration",
+							"guides/github-actions",
+							"guides/webhooks",
+							"guides/slack",
+							"guides/ai-and-apps"
+						]
+					},
+					{
+						"group": "Advanced",
+						"boost": 2,
+						"pages": [
+							"guides/using-readmes",
+							"guides/programmable-readmes",
+							"guides/runbooks",
+							"guides/custom-nested-stacks",
+							"guides/customizing-terraform-stack-templates",
+							"guides/cli-extensions",
+							"guides/external-image-policies",
+							"guides/terraform-cli"
+						]
+					}
+				]
+			},
+			{
+				"tab": "Reference",
+				"icon": "book",
+				"pages": [
+					{
+						"group": "Cloud Reference",
+						"boost": 1,
+						"pages": [
+							"platform-support/introduction",
+							"platform-support/aws",
+							"platform-support/azure",
+							"platform-support/gcp"
+						]
+					},
+					{
+						"group": "Interface Reference",
+						"pages": [
+							{
+								"group": "CLI",
+								"root": "cli",
+								"pages": ["cli-commands"]
+							},
+							"tui",
+							"nuon-api",
+							"sdks"
+						]
+					},
+					{
+						"group": "Config Reference",
+						"root": "config-ref/index",
+						"boost": 0.25,
+						"expanded": true,
+						"pages": [
+							"configuration-files",
+							{
+								"group": "Component Types",
+								"pages": [
+									"config-ref/container-image",
+									"config-ref/docker-build",
+									"config-ref/helm",
+									"config-ref/kubernetes-manifest",
+									"config-ref/terraform"
+								]
+							},
+							{
+								"group": "Configuration Types",
+								"pages": [
+									"config-ref/action",
+									"config-ref/break-glass",
+									"config-ref/inputs",
+									"config-ref/install",
+									"config-ref/installer",
+									"config-ref/metadata",
+									"config-ref/permissions",
+									"config-ref/policies",
+									"config-ref/runner",
+									"config-ref/sandbox",
+									"config-ref/secrets",
+									"config-ref/stack"
+								]
+							}
+						]
+					},
+					{
+						"group": "Architecture Reference",
+						"boost": 1.5,
+						"pages": [
+							"architecture/platform",
+							"architecture/app-deployment",
+							"architecture/runner-auth",
+							"security"
+						]
+					}
+				]
+			},
+			{
+				"tab": "Changelog",
+				"icon": "clock-rotate-left",
+				"pages": [
+					"updates/updates",
+					"updates/035-runbooks-and-readmes",
+					"updates/034-aws-terraform-install-stack",
+					"updates/033-Workflow-Policy-and-improved-cloud-support",
+					"updates/032-extensions-and-roles",
+					"updates/031-operation-roles",
+					"updates/030-policies",
+					"updates/029-auth-inputs-better-nested-templates",
+					"updates/028-open-source",
+					"updates/027-install-config-toggle",
+					"updates/026-helm-repository-support",
+					"updates/025-temporal-stability",
+					"updates/024-install-inputs-ui-redesign",
+					"updates/023-drift-workflow-improvements",
+					"updates/022-nuon-cli-github-actions",
+					"updates/021-drift-detection",
+					"updates/020-break-glass-actions",
+					"updates/019-self-service",
+					"updates/018-management-mode",
+					"updates/017-noop-approvals-stability-updates",
+					"updates/016-enhanced-install-config-files-and-improved-plans",
+					"updates/015-azure-support",
+					"updates/014-install-config-files",
+					"updates/013-kubernetes-manifest-component",
+					"updates/012-approval-diffs-plan-only",
+					"updates/011-approval-updates",
+					"updates/010-approvals",
+					"updates/009-action-triggers-secrets-configs",
+					"updates/008-vcs-stacks-fixes",
+					"updates/007-secret-formats",
+					"updates/006-secrets-workflows",
+					"updates/005-developer-experience",
+					"updates/004-secrets",
+					"updates/003-install-deletes-cancel-improvements",
+					"updates/002-inputs-dependencies",
+					"updates/001-install-workflows-actions"
+				]
+			},
+			{
+				"tab": "Knowledge Base",
+				"icon": "book-open",
+				"href": "https://support.nuon.co"
+			}
+		],
+		"global": {
+			"anchors": []
+		}
+	},
+	"logo": {
+		"light": "/logo/light.svg",
+		"dark": "/logo/dark.svg",
+		"href": "/get-started/introduction"
+	},
+	"navbar": {
+		"links": [
+			{
+				"label": "GitHub",
+				"href": "https://github.com/nuonco/nuon",
+				"icon": "github",
+				"iconType": "brands"
+			},
+			{
+				"label": "Slack",
+				"href": "https://nuon-byoc.slack.com/join/shared_invite/zt-1q323vw9z-C8ztRP~HfWjZx6AXi50VRA#/shared-invite/email",
+				"icon": "slack",
+				"iconType": "brands"
+			}
+		],
+		"primary": {
+			"type": "button",
+			"label": "Sign up",
+			"href": "https://app.nuon.co/"
+		}
+	},
+	"api": {
+		"openapi": "https://api.nuon.co/oapi/v3"
+	},
+	"footer": {
+		"socials": {
+			"website": "https://www.nuon.co",
+			"x": "https://twitter.com/nuoninc",
+			"linkedin": "https://www.linkedin.com/company/nuonco/"
+		}
+	},
+	"integrations": {
+		"plausible": {
+			"domain": "docs.nuon.co"
+		}
+	},
+	"redirects": [
+		{
+			"source": "/",
+			"destination": "/get-started/introduction"
+		},
+		{
+			"source": "/api-ref",
+			"destination": "/nuon-api"
+		},
+		{
+			"source": "/api-ref/getting-started",
+			"destination": "/nuon-api"
+		},
+		{
+			"source": "/changelog",
+			"destination": "/updates/updates"
+		},
+		{
+			"source": "/faq",
+			"destination": "/support/support"
+		},
+		{
+			"source": "/runner-architecture",
+			"destination": "/architecture/platform"
+		},
+		{
+			"source": "/architecture/byoc",
+			"destination": "/architecture/app-deployment"
+		},
+		{
+			"source": "/concepts/installs",
+			"destination": "/guides/app-install-life-cycle"
+		},
+		{
+			"source": "/deployment-options",
+			"destination": "/guides/deployment-options"
+		},
+		{
+			"source": "/guides/self-hosting",
+			"destination": "/guides/self-hosted"
+		},
+		{
+			"source": "/guides/programmatic-install-config",
+			"destination": "/guides/install-configs"
+		},
+		{
+			"source": "/guides/notifications",
+			"destination": "/guides/slack"
+		}
+	]
 }

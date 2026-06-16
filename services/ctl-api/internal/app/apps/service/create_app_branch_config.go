@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -15,12 +16,14 @@ import (
 )
 
 type InstallGroupRequest struct {
-	Name              string   `json:"name" validate:"required,min=1"`
-	Order             int      `json:"order" validate:"min=0"`
-	InstallIDs        []string `json:"install_ids"`
-	RequiresApproval  bool     `json:"requires_approval"`
-	RollbackOnFailure bool     `json:"rollback_on_failure"`
-	MaxParallel       int      `json:"max_parallel" validate:"min=1"`
+	Name           string   `json:"name" validate:"required,min=1"`
+	Order          int      `json:"order" validate:"min=0"`
+	InstallIDs     []string `json:"install_ids"`
+	UseForPreviews bool     `json:"use_for_previews"`
+
+	// LabelSelector dynamically resolves installs at deploy time.
+	// Mutually exclusive with InstallIDs.
+	LabelSelector *labels.Selector `json:"label_selector,omitempty"`
 }
 
 type CreateAppBranchConfigRequest struct {
@@ -48,6 +51,30 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 			}
 		}
 		orders[group.Order] = true
+
+		// InstallIDs and LabelSelector are mutually exclusive
+		hasIDs := len(group.InstallIDs) > 0
+		hasSelector := group.LabelSelector != nil
+		if hasIDs && hasSelector {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("install group %q has both install_ids and label_selector", group.Name),
+				Description: "install groups must use either install_ids or label_selector, not both",
+			}
+		}
+		if !hasIDs && !hasSelector {
+			return stderr.ErrUser{
+				Err:         fmt.Errorf("install group %q has neither install_ids nor label_selector", group.Name),
+				Description: "install groups must specify either install_ids or label_selector",
+			}
+		}
+		if hasSelector {
+			if err := group.LabelSelector.Validate(); err != nil {
+				return stderr.ErrUser{
+					Err:         fmt.Errorf("install group %q has invalid label_selector: %w", group.Name, err),
+					Description: "label_selector must have non-empty match_labels",
+				}
+			}
+		}
 	}
 
 	return nil
@@ -151,17 +178,12 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 	// Convert request install groups to model
 	installGroups := make([]app.AppBranchInstallGroup, len(req.InstallGroups))
 	for i, g := range req.InstallGroups {
-		maxParallel := g.MaxParallel
-		if maxParallel == 0 {
-			maxParallel = 5 // default
-		}
 		installGroups[i] = app.AppBranchInstallGroup{
-			Name:              g.Name,
-			Order:             g.Order,
-			InstallIDs:        g.InstallIDs,
-			RequiresApproval:  g.RequiresApproval,
-			RollbackOnFailure: g.RollbackOnFailure,
-			MaxParallel:       maxParallel,
+			Name:           g.Name,
+			Order:          g.Order,
+			InstallIDs:     g.InstallIDs,
+			LabelSelector:  g.LabelSelector,
+			UseForPreviews: g.UseForPreviews,
 		}
 	}
 

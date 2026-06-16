@@ -148,6 +148,13 @@ func init() {
 
 	// Flow check thresholds
 	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
+
+	// When true, the lowest-precedence operation role is defaulted from the parent
+	// install workflow type (provision/reprovision -> provision role, deprovision ->
+	// deprovision role; everything else -> maintenance role). When false, deploys and
+	// action runs default to the maintenance role. Global rollout switch for all orgs;
+	// override with WORKFLOW_DEFAULT_ROLE_ENABLED env var.
+	config.RegisterDefault("workflow_default_role_enabled", false)
 }
 
 type Config struct {
@@ -411,6 +418,10 @@ type Config struct {
 	// slack-auto-link label seeding in CreateOrg.
 	InternalEmailDomains []string `config:"internal_email_domains"`
 
+	// SFTrialEndpoint posts a Salesforce trial-signup record when a user creates
+	// their first org. Empty disables the integration (e.g. BYOC/self-hosted).
+	SFTrialEndpoint string `config:"sf_trial_access_endpoint"`
+
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
@@ -428,6 +439,10 @@ type Config struct {
 
 	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`
+
+	// WorkflowDefaultRoleEnabled is a global switch (all orgs) that defaults the
+	// lowest-precedence operation role from the parent install workflow type.
+	WorkflowDefaultRoleEnabled bool `config:"workflow_default_role_enabled"`
 }
 
 func (c *Config) IsAWS() bool {

@@ -17,8 +17,15 @@ import (
 // swagger:model service.CreateAppConfigRequest
 type ServiceCreateAppConfigRequest struct {
 
+	// AppBranchID optionally links this config to an app branch.
+	// When set, triggers an app branch run after sync.
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
 	// cli version
 	CliVersion string `json:"cli_version,omitempty"`
+
+	// PlanOnly creates a preview run (plan without apply). Only used with AppBranchID.
+	PlanOnly bool `json:"plan_only,omitempty"`
 
 	// not required Readme
 	Readme string `json:"readme,omitempty"`

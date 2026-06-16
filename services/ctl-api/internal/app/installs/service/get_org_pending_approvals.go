@@ -48,6 +48,7 @@ func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.
 	viewName := "install_workflow_step_approvals_pending_v1"
 	var approvals []app.WorkflowStepApproval
 	res := s.db.WithContext(ctx).
+		Omit("contents").
 		Scopes(scopes.WithOverrideTable(viewName), scopes.WithOffsetPagination).
 		Joins("LEFT JOIN installs ON installs.id = "+viewName+".owner_id AND "+viewName+".owner_type = 'installs'").
 		Where("("+viewName+".owner_type != 'installs' OR installs.deleted_at = 0)").

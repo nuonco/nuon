@@ -44,7 +44,8 @@ func AllModels() []any {
 		&app.VCSConnection{},
 		&app.VCSConnectionCommit{},
 		&app.VCSWebhookSubscription{},
-		&app.VCSEvent{},
+		&app.GithubEvent{},
+		&app.VCSConnectionEvent{},
 
 		// apps
 		&app.App{},
@@ -54,6 +55,8 @@ func AllModels() []any {
 		&app.AppBranchConfig{},
 		&app.AppBranchInstallGroup{},
 		&app.AppBranchRun{},
+		&app.InstallGroupRun{},
+		&app.InstallConfigUpdate{},
 		&app.AppSandboxConfig{},
 		&app.AppSandboxBuild{},
 		&app.AppRunnerConfig{},

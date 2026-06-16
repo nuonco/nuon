@@ -7,6 +7,7 @@ import { UserDropdown } from './UserDropdown'
 export const Default = () => (
   <div className="p-4">
     <UserDropdown
+      isByoc={false}
       isAdmin={false}
       isNuonEmployee={false}
       isDev={false}
@@ -28,6 +29,7 @@ export const Default = () => (
 export const Admin = () => (
   <div className="p-4">
     <UserDropdown
+      isByoc={false}
       isAdmin
       isNuonEmployee
       isDev={false}

@@ -34,6 +34,10 @@ type syncer struct {
 	cmpBuildsScheduled []string
 	cliVersion         string
 
+	// Branch options for app branch integration
+	appBranchID string
+	planOnly    bool
+
 	// mu guards concurrent writes to state.Components / state.Actions /
 	// state.Runbooks and cmpBuildsScheduled, which are appended to by
 	// per-component / per-action / per-runbook syncStep goroutines.
@@ -202,8 +206,19 @@ func (s *syncer) GetComponentsScheduled() []sync.ComponentState {
 //   - cfg: parsed app configuration to sync
 //
 // Returns a sync.Syncer interface that can be used to perform the sync operation.
-func New(apiClient nuon.Client, appID, cliVersion string, cfg *config.AppConfig) sync.Syncer {
-	return &syncer{
+// SyncerOption configures optional syncer behavior.
+type SyncerOption func(*syncer)
+
+// WithAppBranch configures the syncer to target a specific app branch.
+func WithAppBranch(branchID string, planOnly bool) SyncerOption {
+	return func(s *syncer) {
+		s.appBranchID = branchID
+		s.planOnly = planOnly
+	}
+}
+
+func New(apiClient nuon.Client, appID, cliVersion string, cfg *config.AppConfig, opts ...SyncerOption) sync.Syncer {
+	s := &syncer{
 		cfg:       cfg,
 		apiClient: apiClient,
 		appID:     appID,
@@ -214,4 +229,8 @@ func New(apiClient nuon.Client, appID, cliVersion string, cfg *config.AppConfig)
 		prevState:  &sync.State{},
 		cliVersion: cliVersion,
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }

@@ -41,6 +41,15 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 			ServiceAccountEmail:      containerImage.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: containerImage.GCPGARImageConfig.WorkloadIdentityProvider,
 		}
+	} else if containerImage.AzureACRImageConfig != nil {
+		configRequest.ImageURL = generics.ToPtr(containerImage.AzureACRImageConfig.ImageURL)
+		configRequest.Tag = containerImage.AzureACRImageConfig.Tag
+		configRequest.UpdatePolicy = containerImage.AzureACRImageConfig.UpdatePolicy
+		configRequest.AzureAcrImageConfig = &models.ServiceAzureACRImageConfigRequest{
+			RegistryURL: containerImage.AzureACRImageConfig.RegistryURL,
+			TenantID:    containerImage.AzureACRImageConfig.TenantID,
+			ClientID:    containerImage.AzureACRImageConfig.ClientID,
+		}
 	} else if containerImage.PublicImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.PublicImageConfig.ImageURL)
 		configRequest.Tag = containerImage.PublicImageConfig.Tag

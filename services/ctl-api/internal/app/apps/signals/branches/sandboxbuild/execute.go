@@ -52,8 +52,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get sandbox build git source: %w", err)
 	}
 
-	l.Info("hello world test")
-
 	// If sandbox config shares the same VCS config as the branch run's commit, pin to that specific SHA
 	if run.VCSConnectionCommit != nil {
 		var sandboxVCSConfigID string

@@ -103,6 +103,9 @@ type ComponentBuild struct {
 	//     prior build.
 	NoOp bool `json:"no_op,omitzero" gorm:"default false" temporaljson:"no_op,omitzero,omitempty"`
 
+	AppBranchRunID *string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
+	AppBranchRun   *AppBranchRun `faker:"-" json:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
+
 	// QueueSignal is the signal enqueued when this build was created via the queue path
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
 }
@@ -113,6 +116,12 @@ func (c *ComponentBuild) Indexes(db *gorm.DB) []migrations.Index {
 			Name: indexes.Name(db, &ComponentBuild{}, "org_id"),
 			Columns: []string{
 				"org_id",
+			},
+		},
+		{
+			Name: indexes.Name(db, &ComponentBuild{}, "app_branch_run_id"),
+			Columns: []string{
+				"app_branch_run_id",
 			},
 		},
 	}

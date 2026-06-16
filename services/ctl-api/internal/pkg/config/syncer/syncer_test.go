@@ -51,13 +51,7 @@ func TestSyncerSuite(t *testing.T) {
 func (s *SyncerTestSuite) SetupSuite() {
 	s.BaseDBTestSuite.SetupSuite()
 
-	// Build FX options using shared test options plus testseed
-	options := append(
-		tests.CtlApiFXOptions(s.T()),
-		// Add testseed provider
-		// fx.Provide(testseed.New), // TODO: Uncomment when fx.In is available
-		// fx.Populate(&s.service),
-	)
+	options := tests.CtlApiFXOptions(s.T())
 
 	s.app = fxtest.New(s.T(), options...)
 	s.app.RequireStart()

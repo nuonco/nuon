@@ -35,14 +35,8 @@ func (h *Helpers) CreateProcessQueues(ctx context.Context, runnerID string, proc
 		return nil, fmt.Errorf("unable to create process queue: %w", err)
 	}
 
-	// Cron emitter: health check interval depends on process type.
-	// Build processes are longer-lived and less latency-sensitive.
 	healthCheckSchedule := "*/5 * * * *"
 	healthCheckExpiry := 5 * time.Minute
-	if process.Type == app.RunnerProcessTypeBuild {
-		healthCheckSchedule = "*/15 * * * *"
-		healthCheckExpiry = 15 * time.Minute
-	}
 
 	if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
 		QueueID:         q.ID,

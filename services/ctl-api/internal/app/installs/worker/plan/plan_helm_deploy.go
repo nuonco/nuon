@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/nuonco/nuon/pkg/config"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
@@ -17,6 +18,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 //go:embed fake_helm_plan.json
@@ -32,6 +34,7 @@ func (p *Planner) createHelmDeployPlan(
 	stack *app.InstallStack,
 	state *state.State,
 	installDeploy *app.InstallDeploy,
+	roleSelection *operationroles.RoleSelection,
 ) (*plantypes.HelmDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -106,13 +109,20 @@ func (p *Planner) createHelmDeployPlan(
 		})
 	}
 
+	// Install-level Helm values override, carried via a reserved synthetic input.
+	// Rendered like app values so it can reference {{.nuon.*}}. Empty is a no-op.
+	valuesOverride, err := p.installComponentOverride(
+		state, stateData,
+		config.HelmValuesOverrideInputName(installDeploy.ComponentName),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to render helm values override")
+	}
+
 	cloudAuth, err := p.getAuthForDeploy(
 		ctx,
-		installDeploy,
-		compBuild,
-		appCfg,
+		roleSelection,
 		stack,
-		state,
 		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
 	)
 	if err != nil {
@@ -132,6 +142,7 @@ func (p *Planner) createHelmDeployPlan(
 		HelmChartID:     helmChartID,
 		ValuesFiles:     valuesFiles,
 		Values:          values,
+		ValuesOverride:  valuesOverride,
 		TakeOwnership:   cfg.TakeOwnership,
 
 		ClusterInfo: clusterInfo,

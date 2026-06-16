@@ -121,7 +121,7 @@ func (a *Activities) getValues(req *InstallOrUpgradeRequest) helmValues {
 		Resources: resourceValues{
 			Requests: resourceRequests{
 				CPU:    "750m",
-				Memory: "1.5Gi",
+				Memory: "1000Mi",
 			},
 		},
 	}

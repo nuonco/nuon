@@ -351,6 +351,31 @@ func (m *model) handleDetailContentKey(msg tea.KeyPressMsg) bool {
 		return false
 	}
 
+	// Navigate diff sections / builds / install groups with up/down/enter/esc
+	isBranchNavStep := m.selectedStep.Name == "fetch app config" ||
+		m.selectedStep.Name == "building components and sandbox" ||
+		strings.HasPrefix(m.selectedStep.Name, "deploy install group:")
+	if isBranchNavStep && m.diffSectionCount > 0 {
+		switch msg.String() {
+		case "up", "k":
+			if m.diffSectionCursor > 0 {
+				m.diffSectionCursor--
+				m.scrollDiffCursorIntoView()
+			}
+			return true
+		case "down", "j":
+			if m.diffSectionCursor < m.diffSectionCount-1 {
+				m.diffSectionCursor++
+				m.scrollDiffCursorIntoView()
+			}
+			return true
+		case "enter", " ":
+			m.expandedDiffSections[m.diffSectionCursor] = !m.expandedDiffSections[m.diffSectionCursor]
+			return true
+		}
+		return false
+	}
+
 	if !m.stepHasPlanDiff(m.selectedStep) || !isInteractivePlanDiffType(m.selectedStepDiffType()) {
 		return false
 	}

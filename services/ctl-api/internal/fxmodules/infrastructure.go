@@ -32,6 +32,7 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/arm"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/temporal"
@@ -134,6 +135,7 @@ var InfrastructureModule = fx.Module("infrastructure",
 
 	// Core services
 	fx.Provide(loops.New),
+	fx.Provide(salesforce.New),
 	fx.Provide(github.New),
 	fx.Provide(metrics.New),
 	fx.Provide(propagator.New),

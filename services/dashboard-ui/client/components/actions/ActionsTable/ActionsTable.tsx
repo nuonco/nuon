@@ -30,22 +30,25 @@ export function parseActionsToTableData(
     return {
       actionId: action?.id,
       actionName: action?.name,
-      actionSteps: (
-        <ol className="flex flex-col gap-1 list-decimal">
-          {action?.configs
-            ?.at(-1)
-            ?.steps?.sort((a, b) => b?.idx - a?.idx)
-            ?.reverse()
-            ?.map((s) => (
-              <li key={s?.id} className="text-sm">
-                <Text variant="subtext">{s?.name}</Text>
-              </li>
-            ))}
-        </ol>
-      ),
+      actionSteps: (() => {
+        const steps = action?.configs?.at(-1)?.steps
+        if (!steps?.length) return <Icon variant="MinusIcon" />
+        return (
+          <ol className="flex flex-col gap-1 list-decimal">
+            {steps
+              .sort((a, b) => b?.idx - a?.idx)
+              .reverse()
+              .map((s) => (
+                <li key={s?.id} className="text-sm">
+                  <Text variant="subtext">{s?.name}</Text>
+                </li>
+              ))}
+          </ol>
+        )
+      })(),
       labels: (() => {
         const lbls = action.labels
-        if (!lbls || Object.keys(lbls).length === 0) return null
+        if (!lbls || Object.keys(lbls).length === 0) return <Icon variant="MinusIcon" />
         return (
           <span className="flex flex-wrap gap-1">
             {Object.keys(lbls)
@@ -56,19 +59,23 @@ export function parseActionsToTableData(
           </span>
         )
       })(),
-      actionTriggers: (
-        <div className="flex flex-wrap gap-2">
-          {action?.configs?.at(-1)?.triggers?.map((trigger) => (
-            <ActionTriggerType
-              key={trigger?.id}
-              componentName={trigger?.component?.name}
-              componentPath={`${basePath}/components/${trigger?.component?.id}`}
-              triggerType={trigger?.type as TActionConfigTriggerType}
-              cronSchedule={trigger?.cron_schedule}
-            />
-          ))}
-        </div>
-      ),
+      actionTriggers: (() => {
+        const triggers = action?.configs?.at(-1)?.triggers
+        if (!triggers?.length) return <Icon variant="MinusIcon" />
+        return (
+          <div className="flex flex-wrap gap-2">
+            {triggers.map((trigger) => (
+              <ActionTriggerType
+                key={trigger?.id}
+                componentName={trigger?.component?.name}
+                componentPath={`${basePath}/components/${trigger?.component?.id}`}
+                triggerType={trigger?.type as TActionConfigTriggerType}
+                cronSchedule={trigger?.cron_schedule}
+              />
+            ))}
+          </div>
+        )
+      })(),
       href: `${basePath}/actions/${action.id}`,
     }
   })

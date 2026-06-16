@@ -39,7 +39,7 @@ export const CheckboxInput = ({
   return (
     <Label
       className={cn(
-        'flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md p-2 focus-within:outline-1 focus-within:outline-primary-500 cursor-pointer ',
+        'flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md p-2 focus-within:outline-1 focus-within:outline-primary-500 outline-offset-6 cursor-pointer ',
         labelClassName
       )}
       {...labelProps}

@@ -89,6 +89,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			appConfigs.POST("/:config_id/update-installs", s.UpdateAppConfigInstallsV2)
 			appConfigs.GET("/:config_id/graph", s.GetAppConfigGraphV2)
 			appConfigs.POST("/:config_id/build", s.BuildAppConfig)
+			appConfigs.GET("/:config_id/diff", s.GetAppConfigDiff)
 		}
 
 		// app sandbox builds
@@ -198,6 +199,10 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.GET("/:app_branch_id/latest-config", s.GetAppBranchLatestConfig)
 			branches.POST("/:app_branch_id/runs", s.TriggerAppBranchRun)
 			branches.GET("/:app_branch_id/runs", s.GetAppBranchRuns)
+			branches.GET("/:app_branch_id/runs/:run_id/builds", s.GetAppBranchRunBuilds)
+			branches.GET("/:app_branch_id/runs/:run_id/install-groups", s.GetAppBranchRunInstallGroups)
+			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs", s.GetInstallGroupRuns)
+			branches.GET("/:app_branch_id/runs/:run_id/install-group-runs/:install_group_run_id", s.GetInstallGroupRun)
 		}
 
 		// TODO deprecate - latest config routes

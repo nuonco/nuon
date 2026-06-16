@@ -206,6 +206,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			configs.PATCH("/:config_id", s.UpdateInstallConfig)
 		}
 
+		// install app config updates
+		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
+
 		// install audit logs
 		installs.GET("/audit_logs", s.GetInstallAuditLogs)
 

@@ -1,5 +1,3 @@
-import { Badge } from '@/components/common/Badge'
-import { Icon } from '@/components/common/Icon'
 import { Loading } from '@/components/common/Loading'
 import { Text } from '@/components/common/Text'
 import type { TInstallWorkflowStep } from '@/types'
@@ -8,6 +6,75 @@ interface IWorkflowStepsPipeline {
   steps: TInstallWorkflowStep[]
   selectedStepId?: string
   onSelectStep: (step: TInstallWorkflowStep) => void
+}
+
+const StatusIcon = ({ status }: { status?: string }) => {
+  if (status === 'success') {
+    return (
+      <div className="w-[26px] h-[26px] rounded-full bg-green-500 flex items-center justify-center shrink-0">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M2.5 6.5L5.5 9.5L10.5 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="w-[26px] h-[26px] rounded-full bg-red-500 flex items-center justify-center shrink-0">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M4 4L9 9M9 4L4 9" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      </div>
+    )
+  }
+
+  if (status === 'in-progress') {
+    return (
+      <div className="w-[26px] h-[26px] rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+        <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+          <path d="M8 2 A6 6 0 0 1 14 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="w-[26px] h-[26px] rounded-full flex items-center justify-center shrink-0"
+      style={{ boxShadow: 'inset 0 0 0 1.5px rgba(150,150,170,0.35)' }}
+    >
+      <div className="w-[5px] h-[5px] rounded-full bg-cool-grey-400 dark:bg-dark-grey-500" />
+    </div>
+  )
+}
+
+const Arrow = ({ filled }: { filled: boolean }) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    className={`shrink-0 transition-colors ${filled ? 'text-green-500' : 'text-cool-grey-300 dark:text-cool-grey-600'}`}
+  >
+    <path
+      d="M4 10H16M16 10L11 5M16 10L11 15"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)
+
+const formatDuration = (ns?: number): string => {
+  if (!ns) return ''
+  const secs = ns / 1_000_000_000
+  if (secs < 60) return `${secs.toFixed(1)}s`
+  const mins = Math.floor(secs / 60)
+  const rem = Math.round(secs % 60)
+  return `${mins}m ${rem}s`
 }
 
 export const WorkflowStepsPipeline = ({
@@ -31,93 +98,65 @@ export const WorkflowStepsPipeline = ({
       className="relative overflow-x-auto overflow-y-hidden"
       style={{ scrollbarWidth: 'thin', scrollBehavior: 'smooth' }}
     >
-      <div className="flex items-center gap-6 py-6 px-4 min-w-max">
+      <div className="flex items-center gap-2 py-4 px-1 min-w-max">
         {steps.map((step, idx) => {
           const stepStatus = step.status?.status || 'pending'
           const isInProgress = stepStatus === 'in-progress'
           const isSuccess = stepStatus === 'success'
           const isError = stepStatus === 'error'
+          const isSelected = selectedStepId === step.id
+          const prevStep = idx > 0 ? steps[idx - 1] : null
+          const prevSuccess = prevStep?.status?.status === 'success'
+          const duration = formatDuration(step.execution_time)
+
+          let cardBorder = 'border-cool-grey-200 dark:border-dark-grey-700'
+          let cardBg = 'bg-cool-grey-50 dark:bg-dark-grey-800'
+          let cardShadow = ''
+          let cardExtra = ''
+
+          if (isSelected) {
+            cardBorder = 'border-primary-500 dark:border-primary-400'
+            cardBg = 'bg-primary-50 dark:bg-[#1B1026]'
+            cardShadow = '0 0 0 3px rgba(124,58,237,0.18)'
+          } else if (isInProgress) {
+            cardBorder = 'border-blue-400/50 dark:border-blue-500/50'
+            cardBg = 'bg-blue-50/40 dark:bg-[#0d1b2e]'
+          } else if (isSuccess) {
+            cardBorder = 'border-green-400/50 dark:border-green-500/40'
+            cardBg = 'bg-green-50/30 dark:bg-dark-grey-800'
+          } else if (isError) {
+            cardBorder = 'border-red-400/50 dark:border-red-500/40'
+            cardBg = 'bg-red-50/30 dark:bg-dark-grey-800'
+          }
 
           return (
-            <div key={step.id || idx} className="flex items-center gap-4">
+            <div key={step.id || idx} className="flex items-center gap-2 flex-1 min-w-0">
+              {idx > 0 && <Arrow filled={prevSuccess} />}
+
               <div
-                className={`flex flex-col items-center min-w-[240px] p-8 rounded-lg transition-all cursor-pointer border-2 ${
-                  selectedStepId === step.id
-                    ? 'ring-2 ring-primary-300 dark:ring-primary-700 shadow-2xl scale-105 bg-primary-50 dark:bg-dark-grey-900 border-primary-200 dark:border-primary-400/50'
-                    : isInProgress
-                    ? 'ring-2 ring-blue-200 dark:ring-blue-800 shadow-xl hover:shadow-2xl bg-blue-50 dark:bg-dark-grey-900 border-blue-400 dark:border-blue-500/40'
-                    : isSuccess
-                    ? 'shadow-lg hover:shadow-xl bg-green-50 dark:bg-dark-grey-900 border-green-400 dark:border-green-500/40'
-                    : isError
-                    ? 'shadow-lg hover:shadow-xl bg-red-50 dark:bg-dark-grey-900 border-red-300 dark:border-red-500/40'
-                    : 'border-dashed border-cool-grey-300 dark:border-dark-grey-600 hover:border-solid hover:shadow-md bg-cool-grey-50 dark:bg-dark-grey-900'
-                }`}
+                className={`flex flex-col flex-1 min-w-[168px] items-center gap-2 px-4 py-4 rounded-[10px] cursor-pointer border transition-all ${cardBorder} ${cardBg} ${cardExtra} hover:brightness-105`}
+                style={cardShadow ? { boxShadow: cardShadow } : undefined}
                 onClick={() => onSelectStep(step)}
               >
-                <div
-                  className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all ${
-                    isInProgress
-                      ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-lg'
-                      : isSuccess
-                      ? 'bg-green-500 dark:bg-green-600 text-white shadow-md'
-                      : isError
-                      ? 'bg-red-500 dark:bg-red-600 text-white shadow-md'
-                      : 'bg-cool-grey-300 dark:bg-dark-grey-400 text-cool-grey-600 dark:text-dark-grey-200'
-                  }`}
+                <StatusIcon status={stepStatus} />
+
+                <span
+                  className="text-[13px] font-semibold text-center leading-tight text-cool-grey-900 dark:text-cool-grey-100 max-w-[160px]"
                 >
-                  {isInProgress ? (
-                    <Icon variant="PlayIcon" size={32} />
-                  ) : isSuccess ? (
-                    <Icon variant="CheckIcon" size={32} />
-                  ) : isError ? (
-                    <Icon variant="XIcon" size={32} />
-                  ) : (
-                    <Icon variant="ClockIcon" size={28} />
-                  )}
-                </div>
-
-                <Text variant="base" weight="stronger" className="text-center mb-2">
-                  Step {idx + 1}
-                </Text>
-                <Text variant="base" theme="neutral" className="text-center mb-3 max-w-[200px]">
                   {step.name || 'Unknown'}
-                </Text>
+                </span>
 
-                <div className="flex flex-col gap-2 items-center w-full">
-                  {step.group_idx !== undefined && (
-                    <Badge
-                      theme={
-                        isInProgress ? 'info'
-                        : isSuccess ? 'success'
-                        : isError ? 'error'
-                        : 'neutral'
-                      }
-                      size="md"
-                    >
-                      Group {step.group_idx}
-                    </Badge>
-                  )}
-                  {step.execution_time && (
-                    <Text variant="base" theme="neutral" family="mono" weight="strong">
-                      {(step.execution_time / 1000000000).toFixed(1)}s
-                    </Text>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10.5px] uppercase tracking-[0.06em] font-medium text-cool-grey-400 dark:text-cool-grey-500">
+                    GROUP {step.group_idx ?? idx + 1}
+                  </span>
+                  {duration && (
+                    <span className="text-[12px] font-mono text-cool-grey-400 dark:text-cool-grey-500">
+                      {duration}
+                    </span>
                   )}
                 </div>
               </div>
-
-              {idx < steps.length - 1 && (
-                <div className="flex items-center">
-                  <Icon
-                    variant="ArrowRightIcon"
-                    size={36}
-                    className={`transition-colors ${
-                      isSuccess
-                        ? 'text-green-500 dark:text-green-400'
-                        : 'text-cool-grey-400 dark:text-dark-grey-500'
-                    }`}
-                  />
-                </div>
-              )}
             </div>
           )
         })}

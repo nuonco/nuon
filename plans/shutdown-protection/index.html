@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Runner Process Shutdown Protection — Plan Review</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --accent-dim: #1f6feb33;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --code-bg: #0d1117;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+  .layout {
+    display: flex;
+    min-height: 100vh;
+  }
+  .sidebar {
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+  }
+  .sidebar h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+  .sidebar a {
+    display: block;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 2px;
+    transition: all 0.15s;
+  }
+  .sidebar a:hover, .sidebar a.active {
+    color: var(--text);
+    background: var(--accent-dim);
+  }
+  .sidebar .section-label {
+    margin-top: 20px;
+    font-weight: 600;
+    color: var(--text);
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+  .main {
+    margin-left: 260px;
+    flex: 1;
+    max-width: 900px;
+    padding: 48px 48px 120px;
+  }
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 16px;
+    margin-bottom: 40px;
+  }
+  h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 32px;
+    margin-bottom: 12px;
+    color: var(--accent);
+  }
+  h4 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    color: var(--purple);
+  }
+  p, li {
+    font-size: 15px;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  ul, ol {
+    padding-left: 24px;
+    margin-bottom: 16px;
+  }
+  li { margin-bottom: 6px; }
+  code {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: var(--text);
+  }
+  .keyword { color: #ff7b72; }
+  .type { color: #79c0ff; }
+  .string { color: #a5d6ff; }
+  .comment { color: #8b949e; font-style: italic; }
+  .func { color: #d2a8ff; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 14px;
+  }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  td code {
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-new { background: #23863633; color: var(--green); }
+  .badge-modify { background: #d2992233; color: var(--orange); }
+
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .callout.warn {
+    border-left-color: var(--orange);
+  }
+
+  /* Diagram */
+  .diagram-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    margin: 24px 0;
+    overflow-x: auto;
+  }
+  .diagram-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .diagram-controls button {
+    padding: 6px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .diagram-controls button:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+  .diagram-controls button.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  #sequence-diagram {
+    position: relative;
+    min-height: 500px;
+    font-family: 'SF Mono', monospace;
+    font-size: 13px;
+  }
+  .actor-lane {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    background: var(--border);
+    height: 100%;
+  }
+  .actor-label {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 12px;
+  }
+  .seq-step {
+    position: absolute;
+    transition: all 0.4s ease;
+    opacity: 0;
+  }
+  .seq-step.visible {
+    opacity: 1;
+  }
+  .seq-arrow {
+    height: 2px;
+    background: var(--green);
+    position: absolute;
+  }
+  .seq-arrow::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: -5px;
+    border: 6px solid transparent;
+    border-left-color: var(--green);
+  }
+  .seq-arrow.reverse { background: var(--purple); }
+  .seq-arrow.reverse::after { border-left-color: transparent; border-right-color: var(--purple); left: -1px; right: auto; top: -5px; }
+  .seq-label {
+    position: absolute;
+    white-space: nowrap;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .seq-action {
+    position: absolute;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .seq-action.highlight {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  /* SVG-based diagram */
+  .seq-svg {
+    width: 100%;
+    min-height: 620px;
+  }
+  .seq-svg text {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  .seq-svg .lane { stroke: #30363d; stroke-width: 1; stroke-dasharray: 6 4; }
+  .seq-svg .arrow { stroke-width: 2; fill: none; marker-end: url(#arrowGreen); }
+  .seq-svg .arrow-reverse { stroke-width: 2; fill: none; marker-end: url(#arrowPurple); }
+  .seq-svg .actor-box { fill: #1f6feb22; stroke: #58a6ff; stroke-width: 1; rx: 6; }
+  .seq-svg .action-box { fill: #1c2129; stroke: #30363d; stroke-width: 1; rx: 6; }
+  .seq-svg .action-box.hl { stroke: #3fb950; }
+  .seq-svg .action-box.wait { stroke: #d29922; stroke-dasharray: 4 3; }
+  .seq-svg .step-group { opacity: 0; transition: opacity 0.5s ease; }
+  .seq-svg .step-group.visible { opacity: 1; }
+
+  /* Inline commenting */
+  .commentable {
+    position: relative;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .commentable:hover {
+    background: #58a6ff0a;
+  }
+  .commentable:hover::before {
+    content: '+';
+    position: absolute;
+    left: -32px;
+    top: 4px;
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .comment-thread {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 8px 0 16px;
+    display: none;
+  }
+  .comment-thread.open {
+    display: block;
+  }
+  .comment-thread textarea {
+    width: 100%;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    margin-bottom: 10px;
+  }
+  .comment-thread textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .comment-thread button {
+    padding: 8px 18px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  .comment-thread button:hover {
+    opacity: 0.9;
+  }
+  .comment-thread button.cancel {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .saved-comment {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: var(--text);
+    position: relative;
+  }
+  .saved-comment .comment-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .comment-count {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* Comment panel */
+  #comment-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 340px;
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    padding: 20px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+    z-index: 100;
+  }
+  #comment-panel.open {
+    transform: translateX(0);
+  }
+  #comment-panel h3 {
+    color: var(--text);
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+  .panel-comment {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--accent);
+  }
+  .panel-comment .pc-section {
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .panel-comment .pc-text {
+    font-size: 14px;
+    color: var(--text);
+  }
+  .panel-comment .pc-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+  #toggle-panel {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 101;
+    padding: 12px 20px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 28px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #toggle-panel:hover { opacity: 0.9; }
+  #comment-total {
+    background: var(--bg);
+    color: var(--accent);
+    padding: 1px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+  }
+
+  /* Edge case cards */
+  .edge-case-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .edge-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .edge-card strong {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: var(--orange);
+  }
+  .edge-card p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <nav class="sidebar">
+    <h3>Plan Review</h3>
+    <a href="#context">Context</a>
+    <div class="section-label">Part 1: Runner Drain</div>
+    <a href="#p1-root-cause">Root Cause</a>
+    <a href="#p1-design">Design</a>
+    <a href="#p1-files">File Changes</a>
+    <a href="#p1-sequence">Sequence Diagram</a>
+    <div class="section-label">Part 2: API Hold</div>
+    <a href="#p2-root-cause">Root Cause</a>
+    <a href="#p2-design">Design</a>
+    <a href="#p2-activity">New Activity</a>
+    <a href="#p2-signal-change">Signal Change</a>
+    <div class="section-label">Summary</div>
+    <a href="#edge-cases">Edge Cases</a>
+    <a href="#files-summary">Files Summary</a>
+    <a href="#verification">Verification</a>
+  </nav>
+
+  <main class="main">
+    <h1>Runner Process Shutdown Protection</h1>
+    <p class="subtitle">Plan review document &mdash; click any section to leave inline comments</p>
+
+    <!-- CONTEXT -->
+    <section id="context">
+      <h2>Context</h2>
+      <div class="commentable" data-section="context">
+        <p>When a runner process shutdown is requested (e.g., at 8-hour rotation), two things go wrong:</p>
+        <ol>
+          <li><strong>In-flight jobs get killed</strong> &mdash; the <code>jobLoop</code> context is cancelled, terminating the running job</li>
+          <li><strong>New jobs queued during shutdown get stuck</strong> &mdash; the <code>processjob</code> signal marks jobs "available" for a draining runner that will never pick them up, leading to timeout</li>
+        </ol>
+        <p>Two changes needed:</p>
+        <ol>
+          <li><strong>Runner-side drain:</strong> Stop accepting new jobs, finish the in-flight job, then shut down</li>
+          <li><strong>API-side hold:</strong> The <code>processjob</code> signal should not dispatch a job to a runner with a pending shutdown &mdash; wait until shutdown completes and a new healthy process appears</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- PART 1 -->
+    <section id="part1">
+      <h2>Part 1: Runner-Side Drain</h2>
+
+      <div id="p1-root-cause" class="commentable" data-section="p1-root-cause">
+        <h3>Root Cause</h3>
+        <p>The <code>jobLoop</code> uses a single <code>ctx</code>/<code>ctxCancel</code> for both polling and job execution. <code>Stop()</code> cancels everything simultaneously. The <code>ShutdownPoller</code> and <code>jobLoop</code> are decoupled FX components &mdash; the only coordination path is <code>fx.Shutdowner.Shutdown()</code> which triggers all <code>OnStop</code> hooks including the job loop's <code>Stop()</code>.</p>
+      </div>
+
+      <div id="p1-design" class="commentable" data-section="p1-design">
+        <h3>Design: Drainer + Two-Context Separation</h3>
+
+        <h4>New: <code>bins/runner/internal/pkg/jobloop/drain.go</code></h4>
+        <p>An FX singleton that the <code>ShutdownPoller</code> signals and all <code>jobLoop</code> instances listen to.</p>
+        <pre><code><span class="keyword">type</span> <span class="type">Drainer</span> <span class="keyword">struct</span> {
+    drainOnce <span class="type">sync.Once</span>
+    drainCh   <span class="keyword">chan struct</span>{}   <span class="comment">// closed when Drain() is called</span>
+    mu        <span class="type">sync.Mutex</span>
+    doneChs   []&lt;-<span class="keyword">chan struct</span>{} <span class="comment">// one per job loop</span>
+}</code></pre>
+        <p>Methods:</p>
+        <ul>
+          <li><code>NewDrainer() *Drainer</code> &mdash; FX constructor</li>
+          <li><code>Register(ch &lt;-chan struct{})</code> &mdash; each job loop registers its done channel</li>
+          <li><code>Drain()</code> &mdash; closes <code>drainCh</code>, signaling all loops to stop</li>
+          <li><code>DrainCh() &lt;-chan struct{}</code> &mdash; for loops to <code>select</code> on</li>
+          <li><code>Wait(timeout) error</code> &mdash; blocks until all done channels close or timeout</li>
+        </ul>
+
+        <h4>Two-Context Split in <code>jobLoop</code></h4>
+        <p>Replace the single <code>ctx</code>/<code>ctxCancel</code> with:</p>
+        <ul>
+          <li><code>pollCtx</code> / <code>pollCancel</code> &mdash; controls the polling loop; cancelled on drain</li>
+          <li><code>jobCtx</code> / <code>jobCancel</code> &mdash; controls in-flight job execution; only cancelled on hard stop</li>
+        </ul>
+      </div>
+
+      <div id="p1-files" class="commentable" data-section="p1-files">
+        <h3>File Changes</h3>
+
+        <h4><code>jobloop.go</code></h4>
+        <ul>
+          <li>Replace <code>ctx</code>/<code>ctxCancel</code> &rarr; <code>pollCtx</code>/<code>pollCancel</code> + <code>jobCtx</code>/<code>jobCancel</code></li>
+          <li>Add <code>drainer *Drainer</code> and <code>jobDoneCh chan struct{}</code></li>
+          <li>Register <code>jobDoneCh</code> with drainer in <code>New()</code></li>
+        </ul>
+
+        <h4><code>base_params.go</code></h4>
+        <ul><li>Add <code>Drainer *Drainer</code> to <code>BaseParams</code></li></ul>
+
+        <h4><code>worker.go</code></h4>
+        <ul>
+          <li>Top-of-loop: <code>j.pollCtx.Done()</code> instead of <code>j.ctx.Done()</code></li>
+          <li>Drain check via <code>j.drainer.DrainCh()</code> &mdash; if draining with no in-flight job, close <code>jobDoneCh</code>, return</li>
+          <li><code>j.executeJob(j.jobCtx, job)</code> &mdash; drain doesn't cancel in-flight jobs</li>
+          <li>After <code>executeJob</code>, re-check drain</li>
+          <li><code>fetchAvailableJobs()</code>: derive timeout from <code>j.pollCtx</code></li>
+          <li><code>runWorker()</code>: gate <code>os.Exit(155)</code> &mdash; skip if draining</li>
+        </ul>
+
+        <h4><code>lifecycle.go</code></h4>
+        <ul>
+          <li>Add <code>Drain()</code>: calls <code>j.pollCancel()</code></li>
+          <li><code>Stop()</code>: cancel both <code>pollCancel()</code> and <code>jobCancel()</code>, then wait</li>
+        </ul>
+
+        <h4><code>shutdown_poller.go</code></h4>
+        <p>New flow when shutdown is <code>"requested"</code>:</p>
+        <ol>
+          <li><code>UpdateProcess()</code> &rarr; status <code>"pending-shutdown"</code></li>
+          <li><code>drainer.Drain()</code> &mdash; all job loops stop accepting new jobs</li>
+          <li><code>drainer.Wait(30m)</code> &mdash; block until in-flight jobs complete</li>
+          <li><code>UpdateProcess()</code> &rarr; status <code>"shutting-down"</code></li>
+          <li><code>CompleteShutdown()</code> (moved to after drain)</li>
+          <li>Existing pod/VM shutdown logic (unchanged)</li>
+          <li>Force-exit + <code>fx.Shutdowner.Shutdown()</code> (5s post-drain)</li>
+        </ol>
+
+        <h4><code>cli.go</code></h4>
+        <ul><li>Add <code>fx.Provide(jobloop.NewDrainer)</code> to <code>commonProviders()</code></li></ul>
+      </div>
+
+      <!-- INTERACTIVE SEQUENCE DIAGRAM -->
+      <div id="p1-sequence">
+        <h3>Sequence Diagram</h3>
+        <div class="diagram-container">
+          <div class="diagram-controls">
+            <button class="active" onclick="setDiagramMode('auto')">Auto-play</button>
+            <button onclick="setDiagramMode('step')">Step through</button>
+            <button onclick="resetDiagram()" style="margin-left:auto">Reset</button>
+          </div>
+          <svg class="seq-svg" viewBox="0 0 820 640" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <marker id="arrowGreen" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                <path d="M0,0 L10,4 L0,8" fill="#3fb950" />
+              </marker>
+              <marker id="arrowPurple" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                <path d="M0,0 L10,4 L0,8" fill="#bc8cff" />
+              </marker>
+              <marker id="arrowOrange" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                <path d="M0,0 L10,4 L0,8" fill="#d29922" />
+              </marker>
+            </defs>
+
+            <!-- Actor labels -->
+            <rect class="actor-box" x="40" y="10" width="130" height="32" />
+            <text x="105" y="31" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="600">ctl-api</text>
+            <rect class="actor-box" x="280" y="10" width="160" height="32" />
+            <text x="360" y="31" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="600">ShutdownPoller</text>
+            <rect class="actor-box" x="570" y="10" width="130" height="32" />
+            <text x="635" y="31" text-anchor="middle" fill="#58a6ff" font-size="13" font-weight="600">jobLoop (worker)</text>
+
+            <!-- Lanes -->
+            <line class="lane" x1="105" y1="46" x2="105" y2="620" />
+            <line class="lane" x1="360" y1="46" x2="360" y2="620" />
+            <line class="lane" x1="635" y1="46" x2="635" y2="620" />
+
+            <!-- Step 1: Shutdown requested -->
+            <g class="step-group" data-step="0">
+              <line x1="105" y1="80" x2="350" y2="80" stroke="#3fb950" stroke-width="2" marker-end="url(#arrowGreen)" />
+              <rect x="145" y="66" width="160" height="22" rx="4" fill="#161b22" />
+              <text x="225" y="81" text-anchor="middle" fill="#e6edf3" font-size="11">shutdown "requested"</text>
+            </g>
+
+            <!-- Step 2: Update process pending-shutdown -->
+            <g class="step-group" data-step="1">
+              <line x1="360" y1="115" x2="115" y2="115" stroke="#bc8cff" stroke-width="2" marker-end="url(#arrowPurple)" />
+              <rect class="action-box" x="125" y="102" width="225" height="22" />
+              <text x="237" y="117" text-anchor="middle" fill="#d29922" font-size="11">UpdateProcess("pending-shutdown")</text>
+            </g>
+
+            <!-- Step 3: Drain signal -->
+            <g class="step-group" data-step="2">
+              <line x1="360" y1="155" x2="625" y2="155" stroke="#3fb950" stroke-width="2" marker-end="url(#arrowGreen)" />
+              <rect x="420" y="141" width="140" height="22" rx="4" fill="#161b22" />
+              <text x="490" y="156" text-anchor="middle" fill="#3fb950" font-size="11" font-weight="600">drainer.Drain()</text>
+            </g>
+
+            <!-- Step 4: pollCtx cancelled -->
+            <g class="step-group" data-step="3">
+              <rect class="action-box hl" x="560" y="180" width="150" height="22" />
+              <text x="635" y="195" text-anchor="middle" fill="#3fb950" font-size="11">pollCtx cancelled</text>
+              <rect class="action-box hl" x="560" y="210" width="150" height="22" />
+              <text x="635" y="225" text-anchor="middle" fill="#3fb950" font-size="11">stops polling for jobs</text>
+            </g>
+
+            <!-- Step 5: Wait -->
+            <g class="step-group" data-step="4">
+              <rect class="action-box wait" x="295" y="250" width="135" height="22" />
+              <text x="362" y="265" text-anchor="middle" fill="#d29922" font-size="11">drainer.Wait(30m)</text>
+              <line x1="360" y1="280" x2="360" y2="360" stroke="#d29922" stroke-width="2" stroke-dasharray="4 3" />
+              <rect x="370" y="305" width="100" height="20" rx="4" fill="#161b22" />
+              <text x="420" y="319" text-anchor="middle" fill="#8b949e" font-size="10">waiting...</text>
+            </g>
+
+            <!-- Step 6: Job finishes -->
+            <g class="step-group" data-step="5">
+              <rect class="action-box hl" x="555" y="290" width="160" height="22" />
+              <text x="635" y="305" text-anchor="middle" fill="#e6edf3" font-size="11">in-flight job finishes</text>
+              <line x1="635" y1="335" x2="370" y2="335" stroke="#bc8cff" stroke-width="2" marker-end="url(#arrowPurple)" />
+              <rect x="420" y="322" width="160" height="22" rx="4" fill="#161b22" />
+              <text x="500" y="337" text-anchor="middle" fill="#bc8cff" font-size="11">close(jobDoneCh)</text>
+            </g>
+
+            <!-- Step 7: Shutting down -->
+            <g class="step-group" data-step="6">
+              <line x1="360" y1="385" x2="115" y2="385" stroke="#bc8cff" stroke-width="2" marker-end="url(#arrowPurple)" />
+              <rect class="action-box" x="130" y="372" width="220" height="22" />
+              <text x="240" y="387" text-anchor="middle" fill="#d29922" font-size="11">UpdateProcess("shutting-down")</text>
+            </g>
+
+            <!-- Step 8: Complete shutdown -->
+            <g class="step-group" data-step="7">
+              <line x1="360" y1="420" x2="115" y2="420" stroke="#bc8cff" stroke-width="2" marker-end="url(#arrowPurple)" />
+              <rect class="action-box" x="148" y="407" width="180" height="22" />
+              <text x="238" y="422" text-anchor="middle" fill="#e6edf3" font-size="11">CompleteShutdown()</text>
+            </g>
+
+            <!-- Step 9: fx.Shutdown -->
+            <g class="step-group" data-step="8">
+              <rect class="action-box" x="295" y="455" width="130" height="22" />
+              <text x="360" y="470" text-anchor="middle" fill="#f85149" font-size="11">fx.Shutdown()</text>
+            </g>
+
+            <!-- Step 10: Final status -->
+            <g class="step-group" data-step="9">
+              <line x1="360" y1="500" x2="115" y2="500" stroke="#bc8cff" stroke-width="2" marker-end="url(#arrowPurple)" />
+              <rect class="action-box" x="130" y="487" width="220" height="22" />
+              <text x="240" y="502" text-anchor="middle" fill="#f85149" font-size="11">process.stop() &rarr; "shut-down"</text>
+            </g>
+
+            <!-- Status bar at bottom -->
+            <g class="step-group" data-step="9">
+              <rect x="40" y="545" width="720" height="55" rx="8" fill="#161b22" stroke="#30363d" />
+              <text x="60" y="570" fill="#8b949e" font-size="11">Status transitions:</text>
+              <rect x="60" y="578" width="55" height="16" rx="4" fill="#238636" />
+              <text x="87" y="590" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">active</text>
+              <text x="125" y="590" fill="#8b949e" font-size="12">&rarr;</text>
+              <rect x="140" y="578" width="110" height="16" rx="4" fill="#d29922" />
+              <text x="195" y="590" text-anchor="middle" fill="#000" font-size="9" font-weight="600">pending-shutdown</text>
+              <text x="260" y="590" fill="#8b949e" font-size="12">&rarr;</text>
+              <rect x="275" y="578" width="95" height="16" rx="4" fill="#da3633" />
+              <text x="322" y="590" text-anchor="middle" fill="#fff" font-size="9" font-weight="600">shutting-down</text>
+              <text x="380" y="590" fill="#8b949e" font-size="12">&rarr;</text>
+              <rect x="395" y="578" width="70" height="16" rx="4" fill="#8b949e" />
+              <text x="430" y="590" text-anchor="middle" fill="#000" font-size="9" font-weight="600">shut-down</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- PART 2 -->
+    <section id="part2">
+      <h2>Part 2: API-Side &mdash; Hold Jobs During Runner Shutdown</h2>
+
+      <div id="p2-root-cause" class="commentable" data-section="p2-root-cause">
+        <h3>Root Cause</h3>
+        <p>In <code>processjob</code> signal's <code>startJobExecution()</code>, the runner health-wait loop (lines 251-313) only checks if the runner status is <code>active</code>. It doesn't check whether the runner's process has a pending shutdown. So it marks the job "available" and the draining runner ignores it, leading to <code>AvailableTimeout</code> expiry.</p>
+      </div>
+
+      <div id="p2-design" class="commentable" data-section="p2-design">
+        <h3>Design: Shutdown-Aware Health Loop</h3>
+        <p>The <code>startJobExecution()</code> health loop already polls runner status. We add a check: <strong>does this runner have an open (requested/in-progress) process shutdown?</strong> If yes, keep waiting &mdash; don't mark the job available yet.</p>
+        <div class="callout">
+          The loop becomes: "wait until runner is <code>active</code> AND no pending shutdown exists."
+        </div>
+      </div>
+
+      <div id="p2-activity" class="commentable" data-section="p2-activity">
+        <h3>New Activity: <code>HasOpenProcessShutdown</code></h3>
+        <p>File: <code>services/ctl-api/.../activities/has_open_process_shutdown.go</code></p>
+        <pre><code><span class="keyword">type</span> <span class="type">HasOpenProcessShutdownRequest</span> <span class="keyword">struct</span> {
+    RunnerID <span class="type">string</span> <span class="string">`validate:"required"`</span>
+}
+
+<span class="keyword">type</span> <span class="type">HasOpenProcessShutdownResponse</span> <span class="keyword">struct</span> {
+    HasOpenShutdown <span class="type">bool</span>
+}
+
+<span class="comment">// @temporal-gen-v2 activity</span>
+<span class="comment">// @by-field RunnerID</span>
+<span class="keyword">func</span> (a *<span class="type">Activities</span>) <span class="func">HasOpenProcessShutdown</span>(
+    ctx <span class="type">context.Context</span>,
+    req <span class="type">HasOpenProcessShutdownRequest</span>,
+) (*<span class="type">HasOpenProcessShutdownResponse</span>, <span class="type">error</span>) {
+    <span class="keyword">var</span> count <span class="type">int64</span>
+    res := a.db.WithContext(ctx).
+        Model(&amp;app.<span class="type">RunnerProcessShutdown</span>{}).
+        Joins(<span class="string">"JOIN runner_processes ON ..."</span>).
+        Where(<span class="string">"composite_status->>'status' IN ?"</span>,
+            []<span class="type">string</span>{<span class="string">"requested"</span>, <span class="string">"in-progress"</span>}).
+        Count(&amp;count)
+    <span class="keyword">return</span> &amp;<span class="type">HasOpenProcessShutdownResponse</span>{
+        HasOpenShutdown: count > 0,
+    }, res.Error
+}</code></pre>
+        <p>Follows the exact pattern from <code>hasOpenProcessShutdown()</code> in <code>report_runner_process_terminating.go</code>, but as a Temporal activity querying by runner ID.</p>
+      </div>
+
+      <div id="p2-signal-change" class="commentable" data-section="p2-signal-change">
+        <h3>Signal Change: <code>processjob/signal.go</code></h3>
+        <p>In <code>startJobExecution()</code>, the runner-health polling loop changes from:</p>
+        <pre><code><span class="keyword">for</span> attempt := 0; ; attempt++ {
+    runnerStatus = <span class="func">AwaitGetRunnerStatusByID</span>(...)
+    <span class="keyword">if</span> runnerStatus == active { <span class="keyword">break</span> }
+    <span class="comment">// ... timeout checks ...</span>
+    workflow.Sleep(ctx, pollPeriod(attempt))
+}</code></pre>
+        <p>To:</p>
+        <pre><code><span class="keyword">for</span> attempt := 0; ; attempt++ {
+    runnerStatus = <span class="func">AwaitGetRunnerStatusByID</span>(...)
+    shutdownResp = <span class="func">AwaitHasOpenProcessShutdown</span>(...)
+
+    <span class="keyword">if</span> runnerStatus == active &amp;&amp; !shutdownResp.HasOpenShutdown {
+        <span class="keyword">break</span>  <span class="comment">// healthy AND no pending shutdown</span>
+    }
+
+    <span class="comment">// ... existing timeout checks ...</span>
+    workflow.Sleep(ctx, pollPeriod(attempt))
+}</code></pre>
+        <p>The job stays in this loop until the old process drains, shuts down, a new process starts and becomes <code>active</code>, and no open shutdown records remain. Then the job is marked "available" and the new process picks it up.</p>
+        <div class="callout warn">
+          <strong>Safety nets preserved:</strong> The existing <code>AvailableTimeout</code> and <code>OverallTimeout</code> still apply. If a new process never comes up, the job eventually times out.
+        </div>
+      </div>
+    </section>
+
+    <!-- EDGE CASES -->
+    <section id="edge-cases">
+      <h2>Edge Cases</h2>
+      <div class="commentable" data-section="edge-cases">
+        <div class="edge-case-grid">
+          <div class="edge-card">
+            <strong>No in-flight job at drain</strong>
+            <p><code>pollCtx</code> cancellation interrupts fetch/sleep. Worker exits immediately, <code>Wait()</code> returns instantly.</p>
+          </div>
+          <div class="edge-card">
+            <strong>Long-poll blocking</strong>
+            <p><code>fetchAvailableJobs</code> derives timeout from <code>pollCtx</code>. Cancellation aborts the HTTP request.</p>
+          </div>
+          <div class="edge-card">
+            <strong>mng process</strong>
+            <p>Gets a <code>Drainer</code> injected &mdash; harmless if no job is running. Management jobs are short-lived.</p>
+          </div>
+          <div class="edge-card">
+            <strong>Drain timeout (30m)</strong>
+            <p>Shutdown proceeds anyway. <code>fx.Shutdown</code> triggers hard stop via <code>jobCancel()</code>.</p>
+          </div>
+          <div class="edge-card">
+            <strong><code>os.Exit(155)</code> in runWorker</strong>
+            <p>Must not fire during drain &mdash; check drainer state before calling exit.</p>
+          </div>
+          <div class="edge-card">
+            <strong>Job queued during shutdown</strong>
+            <p><code>processjob</code> signal holds in health loop until new process is active with no open shutdown.</p>
+          </div>
+          <div class="edge-card">
+            <strong>Runner never restarts</strong>
+            <p><code>OverallTimeout</code> eventually marks the job as timed out.</p>
+          </div>
+          <div class="edge-card">
+            <strong>Multiple shutdowns</strong>
+            <p><code>HasOpenProcessShutdown</code> counts any open shutdown, so stacked requests are handled.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILES SUMMARY -->
+    <section id="files-summary">
+      <h2>Files Summary</h2>
+      <div class="commentable" data-section="files-summary">
+        <table>
+          <thead>
+            <tr><th>File</th><th>Change</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>bins/runner/.../jobloop/drain.go</code></td><td><span class="badge badge-new">NEW</span> Drainer coordinator</td></tr>
+            <tr><td><code>bins/runner/.../jobloop/jobloop.go</code></td><td><span class="badge badge-modify">MODIFY</span> Split context, add drainer</td></tr>
+            <tr><td><code>bins/runner/.../jobloop/base_params.go</code></td><td><span class="badge badge-modify">MODIFY</span> Add Drainer to BaseParams</td></tr>
+            <tr><td><code>bins/runner/.../jobloop/worker.go</code></td><td><span class="badge badge-modify">MODIFY</span> pollCtx/jobCtx, drain checks</td></tr>
+            <tr><td><code>bins/runner/.../jobloop/lifecycle.go</code></td><td><span class="badge badge-modify">MODIFY</span> Add Drain(), update Stop()</td></tr>
+            <tr><td><code>bins/runner/.../process/shutdown_poller.go</code></td><td><span class="badge badge-modify">MODIFY</span> Drain-then-shutdown flow</td></tr>
+            <tr><td><code>bins/runner/cmd/cli.go</code></td><td><span class="badge badge-modify">MODIFY</span> Provide Drainer in FX</td></tr>
+            <tr><td><code>services/ctl-api/.../activities/has_open_process_shutdown.go</code></td><td><span class="badge badge-new">NEW</span> Temporal activity</td></tr>
+            <tr><td><code>services/ctl-api/.../signals/processjob/signal.go</code></td><td><span class="badge badge-modify">MODIFY</span> Check shutdown in health loop</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- VERIFICATION -->
+    <section id="verification">
+      <h2>Verification</h2>
+      <div class="commentable" data-section="verification">
+        <ol>
+          <li><strong>Unit test:</strong> <code>drain_test.go</code> &mdash; register done channels, drain, verify wait</li>
+          <li><strong>Build runner:</strong> <code>cd bins/runner && go build ./...</code></li>
+          <li><strong>Runner tests:</strong> <code>cd bins/runner && go test ./...</code></li>
+          <li><strong>Code gen:</strong> <code>go generate ./services/ctl-api/...</code></li>
+          <li><strong>API build:</strong> <code>cd services/ctl-api && go build ./...</code></li>
+          <li><strong>Manual test:</strong> Start runner, submit long job, trigger shutdown &rarr; verify drain completes, job finishes, new process picks up subsequent jobs</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Comment panel -->
+<div id="comment-panel">
+  <h3>All Comments</h3>
+  <div id="panel-comments"></div>
+  <p style="color:var(--text-muted); font-size:13px; margin-top:16px;">Comments are saved as individual files in<br><code style="font-size:11px">plans/shutdown-protection/comments/</code></p>
+</div>
+<button id="toggle-panel" onclick="togglePanel()">
+  Comments <span id="comment-total">0</span>
+</button>
+
+<script>
+// =========================================================
+// Inline commenting system — saves each comment as a file
+// readable by the Claude agent.
+// =========================================================
+
+const STORAGE_KEY = 'shutdown-plan-comments';
+let comments = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let panelOpen = false;
+
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('comment-panel').classList.toggle('open', panelOpen);
+}
+
+function renderAllComments() {
+  // Render inline threads
+  document.querySelectorAll('.comment-thread').forEach(t => {
+    const section = t.dataset.section;
+    const threadComments = comments.filter(c => c.section === section);
+    const container = t.querySelector('.thread-comments');
+    container.innerHTML = threadComments.map(c => `
+      <div class="saved-comment">
+        <div class="comment-meta">${new Date(c.timestamp).toLocaleString()}</div>
+        ${escapeHtml(c.text)}
+      </div>
+    `).join('');
+  });
+
+  // Render panel
+  const panel = document.getElementById('panel-comments');
+  panel.innerHTML = comments.length === 0
+    ? '<p style="color:var(--text-muted);font-size:14px;">No comments yet. Click any section to add one.</p>'
+    : comments.map(c => `
+      <div class="panel-comment">
+        <div class="pc-section">${c.section}</div>
+        <div class="pc-text">${escapeHtml(c.text)}</div>
+        <div class="pc-time">${new Date(c.timestamp).toLocaleString()}</div>
+      </div>
+    `).join('');
+
+  // Update badge counts
+  document.getElementById('comment-total').textContent = comments.length;
+  document.querySelectorAll('.commentable').forEach(el => {
+    const section = el.dataset.section;
+    const count = comments.filter(c => c.section === section).length;
+    const existing = el.querySelector('.comment-count');
+    if (existing) existing.remove();
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'comment-count';
+      badge.textContent = count;
+      (el.querySelector('h3') || el.querySelector('h4') || el).prepend(badge);
+    }
+  });
+}
+
+function saveComment(section, text) {
+  const comment = {
+    id: 'comment-' + Date.now(),
+    section: section,
+    text: text.trim(),
+    timestamp: new Date().toISOString()
+  };
+  comments.push(comment);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+
+  // "Save" to file by creating a downloadable blob and also posting
+  // the comment data into a hidden form that writes to disk via the
+  // save-comments endpoint (see below for the static fallback).
+  saveCommentFile(comment);
+  renderAllComments();
+}
+
+function saveCommentFile(comment) {
+  // POST to local server which writes the file to comments/ directory
+  fetch('/save-comment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(comment)
+  }).then(r => r.json()).then(data => {
+    console.log('Comment saved to:', data.file);
+  }).catch(err => {
+    console.warn('Could not save comment to server (run serve.sh):', err);
+  });
+}
+
+function exportAllComments() {
+  if (comments.length === 0) { alert('No comments to export.'); return; }
+  comments.forEach(c => {
+    const content = [
+      '---', 'section: ' + c.section, 'timestamp: ' + c.timestamp,
+      'id: ' + c.id, '---', '', c.text, ''
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = c.id + '.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+}
+
+function dumpCommentsToSingleFile() {
+  if (comments.length === 0) { alert('No comments to export.'); return; }
+  const lines = comments.map(c => [
+    '## ' + c.section,
+    '*' + new Date(c.timestamp).toLocaleString() + '*',
+    '', c.text, '', '---', ''
+  ].join('\n'));
+  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'all-comments.md';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Attach click handlers to commentable sections
+document.querySelectorAll('.commentable').forEach(el => {
+  const section = el.dataset.section;
+
+  // Create thread container
+  const thread = document.createElement('div');
+  thread.className = 'comment-thread';
+  thread.dataset.section = section;
+  thread.innerHTML = `
+    <div class="thread-comments"></div>
+    <textarea placeholder="Leave a comment on this section..."></textarea>
+    <button onclick="submitComment(this, '${section}')">Save Comment</button>
+    <button class="cancel" onclick="this.closest('.comment-thread').classList.remove('open')">Cancel</button>
+  `;
+  el.after(thread);
+
+  el.addEventListener('click', (e) => {
+    if (e.target.tagName === 'A' || e.target.tagName === 'CODE') return;
+    thread.classList.toggle('open');
+    if (thread.classList.contains('open')) {
+      thread.querySelector('textarea').focus();
+    }
+  });
+});
+
+function submitComment(btn, section) {
+  const thread = btn.closest('.comment-thread');
+  const textarea = thread.querySelector('textarea');
+  const text = textarea.value.trim();
+  if (!text) return;
+  saveComment(section, text);
+  textarea.value = '';
+}
+
+// Add export button to panel
+const exportBtn = document.createElement('button');
+exportBtn.textContent = 'Export All Comments';
+exportBtn.style.cssText = 'margin-top:16px;padding:8px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;font-size:13px;width:100%;';
+exportBtn.onclick = dumpCommentsToSingleFile;
+document.getElementById('comment-panel').appendChild(exportBtn);
+
+renderAllComments();
+
+// =========================================================
+// Interactive sequence diagram
+// =========================================================
+
+let diagramMode = 'auto';
+let currentStep = -1;
+const totalSteps = 10;
+let autoTimer = null;
+
+function setDiagramMode(mode) {
+  diagramMode = mode;
+  document.querySelectorAll('.diagram-controls button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (mode === 'auto') {
+    resetDiagram();
+    startAutoPlay();
+  } else {
+    stopAutoPlay();
+  }
+}
+
+function resetDiagram() {
+  stopAutoPlay();
+  currentStep = -1;
+  document.querySelectorAll('.step-group').forEach(g => g.classList.remove('visible'));
+  if (diagramMode === 'auto') startAutoPlay();
+}
+
+function showStep(n) {
+  if (n < 0 || n >= totalSteps) return;
+  document.querySelectorAll(`.step-group[data-step="${n}"]`).forEach(g => g.classList.add('visible'));
+  currentStep = n;
+}
+
+function startAutoPlay() {
+  stopAutoPlay();
+  let step = 0;
+  autoTimer = setInterval(() => {
+    showStep(step);
+    step++;
+    if (step >= totalSteps) stopAutoPlay();
+  }, 800);
+}
+
+function stopAutoPlay() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+}
+
+// Step-through on click
+document.querySelector('.diagram-container').addEventListener('click', (e) => {
+  if (diagramMode !== 'step') return;
+  if (e.target.tagName === 'BUTTON') return;
+  showStep(currentStep + 1);
+});
+
+// Start auto-play on load
+startAutoPlay();
+
+// Sidebar active state
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+      const link = document.querySelector(`.sidebar a[href="#${e.target.id}"]`);
+      if (link) link.classList.add('active');
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('section[id], div[id]').forEach(s => observer.observe(s));
+</script>
+
+</body>
+</html>

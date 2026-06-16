@@ -2,7 +2,7 @@
 title: "Common commands"
 sidebarTitle: "Common commands"
 description: "The Nuon CLI commands you'll reach for most, from auth to deploy."
-keywords: ["nuon cli commands", "nuon auth login", "nuon apps create", "nuon apps sync", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
+keywords: ["nuon cli commands", "nuon auth login", "nuon orgs select", "nuon orgs current", "switch organization", "select org", "current org", "nuon apps create", "nuon apps sync", "nuon installs create", "nuon runbooks", "cli quick reference", "common nuon commands"]
 ---
 
 The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for the full set.
@@ -13,6 +13,13 @@ The commands you'll use most. Run `nuon --help` (or `nuon <command> --help`) for
 |---------|--------------|
 | `nuon auth login` | Sign in (browser SSO). Run this first. |
 | `nuon auth logout` | Sign out. |
+
+## Organizations
+
+| Command | What it does |
+|---------|--------------|
+| `nuon orgs select` | Switch your active org. A new trial account has a single org that's selected automatically when you log in, so you only need this once you belong to more than one. |
+| `nuon orgs current` | Show the active org. |
 
 ## Apps & config
 

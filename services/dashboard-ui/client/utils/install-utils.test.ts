@@ -4,9 +4,75 @@ import {
   getInstallSandboxStatusTitle,
   getInstallComponentsStatusTitle,
   getInstallStatusTitle,
+  getInputDisplayName,
+  getComponentOverrideKind,
 } from './install-utils'
 
 describe('install-utils', () => {
+  describe('getComponentOverrideKind', () => {
+    test('returns helm_values for helm override inputs', () => {
+      expect(
+        getComponentOverrideKind(
+          'nuon_component_override_v1_helm_values_77686f616d69'
+        )
+      ).toBe('helm_values')
+    })
+
+    test('returns tf_vars for terraform override inputs', () => {
+      expect(
+        getComponentOverrideKind(
+          'nuon_component_override_v1_tf_vars_6365727469666963617465'
+        )
+      ).toBe('tf_vars')
+    })
+
+    test('returns null for normal inputs', () => {
+      expect(getComponentOverrideKind('domain')).toBeNull()
+    })
+  })
+
+  describe('getInputDisplayName', () => {
+    test('decodes helm_values override input names', () => {
+      expect(
+        getInputDisplayName('nuon_component_override_v1_helm_values_77686f616d69')
+      ).toBe('components.whoami.helm_values')
+    })
+
+    test('decodes tf_vars override input names', () => {
+      expect(
+        getInputDisplayName(
+          'nuon_component_override_v1_tf_vars_6365727469666963617465'
+        )
+      ).toBe('components.certificate.tf_vars')
+    })
+
+    test('decodes component names containing dashes', () => {
+      expect(
+        getInputDisplayName('nuon_component_override_v1_helm_values_666f6f2d626172')
+      ).toBe('components.foo-bar.helm_values')
+    })
+
+    test('returns non-override input names unchanged', () => {
+      expect(getInputDisplayName('domain')).toBe('domain')
+      expect(getInputDisplayName('sub_domain')).toBe('sub_domain')
+    })
+
+    test('returns malformed override names unchanged', () => {
+      expect(
+        getInputDisplayName('nuon_component_override_v1_helm_values_zz')
+      ).toBe('nuon_component_override_v1_helm_values_zz')
+      expect(
+        getInputDisplayName('nuon_component_override_v1_unknown_77686f616d69')
+      ).toBe('nuon_component_override_v1_unknown_77686f616d69')
+    })
+
+    test('returns invalid-utf8 hex names unchanged', () => {
+      expect(
+        getInputDisplayName('nuon_component_override_v1_helm_values_ff')
+      ).toBe('nuon_component_override_v1_helm_values_ff')
+    })
+  })
+
   describe('getInstallRunnerStatusTitle', () => {
     test('should return correct runner status titles', () => {
       expect(getInstallRunnerStatusTitle('active')).toBe('Runner is healthy')

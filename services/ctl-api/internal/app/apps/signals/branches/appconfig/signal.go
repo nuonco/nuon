@@ -14,9 +14,18 @@ const SignalType signal.SignalType = "app-branch-app-config"
 type Signal struct {
 	AppBranchID string `json:"app_branch_id" validate:"required"`
 	RunID       string `json:"run_id" validate:"required"`
+
+	FlowID string `json:"flow_id,omitempty"`
+	StepID string `json:"step_id,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithStepContext = (*Signal)(nil)
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

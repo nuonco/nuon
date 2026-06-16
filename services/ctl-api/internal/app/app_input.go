@@ -20,6 +20,11 @@ const (
 	AppInputTypeBool   AppInputType = "bool"
 	AppInputTypeList   AppInputType = "list"
 	AppInputTypeJSON   AppInputType = "json"
+	// AppInputTypeYAML / AppInputTypeHCL are structured document types whose
+	// syntax is validated on input update (used by per-component overrides:
+	// Helm values are YAML, Terraform vars are HCL/tfvars).
+	AppInputTypeYAML AppInputType = "yaml"
+	AppInputTypeHCL  AppInputType = "hcl"
 )
 
 type AppInputSource string

@@ -152,6 +152,14 @@ func (h *RootHandler) Handle(c *gin.Context) {
 		return
 	}
 
+	if h.cfg.IsBYOC {
+		h.l.Info("root: no orgs found (BYOC), redirecting to setup",
+			zap.Duration("duration", time.Since(start)),
+		)
+		c.Redirect(http.StatusFound, "/byoc-setup")
+		return
+	}
+
 	h.l.Info("root: no orgs found, redirecting to onboarding",
 		zap.Duration("duration", time.Since(start)),
 	)

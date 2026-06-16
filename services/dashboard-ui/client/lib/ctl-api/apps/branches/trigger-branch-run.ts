@@ -4,6 +4,7 @@ import type { TInstallWorkflow } from '@/types'
 export type TTriggerBranchRunRequest = {
   config_id?: string
   force?: boolean
+  plan_only?: boolean
 }
 
 export const triggerBranchRun = ({

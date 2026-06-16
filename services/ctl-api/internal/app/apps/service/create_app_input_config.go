@@ -69,6 +69,8 @@ func (c *CreateAppInputConfigRequest) Validate(v *validator.Validate) error {
 			app.AppInputTypeList,
 			app.AppInputTypeNumber,
 			app.AppInputTypeString,
+			app.AppInputTypeYAML,
+			app.AppInputTypeHCL,
 		}) {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("invalid input type %s", input.Type),

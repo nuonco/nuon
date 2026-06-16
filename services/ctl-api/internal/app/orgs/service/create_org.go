@@ -14,6 +14,7 @@ import (
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/useragent"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -89,7 +90,11 @@ func (s *service) CreateOrg(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("unable to get org signals queue: %w", err))
 		return
 	}
-	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgcreated.Signal{OrgID: newOrg.ID}, newOrg.ID); err != nil {
+	source := "Dashboard"
+	if useragent.IsCLI(ctx.Request.UserAgent()) {
+		source = "CLI"
+	}
+	if err := s.enqueueOrgSignal(ctx, signalsQueueID, &orgcreated.Signal{OrgID: newOrg.ID, Source: source}, newOrg.ID); err != nil {
 		ctx.Error(fmt.Errorf("unable to enqueue org created signal: %w", err))
 		return
 	}

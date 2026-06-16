@@ -22,6 +22,9 @@ type ServiceTriggerAppBranchRunRequest struct {
 
 	// force run even if no changes detected
 	Force bool `json:"force,omitempty"`
+
+	// plan-only preview mode (no apply)
+	PlanOnly bool `json:"plan_only,omitempty"`
 }
 
 // Validate validates this service trigger app branch run request

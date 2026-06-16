@@ -1,0 +1,10 @@
+module.app.aws_s3_bucket.assets: Creating...
+╷
+│ Error: creating S3 Bucket (acme-prod-assets): AccessDenied: User: arn:aws:iam::123456789012:role/nuon-runner is not authorized to perform: s3:CreateBucket on resource: arn:aws:s3:::acme-prod-assets because no identity-based policy allows the s3:CreateBucket action
+│ 	status code: 403, request id: D5E6F7G8H9, host id: abcDEF/123==
+│
+│   with module.app.aws_s3_bucket.assets,
+│   on main.tf line 42, in resource "aws_s3_bucket" "assets":
+│   42: resource "aws_s3_bucket" "assets" {
+│
+╵

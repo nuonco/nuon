@@ -25,6 +25,8 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"GET", "/v1/general/cli-config"}:                              {},
 	{"GET", "/v1/general/cloud-platform/:cloud_platform/regions"}:  {},
 	{"POST", "/v1/vcs/connection-callback"}:                        {},
+	{"POST", "/v1/vcs/:vcs_connection_id/events"}:                  {},
+	{"POST", "/v1/vcs/webhooks/:subscription_id/events"}:           {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
 	// runner auth: must be accessible w/out a token

@@ -8,8 +8,10 @@ import (
 
 func (s *syncer) start(ctx context.Context) error {
 	cfg, err := s.apiClient.CreateAppConfig(ctx, s.appID, &models.ServiceCreateAppConfigRequest{
-		Readme:     s.cfg.Readme,
-		CliVersion: s.cliVersion,
+		Readme:      s.cfg.Readme,
+		CliVersion:  s.cliVersion,
+		AppBranchID: s.appBranchID,
+		PlanOnly:    s.planOnly,
 	})
 	if err != nil {
 		return err

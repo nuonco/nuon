@@ -9,21 +9,19 @@ import (
 )
 
 func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
-	// When the runner has resolved a manifest digest, the `repository`,
-	// `tag`, and `ref` outputs are rewritten so user templates render
-	// digest-pinned references by default:
+	// `repository` and `tag` are a long-standing public output contract:
+	// app configs compose them as `{{.repository}}:{{.tag}}` (helm values,
+	// terraform vars). They must stay the bare repository and resolved tag —
+	// rewriting repository to the digest-pinned form breaks every such
+	// template, and clearing the tag does NOT fail loudly: charts default an
+	// empty tag to .Chart.AppVersion, yielding invalid `repo@sha256:...:tag`
+	// refs that only surface as pull failures at deploy time.
 	//
-	//   - repository  → "<full_repo>@sha256:<digest>" (existing
-	//                   `image: {{.repository}}` templates pin automatically)
-	//   - tag         → "" (a legacy
-	//                   `image: {{.repository}}:{{.tag}}` template surfaces
-	//                   as an invalid trailing-colon ref instead of
-	//                   silently deploying a mutable tag)
-	//   - ref         → same digest-pinned form, exposed as a stable alias
-	//   - display_tag → the resolved tag for human display
+	// Digest pinning is exposed additively instead:
 	//
-	// Without a digest (non-image artifacts) the legacy `repository = bare
-	// repo`, `tag = DstTag` shape is preserved.
+	//   - ref         → "<full_repo>@sha256:<digest>" for templates that
+	//                   opt in to digest-pinned pulls ("" without a digest)
+	//   - display_tag → the resolved tag, stable alias of `tag`
 	digest := ""
 	if h.state.descriptor != nil {
 		digest = h.state.descriptor.Digest.String()
@@ -41,23 +39,14 @@ func (h *handler) Outputs(ctx context.Context) (map[string]interface{}, error) {
 		fullRepo = fmt.Sprintf("%s/%s", loginServer, fullRepo)
 	}
 
-	var (
-		repositoryOut string
-		tagOut        string
-		refOut        string
-	)
+	refOut := ""
 	if digest != "" && fullRepo != "" {
 		refOut = fmt.Sprintf("%s@%s", fullRepo, digest)
-		repositoryOut = refOut
-		tagOut = ""
-	} else {
-		repositoryOut = h.state.plan.Dst.Repository
-		tagOut = h.state.plan.DstTag
 	}
 
 	obj := map[string]interface{}{
-		"repository":  repositoryOut,
-		"tag":         tagOut,
+		"repository":  h.state.plan.Dst.Repository,
+		"tag":         h.state.plan.DstTag,
 		"ref":         refOut,
 		"display_tag": h.state.plan.DstTag,
 	}

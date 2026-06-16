@@ -1,6 +1,5 @@
 import { ReactNode } from 'react'
 import { Text } from '@/components/common/Text'
-import { Card } from '@/components/common/Card'
 
 interface AdminSectionProps {
   title: string

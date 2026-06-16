@@ -1,20 +1,6 @@
 import { useMemo, useState } from 'react'
-import { createPortal } from 'react-dom'
-import {
-  DndContext,
-  DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
-  closestCorners,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from '@dnd-kit/core'
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
-import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
@@ -22,10 +8,7 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TInstall } from '@/types'
 import { GroupEditor } from './GroupEditor'
 import { newGroup } from './lib'
-import { UnassignedSection } from './UnassignedSection'
 import type { IInstallGroup } from './types'
-
-const UNASSIGNED_ID = '__unassigned__'
 
 interface IDeploymentPlanEditor extends Omit<IModal, 'onSubmit'> {
   initialGroups: IInstallGroup[]
@@ -47,34 +30,21 @@ export const DeploymentPlanEditor = ({
 }: IDeploymentPlanEditor) => {
   const [groups, setGroups] = useState<IInstallGroup[]>(initialGroups)
   const [showValidation, setShowValidation] = useState(false)
-  const [activeId, setActiveId] = useState<string | null>(null)
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+  const assignedInstallIds = useMemo(() => {
+    const assigned = new Set<string>()
+    groups.forEach((g) => {
+      if (!g.use_for_previews) {
+        g.install_ids.forEach((id) => assigned.add(id))
+      }
     })
-  )
-
-  const installsById = useMemo(() => {
-    const map = new Map<string, TInstall>()
-    availableInstalls.forEach((i) => map.set(i.id, i))
-    return map
-  }, [availableInstalls])
-
-  const assignedInstallIds = useMemo(
-    () => new Set(groups.flatMap((g) => g.install_ids)),
-    [groups]
-  )
+    return assigned
+  }, [groups])
 
   const unassignedInstalls = useMemo(
     () => availableInstalls.filter((i) => !assignedInstallIds.has(i.id)),
     [availableInstalls, assignedInstallIds]
   )
-
-  const activeInstall = activeId ? installsById.get(activeId) : null
 
   const hasEmptyNames = groups.some((g) => !g.name.trim())
   const canSave =
@@ -110,7 +80,6 @@ export const DeploymentPlanEditor = ({
   }
 
   const addInstallsToGroup = (groupId: string, installIds: string[]) => {
-    const idSet = new Set(installIds)
     setGroups((curr) =>
       curr.map((g) => {
         if (g.id === groupId) {
@@ -120,10 +89,7 @@ export const DeploymentPlanEditor = ({
           })
           return { ...g, install_ids: merged }
         }
-        return {
-          ...g,
-          install_ids: g.install_ids.filter((i) => !idSet.has(i)),
-        }
+        return g
       })
     )
   }
@@ -136,66 +102,6 @@ export const DeploymentPlanEditor = ({
           : g
       )
     )
-  }
-
-  const moveInstall = (
-    installId: string,
-    fromContainer: string,
-    toContainer: string
-  ) => {
-    if (fromContainer === toContainer) return
-
-    setGroups((curr) => {
-      const next = curr.map((g) => {
-        if (g.id === fromContainer) {
-          return {
-            ...g,
-            install_ids: g.install_ids.filter((id) => id !== installId),
-          }
-        }
-        if (g.id === toContainer) {
-          const filtered = g.install_ids.filter((id) => id !== installId)
-          return { ...g, install_ids: [...filtered, installId] }
-        }
-        return g
-      })
-      return next
-    })
-  }
-
-  const findContainer = (id: string): string => {
-    if (id === UNASSIGNED_ID) return UNASSIGNED_ID
-    if (groups.some((g) => g.id === id)) return id
-    for (const g of groups) {
-      if (g.install_ids.includes(id)) return g.id
-    }
-    return UNASSIGNED_ID
-  }
-
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string)
-  }
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveId(null)
-    const { active, over } = event
-    if (!over) return
-
-    const activeId = active.id as string
-    const overId = over.id as string
-
-    if (activeId === overId) return
-
-    const fromContainer =
-      (active.data.current?.containerId as string | undefined) ??
-      findContainer(activeId)
-    const toContainer =
-      (over.data.current?.containerId as string | undefined) ??
-      findContainer(overId)
-
-    if (!fromContainer || !toContainer || fromContainer === toContainer) return
-
-    moveInstall(activeId, fromContainer, toContainer)
   }
 
   const handleSave = () => {
@@ -234,102 +140,88 @@ export const DeploymentPlanEditor = ({
           deployment plan.
         </Banner>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="flex flex-col gap-4">
-            {groups.length === 0 ? (
-              <div className="flex flex-col items-center gap-4 px-6 py-10 border border-dashed border-cool-grey-300 dark:border-dark-grey-600 rounded-md">
-                <EmptyState
-                  variant="diagram"
-                  emptyTitle="No deployment groups yet"
-                  emptyMessage="Add a group, then drag installs into it."
-                />
-                <Button
-                  variant="primary"
-                  onClick={addGroup}
+        <div className="flex flex-col gap-4">
+          {groups.length === 0 ? (
+            <div className="flex items-center justify-between gap-4 px-4 py-4 border border-dashed border-cool-grey-300 dark:border-dark-grey-600 rounded-md">
+              <Text variant="subtext" theme="neutral">
+                No deployment groups yet. Add a group, then assign installs to it.
+              </Text>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={addGroup}
+                disabled={isDisabled}
+                className="shrink-0"
+              >
+                <Icon variant="PlusIcon" size={16} />
+                Add first group
+              </Button>
+            </div>
+          ) : (
+            groups.map((group, index) => {
+              const nameError =
+                showValidation && !group.name.trim()
+                  ? 'Group name is required'
+                  : undefined
+
+              return (
+                <GroupEditor
+                  key={group.id}
+                  group={group}
+                  index={index}
+                  totalGroups={groups.length}
+                  availableInstalls={availableInstalls}
+                  unassignedInstalls={unassignedInstalls}
                   disabled={isDisabled}
-                >
-                  <Icon variant="PlusIcon" size={16} />
-                  Add first group
-                </Button>
-              </div>
-            ) : (
-              <>
-                {groups.map((group, index) => {
-                  const groupInstalls = group.install_ids
-                    .map((id) => installsById.get(id))
-                    .filter((i): i is TInstall => !!i)
-
-                  const nameError =
-                    showValidation && !group.name.trim()
-                      ? 'Group name is required'
-                      : undefined
-
-                  return (
-                    <GroupEditor
-                      key={group.id}
-                      group={group}
-                      index={index}
-                      totalGroups={groups.length}
-                      installs={groupInstalls}
-                      unassignedInstalls={unassignedInstalls}
-                      disabled={isDisabled}
-                      nameError={nameError}
-                      onUpdate={(updates) => updateGroup(group.id, updates)}
-                      onAddInstalls={(installIds) =>
-                        addInstallsToGroup(group.id, installIds)
-                      }
-                      onRemoveInstall={(installId) =>
-                        removeInstallFromGroup(group.id, installId)
-                      }
-                      onMoveUp={() => moveGroup(group.id, -1)}
-                      onMoveDown={() => moveGroup(group.id, 1)}
-                      onDelete={() => deleteGroup(group.id)}
-                    />
-                  )
-                })}
-              </>
-            )}
-
-            <Button
-              variant="secondary"
-              onClick={addGroup}
-              disabled={isDisabled}
-              className="self-start"
-            >
-              <Icon variant="PlusIcon" size={16} />
-              Add group
-            </Button>
-
-            <UnassignedSection
-              installs={unassignedInstalls}
-              containerId={UNASSIGNED_ID}
-              disabled={isDisabled}
-            />
-          </div>
-
-          {createPortal(
-            <DragOverlay>
-              {activeInstall ? (
-                <div className="flex items-center gap-1.5 px-2 py-2 rounded-md bg-white dark:bg-dark-grey-800 border border-cool-grey-300 dark:border-dark-grey-600 shadow-lg cursor-grabbing">
-                  <Icon
-                    variant="DotsSixVerticalIcon"
-                    size={16}
-                    className="text-cool-grey-500"
-                  />
-                  <Text variant="body" className="truncate">
-                    {activeInstall.name || activeInstall.id}
-                  </Text>
-                </div>
-              ) : null}
-            </DragOverlay>,
-            document.body
+                  nameError={nameError}
+                  onUpdate={(updates) => updateGroup(group.id, updates)}
+                  onAddInstalls={(installIds) =>
+                    addInstallsToGroup(group.id, installIds)
+                  }
+                  onRemoveInstall={(installId) =>
+                    removeInstallFromGroup(group.id, installId)
+                  }
+                  onMoveUp={() => moveGroup(group.id, -1)}
+                  onMoveDown={() => moveGroup(group.id, 1)}
+                  onDelete={() => deleteGroup(group.id)}
+                />
+              )
+            })
           )}
-        </DndContext>
+
+          <Button
+            variant="secondary"
+            onClick={addGroup}
+            disabled={isDisabled}
+            className="self-start"
+          >
+            <Icon variant="PlusIcon" size={16} />
+            Add group
+          </Button>
+
+          {unassignedInstalls.length > 0 && (
+            <div className="border-t border-cool-grey-200 dark:border-dark-grey-700 pt-4">
+              <div className="flex items-baseline gap-2 mb-2">
+                <Text variant="base" weight="strong">Unassigned</Text>
+                <Text variant="subtext" theme="neutral">
+                  — {unassignedInstalls.length} install{unassignedInstalls.length !== 1 ? 's' : ''} won&apos;t deploy
+                </Text>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {unassignedInstalls.map((install) => (
+                  <div
+                    key={install.id}
+                    className="flex items-center gap-1.5 px-2 py-2 rounded-md bg-cool-grey-50 dark:bg-dark-grey-900"
+                  >
+                    <Text variant="body" className="truncate">
+                      {install.name || install.id}
+                    </Text>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </Modal>
   )

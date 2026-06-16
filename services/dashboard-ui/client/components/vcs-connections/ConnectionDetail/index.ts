@@ -2,3 +2,4 @@ export { ConnectionDetailContainer as ConnectionDetail } from './ConnectionDetai
 export { ConnectionDetail as ConnectionDetailComponent } from './ConnectionDetail'
 export { GitHubAccountSection } from './GitHubAccountSection'
 export { RepositoriesSection } from './RepositoriesSection'
+export { WebhookSubscriptionSection } from './WebhookSubscriptionSection'

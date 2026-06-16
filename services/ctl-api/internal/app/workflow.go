@@ -39,6 +39,7 @@ const (
 	WorkflowTypeAppBranchesRun                 WorkflowType = "app_branches_manual_update"
 	WorkflowTypeAppBranchesConfigRepoUpdate    WorkflowType = "app_branches_config_repo_update"
 	WorkflowTypeAppBranchesComponentRepoUpdate WorkflowType = "app_branches_component_repo_update"
+	WorkflowTypeAppBranchConfigUpdate          WorkflowType = "app_branch_config_update"
 
 	// reprovision everything
 	WorkflowTypeReprovision WorkflowType = "reprovision"

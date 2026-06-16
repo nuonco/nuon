@@ -107,11 +107,37 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 				Description: err.Error(),
 			}
 		}
+
+		// Resolve component name to ID for lifecycle triggers
+		var componentID generics.NullString
+		if trigger.ComponentName != "" {
+			resolved := false
+			for _, comp := range s.state.Components {
+				if comp.Name == trigger.ComponentName {
+					componentID = generics.NewNullString(comp.ID)
+					resolved = true
+					break
+				}
+			}
+			if !resolved {
+				// Component not yet synced — look it up from DB
+				var comp app.Component
+				if err := s.db.WithContext(ctx).
+					Where("app_id = ? AND name = ? AND deleted_at = 0", s.appID, trigger.ComponentName).
+					First(&comp).Error; err == nil {
+					componentID = generics.NewNullString(comp.ID)
+				}
+				// If not found, leave null — the component may not exist
+			}
+		}
+
 		triggers = append(triggers, app.ActionWorkflowTriggerConfig{
+			AppID:        s.appID,
+			AppConfigID:  s.appConfigID,
 			Index:        int(trigger.Index),
 			Type:         app.ActionWorkflowTriggerType(trigger.Type),
 			CronSchedule: trigger.CronSchedule,
-			ComponentID:  generics.NewNullString(trigger.ComponentName),
+			ComponentID:  componentID,
 		})
 	}
 
@@ -165,6 +191,8 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		}
 
 		steps = append(steps, app.ActionWorkflowStepConfig{
+			AppID:                    s.appID,
+			AppConfigID:              s.appConfigID,
 			Name:                     step.Name,
 			EnvVars:                  envVars,
 			Command:                  step.Command,
@@ -183,6 +211,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 
 	// Create action workflow config
 	awc := app.ActionWorkflowConfig{
+		AppID:                  s.appID,
 		AppConfigID:            s.appConfigID,
 		ActionWorkflowID:       actionWorkflow.ID,
 		Timeout:                timeout,
@@ -193,11 +222,20 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		Steps:                  steps,
 	}
 
-	res = s.db.WithContext(ctx).Create(&awc)
-	if res.Error != nil {
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to create action workflow config for %s", action.Name),
-			Err:         res.Error,
+	// Check if config already exists (idempotent for retries)
+	var existing app.ActionWorkflowConfig
+	if err := s.db.WithContext(ctx).
+		Where("app_config_id = ? AND action_workflow_id = ? AND deleted_at = 0", s.appConfigID, actionWorkflow.ID).
+		First(&existing).Error; err == nil {
+		// Already exists from a previous attempt — use the existing record
+		awc = existing
+	} else {
+		res = s.db.WithContext(ctx).Create(&awc)
+		if res.Error != nil {
+			return sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to create action workflow config for %s", action.Name),
+				Err:         res.Error,
+			}
 		}
 	}
 
