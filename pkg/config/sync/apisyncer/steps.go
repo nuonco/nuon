@@ -26,10 +26,9 @@ func (s *syncer) syncPhases() ([][]syncStep, error) {
 			},
 		},
 		{
-			Resource: "app-branch",
+			Resource: "app-branches",
 			Method: func(ctx context.Context) error {
-				// TODO: Implement syncAppBranch method
-				return nil
+				return s.syncAppBranches(ctx, "app-branches")
 			},
 		},
 		{

@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/nuonco/nuon/sdks/nuon-go/models"
 	"github.com/pkg/errors"
+
+	"github.com/nuonco/nuon/sdks/nuon-go/models"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
@@ -39,6 +40,10 @@ type SyncOptions struct {
 	Force bool
 	// Create indicates the app should be created if it does not exist.
 	Create bool
+	// Branch optionally targets a specific app branch for this sync.
+	Branch string
+	// Preview creates a plan-only run (no apply). Only used with Branch.
+	Preview bool
 }
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
@@ -104,7 +109,17 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		}
 	}
 
-	syncer := apisyncer.New(s.api, appID, version, cfg)
+	var syncerOpts []apisyncer.SyncerOption
+	if opts.Branch != "" {
+		branchID, branchErr := s.resolveAppBranchID(ctx, appID, opts.Branch)
+		if branchErr != nil {
+			return ui.PrintError(branchErr)
+		}
+		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(branchID, opts.Preview))
+		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
+	}
+
+	syncer := apisyncer.New(s.api, appID, version, cfg, syncerOpts...)
 	err = syncer.Sync(ctx)
 	if err != nil {
 		return ui.PrintError(err)
@@ -248,6 +263,22 @@ func (s *Service) notifyOrphanedComponents(cmps map[string]string) {
 	}
 
 	ui.PrintLn(msg)
+}
+
+// resolveAppBranchID resolves a branch name or ID to a branch ID.
+func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID string) (string, error) {
+	branches, err := s.api.GetAppBranches(ctx, appID)
+	if err != nil {
+		return "", fmt.Errorf("unable to list app branches: %w", err)
+	}
+
+	for _, b := range branches {
+		if b.ID == branchNameOrID || b.Name == branchNameOrID {
+			return b.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("app branch %q not found", branchNameOrID)
 }
 
 func (s *Service) notifyOrphanedActions(actions map[string]string) {

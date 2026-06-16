@@ -2,8 +2,8 @@ import { api } from '@/lib/api'
 import type { TInstallWorkflow } from '@/types'
 
 export const getBranchWorkflowRun = ({
-  appId,
-  branchId,
+  appId: _appId,
+  branchId: _branchId,
   runId,
   orgId,
 }: {
@@ -13,6 +13,6 @@ export const getBranchWorkflowRun = ({
   orgId: string
 }) =>
   api<TInstallWorkflow>({
-    path: `apps/${appId}/branches/${branchId}/runs/${runId}`,
+    path: `workflows/${runId}`,
     orgId,
   })

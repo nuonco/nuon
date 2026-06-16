@@ -1,4 +1,4 @@
-package deploygrouptoqueue
+package installconfigdiff
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"

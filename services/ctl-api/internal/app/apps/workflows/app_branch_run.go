@@ -10,9 +10,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
-	deploygrouptoqueue "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/deploygrouptoqueue"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
-	sandboxbuild "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
 // AppBranchRun builds the workflow steps for an app branch run
@@ -63,9 +62,9 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 	}
 	steps = append(steps, step)
 
-	// Step 3: Build all components and sandbox builds in parallel
+	// Step 3: Build all components and sandbox
 	sg.nextGroup()
-	step, err = sg.appBranchSignalStep(ctx, appBranchID, "builds", pgtype.Hstore{}, &builds.Signal{
+	step, err = sg.appBranchSignalStep(ctx, appBranchID, "building components and sandbox", pgtype.Hstore{}, &builds.Signal{
 		AppBranchID: appBranchID,
 		RunID:       runID,
 	}, WithSkippable(false))
@@ -74,27 +73,34 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 	}
 	steps = append(steps, step)
 
-	// Step 3.5: Build sandbox (conditional — only if an AppSandboxConfig exists for this app)
-	step, err = sg.appBranchSignalStep(ctx, appBranchID, "build sandbox", pgtype.Hstore{}, &sandboxbuild.Signal{
-		AppBranchID: appBranchID,
-		RunID:       runID,
-	}, WithSkippable(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create sandbox build step")
-	}
-	steps = append(steps, step)
-
 	// Step 4: Deploy to install groups in order
 	// Fetch install groups for this config, ordered by the order field
-	installGroups, err := activities.AwaitGetInstallGroupsByConfigID(ctx, configID)
+	allInstallGroups, err := activities.AwaitGetInstallGroupsByConfigID(ctx, configID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch install groups")
+	}
+
+	// For plan-only (preview) runs, only include groups marked UseForPreviews.
+	// If none are marked, fall back to the first group.
+	installGroups := allInstallGroups
+	if flw.PlanOnly && len(allInstallGroups) > 0 {
+		var previewGroups []*app.AppBranchInstallGroup
+		for _, g := range allInstallGroups {
+			if g.UseForPreviews {
+				previewGroups = append(previewGroups, g)
+			}
+		}
+		if len(previewGroups) > 0 {
+			installGroups = previewGroups
+		} else {
+			installGroups = allInstallGroups[:1]
+		}
 	}
 
 	// Create sequential steps for each install group
 	for _, group := range installGroups {
 		sg.nextGroup()
-		step, err = sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &deploygrouptoqueue.Signal{
+		step, err = sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &updateinstallgroup.Signal{
 			InstallGroupID: group.ID,
 			AppBranchID:    appBranchID,
 			RunID:          runID,

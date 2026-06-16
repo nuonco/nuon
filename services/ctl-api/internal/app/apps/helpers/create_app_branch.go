@@ -24,16 +24,41 @@ func (h *Helpers) CreateAppBranch(
 		return nil, fmt.Errorf("unable to create app branch: %w", err)
 	}
 
-	// Create queue for app branch
+	ownerType := plugins.TableName(h.db, app.AppBranch{})
+
+	// Create default queue for app branch signals
 	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     branch.ID,
-		OwnerType:   plugins.TableName(h.db, app.AppBranch{}),
+		OwnerType:   ownerType,
 		Namespace:   "apps",
 		MaxInFlight: 2,
 		MaxDepth:    50,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create queue: %w", err)
+	}
+
+	// Create named queues for workflow execution pipeline
+	namedQueues := []struct {
+		name        string
+		maxInFlight int
+	}{
+		{"app-branch-signals", 5},
+		{"app-branch-workflow-step-groups", 2},
+		{"app-branch-workflow-steps", 5},
+		{"app-branch-generate-steps", 2},
+	}
+	for _, nq := range namedQueues {
+		if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+			OwnerID:     branch.ID,
+			OwnerType:   ownerType,
+			Namespace:   "apps",
+			Name:        nq.name,
+			MaxInFlight: nq.maxInFlight,
+			MaxDepth:    50,
+		}); err != nil {
+			return nil, fmt.Errorf("unable to create %s queue: %w", nq.name, err)
+		}
 	}
 
 	return &branch, nil

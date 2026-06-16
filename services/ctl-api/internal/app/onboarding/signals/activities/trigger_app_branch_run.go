@@ -59,6 +59,8 @@ func (a *Activities) triggerOnboardingAppBranchRun(ctx context.Context, appBranc
 			"config_id":     appBranchConfigID,
 			"config_number": strconv.Itoa(config.ConfigNumber),
 			"force":         "true",
+			"event_type":    "onboarding",
+			"commit_sha":    run.CommitSHA,
 		},
 		false,
 	)

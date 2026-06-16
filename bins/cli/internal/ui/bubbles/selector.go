@@ -574,6 +574,27 @@ func SelectInstall(installs []InstallOption, interactive bool) (string, error) {
 	return SelectFromItems("Select an installation", items, interactive)
 }
 
+func SelectBranch(branches []BranchOption, interactive bool) (string, error) {
+	if !interactive {
+		return "", fmt.Errorf("interactive terminal required for selection; use --branch-id flag to specify directly")
+	}
+	items := make([]SelectorItem, len(branches))
+	maxNameWidth := 0
+	for _, b := range branches {
+		if len(b.Name) > maxNameWidth {
+			maxNameWidth = len(b.Name)
+		}
+	}
+	for i, b := range branches {
+		items[i] = SelectorItem{
+			title:       fmt.Sprintf("%s%s", b.Name, strings.Repeat(" ", maxNameWidth-len(b.Name))),
+			description: styles.TextDim.Render(fmt.Sprintf("ID: %s", b.ID)),
+			value:       b.ID,
+		}
+	}
+	return SelectFromItems("Select a branch", items, interactive)
+}
+
 func SelectWorkflow(workflows []WorkflowOption, interactive bool) (string, error) {
 	if !interactive {
 		return "", fmt.Errorf("interactive terminal required for selection; use --workflow-id flag to specify directly")
@@ -614,6 +635,11 @@ type AppOption struct {
 }
 
 type InstallOption struct {
+	ID   string
+	Name string
+}
+
+type BranchOption struct {
 	ID   string
 	Name string
 }

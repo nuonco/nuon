@@ -20,6 +20,10 @@ func computeWorkflowName(w *Workflow) string {
 		}
 	}
 
+	if w.Type == WorkflowTypeAppBranchesRun {
+		return appBranchRunName(w) + suffix
+	}
+
 	var base string
 	if !w.FinishedAt.IsZero() {
 		base = w.Type.PastTenseName()
@@ -31,6 +35,37 @@ func computeWorkflowName(w *Workflow) string {
 	}
 
 	return base + suffix
+}
+
+func appBranchRunName(w *Workflow) string {
+	eventType := metaValue(w, "event_type")
+	commitSha := metaValue(w, "commit_sha")
+
+	var base string
+	switch eventType {
+	case "push":
+		base = "VCS push"
+	case "pull_request":
+		prNum := metaValue(w, "pr_number")
+		if prNum != "" {
+			base = "PR #" + prNum
+		} else {
+			base = "Pull request"
+		}
+	case "onboarding":
+		base = "Onboarding run"
+	default:
+		base = "Manual run"
+	}
+
+	if commitSha != "" {
+		if len(commitSha) > 7 {
+			commitSha = commitSha[:7]
+		}
+		base += " (" + commitSha + ")"
+	}
+
+	return base
 }
 
 // workflowNameSuffix builds the trailing "(...)" segments appended to the

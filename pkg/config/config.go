@@ -21,6 +21,8 @@ type AppConfig struct {
 
 	// Default App Branch config
 	Branch *AppBranchConfig `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
+	// App branch configs (from branches/ directory)
+	Branches []*AppBranchConfig `mapstructure:"branches,omitempty" toml:"branches,omitempty"`
 	// Input configuration
 	Inputs *AppInputConfig `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 	// Sandbox configuration

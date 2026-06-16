@@ -6,7 +6,9 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -102,6 +104,20 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"config_version", intermediateConfig.Version,
 		"num_components", len(intermediateConfig.Components))
 
+	// Override component branches when they're in the same repo as the branch config.
+	// This ensures components use the deploying branch, not their configured branch.
+	branchRepo := ""
+	branchName := ""
+	if cfg := branch.Configs[0].ConnectedGithubVCSConfig; cfg != nil {
+		branchRepo = cfg.Repo
+		branchName = cfg.Branch
+	}
+	if branchRepo != "" {
+		for _, comp := range intermediateConfig.Components {
+			overrideComponentBranch(comp, branchRepo, branchName)
+		}
+	}
+
 	configJSON, err := json.Marshal(intermediateConfig)
 	if err != nil {
 		closeLogStream()
@@ -162,6 +178,46 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	}); err != nil {
 		closeLogStream()
 		return fmt.Errorf("unable to update run with app config ID: %w", err)
+	}
+
+	// Update step metadata with config info for the UI
+	if s.StepID != "" {
+		meta := map[string]any{
+			"app_config_id":   syncResp.AppConfigID,
+			"component_count": len(syncResp.ComponentIDs),
+			"action_count":    len(syncResp.ActionIDs),
+		}
+
+		// Best-effort: compute structured config diff for the UI
+		var oldConfigID string
+		if run.PreviousRunID != nil && *run.PreviousRunID != "" {
+			prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+			if prevErr == nil && prevRun.AppConfigID != "" {
+				oldConfigID = prevRun.AppConfigID
+			}
+		}
+
+		configDiff, diffErr := activities.AwaitComputeAppConfigDiff(ctx, &activities.ComputeAppConfigDiffInput{
+			AppID:       branch.AppID,
+			NewConfigID: syncResp.AppConfigID,
+			OldConfigID: oldConfigID,
+		})
+		if diffErr == nil && configDiff != nil {
+			meta["config_file"] = configDiff.ConfigFile
+			meta["diff_additions"] = configDiff.Additions
+			meta["diff_removals"] = configDiff.Removals
+			meta["diff_changed"] = configDiff.Changed
+			meta["diff_sections"] = configDiff.Sections
+		}
+
+		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+			ID: s.StepID,
+			Status: app.CompositeStatus{
+				Status:                 app.StatusSuccess,
+				StatusHumanDescription: fmt.Sprintf("synced %d components, %d actions", len(syncResp.ComponentIDs), len(syncResp.ActionIDs)),
+				Metadata:               meta,
+			},
+		})
 	}
 
 	closeLogStream()

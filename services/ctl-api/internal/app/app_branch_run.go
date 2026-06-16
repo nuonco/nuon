@@ -41,6 +41,18 @@ type AppBranchRun struct {
 	// Force indicates if this run was forced (bypassing change detection)
 	Force bool `json:"force,omitzero" temporaljson:"force,omitzero,omitempty"`
 
+	// PlanOnly indicates this is a preview run (e.g., PR preview) that should
+	// only plan changes without applying them.
+	PlanOnly bool `json:"plan_only,omitzero" temporaljson:"plan_only,omitzero,omitempty"`
+
+	// EventType indicates what triggered this run (push, pull_request, manual).
+	EventType string `json:"event_type,omitempty" temporaljson:"event_type,omitzero,omitempty"`
+
+	// PR metadata — populated when EventType is "pull_request"
+	PRNumber   *int   `json:"pr_number,omitempty" temporaljson:"pr_number,omitzero,omitempty"`
+	HeadSHA    string `json:"head_sha,omitempty" temporaljson:"head_sha,omitzero,omitempty"`
+	BaseBranch string `json:"base_branch,omitempty" temporaljson:"base_branch,omitzero,omitempty"`
+
 	// StartedAt tracks when execution actually began
 	StartedAt *time.Time `json:"started_at,omitempty" temporaljson:"started_at,omitzero,omitempty"`
 
@@ -60,6 +72,11 @@ type AppBranchRun struct {
 	// CommitSHA is the VCS commit that triggered or is associated with this run
 	// DEPRECATED: Use VCSConnectionCommit relationship instead
 	CommitSHA string `json:"commit_sha,omitzero" temporaljson:"commit_sha,omitzero,omitempty"`
+
+	// PreviousRunID links to the previous successful run on the same branch,
+	// used for build diffing to determine which components need rebuilding.
+	PreviousRunID *string       `json:"previous_run_id,omitempty" temporaljson:"previous_run_id,omitzero,omitempty"`
+	PreviousRun   *AppBranchRun `json:"previous_run,omitempty" gorm:"foreignKey:PreviousRunID" temporaljson:"previous_run,omitzero,omitempty"`
 
 	// VCSConnectionCommit is the full commit record associated with this run
 	VCSConnectionCommitID *string              `json:"vcs_connection_commit_id,omitempty" swaggerignore:"true" temporaljson:"vcs_connection_commit_id,omitzero,omitempty"`

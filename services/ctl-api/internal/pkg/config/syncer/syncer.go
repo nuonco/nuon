@@ -210,6 +210,19 @@ func (s *syncer) syncSteps() []syncStep {
 		})
 	}
 
+	// Resolve component dependencies (after all components exist)
+	for _, comp := range s.cfg.Components {
+		c := comp // Capture loop variable
+		if len(c.Dependencies) > 0 {
+			steps = append(steps, syncStep{
+				Resource: fmt.Sprintf("component-deps-%s", c.Name),
+				Method: func(ctx context.Context) error {
+					return components.EnsureComponentDependencies(ctx, s.db, s.componentHelpers, c, s.appID)
+				},
+			})
+		}
+	}
+
 	// Sync component configurations
 	for _, comp := range s.cfg.Components {
 		c := comp // Capture loop variable

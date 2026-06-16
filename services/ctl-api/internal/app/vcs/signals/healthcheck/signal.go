@@ -37,7 +37,7 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		VCSConnectionID: s.VCSConnectionID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "vcs connection not found")
+		return err
 	}
 
 	return nil
