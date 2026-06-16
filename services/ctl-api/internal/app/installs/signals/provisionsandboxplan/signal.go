@@ -360,7 +360,17 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, job.JobErrorMessage(err, "provision plan job failed"))
+		msg := job.JobErrorMessage(err, "provision plan job failed")
+		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, msg)
+		if s.runnerJobID != "" {
+			if rerr := activities.AwaitRecordSandboxRunCompositeError(ctx, activities.RecordSandboxRunCompositeErrorRequest{
+				SandboxRunID:    installRun.ID,
+				RunnerJobID:     s.runnerJobID,
+				FallbackMessage: msg,
+			}); rerr != nil {
+				l.Warn("unable to record sandbox run composite error", zap.Error(rerr))
+			}
+		}
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 	if status != app.RunnerJobStatusFinished {
