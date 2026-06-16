@@ -138,6 +138,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	req := models.ServiceCreateInstallRequest{
 		Name:   &installCfg.Name,
 		Inputs: installCfg.FlattenedInputs(),
+		Labels: installCfg.Labels,
 		Metadata: &models.HelpersInstallMetadata{
 			ManagedBy: ManagedByNuonCLIConfig,
 		},
@@ -376,8 +377,40 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
+	if err := s.syncLabels(ctx, appInstall.ID, installCfg.Labels, upstreamConfig.Labels); err != nil {
+		return nil, fmt.Errorf("error syncing labels for install %s: %w", appInstall.Name, err)
+	}
+
 	ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	return appInstall, nil
+}
+
+func (s *appInstallSyncer) syncLabels(ctx context.Context, installID string, desired, current map[string]string) error {
+	toSet := make(map[string]string)
+	for k, v := range desired {
+		if cur, ok := current[k]; !ok || cur != v {
+			toSet[k] = v
+		}
+	}
+
+	var toRemove []string
+	for k := range current {
+		if _, ok := desired[k]; !ok {
+			toRemove = append(toRemove, k)
+		}
+	}
+
+	if len(toSet) > 0 {
+		if _, err := s.api.AddInstallLabels(ctx, installID, toSet); err != nil {
+			return fmt.Errorf("unable to set labels: %w", err)
+		}
+	}
+	if len(toRemove) > 0 {
+		if _, err := s.api.RemoveInstallLabels(ctx, installID, toRemove); err != nil {
+			return fmt.Errorf("unable to remove labels: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) error {
