@@ -3142,10 +3142,6 @@ export interface components {
       created_by_id?: string;
       id?: string;
       install_ids?: string[];
-      /**
-       * @description LabelSelector dynamically resolves installs at deploy time by matching labels.
-       * Mutually exclusive with InstallIDs — set one or the other, not both.
-       */
       label_selector?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Selector"];
       name?: string;
       order?: number;
@@ -4126,6 +4122,12 @@ export interface components {
       component_config_version?: number;
       component_id?: string;
       component_name?: string;
+      /**
+       * @description CompositeError holds a typed, structured error (e.g. a missing AWS IAM
+       * permission) frozen at write time when a deploy plan/apply fails. It is
+       * nil for successful or non-enriched failures.
+       */
+      composite_error?: components["schemas"]["compositeerrors.CompositeErrorData"];
       created_at?: string;
       created_by?: components["schemas"]["app.Account"];
       created_by_id?: string;
@@ -5765,6 +5767,19 @@ export interface components {
       is_private?: boolean;
       name?: string;
     };
+    "compositeerrors.CompositeErrorData": {
+      data?: number[];
+      message?: string;
+      sections?: components["schemas"]["compositeerrors.Section"][];
+      severity?: components["schemas"]["compositeerrors.Severity"];
+      type?: string;
+    };
+    "compositeerrors.Section": {
+      body?: string;
+      heading?: string;
+    };
+    /** @enum {string} */
+    "compositeerrors.Severity": "fatal" | "error" | "warning" | "info";
     /** @enum {string} */
     "config.AppPolicyEngine": "kyverno" | "opa";
     /** @enum {string} */

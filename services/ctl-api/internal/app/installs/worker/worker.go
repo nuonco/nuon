@@ -57,7 +57,6 @@ func New(params WorkerParams) (*Worker, error) {
 	}
 
 	worker.SetStickyWorkflowCacheSize(params.Cfg.TemporalStickyWorkflowCacheSize)
-	fmt.Println("JM-TEST", params.Cfg.TemporalDeadlockDetectionTimeout)
 	wkr := worker.New(client, pkgworkflows.APITaskQueue, worker.Options{
 		MaxConcurrentActivityExecutionSize:     params.Cfg.TemporalMaxConcurrentActivities,
 		MaxConcurrentWorkflowTaskExecutionSize: params.Cfg.TemporalMaxConcurrentWorkflowTaskExecutionSize,

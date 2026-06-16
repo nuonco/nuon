@@ -221,6 +221,7 @@ export type TCompositeError =
 // deploys
 export type TInstallDeploy = components['schemas']['app.InstallDeploy'] & {
   org_id: string
+  composite_error?: TCompositeError
 }
 export type TDeploy = TInstallDeploy
 export type TInstallDeployPlanIntermediateData = {
