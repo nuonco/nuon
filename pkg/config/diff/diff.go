@@ -36,23 +36,17 @@ func (d *Diff) String(indent string) string {
 	}
 
 	if d.Diff != nil {
-		// Suppress unchanged empty values — these are noise
 		if d.Diff.Op == OpNoop && d.Diff.Diff == "'' (unchanged)" {
 			return ""
 		}
-		prefix := opPrefix(d.Diff.Op)
-		return fmt.Sprintf("%s%s%s: %s\n", prefix, indent, d.Key, d.Diff.Diff)
+		return fmt.Sprintf(indent+"%s: %s\n", d.Key, d.Diff.Diff)
 	}
 
-	// Section node — only render if it has visible children
-	var childOutput string
+	diff := indent + d.Key + ":\n"
 	for _, child := range d.Children {
-		childOutput += child.String(indent + "  ")
+		diff = diff + child.String(indent+"\t")
 	}
-	if childOutput == "" {
-		return ""
-	}
-	return fmt.Sprintf("%s%s:\n%s", indent, d.Key, childOutput)
+	return diff
 }
 
 // FormatChanged returns only the parts of the diff tree that have changes
@@ -72,7 +66,7 @@ func (d *Diff) FormatChanged(indent string) string {
 
 	var childOutput string
 	for _, child := range d.Children {
-		childOutput += child.FormatChanged(indent + "  ")
+		childOutput += child.FormatChanged(indent + "\t")
 	}
 	if childOutput == "" {
 		return ""

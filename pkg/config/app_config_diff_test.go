@@ -874,13 +874,12 @@ func (s *AppConfigDiffSuite) TestDiffStringOutput() {
 	s.Contains(output, "app_config:")
 	s.Contains(output, "version:")
 	s.Contains(output, "'1' -> '2'")
-	// Verify prefix markers
-	s.Contains(output, "~ ")
 
-	// FormatChanged omits unchanged sections
+	// FormatChanged omits unchanged sections and adds prefix markers
 	changed := d.FormatChanged("")
 	s.Contains(changed, "version:")
 	s.Contains(changed, "'1' -> '2'")
+	s.Contains(changed, "~ ")
 	s.NotContains(changed, "(unchanged)")
 }
 
