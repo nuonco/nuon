@@ -418,7 +418,7 @@ const CommitStepContent = ({ metadata }: { metadata: Record<string, any> }) => {
               {changedFiles.map((file: any, i: number) => (
                 <div key={file?.path || i} className="flex items-center justify-between px-4 py-2.5">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Icon variant="FileIcon" size={14} className="text-cool-grey-400 dark:text-cool-grey-500 shrink-0" />
+                    <Icon variant="FileTextIcon" size={14} className="text-cool-grey-400 dark:text-cool-grey-500 shrink-0" />
                     <span className="font-mono text-[12.5px] text-cool-grey-700 dark:text-cool-grey-200 truncate">{file?.path}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 ml-3">
@@ -513,13 +513,13 @@ function collectDiffEntries(node: TDiffNode, parentKey: string, section: DiffSec
 }
 
 function computeSummary(sections: DiffSectionData[]) {
-  let additions = 0, removals = 0, changed = 0
+  let added = 0, removed = 0, changed = 0
   for (const s of sections) {
-    additions += s.additions
-    removals += s.removals
+    added += s.additions
+    removed += s.removals
     changed += s.changed
   }
-  return { additions, removals, changed }
+  return { added, removed, changed }
 }
 
 const ConfigStepContent = ({ metadata, status }: { metadata: Record<string, any>; status?: string }) => {
@@ -575,14 +575,14 @@ const ConfigStepContent = ({ metadata, status }: { metadata: Record<string, any>
           </span>
           {summary && (
             <>
-              {(summary.added ?? summary.additions ?? 0) > 0 && (
+              {(summary.added ?? 0) > 0 && (
                 <span className="text-[13px] text-green-600 dark:text-green-400">
-                  <span className="font-semibold">{summary.added ?? summary.additions}</span> additions
+                  <span className="font-semibold">{summary.added}</span> additions
                 </span>
               )}
-              {(summary.removed ?? summary.removals ?? 0) > 0 && (
+              {(summary.removed ?? 0) > 0 && (
                 <span className="text-[13px] text-red-600 dark:text-red-400">
-                  <span className="font-semibold">{summary.removed ?? summary.removals}</span> removals
+                  <span className="font-semibold">{summary.removed}</span> removals
                 </span>
               )}
               {(summary.changed ?? 0) > 0 && (

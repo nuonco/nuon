@@ -10,7 +10,7 @@ import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
 import { AddInstallPicker } from './AddInstallPicker'
-import type { IInstallGroup } from './types'
+import type { IInstallGroup, ILabelSelector } from './types'
 
 interface IGroupEditor {
   group: IInstallGroup
@@ -226,10 +226,10 @@ const LabelSelectorEditor = ({
   onUpdate,
 }: {
   groupId: string
-  labelSelector?: { match_labels: Record<string, string> } | null
+  labelSelector?: ILabelSelector | null
   availableInstalls: TInstall[]
   disabled?: boolean
-  onUpdate: (ls: { match_labels: Record<string, string> }) => void
+  onUpdate: (ls: ILabelSelector) => void
 }) => {
   const [newKey, setNewKey] = useState('')
   const [newValue, setNewValue] = useState('')

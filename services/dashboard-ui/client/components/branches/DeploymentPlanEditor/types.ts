@@ -1,5 +1,6 @@
 export interface ILabelSelector {
-  match_labels: Record<string, string>
+  match_labels?: Record<string, string>
+  not_match_labels?: Record<string, string>
 }
 
 export type InstallSelectionMode = 'manual' | 'labels'

@@ -3147,6 +3147,7 @@ export interface components {
       order?: number;
       org_id?: string;
       updated_at?: string;
+      max_parallel?: number;
       /** @description UseForPreviews marks this group for plan-only preview runs (e.g., PR previews). */
       use_for_previews?: boolean;
     };
