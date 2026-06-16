@@ -28,10 +28,6 @@ type ServiceInstallGroupRequest struct {
 		GithubComNuoncoNuonPkgLabelsSelector
 	} `json:"label_selector,omitempty"`
 
-	// max parallel
-	// Minimum: 1
-	MaxParallel int64 `json:"max_parallel,omitempty"`
-
 	// name
 	// Required: true
 	// Min Length: 1
@@ -53,10 +49,6 @@ func (m *ServiceInstallGroupRequest) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateMaxParallel(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateName(formats); err != nil {
 		res = append(res, err)
 	}
@@ -74,18 +66,6 @@ func (m *ServiceInstallGroupRequest) Validate(formats strfmt.Registry) error {
 func (m *ServiceInstallGroupRequest) validateLabelSelector(formats strfmt.Registry) error {
 	if swag.IsZero(m.LabelSelector) { // not required
 		return nil
-	}
-
-	return nil
-}
-
-func (m *ServiceInstallGroupRequest) validateMaxParallel(formats strfmt.Registry) error {
-	if swag.IsZero(m.MaxParallel) { // not required
-		return nil
-	}
-
-	if err := validate.MinimumInt("max_parallel", "body", m.MaxParallel, 1, false); err != nil {
-		return err
 	}
 
 	return nil

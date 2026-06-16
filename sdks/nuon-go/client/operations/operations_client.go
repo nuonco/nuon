@@ -290,6 +290,8 @@ type ClientService interface {
 
 	CreateVCSConnectionCallback(params *CreateVCSConnectionCallbackParams, opts ...ClientOption) (*CreateVCSConnectionCallbackCreated, error)
 
+	CreateVCSConnectionWebhookSubscription(params *CreateVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionWebhookSubscriptionCreated, error)
+
 	CreateWaitlist(params *CreateWaitlistParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWaitlistOK, error)
 
 	CreateWorkflowStepApprovalResponse(params *CreateWorkflowStepApprovalResponseParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateWorkflowStepApprovalResponseCreated, error)
@@ -568,6 +570,10 @@ type ClientService interface {
 
 	GetInstallEvents(params *GetInstallEventsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallEventsOK, error)
 
+	GetInstallGroupRun(params *GetInstallGroupRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallGroupRunOK, error)
+
+	GetInstallGroupRuns(params *GetInstallGroupRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallGroupRunsOK, error)
+
 	GetInstallInputs(params *GetInstallInputsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallInputsOK, error)
 
 	GetInstallLabelKeys(params *GetInstallLabelKeysParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallLabelKeysOK, error)
@@ -749,6 +755,8 @@ type ClientService interface {
 	GetVCSConnection(params *GetVCSConnectionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionOK, error)
 
 	GetVCSConnectionRepoBranches(params *GetVCSConnectionRepoBranchesParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionRepoBranchesOK, error)
+
+	GetVCSConnectionWebhookSubscription(params *GetVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionWebhookSubscriptionOK, error)
 
 	GetWorkflow(params *GetWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetWorkflowOK, error)
 
@@ -4957,6 +4965,52 @@ func (a *Client) CreateVCSConnectionCallback(params *CreateVCSConnectionCallback
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateVCSConnectionCallback: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateVCSConnectionWebhookSubscription creates a webhook subscription for a vcs connection
+
+Creates a webhook subscription for a VCS connection. This enqueues a signal that will register a GitHub webhook for receiving push and pull request events.
+*/
+func (a *Client) CreateVCSConnectionWebhookSubscription(params *CreateVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateVCSConnectionWebhookSubscriptionCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateVCSConnectionWebhookSubscriptionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateVCSConnectionWebhookSubscription",
+		Method:             "POST",
+		PathPattern:        "/v1/vcs/connections/{connection_id}/webhook-subscription",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateVCSConnectionWebhookSubscriptionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateVCSConnectionWebhookSubscriptionCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateVCSConnectionWebhookSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -11452,6 +11506,98 @@ func (a *Client) GetInstallEvents(params *GetInstallEventsParams, authInfo runti
 }
 
 /*
+GetInstallGroupRun gets a specific install group run
+
+Returns a single install group run with full details
+*/
+func (a *Client) GetInstallGroupRun(params *GetInstallGroupRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallGroupRunOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallGroupRunParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallGroupRun",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-group-runs/{install_group_run_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallGroupRunReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallGroupRunOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallGroupRun: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallGroupRuns lists install group runs for an app branch run
+
+Returns all install group runs for a specific app branch run
+*/
+func (a *Client) GetInstallGroupRuns(params *GetInstallGroupRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallGroupRunsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallGroupRunsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallGroupRuns",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-group-runs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallGroupRunsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallGroupRunsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallGroupRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetInstallInputs gets an installs inputs
 
 Returns input values for an install.
@@ -15610,6 +15756,52 @@ func (a *Client) GetVCSConnectionRepoBranches(params *GetVCSConnectionRepoBranch
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetVCSConnectionRepoBranches: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetVCSConnectionWebhookSubscription returns the webhook subscription for a vcs connection
+
+Returns the webhook subscription associated with a VCS connection.
+*/
+func (a *Client) GetVCSConnectionWebhookSubscription(params *GetVCSConnectionWebhookSubscriptionParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetVCSConnectionWebhookSubscriptionOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetVCSConnectionWebhookSubscriptionParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetVCSConnectionWebhookSubscription",
+		Method:             "GET",
+		PathPattern:        "/v1/vcs/connections/{connection_id}/webhook-subscription",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetVCSConnectionWebhookSubscriptionReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetVCSConnectionWebhookSubscriptionOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetVCSConnectionWebhookSubscription: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
