@@ -468,5 +468,23 @@ func NewConfig() (*Config, error) {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
 	}
 
+	switch {
+	case cfg.IsGCP():
+		if cfg.ManagementGARRepositoryURL == "" {
+			return nil, fmt.Errorf("management_gar_repository_url is required when cloud_provider=gcp")
+		}
+	case cfg.IsAzure():
+		if cfg.ManagementACRRegistryURL == "" {
+			return nil, fmt.Errorf("management_acr_registry_url is required when cloud_provider=azure")
+		}
+	default:
+		if cfg.ManagementIAMRoleARN == "" {
+			return nil, fmt.Errorf("management_iam_role_arn is required when cloud_provider=aws")
+		}
+		if cfg.ManagementECRRegistryID == "" {
+			return nil, fmt.Errorf("management_ecr_registry_id is required when cloud_provider=aws")
+		}
+	}
+
 	return &cfg, nil
 }

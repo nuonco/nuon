@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
@@ -18,9 +19,18 @@ const SignalType signal.SignalType = "app-provision"
 
 type Signal struct {
 	AppID string `json:"app_id"`
+
+	cfg *internal.Config
 }
 
-var _ signal.Signal = (*Signal)(nil)
+var (
+	_ signal.Signal           = (*Signal)(nil)
+	_ signal.SignalWithParams = (*Signal)(nil)
+)
+
+func (s *Signal) WithParams(params *signal.Params) {
+	s.cfg = params.Cfg
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -100,9 +110,31 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		StatusDescription: "provisioning app resources",
 	})
 
-	// Provision ECR repository (only for default org type)
 	var repoResp *ecrrepository.ProvisionECRRepositoryResponse
-	if currentApp.Org.OrgType == app.OrgTypeDefault {
+	switch {
+	case currentApp.Org.OrgType != app.OrgTypeDefault:
+		repoResp = generics.GetFakeObj[*ecrrepository.ProvisionECRRepositoryResponse]()
+		l.Info("skipping provision app repository",
+			zap.String("app_id", currentApp.ID),
+			zap.String("app_name", currentApp.Name),
+			zap.Any("org_type", currentApp.Org.OrgType),
+			zap.String("org_id", currentApp.Org.ID),
+			zap.String("org_name", currentApp.Org.Name))
+	case s.cfg.IsGCP():
+		repoResp = ecrrepository.BuildGARResponse(
+			s.cfg.ManagementGARRepositoryURL,
+			currentApp.OrgID,
+			s.AppID,
+			s.cfg.AppRegion,
+		)
+	case s.cfg.IsAzure():
+		repoResp = ecrrepository.BuildACRResponse(
+			s.cfg.ManagementACRRegistryURL,
+			currentApp.OrgID,
+			s.AppID,
+			s.cfg.AppRegion,
+		)
+	default:
 		repoResp, err = ecrrepository.AwaitProvisionECRRepository(ctx, &ecrrepository.ProvisionECRRepositoryRequest{
 			OrgID: currentApp.OrgID,
 			AppID: s.AppID,
@@ -110,15 +142,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "unable to provision ECR repository")
 		}
-	} else {
-		// For non-default orgs, use fake response
-		repoResp = generics.GetFakeObj[*ecrrepository.ProvisionECRRepositoryResponse]()
-		l.Info("skipping provision ecr",
-			zap.String("app_id", currentApp.ID),
-			zap.String("app_name", currentApp.Name),
-			zap.Any("org_type", currentApp.Org.OrgType),
-			zap.String("org_id", currentApp.Org.ID),
-			zap.String("org_name", currentApp.Org.Name))
 	}
 
 	// Create app repository record
