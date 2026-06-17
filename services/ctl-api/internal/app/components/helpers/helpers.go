@@ -35,3 +35,7 @@ func New(params Params) *Helpers {
 		queueClient: params.QueueClient,
 	}
 }
+
+func (h *Helpers) QueueClient() *queueclient.Client {
+	return h.queueClient
+}

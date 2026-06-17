@@ -11,7 +11,9 @@ import (
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
+	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
 // EnsureComponent creates a component if it doesn't exist, using the shared helpers
@@ -29,7 +31,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 		}
 	}
 
-	_, err = helpers.CreateComponent(ctx, &componenthelpers.CreateComponentParams{
+	newComp, err := helpers.CreateComponent(ctx, &componenthelpers.CreateComponentParams{
 		AppID:            appID,
 		Name:             comp.Name,
 		VarName:          comp.VarName,
@@ -40,6 +42,28 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 	if err != nil {
 		return sync.SyncInternalErr{
 			Description: fmt.Sprintf("unable to create component %s", comp.Name),
+			Err:         err,
+		}
+	}
+
+	q, err := helpers.QueueClient().GetQueueByOwner(ctx, newComp.ID, "components")
+	if err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to get queue for component %s", comp.Name),
+			Err:         err,
+		}
+	}
+
+	if _, err := helpers.QueueClient().EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
+		QueueID:   q.ID,
+		OwnerID:   newComp.ID,
+		OwnerType: "components",
+		Signal: &createdsignal.Signal{
+			ComponentID: newComp.ID,
+		},
+	}); err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to enqueue created signal for component %s", comp.Name),
 			Err:         err,
 		}
 	}
