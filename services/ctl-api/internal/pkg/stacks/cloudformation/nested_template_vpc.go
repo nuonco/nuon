@@ -39,16 +39,6 @@ func (tpl *Templates) getClusterName(inp *stacks.TemplateInput) string {
 	return inp.Install.ID
 }
 
-func (tpl *Templates) getNamespaces(inp *stacks.TemplateInput) string {
-	if inp.Install.CurrentInstallInputs != nil {
-		if val, ok := inp.Install.CurrentInstallInputs.Values["namespaces"]; ok && val != nil {
-			return *val
-		}
-	}
-
-	return ""
-}
-
 // VPCNestedStack returns a nested stack template for VPC resources
 func (tpl *Templates) getVPCNestedStack(inp *stacks.TemplateInput, t tagBuilder) (*nestedcloudformation.Stack, map[string]cloudformation.Parameter, error) {
 	parameters, defaultParameters, reservedInTemplate, _, err := tpl.extractNestedStackParameters(inp.AppCfg.StackConfig.VPCNestedTemplateURL)
