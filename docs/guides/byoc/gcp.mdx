@@ -58,7 +58,7 @@ flowchart TD
 ```
 
 Cloud SQL backs both the Nuon control-plane database and Temporal's database; the two run as separate Cloud SQL
-instances and are sized independently through the inputs.
+instances and are sized independently through inputs.
 
 ## DNS Configuration
 
@@ -81,7 +81,7 @@ Cloud SQL instances, or GKE clusters.
 The following APIs are required by the `install-stack` and BYOC Nuon. These will be enabled by the `install-stack`
 terraform module.
 
-- Secrets Manager API
+- Secret Manager API
 - Compute Engine API
 - IAM Service Account Credentials API
 - Cloud Resource Manager API
@@ -103,7 +103,7 @@ bring your own at any time.
 BYOC Nuon on GCP is provisioned with terraform using the the
 [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module. Nuon will share an `install.tfvars` file
 with the values specific to your install which you will augment with configuration and input values you control. Once
-the vars file is populated and the module is in your CI pipeline, you will apply the install stack the
+the vars file is populated and the module is in your CI pipeline, you will apply the
 [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module to provision the following resources for BYOC
 Nuon:
 
