@@ -45,8 +45,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Enqueue the shared execute-workflow signal to the branch's queue
 	cb := callback.New(ctx, run.ID)
 	enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   branch.ID,
-		OwnerType: "app_branches",
+		OwnerID:         branch.ID,
+		OwnerType:       "app_branches",
+		SignalOwnerID:   *run.WorkflowID,
+		SignalOwnerType: "install_workflows",
 		Signal: &executeflow.Signal{
 			WorkflowID: *run.WorkflowID,
 		},

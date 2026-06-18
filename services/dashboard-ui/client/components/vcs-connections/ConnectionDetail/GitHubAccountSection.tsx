@@ -29,7 +29,19 @@ export const GitHubAccountSection = ({
         </LabeledValue>
 
         <LabeledValue label="Install ID">
-          <ID theme="default">{vcs_connection?.github_install_id || '—'}</ID>
+          {vcs_connection?.github_install_id ? (
+            <a
+              href={`https://github.com/organizations/${vcs_connection.github_account_name}/settings/installations/${vcs_connection.github_install_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 hover:underline"
+            >
+              <ID theme="default">{vcs_connection.github_install_id}</ID>
+              <Icon variant="ArrowSquareOutIcon" size={12} className="text-cool-grey-400" />
+            </a>
+          ) : (
+            <ID theme="default">—</ID>
+          )}
         </LabeledValue>
       </div>
     </div>

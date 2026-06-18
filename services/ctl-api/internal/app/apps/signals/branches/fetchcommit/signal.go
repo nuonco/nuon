@@ -14,9 +14,19 @@ const SignalType signal.SignalType = "app-branch-fetch-commit"
 type Signal struct {
 	RunID       string `json:"run_id" validate:"required"`
 	AppBranchID string `json:"app_branch_id" validate:"required"`
+
+	// FlowID and StepID are injected by the flow engine via SignalWithStepContext.
+	FlowID string `json:"flow_id,omitempty"`
+	StepID string `json:"step_id,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithStepContext = (*Signal)(nil)
+
+func (s *Signal) SetStepContext(stepID, flowID string) {
+	s.StepID = stepID
+	s.FlowID = flowID
+}
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType

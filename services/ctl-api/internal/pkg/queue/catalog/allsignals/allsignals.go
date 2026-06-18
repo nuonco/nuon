@@ -7,10 +7,11 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/created"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/deploygrouptoqueue"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/customstacks"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/deprovision"
@@ -59,6 +60,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionrunner"
@@ -130,6 +132,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updateversion"
 
 	// vcs signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/github_event"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 

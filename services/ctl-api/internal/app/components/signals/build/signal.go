@@ -11,6 +11,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
 	orgprovision "github.com/nuonco/nuon/services/ctl-api/internal/app/orgs/signals/provision"
@@ -22,6 +23,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
+	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -29,9 +31,14 @@ type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
 	BuildID     string `json:"build_id" validate:"required"`
 	SandboxMode bool   `json:"sandbox_mode"`
+
+	runnerJobID string
 }
 
-var _ signal.Signal = (*Signal)(nil)
+var (
+	_ signal.Signal           = (*Signal)(nil)
+	_ signal.SignalWithCancel = (*Signal)(nil)
+)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
@@ -82,6 +89,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "org provision not ready")
 		return fmt.Errorf("org provision not ready: %w", err)
 	}
+	if comp.Status != app.ComponentStatusActive {
+		createdSignal := &createdsignal.Signal{ComponentID: s.ComponentID}
+		if err := createdSignal.Execute(ctx); err != nil {
+			s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "unable to activate component")
+			return fmt.Errorf("unable to activate component: %w", err)
+		}
+	}
 
 	build, err := activities.AwaitGetComponentBuildByID(ctx, s.BuildID)
 	if err != nil {
@@ -96,11 +110,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			"created_by":     build.CreatedBy.Email,
 		})
 		return err
-	}
-
-	if comp.Status != app.ComponentStatusActive {
-		s.updateBuildStatus(ctx, s.BuildID, app.ComponentBuildStatusError, "component is not active")
-		return notify(fmt.Errorf("component is not active"))
 	}
 
 	if err := s.execBuild(ctx, s.ComponentID, s.BuildID, currentApp, s.SandboxMode); err != nil {
@@ -142,6 +151,7 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
 	}
+	s.runnerJobID = runnerJob.ID
 
 	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
@@ -235,6 +245,16 @@ func (s *Signal) updateBuildStatus(ctx workflow.Context, bldID string, status ap
 			zap.Error(err))
 		return
 	}
+}
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	cancelCtx, cancel := workflow.NewDisconnectedContext(ctx)
+	defer cancel()
+	s.updateBuildStatus(cancelCtx, s.BuildID, app.ComponentBuildStatus(app.StatusCancelled), "build cancelled")
+	if s.runnerJobID != "" {
+		jobactivities.AwaitPkgWorkflowsJobCancelJobByID(cancelCtx, s.runnerJobID)
+	}
+	return nil
 }
 
 func (s *Signal) sendNotification(ctx workflow.Context, typ notifications.Type, appID string, vars map[string]string) {

@@ -14,7 +14,6 @@ import (
 )
 
 func TestGetRoleForAction(t *testing.T) {
-	p := &Planner{}
 	l := zap.NewNop()
 
 	tests := []struct {
@@ -424,12 +423,13 @@ func TestGetRoleForAction(t *testing.T) {
 				Name: "test-install",
 			}
 
-			roleSelection, operation, err := p.getRoleForAction(
+			roleSelection, operation, err := operationroles.GetRoleForAction(
 				l,
 				appConfig,
 				run,
 				stack,
 				installState,
+				nil,
 			)
 
 			require.NoError(t, err, "getRoleForAction should not return error for test: %s", tt.description)

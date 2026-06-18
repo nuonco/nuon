@@ -91,6 +91,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 				builds.POST("", s.CreateAppComponentBuild)
 				builds.GET("/latest", s.GetAppComponentLatestBuild)
 				builds.GET("/:build_id", s.GetAppComponentBuild)
+				builds.POST("/:build_id/cancel", s.CancelAppComponentBuild)
 				builds.GET("", s.GetAppComponentBuilds)
 			}
 

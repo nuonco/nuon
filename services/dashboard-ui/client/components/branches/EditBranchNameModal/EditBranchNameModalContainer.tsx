@@ -112,8 +112,6 @@ export const EditBranchNameModalContainer = ({
           install_ids: g.install_ids || [],
           order: g.order ?? idx,
           max_parallel: g.max_parallel || 1,
-          requires_approval: g.requires_approval || false,
-          rollback_on_failure: g.rollback_on_failure || false,
         }))
       }
 

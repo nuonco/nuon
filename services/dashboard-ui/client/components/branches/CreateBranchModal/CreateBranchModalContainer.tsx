@@ -12,7 +12,7 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
-import { createAppBranch } from '@/lib'
+import { createAppBranch, createBranchConfig } from '@/lib'
 import type { TAPIError, TCreateAppBranchRequest } from '@/types'
 import { CreateBranchModal } from './CreateBranchModal'
 
@@ -55,7 +55,33 @@ export const CreateBranchModalContainer = ({
         }
       }
     ) => {
-      return createAppBranch({ appId: app.id, body, orgId: org.id })
+      const branch = await createAppBranch({ appId: app.id, body: { name: body.name }, orgId: org.id })
+
+      // Create the branch config with VCS settings if provided
+      if (body.connected_github_vcs_config) {
+        await createBranchConfig({
+          appId: app.id,
+          branchId: branch.id,
+          orgId: org.id,
+          request: {
+            connected_github_vcs_config: {
+              vcs_connection_id: body.vcs_connection_id || '',
+              ...body.connected_github_vcs_config,
+            },
+          },
+        })
+      } else if (body.public_git_vcs_config) {
+        await createBranchConfig({
+          appId: app.id,
+          branchId: branch.id,
+          orgId: org.id,
+          request: {
+            public_git_vcs_config: body.public_git_vcs_config,
+          },
+        })
+      }
+
+      return branch
     },
     onSuccess: (data) => {
       addToast(

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
 import { DeployHeader } from '@/components/deploys/DeployHeader'
+import { CompositeError } from '@/components/common/CompositeError'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -86,6 +87,10 @@ const DeployDetailContent = ({ componentId }: { componentId: string }) => {
       />
 
       <DeployHeader component={component} workflow={workflow} stepId={step?.id} />
+
+      {deploy?.composite_error ? (
+        <CompositeError error={deploy.composite_error} />
+      ) : null}
 
       {pendingApproval && !isAutoApprove ? (
         <div className="flex flex-col gap-4">

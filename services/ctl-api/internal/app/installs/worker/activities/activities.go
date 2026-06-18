@@ -16,6 +16,7 @@ import (
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/cloudformation"
 )
@@ -35,6 +36,7 @@ type Params struct {
 	AuthzClient       *authz.Client
 	Cfg               *internal.Config
 	CFTemplates       *cloudformation.Templates
+	BlobService       blobstore.Service
 	Features          *features.Features
 	L                 *zap.Logger
 	AccountsHelpers   *account.Client
@@ -46,6 +48,7 @@ type Activities struct {
 	db                *gorm.DB
 	cfg               *internal.Config
 	cfTemplates       *cloudformation.Templates
+	blobSvc           blobstore.Service
 	appsHelpers       *appshelpers.Helpers
 	componentsHelpers *componentshelpers.Helpers
 	runnersHelpers    *runnershelpers.Helpers
@@ -66,6 +69,7 @@ func New(params Params) *Activities {
 		v:                 params.V,
 		cfg:               params.Cfg,
 		cfTemplates:       params.CFTemplates,
+		blobSvc:           params.BlobService,
 		appsHelpers:       params.AppsHelpers,
 		runnersHelpers:    params.RunnersHelpers,
 		actionHelpers:     params.ActionHelpers,

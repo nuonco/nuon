@@ -314,6 +314,11 @@ func (m *model) populateStepDetailView(goToTop bool) {
 
 	sections = append(sections, title)
 
+	// branch-specific step cards
+	if section := m.stepDetailViewBranchStep(step); section != "" {
+		sections = append(sections, section)
+	}
+
 	// stack section
 	// NOTE(fd): brittle af
 	if step.Name == "await install stack" || step.StepTargetType == "install_stack_versions" {

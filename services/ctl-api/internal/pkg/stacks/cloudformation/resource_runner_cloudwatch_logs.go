@@ -6,7 +6,6 @@ import (
 	"github.com/awslabs/goformation/v7/cloudformation"
 	"github.com/awslabs/goformation/v7/cloudformation/iam"
 	"github.com/awslabs/goformation/v7/cloudformation/logs"
-	"github.com/awslabs/goformation/v7/cloudformation/ssm"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
@@ -50,66 +49,5 @@ func (a *Templates) getRunnerCloudWatchLogPolicy(inp *stacks.TemplateInput, t ta
 				},
 			},
 		},
-	}
-}
-
-func (a *Templates) getRunnerCloudWatchAgentConfig(inp *stacks.TemplateInput, t tagBuilder) *ssm.Parameter {
-	// NOTE: idk if we're actually using this rn - configure the log group to send logs from `journalctl -f -u nuon-runner` to cloudwatch
-	return &ssm.Parameter{
-		Name:        ptr(fmt.Sprintf("runner-cw-cfg-%s", inp.Runner.ID)),
-		Type:        "String",
-		Description: ptr("CloudWatch agent configuration for both metrics and logs"),
-		Value: `{
-          "agent": {
-            "metrics_collection_interval": 60,
-            "run_as_user": "root"
-          },
-          "metrics": {
-            "metrics_collected": {
-              "disk": {
-                "measurement": ["used_percent"],
-                "resources": ["/"],
-                "drop_device": true
-              },
-              "mem": {
-                "measurement": ["mem_used_percent"]
-              },
-              "swap": {
-                "measurement": ["swap_used_percent"]
-              }
-            },
-            "append_dimensions": {
-              "AutoScalingGroupName": "${aws:AutoScalingGroupName}"
-            }
-          },
-          "logs": {
-            "logs_collected": {
-              "files": {
-                "collect_list": [
-                  {
-                    "file_path": "/var/log/messages",
-                    "log_group_name": "/ec2/messages",
-                    "log_stream_name": "{instance_id}"
-                  },
-                  {
-                    "file_path": "/var/log/secure",
-                    "log_group_name": "/ec2/secure",
-                    "log_stream_name": "{instance_id}"
-                  },
-                  {
-                    "file_path": "/var/log/httpd/access_log",
-                    "log_group_name": "/ec2/httpd/access_log",
-                    "log_stream_name": "{instance_id}"
-                  },
-                  {
-                    "file_path": "/var/log/httpd/error_log",
-                    "log_group_name": "/ec2/httpd/error_log",
-                    "log_stream_name": "{instance_id}"
-                  }
-                ]
-              }
-            }
-          }
-        }`,
 	}
 }

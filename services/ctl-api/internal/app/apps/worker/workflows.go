@@ -15,17 +15,6 @@ import (
 	workerplan "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/plan"
 )
 
-// acrRepositoryResponse builds a ProvisionECRRepositoryResponse for Azure ACR.
-// ACR uses a shared management registry with org/app path prefixes.
-func (w *Workflows) acrRepositoryResponse(orgID, appID string) *ecrrepository.ProvisionECRRepositoryResponse {
-	acrURL := w.cfg.ManagementACRRegistryURL
-	return &ecrrepository.ProvisionECRRepositoryResponse{
-		RepositoryName: fmt.Sprintf("%s/%s", orgID, appID),
-		RepositoryURI:  fmt.Sprintf("%s/%s/%s", acrURL, orgID, appID),
-		Region:         w.cfg.AppRegion,
-	}
-}
-
 type Workflows struct {
 	cfg       *internal.Config
 	v         *validator.Validate

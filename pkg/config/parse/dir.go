@@ -11,11 +11,12 @@ import (
 // This will be removed and we will pass the `config.AppConfig` into the directory parser once we have time to remove
 // the old version.
 type ConfigDir struct {
-	Branch     *config.AppBranchConfig `name:"branch"`
-	Components []*config.Component     `name:"components"`
-	Actions    []*config.ActionConfig  `name:"actions"`
-	Runbooks   []*config.RunbookConfig `name:"runbooks"`
-	Installs   []*config.Install       `name:"installs"`
+	Branch     *config.AppBranchConfig   `name:"branch"`
+	Branches   []*config.AppBranchConfig `name:"branches"`
+	Components []*config.Component       `name:"components"`
+	Actions    []*config.ActionConfig    `name:"actions"`
+	Runbooks   []*config.RunbookConfig   `name:"runbooks"`
+	Installs   []*config.Install         `name:"installs"`
 
 	Policies    *config.PoliciesConfig `name:"policies"`
 	PoliciesDir []config.AppPolicy     `name:"policies"`
@@ -153,6 +154,16 @@ func (c *ConfigDir) getBreakGlass() (*config.BreakGlass, error) {
 	}, nil
 }
 
+func (c *ConfigDir) getBranches() (*config.AppBranchConfig, []*config.AppBranchConfig, error) {
+	if c.Branch != nil && len(c.Branches) > 0 {
+		return nil, nil, ParseErr{
+			Description: "Can not provide branches both with a branch.toml and branches/ directory",
+			Err:         errors.New("Can not provide branches both with a branch.toml and branches/ directory"),
+		}
+	}
+	return c.Branch, c.Branches, nil
+}
+
 func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	permissions, err := c.getPermissions()
 	if err != nil {
@@ -179,6 +190,10 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	branch, branches, err := c.getBranches()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &config.AppConfig{
 		Components:     c.Components,
@@ -187,7 +202,8 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		Installs:       c.Installs,
 		BreakGlass:     breakGlass,
 		Secrets:        secrets,
-		Branch:         c.Branch,
+		Branch:         branch,
+		Branches:       branches,
 		Inputs:         inputs,
 		Sandbox:        c.Sandbox,
 		Runner:         c.Runner,

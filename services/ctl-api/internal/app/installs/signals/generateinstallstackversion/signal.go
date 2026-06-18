@@ -326,16 +326,29 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		checksum = armResult.Checksum
 	}
 
-	// AWS and Azure converge here, after template generation is complete.
-	// We upload both types of stacks to S3.
-	// Even though Azure cannot use the AWS Quickcreate flow, the Azure CLI can still pull a bicep template file via HTTP.
-
-	// upload and publish the stack
-	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
-		BucketKey: stackVersion.AWSBucketKey,
-		Template:  tmplByts,
-	}); err != nil {
-		return errors.Wrap(err, "unable to upload cloudformation stack")
+	switch s.cfg.CloudProvider {
+	case string(app.CloudPlatformGCP):
+		gcsResp, err := activities.AwaitUploadGCSInstallStackTemplate(ctx, &activities.UploadGCSInstallStackTemplateRequest{
+			Bucket:   s.cfg.GCSInstallTemplateBucket,
+			Key:      stackVersion.AWSBucketKey,
+			Template: tmplByts,
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to upload stack template to GCS")
+		}
+		if err := activities.AwaitUpdateInstallStackVersionTemplateURL(ctx, &activities.UpdateInstallStackVersionTemplateURLRequest{
+			ID:          stackVersion.ID,
+			TemplateURL: gcsResp.URL,
+		}); err != nil {
+			return errors.Wrap(err, "unable to update template URL")
+		}
+	default:
+		if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
+			BucketKey: stackVersion.AWSBucketKey,
+			Template:  tmplByts,
+		}); err != nil {
+			return errors.Wrap(err, "unable to upload cloudformation stack")
+		}
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
