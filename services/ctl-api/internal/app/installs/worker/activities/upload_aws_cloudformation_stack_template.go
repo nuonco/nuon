@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/aws/s3uploader"
 )
 
@@ -18,10 +17,7 @@ type UploadAWSCloudFormationStackVersionTemplateRequest struct {
 func (a *Activities) UploadAWSCloudFormationStackVersionTemplate(ctx context.Context, req *UploadAWSCloudFormationStackVersionTemplateRequest) error {
 	uploader, err := s3uploader.NewS3Uploader(a.v,
 		s3uploader.WithBucketName(a.cfg.AWSCloudFormationStackTemplateBucket),
-		s3uploader.WithCredentials(&credentials.Config{
-			Region:     a.cfg.AWSCloudFormationStackTemplateBucketRegion,
-			UseDefault: true,
-		}),
+		s3uploader.WithCredentials(a.cfg.CFTemplateUploadCreds()),
 	)
 	if err != nil {
 		return errors.Wrap(err, "unable to create s3 uploader")
