@@ -156,7 +156,10 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeExecuteWorkflowStep,
 		signalTypeWorkflowStepApprovalRequest,
 		signalTypeWorkflowStepApprovalResponse,
-		signalTypeDriftDetected:
+		signalTypeDriftDetected,
+		signalTypeStackRun,
+		signalTypeRoleChange,
+		signalTypeInputsUpdated:
 		return true
 	default:
 		return false
@@ -173,7 +176,7 @@ func (h *SlackSignalLifecycleHook) BeforePhase(ctx context.Context, event signal
 	// matching comment in webhook.go. Drift-detected is a single-shot
 	// notification carrier (its Execute is a no-op) so a "started" emission
 	// would just produce a duplicate message right before the real one.
-	if isApprovalSignalType(event.SignalType) || event.SignalType == signalTypeDriftDetected {
+	if isApprovalSignalType(event.SignalType) || isNotificationOnlySignalType(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -371,8 +374,8 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 			// in interests.Matches), so each detection is its own top-level
 			// message linked directly to the affected component or sandbox.
 			var err error
-			if event.SignalType == signalTypeDriftDetected {
-				err = h.postFlatDriftDetected(ctx, install, sub, rendered)
+			if isNotificationOnlySignalType(event.SignalType) {
+				err = h.postFlatNotification(ctx, install, sub, rendered, event.SignalType)
 			} else {
 				err = h.postOrThread(ctx, install, sub, data, rendered, logger)
 			}
@@ -573,6 +576,27 @@ func (h *SlackSignalLifecycleHook) postFlatDriftDetected(
 		Blocks:  msg.Blocks,
 	}); err != nil {
 		return fmt.Errorf("post slack drift-detected message: %w", err)
+	}
+	return nil
+}
+
+func (h *SlackSignalLifecycleHook) postFlatNotification(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+	signalType signal.SignalType,
+) error {
+	if signalType == signalTypeDriftDetected {
+		return h.postFlatDriftDetected(ctx, install, sub, rendered)
+	}
+	msg := slackrender.BuildFlatMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack %s message: %w", signalType, err)
 	}
 	return nil
 }

@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stack Phone Home Signal Fanout</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --red: #f87171;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+  .subtitle { color: var(--muted); margin-bottom: 2rem; font-size: 0.95rem; }
+  .tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--text); }
+  .tab.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .mermaid {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .info-card h3 {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .info-card p, .info-card li {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .info-card ul, .info-card ol { padding-left: 1.2rem; }
+  .info-card li { margin-bottom: 0.3rem; }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .badge-orange { background: rgba(251, 146, 60, 0.15); color: var(--orange); }
+  .badge-purple { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+  .badge-red { background: rgba(248, 113, 113, 0.15); color: var(--red); }
+  .badge-blue { background: rgba(56, 189, 248, 0.15); color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  th { color: var(--accent); font-weight: 600; }
+  td { color: var(--muted); }
+  code {
+    background: rgba(56, 189, 248, 0.1);
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<h1>Stack Phone Home Signal Fanout</h1>
+<p class="subtitle">Every phone home enqueues a <code>stack-run</code> signal that diffs previous vs current outputs, then fans out to the appropriate child signals.</p>
+
+<div class="tabs">
+  <div class="tab active" data-panel="overview">Overview</div>
+  <div class="tab" data-panel="provision">Provision Flow</div>
+  <div class="tab" data-panel="stale">Stale Version Propagation</div>
+  <div class="tab" data-panel="fanout">Diff &amp; Fanout</div>
+  <div class="tab" data-panel="callback">Callback Mechanism</div>
+  <div class="tab" data-panel="signals">Signal Reference</div>
+</div>
+
+<!-- Overview Panel -->
+<div id="overview" class="panel active">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+flowchart TB
+    subgraph Customer["Customer Infrastructure"]
+        CF["CloudFormation / Terraform"]
+    end
+
+    CF -->|"POST /v1/installs/{id}/phone-home/{phone_home_id}"| PH["Phone Home Handler"]
+
+    PH --> RUN["Create InstallStackVersionRun"]
+    RUN --> SR["Always enqueue <b>stack-run</b> signal<br/>(with run_id, version_id, request_type)"]
+
+    SR --> PROCESS["Process outputs<br/>(decode, persist, update roles,<br/>runner settings, region, inputs)"]
+
+    PROCESS --> FIRST{"First run<br/>for this version?"}
+    PROCESS --> PROP{"Newer version<br/>exists?"}
+    PROCESS --> DIFF["Diff previous vs current"]
+
+    FIRST -->|"Yes"| PROVC["Send callback + runner signal<br/>Mark version Active"]
+    FIRST -->|"No"| SKIP3[" "]
+
+    PROP -->|"Yes"| CPRUN["Create run on newer version<br/>with same output data<br/>Mark newer version Active<br/>Send newer version callback"]
+    PROP -->|"No"| SKIP4[" "]
+
+    DIFF --> RDIFF{"Role changes?"}
+    DIFF --> IDIFF{"Input changes?"}
+
+    RDIFF -->|"Yes"| RC["Enqueue <b>role-change</b><br/>per role"]
+    RDIFF -->|"No"| SKIP1[" "]
+
+    IDIFF -->|"Yes"| IU["Enqueue <b>inputs-updated</b>"]
+    IDIFF -->|"No"| SKIP2[" "]
+
+    RC --> HOOKS["Lifecycle Hooks"]
+    IU --> HOOKS
+    HOOKS --> WH["Webhook POST"]
+    HOOKS --> SL["Slack message"]
+
+    style CF fill:#1e40af,stroke:#3b82f6,color:#fff
+    style PH fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style SR fill:#059669,stroke:#34d399,color:#fff
+    style PROVC fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style CPRUN fill:#6d28d9,stroke:#8b5cf6,color:#fff
+    style RC fill:#d97706,stroke:#fbbf24,color:#fff
+    style IU fill:#0891b2,stroke:#22d3ee,color:#fff
+    style HOOKS fill:#be185d,stroke:#f472b6,color:#fff
+    style SKIP1 fill:none,stroke:none
+    style SKIP2 fill:none,stroke:none
+    style SKIP3 fill:none,stroke:none
+    style SKIP4 fill:none,stroke:none
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Six Scenarios</h3>
+      <table>
+        <tr><th>Scenario</th><th>Detection</th><th>Action</th></tr>
+        <tr><td>Provision completing</td><td>First run for version</td><td>Callback + runner signal</td></tr>
+        <tr><td>Old version run applied</td><td>Newer version exists</td><td>Copy run to newer version + callback</td></tr>
+        <tr><td>Role change</td><td>Provisioned state diff</td><td><code>role-change</code> signal per role</td></tr>
+        <tr><td>Inputs updated</td><td>Input values diff</td><td><code>inputs-updated</code> signal</td></tr>
+        <tr><td>Stack torn down</td><td><code>request_type=Delete</code></td><td>200 no-op in handler</td></tr>
+        <tr><td>Noop</td><td>No diff</td><td>Nothing enqueued</td></tr>
+      </table>
+    </div>
+    <div class="info-card">
+      <h3>Key Design Points</h3>
+      <ul>
+        <li><b>Always enqueue</b> — no more <code>existingRunCount > 1</code> guard</li>
+        <li><b>Callback replaces polling</b> — await blocks on signal, not 15s poll loop</li>
+        <li><b>Stale version support</b> — old stack applied? Run copied to newer version automatically</li>
+        <li><b>Diff always runs</b> — even during provision (first run emits all inputs/roles as "added")</li>
+        <li><b>updateinstallstackoutputs step removed</b> from provision/reprovision workflows</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Provision Flow Panel -->
+<div id="provision" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+sequenceDiagram
+    participant W as Provision Workflow
+    participant A as await-install-stack-version-run
+    participant DB as InstallStackVersion
+    participant H as Phone Home Handler
+    participant SR as stack-run Signal
+    participant R as Runner
+
+    W->>A: enqueue signal
+    A->>DB: write CallbackRef (workflow_id + signal_name)
+    Note over A: blocks on callback.AwaitWithTimeout()
+
+    H->>DB: create InstallStackVersionRun
+    H->>SR: enqueue stack-run (run_id, version_id)
+
+    SR->>SR: process outputs (decode, persist, roles, inputs)
+    SR->>SR: detect first run (count == 1)
+    SR->>R: send runner signal (cross-namespace)
+    SR->>DB: update version status to Active
+    SR->>DB: read CallbackRef
+    SR->>A: send callback (success)
+    SR->>SR: diff roles + inputs, fan out notifications
+
+    A->>W: return success
+    W->>W: continue to runner healthy, deploy
+    </pre>
+  </div>
+
+  <div class="info-card" style="max-width: 700px;">
+    <h3>Before vs After</h3>
+    <table>
+      <tr><th></th><th>Before (polling)</th><th>After (callback)</th></tr>
+      <tr><td>Await mechanism</td><td>Poll every 15s to 15m</td><td>Block on Temporal signal channel</td></tr>
+      <tr><td>Temporal history</td><td>Hundreds of activity events</td><td>~3 events (start, receive, complete)</td></tr>
+      <tr><td>Response time</td><td>Up to 15s latency</td><td>Immediate on phone home</td></tr>
+      <tr><td>Outputs processing</td><td>Separate step after await</td><td>Inline in stack-run signal</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Stale Version Panel -->
+<div id="stale" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+sequenceDiagram
+    participant U as User
+    participant P1 as Provision v1
+    participant P2 as Reprovision v2
+    participant A2 as await (v2)
+    participant H as Phone Home Handler
+    participant SR as stack-run Signal
+    participant DB as Database
+
+    Note over P1: v1 generated, user has CFN template
+
+    P2->>A2: enqueue await for v2
+    A2->>DB: write CallbackRef on v2
+    Note over A2: blocking on callback
+
+    Note over U: User applies the OLD v1 template
+
+    U->>H: phone home with v1 phone_home_id
+    H->>DB: create run on v1
+    H->>SR: enqueue stack-run (version=v1)
+
+    SR->>SR: process outputs for v1
+    SR->>SR: detect first run for v1
+
+    SR->>SR: check latest version
+    Note over SR: latest = v2, phone home = v1
+
+    SR->>DB: create new run on v2 with v1 output data
+    SR->>DB: mark v2 Active (applied_from_version_id = v1)
+    SR->>DB: read v2 CallbackRef
+    SR->>A2: send callback (success)
+
+    A2->>P2: return success
+    P2->>P2: continue provision with v1 outputs
+    </pre>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Why This Happens</h3>
+      <p>A user might have the CloudFormation URL from a previous provision. If a reprovision generates a new version (v2), the user may still apply the old template (v1). The outputs are the same infrastructure, so we propagate the run data to the newer version.</p>
+    </div>
+    <div class="info-card">
+      <h3>What Gets Propagated</h3>
+      <ul>
+        <li>A new <code>InstallStackVersionRun</code> is created on v2 with the same HSTORE output data from the v1 run</li>
+        <li>v2 status is set to <code>active</code> with metadata tracking provenance</li>
+        <li>v2's callback is sent, unblocking the provision/reprovision workflow</li>
+        <li>Shared <code>InstallStackOutputs</code> are already updated (keyed by install stack, not version)</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>Status Metadata</h3>
+      <p>The newer version's status includes provenance tracking:</p>
+      <pre style="background:#0f172a;padding:0.75rem;border-radius:4px;font-size:0.8rem;color:var(--accent);margin-top:0.5rem;overflow-x:auto;">{
+  "status": "active",
+  "metadata": {
+    "applied_from_version_id": "isv_abc...",
+    "applied_from_run_id": "isvr_xyz...",
+    "propagated_run_id": "isvr_new..."
+  }
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- Diff & Fanout Panel -->
+<div id="fanout" class="panel">
+  <div class="mermaid">
+    <pre class="mermaid-src">
+flowchart LR
+    subgraph StackRun["stack-run Signal Execute"]
+        direction TB
+        SNAP1["Snapshot roles (before)"]
+        SNAP2["Snapshot inputs (before)"]
+        SNAP1 --> PROC["Process outputs<br/>(decode + persist + update)"]
+        SNAP2 --> PROC
+        PROC --> SNAP3["Re-fetch roles (after)"]
+        PROC --> SNAP4["Decode inputs (after)"]
+        SNAP3 --> CMPRL["Compare roles"]
+        SNAP4 --> CMPRI["Compare inputs"]
+    end
+
+    subgraph FirstRun["First Run Path"]
+        COUNT["Count runs"]
+        COUNT -->|"count == 1"| CB["Callback + runner signal"]
+    end
+
+    subgraph Propagate["Version Propagation"]
+        LATEST["Get latest version"]
+        LATEST -->|"different"| COPY["Copy run to newer version<br/>+ callback"]
+    end
+
+    PROC --> COUNT
+    PROC --> LATEST
+
+    CMPRL -->|"Per changed role"| RC2["role-change signal"]
+    CMPRI -->|"If any diff"| IU2["inputs-updated signal"]
+
+    RC2 --> Q1["Install Signals Queue"]
+    IU2 --> Q1
+    Q1 --> LH["Lifecycle Hooks"]
+    LH --> WH["Webhook POST"]
+    LH --> SL["Slack message"]
+
+    subgraph RolePayload["role-change payload"]
+        direction TB
+        RN["role_name: breakglass-admin"]
+        RT["role_type: breakglass"]
+        CT["change_type: enabled / disabled"]
+        RI["role_id: arn:aws:iam::..."]
+    end
+
+    subgraph InputPayload["inputs-updated payload"]
+        direction TB
+        AK["added_keys: [new_cidr]"]
+        CK["changed_keys: [vpc_name]"]
+        RK["removed_keys: [old_flag]"]
+    end
+
+    RC2 -.-> RolePayload
+    IU2 -.-> InputPayload
+
+    style StackRun fill:#1e293b,stroke:#059669,color:#e2e8f0
+    style FirstRun fill:#1e293b,stroke:#7c3aed,color:#e2e8f0
+    style Propagate fill:#1e293b,stroke:#6d28d9,color:#e2e8f0
+    style CB fill:#7c3aed,stroke:#a78bfa,color:#fff
+    style COPY fill:#6d28d9,stroke:#8b5cf6,color:#fff
+    style RC2 fill:#d97706,stroke:#fbbf24,color:#fff
+    style IU2 fill:#0891b2,stroke:#22d3ee,color:#fff
+    style RolePayload fill:#1e293b,stroke:#d97706,color:#fbbf24
+    style InputPayload fill:#1e293b,stroke:#0891b2,color:#22d3ee
+    </pre>
+  </div>
+
+  <div class="info-card" style="max-width: 700px;">
+    <h3>Diff Behavior by Path</h3>
+    <table>
+      <tr><th>Path</th><th>beforeInputs</th><th>afterInputs</th><th>Result</th></tr>
+      <tr><td>First provision</td><td>nil (no previous outputs)</td><td>All inputs from run</td><td>All keys in <code>AddedKeys</code></td></tr>
+      <tr><td>Subsequent update</td><td>Previous outputs</td><td>New run outputs</td><td>Changed/added/removed keys</td></tr>
+      <tr><td>Noop update</td><td>Previous outputs</td><td>Same as before</td><td>Empty diff, no signal</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- Callback Panel -->
+<div id="callback" class="panel">
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>How the Callback Works</h3>
+      <ol>
+        <li><code>awaitinstallstackversionrun</code> creates a <code>callback.Ref</code> with the current workflow ID and a deterministic signal name: <code>signal-complete-{version_id}</code></li>
+        <li>Writes the ref to <code>InstallStackVersion.CallbackRef</code> (new JSONB column)</li>
+        <li>Calls <code>callback.AwaitWithTimeout(ctx, cb, 180 days)</code> &mdash; opens a Temporal signal channel and blocks</li>
+        <li>When <code>stack-run</code> detects first run, it reads the <code>CallbackRef</code> from the version row and sends success</li>
+        <li>If a stale version phones home, <code>stack-run</code> reads the <em>newer</em> version's <code>CallbackRef</code> and sends success</li>
+        <li>The await signal receives the signal, unblocks, and returns</li>
+      </ol>
+    </div>
+    <div class="info-card">
+      <h3>CallbackRef Storage</h3>
+      <p>New JSONB field on <code>InstallStackVersion</code>:</p>
+      <pre style="background:#0f172a;padding:0.75rem;border-radius:4px;font-size:0.8rem;color:var(--accent);margin-top:0.5rem;overflow-x:auto;">{
+  "workflow_id": "queue-install-signals-abc123",
+  "signal_name": "signal-complete-isv_xyz789",
+  "namespace": "components"
+}</pre>
+    </div>
+    <div class="info-card">
+      <h3>Timeout Handling</h3>
+      <p>If no phone home arrives within 180 days:</p>
+      <ul>
+        <li>Version status &rarr; <code>Expired</code></li>
+        <li>Workflow step status &rarr; <code>Error</code></li>
+        <li>Error: "Stack was not applied within 180 days"</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>Callback Sources</h3>
+      <p>A version's callback can be triggered from two paths:</p>
+      <table>
+        <tr><th>Trigger</th><th>When</th></tr>
+        <tr><td>Direct first run</td><td>Phone home matches this version's <code>phone_home_id</code></td></tr>
+        <tr><td>Stale version propagation</td><td>Phone home matches an older version, run data copied forward</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Signal Reference Panel -->
+<div id="signals" class="panel">
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>stack-run <span class="badge badge-green">orchestrator</span></h3>
+      <p><strong>Type:</strong> <code>"stack-run"</code></p>
+      <p><strong>Fields:</strong></p>
+      <ul>
+        <li><code>InstallStackID</code> &mdash; required</li>
+        <li><code>InstallStackVersionID</code> &mdash; optional</li>
+        <li><code>RunID</code> &mdash; required (the run just created)</li>
+        <li><code>RequestType</code> &mdash; "Create" or "Update"</li>
+      </ul>
+      <p><strong>Execute:</strong></p>
+      <ol>
+        <li>Snapshot roles + inputs (before)</li>
+        <li>Process outputs (decode, persist, update roles, runner, region, inputs, state gen)</li>
+        <li>First run? &rarr; callback + runner signal + Active status</li>
+        <li>Newer version exists? &rarr; copy run + callback + Active status with provenance</li>
+        <li>Diff roles &rarr; fan out <code>role-change</code> per changed role</li>
+        <li>Diff inputs &rarr; fan out <code>inputs-updated</code> if any keys changed</li>
+      </ol>
+    </div>
+    <div class="info-card">
+      <h3>role-change <span class="badge badge-orange">notification</span></h3>
+      <p><strong>Type:</strong> <code>"role-change"</code></p>
+      <p><strong>Fields:</strong></p>
+      <ul>
+        <li><code>InstallID</code>, <code>RoleName</code>, <code>RoleType</code></li>
+        <li><code>ChangeType</code> &mdash; "enabled" or "disabled"</li>
+        <li><code>RoleID</code> &mdash; ARN / SA email</li>
+      </ul>
+      <p><strong>Execute:</strong> No-op (lifecycle hooks deliver notifications)</p>
+    </div>
+    <div class="info-card">
+      <h3>inputs-updated <span class="badge badge-blue">notification</span></h3>
+      <p><strong>Type:</strong> <code>"inputs-updated"</code></p>
+      <p><strong>Fields:</strong></p>
+      <ul>
+        <li><code>InstallID</code></li>
+        <li><code>ChangedKeys</code>, <code>AddedKeys</code>, <code>RemovedKeys</code></li>
+      </ul>
+      <p><strong>Execute:</strong> No-op (lifecycle hooks deliver notifications)</p>
+    </div>
+    <div class="info-card">
+      <h3>await-install-stack-version-run <span class="badge badge-purple">callback</span></h3>
+      <p><strong>Type:</strong> <code>"await-install-stack-version-run"</code></p>
+      <p><strong>Changed:</strong> Replaced polling with callback-based await</p>
+      <ul>
+        <li>Writes <code>CallbackRef</code> to version row</li>
+        <li>Blocks on <code>callback.AwaitWithTimeout</code></li>
+        <li>Unblocked by <code>stack-run</code> on first run or stale version propagation</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="info-card" style="margin-top: 1rem;">
+    <h3>Role Types</h3>
+    <table>
+      <tr><th>Type</th><th>Description</th></tr>
+      <tr><td><code>runner_provision</code></td><td>IAM role for creating/updating infrastructure</td></tr>
+      <tr><td><code>runner_deprovision</code></td><td>IAM role for destroying infrastructure</td></tr>
+      <tr><td><code>runner_maintenance</code></td><td>IAM role for ongoing operational tasks</td></tr>
+      <tr><td><code>breakglass</code></td><td>Emergency access roles for disaster recovery</td></tr>
+      <tr><td><code>custom</code></td><td>Customer-defined application-specific roles</td></tr>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#1e293b',
+      primaryColor: '#38bdf8',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#475569',
+      lineColor: '#64748b',
+      secondaryColor: '#334155',
+      tertiaryColor: '#1e293b',
+    },
+    flowchart: { curve: 'basis', padding: 20 },
+    sequence: { actorMargin: 60, messageFontSize: 13 },
+  });
+
+  async function renderDiagrams() {
+    const sources = document.querySelectorAll('.mermaid-src');
+    for (const el of sources) {
+      const container = el.parentElement;
+      const id = 'mermaid-' + Math.random().toString(36).slice(2, 8);
+      try {
+        const { svg } = await mermaid.render(id, el.textContent.trim());
+        container.innerHTML = svg;
+      } catch (e) {
+        console.error('Mermaid render error:', e);
+      }
+    }
+  }
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+      renderDiagrams();
+    });
+  });
+
+  renderDiagrams();
+</script>
+
+</body>
+</html>
