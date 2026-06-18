@@ -117,10 +117,10 @@ export const DeployComponentModal = ({
               labelText: (
                 <span className="flex flex-col gap-1">
                   <Text variant="base" weight="stronger" className="!leading-none">
-                    Deploy dependencies
+                    Sync dependency images
                   </Text>
                   <Text variant="subtext" theme="neutral" className="!leading-none">
-                    Sync upstream image dependencies before deploying.
+                    Sync any images that this component depends on.
                   </Text>
                 </span>
               ),
@@ -139,7 +139,7 @@ export const DeployComponentModal = ({
                     Deploy dependents
                   </Text>
                   <Text variant="subtext" theme="neutral" className="!leading-none">
-                    Deploy all dependents as well as the selected build.
+                    Trigger a deploy for any component that depends on this component.
                   </Text>
                 </span>
               ),

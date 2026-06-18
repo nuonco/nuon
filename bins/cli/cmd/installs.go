@@ -277,8 +277,8 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	createDeployCmd.MarkFlagRequired("install-id")
 	createDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID for the deploy you want to create")
 	createDeployCmd.MarkFlagRequired("build-id")
-	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Deploy dependents")
-	createDeployCmd.Flags().BoolVar((&deployDependencies), "dependencies", false, "Sync upstream image dependencies before deploying")
+	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Trigger a deploy for any component that depends on this component")
+	createDeployCmd.Flags().BoolVar((&deployDependencies), "dependency-images", false, "Sync any images that this component depends on")
 	installsCmds.AddCommand(createDeployCmd)
 
 	deployLogsCmd := &cobra.Command{
