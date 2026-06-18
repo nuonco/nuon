@@ -37,6 +37,9 @@ type AppAppBranchInstallGroup struct {
 	// label selector
 	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`
 
+	// max parallel
+	MaxParallel int64 `json:"max_parallel,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
