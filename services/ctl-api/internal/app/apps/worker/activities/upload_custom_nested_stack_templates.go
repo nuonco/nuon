@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/aws/s3uploader"
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -33,10 +32,7 @@ func (a *Activities) UploadCustomNestedStackTemplates(ctx context.Context, req *
 
 	uploader, err := s3uploader.NewS3Uploader(a.v,
 		s3uploader.WithBucketName(a.cfg.AWSCloudFormationStackTemplateBucket),
-		s3uploader.WithCredentials(&credentials.Config{
-			Region:     a.cfg.AWSCloudFormationStackTemplateBucketRegion,
-			UseDefault: true,
-		}),
+		s3uploader.WithCredentials(a.cfg.CFTemplateUploadCreds()),
 	)
 	if err != nil {
 		return fmt.Errorf("unable to create s3 uploader: %w", err)

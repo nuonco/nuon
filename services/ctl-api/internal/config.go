@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 )
@@ -310,6 +311,7 @@ type Config struct {
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
+	AWSCloudFormationStackTemplateRoleARN      string `config:"aws_cloudformation_stack_template_role_arn"`
 	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
 	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn"`
 
@@ -455,6 +457,24 @@ func (c *Config) IsGCP() bool {
 
 func (c *Config) IsAzure() bool {
 	return c.CloudProvider == "azure"
+}
+
+func (c *Config) CFTemplateUploadCreds() *credentials.Config {
+	if c.IsGCP() && c.AWSCloudFormationStackTemplateRoleARN != "" {
+		return &credentials.Config{
+			Region: c.AWSCloudFormationStackTemplateBucketRegion,
+			AssumeRole: &credentials.AssumeRoleConfig{
+				RoleARN:                c.AWSCloudFormationStackTemplateRoleARN,
+				SessionName:            "ctl-api-install-templates",
+				SessionDurationSeconds: 30 * 60,
+				UseGCPOIDC:             true,
+			},
+		}
+	}
+	return &credentials.Config{
+		Region:     c.AWSCloudFormationStackTemplateBucketRegion,
+		UseDefault: true,
+	}
 }
 
 func NewConfig() (*Config, error) {
