@@ -412,6 +412,13 @@ export interface paths {
      */
     get: operations["GetAppComponentBuild"];
   };
+  "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}/cancel": {
+    /**
+     * cancel component build
+     * @description Cancel a component build by cancelling its queue signal. If the build has an in-flight runner job, it will also be cancelled.
+     */
+    post: operations["CancelAppComponentBuild"];
+  };
   "/v1/apps/{app_id}/components/{component_id}/configs": {
     /**
      * get all configs for a component
@@ -7010,6 +7017,7 @@ export interface components {
     };
     "service.CreateInstallComponentDeployRequest": {
       build_id?: string;
+      deploy_dependencies?: boolean;
       deploy_dependents?: boolean;
       plan_only?: boolean;
       role?: string;
@@ -7025,6 +7033,7 @@ export interface components {
     };
     "service.CreateInstallDeployRequest": {
       build_id?: string;
+      deploy_dependencies?: boolean;
       deploy_dependents?: boolean;
       plan_only?: boolean;
       role?: string;
@@ -11200,6 +11209,60 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel component build
+   * @description Cancel a component build by cancelling its queue signal. If the build has an in-flight runner job, it will also be cancelled.
+   */
+  CancelAppComponentBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
         content: {
           "application/json": components["schemas"]["app.ComponentBuild"];
         };
