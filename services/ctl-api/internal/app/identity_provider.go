@@ -96,6 +96,19 @@ func (ip *IdentityProvider) ValidateConfig() error {
 	}
 }
 
+// GetClientID returns the client_id from the provider config, regardless of type.
+func (ip *IdentityProvider) GetClientID() (string, error) {
+	if len(ip.Config) == 0 {
+		return "", nil
+	}
+
+	var cfg providers.BaseConfig
+	if err := json.Unmarshal(ip.Config, &cfg); err != nil {
+		return "", err
+	}
+	return cfg.ClientID, nil
+}
+
 // GetOpenIDConfig unmarshals the Config as OpenIDConfig.
 func (ip *IdentityProvider) GetOpenIDConfig() (*providers.OpenIDConfig, error) {
 	var cfg providers.OpenIDConfig
