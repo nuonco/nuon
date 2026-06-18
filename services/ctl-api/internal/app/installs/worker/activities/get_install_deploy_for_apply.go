@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -22,12 +21,11 @@ func (a *Activities) GetInstallDeployForApplyStep(ctx context.Context, req GetIn
 func (a *Activities) getInstallDeployForApplyStep(ctx context.Context, installWorkflowID, componentID string) (*app.InstallDeploy, error) {
 	installDeploy := app.InstallDeploy{}
 	res := a.db.WithContext(ctx).
-		Where(app.InstallDeploy{
-			InstallWorkflowID: generics.ToPtr(installWorkflowID),
-			ComponentID:       componentID,
-		}).
+		Joins("JOIN install_components ON install_components.id = install_deploys.install_component_id").
+		Where("install_deploys.install_workflow_id = ?", installWorkflowID).
+		Where("install_components.component_id = ?", componentID).
 		Preload("LogStream").
-		Order("created_at desc").
+		Order("install_deploys.created_at desc").
 		First(&installDeploy)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to find install deploy")

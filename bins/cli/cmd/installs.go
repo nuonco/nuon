@@ -11,34 +11,35 @@ import (
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id               string
-		workflowID       string
-		actionWorkflowID string
-		stepID           string
-		note             string
-		name             string
-		region           string
-		appID            string
-		deployID         string
-		runID            string
-		installCompID    string
-		componentID      string
-		roleName         string
-		inputs           []string
-		labelArgs        []string
-		noSelect         bool
-		deployDeps       bool
-		deployDependents bool
-		offset           int
-		limit            int
-		planOnly         bool
-		fileOrDir        string
-		confirm          bool
-		wait             bool
-		enable           bool
-		disable          bool
-		dryRun           bool
-		skipConfirm      bool
+		id                 string
+		workflowID         string
+		actionWorkflowID   string
+		stepID             string
+		note               string
+		name               string
+		region             string
+		appID              string
+		deployID           string
+		runID              string
+		installCompID      string
+		componentID        string
+		roleName           string
+		inputs             []string
+		labelArgs          []string
+		noSelect           bool
+		deployDeps         bool
+		deployDependents   bool
+		deployDependencies bool
+		offset             int
+		limit              int
+		planOnly           bool
+		fileOrDir          string
+		confirm            bool
+		wait               bool
+		enable             bool
+		disable            bool
+		dryRun             bool
+		skipConfirm        bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -269,7 +270,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Create an install deploy by install ID and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, PrintJSON)
+			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, deployDependencies, PrintJSON)
 		}),
 	}
 	createDeployCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
@@ -277,6 +278,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	createDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID for the deploy you want to create")
 	createDeployCmd.MarkFlagRequired("build-id")
 	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Deploy dependents")
+	createDeployCmd.Flags().BoolVar((&deployDependencies), "dependencies", false, "Sync upstream image dependencies before deploying")
 	installsCmds.AddCommand(createDeployCmd)
 
 	deployLogsCmd := &cobra.Command{
