@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/render"
+	pkgstate "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/rolechange"
@@ -131,7 +133,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		s.handleProvisionComplete(ctx, install, version, l)
 		s.propagateToNewerVersion(ctx, install, version, l)
 	} else {
-		diffAndEnqueueRoleChanges(ctx, install.ID, beforeRoles, afterRoles, l)
+		installState, err := activities.AwaitGetLatestInstallState(ctx, &activities.GetLatestInstallStateRequest{
+			InstallID: install.ID,
+		})
+		if err != nil {
+			l.Warn("unable to get install state for role name rendering", zap.Error(err))
+		}
+		diffAndEnqueueRoleChanges(ctx, install.ID, beforeRoles, afterRoles, installState, l)
 	}
 
 	return nil
@@ -484,7 +492,7 @@ func snapshotInputs(ctx workflow.Context, installStackID string) map[string]stri
 	return extractInputValues(prevOutputs)
 }
 
-func diffAndEnqueueRoleChanges(ctx workflow.Context, installID string, before, after map[string]roleSnapshot, l log.Logger) {
+func diffAndEnqueueRoleChanges(ctx workflow.Context, installID string, before, after map[string]roleSnapshot, installState *pkgstate.State, l log.Logger) {
 	if before == nil || after == nil {
 		return
 	}
@@ -493,32 +501,48 @@ func diffAndEnqueueRoleChanges(ctx workflow.Context, installID string, before, a
 		beforeRole, existed := before[id]
 		if !existed {
 			if afterRole.Provisioned {
-				enqueueRoleChange(ctx, installID, afterRole, "enabled", l)
+				enqueueRoleChange(ctx, installID, afterRole, "enabled", installState, l)
 			}
 			continue
 		}
 		if !beforeRole.Provisioned && afterRole.Provisioned {
-			enqueueRoleChange(ctx, installID, afterRole, "enabled", l)
+			enqueueRoleChange(ctx, installID, afterRole, "enabled", installState, l)
 		} else if beforeRole.Provisioned && !afterRole.Provisioned {
-			enqueueRoleChange(ctx, installID, afterRole, "disabled", l)
+			enqueueRoleChange(ctx, installID, afterRole, "disabled", installState, l)
 		}
 	}
 
 	for id, beforeRole := range before {
 		if _, exists := after[id]; !exists && beforeRole.Provisioned {
-			enqueueRoleChange(ctx, installID, beforeRole, "disabled", l)
+			enqueueRoleChange(ctx, installID, beforeRole, "disabled", installState, l)
 		}
 	}
 }
 
-func enqueueRoleChange(ctx workflow.Context, installID string, role roleSnapshot, changeType string, l log.Logger) {
+func renderRoleName(name string, installState *pkgstate.State) string {
+	if installState == nil || name == "" {
+		return name
+	}
+	stateMap, err := installState.AsMap()
+	if err != nil {
+		return name
+	}
+	rendered, err := render.RenderV2(name, stateMap)
+	if err != nil {
+		return name
+	}
+	return rendered
+}
+
+func enqueueRoleChange(ctx workflow.Context, installID string, role roleSnapshot, changeType string, installState *pkgstate.State, l log.Logger) {
+	renderedName := renderRoleName(role.RoleName, installState)
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:   installID,
 		OwnerType: "installs",
 		QueueName: installSignalsQueueName,
 		Signal: &rolechange.Signal{
 			InstallID:  installID,
-			RoleName:   role.RoleName,
+			RoleName:   renderedName,
 			RoleType:   role.RoleType,
 			ChangeType: changeType,
 			RoleID:     role.RoleID,

@@ -331,15 +331,23 @@ func BuildRoleChangeMessage(e Event) Message {
 	return Message{Text: plainRoleChangeHeadline(e), Blocks: blocks}
 }
 
-// roleChangeHeaderText renders the header: "🔐 Role enabled" or
-// "🔐 Role disabled", with the role name appended when available.
+// roleChangeHeaderText renders the header with the role name appended when
+// available. Break-glass roles get 🚨, others get 🔐.
 func roleChangeHeaderText(e Event) string {
 	changeType := roleChangeType(e)
-	text := "🔐 Role " + changeType
+	emoji := "🔐"
+	if isBreakGlassRoleType(roleChangeRoleType(e)) {
+		emoji = "🚨"
+	}
+	text := emoji + " Role " + changeType
 	if name := roleChangeName(e); name != "" {
 		text = text + " · " + name
 	}
 	return text
+}
+
+func isBreakGlassRoleType(roleType string) bool {
+	return roleType == "breakglass" || roleType == "runner_breakglass"
 }
 
 // roleChangeType extracts the change_type from event metadata. Defaults to
@@ -388,7 +396,20 @@ func roleChangeFields(e Event) []kv {
 	if name := orgName(e); name != "" {
 		fields = append(fields, kv{"Org", slackEscape(name)})
 	}
+	if names := roleChangeActionTriggers(e); names != "" {
+		fields = append(fields, kv{"Action triggers", names})
+	}
 	return fields
+}
+
+func roleChangeActionTriggers(e Event) string {
+	if e.Metadata == nil {
+		return ""
+	}
+	if v, ok := e.Metadata["action_trigger_names"].(string); ok && v != "" {
+		return slackEscape(v)
+	}
+	return ""
 }
 
 // roleChangeLinks returns the role-change card button targets.

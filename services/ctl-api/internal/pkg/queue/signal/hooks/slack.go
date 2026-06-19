@@ -293,6 +293,10 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		}
 	}
 
+	if event.SignalType == signalTypeRoleChange {
+		h.enrichRoleChangeWithActionTriggers(ctx, event, &data)
+	}
+
 	rendered := buildRenderEvent(data)
 
 	// Resolve the entity ids referenced by this event (install / component /
@@ -1004,6 +1008,46 @@ func (h *SlackSignalLifecycleHook) lookupInstallIDFromSandbox(ctx context.Contex
 		return ""
 	}
 	return row.InstallID
+}
+
+// enrichRoleChangeWithActionTriggers looks up action workflows that have
+// role-enabled or role-disabled triggers for the install's app, and adds their
+// names to the event metadata so the Slack renderer can display them.
+func (h *SlackSignalLifecycleHook) enrichRoleChangeWithActionTriggers(ctx context.Context, event signal.SignalPhaseEvent, data *lifecycleEventData) {
+	if h.db == nil || event.OwnerID == "" {
+		return
+	}
+
+	changeType, _ := data.Metadata["change_type"].(string)
+	triggerType := "role-enabled"
+	if changeType == "disabled" {
+		triggerType = "role-disabled"
+	}
+
+	var appID string
+	if err := h.db.WithContext(ctx).
+		Table("installs").
+		Select("app_id").
+		Where("id = ?", event.OwnerID).
+		Scan(&appID).Error; err != nil || appID == "" {
+		return
+	}
+
+	var names []string
+	if err := h.db.WithContext(ctx).
+		Table("action_workflows").
+		Select("action_workflows.name").
+		Joins("JOIN action_workflow_configs_latest_view_v1 awc ON awc.action_workflow_id = action_workflows.id").
+		Joins("JOIN action_workflow_trigger_configs awtc ON awtc.action_workflow_config_id = awc.id").
+		Where("action_workflows.app_id = ? AND awtc.type = ? AND awtc.deleted_at = 0", appID, triggerType).
+		Scan(&names).Error; err != nil || len(names) == 0 {
+		return
+	}
+
+	if data.Metadata == nil {
+		data.Metadata = map[string]any{}
+	}
+	data.Metadata["action_trigger_names"] = strings.Join(names, ", ")
 }
 
 // markWorkspaceUninstalled mirrors the Phase 4 events handler's transactional
