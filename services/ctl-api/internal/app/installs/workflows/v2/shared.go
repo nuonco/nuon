@@ -25,8 +25,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 )
 
 // WorkflowStepOptions is a functional option for configuring WorkflowStep
@@ -85,7 +85,7 @@ func getSignalStepMetadata(sigType signal.SignalType, planOnly bool) signalStepM
 	}
 
 	switch sigType {
-	case generateinstallstackversion.SignalType, awaitinstallstackversionrun.SignalType, updateinstallstackoutputs.SignalType:
+	case generateinstallstackversion.SignalType, awaitinstallstackversionrun.SignalType, stackrun.SignalType:
 		meta.targetType = string(app.WorkflowStepTargetTypeInstallStackVersions)
 		meta.retryable = false
 	case awaitrunnerhealthy.SignalType:

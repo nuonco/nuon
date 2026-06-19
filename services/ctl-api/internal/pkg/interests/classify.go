@@ -24,7 +24,10 @@ const (
 	// has been quiet long enough (5 min) for processhealthcheck to give up on
 	// it; the classifier maps it onto (runners, inactive) so subscribers can
 	// opt into a notification.
-	signalTypeOnInactive signal.SignalType = "on_inactive"
+	signalTypeOnInactive    signal.SignalType = "on_inactive"
+	signalTypeStackRun      signal.SignalType = "stack-run"
+	signalTypeRoleChange    signal.SignalType = "role-change"
+	signalTypeInputsUpdated signal.SignalType = "inputs-updated"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -54,6 +57,8 @@ const (
 	eventClassApprovalRequest
 	eventClassApprovalResponse
 	eventClassDriftDetected
+	eventClassRoleChange
+	eventClassInputsUpdated
 )
 
 // approvalResponseType is the resolved approved/rejected outcome of an
@@ -223,6 +228,27 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.Resource = res
 		f.Op = op
 		f.EventClass = eventClassDriftDetected
+		f.Resolved = true
+		return f
+
+	case signalTypeStackRun:
+		f.Resource = ResourceStacks
+		f.Op = "stack_run"
+		f.EventClass = eventClassLifecycle
+		f.Resolved = true
+		return f
+
+	case signalTypeRoleChange:
+		f.Resource = ResourceStacks
+		f.Op = "role_change"
+		f.EventClass = eventClassRoleChange
+		f.Resolved = true
+		return f
+
+	case signalTypeInputsUpdated:
+		f.Resource = ResourceStacks
+		f.Op = "inputs_updated"
+		f.EventClass = eventClassInputsUpdated
 		f.Resolved = true
 		return f
 	}
@@ -498,6 +524,14 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassDriftDetected:
 		slugs = append(slugs, SlugEventDriftDetected)
+		return slugs
+
+	case eventClassRoleChange:
+		slugs = append(slugs, SlugEventRoleChange)
+		return slugs
+
+	case eventClassInputsUpdated:
+		slugs = append(slugs, SlugEventInputsUpdated)
 		return slugs
 	}
 

@@ -7,11 +7,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	updateinstallstackoutputs "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
@@ -75,7 +74,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 		return
 	}
 
-	if err := s.updateInstallPhoneHome(ctx, installID, phoneHomeID, &req); err != nil {
+	if err := s.updateInstallPhoneHome(ctx, installID, phoneHomeID, requestType, &req); err != nil {
 		ctx.Error(errors.Wrap(err, "unable to update install phone home"))
 		return
 	}
@@ -83,7 +82,7 @@ func (s *service) InstallPhoneHome(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, app.EmptyResponse{})
 }
 
-func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHomeID string, req *InstallPhoneHomeRequest) error {
+func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHomeID, requestType string, req *InstallPhoneHomeRequest) error {
 	var stackVersion app.InstallStackVersion
 	if res := s.db.WithContext(ctx).
 		Where(app.InstallStackVersion{
@@ -99,7 +98,6 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(err, "unable to convert to mapstructure")
 	}
 
-	// now make updates
 	updatedStack := app.InstallStackVersion{
 		ID: stackVersion.ID,
 	}
@@ -116,9 +114,6 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 	if res.Error != nil {
 		return errors.Wrap(res.Error, "unable to update stack version")
 	}
-	if res.RowsAffected != 1 {
-		return errors.Wrap(gorm.ErrRecordNotFound, "cloudformation stack not found")
-	}
 
 	run := app.InstallStackVersionRun{
 		OrgID:                 stackVersion.OrgID,
@@ -131,35 +126,19 @@ func (s *service) updateInstallPhoneHome(ctx context.Context, installID, phoneHo
 		return errors.Wrap(res.Error, "unable to create install stack version run")
 	}
 
-	// Only send UpdateInstallStackOutputs signal if this is a stack param update (existing runs present meaning,
-	// its an stack update on existing install and not part of provision / reprovision flow).
-	// For the first phone home during provisioning, the provision/reprovision workflow step handles this.
-	var existingRunCount int64
-	if res = s.db.WithContext(ctx).
-		Model(&app.InstallStackVersionRun{}).
-		Where("install_stack_version_id = ?", stackVersion.ID).
-		Count(&existingRunCount); res.Error != nil {
-		return errors.Wrap(res.Error, "unable to count existing runs")
+	ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
+	ctx = cctx.SetAccountIDContext(ctx, stackVersion.CreatedByID)
+	queueID, err := s.getInstallSignalsQueueID(ctx, installID)
+	if err != nil {
+		return err
 	}
-
-	if existingRunCount > 1 {
-		// The phone-home endpoint is unauthenticated (called from the AWS
-		// Lambda or the Terraform local-exec), so no middleware sets the
-		// org or account on the context. Derive both from the stack version
-		// we just looked up so the queue_signals INSERT's `created_by_id`
-		// NOT NULL constraint is satisfied (the BeforeCreate hook reads
-		// from context).
-		ctx = cctx.SetOrgIDContext(ctx, stackVersion.OrgID)
-		ctx = cctx.SetAccountIDContext(ctx, stackVersion.CreatedByID)
-		queueID, err := s.getInstallSignalsQueueID(ctx, installID)
-		if err != nil {
-			return err
-		}
-		if err := s.enqueueInstallSignal(ctx, queueID, &updateinstallstackoutputs.Signal{
-			InstallStackID: stackVersion.InstallStackID,
-		}, "", ""); err != nil {
-			return fmt.Errorf("enqueue signal: %w", err)
-		}
+	if err := s.enqueueInstallSignal(ctx, queueID, &stackrun.Signal{
+		InstallStackID:        stackVersion.InstallStackID,
+		InstallStackVersionID: stackVersion.ID,
+		RunID:                 run.ID,
+		RequestType:           requestType,
+	}, "", ""); err != nil {
+		return fmt.Errorf("enqueue signal: %w", err)
 	}
 
 	return nil
