@@ -29,6 +29,9 @@ type AppInstallStackVersion struct {
 	// aws configuration parameters
 	AwsBucketName string `json:"aws_bucket_name,omitempty"`
 
+	// callback ref
+	CallbackRef *CallbackRef `json:"callback_ref,omitempty"`
+
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
@@ -88,6 +91,10 @@ type AppInstallStackVersion struct {
 func (m *AppInstallStackVersion) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCallbackRef(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCompositeStatus(formats); err != nil {
 		res = append(res, err)
 	}
@@ -99,6 +106,29 @@ func (m *AppInstallStackVersion) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallStackVersion) validateCallbackRef(formats strfmt.Registry) error {
+	if swag.IsZero(m.CallbackRef) { // not required
+		return nil
+	}
+
+	if m.CallbackRef != nil {
+		if err := m.CallbackRef.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("callback_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("callback_ref")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -159,6 +189,10 @@ func (m *AppInstallStackVersion) validateRuns(formats strfmt.Registry) error {
 func (m *AppInstallStackVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateCallbackRef(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCompositeStatus(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -170,6 +204,31 @@ func (m *AppInstallStackVersion) ContextValidate(ctx context.Context, formats st
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstallStackVersion) contextValidateCallbackRef(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.CallbackRef != nil {
+
+		if swag.IsZero(m.CallbackRef) { // not required
+			return nil
+		}
+
+		if err := m.CallbackRef.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("callback_ref")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("callback_ref")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

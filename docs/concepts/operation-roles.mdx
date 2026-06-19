@@ -150,6 +150,8 @@ The upgrade is fully auditable. Audit trail records show exactly which role was 
 which operation, and the elevated permissions exist in the customer's account for only as long as
 necessary.
 
+You can also automate responses to role changes using [action triggers](/concepts/actions#role-change-triggers). The `role-enabled` and `role-disabled` triggers fire whenever a customer enables or disables a role in their install stack, allowing you to run validation, auditing, or setup tasks automatically.
+
 ## Role Name Resolution
 
 Role names at all levels support Go template syntax using install state variables:

@@ -412,6 +412,13 @@ export interface paths {
      */
     get: operations["GetAppComponentBuild"];
   };
+  "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}/cancel": {
+    /**
+     * cancel component build
+     * @description Cancel a component build by cancelling its queue signal. If the build has an in-flight runner job, it will also be cancelled.
+     */
+    post: operations["CancelAppComponentBuild"];
+  };
   "/v1/apps/{app_id}/components/{component_id}/configs": {
     /**
      * get all configs for a component
@@ -3019,7 +3026,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs";
+    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs" | "role-enabled" | "role-disabled";
     "app.AdHocStepConfig": {
       action_workflow_config_id?: string;
       /** @description this belongs to an app config id */
@@ -4375,6 +4382,7 @@ export interface components {
       aws_bucket_key?: string;
       /** @description aws configuration parameters */
       aws_bucket_name?: string;
+      callback_ref?: components["schemas"]["callback.Ref"];
       checksum?: string;
       composite_status?: components["schemas"]["app.CompositeStatus"];
       contents?: string;
@@ -4409,6 +4417,9 @@ export interface components {
         [key: string]: unknown;
       };
       id?: string;
+      input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
+      role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
+      run_type?: components["schemas"]["app.StackVersionRunType"];
       updated_at?: string;
     };
     "app.InstallState": {
@@ -5364,6 +5375,17 @@ export interface components {
     "app.SlackOrgLinkStatus": "verified" | "revoked";
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
+    "app.StackVersionRunInputDiff": {
+      added?: string[];
+      changed?: string[];
+      removed?: string[];
+    };
+    "app.StackVersionRunRoleDiff": {
+      disabled?: string[];
+      enabled?: string[];
+    };
+    /** @enum {string} */
+    "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
     /** @enum {string} */
     "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
@@ -8963,6 +8985,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by action workflow trigger type */
+        trigger_types?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -9141,6 +9165,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by action workflow trigger type */
+        trigger_types?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -11200,6 +11226,60 @@ export interface operations {
     responses: {
       /** @description OK */
       200: {
+        content: {
+          "application/json": components["schemas"]["app.ComponentBuild"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * cancel component build
+   * @description Cancel a component build by cancelling its queue signal. If the build has an in-flight runner job, it will also be cancelled.
+   */
+  CancelAppComponentBuild: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description component ID */
+        component_id: string;
+        /** @description build ID */
+        build_id: string;
+      };
+    };
+    responses: {
+      /** @description Accepted */
+      202: {
         content: {
           "application/json": components["schemas"]["app.ComponentBuild"];
         };

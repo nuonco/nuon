@@ -88,6 +88,17 @@ across:
 For example, a "production deploy failures" subscription matches `installs` with
 the `env=prod` label, and interests of `deploy` + `failures`.
 
+## Role change notifications
+
+When a customer enables or disables an [operation role](/concepts/operation-roles)
+in their install stack, Nuon can post a notification to subscribed Slack channels.
+Role change events appear as standalone messages (not threaded under a workflow)
+showing the role name, type, and install context.
+
+To receive role change notifications, include **installs** in your subscription's
+interests. Role enable/disable events are delivered alongside other install
+lifecycle events.
+
 ## Approvals from Slack
 
 When a workflow step requires approval and a channel is subscribed to approval

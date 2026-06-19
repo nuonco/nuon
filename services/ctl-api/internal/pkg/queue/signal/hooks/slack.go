@@ -156,7 +156,10 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeExecuteWorkflowStep,
 		signalTypeWorkflowStepApprovalRequest,
 		signalTypeWorkflowStepApprovalResponse,
-		signalTypeDriftDetected:
+		signalTypeDriftDetected,
+		signalTypeStackRun,
+		signalTypeRoleChange,
+		signalTypeInputsUpdated:
 		return true
 	default:
 		return false
@@ -173,7 +176,7 @@ func (h *SlackSignalLifecycleHook) BeforePhase(ctx context.Context, event signal
 	// matching comment in webhook.go. Drift-detected is a single-shot
 	// notification carrier (its Execute is a no-op) so a "started" emission
 	// would just produce a duplicate message right before the real one.
-	if isApprovalSignalType(event.SignalType) || event.SignalType == signalTypeDriftDetected {
+	if isApprovalSignalType(event.SignalType) || isNotificationOnlySignalType(event.SignalType) {
 		return signal.AllowPhaseDecision(), nil
 	}
 
@@ -218,7 +221,10 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		}
 	}()
 
-	if event.OrgID == "" || event.WorkflowID == "" {
+	if event.OrgID == "" {
+		return nil
+	}
+	if event.WorkflowID == "" && !isNotificationOnlySignalType(event.SignalType) {
 		return nil
 	}
 
@@ -285,6 +291,10 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 				}
 			}
 		}
+	}
+
+	if event.SignalType == signalTypeRoleChange {
+		h.enrichRoleChangeWithActionTriggers(ctx, event, &data)
 	}
 
 	rendered := buildRenderEvent(data)
@@ -371,8 +381,8 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 			// in interests.Matches), so each detection is its own top-level
 			// message linked directly to the affected component or sandbox.
 			var err error
-			if event.SignalType == signalTypeDriftDetected {
-				err = h.postFlatDriftDetected(ctx, install, sub, rendered)
+			if isNotificationOnlySignalType(event.SignalType) {
+				err = h.postFlatNotification(ctx, install, sub, rendered, event.SignalType)
 			} else {
 				err = h.postOrThread(ctx, install, sub, data, rendered, logger)
 			}
@@ -577,6 +587,50 @@ func (h *SlackSignalLifecycleHook) postFlatDriftDetected(
 	return nil
 }
 
+// postFlatRoleChange posts a standalone role-change notification to a single
+// channel subscription. Each role enable/disable lands as its own top-level
+// message with the role name, type, and install/org context.
+func (h *SlackSignalLifecycleHook) postFlatRoleChange(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+) error {
+	msg := slackrender.BuildRoleChangeMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack role-change message: %w", err)
+	}
+	return nil
+}
+
+func (h *SlackSignalLifecycleHook) postFlatNotification(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+	signalType signal.SignalType,
+) error {
+	if signalType == signalTypeDriftDetected {
+		return h.postFlatDriftDetected(ctx, install, sub, rendered)
+	}
+	if signalType == signalTypeRoleChange {
+		return h.postFlatRoleChange(ctx, install, sub, rendered)
+	}
+	msg := slackrender.BuildFlatMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack %s message: %w", signalType, err)
+	}
+	return nil
+}
+
 // lookupAnchor selects the anchor row for (team, channel, workflow). Returns
 // found=false on gorm.ErrRecordNotFound; non-nil error otherwise.
 func (h *SlackSignalLifecycleHook) lookupAnchor(ctx context.Context, teamID, channelID, workflowID string) (app.SlackThreadAnchor, bool, error) {
@@ -670,6 +724,8 @@ func buildRenderEvent(data lifecycleEventData) renderEvent {
 			RespondAPI: data.Links.RespondAPI,
 		}
 	}
+
+	e.Metadata = data.Metadata
 
 	return renderEvent{event: e}
 }
@@ -952,6 +1008,46 @@ func (h *SlackSignalLifecycleHook) lookupInstallIDFromSandbox(ctx context.Contex
 		return ""
 	}
 	return row.InstallID
+}
+
+// enrichRoleChangeWithActionTriggers looks up action workflows that have
+// role-enabled or role-disabled triggers for the install's app, and adds their
+// names to the event metadata so the Slack renderer can display them.
+func (h *SlackSignalLifecycleHook) enrichRoleChangeWithActionTriggers(ctx context.Context, event signal.SignalPhaseEvent, data *lifecycleEventData) {
+	if h.db == nil || event.OwnerID == "" {
+		return
+	}
+
+	changeType, _ := data.Metadata["change_type"].(string)
+	triggerType := "role-enabled"
+	if changeType == "disabled" {
+		triggerType = "role-disabled"
+	}
+
+	var appID string
+	if err := h.db.WithContext(ctx).
+		Table("installs").
+		Select("app_id").
+		Where("id = ?", event.OwnerID).
+		Scan(&appID).Error; err != nil || appID == "" {
+		return
+	}
+
+	var names []string
+	if err := h.db.WithContext(ctx).
+		Table("action_workflows").
+		Select("action_workflows.name").
+		Joins("JOIN action_workflow_configs_latest_view_v1 awc ON awc.action_workflow_id = action_workflows.id").
+		Joins("JOIN action_workflow_trigger_configs awtc ON awtc.action_workflow_config_id = awc.id").
+		Where("action_workflows.app_id = ? AND awtc.type = ? AND awtc.deleted_at = 0", appID, triggerType).
+		Scan(&names).Error; err != nil || len(names) == 0 {
+		return
+	}
+
+	if data.Metadata == nil {
+		data.Metadata = map[string]any{}
+	}
+	data.Metadata["action_trigger_names"] = strings.Join(names, ", ")
 }
 
 // markWorkspaceUninstalled mirrors the Phase 4 events handler's transactional

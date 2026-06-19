@@ -19,8 +19,9 @@ import (
 // @Summary				get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param         q 						query	string	false	"search query to filter action workflows by name or ID"
+// @Param					q							query	string	false	"search query to filter action workflows by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					trigger_types				query	string	false	"filter by action workflow trigger type"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -44,8 +45,9 @@ func (s *service) GetAppActions(ctx *gin.Context) {
 // @Summary				get action workflows for an app
 // @Description.markdown	get_app_action_workflows.md
 // @Param					app_id						path	string	true	"app ID"
-// @Param         q 						query	string	false	"search query to filter action workflows by name or ID"
+// @Param					q							query	string	false	"search query to filter action workflows by name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					trigger_types				query	string	false	"filter by action workflow trigger type"
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
@@ -70,6 +72,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	}
 
 	q := ctx.Query("q")
+	triggerTypes := ctx.Query("trigger_types")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
 	appID := ctx.Param("app_id")
 	_, err = s.findApp(ctx, org.ID, appID)
@@ -78,7 +81,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 		return
 	}
 
-	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q, lbls)
+	actionWorkflows, err := s.findActionWorkflows(ctx, org.ID, appID, q, triggerTypes, lbls)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get action workflows %s: %w", appID, err))
 		return
@@ -87,7 +90,7 @@ func (s *service) GetAppActionWorkflows(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, actionWorkflows)
 }
 
-func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
+func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q, triggerTypes string, lbls labels.Labels) ([]*app.ActionWorkflow, error) {
 	actionWorkflows := []*app.ActionWorkflow{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -103,6 +106,14 @@ func (s *service) findActionWorkflows(ctx *gin.Context, orgID, appID, q string, 
 	if q != "" {
 		tx = tx.Where("name ILIKE ? OR action_workflows.id = ?", "%"+q+"%", q)
 	}
+
+	if triggerTypes != "" {
+		tx = tx.Where(
+			"action_workflows.id IN (SELECT awc.action_workflow_id FROM action_workflow_configs_latest_view_v1 awc JOIN action_workflow_trigger_configs awtc ON awtc.action_workflow_config_id = awc.id WHERE awtc.type = ? AND awtc.deleted_at = 0)",
+			triggerTypes,
+		)
+	}
+
 	res := tx.Find(&actionWorkflows)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get action workflows: %w", res.Error)

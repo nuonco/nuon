@@ -52,6 +52,9 @@ func (h *handler) buildSignalPhaseEvent(phase signal.SignalPhase) signal.SignalP
 		if ctx.OwnerName != "" {
 			event.OwnerName = ctx.OwnerName
 		}
+		if ctx.Metadata != nil {
+			event.Metadata = ctx.Metadata
+		}
 	}
 
 	return event
