@@ -37,6 +37,7 @@ The Stack gives the customer full control over the Runner's access to their clou
 - **Enable or disable the Runner** to stop it from executing jobs
 - **Configure IAM roles and policies** to control what the Runner can do
 - **Grant break glass roles** for temporary elevated access during emergencies, which the customer can revoke at any time
+- **Trigger automated actions** when roles are enabled or disabled — use the `role-enabled` and `role-disabled` [action triggers](/concepts/actions#role-change-triggers) to run auditing, validation, or setup tasks in response to role changes
 
 This means the customer always has a killswitch. See [Customer-Controlled Runner Shutdown](/guides/runner-kill-switch).
 

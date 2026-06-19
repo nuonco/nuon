@@ -221,7 +221,10 @@ func (h *SlackSignalLifecycleHook) publish(ctx context.Context, event signal.Sig
 		}
 	}()
 
-	if event.OrgID == "" || event.WorkflowID == "" {
+	if event.OrgID == "" {
+		return nil
+	}
+	if event.WorkflowID == "" && !isNotificationOnlySignalType(event.SignalType) {
 		return nil
 	}
 
@@ -580,6 +583,26 @@ func (h *SlackSignalLifecycleHook) postFlatDriftDetected(
 	return nil
 }
 
+// postFlatRoleChange posts a standalone role-change notification to a single
+// channel subscription. Each role enable/disable lands as its own top-level
+// message with the role name, type, and install/org context.
+func (h *SlackSignalLifecycleHook) postFlatRoleChange(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+) error {
+	msg := slackrender.BuildRoleChangeMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack role-change message: %w", err)
+	}
+	return nil
+}
+
 func (h *SlackSignalLifecycleHook) postFlatNotification(
 	ctx context.Context,
 	install *app.SlackInstallation,
@@ -589,6 +612,9 @@ func (h *SlackSignalLifecycleHook) postFlatNotification(
 ) error {
 	if signalType == signalTypeDriftDetected {
 		return h.postFlatDriftDetected(ctx, install, sub, rendered)
+	}
+	if signalType == signalTypeRoleChange {
+		return h.postFlatRoleChange(ctx, install, sub, rendered)
 	}
 	msg := slackrender.BuildFlatMessage(rendered.event)
 	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
@@ -694,6 +720,8 @@ func buildRenderEvent(data lifecycleEventData) renderEvent {
 			RespondAPI: data.Links.RespondAPI,
 		}
 	}
+
+	e.Metadata = data.Metadata
 
 	return renderEvent{event: e}
 }

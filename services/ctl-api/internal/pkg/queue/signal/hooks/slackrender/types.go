@@ -24,6 +24,9 @@ const (
 	KindWorkflow             = "workflow"
 	KindWorkflowStep         = "workflow_step"
 	KindWorkflowStepApproval = "workflow_step_approval"
+	KindRoleChange           = "role_change"
+	KindInputsUpdated        = "inputs_updated"
+	KindStackRun             = "stack_run"
 )
 
 // Transition values for Event.Transition. British "cancelled" is the
@@ -163,6 +166,11 @@ type Event struct {
 	Outcome  *Outcome
 	Approval *ApprovalRef
 	Links    *ContextLinks
+
+	// Metadata carries domain-specific key-value data from the originating
+	// signal. Used by notification-only events (e.g. role-change) to pass
+	// fields like role_name, change_type, etc. to the renderer.
+	Metadata map[string]any
 }
 
 // IsTerminal reports whether the event represents a terminal transition.

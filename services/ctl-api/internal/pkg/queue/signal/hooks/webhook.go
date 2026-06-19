@@ -272,7 +272,7 @@ func isApprovalSignalType(t signal.SignalType) bool {
 
 func isNotificationOnlySignalType(t signal.SignalType) bool {
 	switch t {
-	case signalTypeDriftDetected, signalTypeRoleChange, signalTypeInputsUpdated:
+	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated:
 		return true
 	}
 	return false
@@ -334,6 +334,7 @@ type lifecycleEventData struct {
 	Outcome  *lifecycleOutcome `json:"outcome,omitempty"`
 	Approval *approvalRef      `json:"approval,omitempty"`
 	Links    *contextLinks     `json:"links,omitempty"`
+	Metadata map[string]any    `json:"metadata,omitempty"`
 }
 
 type workflowRef struct {
@@ -689,6 +690,7 @@ func (h *WebhookSignalLifecycleHook) buildStackEventData(_ context.Context, even
 			OwnerType: event.OwnerType,
 			OwnerName: event.OwnerName,
 		},
+		Metadata: event.Metadata,
 	}
 
 	if outcome != nil {

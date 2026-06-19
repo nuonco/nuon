@@ -8,6 +8,7 @@ import (
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/rolechange"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
@@ -80,6 +81,8 @@ func (s *service) updateInstallRole(ctx *gin.Context, orgID, installID, roleID s
 		return nil, fmt.Errorf("unable to find install role: %w", res.Error)
 	}
 
+	previousEnabled := role.Enabled
+
 	res = s.db.WithContext(ctx).
 		Model(&role).
 		Update("enabled", *req.Enabled)
@@ -87,5 +90,41 @@ func (s *service) updateInstallRole(ctx *gin.Context, orgID, installID, roleID s
 		return nil, fmt.Errorf("unable to update install role: %w", res.Error)
 	}
 
+	// Fire a rolechange signal when the enabled state changes so Slack /
+	// webhook subscribers are notified. Best-effort: failures here never
+	// block the API response.
+	if previousEnabled != *req.Enabled {
+		s.enqueueRoleChangeSignal(ctx, installID, &role)
+	}
+
 	return &role, nil
+}
+
+// enqueueRoleChangeSignal fires a role-change signal for the given install
+// role. All errors are swallowed — notification delivery must never fail the
+// API request.
+func (s *service) enqueueRoleChangeSignal(ctx *gin.Context, installID string, role *app.InstallRoles) {
+	var roleConfig app.AppAWSIAMRoleConfig
+	if err := s.db.WithContext(ctx).Where("id = ?", role.AppRoleConfigID).First(&roleConfig).Error; err != nil {
+		return
+	}
+
+	changeType := "disabled"
+	if role.Enabled {
+		changeType = "enabled"
+	}
+
+	queueID, err := s.getInstallSignalsQueueID(ctx, installID)
+	if err != nil {
+		return
+	}
+
+	_ = s.enqueueInstallSignal(ctx, queueID, &rolechange.Signal{
+		InstallID:      installID,
+		RoleName:       roleConfig.Name,
+		RoleType:       string(roleConfig.Type),
+		ChangeType:     changeType,
+		RoleID:         role.RoleID,
+		InstallRolesID: role.ID,
+	}, installID, "installs")
 }

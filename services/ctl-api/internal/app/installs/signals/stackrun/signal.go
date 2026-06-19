@@ -12,12 +12,12 @@ import (
 	pkggenerics "github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers/stategen"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/inputsupdated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/rolechange"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	runnersignalsv2 "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/installstackversionrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
@@ -27,6 +27,7 @@ import (
 const SignalType signal.SignalType = "stack-run"
 
 const installSignalsQueueName = "install-signals"
+const installWorkflowsQueueName = "install-workflows"
 
 type Signal struct {
 	InstallStackID        string `json:"install_stack_id"`
@@ -83,10 +84,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
+	runType := s.determineRunType(ctx, version, install)
+
+	// Phase 1: Parse and Store
 	beforeRoles := snapshotRoles(ctx, install.ID, l)
 	beforeInputs := snapshotInputs(ctx, version.InstallStackID)
 
-	if err := s.processOutputs(ctx, install, version, l); err != nil {
+	skipInputWorkflow := runType == app.StackVersionRunTypeWorkflow
+	if err := s.processOutputs(ctx, install, version, l, skipInputWorkflow); err != nil {
 		return err
 	}
 
@@ -107,21 +112,109 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	isFirstRun, err := s.isFirstRun(ctx, version.ID)
-	if err != nil {
-		return errors.Wrap(err, "unable to check if first run")
+	roleDiff := computeRoleDiff(beforeRoles, afterRoles)
+	inputDiff := computeInputDiff(beforeInputs, afterInputs)
+
+	if run != nil {
+		if err := activities.AwaitUpdateInstallStackVersionRun(ctx, activities.UpdateInstallStackVersionRunRequest{
+			RunID:     run.ID,
+			RunType:   runType,
+			RoleDiff:  roleDiff,
+			InputDiff: inputDiff,
+		}); err != nil {
+			l.Warn("unable to store run type and diffs", zap.Error(err))
+		}
 	}
 
-	if isFirstRun {
+	// Phase 2: Signal and Complete
+	if runType == app.StackVersionRunTypeWorkflow {
 		s.handleProvisionComplete(ctx, install, version, l)
+		s.propagateToNewerVersion(ctx, install, version, l)
+	} else {
+		diffAndEnqueueRoleChanges(ctx, install.ID, beforeRoles, afterRoles, l)
 	}
-
-	s.propagateToNewerVersion(ctx, install, version, l)
-
-	diffAndEnqueueRoleChanges(ctx, install.ID, beforeRoles, afterRoles, l)
-	diffAndEnqueueInputChanges(ctx, install.ID, beforeInputs, afterInputs, l)
 
 	return nil
+}
+
+func (s *Signal) determineRunType(ctx workflow.Context, version *app.InstallStackVersion, install *app.Install) app.StackVersionRunType {
+	cbResp, err := activities.AwaitGetInstallStackVersionCallback(ctx, activities.GetInstallStackVersionCallbackRequest{
+		VersionID: version.ID,
+	})
+	if err == nil && cbResp.CallbackRef.IsSet() {
+		return app.StackVersionRunTypeWorkflow
+	}
+
+	latestVersion, err := activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
+	if err == nil && latestVersion.ID != version.ID {
+		cbResp, err := activities.AwaitGetInstallStackVersionCallback(ctx, activities.GetInstallStackVersionCallbackRequest{
+			VersionID: latestVersion.ID,
+		})
+		if err == nil && cbResp.CallbackRef.IsSet() {
+			return app.StackVersionRunTypeWorkflow
+		}
+	}
+
+	return app.StackVersionRunTypeOutOfBand
+}
+
+func computeRoleDiff(before, after map[string]roleSnapshot) *app.StackVersionRunRoleDiff {
+	if before == nil || after == nil {
+		return nil
+	}
+
+	diff := &app.StackVersionRunRoleDiff{}
+	for id, afterRole := range after {
+		beforeRole, existed := before[id]
+		if !existed && afterRole.Provisioned {
+			diff.Enabled = append(diff.Enabled, afterRole.RoleName)
+		} else if existed && !beforeRole.Provisioned && afterRole.Provisioned {
+			diff.Enabled = append(diff.Enabled, afterRole.RoleName)
+		} else if existed && beforeRole.Provisioned && !afterRole.Provisioned {
+			diff.Disabled = append(diff.Disabled, afterRole.RoleName)
+		}
+	}
+	for id, beforeRole := range before {
+		if _, exists := after[id]; !exists && beforeRole.Provisioned {
+			diff.Disabled = append(diff.Disabled, beforeRole.RoleName)
+		}
+	}
+
+	if len(diff.Enabled) == 0 && len(diff.Disabled) == 0 {
+		return nil
+	}
+	return diff
+}
+
+func computeInputDiff(before, after map[string]string) *app.StackVersionRunInputDiff {
+	if before == nil && after == nil {
+		return nil
+	}
+	if before == nil {
+		before = map[string]string{}
+	}
+	if after == nil {
+		after = map[string]string{}
+	}
+
+	diff := &app.StackVersionRunInputDiff{}
+	for k, v := range after {
+		if oldV, ok := before[k]; !ok {
+			diff.Added = append(diff.Added, k)
+		} else if oldV != v {
+			diff.Changed = append(diff.Changed, k)
+		}
+	}
+	for k := range before {
+		if _, ok := after[k]; !ok {
+			diff.Removed = append(diff.Removed, k)
+		}
+	}
+
+	if len(diff.Added) == 0 && len(diff.Removed) == 0 && len(diff.Changed) == 0 {
+		return nil
+	}
+	return diff
 }
 
 func (s *Signal) resolveVersion(ctx workflow.Context, install *app.Install) (*app.InstallStackVersion, error) {
@@ -131,16 +224,6 @@ func (s *Signal) resolveVersion(ctx workflow.Context, install *app.Install) (*ap
 		})
 	}
 	return activities.AwaitGetInstallStackVersionByInstallID(ctx, install.ID)
-}
-
-func (s *Signal) isFirstRun(ctx workflow.Context, versionID string) (bool, error) {
-	resp, err := activities.AwaitCountInstallStackVersionRuns(ctx, activities.CountInstallStackVersionRunsRequest{
-		VersionID: versionID,
-	})
-	if err != nil {
-		return false, err
-	}
-	return resp.Count == 1, nil
 }
 
 func (s *Signal) handleProvisionComplete(ctx workflow.Context, install *app.Install, version *app.InstallStackVersion, l log.Logger) {
@@ -174,6 +257,11 @@ func (s *Signal) handleProvisionComplete(ctx workflow.Context, install *app.Inst
 		callback.Send(ctx, nil, cbResp.CallbackRef, callback.Result{
 			Status: "success",
 		})
+		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
+			VersionID: version.ID,
+		}); err != nil {
+			l.Warn("unable to clear callback ref", zap.Error(err))
+		}
 	}
 }
 
@@ -225,10 +313,15 @@ func (s *Signal) propagateToNewerVersion(ctx workflow.Context, install *app.Inst
 		callback.Send(ctx, nil, cbResp.CallbackRef, callback.Result{
 			Status: "success",
 		})
+		if err := activities.AwaitClearInstallStackVersionCallback(ctx, activities.ClearInstallStackVersionCallbackRequest{
+			VersionID: latestVersion.ID,
+		}); err != nil {
+			l.Warn("unable to clear newer version callback ref", zap.Error(err))
+		}
 	}
 }
 
-func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, version *app.InstallStackVersion, l log.Logger) error {
+func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, version *app.InstallStackVersion, l log.Logger, skipInputUpdateWorkflow bool) error {
 	run, err := activities.AwaitGetInstallStackVersionRunByVersionID(ctx, version.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get run outputs")
@@ -316,13 +409,28 @@ func (s *Signal) processOutputs(ctx workflow.Context, install *app.Install, vers
 		return errors.Wrap(err, "unable to fetch install input values from stack outputs")
 	}
 	if len(installInputValues) > 0 {
-		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
-			InstallID:             install.ID,
-			InputConfigID:         appCfg.InputConfig.ID,
-			InputValues:           installInputValues,
-			InstallStackVersionID: version.ID,
-		}); err != nil {
+		inputResp, err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
+			InstallID:               install.ID,
+			InputConfigID:           appCfg.InputConfig.ID,
+			InputValues:             installInputValues,
+			InstallStackVersionID:   version.ID,
+			SkipInputUpdateWorkflow: skipInputUpdateWorkflow,
+		})
+		if err != nil {
 			return errors.Wrap(err, "unable to update install inputs from stack outputs")
+		}
+
+		if inputResp != nil && inputResp.WorkflowID != "" {
+			if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+				OwnerID:   install.ID,
+				OwnerType: "installs",
+				QueueName: installWorkflowsQueueName,
+				Signal: &executeflow.Signal{
+					WorkflowID: inputResp.WorkflowID,
+				},
+			}); err != nil {
+				l.Warn("unable to enqueue input update workflow signal", zap.Error(err))
+			}
 		}
 	}
 
@@ -418,51 +526,6 @@ func enqueueRoleChange(ctx workflow.Context, installID string, role roleSnapshot
 	})
 	if err != nil {
 		l.Warn("unable to enqueue role-change signal", zap.Error(err))
-	}
-}
-
-func diffAndEnqueueInputChanges(ctx workflow.Context, installID string, before, after map[string]string, l log.Logger) {
-	if before == nil && after == nil {
-		return
-	}
-	if before == nil {
-		before = map[string]string{}
-	}
-	if after == nil {
-		after = map[string]string{}
-	}
-
-	var added, removed, changed []string
-	for k, v := range after {
-		if oldV, ok := before[k]; !ok {
-			added = append(added, k)
-		} else if oldV != v {
-			changed = append(changed, k)
-		}
-	}
-	for k := range before {
-		if _, ok := after[k]; !ok {
-			removed = append(removed, k)
-		}
-	}
-
-	if len(added) == 0 && len(removed) == 0 && len(changed) == 0 {
-		return
-	}
-
-	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   installID,
-		OwnerType: "installs",
-		QueueName: installSignalsQueueName,
-		Signal: &inputsupdated.Signal{
-			InstallID:   installID,
-			ChangedKeys: changed,
-			AddedKeys:   added,
-			RemovedKeys: removed,
-		},
-	})
-	if err != nil {
-		l.Warn("unable to enqueue inputs-updated signal", zap.Error(err))
 	}
 }
 

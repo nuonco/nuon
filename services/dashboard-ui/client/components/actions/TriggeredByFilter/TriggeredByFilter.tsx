@@ -31,6 +31,8 @@ const TRIGGER_OPTIONS = [
   'post-reprovision-sandbox',
   'pre-update-inputs',
   'post-update-inputs',
+  'role-enabled',
+  'role-disabled',
 ] as const
 
 interface ITriggeredByFilter {

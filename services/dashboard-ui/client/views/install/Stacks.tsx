@@ -8,7 +8,7 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { EditStackOverridesButton } from '@/components/installs/management/EditStackOverrides'
-import { InstallStacksTable, InstallStacksTableSkeleton } from '@/components/stacks/InstallStacksTable'
+import { InstallStackVersionCards } from '@/components/stacks/InstallStackVersionCards'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -16,7 +16,7 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
-import { getAppConfig, getAppConfigs } from '@/lib'
+import { getAppConfig, getAppConfigs, getInstallStack } from '@/lib'
 import { hasNewerAppConfig, hasStackConfigChanged } from '@/utils/app-utils'
 
 export const Stacks = () => {
@@ -62,6 +62,13 @@ export const Stacks = () => {
         recurse: true,
       }),
     enabled: newerAppConfig && !!latestConfigSummary?.id,
+  })
+
+  const { data: stack } = useQuery({
+    queryKey: ['install-stack', org?.id, install?.id],
+    queryFn: () => getInstallStack({ orgId: org.id, installId: install.id }),
+    refetchInterval: 20000,
+    enabled: !!org?.id && !!install?.id,
   })
 
   const stackChanged = hasStackConfigChanged(config, latestFullConfig)
@@ -243,7 +250,13 @@ export const Stacks = () => {
 
       <div className="flex flex-col gap-4">
         <Text weight="strong">Install stack versions</Text>
-        <InstallStacksTable shouldPoll />
+        {stack ? (
+          <InstallStackVersionCards
+            stack={stack}
+            orgId={org?.id}
+            appId={install?.app_id}
+          />
+        ) : null}
       </div>
     </PageSection>
   )

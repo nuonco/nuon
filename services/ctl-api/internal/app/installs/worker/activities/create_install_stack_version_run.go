@@ -10,8 +10,8 @@ import (
 )
 
 type CreateInstallStackVersionRunRequest struct {
-	InstallStackVersionID string         `json:"install_stack_version_id" validate:"required"`
-	Data                  pgtype.Hstore  `json:"data"`
+	InstallStackVersionID string        `json:"install_stack_version_id" validate:"required"`
+	Data                  pgtype.Hstore `json:"data"`
 }
 
 type CreateInstallStackVersionRunResponse struct {
