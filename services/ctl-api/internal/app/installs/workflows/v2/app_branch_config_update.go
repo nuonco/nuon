@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
 )
@@ -183,15 +182,6 @@ func getStackReprovisionSteps(ctx workflow.Context, sg *stepGroup, installID str
 	step, err = sg.installSignalStep(ctx, installID, "await install stack", pgtype.Hstore{}, &awaitinstallstackversionrun.Signal{
 		InstallStackID: stack.ID,
 	}, planOnly, WithSkippable(false))
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
-	step, err = sg.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &updateinstallstackoutputs.Signal{
-		InstallStackID:          stack.ID,
-		SkipInputUpdateWorkflow: true,
-	}, planOnly)
 	if err != nil {
 		return nil, err
 	}

@@ -1,3 +1,4 @@
+import { Badge } from '@/components/common/Badge'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
@@ -9,7 +10,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { Panel, type IPanel } from '@/components/surfaces/Panel'
-import type { TInstallStack } from '@/types'
+import type { TInstallStack, TInstallStackVersionRun } from '@/types'
 import { cn } from '@/utils/classnames'
 import { objectToKeyValueArray } from '@/utils/data-utils'
 import { indexToOrdinal } from '@/utils/string-utils'
@@ -115,6 +116,52 @@ const StackVersionLinks = ({ version }: { version: TStackVersion }) => {
   )
 }
 
+const RunTypeBadge = ({ runType }: { runType?: string }) => {
+  if (!runType) return null
+  const theme = runType === 'workflow-run' ? 'brand' : 'info'
+  const label = runType === 'workflow-run' ? 'Workflow' : 'Out of band'
+  return <Badge theme={theme} size="sm">{label}</Badge>
+}
+
+const DiffList = ({ label, items, theme }: { label: string; items?: string[]; theme: 'success' | 'error' | 'info' }) => {
+  if (!items?.length) return null
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <Text variant="subtext" theme="neutral">{label}:</Text>
+      {items.map((item) => (
+        <Badge key={item} theme={theme} size="sm" variant="code">{item}</Badge>
+      ))}
+    </div>
+  )
+}
+
+const RunDiffs = ({ run }: { run: TInstallStackVersionRun }) => {
+  const hasRoleDiff = run?.role_diff?.enabled?.length || run?.role_diff?.disabled?.length
+  const hasInputDiff = run?.input_diff?.added?.length || run?.input_diff?.removed?.length || run?.input_diff?.changed?.length
+
+  if (!hasRoleDiff && !hasInputDiff) return null
+
+  return (
+    <div className="flex flex-col gap-2">
+      {hasRoleDiff ? (
+        <div className="flex flex-col gap-1.5">
+          <Text variant="subtext" weight="strong">Role changes</Text>
+          <DiffList label="Enabled" items={run.role_diff?.enabled} theme="success" />
+          <DiffList label="Disabled" items={run.role_diff?.disabled} theme="error" />
+        </div>
+      ) : null}
+      {hasInputDiff ? (
+        <div className="flex flex-col gap-1.5">
+          <Text variant="subtext" weight="strong">Input changes</Text>
+          <DiffList label="Added" items={run.input_diff?.added} theme="success" />
+          <DiffList label="Changed" items={run.input_diff?.changed} theme="info" />
+          <DiffList label="Removed" items={run.input_diff?.removed} theme="error" />
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
   const runs = version?.runs ?? []
   return (
@@ -133,23 +180,32 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
               className="border rounded-md"
               isOpen={idx === 0}
               heading={
-                <Text variant="base">
-                  {indexToOrdinal(ordinalIdx)} run &middot;{' '}
-                  <Time variant="subtext" time={run?.created_at} />
-                </Text>
+                <span className="flex items-center gap-2">
+                  <Text variant="base">
+                    {indexToOrdinal(ordinalIdx)} run &middot;{' '}
+                    <Time variant="subtext" time={run?.created_at} />
+                  </Text>
+                  <RunTypeBadge runType={run?.run_type} />
+                </span>
               }
             >
-              <div className="border-t p-4 flex flex-col gap-2">
-                <ClickToCopyButton
-                  className="w-fit self-end"
-                  textToCopy={JSON.stringify(
-                    run?.data_contents || run?.data || {}
-                  )}
-                />
-                <div className="overflow-auto max-h-[600px]">
-                  <KeyValueList
-                    values={objectToKeyValueArray(run?.data_contents || {})}
-                  />
+              <div className="border-t p-4 flex flex-col gap-4">
+                <RunDiffs run={run} />
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <Text variant="subtext" weight="strong">Outputs</Text>
+                    <ClickToCopyButton
+                      className="w-fit"
+                      textToCopy={JSON.stringify(
+                        run?.data_contents || run?.data || {}
+                      )}
+                    />
+                  </div>
+                  <div className="overflow-auto max-h-[600px]">
+                    <KeyValueList
+                      values={objectToKeyValueArray(run?.data_contents || {})}
+                    />
+                  </div>
                 </div>
               </div>
             </Expand>

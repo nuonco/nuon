@@ -59,6 +59,10 @@ const (
 
 	ActionWorkflowTriggerTypePreUpdateInputs  ActionWorkflowTriggerType = "pre-update-inputs"
 	ActionWorkflowTriggerTypePostUpdateInputs ActionWorkflowTriggerType = "post-update-inputs"
+
+	// role change triggers
+	ActionWorkflowTriggerTypeRoleEnabled  ActionWorkflowTriggerType = "role-enabled"
+	ActionWorkflowTriggerTypeRoleDisabled ActionWorkflowTriggerType = "role-disabled"
 )
 
 // These component types require a component to be passed with them
@@ -94,6 +98,8 @@ var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypePostReprovisionSandbox,
 	ActionWorkflowTriggerTypePreUpdateInputs,
 	ActionWorkflowTriggerTypePostUpdateInputs,
+	ActionWorkflowTriggerTypeRoleEnabled,
+	ActionWorkflowTriggerTypeRoleDisabled,
 }
 
 type ActionWorkflowTriggerConfig struct {

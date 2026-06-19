@@ -133,10 +133,21 @@ following set of triggers:
 - `post-update-inputs`
 - `pre-secrets-sync`
 - `post-secrets-sync`
+- `role-enabled`
+- `role-disabled`
 
 Each workflow trigger is called at the beginning or end of the workflow. In some
 cases, such as `pre-provision` or `pre-reprovision` that include a stack-run,
 the trigger will be called right after the runner is healthy.
+
+### Role change triggers
+
+The `role-enabled` and `role-disabled` triggers fire when a customer enables or
+disables an [operation role](/concepts/operation-roles) in their install stack.
+Use these to run validation, auditing, or setup tasks whenever elevated
+permissions are granted or revoked.
+
+### Component triggers
 
 The following triggers require a `component_name` field to be set, as they are
 tied to a specific component:

@@ -7,6 +7,7 @@ export interface IGetActions extends TPaginationParams {
   labels?: string
   orgId: string
   q?: string
+  trigger_types?: string
 }
 
 export async function getActions({
@@ -16,10 +17,11 @@ export async function getActions({
   limit,
   offset,
   q,
+  trigger_types,
 }: IGetActions) {
   return api<TAction[]>({
     orgId,
-    path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q, labels })}`,
+    path: `apps/${appId}/action-workflows${buildQueryParams({ limit, offset, q, labels, trigger_types })}`,
     paginated: true,
   })
 }

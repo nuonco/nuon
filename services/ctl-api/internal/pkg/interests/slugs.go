@@ -48,6 +48,11 @@ const (
 	SlugEventDriftDetected = SlugPrefixEvent + "drift.detected"
 )
 
+const (
+	SlugEventRoleChange    = SlugPrefixEvent + "role.change"
+	SlugEventInputsUpdated = SlugPrefixEvent + "inputs.updated"
+)
+
 // ResourceSlug returns "resource:<kind>".
 func ResourceSlug(kind ResourceKind) string {
 	return SlugPrefixResource + string(kind)

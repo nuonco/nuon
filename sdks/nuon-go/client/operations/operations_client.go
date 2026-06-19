@@ -134,6 +134,8 @@ type ClientService interface {
 
 	BuildAppConfig(params *BuildAppConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*BuildAppConfigCreated, error)
 
+	CancelAppComponentBuild(params *CancelAppComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelAppComponentBuildAccepted, error)
+
 	CancelInstallWorkflow(params *CancelInstallWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelInstallWorkflowAccepted, error)
 
 	CancelRunnerJob(params *CancelRunnerJobParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelRunnerJobAccepted, error)
@@ -1332,6 +1334,52 @@ func (a *Client) BuildAppConfig(params *BuildAppConfigParams, authInfo runtime.C
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for BuildAppConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CancelAppComponentBuild cancels component build
+
+Cancel a component build by cancelling its queue signal. If the build has an in-flight runner job, it will also be cancelled.
+*/
+func (a *Client) CancelAppComponentBuild(params *CancelAppComponentBuildParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CancelAppComponentBuildAccepted, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCancelAppComponentBuildParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CancelAppComponentBuild",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/components/{component_id}/builds/{build_id}/cancel",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CancelAppComponentBuildReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CancelAppComponentBuildAccepted)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CancelAppComponentBuild: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
