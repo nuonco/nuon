@@ -86,8 +86,6 @@ func (i WorkflowType) PastTenseName() string {
 		return "Built app config components"
 	case WorkflowTypeRunbookRun:
 		return "Runbook run"
-	case WorkflowTypeCreateStackVersion:
-		return "Created stack version"
 	default:
 	}
 
@@ -120,8 +118,6 @@ func (i WorkflowType) Name() string {
 		return "Building app config components"
 	case WorkflowTypeRunbookRun:
 		return "Running runbook"
-	case WorkflowTypeCreateStackVersion:
-		return "Create stack version"
 	default:
 	}
 
