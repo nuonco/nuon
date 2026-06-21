@@ -154,6 +154,7 @@ type InstallerSDKConfig struct {
 	ClusterName  string `json:"cluster_name,omitempty"`
 	RunnerID     string `json:"runner_id,omitempty"`
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+	PhoneHomeURL string `json:"phone_home_url,omitempty"`
 
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 

@@ -153,7 +153,7 @@ func runStatus() {
 		fail(err)
 	}
 	defer inst.Close(context.Background())
-	st, err := inst.Status()
+	st, err := inst.Status(context.Background())
 	if err != nil {
 		fail(err)
 	}

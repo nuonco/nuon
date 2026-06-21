@@ -1,4 +1,4 @@
-package stack
+package awssdk
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/iam"
 	iamtypes "github.com/aws/aws-sdk-go-v2/service/iam/types"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
+	"github.com/nuonco/nuon/sdks/stack/internal/core"
 )
 
 // Trust policy snippets that mirror install-stacks/aws/iam.tf.
@@ -29,7 +30,7 @@ const ec2AssumePolicy = `{
 //  3. Dynamic break-glass and custom roles, keyed verbatim by map key.
 //  4. The runner inline policy (built last because its AssumeRole resources
 //     reference whichever ops/break-glass/custom roles ended up existing).
-func createIAMRoles(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client, stsc *sts.Client, st *State, cfg *Config) error {
+func createIAMRoles(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client, stsc *sts.Client, st *State, cfg *core.Config) error {
 	accountID, err := callerAccountID(ctx, stsc)
 	if err != nil {
 		return err
@@ -381,7 +382,7 @@ func callerAccountID(ctx context.Context, stsc *sts.Client) (string, error) {
 // sortedEnabledKeys returns the enabled keys of a role map in stable
 // (sorted) order so retries hit AWS in the same sequence and logs read
 // deterministically across runs.
-func sortedEnabledKeys(m map[string]RoleConfig) []string {
+func sortedEnabledKeys(m map[string]core.RoleConfig) []string {
 	keys := make([]string, 0, len(m))
 	for k, v := range m {
 		if !v.Enabled {

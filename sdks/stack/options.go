@@ -7,6 +7,11 @@ type Options struct {
 	InstallID string
 	AWSRegion string
 
+	// Method overrides the provisioning method. When empty, the method from
+	// the ctl-api Config is used, falling back to the default (aws-sdk). Lets
+	// stack-cli force a method from the CLI.
+	Method Method
+
 	// logStream / stackRun are populated by FromURL. They aren't part of the
 	// public construction API because callers using New only need the
 	// install ID + region; the URL flow is the only one that needs ctl-api

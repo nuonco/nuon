@@ -9,16 +9,19 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nuonco/nuon/sdks/stack/internal/core"
 )
 
 // Kind identifies the operation a stack run represents. Mirrors the ctl-api
-// `app.InstallStackVersionRunKind` enum.
-type Kind string
+// `app.InstallStackVersionRunKind` enum. Defined in internal/core and
+// re-exported here so the method packages can share it.
+type Kind = core.Kind
 
 const (
-	KindProvision   Kind = "provision"
-	KindReprovision Kind = "reprovision"
-	KindDeprovision Kind = "deprovision"
+	KindProvision   = core.KindProvision
+	KindReprovision = core.KindReprovision
+	KindDeprovision = core.KindDeprovision
 )
 
 // runClientConfig configures the run client. CtlAPIURL + PhoneHomeID are required.

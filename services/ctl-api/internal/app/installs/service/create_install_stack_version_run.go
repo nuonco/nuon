@@ -111,6 +111,10 @@ func (s *service) CreateInstallStackVersionRun(ctx *gin.Context) {
 	}
 	run.SDKConfig = cfg
 
+	// The terraform method renders this into tfvars so the module's phone-home
+	// reports the run; same URL ctl-api already stores on the stack version.
+	cfg.PhoneHomeURL = stackVersion.PhoneHomeURL
+
 	// Merge the install's latest stored input values onto the response so
 	// the stack-cli wizard can render them on the App step. Kept here
 	// rather than inside buildInstallerSDKConfig to avoid touching the hot

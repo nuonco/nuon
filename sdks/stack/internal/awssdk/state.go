@@ -1,9 +1,10 @@
-// Package stack provisions and tears down the AWS resources that make up a
-// Nuon install stack: VPC + subnets (incl. dedicated runner subnet/SG), IAM
-// roles (runner + ops + dynamic break-glass/custom), Secrets Manager entries,
-// and the runner EC2 ASG with its CloudWatch log group. Mirrors the reference
-// Terraform module at install-stacks/aws/.
-package stack
+// Package awssdk provisions and tears down the AWS resources that make up a
+// Nuon install stack using the AWS SDK directly: VPC + subnets (incl.
+// dedicated runner subnet/SG), IAM roles (runner + ops + dynamic
+// break-glass/custom), Secrets Manager entries, and the runner EC2 ASG with
+// its CloudWatch log group. Mirrors the reference Terraform module at
+// install-stacks/aws/. It is one implementation of core.Provisioner.
+package awssdk
 
 import (
 	"encoding/json"

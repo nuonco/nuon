@@ -1,4 +1,4 @@
-package stack
+package awssdk
 
 import (
 	"context"
@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	ec2types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/nuonco/nuon/sdks/stack/internal/core"
 )
 
 // runnerInstanceType matches the TF default. Why: the init script's resource
@@ -54,7 +55,7 @@ curl -fsSL https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scrip
 // Provision passes refresh=true on first creation as a no-op (no instance
 // exists to cycle); reprovision passes true to force a roll; deprovision
 // shouldn't call this at all.
-func ensureRunnerCompute(ctx context.Context, log *slog.Logger, ec2c *ec2.Client, iamc *iam.Client, asgc *autoscaling.Client, logsc *cloudwatchlogs.Client, st *State, cfg *Config, refresh bool) error {
+func ensureRunnerCompute(ctx context.Context, log *slog.Logger, ec2c *ec2.Client, iamc *iam.Client, asgc *autoscaling.Client, logsc *cloudwatchlogs.Client, st *State, cfg *core.Config, refresh bool) error {
 	prefix := cfg.Prefix()
 
 	// Block on IAM propagation before referencing the instance profile in the
@@ -276,7 +277,7 @@ func lookupLatestAL2023AMI(ctx context.Context, c *ec2.Client) (string, error) {
 // launch-template TagSpecifications and ASG propagating tags. Why a single
 // helper: the init script reads `nuon_runner_id` and `nuon_runner_api_url`
 // from instance tags; drift between LT and ASG produces silent boot failures.
-func runnerTagPairs(prefix string, cfg *Config) [][2]string {
+func runnerTagPairs(prefix string, cfg *core.Config) [][2]string {
 	return [][2]string{
 		{"Name", prefix + "-runner"},
 		{"nuon_runner_id", cfg.RunnerID},
@@ -286,7 +287,7 @@ func runnerTagPairs(prefix string, cfg *Config) [][2]string {
 	}
 }
 
-func ensureLaunchTemplate(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, cfg *Config, amiID string) error {
+func ensureLaunchTemplate(ctx context.Context, log *slog.Logger, c *ec2.Client, st *State, cfg *core.Config, amiID string) error {
 	name := cfg.Prefix() + "-runner"
 	userData := base64.StdEncoding.EncodeToString([]byte(runnerUserDataTemplate))
 
@@ -369,7 +370,7 @@ func ensureLaunchTemplate(ctx context.Context, log *slog.Logger, c *ec2.Client, 
 	return nil
 }
 
-func ensureASG(ctx context.Context, log *slog.Logger, c *autoscaling.Client, st *State, cfg *Config) error {
+func ensureASG(ctx context.Context, log *slog.Logger, c *autoscaling.Client, st *State, cfg *core.Config) error {
 	name := cfg.Prefix() + "-runner-asg"
 	st.RunnerASGName = name
 
@@ -442,7 +443,7 @@ func ensureASG(ctx context.Context, log *slog.Logger, c *autoscaling.Client, st 
 	return nil
 }
 
-func buildASGTags(asgName string, cfg *Config) []astypes.Tag {
+func buildASGTags(asgName string, cfg *core.Config) []astypes.Tag {
 	pairs := runnerTagPairs(cfg.Prefix(), cfg)
 	tags := make([]astypes.Tag, 0, len(pairs))
 	for _, kv := range pairs {

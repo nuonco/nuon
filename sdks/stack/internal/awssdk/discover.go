@@ -1,4 +1,4 @@
-package stack
+package awssdk
 
 import (
 	"context"

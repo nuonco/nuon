@@ -1,4 +1,4 @@
-package stack
+package awssdk
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	smtypes "github.com/aws/aws-sdk-go-v2/service/secretsmanager/types"
+	"github.com/nuonco/nuon/sdks/stack/internal/core"
 )
 
 // secretAlphabet matches install-stacks/aws/secrets.tf random_password
@@ -23,7 +24,7 @@ const secretLength = 63
 // AWS Secrets Manager. Idempotent: existing secrets keep their stored value
 // (we only PutSecretValue when we just created the secret, mirroring TF's
 // `lifecycle { ignore_changes = [secret_string] }`).
-func ensureSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *Config) error {
+func ensureSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *core.Config) error {
 	if st.SecretARNs == nil {
 		st.SecretARNs = map[string]string{}
 	}
@@ -112,7 +113,7 @@ func randomPassword() (string, error) {
 // deleteSecrets schedules deletion of every secret created for this install.
 // Uses ForceDeleteWithoutRecovery so a re-provision can recreate by name
 // without waiting out the recovery window.
-func deleteSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *Config) error {
+func deleteSecrets(ctx context.Context, log *slog.Logger, c *secretsmanager.Client, st *State, cfg *core.Config) error {
 	prefix := cfg.Prefix()
 	names := []string{}
 	for _, n := range cfg.AutoGenerateSecrets {

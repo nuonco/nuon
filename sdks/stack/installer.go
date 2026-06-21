@@ -1,7 +1,13 @@
-// Package stack is the Nuon Stack SDK. It provisions and tears down the AWS
+// Package stack is the Nuon Stack SDK. It provisions and tears down the
 // resources that make up a Nuon install stack (VPC + subnets, IAM roles,
 // Secrets Manager entries, runner EC2 ASG) and reports run status back to
 // ctl-api over the public phone-home endpoint.
+//
+// The actual resource lifecycle is delegated to a provisioning method
+// (see internal/core.Provisioner): the AWS SDK implementation lives in
+// internal/awssdk, with Terraform and CloudFormation methods to follow. This
+// package owns the cross-cutting concerns — run reporting, log-stream wiring,
+// and config hydration — and selects which method to drive.
 //
 // Customer-facing clients (stack-cli, embedded Go consumers) construct an
 // Installer with FromURL when bootstrapping from a dashboard-rendered URL,
@@ -14,19 +20,18 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/autoscaling"
-	"github.com/aws/aws-sdk-go-v2/service/cloudwatchlogs"
-	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/iam"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go-v2/service/sts"
-
+	"github.com/nuonco/nuon/sdks/stack/internal/awssdk"
+	"github.com/nuonco/nuon/sdks/stack/internal/core"
 	"github.com/nuonco/nuon/sdks/stack/internal/logstream"
+	"github.com/nuonco/nuon/sdks/stack/internal/terraform"
 )
 
-// Installer provisions and tears down an install stack in a customer AWS account.
+// Outputs is the method-agnostic result of a provision: the fully-resolved
+// values that make up the phone-home payload. Re-exported from internal/core.
+type Outputs = core.Outputs
+
+// Installer provisions and tears down an install stack in a customer cloud
+// account. It drives a single provisioning method selected at construction.
 type Installer struct {
 	opts Options
 	// log emits under OTEL scope "oteljob" — user-visible job output the
@@ -38,21 +43,9 @@ type Installer struct {
 	sysLog *slog.Logger
 	prov   *logstream.Provider
 
-	awsCfg aws.Config
-	ec2c   *ec2.Client
-	iamc   *iam.Client
-	stsc   *sts.Client
-	asgc   *autoscaling.Client
-	logsc  *cloudwatchlogs.Client
-	smc    *secretsmanager.Client
-
-	// cfg is hydrated from the createRun response and threaded into every
-	// resource provisioner. nil until Provision/Deprovision fetches it.
+	// cfg is hydrated from the createRun response and threaded into the
+	// provisioner. nil until Provision/Deprovision fetches it.
 	cfg *Config
-
-	// accountID is captured during stepValidateAWS so reportRun can build
-	// IAM role ARNs without a second sts call on the failure path.
-	accountID string
 
 	// preCreatedRun, when set, makes Run/Deprovision skip their own createRun
 	// call and use this response instead. Set by FromURL — the URL flow
@@ -151,25 +144,34 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 		}
 	}
 
-	awsCfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(opts.AWSRegion))
-	if err != nil {
-		_ = prov.Shutdown(ctx)
-		return nil, fmt.Errorf("load aws config: %w", err)
-	}
-
 	return &Installer{
 		opts:   opts,
 		log:    prov.Logger().With("install_id", opts.InstallID, "aws_region", opts.AWSRegion),
 		sysLog: prov.SystemLogger().With("install_id", opts.InstallID, "aws_region", opts.AWSRegion),
 		prov:   prov,
-		awsCfg: awsCfg,
-		ec2c:   ec2.NewFromConfig(awsCfg),
-		iamc:   iam.NewFromConfig(awsCfg),
-		stsc:   sts.NewFromConfig(awsCfg),
-		asgc:   autoscaling.NewFromConfig(awsCfg),
-		logsc:  cloudwatchlogs.NewFromConfig(awsCfg),
-		smc:    secretsmanager.NewFromConfig(awsCfg),
 	}, nil
+}
+
+// selectProvisioner constructs the provisioning method for this run. The
+// method is resolved from Options (explicit CLI override) first, then the
+// ctl-api Config, then the default. Construction is deferred until the Config
+// is hydrated because ctl-api decides the method per install.
+func (i *Installer) selectProvisioner(ctx context.Context, cfg *Config) (core.Provisioner, error) {
+	method := i.opts.Method
+	if method == "" {
+		method = cfg.Method
+	}
+	if method == "" {
+		method = core.DefaultMethod
+	}
+	switch method {
+	case core.MethodTerraform:
+		return terraform.New(i.opts.AWSRegion), nil
+	case core.MethodAWSSDK:
+		return awssdk.New(ctx, i.opts.AWSRegion)
+	default:
+		return nil, fmt.Errorf("unknown provisioning method %q", method)
+	}
 }
 
 // PreparedConfig returns the rendered Config attached to the pre-created run
@@ -191,9 +193,8 @@ func (i *Installer) Close(ctx context.Context) error {
 	return nil
 }
 
-// Provision runs the full provisioning sequence. State is persisted to disk
-// after each successful step so a partial failure can be cleaned up by Deprovision.
-func (i *Installer) Provision(ctx context.Context) (*State, error) {
+// Provision runs the full provisioning sequence via the selected method.
+func (i *Installer) Provision(ctx context.Context) (*Outputs, error) {
 	return i.run(ctx, KindProvision)
 }
 
@@ -201,17 +202,14 @@ func (i *Installer) Provision(ctx context.Context) (*State, error) {
 // Provision (both code paths are idempotent — every step is discover-or-create
 // keyed on the install_id tag) but recorded as a distinct run kind so the
 // dashboard can show first-time vs reconcile in the audit trail.
-func (i *Installer) Reprovision(ctx context.Context) (*State, error) {
+func (i *Installer) Reprovision(ctx context.Context) (*Outputs, error) {
 	return i.run(ctx, KindReprovision)
 }
 
-// run executes a provision-shaped workflow under the given kind.
-func (i *Installer) run(ctx context.Context, kind Kind) (*State, error) {
-	st, err := loadState(i.opts.InstallID, i.opts.AWSRegion)
-	if err != nil {
-		return nil, err
-	}
-
+// run executes a provision-shaped workflow under the given kind: it reports
+// the run to ctl-api (which mints the log-stream credentials and rendered
+// config), then delegates the resource lifecycle to the provisioner.
+func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 	// Report to ctl-api as a stack run. Required when configured: the response
 	// also carries the OTLP log-stream credentials and the rendered Config we
 	// need for visibility and resource provisioning.
@@ -235,34 +233,26 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*State, error) {
 			var err error
 			resp, err = rc.createRun(ctx, kind)
 			if err != nil {
-				return st, fmt.Errorf("create stack run: %w", err)
+				return nil, fmt.Errorf("create stack run: %w", err)
 			}
 		}
 		runID = resp.ID
 		i.log.Info("created stack run", "run_id", runID)
 		if resp.Config == nil {
-			return st, fmt.Errorf("create stack run: ctl-api returned no config block")
+			return nil, fmt.Errorf("create stack run: ctl-api returned no config block")
 		}
 		i.cfg = resp.Config
 		i.cfg.InstallID = i.opts.InstallID
-		// Propagate identity + cluster name into State so resource tagging
-		// callsites can read them without holding cfg.
-		st.OrgID = i.cfg.OrgID
-		st.AppID = i.cfg.AppID
-		st.ClusterName = i.cfg.ClusterName
-		if st.ClusterName == "" {
-			st.ClusterName = i.opts.InstallID
-		}
-		// Validate the bootstrap fields before any AWS resources change. The
+		// Validate the bootstrap fields before any resources change. The
 		// runner's init script reads nuon_runner_id / nuon_runner_api_url
 		// from EC2 instance tags via IMDSv2 — empty values would let
 		// provisioning succeed but leave the runner unable to authenticate,
 		// surfacing as a silent "never connects" later.
 		if i.cfg.RunnerID == "" {
-			return st, fmt.Errorf("ctl-api config missing runner_id — install has no runner attached")
+			return nil, fmt.Errorf("ctl-api config missing runner_id — install has no runner attached")
 		}
 		if i.cfg.RunnerAPIURL == "" {
-			return st, fmt.Errorf("ctl-api config missing runner_api_url — set RunnerGroupSettings.RunnerAPIURL on this install's runner group")
+			return nil, fmt.Errorf("ctl-api config missing runner_api_url — set RunnerGroupSettings.RunnerAPIURL on this install's runner group")
 		}
 		// Swap the stdout-only provider for an OTLP one fed by the credentials
 		// ctl-api just minted for this run.
@@ -295,136 +285,107 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*State, error) {
 			}
 		}
 	} else {
-		// No stackRun configured: run with an empty config so VPC/log-group/
-		// secrets can still be exercised end-to-end.
+		// No stackRun configured: run with an empty config so the method can
+		// still be exercised end-to-end.
 		i.cfg = &Config{InstallID: i.opts.InstallID}
 	}
 
-	steps := []struct {
-		name string
-		run  func(context.Context, *slog.Logger, *State) error
-	}{
-		{"validate-aws", i.stepValidateAWS},
-		{"create-vpc", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return createVPC(ctx, l, i.ec2c, s)
-		}},
-		{"create-iam", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return createIAMRoles(ctx, l, i.sysLog, i.iamc, i.stsc, s, i.cfg)
-		}},
-		{"create-secrets", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return ensureSecrets(ctx, l, i.smc, s, i.cfg)
-		}},
-		{"create-runner-compute", func(ctx context.Context, l *slog.Logger, s *State) error {
-			// Cycle the running instance on every run — initial provision is a
-			// no-op (no instance exists yet); reprovision picks up refreshed
-			// tags / AMI / user-data without manual intervention.
-			refresh := kind == KindProvision || kind == KindReprovision
-			return ensureRunnerCompute(ctx, l, i.ec2c, i.iamc, i.asgc, i.logsc, s, i.cfg, refresh)
-		}},
+	provisioner, err := i.selectProvisioner(ctx, i.cfg)
+	if err != nil {
+		i.reportRun(ctx, rc, runID, "failed", err.Error(), nil)
+		return nil, err
 	}
 
-	for _, s := range steps {
-		log := i.log.With("step", s.name)
-		log.Info("step starting")
-		if err := s.run(ctx, log, st); err != nil {
-			log.Error("step failed", "err", err.Error())
-			i.reportRun(ctx, rc, runID, "failed", err.Error(), st)
-			return st, fmt.Errorf("step %s: %w", s.name, err)
+	// When the method reports its own run (e.g. the Terraform module's
+	// phone-home), the SDK must not also report or it double-reports.
+	ownReporting := provisioner.ReportsOwnRun()
+
+	outputs, err := provisioner.Provision(ctx, i.log, i.sysLog, i.cfg, kind)
+	if err != nil {
+		if !ownReporting {
+			i.reportRun(ctx, rc, runID, "failed", err.Error(), nil)
 		}
-		log.Info("step completed")
+		return nil, err
 	}
-
-	i.log.Info("provision complete", "runner_asg", st.RunnerASGName)
-	i.reportRun(ctx, rc, runID, "succeeded", "", st)
-	return st, nil
+	if !ownReporting {
+		i.reportRun(ctx, rc, runID, "succeeded", "", outputs)
+	}
+	return outputs, nil
 }
 
 // reportRun is best-effort; failures only log. Builds the phone-home payload
 // described in install-stacks/aws/phone_home.tf so app templates resolving
 // `nuon.install_stack.outputs.*` see identical key sets across CFN/TF/SDK.
-func (i *Installer) reportRun(ctx context.Context, c *runClient, runID, status, statusDesc string, st *State) {
+func (i *Installer) reportRun(ctx context.Context, c *runClient, runID, status, statusDesc string, out *Outputs) {
 	if c == nil || runID == "" {
 		return
 	}
-	data := i.buildPhoneHomePayload(st)
 	if err := c.updateRun(ctx, runID, updateRunRequest{
 		Status:            status,
 		StatusDescription: statusDesc,
-		Data:              data,
+		Data:              i.buildPhoneHomePayload(out),
 	}); err != nil {
 		i.sysLog.Warn("update stack run failed", "err", err.Error(), "status", status)
 	}
 }
 
-func (i *Installer) buildPhoneHomePayload(st *State) map[string]any {
-	roleARN := func(name string) string {
-		if name == "" || i.accountID == "" {
-			return ""
-		}
-		return fmt.Sprintf("arn:aws:iam::%s:role/%s", i.accountID, name)
-	}
-	instanceProfileARN := func(name string) string {
-		if name == "" || i.accountID == "" {
-			return ""
-		}
-		return fmt.Sprintf("arn:aws:iam::%s:instance-profile/%s", i.accountID, name)
-	}
-	breakGlass := map[string]string{}
-	for _, n := range st.BreakGlassRoleNames {
-		breakGlass[n] = roleARN(n)
-	}
-	customRoles := map[string]string{}
-	for _, n := range st.CustomRoleNames {
-		customRoles[n] = roleARN(n)
-	}
-	// Always non-nil — empty maps stringify to "map[]" which the StringToMap
-	// decode hook handles cleanly. Nil maps land as NULL in hstore and break
-	// downstream decode with "expected a map, got 'string'".
-	installInputs := map[string]string{}
-	if i.cfg != nil && len(i.cfg.InstallInputs) > 0 {
-		installInputs = i.cfg.InstallInputs
-	}
+func (i *Installer) buildPhoneHomePayload(out *Outputs) map[string]any {
 	data := map[string]any{
-		"request_type":             "Create",
-		"phone_home_type":          "aws",
-		"account_id":               i.accountID,
-		"region":                   i.opts.AWSRegion,
-		"vpc_id":                   st.VPCID,
-		"runner_subnet":            st.RunnerSubnetID,
-		"public_subnets":           strings.Join(st.PublicSubnetIDs, ","),
-		"private_subnets":          strings.Join(st.PrivateSubnetIDs, ","),
-		"runner_security_group_id": st.RunnerSecurityGroupID,
-		"runner_iam_role_arn":      roleARN(st.RunnerRoleName),
-		"runner_instance_profile":  instanceProfileARN(st.RunnerInstanceProfileName),
-		"runner_asg_name":          st.RunnerASGName,
-		"runner_log_group_name":    st.RunnerLogGroupName,
-		"provision_iam_role_arn":   roleARN(st.ProvisionRoleName),
-		"maintenance_iam_role_arn": roleARN(st.MaintenanceRoleName),
-		"deprovision_iam_role_arn": roleARN(st.DeprovisionRoleName),
+		"request_type":    "Create",
+		"phone_home_type": "aws",
 	}
+	if out == nil {
+		// Failure path: ctl-api skips output processing for failed runs, so a
+		// minimal payload is sufficient.
+		return data
+	}
+
+	data["account_id"] = out.AccountID
+	data["region"] = out.Region
+	data["vpc_id"] = out.VPCID
+	data["runner_subnet"] = out.RunnerSubnetID
+	data["public_subnets"] = strings.Join(out.PublicSubnetIDs, ",")
+	data["private_subnets"] = strings.Join(out.PrivateSubnetIDs, ",")
+	data["runner_security_group_id"] = out.RunnerSecurityGroupID
+	data["runner_iam_role_arn"] = out.RunnerIAMRoleARN
+	data["runner_instance_profile"] = out.RunnerInstanceProfileARN
+	data["runner_asg_name"] = out.RunnerASGName
+	data["runner_log_group_name"] = out.RunnerLogGroupName
+	data["provision_iam_role_arn"] = out.ProvisionRoleARN
+	data["maintenance_iam_role_arn"] = out.MaintenanceRoleARN
+	data["deprovision_iam_role_arn"] = out.DeprovisionRoleARN
+
 	// Always emit map-typed keys, even when empty. Customer dashboard
 	// templates reference `.nuon.install_stack.outputs.break_glass_role_arns`
 	// directly and explode if the key is missing. Empty Go maps stringify to
 	// "map[]" via fmt.Sprintf("%v", v); the StringToMapDecodeHook handles
 	// that input cleanly.
+	breakGlass := out.BreakGlassRoleARNs
+	if breakGlass == nil {
+		breakGlass = map[string]string{}
+	}
+	customRoles := out.CustomRoleARNs
+	if customRoles == nil {
+		customRoles = map[string]string{}
+	}
+	installInputs := out.InstallInputs
+	if installInputs == nil {
+		installInputs = map[string]string{}
+	}
 	data["break_glass_role_arns"] = breakGlass
 	data["custom_role_arns"] = customRoles
 	data["install_inputs"] = installInputs
-	for k, v := range st.SecretARNs {
+	for k, v := range out.SecretARNs {
 		data[k] = v
 	}
 	return data
 }
 
-// Deprovision tears down everything in the state file in reverse order.
+// Deprovision tears down everything the selected method created.
 func (i *Installer) Deprovision(ctx context.Context) error {
-	st, err := loadState(i.opts.InstallID, i.opts.AWSRegion)
-	if err != nil {
-		return err
-	}
 	// Hydrate config — Deprovision needs cfg to know which secret names to
 	// delete. If stackRun isn't configured, fall back to an empty config; the
-	// Delete* funcs all tolerate a sparse config.
+	// method's delete path tolerates a sparse config.
 	if i.opts.stackRun != nil {
 		rc := i.runClient
 		if rc == nil {
@@ -453,53 +414,20 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 	} else {
 		i.cfg = &Config{InstallID: i.opts.InstallID}
 	}
-	steps := []struct {
-		name string
-		run  func(context.Context, *slog.Logger, *State) error
-	}{
-		{"delete-runner-compute", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return deleteRunnerCompute(ctx, l, i.ec2c, i.asgc, i.logsc, s)
-		}},
-		{"delete-secrets", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return deleteSecrets(ctx, l, i.smc, s, i.cfg)
-		}},
-		{"delete-iam", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return deleteIAMRoles(ctx, l, i.iamc, s)
-		}},
-		{"delete-vpc", func(ctx context.Context, l *slog.Logger, s *State) error {
-			return deleteVPC(ctx, l, i.ec2c, s)
-		}},
-	}
-	for _, s := range steps {
-		log := i.log.With("step", s.name)
-		log.Info("step starting")
-		if err := s.run(ctx, log, st); err != nil {
-			log.Error("step failed", "err", err.Error())
-			return fmt.Errorf("step %s: %w", s.name, err)
-		}
-		log.Info("step completed")
-	}
-	if err := st.Delete(); err != nil {
-		return fmt.Errorf("delete state file: %w", err)
-	}
-	i.log.Info("deprovision complete")
-	return nil
-}
 
-// Status returns the current persisted state.
-func (i *Installer) Status() (*State, error) {
-	return loadState(i.opts.InstallID, i.opts.AWSRegion)
-}
-
-func (i *Installer) stepValidateAWS(ctx context.Context, log *slog.Logger, _ *State) error {
-	out, err := i.stsc.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+	provisioner, err := i.selectProvisioner(ctx, i.cfg)
 	if err != nil {
-		return fmt.Errorf("sts get-caller-identity: %w", err)
+		return err
 	}
-	i.accountID = aws.ToString(out.Account)
-	log.Info("aws caller identity",
-		"account", i.accountID,
-		"arn", aws.ToString(out.Arn),
-	)
-	return nil
+	return provisioner.Deprovision(ctx, i.log, i.sysLog, i.cfg)
+}
+
+// Status returns the current persisted outputs for the install.
+func (i *Installer) Status(ctx context.Context) (*Outputs, error) {
+	cfg := &Config{InstallID: i.opts.InstallID, AWSRegion: i.opts.AWSRegion, Method: i.opts.Method}
+	provisioner, err := i.selectProvisioner(ctx, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return provisioner.Status(ctx, cfg)
 }
