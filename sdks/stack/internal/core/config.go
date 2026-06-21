@@ -30,7 +30,7 @@ type Config struct {
 	// report the run; the AWS SDK method ignores it (the SDK reports directly).
 	PhoneHomeURL string `json:"phone_home_url,omitempty"`
 
-	// Method selects the provisioning implementation (aws-sdk or terraform).
+	// Method selects the provisioning implementation (sdk or terraform).
 	// Empty falls back to DefaultMethod.
 	Method Method `json:"method,omitempty"`
 

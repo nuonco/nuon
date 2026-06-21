@@ -25,7 +25,7 @@ type introStep struct {
 }
 
 func newIntroStep(kind stack.Kind) *introStep { return &introStep{kind: kind} }
-func (s *introStep) Init() tea.Cmd             { return nil }
+func (s *introStep) Init() tea.Cmd            { return nil }
 
 func (s *introStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 	if k, ok := msg.(tea.KeyPressMsg); ok && k.String() == "enter" {
@@ -545,8 +545,8 @@ func (s *networkStep) View(w, h int) string {
 	return title + "\n\n" + body + "\n\n" + buttons
 }
 
-func (s *networkStep) Help() string                 { return "←→ move" }
-func (s *networkStep) CanAdvance() (bool, string)   { return true, "" }
+func (s *networkStep) Help() string               { return "←→ move" }
+func (s *networkStep) CanAdvance() (bool, string) { return true, "" }
 
 func networkDiagram() string {
 	return `┌──────────── VPC 10.128.0.0/16 ────────────┐
@@ -578,8 +578,8 @@ const (
 )
 
 type roleEntry struct {
-	key     string  // map key or op role identifier
-	label   string  // display label
+	key     string // map key or op role identifier
+	label   string // display label
 	enabled bool
 	// For ops roles: snapshot of original policy fields to restore on re-enable.
 	opSnapshot *opSnapshot
@@ -960,8 +960,8 @@ func (s *confirmStep) View(w, h int) string {
 	return title + "\n\n" + cols + "\n\n" + warn + "\n\n" + buttons
 }
 
-func (s *confirmStep) Help() string                 { return "←→ move" }
-func (s *confirmStep) CanAdvance() (bool, string)   { return true, "" }
+func (s *confirmStep) Help() string               { return "←→ move" }
+func (s *confirmStep) CanAdvance() (bool, string) { return true, "" }
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 

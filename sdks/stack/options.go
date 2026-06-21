@@ -8,7 +8,7 @@ type Options struct {
 	AWSRegion string
 
 	// Method overrides the provisioning method. When empty, the method from
-	// the ctl-api Config is used, falling back to the default (aws-sdk). Lets
+	// the ctl-api Config is used, falling back to the default (sdk). Lets
 	// stack-cli force a method from the CLI.
 	Method Method
 
@@ -25,6 +25,10 @@ type Options struct {
 type URLOptions struct {
 	URL  string
 	Kind Kind
+
+	// Method overrides the provisioning method. Empty uses the method the
+	// ctl-api Config specifies, falling back to the default (sdk).
+	Method Method
 }
 
 // logStreamConfig points the SDK at a Nuon ctl-api log stream for OTLP push.

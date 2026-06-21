@@ -20,6 +20,6 @@ type (
 
 // Provisioning methods.
 const (
-	MethodAWSSDK    = core.MethodAWSSDK
+	MethodSDK       = core.MethodSDK
 	MethodTerraform = core.MethodTerraform
 )

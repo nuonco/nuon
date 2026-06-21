@@ -92,6 +92,7 @@ func FromURL(ctx context.Context, in URLOptions) (*Installer, error) {
 	opts := Options{
 		InstallID: resp.Config.InstallID,
 		AWSRegion: resp.Config.AWSRegion,
+		Method:    in.Method,
 		stackRun: &stackRunConfig{
 			CtlAPIURL:   base,
 			PhoneHomeID: phoneHomeID,
@@ -167,7 +168,7 @@ func (i *Installer) selectProvisioner(ctx context.Context, cfg *Config) (core.Pr
 	switch method {
 	case core.MethodTerraform:
 		return terraform.New(i.opts.AWSRegion), nil
-	case core.MethodAWSSDK:
+	case core.MethodSDK:
 		return awssdk.New(ctx, i.opts.AWSRegion)
 	default:
 		return nil, fmt.Errorf("unknown provisioning method %q", method)
