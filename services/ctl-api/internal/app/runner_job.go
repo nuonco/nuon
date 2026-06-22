@@ -42,6 +42,23 @@ const (
 	RunnerJobStatusUnknown RunnerJobStatus = "unknown"
 )
 
+// IsTerminal reports whether the status is a final state that the job will not
+// transition out of. A job left in a non-terminal status when its execution
+// loop ends has been dropped and must not be read as success downstream.
+func (s RunnerJobStatus) IsTerminal() bool {
+	switch s {
+	case RunnerJobStatusFinished,
+		RunnerJobStatusFailed,
+		RunnerJobStatusTimedOut,
+		RunnerJobStatusNotAttempted,
+		RunnerJobStatusCancelled,
+		RunnerJobStatusUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
 type RunnerJobGroup string
 
 const (
