@@ -99,6 +99,28 @@ const ApprovedPlanBanner = ({ step }: IApprovalBanner) => {
   const responseType = getApprovalResponseType(step?.approval?.response?.type)
   const optimistic = !responseType && hasResponded(step?.id)
 
+  const superseded =
+    step?.retried &&
+    (step?.approval?.response?.type === 'approve' ||
+      step?.status?.metadata?.status === 'approved')
+
+  if (superseded) {
+    return (
+      <Banner theme="warn">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col">
+            <Text weight="strong">Plan superseded</Text>
+            <Text variant="subtext" theme="neutral">
+              This plan was approved, but a later step in the group failed and
+              the group was retried with a fresh plan. This approval no longer
+              applies.
+            </Text>
+          </div>
+        </div>
+      </Banner>
+    )
+  }
+
   return (
     <Banner theme={optimistic ? 'success' : RESPONSE_THEME[step?.approval?.response?.type]}>
       <div className="flex items-center justify-between gap-4">

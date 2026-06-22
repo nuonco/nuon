@@ -34,15 +34,24 @@ export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 
-export function getStepBadge(
-  step: TWorkflowStep,
-  isApprovalPrompt?: boolean,
-  planOnly?: boolean
-): TBadgeCfg {
+// The retry "lineage" badge — how this attempt relates to its retries. Distinct
+// from the outcome badge (below) so a retry row can show both.
+function getStepLineageBadge(step: TWorkflowStep): TBadgeCfg | undefined {
   const metadata = step?.status?.metadata
 
   if (metadata?.auto_retried) {
     return { children: 'Auto-retried', theme: 'info' }
+  }
+
+  // An approved plan that was later retried (e.g. its apply failed and the
+  // whole group re-ran) is no longer valid — surface that the approval was
+  // superseded rather than a generic "Retried".
+  const wasApprovedPlan =
+    step?.execution_type === 'approval' &&
+    (metadata?.status === 'approved' ||
+      step?.approval?.response?.type === 'approve')
+  if (step?.retried && wasApprovedPlan) {
+    return { children: 'Plan superseded', theme: 'warn' }
   }
 
   if (step?.retried) {
@@ -54,6 +63,17 @@ export function getStepBadge(
     const retryLabel = metadata.retry_type === 'manual' ? 'Manual retry' : metadata.retry_type === 'auto' ? 'Auto retry' : 'Retry'
     return { children: `${retryLabel} #${retryIdx}`, theme: 'info' }
   }
+
+  return undefined
+}
+
+// The step's outcome badge — its terminal result (Completed / Failed / Plan
+// approved / etc.), independent of any retry lineage.
+function getStepOutcomeBadge(
+  step: TWorkflowStep,
+  isApprovalPrompt?: boolean,
+  planOnly?: boolean
+): TBadgeCfg {
   if (step?.execution_type === 'skipped') {
     return { children: 'Skipped' }
   }
@@ -100,6 +120,38 @@ export function getStepBadge(
   }
 
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
+}
+
+// Badges for a step, in render order: the retry lineage badge (if any) followed
+// by the outcome badge, so a retry attempt shows both "Retry #2" and its result.
+export function getStepBadges(
+  step: TWorkflowStep,
+  isApprovalPrompt?: boolean,
+  planOnly?: boolean
+): TBadgeCfg[] {
+  const lineage = getStepLineageBadge(step)
+
+  // "Plan superseded" already conveys the outcome — don't double up.
+  if (lineage?.children === 'Plan superseded') {
+    return [lineage]
+  }
+
+  const outcome = getStepOutcomeBadge(step, isApprovalPrompt, planOnly)
+  const badges = [lineage, outcome].filter(
+    (badge): badge is TBadgeCfg => !!badge?.children
+  )
+
+  return badges.filter(
+    (badge, idx) => badges.findIndex((b) => b.children === badge.children) === idx
+  )
+}
+
+export function getStepBadge(
+  step: TWorkflowStep,
+  isApprovalPrompt?: boolean,
+  planOnly?: boolean
+): TBadgeCfg {
+  return getStepBadges(step, isApprovalPrompt, planOnly)[0] ?? {}
 }
 /**
  * A step's logical "kind" — stable across retry attempts. Retrying a step
@@ -247,6 +299,18 @@ export function getStepBanner(step: TWorkflowStep): TStepBannerCfg | undefined {
       copy: `Step was skipped due to being a plan only workflow`,
       theme: 'default',
       title: `Step ${step?.name} skipped`,
+    }
+  }
+
+  const wasApprovedPlan =
+    step?.execution_type === 'approval' &&
+    (step?.status?.metadata?.status === 'approved' ||
+      step?.approval?.response?.type === 'approve')
+  if (step?.retried && wasApprovedPlan) {
+    return {
+      copy: 'This plan was approved, but a later step in the group failed and the group was retried with a fresh plan. This approval no longer applies.',
+      theme: 'warn',
+      title: `Step ${step?.name} — plan superseded`,
     }
   }
 

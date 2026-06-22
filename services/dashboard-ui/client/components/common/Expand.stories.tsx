@@ -7,6 +7,52 @@ import { Text } from './Text'
 import { Icon } from './Icon'
 import { Badge } from './Badge'
 import { Status } from './Status'
+import { Button } from './Button'
+
+export const InteractiveHeading = () => (
+  <div className="space-y-6 max-w-2xl">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Interactive Heading</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        With <code>interactiveHeading</code> the header is a plain container and
+        only the caret toggles. This lets the heading host its own links and
+        buttons without nesting them inside the toggle button.
+      </p>
+    </div>
+
+    <Expand
+      id="interactive-heading-expand"
+      interactiveHeading
+      toggleLabel="Show previous attempts"
+      className="border rounded-md"
+      headerClassName="px-4 py-2"
+      heading={
+        <div className="flex items-center gap-4 flex-1">
+          <Status status="error" isWithoutText variant="timeline" />
+          <Text weight="strong">Sync and plan certificate</Text>
+          <Badge theme="info" size="sm">
+            Retry #3
+          </Badge>
+          <Button
+            size="sm"
+            variant="primary"
+            className="ml-auto"
+            onClick={() => alert('Retry clicked')}
+          >
+            Retry step
+          </Button>
+          <Text variant="subtext" theme="neutral">
+            3 previous attempts
+          </Text>
+        </div>
+      }
+    >
+      <div className="p-4">
+        <Text>Previous attempts render here, newest first.</Text>
+      </div>
+    </Expand>
+  </div>
+)
 
 export const BasicUsage = () => (
   <div className="space-y-6">
