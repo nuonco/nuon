@@ -16,21 +16,24 @@ type step int
 
 const (
 	stepIntro step = iota
-	stepMethod
 	stepAuth
 	stepInputs
 	stepNetwork
 	stepRoles
+	stepMethod
 	stepConfirm
 )
 
 // stepModel is what each step must satisfy. Steps own their own focus and
-// render their own Previous/Next buttons; the parent provides chrome and
-// listens for nav messages.
+// render their own Previous/Next buttons; the parent provides chrome, the
+// two-column layout, and listens for nav messages. Main renders the left
+// column (primary content + buttons); Detail renders the focus-driven right
+// column and may return "" when there is nothing to show.
 type stepModel interface {
 	Init() tea.Cmd
 	Update(tea.Msg) (stepModel, tea.Cmd)
-	View(width, height int) string
+	Main(width, height int) string
+	Detail(width, height int) string
 	Help() string
 	// CanAdvance gates nextStepMsg; when false, the reason surfaces in the
 	// footer instead of advancing.
@@ -184,7 +187,8 @@ func (m appModel) View() tea.View {
 	if stepH < 1 {
 		stepH = 1
 	}
-	bodyContent := m.steps[m.current].View(innerW, stepH)
+	cur := m.steps[m.current]
+	bodyContent := twoColumn(innerW, stepH, cur.Main, cur.Detail)
 	bodyContent = clipLinesExact(bodyContent, stepH)
 	body := bodyPadStyle.
 		Width(innerW).
@@ -222,10 +226,10 @@ func (m appModel) renderHeader(w int) string {
 }
 
 func (m appModel) renderStepper(w int) string {
-	labels := []string{"Method", "Auth", "Inputs", "Network", "Roles", "Provision"}
+	labels := []string{"Auth", "Inputs", "Network", "Roles", "Method", "Provision"}
 	parts := make([]string, 0, len(labels)*2)
 	for i, lbl := range labels {
-		// labels[0] corresponds to stepMethod (step value 1); the intro step
+		// labels[0] corresponds to stepAuth (step value 1); the intro step
 		// (value 0) is intentionally not in the stepper.
 		stepValue := step(i + 1)
 		var marker, text string

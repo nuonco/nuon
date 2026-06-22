@@ -17,7 +17,8 @@ var (
 	headerMetaStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("244")).
 			Padding(0, 1)
-	ruleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	ruleStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	dividerStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 
 	stepActive  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
 	stepDone    = lipgloss.NewStyle().Foreground(lipgloss.Color("42"))

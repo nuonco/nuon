@@ -34,7 +34,7 @@ func (s *introStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 	return s, nil
 }
 
-func (s *introStep) View(w, h int) string {
+func (s *introStep) Main(w, h int) string {
 	verb := "provision"
 	switch s.kind {
 	case stack.KindReprovision:
@@ -56,12 +56,6 @@ func (s *introStep) View(w, h int) string {
 			"",
 			kvKeyStyle.Render("Deprovision") + " tears everything down in reverse order, leaving",
 			"the AWS account empty of stack-managed resources.",
-			"",
-			dimStyle.Render("This will delete:"),
-			dimStyle.Render("  · the runner EC2 instance and log group"),
-			dimStyle.Render("  · all created IAM roles and policies"),
-			dimStyle.Render("  · stack secrets in AWS Secrets Manager"),
-			dimStyle.Render("  · the VPC, subnets, NAT gateway, and route tables"),
 		}, "\n")
 	default:
 		body = strings.Join([]string{
@@ -72,20 +66,35 @@ func (s *introStep) View(w, h int) string {
 			"",
 			"This wizard walks you through " + verb + "ing one. You'll:",
 			"",
-			"  " + stepActive.Render("1.") + " " + kvKeyStyle.Render("Method") + "   — choose how the stack is provisioned",
-			"  " + stepActive.Render("2.") + " " + kvKeyStyle.Render("Auth") + "     — verify your AWS credentials and region",
-			"  " + stepActive.Render("3.") + " " + kvKeyStyle.Render("Inputs") + "   — fill in install inputs and required secrets",
-			"  " + stepActive.Render("4.") + " " + kvKeyStyle.Render("Network") + "  — review the VPC plan",
-			"  " + stepActive.Render("5.") + " " + kvKeyStyle.Render("Roles") + "    — pick which IAM roles to create",
+			"  " + stepActive.Render("1.") + " " + kvKeyStyle.Render("Auth") + "     — verify your AWS credentials and region",
+			"  " + stepActive.Render("2.") + " " + kvKeyStyle.Render("Inputs") + "   — fill in install inputs and required secrets",
+			"  " + stepActive.Render("3.") + " " + kvKeyStyle.Render("Network") + "  — review the VPC plan",
+			"  " + stepActive.Render("4.") + " " + kvKeyStyle.Render("Roles") + "    — pick which IAM roles to create",
+			"  " + stepActive.Render("5.") + " " + kvKeyStyle.Render("Method") + "   — choose how the stack is provisioned",
 			"  " + stepActive.Render("6.") + " " + kvKeyStyle.Render("Provision") + " — confirm the plan and apply it",
-			"",
-			dimStyle.Render("Nothing is created in your AWS account until you reach the final"),
-			dimStyle.Render("step and select Provision."),
 		}, "\n")
 	}
 
 	next := renderButton(" Get started ▸ ", true, false)
 	return heading + "\n\n" + body + "\n\n" + next
+}
+
+func (s *introStep) Detail(w, h int) string {
+	if s.kind == stack.KindDeprovision {
+		return strings.Join([]string{
+			kvKeyStyle.Render("This will delete"),
+			"",
+			dimStyle.Render("· the runner EC2 instance and log group"),
+			dimStyle.Render("· all created IAM roles and policies"),
+			dimStyle.Render("· stack secrets in AWS Secrets Manager"),
+			dimStyle.Render("· the VPC, subnets, NAT gateway, and route tables"),
+		}, "\n")
+	}
+	return strings.Join([]string{
+		kvKeyStyle.Render("Before you begin"),
+		"",
+		dimStyle.Render(wrap("Nothing is created in your AWS account until you reach the final step and select Provision.", w)),
+	}, "\n")
 }
 
 func (s *introStep) Help() string               { return "" }
@@ -189,10 +198,10 @@ func (s *methodStep) apply() {
 	s.cfg.Method = s.options[s.selected].method
 }
 
-func (s *methodStep) View(w, h int) string {
+func (s *methodStep) Main(w, h int) string {
 	title := titleStyle.Render("Provisioning method")
-	intro := dimStyle.Render("Choose how the stack's AWS resources are created. Both methods")
-	intro2 := dimStyle.Render("run self-contained — no CLI tools need to be installed here.")
+	intro := dimStyle.Render("Choose how the stack's AWS resources are created. Both")
+	intro2 := dimStyle.Render("methods run self-contained — no CLI tools needed here.")
 
 	var lines []string
 	for i, o := range s.options {
@@ -208,10 +217,6 @@ func (s *methodStep) View(w, h int) string {
 			label = focusedStyle.Render(label)
 		}
 		lines = append(lines, fmt.Sprintf("%s%s %s", marker, radio, label))
-		for _, dl := range o.desc {
-			lines = append(lines, "      "+dimStyle.Render(dl))
-		}
-		lines = append(lines, "")
 	}
 
 	prev := renderButton(" ◂ Previous ", s.cursor == s.prevIdx(), false)
@@ -219,7 +224,20 @@ func (s *methodStep) View(w, h int) string {
 	buttons := lipgloss.JoinHorizontal(lipgloss.Top, prev, "  ", next)
 
 	body := strings.Join(lines, "\n")
-	return title + "\n\n" + intro + "\n" + intro2 + "\n\n" + body + "\n" + buttons
+	return title + "\n\n" + intro + "\n" + intro2 + "\n\n" + body + "\n\n" + buttons
+}
+
+func (s *methodStep) Detail(w, h int) string {
+	idx := s.cursor
+	if idx >= len(s.options) {
+		idx = s.selected
+	}
+	o := s.options[idx]
+	lines := []string{kvKeyStyle.Render("Details"), "", kvKeyStyle.Render(o.label), ""}
+	for _, dl := range o.desc {
+		lines = append(lines, dimStyle.Render(wrap(dl, w)))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (s *methodStep) Help() string { return "↑↓ move · space select" }
@@ -292,15 +310,14 @@ func (s *authStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 	return s, cmd
 }
 
-func (s *authStep) View(w, h int) string {
+func (s *authStep) Main(w, h int) string {
 	title := titleStyle.Render("Verify AWS credentials")
 	var body string
 	switch {
 	case s.loading:
 		body = s.spinner.View() + " " + dimStyle.Render("Calling sts:GetCallerIdentity…")
 	case s.err != nil:
-		body = errStyle.Render("Error: "+s.err.Error()) + "\n\n" +
-			dimStyle.Render("Fix your AWS credentials (env, profile, or SSO) and restart.")
+		body = errStyle.Render("Error: " + s.err.Error())
 	default:
 		rows := []string{
 			kvRow("Account", s.account),
@@ -310,6 +327,19 @@ func (s *authStep) View(w, h int) string {
 		body = strings.Join(rows, "\n") + "\n\n" + renderButton(" Continue ▸ ", true, false)
 	}
 	return title + "\n\n" + body
+}
+
+func (s *authStep) Detail(w, h int) string {
+	switch {
+	case s.loading:
+		return dimStyle.Render(wrap("Confirming which AWS account and principal this stack will be provisioned into.", w))
+	case s.err != nil:
+		return kvKeyStyle.Render("Troubleshooting") + "\n\n" +
+			dimStyle.Render(wrap("Fix your AWS credentials (env, profile, or SSO) and restart. If using SSO, run aws sso login first.", w))
+	default:
+		return kvKeyStyle.Render("Identity") + "\n\n" +
+			dimStyle.Render(wrap("These credentials will be used for every AWS call during provisioning.", w))
+	}
 }
 
 func (s *authStep) Help() string {
@@ -494,7 +524,7 @@ func (s *inputsStep) applyEdits() {
 	}
 }
 
-func (s *inputsStep) View(w, h int) string {
+func (s *inputsStep) Main(w, h int) string {
 	title := titleStyle.Render("Inputs & Secrets")
 	if len(s.fields) == 0 {
 		return title + "\n\n" +
@@ -503,6 +533,35 @@ func (s *inputsStep) View(w, h int) string {
 	}
 	form := s.renderForm(w, h-4) // -4 for title + spacing + button row
 	return title + "  " + s.renderProgress() + "\n\n" + form + "\n" + s.renderButtons()
+}
+
+func (s *inputsStep) Detail(w, h int) string {
+	if len(s.fields) == 0 {
+		return ""
+	}
+	if !s.onField() {
+		return dimStyle.Render(wrap("Move ↑ into a field to see its details.", w))
+	}
+	f := s.fields[s.cursor]
+	kind := "input"
+	if f.secret {
+		kind = "secret"
+	}
+	lines := []string{
+		kvKeyStyle.Render("Details"), "",
+		kvRow("Field", f.key),
+		kvRow("Type", kind),
+		kvRow("Required", yesNo(f.required)),
+	}
+	if f.secret {
+		lines = append(lines, kvRow("Length", fmt.Sprintf("%d chars", len(f.input.Value()))))
+	} else {
+		lines = append(lines, kvRow("Value", f.input.Value()))
+	}
+	if f.desc != "" {
+		lines = append(lines, "", dimStyle.Render(wrap(f.desc, w)))
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (s *inputsStep) renderButtons() string {
@@ -571,11 +630,6 @@ func (s *inputsStep) renderForm(width, height int) string {
 		f.input.SetWidth(inputW)
 		lines = append(lines, "    "+f.input.View())
 
-		if focused && f.desc != "" {
-			for _, dl := range strings.Split(wrap(f.desc, width-6), "\n") {
-				lines = append(lines, "    "+dimStyle.Render(dl))
-			}
-		}
 		if focused && f.required && strings.TrimSpace(f.input.Value()) == "" {
 			lines = append(lines, "    "+requiredStyle.Render("value required before continuing"))
 		}
@@ -660,9 +714,8 @@ func (s *networkStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 	return s, nil
 }
 
-func (s *networkStep) View(w, h int) string {
+func (s *networkStep) Main(w, h int) string {
 	title := titleStyle.Render("Network")
-	diagram := networkDiagram()
 	side := strings.Join([]string{
 		kvRow("VPC CIDR", "10.128.0.0/16"),
 		kvRow("Public subnets", "10.128.0.0/24, 10.128.16.0/24"),
@@ -673,15 +726,14 @@ func (s *networkStep) View(w, h int) string {
 		dimStyle.Render("Existing VPC tagged for this install"),
 		dimStyle.Render("will be adopted; otherwise created."),
 	}, "\n")
-	body := lipgloss.JoinHorizontal(lipgloss.Top,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(diagram),
-		"    ",
-		side,
-	)
 	prev := renderButton(" ◂ Previous ", s.cursor == 0, false)
 	next := renderButton(" Next ▸ ", s.cursor == 1, false)
 	buttons := lipgloss.JoinHorizontal(lipgloss.Top, prev, "  ", next)
-	return title + "\n\n" + body + "\n\n" + buttons
+	return title + "\n\n" + side + "\n\n" + buttons
+}
+
+func (s *networkStep) Detail(w, h int) string {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(networkDiagram())
 }
 
 func (s *networkStep) Help() string               { return "←→ move" }
@@ -898,7 +950,7 @@ func (s *rolesStep) apply() {
 	}
 }
 
-func (s *rolesStep) View(w, h int) string {
+func (s *rolesStep) Main(w, h int) string {
 	title := titleStyle.Render("Roles")
 
 	panels := []string{
@@ -911,20 +963,11 @@ func (s *rolesStep) View(w, h int) string {
 	next := renderButton(" Next ▸ ", s.cursor == s.nextCursorIdx(), false)
 	buttons := lipgloss.JoinHorizontal(lipgloss.Top, prev, "  ", next)
 
-	// Buttons live in the left column, directly under the role panels, so a
-	// tall detail pane on the right doesn't push them to the bottom.
-	left := strings.Join(panels, "\n") + "\n" + buttons
+	return title + "\n\n" + strings.Join(panels, "\n") + "\n" + buttons
+}
 
-	// Detail pane fills the remaining width after the left column + a 4-col
-	// gutter. Fall back to w/3 if the math comes out too narrow.
-	leftW := lipgloss.Width(left)
-	detailW := w - leftW - 4
-	if detailW < w/3 {
-		detailW = w / 3
-	}
-	detail := s.renderDetail(detailW)
-	body := lipgloss.JoinHorizontal(lipgloss.Top, left, "    ", detail)
-	return title + "\n\n" + body
+func (s *rolesStep) Detail(w, h int) string {
+	return s.renderDetail(w)
 }
 
 func (s *rolesStep) renderPanel(title, desc string, k roleGroupKind) string {
@@ -1050,9 +1093,25 @@ func (s *confirmStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 	return s, nil
 }
 
-func (s *confirmStep) View(w, h int) string {
+func (s *confirmStep) Main(w, h int) string {
 	title := titleStyle.Render("Provision")
 
+	var rows []string
+	if s.accountID != "" {
+		rows = append(rows, kvRow("Account", s.accountID))
+	}
+	rows = append(rows, kvRow("Region", s.cfg.AWSRegion))
+	rows = append(rows, kvRow("Method", methodLabel(s.cfg.Method)))
+
+	warn := dimStyle.Render(wrap("AWS resources will be created in your account. Activate Provision to begin.", w))
+
+	prev := renderButton(" ◂ Previous ", s.cursor == 0, false)
+	provision := renderButton(" Provision ✓ ", s.cursor == 1, false)
+	buttons := lipgloss.JoinHorizontal(lipgloss.Top, prev, "  ", provision)
+	return title + "\n\n" + strings.Join(rows, "\n") + "\n\n" + warn + "\n\n" + buttons
+}
+
+func (s *confirmStep) Detail(w, h int) string {
 	opRoles := []string{}
 	if s.cfg.ProvisionInlinePolicyDocument != "" || len(s.cfg.ProvisionPermissions) > 0 || len(s.cfg.ProvisionManagedPolicyARNs) > 0 {
 		opRoles = append(opRoles, "provision")
@@ -1076,28 +1135,14 @@ func (s *confirmStep) View(w, h int) string {
 		}
 	}
 
-	var leftRows []string
-	if s.accountID != "" {
-		leftRows = append(leftRows, kvRow("Account", s.accountID))
-	}
-	leftRows = append(leftRows, kvRow("Region", s.cfg.AWSRegion))
-	leftRows = append(leftRows, kvRow("Method", methodLabel(s.cfg.Method)))
-	left := strings.Join(leftRows, "\n")
-	right := strings.Join([]string{
+	return strings.Join([]string{
+		kvKeyStyle.Render("Summary"), "",
 		kvRow("Inputs", fmt.Sprintf("%d", len(s.cfg.InstallInputs))),
 		kvRow("Secrets", fmt.Sprintf("%d (%d auto)", len(s.cfg.Secrets), len(s.cfg.AutoGenerateSecrets))),
 		kvRow("Op roles", strings.Join(opRoles, ", ")),
 		kvRow("Break-glass", fmt.Sprintf("%d / %d", bgOn, len(s.cfg.BreakGlassRoles))),
 		kvRow("Custom", fmt.Sprintf("%d / %d", crOn, len(s.cfg.CustomRoles))),
 	}, "\n")
-
-	cols := lipgloss.JoinHorizontal(lipgloss.Top, left, "        ", right)
-	warn := dimStyle.Render("AWS resources will be created in your account. Activate Provision to begin.")
-
-	prev := renderButton(" ◂ Previous ", s.cursor == 0, false)
-	provision := renderButton(" Provision ✓ ", s.cursor == 1, false)
-	buttons := lipgloss.JoinHorizontal(lipgloss.Top, prev, "  ", provision)
-	return title + "\n\n" + cols + "\n\n" + warn + "\n\n" + buttons
 }
 
 func (s *confirmStep) Help() string               { return "←→ move" }
@@ -1130,6 +1175,13 @@ func methodLabel(m stack.Method) string {
 	default:
 		return "AWS SDK (default)"
 	}
+}
+
+func yesNo(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
 }
 
 func onOff(b bool) string {
