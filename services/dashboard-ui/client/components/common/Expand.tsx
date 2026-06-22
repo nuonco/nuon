@@ -12,6 +12,9 @@ export interface IExpand extends React.HTMLAttributes<HTMLDivElement> {
   hasNoHoverStyle?: boolean
   headerClassName?: string
   id: string
+  interactiveHeading?: boolean
+  toggleLabel?: string
+  toggleContent?: React.ReactNode
 }
 
 export const Expand = ({
@@ -23,6 +26,9 @@ export const Expand = ({
   headerClassName,
   isIconBeforeHeading = false,
   isOpen = false,
+  interactiveHeading = false,
+  toggleLabel,
+  toggleContent,
   ...props
 }: IExpand) => {
   const [isExpanded, setIsExpanded] = useState(isOpen)
@@ -31,11 +37,16 @@ export const Expand = ({
     setIsExpanded(isOpen)
   }, [isOpen])
 
+  const toggle = () => setIsExpanded((prev) => !prev)
+
   const expandIcon = isExpanded ? (
     <Icon variant="CaretUpIcon" />
   ) : (
     <Icon variant="CaretDownIcon" />
   )
+
+  const headingNode =
+    typeof heading === 'string' ? <Text>{heading}</Text> : heading
 
   return (
     <div
@@ -48,26 +59,68 @@ export const Expand = ({
       )}
       {...props}
     >
-      <button
-        type="button"
-        className={cn(
-          'flex items-center gap-2 cursor-pointer p-2 w-full outline-none transition-all',
-          {
-            'justify-between': !isIconBeforeHeading,
-            'hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10':
-              !hasNoHoverStyle,
-          },
-          headerClassName
-        )}
-        aria-expanded={isExpanded}
-        aria-controls={`${id}-content`}
-        id={id}
-        onClick={() => setIsExpanded((prev) => !prev)}
-      >
-        {isIconBeforeHeading && expandIcon}
-        {typeof heading === 'string' ? <Text>{heading}</Text> : heading}
-        {!isIconBeforeHeading && expandIcon}
-      </button>
+      {interactiveHeading ? (
+        <div
+          className={cn(
+            'flex items-start gap-2 p-2 w-full',
+            {
+              'justify-between': !isIconBeforeHeading,
+            },
+            headerClassName
+          )}
+        >
+          {isIconBeforeHeading && (
+            <button
+              type="button"
+              className="flex items-center gap-2 cursor-pointer outline-none rounded px-2 py-1 transition-all hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10"
+              aria-expanded={isExpanded}
+              aria-controls={`${id}-content`}
+              aria-label={toggleLabel}
+              id={id}
+              onClick={toggle}
+            >
+              {expandIcon}
+              {toggleContent}
+            </button>
+          )}
+          {headingNode}
+          {!isIconBeforeHeading && (
+            <button
+              type="button"
+              className="flex items-center gap-2 cursor-pointer outline-none rounded px-2 py-1 transition-all hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10"
+              aria-expanded={isExpanded}
+              aria-controls={`${id}-content`}
+              aria-label={toggleLabel}
+              id={id}
+              onClick={toggle}
+            >
+              {toggleContent}
+              {expandIcon}
+            </button>
+          )}
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={cn(
+            'flex items-center gap-2 cursor-pointer p-2 w-full outline-none transition-all',
+            {
+              'justify-between': !isIconBeforeHeading,
+              'hover:bg-black/5 focus:bg-black/5 active:bg-black/10 dark:hover:bg-white/5 dark:focus:bg-white/5 dark:active:bg-white/10':
+                !hasNoHoverStyle,
+            },
+            headerClassName
+          )}
+          aria-expanded={isExpanded}
+          aria-controls={`${id}-content`}
+          id={id}
+          onClick={toggle}
+        >
+          {isIconBeforeHeading && expandIcon}
+          {headingNode}
+          {!isIconBeforeHeading && expandIcon}
+        </button>
+      )}
 
       <TransitionDiv
         isVisible={isExpanded}

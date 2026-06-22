@@ -46,9 +46,25 @@ const k8sStep: TWorkflowStep = {
   },
 } as TWorkflowStep
 
+const supersededStep: TWorkflowStep = {
+  ...baseTerraformStep,
+  execution_type: 'approval',
+  retried: true,
+  approval: {
+    type: 'helm_approval',
+    response: { type: 'approve' },
+  },
+  status: {
+    status: 'success',
+    metadata: { status: 'approved' },
+  },
+} as TWorkflowStep
+
 export const AwaitingTerraformApproval = () => <ApprovalBanner step={baseTerraformStep} />
 
 export const Approved = () => <ApprovalBanner step={approvedStep} />
+
+export const Superseded = () => <ApprovalBanner step={supersededStep} />
 
 export const Denied = () => <ApprovalBanner step={deniedStep} />
 

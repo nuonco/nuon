@@ -1,17 +1,14 @@
 import { useState } from 'react'
-import { Badge } from '@/components/common/Badge'
-import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Loading } from '@/components/common/Loading'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { PolicyCountsBadge } from '@/components/workflows/step-details/PolicyCountsBadge'
-import { StepButtons } from '@/components/workflows/step-details/StepButtons'
-import { StepDetailPanelButton } from '@/components/workflows/step-details/StepDetailPanel'
-import { StepTitle } from '@/components/workflows/step-details/StepTitle'
 import type { TWorkflowStep } from '@/types'
-import { getStepBadge, getStepKind } from '@/utils/workflow-utils'
+import { getStepKind } from '@/utils/workflow-utils'
+import { WorkflowStepGroup } from './WorkflowStepGroup'
+import { WorkflowStepRoundGroup } from './WorkflowStepRoundGroup'
+import { WorkflowStepRow } from './WorkflowStepRow'
 
 export interface IWorkflowSteps {
   approvalPrompt?: boolean
@@ -34,13 +31,75 @@ export const WorkflowSteps = ({
     .filter((step) => step.execution_type !== 'hidden')
     .filter((step) => step.name.includes(searchName))
 
-  // Retrying a step appends a new attempt row that shares the same logical
-  // "kind" (group + name) as the prior attempts. Only the latest attempt of a
-  // kind should expose retry/skip controls, so track the last index per kind.
-  const lastIdxByKind = new Map<string, number>()
-  filteredSteps.forEach((step, idx) => {
-    lastIdxByKind.set(getStepKind(step), idx)
-  })
+  // Steps are organized by `group_idx` (plan+apply for one component share a
+  // group; independent steps get their own). A group is retried two ways:
+  //   • group retry — apply fails and the whole group re-runs, cloning every
+  //     step with an incremented `group_retry_idx`. These render as one card
+  //     with the current round on top and prior rounds nested (WorkflowStepRoundGroup).
+  //   • step retry — a single step auto-retries on its own (e.g. a plan), keeping
+  //     `group_retry_idx` at 0 while appending same-kind attempts. These collapse
+  //     per kind (WorkflowStepGroup), with single-attempt kinds as plain rows.
+  const groupsByGroupIdx = new Map<string, TWorkflowStep[]>()
+  let soloIdx = 0
+  for (const step of filteredSteps) {
+    const key = step.group_idx != null ? `g${step.group_idx}` : `s${soloIdx++}`
+    const group = groupsByGroupIdx.get(key)
+    if (group) {
+      group.push(step)
+    } else {
+      groupsByGroupIdx.set(key, [step])
+    }
+  }
+
+  const renderGroup = (groupSteps: TWorkflowStep[]) => {
+    const rounds = new Set(groupSteps.map((s) => s.group_retry_idx ?? 0))
+    if (rounds.size > 1) {
+      return (
+        <WorkflowStepRoundGroup
+          key={`round-${groupSteps[0].id}`}
+          steps={groupSteps}
+          approvalPrompt={approvalPrompt}
+          planOnly={planOnly}
+        />
+      )
+    }
+
+    const byKind = new Map<string, TWorkflowStep[]>()
+    for (const step of groupSteps) {
+      const kind = getStepKind(step)
+      const kindSteps = byKind.get(kind)
+      if (kindSteps) {
+        kindSteps.push(step)
+      } else {
+        byKind.set(kind, [step])
+      }
+    }
+
+    return [...byKind.values()].map((kindSteps) => {
+      if (kindSteps.length > 1) {
+        return (
+          <WorkflowStepGroup
+            key={kindSteps[0].id}
+            steps={kindSteps}
+            approvalPrompt={approvalPrompt}
+            planOnly={planOnly}
+          />
+        )
+      }
+
+      const step = kindSteps[0]
+      return (
+        <div key={step.id} className="flex border px-4 py-2 rounded-md">
+          <WorkflowStepRow
+            step={step}
+            approvalPrompt={approvalPrompt}
+            planOnly={planOnly}
+            showRetry
+          />
+        </div>
+      )
+    })
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -51,50 +110,7 @@ export const WorkflowSteps = ({
       />
       <div className="flex flex-col gap-4">
         {filteredSteps.length ? (
-          filteredSteps.map((step, idx) => {
-            const badgeConfig = getStepBadge(step, approvalPrompt, planOnly)
-            const isLatestAttempt = lastIdxByKind.get(getStepKind(step)) === idx
-
-            return (
-              <div
-                key={step.id}
-                className="flex flex-col md:flex-row md:items-center gap-4 border px-4 py-2 rounded-md"
-              >
-                <StepTitle step={step} />
-
-                <div className="flex items-center flex-wrap gap-2 md:gap-4">
-                  {badgeConfig?.children ? (
-                    <Badge {...badgeConfig} size="sm" />
-                  ) : null}
-
-                  <PolicyCountsBadge step={step} />
-
-                  {(step.execution_type === 'system' && !step.step_target_type) ||
-                  step.status.status === 'pending' ||
-                  step.status.status === 'not-attempted' ? null : (
-                    <StepDetailPanelButton
-                      approvalPrompt={approvalPrompt}
-                      step={step}
-                      planOnly={planOnly}
-                    />
-                  )}
-
-                  {step?.finished ? (
-                    <Text variant="subtext" theme="neutral">
-                      Completed in{' '}
-                      <Duration variant="subtext" nanoseconds={step?.execution_time} />
-                    </Text>
-                  ) : null}
-                </div>
-
-                <StepButtons
-                  isApproveAll={!approvalPrompt}
-                  showRetry={isLatestAttempt}
-                  step={step}
-                />
-              </div>
-            )
-          })
+          [...groupsByGroupIdx.values()].flatMap((group) => renderGroup(group))
         ) : (
           <EmptyState
             variant="table"
