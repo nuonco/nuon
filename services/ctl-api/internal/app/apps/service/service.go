@@ -194,6 +194,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.GET("", s.GetAppBranches)
 			branches.GET("/:app_branch_id", s.GetAppBranch)
 			branches.PATCH("/:app_branch_id", s.UpdateAppBranch)
+			branches.DELETE("/:app_branch_id", s.DeleteAppBranch)
 			branches.GET("/:app_branch_id/configs", s.GetAppBranchAppConfigs)
 			branches.POST("/:app_branch_id/configs", s.CreateAppBranchConfig)
 			branches.GET("/:app_branch_id/latest-config", s.GetAppBranchLatestConfig)

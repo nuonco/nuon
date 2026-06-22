@@ -17,6 +17,9 @@ import (
 // swagger:model service.TriggerAppBranchRunRequest
 type ServiceTriggerAppBranchRunRequest struct {
 
+	// optional - use pre-existing app config (skips VCS fetch + config parse)
+	AppConfigID string `json:"app_config_id,omitempty"`
+
 	// optional - use latest if not provided
 	ConfigID string `json:"config_id,omitempty"`
 
@@ -25,6 +28,9 @@ type ServiceTriggerAppBranchRunRequest struct {
 
 	// plan-only preview mode (no apply)
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// skip builds step (e.g. rollback to existing config with existing builds)
+	SkipBuilds bool `json:"skip_builds,omitempty"`
 }
 
 // Validate validates this service trigger app branch run request
