@@ -733,29 +733,70 @@ func (s *networkStep) Main(w, h int) string {
 }
 
 func (s *networkStep) Detail(w, h int) string {
-	return lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(networkDiagram())
+	return networkDiagram()
 }
 
 func (s *networkStep) Help() string               { return "←→ move" }
 func (s *networkStep) CanAdvance() (bool, string) { return true, "" }
 
+// networkDiagram composes the VPC topology from lipgloss-bordered boxes rather
+// than hand-drawn ASCII so every border edge lines up regardless of label
+// width. Boxes are joined vertically per-AZ and horizontally across AZs; the
+// outer box carries the VPC title.
 func networkDiagram() string {
-	return `┌──────────── VPC 10.128.0.0/16 ────────────┐
-│                                            │
-│   AZ-a                  AZ-b               │
-│  ┌──────────┐         ┌──────────┐         │
-│  │ public   │         │ public   │  ◀ IGW │
-│  │ .0.0/24  │         │ .16.0/24 │         │
-│  └────┬─────┘         └──────────┘         │
-│       │ NAT                                │
-│  ┌────▼─────┐         ┌──────────┐         │
-│  │ private  │         │ private  │         │
-│  │ .1.0/24  │         │ .17.0/24 │         │
-│  └──────────┘         └──────────┘         │
-│  ┌──────────┐                              │
-│  │ runner   │ .2.0/24 (private)            │
-│  └──────────┘                              │
-└────────────────────────────────────────────┘`
+	cyan := lipgloss.Color("39")
+	lbl := lipgloss.NewStyle().Foreground(cyan).Bold(true)
+	note := lipgloss.NewStyle().Foreground(cyan)
+
+	box := func(name, cidr string) string {
+		return lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(cyan).
+			Foreground(cyan).
+			Padding(1, 2).
+			Width(24).
+			Render(fmt.Sprintf("%-8s %s", name, cidr))
+	}
+
+	// boxW is the rendered box width: inner 24 + padding 4 + border 2 = 30.
+	const boxW = 30
+	center := strings.Repeat(" ", boxW/2)
+	nat := note.Render(center + "│\n" + strings.Repeat(" ", boxW/2-1) + "NAT\n" + center + "▼")
+
+	colA := lipgloss.JoinVertical(lipgloss.Left,
+		lbl.Render("AZ-a"),
+		box("public", ".0.0/24"),
+		nat,
+		box("private", ".1.0/24"),
+	)
+	colB := lipgloss.JoinVertical(lipgloss.Left,
+		lbl.Render("AZ-b"),
+		box("public", ".16.0/24"),
+		"", "", "", // pad to align private box with AZ-a's, past the NAT connector
+		box("private", ".17.0/24"),
+	)
+	igw := lipgloss.JoinVertical(lipgloss.Left, "", "", "", lbl.Render("◀ IGW"))
+
+	azRow := lipgloss.JoinHorizontal(lipgloss.Top, colA, "        ", colB, "      ", igw)
+
+	runnerRow := lipgloss.JoinHorizontal(lipgloss.Center,
+		box("runner", ".2.0/24"),
+		note.Render("  (private)"),
+	)
+
+	inner := lipgloss.JoinVertical(lipgloss.Left,
+		lbl.Render("VPC 10.128.0.0/16"),
+		"",
+		azRow,
+		"",
+		runnerRow,
+	)
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(cyan).
+		Padding(1, 2).
+		Render(inner)
 }
 
 // ─── Roles ──────────────────────────────────────────────────────────────────
@@ -1112,37 +1153,88 @@ func (s *confirmStep) Main(w, h int) string {
 }
 
 func (s *confirmStep) Detail(w, h int) string {
-	opRoles := []string{}
-	if s.cfg.ProvisionInlinePolicyDocument != "" || len(s.cfg.ProvisionPermissions) > 0 || len(s.cfg.ProvisionManagedPolicyARNs) > 0 {
-		opRoles = append(opRoles, "provision")
-	}
-	if s.cfg.MaintenanceInlinePolicyDocument != "" || len(s.cfg.MaintenancePermissions) > 0 || len(s.cfg.MaintenanceManagedPolicyARNs) > 0 {
-		opRoles = append(opRoles, "maintenance")
-	}
-	if s.cfg.DeprovisionInlinePolicyDocument != "" || len(s.cfg.DeprovisionPermissions) > 0 || len(s.cfg.DeprovisionManagedPolicyARNs) > 0 {
-		opRoles = append(opRoles, "deprovision")
-	}
-	bgOn := 0
-	for _, v := range s.cfg.BreakGlassRoles {
-		if v.Enabled {
-			bgOn++
+	var lines []string
+	section := func(title string) {
+		if len(lines) > 0 {
+			lines = append(lines, "")
 		}
+		lines = append(lines, kvKeyStyle.Render(title))
 	}
-	crOn := 0
-	for _, v := range s.cfg.CustomRoles {
-		if v.Enabled {
-			crOn++
-		}
+	item := func(label, value string) {
+		lines = append(lines, "  "+dimStyle.Render(label)+"  "+value)
+	}
+	none := func() {
+		lines = append(lines, "  "+dimStyle.Render("(none)"))
 	}
 
-	return strings.Join([]string{
-		kvKeyStyle.Render("Summary"), "",
-		kvRow("Inputs", fmt.Sprintf("%d", len(s.cfg.InstallInputs))),
-		kvRow("Secrets", fmt.Sprintf("%d (%d auto)", len(s.cfg.Secrets), len(s.cfg.AutoGenerateSecrets))),
-		kvRow("Op roles", strings.Join(opRoles, ", ")),
-		kvRow("Break-glass", fmt.Sprintf("%d / %d", bgOn, len(s.cfg.BreakGlassRoles))),
-		kvRow("Custom", fmt.Sprintf("%d / %d", crOn, len(s.cfg.CustomRoles))),
-	}, "\n")
+	section(fmt.Sprintf("Inputs (%d)", len(s.cfg.InstallInputs)))
+	if len(s.cfg.InstallInputs) == 0 {
+		none()
+	}
+	for _, k := range sortedKeys(s.cfg.InstallInputs) {
+		v := s.cfg.InstallInputs[k]
+		if v == "" {
+			v = dimStyle.Render("(empty)")
+		} else {
+			v = truncate(v, w/2)
+		}
+		item(k, v)
+	}
+
+	auto := map[string]bool{}
+	for _, k := range s.cfg.AutoGenerateSecrets {
+		auto[k] = true
+	}
+	section(fmt.Sprintf("Secrets (%d)", len(s.cfg.Secrets)))
+	if len(s.cfg.Secrets) == 0 {
+		none()
+	}
+	for _, k := range sortedKeys(s.cfg.Secrets) {
+		sec := s.cfg.Secrets[k]
+		var tag string
+		switch {
+		case auto[k]:
+			tag = dimStyle.Render("auto-generated")
+		case strings.TrimSpace(sec.Value) != "":
+			tag = checkboxOn.Render("set")
+		case sec.Required:
+			tag = requiredStyle.Render("required, empty")
+		default:
+			tag = dimStyle.Render("empty")
+		}
+		item(k, tag)
+	}
+
+	section("Roles")
+	ops := []struct {
+		name   string
+		inline string
+		perms  []string
+		arns   []string
+	}{
+		{"provision", s.cfg.ProvisionInlinePolicyDocument, s.cfg.ProvisionPermissions, s.cfg.ProvisionManagedPolicyARNs},
+		{"maintenance", s.cfg.MaintenanceInlinePolicyDocument, s.cfg.MaintenancePermissions, s.cfg.MaintenanceManagedPolicyARNs},
+		{"deprovision", s.cfg.DeprovisionInlinePolicyDocument, s.cfg.DeprovisionPermissions, s.cfg.DeprovisionManagedPolicyARNs},
+	}
+	for _, op := range ops {
+		on := hasOp(op.inline, op.perms, op.arns)
+		item(op.name, roleStateTag(on))
+	}
+	for _, k := range sortedKeys(s.cfg.BreakGlassRoles) {
+		item(k+" "+dimStyle.Render("(break-glass)"), roleStateTag(s.cfg.BreakGlassRoles[k].Enabled))
+	}
+	for _, k := range sortedKeys(s.cfg.CustomRoles) {
+		item(k+" "+dimStyle.Render("(custom)"), roleStateTag(s.cfg.CustomRoles[k].Enabled))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func roleStateTag(on bool) string {
+	if on {
+		return checkboxOn.Render("create")
+	}
+	return checkboxOff.Render("skip")
 }
 
 func (s *confirmStep) Help() string               { return "←→ move" }
