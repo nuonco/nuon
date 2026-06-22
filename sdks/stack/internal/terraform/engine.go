@@ -6,11 +6,19 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/hc-install/product"
 	"github.com/hashicorp/hc-install/releases"
 )
+
+// installTimeout overrides hc-install's 30s default, which is too short to
+// download and unpack the terraform binary (a ~32MB archive that expands to a
+// ~110MB binary) on an average connection. When the 30s deadline fires
+// mid-download hc-install still tries to chmod the never-written binary,
+// surfacing as a confusing "chmod …/terraform: no such file or directory".
+const installTimeout = 5 * time.Minute
 
 // resolveTerraform ensures a terraform binary of the requested version is
 // available locally and returns its path. An empty version resolves the
@@ -37,6 +45,7 @@ func resolveTerraform(ctx context.Context, ver, baseDir string) (string, error) 
 		lv := &releases.LatestVersion{
 			Product:    product.Terraform,
 			InstallDir: dir,
+			Timeout:    installTimeout,
 		}
 		path, err := lv.Install(ctx)
 		if err != nil {
@@ -53,6 +62,7 @@ func resolveTerraform(ctx context.Context, ver, baseDir string) (string, error) 
 		Product:    product.Terraform,
 		Version:    v,
 		InstallDir: dir,
+		Timeout:    installTimeout,
 	}
 	path, err := ev.Install(ctx)
 	if err != nil {
