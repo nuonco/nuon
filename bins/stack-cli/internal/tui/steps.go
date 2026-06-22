@@ -176,7 +176,7 @@ func (s *methodStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 		if s.cursor == s.nextIdx() {
 			s.cursor = s.prevIdx()
 		}
-	case " ", "x":
+	case "space", "x":
 		if s.cursor < len(s.options) {
 			s.selected = s.cursor
 		}
@@ -922,7 +922,7 @@ func (s *rolesStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 		if s.cursor == s.nextCursorIdx() {
 			s.cursor = s.prevCursorIdx()
 		}
-	case " ", "x":
+	case "space", "x":
 		_, idx, isBtn, _ := s.resolveCursor()
 		if isBtn {
 			return s, nil
