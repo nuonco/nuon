@@ -1,9 +1,9 @@
 // Package tui renders the full-screen interactive pre-provision walkthrough
 // for stack-cli using bubbletea v2.
 //
-// Five steps in order: Auth (review) → Inputs & Secrets → Network (review)
-// → Roles → Confirm. The user's stack.Config is mutated in place; the
-// Installer reads the same pointer via preCreatedRun.Config.
+// Six steps in order: Method → Auth (review) → Inputs & Secrets → Network
+// (review) → Roles → Confirm. The user's stack.Config is mutated in place;
+// the Installer reads the same pointer via preCreatedRun.Config.
 package tui
 
 import (

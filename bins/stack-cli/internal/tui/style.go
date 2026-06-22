@@ -3,7 +3,7 @@ package tui
 import "charm.land/lipgloss/v2"
 
 const (
-	totalSteps   = 5
+	totalSteps   = 6
 	maxBodyWidth = 100
 	minWidth     = 70
 	minHeight    = 18

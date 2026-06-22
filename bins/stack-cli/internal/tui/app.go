@@ -16,6 +16,7 @@ type step int
 
 const (
 	stepIntro step = iota
+	stepMethod
 	stepAuth
 	stepInputs
 	stepNetwork
@@ -69,6 +70,7 @@ func newAppModel(ctx context.Context, kind stack.Kind, cfg *stack.Config) appMod
 		current: stepIntro,
 		steps: map[step]stepModel{
 			stepIntro:   newIntroStep(kind),
+			stepMethod:  newMethodStep(cfg),
 			stepAuth:    newAuthStep(ctx, cfg),
 			stepInputs:  newInputsStep(cfg),
 			stepNetwork: newNetworkStep(cfg),
@@ -220,10 +222,10 @@ func (m appModel) renderHeader(w int) string {
 }
 
 func (m appModel) renderStepper(w int) string {
-	labels := []string{"Auth", "Inputs", "Network", "Roles", "Provision"}
+	labels := []string{"Method", "Auth", "Inputs", "Network", "Roles", "Provision"}
 	parts := make([]string, 0, len(labels)*2)
 	for i, lbl := range labels {
-		// labels[0] corresponds to stepAuth (step value 1); the intro step
+		// labels[0] corresponds to stepMethod (step value 1); the intro step
 		// (value 0) is intentionally not in the stepper.
 		stepValue := step(i + 1)
 		var marker, text string
