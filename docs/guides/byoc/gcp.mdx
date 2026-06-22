@@ -78,7 +78,8 @@ You'll need a GCP project with a few APIs enabled. The install stack provisions 
 make sure your account has IAM permissions to create those resources and the project has not hit quota limits for VPCs,
 Cloud SQL instances, or GKE clusters.
 
-Ensure the following APIs are enabled.
+The following APIs are required by the `install-stack` and BYOC Nuon. These will be enabled by the `install-stack`
+terraform module.
 
 - Secrets Manager API
 - Compute Engine API
@@ -90,6 +91,12 @@ Ensure the following APIs are enabled.
 - Certificate Manager API
 - Service Networking API
 - Cloud SQL Admin API
+
+## AWS Account
+
+An AWS Account is required solely for the purpose of hosting a single S3 bucket which holds install templates for use by
+CloudFormation stacks for BYOC Installs targetting AWS. We can, and will initially, provide this bucket but you can
+bring your own at any time.
 
 ## Provision the Install Stack
 
