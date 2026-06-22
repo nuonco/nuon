@@ -13,17 +13,13 @@ import { Panel, type IPanel } from '@/components/surfaces/Panel'
 import { SSELogs } from '@/components/log-stream/SSELogs'
 import { AwaitStackDetails } from '@/components/workflows/step-details/stack-details/AwaitStackDetails/AwaitStackDetails'
 import { useInstall } from '@/hooks/use-install'
-import type {
-  TInstallStack,
-  TWorkflowStep,
-  TInstallStackVersionRun,
-} from '@/types'
 import { useOrg } from '@/hooks/use-org'
 import { LogStreamProvider } from '@/providers/log-stream-provider'
 import { LogViewerProvider } from '@/providers/log-viewer-provider'
 import type {
   TInstallStack,
   TInstallStackOutputs,
+  TInstallStackVersionRun,
   TWorkflowStep,
 } from '@/types'
 import { cn } from '@/utils/classnames'
@@ -33,6 +29,8 @@ import { indexToOrdinal } from '@/utils/string-utils'
 type TStackVersion = TInstallStack['versions'][number]
 
 export const StackVersionDetails = ({
+  version,
+  installStackOutputs,
   ...props
 }: {
   version: TStackVersion
@@ -279,16 +277,9 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
               id={`run-${run?.id}`}
               className="border rounded-md"
               heading={
-                <span className="flex items-center gap-2">
-                  <Text variant="base">
-                    {indexToOrdinal(ordinalIdx)} run &middot;{' '}
-                    <Time variant="subtext" time={run?.created_at} />
-                  </Text>
-                  <RunTypeBadge runType={run?.run_type} />
-                  <Text variant="base" weight="strong">
-                    {kind}
                 stackV2 ? (
                   <span className="flex items-center gap-2">
+                    <RunTypeBadge runType={run?.run_type} />
                     <Text variant="base" weight="strong">
                       {kind}
                     </Text>
@@ -324,6 +315,7 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                       values={objectToKeyValueArray(run?.data_contents || {})}
                     />
                   </div>
+                </div>
                 {stackV2 && logStreamID ? (
                   <LogStreamProvider shouldPoll logStreamId={logStreamID}>
                     <LogViewerProvider>
@@ -331,17 +323,6 @@ const StackVersionRuns = ({ version }: { version: TStackVersion }) => {
                     </LogViewerProvider>
                   </LogStreamProvider>
                 ) : null}
-                <ClickToCopyButton
-                  className="w-fit self-end"
-                  textToCopy={JSON.stringify(
-                    run?.data_contents || run?.data || {}
-                  )}
-                />
-                <div className="overflow-auto max-h-[600px]">
-                  <KeyValueList
-                    values={objectToKeyValueArray(run?.data_contents || {})}
-                  />
-                </div>
               </div>
             </Expand>
           )

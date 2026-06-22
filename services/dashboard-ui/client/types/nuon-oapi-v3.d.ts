@@ -3026,7 +3026,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs";
+    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs" | "role-enabled" | "role-disabled";
     "app.AdHocStepConfig": {
       action_workflow_config_id?: string;
       /** @description this belongs to an app config id */
@@ -4382,6 +4382,7 @@ export interface components {
       aws_bucket_key?: string;
       /** @description aws configuration parameters */
       aws_bucket_name?: string;
+      callback_ref?: components["schemas"]["callback.Ref"];
       checksum?: string;
       composite_status?: components["schemas"]["app.CompositeStatus"];
       contents?: string;
@@ -4394,6 +4395,14 @@ export interface components {
       phone_home_id?: string;
       phone_home_url?: string;
       quick_link_url?: string;
+      /**
+       * @description RunnerAPIURL is the externally-reachable runner-API host the stack-cli
+       * SDK should POST to. Populated transiently on read via AfterFind from
+       * Install.RunnerGroup.Settings.RunnerAPIURL — the runner API is the
+       * surface vendors expose, so the customer's workstation can hit it even
+       * when ctl-api itself is private.
+       */
+      runner_api_url?: string;
       runs?: components["schemas"]["app.InstallStackVersionRun"][];
       template_url?: string;
       terraform_checksum?: string;
@@ -4407,6 +4416,7 @@ export interface components {
       updated_at?: string;
     };
     "app.InstallStackVersionRun": {
+      composite_status?: components["schemas"]["app.CompositeStatus"];
       created_at?: string;
       created_by_id?: string;
       data?: {
@@ -4416,8 +4426,33 @@ export interface components {
         [key: string]: unknown;
       };
       id?: string;
+      input_diff?: components["schemas"]["app.StackVersionRunInputDiff"];
+      /**
+       * @description Kind is the operation this run represents. provision = first-time create,
+       * reprovision = idempotent reconcile of an existing install, deprovision =
+       * tear-down. default:'provision' lets gorm auto-migrate back-fill historical
+       * rows; BeforeCreate validates the value.
+       */
+      kind?: components["schemas"]["app.InstallStackVersionRunKind"];
+      /**
+       * @description LogStream is populated transiently:
+       *   - On the POST response: with WriteToken + RunnerAPIURL so the SDK can
+       *     start pushing logs immediately.
+       *   - On GET-runs (via Preload): without WriteToken, so the dashboard can
+       *     find the stream to render but can't write to it.
+       */
+      log_stream?: components["schemas"]["app.LogStream"];
+      /**
+       * @description LogStreamID is the OTLP log stream the SDK pushes provisioning logs to.
+       * Persisted so the PATCH handler can close the stream on terminal status.
+       */
+      log_stream_id?: string;
+      role_diff?: components["schemas"]["app.StackVersionRunRoleDiff"];
+      run_type?: components["schemas"]["app.StackVersionRunType"];
       updated_at?: string;
     };
+    /** @enum {string} */
+    "app.InstallStackVersionRunKind": "provision" | "reprovision" | "deprovision";
     "app.InstallState": {
       archived?: boolean;
       contents?: string;
@@ -5371,8 +5406,19 @@ export interface components {
     "app.SlackOrgLinkStatus": "verified" | "revoked";
     /** @enum {string} */
     "app.StackType": "aws-cloudformation" | "azure-bicep" | "gcp-terraform";
+    "app.StackVersionRunInputDiff": {
+      added?: string[];
+      changed?: string[];
+      removed?: string[];
+    };
+    "app.StackVersionRunRoleDiff": {
+      disabled?: string[];
+      enabled?: string[];
+    };
     /** @enum {string} */
-    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
+    "app.StackVersionRunType": "workflow-run" | "out-of-band-update";
+    /** @enum {string} */
+    "app.Status": "error" | "pending" | "in-progress" | "checking-plan" | "success" | "not-attempted" | "cancelled" | "retrying" | "discarded" | "user-skipped" | "auto-skipped" | "planning" | "applying" | "queued" | "warning" | "failed-pending-retry" | "generating" | "awaiting-user-run" | "provisioning" | "active" | "outdated" | "expired" | "destroying" | "destroyed" | "running" | "succeeded" | "failed" | "approved" | "drifted" | "no-drift" | "approval-expired" | "approval-denied" | "approval-retry" | "building" | "deleting" | "noop" | "approval-awaiting";
     "app.TerraformLock": {
       created?: string;
       id?: string;
@@ -8970,6 +9016,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by action workflow trigger type */
+        trigger_types?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -9148,6 +9196,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description filter by action workflow trigger type */
+        trigger_types?: string;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
