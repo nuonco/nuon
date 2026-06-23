@@ -1,5 +1,6 @@
 import { Button } from '@/components/common/Button'
 import { Card, type ICard } from '@/components/common/Card'
+import { Cron } from '@/components/common/Cron'
 import { GitRepo } from '@/components/common/GitRepo'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -90,6 +91,11 @@ export const SandboxConfigCard = ({
                 {config.terraform_version}
               </LabeledValue>
             )
+          )}
+          {config.drift_schedule && (
+            <LabeledValue label="Drift schedule">
+              <Cron cron={config.drift_schedule} variant="subtext" />
+            </LabeledValue>
           )}
         </div>
 
