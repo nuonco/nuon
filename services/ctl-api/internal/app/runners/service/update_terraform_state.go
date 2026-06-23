@@ -12,6 +12,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 // @ID						UpdateTerraformState
@@ -92,7 +93,8 @@ func (s *service) UpdateTerraformState(ctx *gin.Context) {
 		return
 	}
 
-	_, err = s.helpers.InsertTerraformState(ctx, workspaceID, sJobID, contents, &data)
+	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
+	_, err = s.helpers.InsertTerraformState(dbCtx, workspaceID, sJobID, contents, &data)
 	if err != nil {
 		s.l.Error("unable to insert terraform state", zap.Error(err))
 		ctx.Error(fmt.Errorf("unable to update terraform state: %w", err))

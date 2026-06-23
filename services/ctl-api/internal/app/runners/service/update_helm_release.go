@@ -75,17 +75,17 @@ func (s *service) updateHelmRelease(ctx *gin.Context, helmChartID, namespace, ke
 	}
 
 	helmRelease := app.HelmRelease{
-		Body:      body,
-		BodyBlob:  &blobstore.Blob{},
+		Body:      &blobstore.Blob{},
 		Name:      rls.Name,
 		Version:   rls.Version,
 		Status:    string(rls.Info.Status),
 		Owner:     "helm",
 		UpdatedAt: time.Now().UTC(),
 	}
-	helmRelease.BodyBlob.Set(body)
+	helmRelease.Body.Set(body)
 
-	res := s.db.WithContext(ctx).Model(&app.HelmRelease{}).
+	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
+	res := s.db.WithContext(dbCtx).Model(&app.HelmRelease{}).
 		Where("helm_chart_id = ? and namespace = ? and key = ?", helmChartID, namespace, key).
 		Updates(&helmRelease)
 	if res.Error != nil {

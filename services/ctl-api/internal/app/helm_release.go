@@ -34,9 +34,8 @@ type HelmRelease struct {
 	// See https://github.com/helm/helm/blob/c9fe3d118caec699eb2565df9838673af379ce12/pkg/storage/driver/secrets.go#L231
 	Type string `gorm:"not null"`
 
-	// The rspb.Release body, as a base64-encoded string
-	Body     string          `gorm:"not null"`
-	BodyBlob *blobstore.Blob `json:"-" temporaljson:"-"`
+	// The rspb.Release body (base64-encoded), stored in S3 via blob storage.
+	Body *blobstore.Blob `gorm:"column:body_blob" json:"-" temporaljson:"-"`
 
 	// Release "labels" that can be used as filters in the storage.Query(labels map[string]string)
 	// we implemented. Note that allowing Helm users to filter against new dimensions will require a
@@ -72,9 +71,9 @@ func (t *HelmRelease) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-// BeforeSave (not BeforeCreate) so the body blob is dual-written on helm upgrades, which use Updates.
+// BeforeSave (not BeforeCreate) so the body blob uploads on helm upgrades too, which use Updates.
 func (t *HelmRelease) BeforeSave(tx *gorm.DB) error {
-	return t.BodyBlob.BeforeCreate(tx)
+	return t.Body.BeforeCreate(tx)
 }
 
 func (j JSONMap) Value() (driver.Value, error) {

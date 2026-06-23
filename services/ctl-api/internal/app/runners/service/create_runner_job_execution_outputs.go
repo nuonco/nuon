@@ -80,6 +80,7 @@ func (s *service) createRunnerJobExecutionOutputs(ctx context.Context, runnerJob
 	}
 	obj.OutputsBlob.Set(string(byts))
 
+	ctx = blobstore.WithBlobService(ctx, s.blobSvc)
 	res := s.db.WithContext(ctx).
 		Create(&obj)
 	if res.Error != nil {
