@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -29,7 +30,8 @@ type RunnerJobExecutionOutputs struct {
 	RunnerJobExecutionID string             `json:"runner_job_execution_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_execution_outputs,unique" temporaljson:"runner_job_execution_id,omitzero,omitempty"`
 	RunnerJobExecution   RunnerJobExecution `json:"-" temporaljson:"runner_job_execution,omitzero,omitempty"`
 
-	Outputs []byte `json:"outputs_json,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"outputs,omitzero,omitempty"`
+	Outputs     []byte          `json:"outputs_json,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"outputs,omitzero,omitempty"`
+	OutputsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	// after query
 
@@ -58,6 +60,10 @@ func (r *RunnerJobExecutionOutputs) BeforeCreate(tx *gorm.DB) error {
 
 	if r.OrgID == "" {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	if err := r.OutputsBlob.BeforeCreate(tx); err != nil {
+		return err
 	}
 
 	return nil

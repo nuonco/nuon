@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type CreateRunnerJobExecutionOutputsRequest struct {
@@ -75,7 +76,9 @@ func (s *service) createRunnerJobExecutionOutputs(ctx context.Context, runnerJob
 	obj := app.RunnerJobExecutionOutputs{
 		RunnerJobExecutionID: runnerJobExecutionID,
 		Outputs:              byts,
+		OutputsBlob:          &blobstore.Blob{},
 	}
+	obj.OutputsBlob.Set(string(byts))
 
 	res := s.db.WithContext(ctx).
 		Create(&obj)

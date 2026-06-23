@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
@@ -34,7 +35,8 @@ type HelmRelease struct {
 	Type string `gorm:"not null"`
 
 	// The rspb.Release body, as a base64-encoded string
-	Body string `gorm:"not null"`
+	Body     string          `gorm:"not null"`
+	BodyBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	// Release "labels" that can be used as filters in the storage.Query(labels map[string]string)
 	// we implemented. Note that allowing Helm users to filter against new dimensions will require a
@@ -68,6 +70,11 @@ func (t *HelmRelease) BeforeCreate(tx *gorm.DB) (err error) {
 		t.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 	return nil
+}
+
+// BeforeSave (not BeforeCreate) so the body blob is dual-written on helm upgrades, which use Updates.
+func (t *HelmRelease) BeforeSave(tx *gorm.DB) error {
+	return t.BodyBlob.BeforeCreate(tx)
 }
 
 func (j JSONMap) Value() (driver.Value, error) {

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/helm"
 )
 
@@ -75,12 +76,14 @@ func (s *service) updateHelmRelease(ctx *gin.Context, helmChartID, namespace, ke
 
 	helmRelease := app.HelmRelease{
 		Body:      body,
+		BodyBlob:  &blobstore.Blob{},
 		Name:      rls.Name,
 		Version:   rls.Version,
 		Status:    string(rls.Info.Status),
 		Owner:     "helm",
 		UpdatedAt: time.Now().UTC(),
 	}
+	helmRelease.BodyBlob.Set(body)
 
 	res := s.db.WithContext(ctx).Model(&app.HelmRelease{}).
 		Where("helm_chart_id = ? and namespace = ? and key = ?", helmChartID, namespace, key).
