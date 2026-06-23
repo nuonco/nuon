@@ -55,7 +55,7 @@ export const WorkflowStatusSectionContainer = () => {
   return (
     <WorkflowStatusSection
       workflow={workflow}
-      queuePosition={queuePosition}
+      queuePosition={isPending ? queuePosition : undefined}
       installId={install?.id}
       orgId={org?.id}
       onCancelWorkflow={handleCancelWorkflow}
