@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -112,9 +113,17 @@ func (s *service) cancelSingleWorkflow(ctx *gin.Context, orgID, workflowID strin
 	if _, err := s.flowsClient.CancelWorkflow(ctx, &flowclient.CancelWorkflowRequest{
 		InstallWorkflowID: wf.ID,
 	}); err != nil {
-		s.l.Warn("failed to cancel workflow via queues",
-			zap.String("workflow_id", wf.ID),
-			zap.Error(err))
+		// Orphaned workflows (e.g. weeks-old rows stuck in-progress) no longer
+		// have a live execute-flow queue signal — it was soft-deleted once the
+		// handler finished. There is nothing to signal, so flip the row
+		// directly in the DB rather than leaving it stuck in-progress forever.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if dbErr := s.cancelWorkflow(ctx, wf.ID); dbErr != nil {
+				return fmt.Errorf("unable to cancel orphaned workflow: %w", dbErr)
+			}
+			return nil
+		}
+		return fmt.Errorf("unable to cancel workflow via queues: %w", err)
 	}
 
 	return nil
