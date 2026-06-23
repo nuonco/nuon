@@ -212,10 +212,19 @@ The `secrets` map must be popoulated with the following:
 
 | Secret                    | Value                                                                         |
 | ------------------------- | ----------------------------------------------------------------------------- |
-| `github_app_key`          | Your GitHub App PEM key (paste directly — Terraform preserves newlines).      |
+| `github_app_key`          | Your base64-encoded GitHub App PEM key                                        |
 | `nuon_auth_client_secret` | OIDC Client Secret from your identity provider.                               |
 | `slack_client_secret`     | Client Secret from your Slack app (optional — required only if using Slack).  |
 | `slack_signing_secret`    | Signing Secret from your Slack app (optional — required only if using Slack). |
+
+<Note>
+The GitHub App PEM key must be base64 encoded because AWS CloudFormation doesn't preserve newlines in text fields.
+
+To encode your PEM key:
+
+```bash
+base64 -i your-github-app-key.pem
+```
 
 ### 4. Apply the install stack
 
