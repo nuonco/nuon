@@ -9,6 +9,7 @@ export const Default = () => (
     appConfig={{
       sandbox: {
         terraform_version: '1.5.7',
+        drift_schedule: '0 2 * * *',
         public_git_vcs_config: {
           repo: 'https://github.com/my-org/sandbox-config',
           branch: 'main',
