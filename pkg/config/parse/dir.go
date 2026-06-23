@@ -95,7 +95,7 @@ func (c *ConfigDir) getOperationRoles() (*config.OperationRolesConfig, error) {
 }
 
 func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
-	if c.Inputs == nil && len(c.InputsDir) < 1 && (len(c.InputGroupsDir) < 1 && len(c.InputsDir) < 1) {
+	if c.Inputs == nil && len(c.InputsDir) < 1 && len(c.InputGroupsDir) < 1 {
 		return nil, nil
 	}
 	if c.Inputs != nil && (len(c.InputsDir) > 0 || len(c.InputGroupsDir) > 0) {
@@ -224,21 +224,21 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	}
 
 	cfg := &config.AppConfig{
-		Components:     c.Components,
-		Actions:        c.Actions,
-		Runbooks:       c.Runbooks,
-		Installs:       c.Installs,
-		BreakGlass:     breakGlass,
-		Secrets:        secrets,
-		Branch:         branch,
-		Branches:       branches,
-		Inputs:         inputs,
-		Sandbox:        c.Sandbox,
-		Runner:         c.Runner,
-		Permissions:    permissions,
-		Stack:          c.Stack,
-		Policies:       policies,
-		OperationRoles: operationRoles,
+		Components:         c.Components,
+		Actions:            c.Actions,
+		Runbooks:           c.Runbooks,
+		Installs:           c.Installs,
+		BreakGlass:         breakGlass,
+		Secrets:            secrets,
+		Branch:             branch,
+		Branches:           branches,
+		Inputs:             inputs,
+		Sandbox:            c.Sandbox,
+		Runner:             c.Runner,
+		Permissions:        permissions,
+		Stack:              c.Stack,
+		Policies:           policies,
+		OperationRoles:     operationRoles,
 		KubernetesContexts: kubernetesContexts,
 	}
 
