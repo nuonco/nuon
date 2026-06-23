@@ -18,7 +18,9 @@ func (m middleware) Name() string {
 
 func (m middleware) Handler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		blobstore.WithBlobServiceGin(ctx, m.svc)
+		ctx.Request = ctx.Request.WithContext(
+			blobstore.WithBlobService(ctx.Request.Context(), m.svc),
+		)
 		ctx.Next()
 	}
 }
