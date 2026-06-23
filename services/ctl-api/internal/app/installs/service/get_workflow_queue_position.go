@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -78,48 +79,79 @@ func (s *service) GetWorkflowQueuePosition(ctx *gin.Context) {
 		}
 	}
 
-	// Find signals ahead in the same queue (created before this one, not yet completed).
+	// A signal still occupies the queue until its own status reaches a terminal
+	// state. Workflow status is not a reliable proxy — a signal can be parked
+	// (StatusPending, e.g. signal type not yet registered) or not-yet-enqueued
+	// while its workflow is still non-terminal, and vice versa.
+	terminalStatuses := []string{
+		string(app.StatusSuccess),
+		string(app.StatusError),
+		string(app.StatusCancelled),
+	}
+	workflowOwnerTypes := []string{"install_workflows", "install_action_workflows"}
+
+	inQueue := func(db *gorm.DB) *gorm.DB {
+		return db.
+			Where("queue_id = ?", qs.QueueID).
+			Where("owner_type IN ?", workflowOwnerTypes).
+			Where("status->>'status' NOT IN ?", terminalStatuses)
+	}
+
+	// Total workflows still waiting in this queue (includes this one).
+	var queueDepth int64
+	inQueue(s.db.WithContext(ctx).Model(&app.QueueSignal{})).Count(&queueDepth)
+
+	// Workflows ahead of this one — those enqueued before it that are still in the queue.
+	var aheadCount int64
+	inQueue(s.db.WithContext(ctx).Model(&app.QueueSignal{})).
+		Where("created_at < ? AND id != ?", qs.CreatedAt, qs.ID).
+		Count(&aheadCount)
+
+	// Fetch the signals immediately ahead for display, front to back.
 	var signalsAhead []app.QueueSignal
-	s.db.WithContext(ctx).
-		Where("queue_id = ? AND created_at < ? AND id != ?", qs.QueueID, qs.CreatedAt, qs.ID).
+	inQueue(s.db.WithContext(ctx)).
+		Where("created_at < ? AND id != ?", qs.CreatedAt, qs.ID).
 		Order("created_at ASC").
 		Limit(20).
 		Find(&signalsAhead)
 
-	// Look up the workflows for the signals ahead.
-	items := make([]WorkflowQueueItem, 0, len(signalsAhead))
+	// Batch-load the workflows for the signals ahead to enrich the display items.
+	ownerIDs := make([]string, 0, len(signalsAhead))
 	for _, sig := range signalsAhead {
-		var wf app.Workflow
-		wfRes := s.db.WithContext(ctx).
-			Where("id = ? AND org_id = ?", sig.OwnerID, org.ID).
-			First(&wf)
-		if wfRes.Error != nil {
-			continue
-		}
-
-		// Only include non-terminal workflows.
-		if wf.Status.Status == app.StatusSuccess || wf.Status.Status == app.StatusError ||
-			wf.Status.Status == app.StatusCancelled {
-			continue
-		}
-
-		items = append(items, WorkflowQueueItem{
-			WorkflowID:   wf.ID,
-			WorkflowType: wf.Type,
-			Status:       wf.Status.Status,
-			CreatedAt:    wf.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		})
+		ownerIDs = append(ownerIDs, sig.OwnerID)
 	}
 
-	// Count total queue depth from non-terminal signals.
-	var totalDepth int64
-	s.db.WithContext(ctx).Model(&app.QueueSignal{}).
-		Where("queue_id = ?", qs.QueueID).
-		Count(&totalDepth)
+	workflowsByID := make(map[string]app.Workflow, len(ownerIDs))
+	if len(ownerIDs) > 0 {
+		var wfs []app.Workflow
+		s.db.WithContext(ctx).
+			Where("id IN ? AND org_id = ?", ownerIDs, org.ID).
+			Find(&wfs)
+		for _, wf := range wfs {
+			workflowsByID[wf.ID] = wf
+		}
+	}
+
+	items := make([]WorkflowQueueItem, 0, len(signalsAhead))
+	for _, sig := range signalsAhead {
+		item := WorkflowQueueItem{
+			WorkflowID: sig.OwnerID,
+			Status:     sig.Status.Status,
+			CreatedAt:  sig.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		}
+		// Action workflows live in a different table and won't resolve here; they
+		// still count toward position but display without an enriched type.
+		if wf, ok := workflowsByID[sig.OwnerID]; ok {
+			item.WorkflowType = wf.Type
+			item.Status = wf.Status.Status
+			item.CreatedAt = wf.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+		}
+		items = append(items, item)
+	}
 
 	ctx.JSON(http.StatusOK, WorkflowQueuePositionResponse{
-		Position:     len(items) + 1, // 1-based: this workflow is after the items ahead
-		QueueDepth:   int(totalDepth),
+		Position:     int(aheadCount) + 1, // 1-based: this workflow is after the ones ahead
+		QueueDepth:   int(queueDepth),
 		SignalsAhead: items,
 	})
 }
