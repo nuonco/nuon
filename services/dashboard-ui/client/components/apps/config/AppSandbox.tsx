@@ -1,3 +1,4 @@
+import { Cron } from '@/components/common/Cron'
 import { GitRepo } from '@/components/common/GitRepo'
 import { KeyValueList } from '@/components/common/KeyValueList'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -41,6 +42,11 @@ export const AppSandbox = ({ appConfig }: IAppSandbox) => {
               {sandboxConfig.terraform_version}
             </LabeledValue>
           )
+        )}
+        {sandboxConfig?.drift_schedule && (
+          <LabeledValue label="Drift schedule">
+            <Cron cron={sandboxConfig.drift_schedule} variant="subtext" />
+          </LabeledValue>
         )}
       </div>
       {sandboxVariables?.length ? (
