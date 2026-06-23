@@ -4433,7 +4433,6 @@ export interface components {
       stale_at?: components["schemas"]["generics.NullTime"];
       /** @description StalePartials lists which state partials are stale and need regeneration on next read. */
       stale_partials?: components["schemas"]["state.PartialName"][];
-      state_blob?: components["schemas"]["blobstore.Blob"];
       triggered_by_id?: string;
       triggered_by_type?: string;
       updated_at?: string;
