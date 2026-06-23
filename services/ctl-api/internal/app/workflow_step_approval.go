@@ -8,6 +8,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -48,7 +49,8 @@ type WorkflowStepApproval struct {
 	OwnerID   string `json:"owner_id,omitzero" gorm:"type:text;check:owner_id_checker,char_length(id)=26;index:idx_runner_jobs_owner_id,priority:1" temporaljson:"owner_id,omitzero,omitempty"`
 	OwnerType string `json:"owner_type,omitzero" gorm:"type:text;" temporaljson:"owner_type,omitzero,omitempty"`
 
-	Contents string `json:"-" temporaljson:"-"`
+	Contents     string          `json:"-" temporaljson:"-"`
+	ContentsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	Type WorkflowStepApprovalType `json:"type"`
 
@@ -75,6 +77,11 @@ func (c *WorkflowStepApproval) BeforeCreate(tx *gorm.DB) error {
 	if c.OrgID == "" {
 		c.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
+	if err := c.ContentsBlob.BeforeCreate(tx); err != nil {
+		return err
+	}
+
 	return nil
 }
 

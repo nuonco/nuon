@@ -10,6 +10,7 @@ import (
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/pkg/types/state"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -39,8 +40,9 @@ type InstallState struct {
 	Install   Install `json:"-" faker:"-" temporaljson:"install,omitzero,omitempty"`
 	InstallID string  `json:"install_id,omitzero" gorm:"notnull" temporaljson:"install_id,omitzero,omitempty"`
 
-	State   *state.State `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
-	Version int          `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
+	State     *state.State    `json:"contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"-"`
+	StateBlob *blobstore.Blob `json:"-" temporaljson:"-"`
+	Version   int             `json:"version,omitzero" gorm:"->;-:migration" temporaljson:"version,omitzero,omitempty"`
 
 	TriggeredByID   string `json:"triggered_by_id,omitzero" gorm:"type:text;check:triggered_by_id_checker,char_length(id)=26"`
 	TriggeredByType string `json:"triggered_by_type,omitzero" gorm:"type:text;"`
@@ -107,6 +109,10 @@ func (a *InstallState) BeforeCreate(tx *gorm.DB) error {
 				return fmt.Errorf("org_id is required and could not be determined")
 			}
 		}
+	}
+
+	if err := a.StateBlob.BeforeCreate(tx); err != nil {
+		return err
 	}
 
 	return nil
