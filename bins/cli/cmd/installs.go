@@ -248,6 +248,27 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsOutputsCmd.MarkFlagRequired("install-id")
 	componentsCmd.AddCommand(componentsOutputsCmd)
 
+	componentsToggleCmd := &cobra.Command{
+		Use:   "toggle",
+		Short: "Toggle a component on an install",
+		Long:  "Enable or disable a toggleable component on an install. If neither --enable nor --disable is passed, an interactive prompt will ask. The resulting workflow is shown in the TUI unless -j is passed.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if enable && disable {
+				return fmt.Errorf("only one of --enable or --disable can be set")
+			}
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ToggleComponent(cmd.Context(), id, componentID, enable, disable, planOnly, PrintJSON)
+		}),
+	}
+	componentsToggleCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	componentsToggleCmd.MarkFlagRequired("install-id")
+	componentsToggleCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name to toggle")
+	componentsToggleCmd.MarkFlagRequired("component-id")
+	componentsToggleCmd.Flags().BoolVar(&enable, "enable", false, "Enable the component")
+	componentsToggleCmd.Flags().BoolVar(&disable, "disable", false, "Disable the component")
+	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Plan without applying")
+	componentsCmd.AddCommand(componentsToggleCmd)
+
 	installsCmds.AddCommand(componentsCmd)
 
 	getDeployCmd := &cobra.Command{

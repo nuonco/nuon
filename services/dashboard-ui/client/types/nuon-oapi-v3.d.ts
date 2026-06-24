@@ -1585,6 +1585,13 @@ export interface paths {
      */
     post: operations["TeardownInstallComponent"];
   };
+  "/v1/installs/{install_id}/components/{component_id}/toggle": {
+    /**
+     * toggle an install component on or off
+     * @description Enable or disable a toggleable component on an install. Enabling triggers a deploy workflow, disabling triggers a teardown workflow.
+     */
+    post: operations["ToggleInstallComponent"];
+  };
   "/v1/installs/{install_id}/configs": {
     /**
      * create an install config
@@ -3031,7 +3038,7 @@ export interface components {
       updated_at?: string;
     };
     /** @enum {string} */
-    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs" | "role-enabled" | "role-disabled";
+    "app.ActionWorkflowTriggerType": "manual" | "cron" | "adhoc" | "pre-deploy-component" | "post-deploy-component" | "pre-teardown-component" | "post-teardown-component" | "pre-secrets-sync" | "post-secrets-sync" | "pre-provision" | "post-provision" | "pre-reprovision" | "post-reprovision" | "pre-deprovision" | "post-deprovision" | "pre-deploy-all-components" | "post-deploy-all-components" | "pre-teardown-all-components" | "post-teardown-all-components" | "pre-deprovision-sandbox" | "post-deprovision-sandbox" | "pre-reprovision-sandbox" | "post-reprovision-sandbox" | "pre-update-inputs" | "post-update-inputs" | "role-enabled" | "role-disabled" | "pre-enable-component" | "post-enable-component" | "pre-disable-component" | "post-disable-component";
     "app.AdHocStepConfig": {
       action_workflow_config_id?: string;
       /** @description this belongs to an app config id */
@@ -3694,6 +3701,7 @@ export interface components {
       component_name?: string;
       created_at?: string;
       created_by_id?: string;
+      default_enabled?: boolean;
       /** @description Duration string for deploy operations (e.g., "30m", "1h"). Max 1h. */
       deploy_timeout?: string;
       docker_build?: components["schemas"]["app.DockerBuildComponentConfig"];
@@ -3713,6 +3721,7 @@ export interface components {
       refs?: components["schemas"]["refs.Ref"][];
       skip_noops?: boolean;
       terraform_module?: components["schemas"]["app.TerraformModuleComponentConfig"];
+      toggleable?: boolean;
       type?: components["schemas"]["app.ComponentType"];
       updated_at?: string;
       version?: number;
@@ -3925,8 +3934,6 @@ export interface components {
       values_files?: string[];
     };
     "app.HelmRelease": {
-      /** @description The rspb.Release body, as a base64-encoded string */
-      body?: string;
       created_at?: string;
       created_by_id?: string;
       helmChart?: components["schemas"]["app.HelmChart"];
@@ -4098,6 +4105,9 @@ export interface components {
     };
     "app.InstallConfig": {
       approval_option?: components["schemas"]["app.InstallApprovalOption"];
+      component_toggles?: {
+        [key: string]: boolean;
+      };
       created_at?: string;
       created_by_id?: string;
       custom_nested_stacks?: components["schemas"]["config.CustomNestedStack"][];
@@ -5776,7 +5786,7 @@ export interface components {
     /** @enum {string} */
     "app.WorkflowStepResponseType": "deny" | "approve" | "deny-skip-current" | "deny-skip-current-and-dependents" | "retry" | "auto-approve";
     /** @enum {string} */
-    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "reprovision" | "app_config_build" | "runbook_run";
+    "app.WorkflowType": "provision" | "deprovision" | "deprovision_sandbox" | "manual_deploy" | "input_update" | "deploy_components" | "teardown_component" | "teardown_components" | "reprovision_sandbox" | "drift_run_reprovision_sandbox" | "action_workflow_run" | "sync_secrets" | "drift_run" | "app_branches_manual_update" | "app_branches_config_repo_update" | "app_branches_component_repo_update" | "app_branch_config_update" | "reprovision" | "app_config_build" | "runbook_run" | "component_enabled" | "component_disabled";
     "blobstore.Blob": Record<string, never>;
     "callback.Ref": {
       namespace?: string;
@@ -6954,6 +6964,7 @@ export interface components {
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      default_enabled?: boolean;
       dependencies?: string[];
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
@@ -6969,6 +6980,7 @@ export interface components {
       references?: string[];
       skip_noops?: boolean;
       target?: string;
+      toggleable?: boolean;
     };
     "service.CreateExternalImageComponentConfigRequest": {
       app_config_id?: string;
@@ -6978,6 +6990,7 @@ export interface components {
       /** @description Duration string for build operations (e.g., "30m", "1h") */
       build_timeout?: string;
       checksum?: string;
+      default_enabled?: boolean;
       dependencies?: string[];
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
@@ -6990,6 +7003,7 @@ export interface components {
       references?: string[];
       skip_noops?: boolean;
       tag?: string;
+      toggleable?: boolean;
       /**
        * @description UpdatePolicy is an optional Masterminds-compatible semver constraint
        * (e.g. "~1.25.0", "^2"). When set, the runner lists tags from the
@@ -7006,6 +7020,7 @@ export interface components {
       chart_name: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      default_enabled?: boolean;
       dependencies?: string[];
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
@@ -7021,6 +7036,7 @@ export interface components {
       skip_noops?: boolean;
       storage_driver?: string;
       take_ownership?: boolean;
+      toggleable?: boolean;
       values: {
         [key: string]: string;
       };
@@ -7124,6 +7140,7 @@ export interface components {
       build_timeout?: string;
       checksum?: string;
       cmd?: string[];
+      default_enabled?: boolean;
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
       env_vars?: {
@@ -7137,6 +7154,7 @@ export interface components {
       references?: string[];
       skip_noops?: boolean;
       tag: string;
+      toggleable?: boolean;
     };
     "service.CreateKubernetesManifestComponentConfigRequest": {
       app_config_id?: string;
@@ -7145,6 +7163,7 @@ export interface components {
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      default_enabled?: boolean;
       dependencies?: string[];
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
@@ -7161,6 +7180,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       skip_noops?: boolean;
+      toggleable?: boolean;
     };
     "service.CreateNotebookRequest": {
       description?: string;
@@ -7190,6 +7210,7 @@ export interface components {
         [key: string]: string;
       };
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      default_enabled?: boolean;
       dependencies?: string[];
       deploy_timeout?: string;
       drift_schedule?: string;
@@ -7204,6 +7225,7 @@ export interface components {
       references?: string[];
       runtime: string;
       skip_noops?: boolean;
+      toggleable?: boolean;
       version?: string;
     };
     "service.CreateRunbookConfigRequest": {
@@ -7266,6 +7288,7 @@ export interface components {
       build_timeout?: string;
       checksum?: string;
       connected_github_vcs_config?: components["schemas"]["service.ConnectedGithubVCSConfigRequest"];
+      default_enabled?: boolean;
       dependencies?: string[];
       /** @description Duration string for deploy operations (e.g., "30m", "1h") */
       deploy_timeout?: string;
@@ -7280,6 +7303,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["service.PublicGitVCSConfigRequest"];
       references?: string[];
       skip_noops?: boolean;
+      toggleable?: boolean;
       variables: {
         [key: string]: string;
       };
@@ -7586,6 +7610,11 @@ export interface components {
       series?: components["schemas"]["service.SeriesPoint"][];
       time?: string;
       warns?: number;
+    };
+    "service.ToggleInstallComponentRequest": {
+      enabled?: boolean;
+      plan_only?: boolean;
+      role?: string;
     };
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
@@ -19886,6 +19915,70 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * toggle an install component on or off
+   * @description Enable or disable a toggleable component on an install. Enabling triggers a deploy workflow, disabling triggers a teardown workflow.
+   */
+  ToggleInstallComponent: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description component ID */
+        component_id: string;
+      };
+    };
+    /** @description Input */
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["service.ToggleInstallComponentRequest"];
+      };
+    };
+    responses: {
+      /** @description Created */
+      201: {
+        content: {
+          "application/json": components["schemas"]["app.WorkflowResponse"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };

@@ -37,6 +37,9 @@ type ServiceCreateJobComponentConfigRequest struct {
 	// cmd
 	Cmd []string `json:"cmd"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// Duration string for deploy operations (e.g., "30m", "1h")
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
@@ -62,6 +65,9 @@ type ServiceCreateJobComponentConfigRequest struct {
 	// tag
 	// Required: true
 	Tag *string `json:"tag"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 }
 
 // Validate validates this service create job component config request

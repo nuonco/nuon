@@ -41,6 +41,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -76,6 +79,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 
 	// take ownership
 	TakeOwnership bool `json:"take_ownership,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// values
 	// Required: true

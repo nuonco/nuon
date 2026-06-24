@@ -158,6 +158,11 @@ type Install struct {
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 
+	// ComponentToggles controls which toggleable components are enabled or disabled
+	// for this install, keyed by component name. true = enabled, false = disabled.
+	// Absent keys fall through to the component's default_enabled setting.
+	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
+
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved

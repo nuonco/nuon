@@ -40,6 +40,7 @@ type InstallConfig struct {
 	VPCNestedTemplateURL    *string                    `json:"vpc_nested_template_url,omitempty" gorm:"column:vpc_nested_template_url" temporaljson:"vpc_nested_template_url,omitempty"`
 	RunnerNestedTemplateURL *string                    `json:"runner_nested_template_url,omitempty" gorm:"column:runner_nested_template_url" temporaljson:"runner_nested_template_url,omitempty"`
 	CustomNestedStacks      []config.CustomNestedStack `json:"custom_nested_stacks,omitempty" gorm:"type:jsonb;serializer:json;default:'[]'" temporaljson:"custom_nested_stacks,omitempty"`
+	ComponentToggles        map[string]bool            `json:"component_toggles,omitempty" gorm:"type:jsonb;serializer:json;default:'{}'" temporaljson:"component_toggles,omitempty"`
 	labels.Labeled
 }
 
@@ -51,6 +52,18 @@ func (a *InstallConfig) BeforeCreate(tx *gorm.DB) error {
 	a.CreatedByID = createdByIDFromContext(tx.Statement.Context)
 	a.OrgID = orgIDFromContext(tx.Statement.Context)
 	return nil
+}
+
+func (c *InstallConfig) IsComponentEnabled(componentID string, ccc *ComponentConfigConnection) bool {
+	if ccc == nil || !ccc.IsToggleable() {
+		return true
+	}
+	if c != nil && c.ComponentToggles != nil {
+		if enabled, ok := c.ComponentToggles[componentID]; ok {
+			return enabled
+		}
+	}
+	return ccc.GetDefaultEnabled()
 }
 
 func (c *InstallConfig) Indexes(db *gorm.DB) []migrations.Index {
