@@ -3925,8 +3925,6 @@ export interface components {
       values_files?: string[];
     };
     "app.HelmRelease": {
-      /** @description The rspb.Release body, as a base64-encoded string */
-      body?: string;
       created_at?: string;
       created_by_id?: string;
       helmChart?: components["schemas"]["app.HelmChart"];
