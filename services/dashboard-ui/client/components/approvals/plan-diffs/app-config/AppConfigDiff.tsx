@@ -2,22 +2,35 @@ import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { Expand } from '@/components/common/Expand'
+import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
 
-const DIFF_SECTION_KEYS: Record<string, string> = {
-  components: 'Components',
-  actions: 'Actions',
-  inputs: 'Install inputs',
-  secrets: 'Secrets',
-  sandbox: 'Sandbox',
-  runner: 'Runner',
-  permissions: 'Permissions',
-  stack: 'Stack',
+const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant }> = {
+  components: { displayName: 'Components', icon: 'CubeIcon' },
+  actions: { displayName: 'Actions', icon: 'LightningIcon' },
+  inputs: { displayName: 'Install inputs', icon: 'ListBulletsIcon' },
+  secrets: { displayName: 'Secrets', icon: 'KeyIcon' },
+  sandbox: { displayName: 'Sandbox', icon: 'TerminalWindowIcon' },
+  runner: { displayName: 'Runner', icon: 'GearIcon' },
+  permissions: { displayName: 'Permissions', icon: 'ShieldIcon' },
+  stack: { displayName: 'Stack', icon: 'StackIcon' },
+}
+
+const COMPONENT_TYPE_ICON: Record<string, { icon: TIconVariant; brandClass: string }> = {
+  helm_chart: { icon: 'Helm', brandClass: 'text-[#0F1689] dark:text-[#6A70D6]' },
+  terraform_module: { icon: 'Terraform', brandClass: 'text-[#7B42BC] dark:text-[#A878E0]' },
+  docker_build: { icon: 'Docker', brandClass: 'text-[#2496ED] dark:text-[#56B4F9]' },
+  external_image: { icon: 'OCI', brandClass: 'text-[#262261] dark:text-[#8B87D1]' },
+  kubernetes_manifest: { icon: 'Kubernetes', brandClass: 'text-[#326CE5] dark:text-[#5A8DEF]' },
+  job: { icon: 'AWSLambda', brandClass: 'text-[#FF9900] dark:text-[#FFB340]' },
+  pulumi: { icon: 'Pulumi', brandClass: 'text-[#8A3391] dark:text-[#B06AB8]' },
+  pulumi_module: { icon: 'Pulumi', brandClass: 'text-[#8A3391] dark:text-[#C48BCC]' },
 }
 
 export type DiffSectionData = {
   name: string
+  sectionKey: string
   additions: number
   removals: number
   changed: number
@@ -108,10 +121,17 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
 
   const sections: DiffSectionData[] = []
   for (const child of node.children) {
-    const displayName = DIFF_SECTION_KEYS[child.key]
-    if (!displayName) continue
+    const config = SECTION_CONFIG[child.key]
+    if (!config) continue
 
-    const section: DiffSectionData = { name: displayName, additions: 0, removals: 0, changed: 0, entries: [] }
+    const section: DiffSectionData = {
+      name: config.displayName,
+      sectionKey: child.key,
+      additions: 0,
+      removals: 0,
+      changed: 0,
+      entries: [],
+    }
     collectDiffEntries(child, '', section)
     if (section.entries.length > 0) {
       sections.push(section)
@@ -217,18 +237,23 @@ const EntryValuesDiff = ({ entries }: { entries: DiffEntry[] }) => (
   </div>
 )
 
+const EntryComponentIcon = ({ description }: { description: string }) => {
+  const componentType = description.trim().toLowerCase().replace(/\s+/g, '_')
+  const config = COMPONENT_TYPE_ICON[componentType]
+  if (!config) return null
+  return <Icon variant={config.icon} size="14" className={config.brandClass} />
+}
+
 export interface IAppConfigDiff {
   sections: DiffSectionData[]
   summary: { added: number; removed: number; changed: number } | null
   isLoading?: boolean
-  configFile?: string
 }
 
 export const AppConfigDiff = ({
   sections,
   summary,
   isLoading = false,
-  configFile = 'nuon.toml',
 }: IAppConfigDiff) => {
   if (isLoading) {
     return (
@@ -252,56 +277,63 @@ export const AppConfigDiff = ({
 
   return (
     <div className="flex flex-col gap-6">
-      {sections.map((section) => (
-        <Card key={section.name} className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-          <div className="px-4 sm:px-6 py-4 border-b">
-            <div className="flex items-center gap-3">
-              <Text variant="base" weight="strong">
+      {sections.map((section) => {
+        const sectionIcon = SECTION_CONFIG[section.sectionKey]?.icon
+
+        return (
+          <Card key={section.name} className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+            <div className="px-4 sm:px-6 py-4 border-b">
+              <Text flex className="gap-2 items-center" variant="base" weight="strong">
+                {sectionIcon && <Icon variant={sectionIcon} size="16" />}
                 {section.name}
               </Text>
-              <Text variant="subtext" theme="neutral" family="mono">
-                {configFile}
-              </Text>
             </div>
-          </div>
 
-          <AppConfigSummary summary={{ added: section.additions, removed: section.removals, changed: section.changed }} />
+            <AppConfigSummary summary={{ added: section.additions, removed: section.removals, changed: section.changed }} />
 
-          <div className="flex flex-col divide-y">
-            {section.entries.map((entry, idx) => {
-              const bgColor = getOpBgColor(entry.op)
-              const borderColor = getOpBorderColor(entry.op)
+            <div className="flex flex-col divide-y">
+              {section.entries.map((entry, idx) => {
+                const bgColor = getOpBgColor(entry.op)
+                const borderColor = getOpBorderColor(entry.op)
+                const isComponentSection = section.sectionKey === 'components'
 
-              return (
-                <Expand
-                  key={`${entry.name}-${idx}`}
-                  id={`${section.name}-${entry.name}-${idx}`}
-                  className={`border-l-4 ${borderColor}`}
-                  headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
-                  heading={
-                    <div className="text-left w-full">
-                      <div className="flex items-start justify-between w-full">
-                        <div className="flex flex-col max-w-[500px]">
-                          <Text nowrap className="block truncate" weight="strong">
-                            {entry.name}
-                          </Text>
-                        </div>
-                        <div className="flex items-center pr-4 self-center">
-                          <Badge theme={OP_BADGE_THEME[entry.op as AppConfigOp] || 'neutral'} size="sm">
-                            {entry.op}
-                          </Badge>
+                return (
+                  <Expand
+                    key={`${entry.name}-${idx}`}
+                    id={`${section.name}-${entry.name}-${idx}`}
+                    className={`border-l-4 ${borderColor}`}
+                    headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
+                    heading={
+                      <div className="text-left w-full">
+                        <div className="flex items-start justify-between w-full">
+                          <div className="flex items-center gap-2 max-w-[500px]">
+                            {isComponentSection && <EntryComponentIcon description={entry.description} />}
+                            <Text nowrap className="block truncate" weight="strong">
+                              {entry.name}
+                            </Text>
+                            {isComponentSection && (
+                              <Text variant="subtext" theme="neutral">
+                                {entry.description}
+                              </Text>
+                            )}
+                          </div>
+                          <div className="flex items-center pr-4 self-center">
+                            <Badge theme={OP_BADGE_THEME[entry.op as AppConfigOp] || 'neutral'} size="sm">
+                              {entry.op}
+                            </Badge>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  }
-                >
-                  <EntryValuesDiff entries={[entry]} />
-                </Expand>
-              )
-            })}
-          </div>
-        </Card>
-      ))}
+                    }
+                  >
+                    <EntryValuesDiff entries={[entry]} />
+                  </Expand>
+                )
+              })}
+            </div>
+          </Card>
+        )
+      })}
 
       {summary && (
         <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">

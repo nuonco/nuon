@@ -8,18 +8,20 @@ import type { DiffSectionData } from './AppConfigDiff'
 const mockSections: DiffSectionData[] = [
   {
     name: 'Components',
+    sectionKey: 'components',
     additions: 1,
     removals: 1,
     changed: 2,
     entries: [
       { op: 'add', name: 'redis', description: 'helm_chart' },
       { op: 'remove', name: 'legacy-worker', description: 'docker_build' },
-      { op: 'change', name: 'ctl-api', description: "chart_name: 'ctl-api-v1' -> 'ctl-api-v2'" },
-      { op: 'change', name: 'dashboard', description: "namespace: 'default' -> 'app'" },
+      { op: 'change', name: 'ctl-api', description: 'terraform_module' },
+      { op: 'change', name: 'dashboard', description: 'kubernetes_manifest' },
     ],
   },
   {
     name: 'Actions',
+    sectionKey: 'actions',
     additions: 1,
     removals: 0,
     changed: 1,
@@ -30,6 +32,7 @@ const mockSections: DiffSectionData[] = [
   },
   {
     name: 'Install inputs',
+    sectionKey: 'inputs',
     additions: 2,
     removals: 0,
     changed: 0,
@@ -69,58 +72,100 @@ export const SingleSection = () => (
   />
 )
 
-export const ManyChanges = () => {
-  const largeSections: DiffSectionData[] = [
+export const AllSections = () => {
+  const allSections: DiffSectionData[] = [
     {
       name: 'Components',
-      additions: 5,
-      removals: 2,
-      changed: 8,
+      sectionKey: 'components',
+      additions: 2,
+      removals: 1,
+      changed: 3,
       entries: [
         { op: 'add', name: 'redis', description: 'helm_chart' },
-        { op: 'add', name: 'postgres', description: 'helm_chart' },
         { op: 'add', name: 'monitoring', description: 'terraform_module' },
-        { op: 'add', name: 'cert-manager', description: 'helm_chart' },
-        { op: 'add', name: 'ingress-nginx', description: 'helm_chart' },
         { op: 'remove', name: 'legacy-worker', description: 'docker_build' },
-        { op: 'remove', name: 'old-proxy', description: 'docker_build' },
-        { op: 'change', name: 'ctl-api', description: "chart_name: 'ctl-api-v1' -> 'ctl-api-v2'" },
-        { op: 'change', name: 'dashboard', description: "namespace: 'default' -> 'app'" },
-        { op: 'change', name: 'worker', description: "replicas: '1' -> '3'" },
-        { op: 'change', name: 'api-gateway', description: "image_tag: 'v1.2' -> 'v2.0'" },
-        { op: 'change', name: 'scheduler', description: "cron: '*/5 * * * *' -> '*/2 * * * *'" },
-        { op: 'change', name: 'notifier', description: "env.SLACK_CHANNEL: '#alerts' -> '#ops-alerts'" },
-        { op: 'change', name: 'auth-service', description: "timeout: '30s' -> '60s'" },
-        { op: 'change', name: 'cache', description: "max_memory: '256Mi' -> '512Mi'" },
+        { op: 'change', name: 'ctl-api', description: 'helm_chart' },
+        { op: 'change', name: 'runner', description: 'external_image' },
+        { op: 'change', name: 'infra', description: 'pulumi' },
+      ],
+    },
+    {
+      name: 'Actions',
+      sectionKey: 'actions',
+      additions: 1,
+      removals: 0,
+      changed: 0,
+      entries: [
+        { op: 'add', name: 'run-migrations', description: 'timeout: 300s' },
+      ],
+    },
+    {
+      name: 'Install inputs',
+      sectionKey: 'inputs',
+      additions: 2,
+      removals: 0,
+      changed: 0,
+      entries: [
+        { op: 'add', name: 'cluster_name', description: 'required string' },
+        { op: 'add', name: 'region', description: "default: 'us-west-2'" },
       ],
     },
     {
       name: 'Secrets',
-      additions: 3,
+      sectionKey: 'secrets',
+      additions: 1,
       removals: 0,
       changed: 0,
       entries: [
         { op: 'add', name: 'DATABASE_URL', description: 'required, no default' },
-        { op: 'add', name: 'REDIS_PASSWORD', description: 'required, auto_generate' },
-        { op: 'add', name: 'API_KEY', description: 'required, format: uuid' },
       ],
     },
     {
       name: 'Sandbox',
+      sectionKey: 'sandbox',
       additions: 0,
       removals: 0,
-      changed: 2,
+      changed: 1,
       entries: [
         { op: 'change', name: 'terraform_version', description: "'1.5.0' -> '1.6.0'" },
-        { op: 'change', name: 'drift_schedule', description: "'@daily' -> '@hourly'" },
+      ],
+    },
+    {
+      name: 'Runner',
+      sectionKey: 'runner',
+      additions: 0,
+      removals: 0,
+      changed: 1,
+      entries: [
+        { op: 'change', name: 'runner_type', description: "'standard' -> 'gpu'" },
+      ],
+    },
+    {
+      name: 'Permissions',
+      sectionKey: 'permissions',
+      additions: 1,
+      removals: 0,
+      changed: 0,
+      entries: [
+        { op: 'add', name: 'provision', description: 'arn:aws:iam::role/deploy' },
+      ],
+    },
+    {
+      name: 'Stack',
+      sectionKey: 'stack',
+      additions: 0,
+      removals: 0,
+      changed: 1,
+      entries: [
+        { op: 'change', name: 'type', description: "'eks' -> 'eks-v2'" },
       ],
     },
   ]
 
   return (
     <AppConfigDiff
-      sections={largeSections}
-      summary={{ added: 8, removed: 2, changed: 10 }}
+      sections={allSections}
+      summary={{ added: 7, removed: 1, changed: 6 }}
     />
   )
 }
