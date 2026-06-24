@@ -33,6 +33,10 @@ func (m model) stepHasPlanDiff(step *models.AppWorkflowStep) bool {
 		return true
 	}
 
+	if strings.Contains(strings.ToLower(step.Name), "plan install group") {
+		return true
+	}
+
 	return strings.Contains(strings.ToLower(step.Name), "sync and plan")
 }
 

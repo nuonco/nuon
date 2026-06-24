@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
 	queuebuild "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/queuebuild"
-	componentdeploysyncandplan "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -86,28 +85,13 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	builds = append(builds, sandboxEntry)
 	s.updateBuildMetadata(ctx, builds)
 
-	if err := s.buildSandboxInfra(ctx, l); err != nil {
+	if err := s.buildSandbox(ctx, l); err != nil {
 		s.setBuildStatus(builds, "sandbox", "error")
 		s.updateBuildMetadata(ctx, builds)
-		return fmt.Errorf("sandbox infrastructure build failed: %w", err)
+		return fmt.Errorf("sandbox build failed: %w", err)
 	}
 	s.setBuildStatus(builds, "sandbox", "success")
 	s.updateBuildMetadata(ctx, builds)
-
-	// Deploy components to sandbox installs using built artifacts
-	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
-	if err != nil {
-		return fmt.Errorf("unable to get app branch: %w", err)
-	}
-
-	if len(branch.Configs) == 0 {
-		l.Info("no branch config found, skipping sandbox deploy")
-		return nil
-	}
-
-	if err := s.sandboxBuild(ctx, l, appConfig.ComponentIDs, &branch.Configs[0]); err != nil {
-		return fmt.Errorf("sandbox builds failed: %w", err)
-	}
 
 	l.Info("all builds completed successfully")
 	return nil
@@ -312,9 +296,7 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 	})
 }
 
-// buildSandboxInfra enqueues the sandbox infrastructure build signal (terraform)
-// on the branch queue and awaits its completion.
-func (s *Signal) buildSandboxInfra(ctx workflow.Context, l log.Logger) error {
+func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 	cb := callback.New(ctx, s.AppBranchID+"-sandbox-infra")
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
@@ -336,105 +318,5 @@ func (s *Signal) buildSandboxInfra(ctx workflow.Context, l log.Logger) error {
 	}
 
 	l.Info("sandbox infrastructure build completed")
-	return nil
-}
-
-// sandboxBuild deploys built components to sandbox installs across all install groups in parallel.
-func (s *Signal) sandboxBuild(ctx workflow.Context, l log.Logger, componentIDs []string, config *app.AppBranchConfig) error {
-	if len(config.InstallGroups) == 0 {
-		l.Info("no install groups, skipping sandbox build")
-		return nil
-	}
-
-	for _, group := range config.InstallGroups {
-		if len(group.InstallIDs) == 0 {
-			l.Info("no installs in group, skipping", "group_name", group.Name)
-			continue
-		}
-
-		errCh := workflow.NewChannel(ctx)
-		pending := len(group.InstallIDs)
-
-		for _, installID := range group.InstallIDs {
-			installID := installID
-			workflow.Go(ctx, func(gCtx workflow.Context) {
-				deployErr := s.sandboxBuildForInstall(gCtx, l, installID, componentIDs)
-				errCh.Send(gCtx, deployErr)
-			})
-		}
-
-		var errs []error
-		for i := 0; i < pending; i++ {
-			var deployErr error
-			errCh.Receive(ctx, &deployErr)
-			if deployErr != nil {
-				errs = append(errs, deployErr)
-			}
-		}
-
-		if len(errs) > 0 {
-			return fmt.Errorf("sandbox build group %q had %d error(s): %v", group.Name, len(errs), errs)
-		}
-	}
-
-	l.Info("sandbox builds completed successfully")
-	return nil
-}
-
-// sandboxBuildForInstall triggers componentdeploysyncandplan (sandbox mode) for each component in an install.
-func (s *Signal) sandboxBuildForInstall(ctx workflow.Context, l log.Logger, installID string, componentIDs []string) error {
-	mappingResp, err := activities.AwaitGetInstallComponentsByComponentIDs(ctx, activities.GetInstallComponentsByComponentIDsRequest{
-		Req: &activities.GetInstallComponentsByComponentIDsInput{
-			InstallID:    installID,
-			ComponentIDs: componentIDs,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("install %s: unable to get install components: %w", installID, err)
-	}
-
-	installComponentMap := make(map[string]string, len(mappingResp.Mappings))
-	for _, m := range mappingResp.Mappings {
-		installComponentMap[m.ComponentID] = m.InstallComponentID
-	}
-
-	for _, componentID := range componentIDs {
-		installComponentID, ok := installComponentMap[componentID]
-		if !ok {
-			l.Warn("install component mapping not found, skipping",
-				"install_id", installID,
-				"component_id", componentID)
-			continue
-		}
-
-		cb := callback.New(ctx, installComponentID)
-		enqueueResp, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-			OwnerID:   installID,
-			OwnerType: "installs",
-			QueueName: "install-signals",
-			Signal: &componentdeploysyncandplan.Signal{
-				SandboxMode:        true,
-				ComponentID:        componentID,
-				InstallComponentID: installComponentID,
-			},
-			Callback: cb,
-		})
-		if err != nil {
-			return fmt.Errorf("install %s component %s: enqueue failed: %w", installID, componentID, err)
-		}
-
-		l.Info("waiting for sandbox deploy to complete",
-			"install_id", installID,
-			"component_id", componentID,
-			"install_component_id", installComponentID,
-			"queue_signal_id", enqueueResp.QueueSignalID)
-
-		if _, err = callback.AwaitWithTimeout(ctx, cb, callback.FallbackAwaitTimeout); err != nil {
-			return fmt.Errorf("install %s component %s: sandbox deploy failed: %w", installID, componentID, err)
-		}
-
-		l.Info("sandbox deploy completed", "install_id", installID, "component_id", componentID)
-	}
-
 	return nil
 }
