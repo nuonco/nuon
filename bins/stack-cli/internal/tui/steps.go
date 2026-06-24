@@ -21,11 +21,14 @@ import (
 // ─── Intro ──────────────────────────────────────────────────────────────────
 
 type introStep struct {
-	kind stack.Kind
+	kind  stack.Kind
+	cloud stack.Cloud
 }
 
-func newIntroStep(kind stack.Kind) *introStep { return &introStep{kind: kind} }
-func (s *introStep) Init() tea.Cmd            { return nil }
+func newIntroStep(kind stack.Kind, cloud stack.Cloud) *introStep {
+	return &introStep{kind: kind, cloud: cloud}
+}
+func (s *introStep) Init() tea.Cmd { return nil }
 
 func (s *introStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
 	if k, ok := msg.(tea.KeyPressMsg); ok && k.String() == "enter" {
@@ -41,6 +44,10 @@ func (s *introStep) Main(w, h int) string {
 		verb = "reprovision"
 	case stack.KindDeprovision:
 		verb = "deprovision"
+	}
+
+	if s.cloud == stack.CloudGCP {
+		return s.mainGCP(verb)
 	}
 
 	heading := titleStyle.Render("Welcome")
@@ -67,11 +74,12 @@ func (s *introStep) Main(w, h int) string {
 			"This wizard walks you through " + verb + "ing one. You'll:",
 			"",
 			"  " + stepActive.Render("1.") + " " + kvKeyStyle.Render("Auth") + "     — verify your AWS credentials and region",
-			"  " + stepActive.Render("2.") + " " + kvKeyStyle.Render("Inputs") + "   — fill in install inputs and required secrets",
-			"  " + stepActive.Render("3.") + " " + kvKeyStyle.Render("Network") + "  — review the VPC plan",
-			"  " + stepActive.Render("4.") + " " + kvKeyStyle.Render("Roles") + "    — pick which IAM roles to create",
-			"  " + stepActive.Render("5.") + " " + kvKeyStyle.Render("Method") + "   — choose how the stack is provisioned",
-			"  " + stepActive.Render("6.") + " " + kvKeyStyle.Render("Provision") + " — confirm the plan and apply it",
+			"  " + stepActive.Render("2.") + " " + kvKeyStyle.Render("Inputs") + "   — fill in install inputs",
+			"  " + stepActive.Render("3.") + " " + kvKeyStyle.Render("Secrets") + "  — set required secrets",
+			"  " + stepActive.Render("4.") + " " + kvKeyStyle.Render("Network") + "  — review the VPC plan",
+			"  " + stepActive.Render("5.") + " " + kvKeyStyle.Render("Roles") + "    — pick which IAM roles to create",
+			"  " + stepActive.Render("6.") + " " + kvKeyStyle.Render("Method") + "   — choose how the stack is provisioned",
+			"  " + stepActive.Render("7.") + " " + kvKeyStyle.Render("Provision") + " — confirm the plan and apply it",
 		}, "\n")
 	}
 
@@ -79,7 +87,59 @@ func (s *introStep) Main(w, h int) string {
 	return heading + "\n\n" + body + "\n\n" + next
 }
 
+func (s *introStep) mainGCP(verb string) string {
+	heading := titleStyle.Render("Welcome")
+	var body string
+	switch s.kind {
+	case stack.KindDeprovision:
+		body = strings.Join([]string{
+			"A " + kvKeyStyle.Render("stack") + " is the set of GCP resources installed in your",
+			"project: a VPC network and subnets, service accounts and",
+			"IAM bindings, Secret Manager entries, and a runner GCE",
+			"instance. Applications run inside this stack.",
+			"",
+			kvKeyStyle.Render("Deprovision") + " tears everything down via Terraform, leaving",
+			"the project empty of stack-managed resources.",
+		}, "\n")
+	default:
+		body = strings.Join([]string{
+			"A " + kvKeyStyle.Render("stack") + " is the set of GCP resources installed in your",
+			"project so applications can run there: a VPC network and",
+			"subnets, service accounts and IAM bindings, Secret Manager",
+			"entries, and a runner GCE instance.",
+			"",
+			"This wizard walks you through " + verb + "ing one. You'll:",
+			"",
+			"  " + stepActive.Render("1.") + " " + kvKeyStyle.Render("Inputs") + "   — fill in install inputs",
+			"  " + stepActive.Render("2.") + " " + kvKeyStyle.Render("Secrets") + "  — set required secrets",
+			"  " + stepActive.Render("3.") + " " + kvKeyStyle.Render("Roles") + "    — pick which IAM roles to create",
+			"  " + stepActive.Render("4.") + " " + kvKeyStyle.Render("Auth") + "     — verify your GCP credentials",
+			"  " + stepActive.Render("5.") + " " + kvKeyStyle.Render("Network") + "  — set the project/region and review the VPC plan",
+			"  " + stepActive.Render("6.") + " " + kvKeyStyle.Render("Provision") + " — confirm the plan and apply it",
+		}, "\n")
+	}
+	next := renderButton(" Get started ▸ ", true, false)
+	return heading + "\n\n" + body + "\n\n" + next
+}
+
 func (s *introStep) Detail(w, h int) string {
+	if s.cloud == stack.CloudGCP {
+		if s.kind == stack.KindDeprovision {
+			return strings.Join([]string{
+				kvKeyStyle.Render("This will delete"),
+				"",
+				dimStyle.Render("· the runner GCE instance and logs"),
+				dimStyle.Render("· all created service accounts and IAM bindings"),
+				dimStyle.Render("· stack secrets in GCP Secret Manager"),
+				dimStyle.Render("· the VPC network, subnets, and router/NAT"),
+			}, "\n")
+		}
+		return strings.Join([]string{
+			kvKeyStyle.Render("Before you begin"),
+			"",
+			dimStyle.Render(wrap("Nothing is created in your GCP project until you reach the final step and select Provision.", w)),
+		}, "\n")
+	}
 	if s.kind == stack.KindDeprovision {
 		return strings.Join([]string{
 			kvKeyStyle.Render("This will delete"),
@@ -280,7 +340,7 @@ func (s *authStep) Init() tea.Cmd {
 }
 
 func (s *authStep) fetch() tea.Msg {
-	awsCfg, err := awsconfig.LoadDefaultConfig(s.ctx, awsconfig.WithRegion(s.cfg.AWSRegion))
+	awsCfg, err := awsconfig.LoadDefaultConfig(s.ctx, awsconfig.WithRegion(s.cfg.AWS.Region))
 	if err != nil {
 		return authDoneMsg{err: fmt.Errorf("load aws config: %w", err)}
 	}
@@ -322,7 +382,7 @@ func (s *authStep) Main(w, h int) string {
 		rows := []string{
 			kvRow("Account", s.account),
 			kvRow("ARN", s.arn),
-			kvRow("Region", s.cfg.AWSRegion),
+			kvRow("Region", s.cfg.AWS.Region),
 		}
 		body = strings.Join(rows, "\n") + "\n\n" + renderButton(" Continue ▸ ", true, false)
 	}
@@ -374,9 +434,11 @@ type inputField struct {
 }
 
 type inputsStep struct {
-	cfg    *stack.Config
-	fields []*inputField
-	cursor int
+	cfg      *stack.Config
+	fields   []*inputField
+	cursor   int
+	title    string
+	emptyMsg string
 
 	// railOffset is the first rail line currently visible. Auto-adjusted in
 	// renderRail to keep the focused field on screen; lets the rail scroll
@@ -390,41 +452,59 @@ type inputsStep struct {
 	inputEdits  map[string]string
 }
 
+// newInputsStep builds the install-inputs step (no secrets).
 func newInputsStep(cfg *stack.Config) *inputsStep {
+	return newFieldStep(cfg, true, false, "Inputs", "No inputs to configure for this install.")
+}
+
+// newSecretsStep builds the secrets step (no install inputs).
+func newSecretsStep(cfg *stack.Config) *inputsStep {
+	return newFieldStep(cfg, false, true, "Secrets", "No secrets to configure for this install.")
+}
+
+// newFieldStep is the shared builder behind the inputs and secrets steps; both
+// are the same textinput-driven form over a filtered field set.
+func newFieldStep(cfg *stack.Config, includeInputs, includeSecrets bool, title, emptyMsg string) *inputsStep {
 	s := &inputsStep{
 		cfg:         cfg,
 		secretEdits: map[string]string{},
 		inputEdits:  map[string]string{},
+		title:       title,
+		emptyMsg:    emptyMsg,
 	}
 
-	for _, k := range sortedKeys(cfg.InstallInputs) {
-		v := cfg.InstallInputs[k]
-		s.inputEdits[k] = v
-		ti := textinput.New()
-		ti.SetValue(v)
-		ti.Placeholder = "(empty)"
-		s.fields = append(s.fields, &inputField{
-			key:    k,
-			target: refInput(s.inputEdits, k),
-			input:  ti,
-		})
+	if includeInputs {
+		for _, k := range sortedKeys(cfg.InstallInputs) {
+			v := cfg.InstallInputs[k]
+			s.inputEdits[k] = v
+			ti := textinput.New()
+			ti.SetValue(v)
+			ti.Placeholder = "(empty)"
+			s.fields = append(s.fields, &inputField{
+				key:    k,
+				target: refInput(s.inputEdits, k),
+				input:  ti,
+			})
+		}
 	}
-	for _, k := range sortedKeys(cfg.Secrets) {
-		sec := cfg.Secrets[k]
-		s.secretEdits[k] = sec.Value
-		ti := textinput.New()
-		ti.SetValue(sec.Value)
-		ti.EchoMode = textinput.EchoPassword
-		ti.EchoCharacter = '•'
-		ti.Placeholder = "(empty)"
-		s.fields = append(s.fields, &inputField{
-			key:      k,
-			desc:     sec.Description,
-			secret:   true,
-			required: sec.Required,
-			target:   refInput(s.secretEdits, k),
-			input:    ti,
-		})
+	if includeSecrets {
+		for _, k := range sortedKeys(cfg.Secrets) {
+			sec := cfg.Secrets[k]
+			s.secretEdits[k] = sec.Value
+			ti := textinput.New()
+			ti.SetValue(sec.Value)
+			ti.EchoMode = textinput.EchoPassword
+			ti.EchoCharacter = '•'
+			ti.Placeholder = "(empty)"
+			s.fields = append(s.fields, &inputField{
+				key:      k,
+				desc:     sec.Description,
+				secret:   true,
+				required: sec.Required,
+				target:   refInput(s.secretEdits, k),
+				input:    ti,
+			})
+		}
 	}
 	if len(s.fields) > 0 {
 		_ = s.fields[0].input.Focus()
@@ -525,10 +605,10 @@ func (s *inputsStep) applyEdits() {
 }
 
 func (s *inputsStep) Main(w, h int) string {
-	title := titleStyle.Render("Inputs & Secrets")
+	title := titleStyle.Render(s.title)
 	if len(s.fields) == 0 {
 		return title + "\n\n" +
-			dimStyle.Render("No inputs or secrets to configure for this install.") + "\n\n" +
+			dimStyle.Render(s.emptyMsg) + "\n\n" +
 			s.renderButtons()
 	}
 	form := s.renderForm(w, h-4) // -4 for title + spacing + button row
@@ -599,20 +679,7 @@ func (s *inputsStep) renderForm(width, height int) string {
 
 	var lines []string
 	fieldStart := make([]int, len(s.fields))
-	wroteInputs, wroteSecrets := false, false
 	for i, f := range s.fields {
-		if !f.secret && !wroteInputs {
-			lines = append(lines, dimStyle.Render("INPUTS"))
-			wroteInputs = true
-		}
-		if f.secret && !wroteSecrets {
-			if wroteInputs {
-				lines = append(lines, "")
-			}
-			lines = append(lines, dimStyle.Render("SECRETS"))
-			wroteSecrets = true
-		}
-
 		focused := i == s.cursor
 		marker := "  "
 		label := f.key
@@ -631,7 +698,7 @@ func (s *inputsStep) renderForm(width, height int) string {
 		lines = append(lines, "    "+f.input.View())
 
 		if focused && f.required && strings.TrimSpace(f.input.Value()) == "" {
-			lines = append(lines, "    "+requiredStyle.Render("value required before continuing"))
+			lines = append(lines, "    "+requiredStyle.Render("required — must be set before provisioning"))
 		}
 		lines = append(lines, "")
 	}
@@ -676,11 +743,8 @@ func (s *inputsStep) Help() string {
 }
 
 func (s *inputsStep) CanAdvance() (bool, string) {
-	for _, f := range s.fields {
-		if f.required && strings.TrimSpace(s.secretEdits[f.key]) == "" {
-			return false, fmt.Sprintf("required secret %q is empty", f.key)
-		}
-	}
+	// Required fields are not enforced here — the user can move forward with
+	// them empty and fill them later. Validation happens at provision time.
 	s.applyEdits()
 	return true, ""
 }
@@ -865,26 +929,26 @@ func newRolesStep(cfg *stack.Config) *rolesStep {
 		on    bool
 		snap  *opSnapshot
 	}{
-		{"provision", "Provision (install)", hasOp(cfg.ProvisionInlinePolicyDocument, cfg.ProvisionPermissions, cfg.ProvisionManagedPolicyARNs),
-			&opSnapshot{cfg.ProvisionInlinePolicyDocument, cfg.ProvisionPermissions, cfg.ProvisionManagedPolicyARNs}},
-		{"maintenance", "Maintenance (day-2 ops)", hasOp(cfg.MaintenanceInlinePolicyDocument, cfg.MaintenancePermissions, cfg.MaintenanceManagedPolicyARNs),
-			&opSnapshot{cfg.MaintenanceInlinePolicyDocument, cfg.MaintenancePermissions, cfg.MaintenanceManagedPolicyARNs}},
-		{"deprovision", "Deprovision (teardown)", hasOp(cfg.DeprovisionInlinePolicyDocument, cfg.DeprovisionPermissions, cfg.DeprovisionManagedPolicyARNs),
-			&opSnapshot{cfg.DeprovisionInlinePolicyDocument, cfg.DeprovisionPermissions, cfg.DeprovisionManagedPolicyARNs}},
+		{"provision", "Provision (install)", hasOp(cfg.AWS.ProvisionInlinePolicyDocument, cfg.AWS.ProvisionPermissions, cfg.AWS.ProvisionManagedPolicyARNs),
+			&opSnapshot{cfg.AWS.ProvisionInlinePolicyDocument, cfg.AWS.ProvisionPermissions, cfg.AWS.ProvisionManagedPolicyARNs}},
+		{"maintenance", "Maintenance (day-2 ops)", hasOp(cfg.AWS.MaintenanceInlinePolicyDocument, cfg.AWS.MaintenancePermissions, cfg.AWS.MaintenanceManagedPolicyARNs),
+			&opSnapshot{cfg.AWS.MaintenanceInlinePolicyDocument, cfg.AWS.MaintenancePermissions, cfg.AWS.MaintenanceManagedPolicyARNs}},
+		{"deprovision", "Deprovision (teardown)", hasOp(cfg.AWS.DeprovisionInlinePolicyDocument, cfg.AWS.DeprovisionPermissions, cfg.AWS.DeprovisionManagedPolicyARNs),
+			&opSnapshot{cfg.AWS.DeprovisionInlinePolicyDocument, cfg.AWS.DeprovisionPermissions, cfg.AWS.DeprovisionManagedPolicyARNs}},
 	}
 	for _, o := range ops {
 		s.groups[grpOps] = append(s.groups[grpOps], &roleEntry{
 			key: o.key, label: o.label, enabled: o.on, opSnapshot: o.snap,
 		})
 	}
-	for _, k := range sortedKeys(cfg.BreakGlassRoles) {
-		v := cfg.BreakGlassRoles[k]
+	for _, k := range sortedKeys(cfg.AWS.BreakGlassRoles) {
+		v := cfg.AWS.BreakGlassRoles[k]
 		s.groups[grpBreakGlass] = append(s.groups[grpBreakGlass], &roleEntry{
 			key: k, label: k, enabled: v.Enabled,
 		})
 	}
-	for _, k := range sortedKeys(cfg.CustomRoles) {
-		v := cfg.CustomRoles[k]
+	for _, k := range sortedKeys(cfg.AWS.CustomRoles) {
+		v := cfg.AWS.CustomRoles[k]
 		s.groups[grpCustom] = append(s.groups[grpCustom], &roleEntry{
 			key: k, label: k, enabled: v.Enabled,
 		})
@@ -949,45 +1013,45 @@ func (s *rolesStep) apply() {
 		switch r.key {
 		case "provision":
 			if r.enabled {
-				s.cfg.ProvisionInlinePolicyDocument = r.opSnapshot.inline
-				s.cfg.ProvisionPermissions = r.opSnapshot.perms
-				s.cfg.ProvisionManagedPolicyARNs = r.opSnapshot.managedArn
+				s.cfg.AWS.ProvisionInlinePolicyDocument = r.opSnapshot.inline
+				s.cfg.AWS.ProvisionPermissions = r.opSnapshot.perms
+				s.cfg.AWS.ProvisionManagedPolicyARNs = r.opSnapshot.managedArn
 			} else {
-				s.cfg.ProvisionInlinePolicyDocument = ""
-				s.cfg.ProvisionPermissions = nil
-				s.cfg.ProvisionManagedPolicyARNs = nil
+				s.cfg.AWS.ProvisionInlinePolicyDocument = ""
+				s.cfg.AWS.ProvisionPermissions = nil
+				s.cfg.AWS.ProvisionManagedPolicyARNs = nil
 			}
 		case "maintenance":
 			if r.enabled {
-				s.cfg.MaintenanceInlinePolicyDocument = r.opSnapshot.inline
-				s.cfg.MaintenancePermissions = r.opSnapshot.perms
-				s.cfg.MaintenanceManagedPolicyARNs = r.opSnapshot.managedArn
+				s.cfg.AWS.MaintenanceInlinePolicyDocument = r.opSnapshot.inline
+				s.cfg.AWS.MaintenancePermissions = r.opSnapshot.perms
+				s.cfg.AWS.MaintenanceManagedPolicyARNs = r.opSnapshot.managedArn
 			} else {
-				s.cfg.MaintenanceInlinePolicyDocument = ""
-				s.cfg.MaintenancePermissions = nil
-				s.cfg.MaintenanceManagedPolicyARNs = nil
+				s.cfg.AWS.MaintenanceInlinePolicyDocument = ""
+				s.cfg.AWS.MaintenancePermissions = nil
+				s.cfg.AWS.MaintenanceManagedPolicyARNs = nil
 			}
 		case "deprovision":
 			if r.enabled {
-				s.cfg.DeprovisionInlinePolicyDocument = r.opSnapshot.inline
-				s.cfg.DeprovisionPermissions = r.opSnapshot.perms
-				s.cfg.DeprovisionManagedPolicyARNs = r.opSnapshot.managedArn
+				s.cfg.AWS.DeprovisionInlinePolicyDocument = r.opSnapshot.inline
+				s.cfg.AWS.DeprovisionPermissions = r.opSnapshot.perms
+				s.cfg.AWS.DeprovisionManagedPolicyARNs = r.opSnapshot.managedArn
 			} else {
-				s.cfg.DeprovisionInlinePolicyDocument = ""
-				s.cfg.DeprovisionPermissions = nil
-				s.cfg.DeprovisionManagedPolicyARNs = nil
+				s.cfg.AWS.DeprovisionInlinePolicyDocument = ""
+				s.cfg.AWS.DeprovisionPermissions = nil
+				s.cfg.AWS.DeprovisionManagedPolicyARNs = nil
 			}
 		}
 	}
 	for _, r := range s.groups[grpBreakGlass] {
-		v := s.cfg.BreakGlassRoles[r.key]
+		v := s.cfg.AWS.BreakGlassRoles[r.key]
 		v.Enabled = r.enabled
-		s.cfg.BreakGlassRoles[r.key] = v
+		s.cfg.AWS.BreakGlassRoles[r.key] = v
 	}
 	for _, r := range s.groups[grpCustom] {
-		v := s.cfg.CustomRoles[r.key]
+		v := s.cfg.AWS.CustomRoles[r.key]
 		v.Enabled = r.enabled
-		s.cfg.CustomRoles[r.key] = v
+		s.cfg.AWS.CustomRoles[r.key] = v
 	}
 }
 
@@ -1072,7 +1136,7 @@ func (s *rolesStep) renderDetail(width int) string {
 			}
 		}
 	case grpBreakGlass:
-		v := s.cfg.BreakGlassRoles[r.key]
+		v := s.cfg.AWS.BreakGlassRoles[r.key]
 		lines = append(lines, kvRow("Role", r.key))
 		lines = append(lines, kvRow("State", onOff(r.enabled)))
 		lines = append(lines, kvRow("Permissions", fmt.Sprintf("%d", len(v.Permissions))))
@@ -1082,7 +1146,7 @@ func (s *rolesStep) renderDetail(width int) string {
 			lines = append(lines, prettyJSON(v.InlinePolicyDocument, width-2, 16))
 		}
 	case grpCustom:
-		v := s.cfg.CustomRoles[r.key]
+		v := s.cfg.AWS.CustomRoles[r.key]
 		lines = append(lines, kvRow("Role", r.key))
 		lines = append(lines, kvRow("State", onOff(r.enabled)))
 		lines = append(lines, kvRow("Permissions", fmt.Sprintf("%d", len(v.Permissions))))
@@ -1138,13 +1202,27 @@ func (s *confirmStep) Main(w, h int) string {
 	title := titleStyle.Render("Provision")
 
 	var rows []string
-	if s.accountID != "" {
-		rows = append(rows, kvRow("Account", s.accountID))
+	var warnText string
+	if s.cfg.Cloud == stack.CloudGCP {
+		g := s.cfg.GCP
+		if g != nil {
+			rows = append(rows, kvRow("Project", g.ProjectID))
+			rows = append(rows, kvRow("Region", g.Region))
+		}
+		rows = append(rows, kvRow("Method", "Terraform module"))
+		warnText = "GCP resources will be created in your project. Activate Provision to begin."
+	} else {
+		if s.accountID != "" {
+			rows = append(rows, kvRow("Account", s.accountID))
+		}
+		if s.cfg.AWS != nil {
+			rows = append(rows, kvRow("Region", s.cfg.AWS.Region))
+		}
+		rows = append(rows, kvRow("Method", methodLabel(s.cfg.Method)))
+		warnText = "AWS resources will be created in your account. Activate Provision to begin."
 	}
-	rows = append(rows, kvRow("Region", s.cfg.AWSRegion))
-	rows = append(rows, kvRow("Method", methodLabel(s.cfg.Method)))
 
-	warn := dimStyle.Render(wrap("AWS resources will be created in your account. Activate Provision to begin.", w))
+	warn := dimStyle.Render(wrap(warnText, w))
 
 	prev := renderButton(" ◂ Previous ", s.cursor == 0, false)
 	provision := renderButton(" Provision ✓ ", s.cursor == 1, false)
@@ -1206,25 +1284,50 @@ func (s *confirmStep) Detail(w, h int) string {
 	}
 
 	section("Roles")
+	if s.cfg.Cloud == stack.CloudGCP {
+		g := s.cfg.GCP
+		if g != nil {
+			gcpOps := []struct {
+				name       string
+				perms      []string
+				predefined string
+			}{
+				{"provision", g.ProvisionPermissions, g.ProvisionPredefinedRole},
+				{"maintenance", g.MaintenancePermissions, g.MaintenancePredefinedRole},
+				{"deprovision", g.DeprovisionPermissions, g.DeprovisionPredefinedRole},
+			}
+			for _, op := range gcpOps {
+				item(op.name, roleStateTag(len(op.perms) > 0 || op.predefined != ""))
+			}
+			for _, k := range sortedKeys(g.BreakGlassRoles) {
+				item(k+" "+dimStyle.Render("(break-glass)"), roleStateTag(g.BreakGlassRoles[k].Enabled))
+			}
+			for _, k := range sortedKeys(g.CustomRoles) {
+				item(k+" "+dimStyle.Render("(custom)"), roleStateTag(g.CustomRoles[k].Enabled))
+			}
+		}
+		return strings.Join(lines, "\n")
+	}
+
 	ops := []struct {
 		name   string
 		inline string
 		perms  []string
 		arns   []string
 	}{
-		{"provision", s.cfg.ProvisionInlinePolicyDocument, s.cfg.ProvisionPermissions, s.cfg.ProvisionManagedPolicyARNs},
-		{"maintenance", s.cfg.MaintenanceInlinePolicyDocument, s.cfg.MaintenancePermissions, s.cfg.MaintenanceManagedPolicyARNs},
-		{"deprovision", s.cfg.DeprovisionInlinePolicyDocument, s.cfg.DeprovisionPermissions, s.cfg.DeprovisionManagedPolicyARNs},
+		{"provision", s.cfg.AWS.ProvisionInlinePolicyDocument, s.cfg.AWS.ProvisionPermissions, s.cfg.AWS.ProvisionManagedPolicyARNs},
+		{"maintenance", s.cfg.AWS.MaintenanceInlinePolicyDocument, s.cfg.AWS.MaintenancePermissions, s.cfg.AWS.MaintenanceManagedPolicyARNs},
+		{"deprovision", s.cfg.AWS.DeprovisionInlinePolicyDocument, s.cfg.AWS.DeprovisionPermissions, s.cfg.AWS.DeprovisionManagedPolicyARNs},
 	}
 	for _, op := range ops {
 		on := hasOp(op.inline, op.perms, op.arns)
 		item(op.name, roleStateTag(on))
 	}
-	for _, k := range sortedKeys(s.cfg.BreakGlassRoles) {
-		item(k+" "+dimStyle.Render("(break-glass)"), roleStateTag(s.cfg.BreakGlassRoles[k].Enabled))
+	for _, k := range sortedKeys(s.cfg.AWS.BreakGlassRoles) {
+		item(k+" "+dimStyle.Render("(break-glass)"), roleStateTag(s.cfg.AWS.BreakGlassRoles[k].Enabled))
 	}
-	for _, k := range sortedKeys(s.cfg.CustomRoles) {
-		item(k+" "+dimStyle.Render("(custom)"), roleStateTag(s.cfg.CustomRoles[k].Enabled))
+	for _, k := range sortedKeys(s.cfg.AWS.CustomRoles) {
+		item(k+" "+dimStyle.Render("(custom)"), roleStateTag(s.cfg.AWS.CustomRoles[k].Enabled))
 	}
 
 	return strings.Join(lines, "\n")

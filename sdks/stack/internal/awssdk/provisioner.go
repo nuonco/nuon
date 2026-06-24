@@ -64,6 +64,9 @@ func New(ctx context.Context, region string) (*Provisioner, error) {
 // after each successful step so a partial failure can be cleaned up by
 // Deprovision.
 func (p *Provisioner) Provision(ctx context.Context, log, sysLog *slog.Logger, cfg *core.Config, kind core.Kind) (*core.Outputs, error) {
+	if cfg.AWS == nil {
+		return nil, fmt.Errorf("aws sdk provisioner: config missing aws block")
+	}
 	st, err := loadState(cfg.InstallID, p.region)
 	if err != nil {
 		return nil, err
@@ -72,7 +75,7 @@ func (p *Provisioner) Provision(ctx context.Context, log, sysLog *slog.Logger, c
 	// callsites can read them without holding cfg.
 	st.OrgID = cfg.OrgID
 	st.AppID = cfg.AppID
-	st.ClusterName = cfg.ClusterName
+	st.ClusterName = cfg.AWS.ClusterName
 	if st.ClusterName == "" {
 		st.ClusterName = cfg.InstallID
 	}
@@ -218,27 +221,30 @@ func (p *Provisioner) buildOutputs(st *State, cfg *core.Config) *core.Outputs {
 	}
 
 	return &core.Outputs{
-		AccountID: p.accountID,
-		Region:    p.region,
-
-		VPCID:                 st.VPCID,
-		RunnerSubnetID:        st.RunnerSubnetID,
-		PublicSubnetIDs:       st.PublicSubnetIDs,
-		PrivateSubnetIDs:      st.PrivateSubnetIDs,
-		RunnerSecurityGroupID: st.RunnerSecurityGroupID,
-
-		RunnerIAMRoleARN:         roleARN(st.RunnerRoleName),
-		RunnerInstanceProfileARN: instanceProfileARN(st.RunnerInstanceProfileName),
-		RunnerASGName:            st.RunnerASGName,
-		RunnerLogGroupName:       st.RunnerLogGroupName,
-
-		ProvisionRoleARN:   roleARN(st.ProvisionRoleName),
-		MaintenanceRoleARN: roleARN(st.MaintenanceRoleName),
-		DeprovisionRoleARN: roleARN(st.DeprovisionRoleName),
-		BreakGlassRoleARNs: breakGlass,
-		CustomRoleARNs:     customRoles,
-
-		SecretARNs:    secretARNs,
+		Cloud:         core.CloudAWS,
 		InstallInputs: installInputs,
+		AWS: &core.AWSOutputs{
+			AccountID: p.accountID,
+			Region:    p.region,
+
+			VPCID:                 st.VPCID,
+			RunnerSubnetID:        st.RunnerSubnetID,
+			PublicSubnetIDs:       st.PublicSubnetIDs,
+			PrivateSubnetIDs:      st.PrivateSubnetIDs,
+			RunnerSecurityGroupID: st.RunnerSecurityGroupID,
+
+			RunnerIAMRoleARN:         roleARN(st.RunnerRoleName),
+			RunnerInstanceProfileARN: instanceProfileARN(st.RunnerInstanceProfileName),
+			RunnerASGName:            st.RunnerASGName,
+			RunnerLogGroupName:       st.RunnerLogGroupName,
+
+			ProvisionRoleARN:   roleARN(st.ProvisionRoleName),
+			MaintenanceRoleARN: roleARN(st.MaintenanceRoleName),
+			DeprovisionRoleARN: roleARN(st.DeprovisionRoleName),
+			BreakGlassRoleARNs: breakGlass,
+			CustomRoleARNs:     customRoles,
+
+			SecretARNs: secretARNs,
+		},
 	}
 }

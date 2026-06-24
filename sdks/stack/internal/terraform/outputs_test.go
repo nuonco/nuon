@@ -40,20 +40,26 @@ func TestOutputsToCore(t *testing.T) {
 		t.Fatalf("outputsToCore: %v", err)
 	}
 
-	if out.AccountID != "123456789012" {
-		t.Errorf("AccountID = %q", out.AccountID)
+	if out.Cloud != "aws" {
+		t.Errorf("Cloud = %q, want aws", out.Cloud)
 	}
-	if out.VPCID != "vpc-abc" {
-		t.Errorf("VPCID = %q", out.VPCID)
+	if out.AWS == nil {
+		t.Fatal("AWS outputs nil")
 	}
-	if len(out.PublicSubnetIDs) != 2 || out.PublicSubnetIDs[0] != "subnet-a" {
-		t.Errorf("PublicSubnetIDs = %v", out.PublicSubnetIDs)
+	if out.AWS.AccountID != "123456789012" {
+		t.Errorf("AccountID = %q", out.AWS.AccountID)
 	}
-	if out.BreakGlassRoleARNs["bg"] != "arn:aws:iam::123456789012:role/bg" {
-		t.Errorf("BreakGlassRoleARNs = %v", out.BreakGlassRoleARNs)
+	if out.AWS.VPCID != "vpc-abc" {
+		t.Errorf("VPCID = %q", out.AWS.VPCID)
 	}
-	if out.SecretARNs["db_arn"] == "" {
-		t.Errorf("SecretARNs missing db_arn: %v", out.SecretARNs)
+	if len(out.AWS.PublicSubnetIDs) != 2 || out.AWS.PublicSubnetIDs[0] != "subnet-a" {
+		t.Errorf("PublicSubnetIDs = %v", out.AWS.PublicSubnetIDs)
+	}
+	if out.AWS.BreakGlassRoleARNs["bg"] != "arn:aws:iam::123456789012:role/bg" {
+		t.Errorf("BreakGlassRoleARNs = %v", out.AWS.BreakGlassRoleARNs)
+	}
+	if out.AWS.SecretARNs["db_arn"] == "" {
+		t.Errorf("SecretARNs missing db_arn: %v", out.AWS.SecretARNs)
 	}
 	if out.InstallInputs["cluster_name"] != "prod" {
 		t.Errorf("InstallInputs = %v", out.InstallInputs)

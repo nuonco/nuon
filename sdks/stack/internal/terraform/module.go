@@ -12,10 +12,7 @@ import (
 	"strings"
 )
 
-const (
-	defaultModuleURL    = "https://github.com/nuonco/install-stacks/archive/refs/heads/main.tar.gz"
-	defaultModuleSubdir = "aws"
-)
+const defaultModuleURL = "https://github.com/nuonco/install-stacks/archive/refs/heads/main.tar.gz"
 
 // fetchModule downloads the install-stacks archive over plain HTTPS and
 // extracts the requested subdir into destDir. Pure Go (net/http + tar/gzip) so
@@ -30,7 +27,7 @@ func fetchModule(ctx context.Context, url, subdir, destDir string) error {
 		url = defaultModuleURL
 	}
 	if subdir == "" {
-		subdir = defaultModuleSubdir
+		return fmt.Errorf("fetchModule: empty module subdir")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

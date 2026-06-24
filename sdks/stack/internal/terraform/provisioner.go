@@ -1,9 +1,13 @@
-// Package terraform provisions a Nuon install stack by applying the
-// install-stacks/aws Terraform module. It downloads a terraform binary on
-// first use (no install required), fetches the module over HTTPS, renders
-// tfvars from the install config, and drives terraform via terraform-exec.
-// It is one implementation of core.Provisioner; outputs are mapped back into
-// the same core.Outputs the AWS SDK method produces.
+// Package terraform provisions a Nuon install stack by applying an
+// install-stacks Terraform module. It downloads a terraform binary on first
+// use (no install required), fetches the module over HTTPS, renders tfvars
+// from the install config, and drives terraform via terraform-exec. It is one
+// implementation of core.Provisioner; outputs are mapped back into the same
+// core.Outputs the SDK methods produce.
+//
+// The engine here is cloud-agnostic: the per-cloud specifics (module subdir,
+// tfvars rendering, output mapping) live behind a moduleAdapter selected by
+// cloud at construction (see adapter.go).
 package terraform
 
 import (
@@ -20,20 +24,27 @@ import (
 
 const tfvarsFilename = "terraform.tfvars.json"
 
-// Provisioner applies the install-stacks/aws Terraform module.
+// Provisioner applies an install-stacks Terraform module for a single cloud,
+// selected by the moduleAdapter built at construction.
 type Provisioner struct {
-	region string
+	cloud   core.Cloud
+	adapter moduleAdapter
 }
 
 var _ core.Provisioner = (*Provisioner)(nil)
 
-// ReportsOwnRun is true: the install-stacks/aws module's phone-home reports the
+// ReportsOwnRun is true: the install-stacks module's phone-home reports the
 // run to ctl-api, so the stack package must not also report via run_client.
 func (p *Provisioner) ReportsOwnRun() bool { return true }
 
-// New constructs a Terraform provisioner for the given region.
-func New(region string) *Provisioner {
-	return &Provisioner{region: region}
+// New constructs a Terraform provisioner for the given cloud. It returns an
+// error when the cloud has no module adapter.
+func New(cloud core.Cloud) (*Provisioner, error) {
+	adapter, err := adapterFor(cloud)
+	if err != nil {
+		return nil, err
+	}
+	return &Provisioner{cloud: cloud, adapter: adapter}, nil
 }
 
 // Provision fetches the module, renders tfvars, runs init + apply, and returns
@@ -84,12 +95,13 @@ func (p *Provisioner) prepare(ctx context.Context, log, sysLog *slog.Logger, cfg
 		return nil, err
 	}
 
-	log.Info("fetching terraform module", "subdir", moduleSubdir(cfg))
-	if err := fetchModule(ctx, cfg.TerraformModuleURL, cfg.TerraformModuleSubdir, workDir); err != nil {
+	subdir := p.moduleSubdir(cfg)
+	log.Info("fetching terraform module", "subdir", subdir)
+	if err := fetchModule(ctx, cfg.TerraformModuleURL, subdir, workDir); err != nil {
 		return nil, err
 	}
 
-	vars, err := renderTFVars(cfg)
+	vars, err := p.adapter.RenderTFVars(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("render tfvars: %w", err)
 	}
@@ -126,14 +138,16 @@ func (p *Provisioner) readOutputs(ctx context.Context, tf *tfexec.Terraform) (*c
 	if err != nil {
 		return nil, fmt.Errorf("terraform output: %w", err)
 	}
-	return outputsToCore(meta)
+	return p.adapter.MapOutputs(meta)
 }
 
-func moduleSubdir(cfg *core.Config) string {
+// moduleSubdir resolves the install-stacks subdir for this run: an explicit
+// Config override wins, otherwise the adapter's default for the cloud.
+func (p *Provisioner) moduleSubdir(cfg *core.Config) string {
 	if cfg.TerraformModuleSubdir != "" {
 		return cfg.TerraformModuleSubdir
 	}
-	return defaultModuleSubdir
+	return p.adapter.ModuleSubdir()
 }
 
 func workDirFor(installID string) (string, error) {

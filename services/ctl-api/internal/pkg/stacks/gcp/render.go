@@ -200,6 +200,63 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 	return result
 }
 
+// GCPOpRoleRaw is a standard operation role's GCP IAM inputs in raw Go form
+// (not template strings). Used by the SDK-provisioner config builder.
+type GCPOpRoleRaw struct {
+	Permissions    []string
+	PredefinedRole string
+}
+
+// GCPRoleRaw is a named break-glass/custom GCP role in raw Go form.
+type GCPRoleRaw struct {
+	Name           string
+	Permissions    []string
+	PredefinedRole string
+}
+
+// ExtractGCPStandardRolesRaw returns the provision/maintenance/deprovision GCP
+// operation-role inputs (permissions + predefined role) in raw Go form.
+func ExtractGCPStandardRolesRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision GCPOpRoleRaw) {
+	if appCfg == nil {
+		return
+	}
+	for _, role := range appCfg.PermissionsConfig.Roles {
+		if role.CloudPlatform != "gcp" {
+			continue
+		}
+		perms, predefined := extractRolePermissions(role)
+		if len(perms) == 0 && predefined == "" {
+			continue
+		}
+		switch role.Type {
+		case app.AWSIAMRoleTypeRunnerProvision:
+			provision = GCPOpRoleRaw{Permissions: perms, PredefinedRole: predefined}
+		case app.AWSIAMRoleTypeRunnerMaintenance:
+			maintenance = GCPOpRoleRaw{Permissions: perms, PredefinedRole: predefined}
+		case app.AWSIAMRoleTypeRunnerDeprovision:
+			deprovision = GCPOpRoleRaw{Permissions: perms, PredefinedRole: predefined}
+		}
+	}
+	return
+}
+
+// ExtractGCPRolesRaw converts a slice of role configs into raw GCP role inputs,
+// filtering to GCP roles that have permissions or a predefined role.
+func ExtractGCPRolesRaw(roles []app.AppAWSIAMRoleConfig) []GCPRoleRaw {
+	var out []GCPRoleRaw
+	for _, role := range roles {
+		if role.CloudPlatform != "gcp" {
+			continue
+		}
+		perms, predefined := extractRolePermissions(role)
+		if len(perms) == 0 && predefined == "" {
+			continue
+		}
+		out = append(out, GCPRoleRaw{Name: role.Name, Permissions: perms, PredefinedRole: predefined})
+	}
+	return out
+}
+
 func extractRolePermissions(role app.AppAWSIAMRoleConfig) ([]string, string) {
 	var perms []string
 	var predefinedRole string

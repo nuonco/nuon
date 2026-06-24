@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -24,7 +25,17 @@ var ErrAborted = errors.New("aborted by user")
 // Deprovision Stack).
 func Run(ctx context.Context, kind stack.Kind, cfg *stack.Config) error {
 	m := newAppModel(ctx, kind, cfg)
-	p := tea.NewProgram(m)
+
+	// Read keystrokes from the controlling terminal, not stdin: the dashboard
+	// runs the wizard via `curl … | sh`, which leaves stdin attached to the
+	// (already-consumed) pipe. /dev/tty gives us real interactive input.
+	opts := []tea.ProgramOption{}
+	if tty, err := os.Open("/dev/tty"); err == nil {
+		defer tty.Close()
+		opts = append(opts, tea.WithInput(tty))
+	}
+
+	p := tea.NewProgram(m, opts...)
 	final, err := p.Run()
 	if err != nil {
 		return fmt.Errorf("tui run: %w", err)

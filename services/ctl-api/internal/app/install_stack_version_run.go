@@ -143,27 +143,40 @@ type InstallStackVersionRun struct {
 }
 
 // InstallerSDKConfig is the JSON shape the SDK expects on CreateRunResponse.
-// Field tags match sdks/stack/stack/config.go exactly. Only
-// populated on the create-run POST response — never persisted, never returned
-// on the GET path.
+// Field tags match sdks/stack/internal/core (Config + per-cloud sub-structs)
+// exactly: common fields here, cloud-specific inputs on AWS/GCP, selected by
+// Cloud. Only populated on the create-run POST response — never persisted,
+// never returned on the GET path.
 type InstallerSDKConfig struct {
+	Cloud        string `json:"cloud,omitempty"`
 	InstallID    string `json:"install_id,omitempty"`
 	OrgID        string `json:"org_id,omitempty"`
 	AppID        string `json:"app_id,omitempty"`
-	AWSRegion    string `json:"aws_region,omitempty"`
-	ClusterName  string `json:"cluster_name,omitempty"`
 	RunnerID     string `json:"runner_id,omitempty"`
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
 	PhoneHomeURL string `json:"phone_home_url,omitempty"`
 
+	InstallInputs map[string]string `json:"install_inputs,omitempty"`
+	// RequiredInputs lists the install-input names that must be set before
+	// provisioning. The SDK enforces it at provision time.
+	RequiredInputs []string `json:"required_inputs,omitempty"`
+
+	AutoGenerateSecrets []string                      `json:"auto_generate_secrets,omitempty"`
+	Secrets             map[string]InstallerSDKSecret `json:"secrets,omitempty"`
+
+	AWS *InstallerSDKAWSConfig `json:"aws,omitempty"`
+	GCP *InstallerSDKGCPConfig `json:"gcp,omitempty"`
+}
+
+// InstallerSDKAWSConfig mirrors sdks/stack core.AWSConfig.
+type InstallerSDKAWSConfig struct {
+	Region      string `json:"region,omitempty"`
+	ClusterName string `json:"cluster_name,omitempty"`
+
 	NuonSupportIAMRoleARNs []string `json:"nuon_support_iam_role_arns,omitempty"`
 
-	InstallInputs map[string]string `json:"install_inputs,omitempty"`
-
-	AutoGenerateSecrets []string                          `json:"auto_generate_secrets,omitempty"`
-	Secrets             map[string]InstallerSDKSecret     `json:"secrets,omitempty"`
-	BreakGlassRoles     map[string]InstallerSDKRoleConfig `json:"break_glass_roles,omitempty"`
-	CustomRoles         map[string]InstallerSDKRoleConfig `json:"custom_roles,omitempty"`
+	BreakGlassRoles map[string]InstallerSDKRoleConfig `json:"break_glass_roles,omitempty"`
+	CustomRoles     map[string]InstallerSDKRoleConfig `json:"custom_roles,omitempty"`
 
 	ProvisionPermissions          []string `json:"provision_permissions,omitempty"`
 	ProvisionInlinePolicyDocument string   `json:"provision_inline_policy_document,omitempty"`
@@ -178,19 +191,46 @@ type InstallerSDKConfig struct {
 	DeprovisionManagedPolicyARNs    []string `json:"deprovision_managed_policy_arns,omitempty"`
 }
 
-// InstallerSDKSecret is the customer-provided secret shape.
+// InstallerSDKGCPConfig mirrors sdks/stack core.GCPConfig. ctl-api populates
+// the Nuon-generated fields; the customer-supplied project/region/machine-type/
+// GKE inputs are filled by the SDK from CLI options, so they are left empty here.
+type InstallerSDKGCPConfig struct {
+	// NOTE: project + region are NOT set here — the customer supplies them at
+	// provision time via the CLI. ctl-api only emits the Nuon-generated inputs.
+	RunnerInitScriptURL string `json:"runner_init_script_url,omitempty"`
+	RunnerAPIToken      string `json:"runner_api_token,omitempty"`
+
+	ProvisionPermissions      []string `json:"provision_permissions,omitempty"`
+	ProvisionPredefinedRole   string   `json:"provision_predefined_role,omitempty"`
+	MaintenancePermissions    []string `json:"maintenance_permissions,omitempty"`
+	MaintenancePredefinedRole string   `json:"maintenance_predefined_role,omitempty"`
+	DeprovisionPermissions    []string `json:"deprovision_permissions,omitempty"`
+	DeprovisionPredefinedRole string   `json:"deprovision_predefined_role,omitempty"`
+
+	BreakGlassRoles map[string]InstallerSDKGCPRole `json:"break_glass_roles,omitempty"`
+	CustomRoles     map[string]InstallerSDKGCPRole `json:"custom_roles,omitempty"`
+}
+
+// InstallerSDKSecret is the customer-provided secret shape (cloud-agnostic).
 type InstallerSDKSecret struct {
 	Description string `json:"description,omitempty"`
 	Required    bool   `json:"required,omitempty"`
 	Value       string `json:"value,omitempty"`
 }
 
-// InstallerSDKRoleConfig is the per-role payload for break-glass/custom roles.
+// InstallerSDKRoleConfig is the per-role payload for AWS break-glass/custom roles.
 type InstallerSDKRoleConfig struct {
 	Permissions          []string `json:"permissions,omitempty"`
 	InlinePolicyDocument string   `json:"inline_policy_document,omitempty"`
 	ManagedPolicyARNs    []string `json:"managed_policy_arns,omitempty"`
 	Enabled              bool     `json:"enabled,omitempty"`
+}
+
+// InstallerSDKGCPRole is the per-role payload for GCP break-glass/custom roles.
+type InstallerSDKGCPRole struct {
+	Permissions    []string `json:"permissions,omitempty"`
+	PredefinedRole string   `json:"predefined_role,omitempty"`
+	Enabled        bool     `json:"enabled,omitempty"`
 }
 
 func (i *InstallStackVersionRun) Indexes(db *gorm.DB) []migrations.Index {

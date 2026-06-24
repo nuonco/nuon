@@ -12,14 +12,29 @@ type (
 	Config = core.Config
 	// SecretInput mirrors the customer-provided secret shape.
 	SecretInput = core.SecretInput
-	// RoleConfig is the per-role payload for break-glass/custom roles.
+	// RoleConfig is the per-role payload for AWS break-glass/custom roles.
 	RoleConfig = core.RoleConfig
+	// AWSConfig carries the AWS-specific install-stack inputs.
+	AWSConfig = core.AWSConfig
+	// GCPConfig carries the GCP-specific install-stack inputs.
+	GCPConfig = core.GCPConfig
+	// GCPRole is the per-role payload for GCP break-glass/custom roles.
+	GCPRole = core.GCPRole
 	// Method selects which provisioning implementation drives an install stack.
 	Method = core.Method
+	// Cloud selects which cloud provider an install stack targets.
+	Cloud = core.Cloud
 )
 
 // Provisioning methods.
 const (
 	MethodSDK       = core.MethodSDK
 	MethodTerraform = core.MethodTerraform
+)
+
+// Cloud providers.
+const (
+	CloudAWS   = core.CloudAWS
+	CloudGCP   = core.CloudGCP
+	CloudAzure = core.CloudAzure
 )

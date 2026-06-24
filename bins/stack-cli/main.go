@@ -32,14 +32,18 @@ var Version = "dev"
 const usage = `stack-cli — provision/reprovision/deprovision a Nuon install stack.
 
 Usage:
-  stack-cli provision    [--method sdk|terraform] <create-run-url>
-  stack-cli reprovision  [--method sdk|terraform] <create-run-url>
-  stack-cli deprovision  [--method sdk|terraform] <create-run-url>
+  stack-cli provision    [--method sdk|terraform] [gcp flags] <create-run-url>
+  stack-cli reprovision  [--method sdk|terraform] [gcp flags] <create-run-url>
+  stack-cli deprovision  [--method sdk|terraform] [gcp flags] <create-run-url>
   stack-cli status       --install-id <id> --region <region> [--method sdk|terraform]
   stack-cli version      [--json]
 
 The <create-run-url> is the POST endpoint the Nuon dashboard renders, e.g.
   https://api.nuon.co/v1/stack-runs/aws…
+
+GCP installs require --gcp-project and --gcp-region (the customer supplies these
+at provision time; they are not known server-side). Optional:
+--gcp-machine-type, --gcp-gke-sa-email, --gcp-no-gke.
 `
 
 func main() {
@@ -70,6 +74,11 @@ func runFromURL(verb string) {
 	fs := flag.NewFlagSet(verb, flag.ExitOnError)
 	nonInteractive := fs.Bool("non-interactive", false, "skip the interactive walkthrough even on a TTY")
 	method := fs.String("method", "", "provisioning method: sdk or terraform (default: chosen by the server)")
+	gcpProject := fs.String("gcp-project", "", "GCP project ID (required for GCP installs)")
+	gcpRegion := fs.String("gcp-region", "", "GCP region (required for GCP installs)")
+	gcpMachineType := fs.String("gcp-machine-type", "", "GCE machine type for the runner (optional; defaults to the module default)")
+	gcpGKESAEmail := fs.String("gcp-gke-sa-email", "", "existing GKE node-pool service account email (optional)")
+	gcpNoGKE := fs.Bool("gcp-no-gke", false, "do not create a GKE node-pool service account")
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: stack-cli %s [flags] <create-run-url>\n\nflags:\n", verb)
 		fs.PrintDefaults()
@@ -97,11 +106,24 @@ func runFromURL(verb string) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	inst, err := stack.FromURL(ctx, stack.URLOptions{URL: url, Kind: stack.Kind(verb), Method: m})
+	gcpOpts := stack.GCPOptions{
+		ProjectID:          *gcpProject,
+		Region:             *gcpRegion,
+		RunnerMachineType:  *gcpMachineType,
+		GKENodePoolSAEmail: *gcpGKESAEmail,
+	}
+	if *gcpNoGKE {
+		no := false
+		gcpOpts.HasGKENodePool = &no
+	}
+
+	inst, err := stack.FromURL(ctx, stack.URLOptions{URL: url, Kind: stack.Kind(verb), Method: m, GCP: gcpOpts})
 	if err != nil {
 		fail(err)
 	}
 
+	// The interactive walkthrough is cloud-aware (AWS, GCP, …); it collects any
+	// customer-supplied inputs (e.g. GCP project/region) the server doesn't know.
 	if !*nonInteractive && term.IsTerminal(int(os.Stdout.Fd())) {
 		if cfg := inst.PreparedConfig(); cfg != nil {
 			if err := tui.Run(ctx, stack.Kind(verb), cfg); err != nil {

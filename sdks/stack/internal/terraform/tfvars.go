@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/nuonco/nuon/sdks/stack/internal/core"
 )
@@ -70,31 +71,35 @@ type tfvars struct {
 // as set; a null would fall back to the variable default, which is fine here
 // but we prefer to be explicit).
 func renderTFVars(cfg *core.Config) ([]byte, error) {
+	if cfg.AWS == nil {
+		return nil, fmt.Errorf("aws terraform: config missing aws block")
+	}
+	awsCfg := cfg.AWS
 	v := tfvars{
 		NuonInstallID: cfg.InstallID,
 		NuonOrgID:     cfg.OrgID,
 		NuonAppID:     cfg.AppID,
-		AWSRegion:     cfg.AWSRegion,
+		AWSRegion:     awsCfg.Region,
 		RunnerAPIURL:  cfg.RunnerAPIURL,
 		RunnerID:      cfg.RunnerID,
 		PhoneHomeURL:  cfg.PhoneHomeURL,
 
-		NuonSupportIAMRoleARNs: nonNilSlice(cfg.NuonSupportIAMRoleARNs),
+		NuonSupportIAMRoleARNs: nonNilSlice(awsCfg.NuonSupportIAMRoleARNs),
 
-		ProvisionPermissions:          nonNilSlice(cfg.ProvisionPermissions),
-		ProvisionInlinePolicyDocument: cfg.ProvisionInlinePolicyDocument,
-		ProvisionManagedPolicyARNs:    nonNilSlice(cfg.ProvisionManagedPolicyARNs),
+		ProvisionPermissions:          nonNilSlice(awsCfg.ProvisionPermissions),
+		ProvisionInlinePolicyDocument: awsCfg.ProvisionInlinePolicyDocument,
+		ProvisionManagedPolicyARNs:    nonNilSlice(awsCfg.ProvisionManagedPolicyARNs),
 
-		MaintenancePermissions:          nonNilSlice(cfg.MaintenancePermissions),
-		MaintenanceInlinePolicyDocument: cfg.MaintenanceInlinePolicyDocument,
-		MaintenanceManagedPolicyARNs:    nonNilSlice(cfg.MaintenanceManagedPolicyARNs),
+		MaintenancePermissions:          nonNilSlice(awsCfg.MaintenancePermissions),
+		MaintenanceInlinePolicyDocument: awsCfg.MaintenanceInlinePolicyDocument,
+		MaintenanceManagedPolicyARNs:    nonNilSlice(awsCfg.MaintenanceManagedPolicyARNs),
 
-		DeprovisionPermissions:          nonNilSlice(cfg.DeprovisionPermissions),
-		DeprovisionInlinePolicyDocument: cfg.DeprovisionInlinePolicyDocument,
-		DeprovisionManagedPolicyARNs:    nonNilSlice(cfg.DeprovisionManagedPolicyARNs),
+		DeprovisionPermissions:          nonNilSlice(awsCfg.DeprovisionPermissions),
+		DeprovisionInlinePolicyDocument: awsCfg.DeprovisionInlinePolicyDocument,
+		DeprovisionManagedPolicyARNs:    nonNilSlice(awsCfg.DeprovisionManagedPolicyARNs),
 
-		BreakGlassRoles: nonNilRoles(cfg.BreakGlassRoles),
-		CustomRoles:     nonNilRoles(cfg.CustomRoles),
+		BreakGlassRoles: nonNilRoles(awsCfg.BreakGlassRoles),
+		CustomRoles:     nonNilRoles(awsCfg.CustomRoles),
 
 		InstallInputs: nonNilStrMap(cfg.InstallInputs),
 

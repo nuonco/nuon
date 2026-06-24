@@ -4,7 +4,10 @@ import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Skeleton } from '@/components/common/Skeleton'
+import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { useConfig } from '@/hooks/use-config'
+import { useOrg } from '@/hooks/use-org'
 import type { IStackDetails } from '../types'
 
 function parseTfvars(contents: unknown): string {
@@ -35,12 +38,88 @@ interface IAwaitGCPDetails extends IStackDetails {
 }
 
 export const AwaitGCPDetails = ({ stack, installId }: IAwaitGCPDetails) => {
+  const { org } = useOrg()
+  const stackV2 = !!org?.features?.['stack-cli']
   const version = stack?.versions?.at(0)
   const tfvarsContent = useMemo(
     () => parseTfvars(version?.contents),
     [version?.contents]
   )
 
+  if (!stackV2) {
+    return <TerraformTab tfvarsContent={tfvarsContent} installId={installId} />
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Text variant="base" weight="strong">
+        Setup instructions
+      </Text>
+
+      <Tabs
+        initActiveTab="cli"
+        tabLabels={{ cli: 'CLI' }}
+        tabs={{
+          cli: (
+            <CLITab
+              phoneHomeId={version?.phone_home_id}
+              runnerAPIURL={version?.runner_api_url}
+            />
+          ),
+          terraform: (
+            <TerraformTab
+              tfvarsContent={tfvarsContent}
+              installId={installId}
+            />
+          ),
+        }}
+      />
+    </div>
+  )
+}
+
+interface ICLITab {
+  phoneHomeId?: string
+  // runnerAPIURL is the externally-reachable runner API host. The SDK
+  // endpoints live there so they work even when ctl-api itself is private
+  // (self-hosted vendors). Sourced server-side from the install's
+  // RunnerGroupSettings.
+  runnerAPIURL?: string
+}
+
+const CLITab = ({ phoneHomeId, runnerAPIURL }: ICLITab) => {
+  const config = useConfig()
+  const base = runnerAPIURL || 'https://api.nuon.co'
+  const createRunURL = `${base}/v1/stack-runs/${phoneHomeId || '<phone-home-id>'}`
+
+  const installerBase =
+    config.stackCliDownloadUrl || 'https://install.nuon.co/stack-cli'
+  const cmd = `curl -fsSL ${installerBase}/install.sh | sh -s -- provision ${createRunURL}`
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <Card>
+        <span className="flex justify-between items-center">
+          <Text weight="strong">Provision with stack-cli</Text>
+          <ClickToCopyButton textToCopy={cmd} />
+        </span>
+        <Text variant="subtext" theme="neutral">
+          Run this on a workstation with GCP credentials for the target project
+          (gcloud Application Default Credentials or a service account). No Nuon
+          API token needed; the phone-home ID in the URL is the secret.
+        </Text>
+        <Code className="text-xs whitespace-pre-wrap break-all">{cmd}</Code>
+      </Card>
+    </div>
+  )
+}
+
+interface ITerraformTab {
+  tfvarsContent: string
+  installId?: string
+}
+
+const TerraformTab = ({ tfvarsContent, installId }: ITerraformTab) => {
   const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/gcp`
 
@@ -54,7 +133,7 @@ cd install-stacks/gcp`
   const applyCmd = `terraform init && terraform apply -var-file=install.tfvars`
 
   return (
-    <>
+    <div className="flex flex-col gap-4 pt-4">
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           1. Clone the install stack module
@@ -121,7 +200,7 @@ cd install-stacks/gcp`
           <Code variant="preformated">{applyCmd}</Code>
         </Card>
       </div>
-    </>
+    </div>
   )
 }
 

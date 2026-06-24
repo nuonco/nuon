@@ -14,18 +14,20 @@ func TestRenderTFVarsKeys(t *testing.T) {
 		InstallID:    "inst123",
 		OrgID:        "org123",
 		AppID:        "app123",
-		AWSRegion:    "us-east-1",
 		RunnerID:     "rnr123",
 		RunnerAPIURL: "https://api.nuon.co",
 		PhoneHomeURL: "https://api.nuon.co/v1/installs/inst123/phone-home",
-		BreakGlassRoles: map[string]core.RoleConfig{
-			"break-glass": {Permissions: []string{"s3:*"}, Enabled: false},
-		},
-		CustomRoles: map[string]core.RoleConfig{
-			"custom": {InlinePolicyDocument: `{"Version":"2012-10-17"}`, Enabled: true},
-		},
 		Secrets: map[string]core.SecretInput{
 			"db": {Description: "db pw", Required: true},
+		},
+		AWS: &core.AWSConfig{
+			Region: "us-east-1",
+			BreakGlassRoles: map[string]core.RoleConfig{
+				"break-glass": {Permissions: []string{"s3:*"}, Enabled: false},
+			},
+			CustomRoles: map[string]core.RoleConfig{
+				"custom": {InlinePolicyDocument: `{"Version":"2012-10-17"}`, Enabled: true},
+			},
 		},
 	})
 	if err != nil {

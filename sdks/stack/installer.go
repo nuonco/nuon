@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
 
 	"github.com/nuonco/nuon/sdks/stack/internal/awssdk"
@@ -85,18 +86,46 @@ func FromURL(ctx context.Context, in URLOptions) (*Installer, error) {
 	if resp.Config == nil {
 		return nil, fmt.Errorf("create stack run: ctl-api returned no config block")
 	}
-	if resp.Config.InstallID == "" || resp.Config.AWSRegion == "" {
-		return nil, fmt.Errorf("create stack run: config missing install_id or aws_region")
+	if resp.Config.InstallID == "" {
+		return nil, fmt.Errorf("create stack run: config missing install_id")
+	}
+
+	// Resolve the cloud: explicit override, then the ctl-api Config, then the
+	// default. The location inputs come from different places per cloud — AWS
+	// region from the Config, GCP project/region from the caller (URLOptions).
+	cloud := in.Cloud
+	if cloud == "" {
+		cloud = resp.Config.Cloud
+	}
+	if cloud == "" {
+		cloud = core.DefaultCloud
 	}
 
 	opts := Options{
 		InstallID: resp.Config.InstallID,
-		AWSRegion: resp.Config.AWSRegion,
+		Cloud:     cloud,
 		Method:    in.Method,
+		GCP:       in.GCP,
 		stackRun: &stackRunConfig{
 			CtlAPIURL:   base,
 			PhoneHomeID: phoneHomeID,
 		},
+	}
+	switch cloud {
+	case core.CloudAWS:
+		if resp.Config.AWS != nil {
+			opts.AWSRegion = resp.Config.AWS.Region
+		}
+		if opts.AWSRegion == "" {
+			return nil, fmt.Errorf("create stack run: config missing aws region")
+		}
+	case core.CloudGCP:
+		// Project + region are customer-supplied at provision time — they are
+		// not known server-side. They are collected by the interactive wizard
+		// (or via URLOptions.GCP) after construction and validated when the run
+		// starts, so we don't require them here.
+	default:
+		return nil, fmt.Errorf("unsupported cloud %q", cloud)
 	}
 	if resp.LogStream != nil && resp.LogStream.ID != "" {
 		opts.logStream = &logStreamConfig{
@@ -121,8 +150,9 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 	if opts.InstallID == "" {
 		return nil, fmt.Errorf("InstallID required")
 	}
-	if opts.AWSRegion == "" {
-		return nil, fmt.Errorf("AWSRegion required")
+	locKey, locVal, err := validateLocation(opts)
+	if err != nil {
+		return nil, err
 	}
 
 	var prov *logstream.Provider
@@ -137,7 +167,7 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 			ServiceName:  "stack",
 			Attrs: map[string]string{
 				"install_id": opts.InstallID,
-				"aws_region": opts.AWSRegion,
+				locKey:       locVal,
 			},
 		})
 		if err != nil {
@@ -147,32 +177,179 @@ func New(ctx context.Context, opts Options) (*Installer, error) {
 
 	return &Installer{
 		opts:   opts,
-		log:    prov.Logger().With("install_id", opts.InstallID, "aws_region", opts.AWSRegion),
-		sysLog: prov.SystemLogger().With("install_id", opts.InstallID, "aws_region", opts.AWSRegion),
+		log:    prov.Logger().With("install_id", opts.InstallID, locKey, locVal),
+		sysLog: prov.SystemLogger().With("install_id", opts.InstallID, locKey, locVal),
 		prov:   prov,
 	}, nil
 }
 
-// selectProvisioner constructs the provisioning method for this run. The
-// method is resolved from Options (explicit CLI override) first, then the
-// ctl-api Config, then the default. Construction is deferred until the Config
-// is hydrated because ctl-api decides the method per install.
+// validateLocation checks the caller-supplied location inputs for the resolved
+// cloud and returns the log attribute (key, value) naming that location. AWS
+// needs a region; GCP needs a project and region.
+func validateLocation(opts Options) (string, string, error) {
+	cloud := opts.Cloud
+	if cloud == "" {
+		cloud = core.DefaultCloud
+	}
+	switch cloud {
+	case core.CloudAWS:
+		if opts.AWSRegion == "" {
+			return "", "", fmt.Errorf("AWSRegion required for cloud aws")
+		}
+		return "aws_region", opts.AWSRegion, nil
+	case core.CloudGCP:
+		// Location is collected interactively after construction; validated at
+		// provision time, not here.
+		return "gcp_region", opts.GCP.Region, nil
+	default:
+		return "", "", fmt.Errorf("unsupported cloud %q", cloud)
+	}
+}
+
+// resolveCloud picks the target cloud: explicit Options override, then the
+// hydrated Config, then the default.
+func (i *Installer) resolveCloud() core.Cloud {
+	if i.opts.Cloud != "" {
+		return i.opts.Cloud
+	}
+	if i.cfg != nil && i.cfg.Cloud != "" {
+		return i.cfg.Cloud
+	}
+	return core.DefaultCloud
+}
+
+// applyCloudOptions overlays the caller-supplied location/sizing inputs onto
+// the hydrated Config. ctl-api provides the Nuon-generated fields; the customer
+// supplies the rest (AWS region, GCP project/region/machine-type/GKE) via
+// Options. It also pins Config.Cloud so downstream resolution is consistent.
+func (i *Installer) applyCloudOptions() {
+	if i.cfg == nil {
+		return
+	}
+	cloud := i.resolveCloud()
+	i.cfg.Cloud = cloud
+	switch cloud {
+	case core.CloudAWS:
+		if i.cfg.AWS == nil {
+			i.cfg.AWS = &core.AWSConfig{}
+		}
+		if i.cfg.AWS.Region == "" {
+			i.cfg.AWS.Region = i.opts.AWSRegion
+		}
+	case core.CloudGCP:
+		if i.cfg.GCP == nil {
+			i.cfg.GCP = &core.GCPConfig{}
+		}
+		g, o := i.cfg.GCP, i.opts.GCP
+		if o.ProjectID != "" {
+			g.ProjectID = o.ProjectID
+		}
+		if o.Region != "" {
+			g.Region = o.Region
+		}
+		if o.RunnerMachineType != "" {
+			g.RunnerMachineType = o.RunnerMachineType
+		}
+		if o.HasGKENodePool != nil {
+			g.HasGKENodePool = o.HasGKENodePool
+		}
+		if o.GKENodePoolSAEmail != "" {
+			g.GKENodePoolSAEmail = o.GKENodePoolSAEmail
+		}
+	}
+}
+
+// validateProvisionConfig checks the resolved Config has the cloud's required
+// location inputs before any resources change. For GCP these are collected
+// interactively (or via options) after construction, so this is the first
+// point they're guaranteed present.
+func (i *Installer) validateProvisionConfig() error {
+	switch i.resolveCloud() {
+	case core.CloudGCP:
+		if i.cfg.GCP == nil || i.cfg.GCP.ProjectID == "" || i.cfg.GCP.Region == "" {
+			return fmt.Errorf("gcp install requires a project and region")
+		}
+	case core.CloudAWS:
+		if i.cfg.AWS == nil || i.cfg.AWS.Region == "" {
+			return fmt.Errorf("aws install requires a region")
+		}
+	}
+	return nil
+}
+
+// validateRequiredValues checks that every required install input and secret
+// has a non-empty value. Enforced only on provision/reprovision (not
+// deprovision, where missing values shouldn't block teardown). Reports all
+// missing fields at once so the user can fix them in a single pass.
+func (i *Installer) validateRequiredValues() error {
+	var missing []string
+	for _, name := range i.cfg.RequiredInputs {
+		if strings.TrimSpace(i.cfg.InstallInputs[name]) == "" {
+			missing = append(missing, "input "+name)
+		}
+	}
+	for name, sec := range i.cfg.Secrets {
+		if sec.Required && strings.TrimSpace(sec.Value) == "" {
+			missing = append(missing, "secret "+name)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return fmt.Errorf("required values not set: %s", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+// locationAttr returns the log attribute (key, value) naming the run's
+// location for the resolved cloud.
+func (i *Installer) locationAttr() (string, string) {
+	if i.resolveCloud() == core.CloudGCP {
+		return "gcp_region", i.opts.GCP.Region
+	}
+	return "aws_region", i.opts.AWSRegion
+}
+
+// selectProvisioner constructs the provisioning method for this run from the
+// (cloud, method) pair. Each is resolved from Options (explicit CLI override)
+// first, then the ctl-api Config, then the default (cloud→aws, method→the
+// cloud's default). The pair is validated against the supported matrix before
+// construction. Construction is deferred until the Config is hydrated because
+// ctl-api decides the cloud and method per install.
 func (i *Installer) selectProvisioner(ctx context.Context, cfg *Config) (core.Provisioner, error) {
+	cloud := i.opts.Cloud
+	if cloud == "" {
+		cloud = cfg.Cloud
+	}
+	if cloud == "" {
+		cloud = core.DefaultCloud
+	}
+
 	method := i.opts.Method
 	if method == "" {
 		method = cfg.Method
 	}
 	if method == "" {
-		method = core.DefaultMethod
+		method = core.DefaultMethodForCloud(cloud)
 	}
-	switch method {
-	case core.MethodTerraform:
-		return terraform.New(i.opts.AWSRegion), nil
-	case core.MethodSDK:
-		return awssdk.New(ctx, i.opts.AWSRegion)
-	default:
-		return nil, fmt.Errorf("unknown provisioning method %q", method)
+
+	if err := core.ValidateCloudMethod(cloud, method); err != nil {
+		return nil, err
 	}
+
+	switch cloud {
+	case core.CloudAWS:
+		switch method {
+		case core.MethodTerraform:
+			return terraform.New(cloud)
+		case core.MethodSDK:
+			return awssdk.New(ctx, i.opts.AWSRegion)
+		}
+	case core.CloudGCP:
+		// GCP supports the Terraform method only (enforced by
+		// ValidateCloudMethod above).
+		return terraform.New(cloud)
+	}
+	return nil, fmt.Errorf("unsupported cloud/method combination: cloud %q, method %q", cloud, method)
 }
 
 // PreparedConfig returns the rendered Config attached to the pre-created run
@@ -244,6 +421,9 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 		}
 		i.cfg = resp.Config
 		i.cfg.InstallID = i.opts.InstallID
+		// Overlay the caller-supplied cloud inputs (e.g. GCP project/region,
+		// AWS region) the ctl-api Config doesn't carry.
+		i.applyCloudOptions()
 		// Validate the bootstrap fields before any resources change. The
 		// runner's init script reads nuon_runner_id / nuon_runner_api_url
 		// from EC2 instance tags via IMDSv2 — empty values would let
@@ -258,6 +438,7 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 		// Swap the stdout-only provider for an OTLP one fed by the credentials
 		// ctl-api just minted for this run.
 		if resp.LogStream != nil && resp.LogStream.ID != "" {
+			locKey, locVal := i.locationAttr()
 			otelProv, err := logstream.New(ctx, logstream.Config{
 				RunnerAPIURL: resp.LogStream.RunnerAPIURL,
 				LogStreamID:  resp.LogStream.ID,
@@ -265,7 +446,7 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 				ServiceName:  "stack",
 				Attrs: map[string]string{
 					"install_id": i.opts.InstallID,
-					"aws_region": i.opts.AWSRegion,
+					locKey:       locVal,
 				},
 			})
 			if err != nil {
@@ -277,11 +458,11 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 				i.prov = otelProv
 				i.log = otelProv.Logger().With(
 					"install_id", i.opts.InstallID,
-					"aws_region", i.opts.AWSRegion,
+					locKey, locVal,
 				)
 				i.sysLog = otelProv.SystemLogger().With(
 					"install_id", i.opts.InstallID,
-					"aws_region", i.opts.AWSRegion,
+					locKey, locVal,
 				)
 			}
 		}
@@ -289,6 +470,16 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 		// No stackRun configured: run with an empty config so the method can
 		// still be exercised end-to-end.
 		i.cfg = &Config{InstallID: i.opts.InstallID}
+		i.applyCloudOptions()
+	}
+
+	if err := i.validateProvisionConfig(); err != nil {
+		i.reportRun(ctx, rc, runID, "failed", err.Error(), nil)
+		return nil, err
+	}
+	if err := i.validateRequiredValues(); err != nil {
+		i.reportRun(ctx, rc, runID, "failed", err.Error(), nil)
+		return nil, err
 	}
 
 	provisioner, err := i.selectProvisioner(ctx, i.cfg)
@@ -335,37 +526,38 @@ func (i *Installer) buildPhoneHomePayload(out *Outputs) map[string]any {
 		"request_type":    "Create",
 		"phone_home_type": "aws",
 	}
-	if out == nil {
+	if out == nil || out.AWS == nil {
 		// Failure path: ctl-api skips output processing for failed runs, so a
 		// minimal payload is sufficient.
 		return data
 	}
+	aws := out.AWS
 
-	data["account_id"] = out.AccountID
-	data["region"] = out.Region
-	data["vpc_id"] = out.VPCID
-	data["runner_subnet"] = out.RunnerSubnetID
-	data["public_subnets"] = strings.Join(out.PublicSubnetIDs, ",")
-	data["private_subnets"] = strings.Join(out.PrivateSubnetIDs, ",")
-	data["runner_security_group_id"] = out.RunnerSecurityGroupID
-	data["runner_iam_role_arn"] = out.RunnerIAMRoleARN
-	data["runner_instance_profile"] = out.RunnerInstanceProfileARN
-	data["runner_asg_name"] = out.RunnerASGName
-	data["runner_log_group_name"] = out.RunnerLogGroupName
-	data["provision_iam_role_arn"] = out.ProvisionRoleARN
-	data["maintenance_iam_role_arn"] = out.MaintenanceRoleARN
-	data["deprovision_iam_role_arn"] = out.DeprovisionRoleARN
+	data["account_id"] = aws.AccountID
+	data["region"] = aws.Region
+	data["vpc_id"] = aws.VPCID
+	data["runner_subnet"] = aws.RunnerSubnetID
+	data["public_subnets"] = strings.Join(aws.PublicSubnetIDs, ",")
+	data["private_subnets"] = strings.Join(aws.PrivateSubnetIDs, ",")
+	data["runner_security_group_id"] = aws.RunnerSecurityGroupID
+	data["runner_iam_role_arn"] = aws.RunnerIAMRoleARN
+	data["runner_instance_profile"] = aws.RunnerInstanceProfileARN
+	data["runner_asg_name"] = aws.RunnerASGName
+	data["runner_log_group_name"] = aws.RunnerLogGroupName
+	data["provision_iam_role_arn"] = aws.ProvisionRoleARN
+	data["maintenance_iam_role_arn"] = aws.MaintenanceRoleARN
+	data["deprovision_iam_role_arn"] = aws.DeprovisionRoleARN
 
 	// Always emit map-typed keys, even when empty. Customer dashboard
 	// templates reference `.nuon.install_stack.outputs.break_glass_role_arns`
 	// directly and explode if the key is missing. Empty Go maps stringify to
 	// "map[]" via fmt.Sprintf("%v", v); the StringToMapDecodeHook handles
 	// that input cleanly.
-	breakGlass := out.BreakGlassRoleARNs
+	breakGlass := aws.BreakGlassRoleARNs
 	if breakGlass == nil {
 		breakGlass = map[string]string{}
 	}
-	customRoles := out.CustomRoleARNs
+	customRoles := aws.CustomRoleARNs
 	if customRoles == nil {
 		customRoles = map[string]string{}
 	}
@@ -376,7 +568,7 @@ func (i *Installer) buildPhoneHomePayload(out *Outputs) map[string]any {
 	data["break_glass_role_arns"] = breakGlass
 	data["custom_role_arns"] = customRoles
 	data["install_inputs"] = installInputs
-	for k, v := range out.SecretARNs {
+	for k, v := range aws.SecretARNs {
 		data[k] = v
 	}
 	return data
@@ -415,6 +607,10 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 	} else {
 		i.cfg = &Config{InstallID: i.opts.InstallID}
 	}
+	i.applyCloudOptions()
+	if err := i.validateProvisionConfig(); err != nil {
+		return err
+	}
 
 	provisioner, err := i.selectProvisioner(ctx, i.cfg)
 	if err != nil {
@@ -425,10 +621,11 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 
 // Status returns the current persisted outputs for the install.
 func (i *Installer) Status(ctx context.Context) (*Outputs, error) {
-	cfg := &Config{InstallID: i.opts.InstallID, AWSRegion: i.opts.AWSRegion, Method: i.opts.Method}
-	provisioner, err := i.selectProvisioner(ctx, cfg)
+	i.cfg = &Config{InstallID: i.opts.InstallID, Method: i.opts.Method}
+	i.applyCloudOptions()
+	provisioner, err := i.selectProvisioner(ctx, i.cfg)
 	if err != nil {
 		return nil, err
 	}
-	return provisioner.Status(ctx, cfg)
+	return provisioner.Status(ctx, i.cfg)
 }

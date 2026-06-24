@@ -36,6 +36,7 @@ func createIAMRoles(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client
 		return err
 	}
 	prefix := cfg.Prefix()
+	awsCfg := cfg.AWS
 
 	// Reset role-name fields each run; we'll repopulate based on what cfg
 	// requested. Why: a config that previously enabled provision but no
@@ -59,29 +60,29 @@ func createIAMRoles(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client
 	// 2. Operation roles. The control_plane_assume trust references the
 	// runner role's ARN, so build it after the runner role exists.
 	runnerARN := iamRoleARN(accountID, st.RunnerRoleName)
-	trust := buildControlPlaneAssume(accountID, runnerARN, cfg.NuonSupportIAMRoleARNs)
+	trust := buildControlPlaneAssume(accountID, runnerARN, awsCfg.NuonSupportIAMRoleARNs)
 
-	provisionInline := resolveInline(cfg.ProvisionInlinePolicyDocument, cfg.ProvisionPermissions)
-	if provisionInline != "" || len(cfg.ProvisionManagedPolicyARNs) > 0 {
+	provisionInline := resolveInline(awsCfg.ProvisionInlinePolicyDocument, awsCfg.ProvisionPermissions)
+	if provisionInline != "" || len(awsCfg.ProvisionManagedPolicyARNs) > 0 {
 		st.ProvisionRoleName = prefix + "-provision"
 		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, st.ProvisionRoleName, trust, provisionInline,
-			prefix+"-provision-inline", cfg.ProvisionManagedPolicyARNs, st.InstallID); err != nil {
+			prefix+"-provision-inline", awsCfg.ProvisionManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
 	}
-	maintenanceInline := resolveInline(cfg.MaintenanceInlinePolicyDocument, cfg.MaintenancePermissions)
-	if maintenanceInline != "" || len(cfg.MaintenanceManagedPolicyARNs) > 0 {
+	maintenanceInline := resolveInline(awsCfg.MaintenanceInlinePolicyDocument, awsCfg.MaintenancePermissions)
+	if maintenanceInline != "" || len(awsCfg.MaintenanceManagedPolicyARNs) > 0 {
 		st.MaintenanceRoleName = prefix + "-maintenance"
 		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, st.MaintenanceRoleName, trust, maintenanceInline,
-			prefix+"-maintenance-inline", cfg.MaintenanceManagedPolicyARNs, st.InstallID); err != nil {
+			prefix+"-maintenance-inline", awsCfg.MaintenanceManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
 	}
-	deprovisionInline := resolveInline(cfg.DeprovisionInlinePolicyDocument, cfg.DeprovisionPermissions)
-	if deprovisionInline != "" || len(cfg.DeprovisionManagedPolicyARNs) > 0 {
+	deprovisionInline := resolveInline(awsCfg.DeprovisionInlinePolicyDocument, awsCfg.DeprovisionPermissions)
+	if deprovisionInline != "" || len(awsCfg.DeprovisionManagedPolicyARNs) > 0 {
 		st.DeprovisionRoleName = prefix + "-deprovision"
 		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, st.DeprovisionRoleName, trust, deprovisionInline,
-			prefix+"-deprovision-inline", cfg.DeprovisionManagedPolicyARNs, st.InstallID); err != nil {
+			prefix+"-deprovision-inline", awsCfg.DeprovisionManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
 	}
@@ -89,16 +90,16 @@ func createIAMRoles(ctx context.Context, log, sysLog *slog.Logger, c *iam.Client
 	// 3. Dynamic break-glass + custom roles. Keys come from cfg.* maps; role
 	// names are taken verbatim — TF uses each.key without any wrapping to
 	// stay under IAM's 64-char role-name limit, and we match.
-	for _, k := range sortedEnabledKeys(cfg.BreakGlassRoles) {
-		v := cfg.BreakGlassRoles[k]
+	for _, k := range sortedEnabledKeys(awsCfg.BreakGlassRoles) {
+		v := awsCfg.BreakGlassRoles[k]
 		inline := resolveInline(v.InlinePolicyDocument, v.Permissions)
 		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, k, trust, inline, k+"-inline", v.ManagedPolicyARNs, st.InstallID); err != nil {
 			return err
 		}
 		st.BreakGlassRoleNames = append(st.BreakGlassRoleNames, k)
 	}
-	for _, k := range sortedEnabledKeys(cfg.CustomRoles) {
-		v := cfg.CustomRoles[k]
+	for _, k := range sortedEnabledKeys(awsCfg.CustomRoles) {
+		v := awsCfg.CustomRoles[k]
 		inline := resolveInline(v.InlinePolicyDocument, v.Permissions)
 		if err := ensureRoleWithPolicies(ctx, log, sysLog, c, k, trust, inline, k+"-inline", v.ManagedPolicyARNs, st.InstallID); err != nil {
 			return err

@@ -13,7 +13,13 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	awsstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/aws"
+	gcpstacks "github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks/gcp"
 )
+
+// defaultGCPRunnerInitScript is the runner bootstrap script the GCP module
+// fetches when the app's RunnerConfig doesn't pin one. Kept in sync with the
+// generate-install-stack-version workflow's DefaultGCPRunnerInitScript.
+const defaultGCPRunnerInitScript = "https://raw.githubusercontent.com/nuonco/runner/refs/heads/main/scripts/gcp/init.sh"
 
 // LogStreamOwnerTypeInstallStackVersionRuns identifies log streams created
 // for SDK provisioner runs. Used as the OwnerType when the dashboard queries
@@ -167,9 +173,6 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 	if runnerAPIURL == "" {
 		return nil, fmt.Errorf("install %s: runner_api_url empty (set RunnerGroupSettings.RunnerAPIURL for the install's runner group)", installID)
 	}
-	if install.AWSAccount == nil || install.AWSAccount.Region == "" {
-		return nil, fmt.Errorf("install %s has no AWS region; SDK provisioner requires it", installID)
-	}
 
 	// GetFullAppConfig preloads PermissionsConfig, BreakGlassConfig,
 	// InputConfig, SecretsConfig — same data the TF renderer walks.
@@ -205,24 +208,12 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 		return nil, fmt.Errorf("render secrets config: %w", err)
 	}
 
-	provMPAs, maintMPAs, deprovMPAs := awsstacks.ExtractAWSStandardPermissionsRaw(appCfg)
-	provDoc, maintDoc, deprovDoc, err := awsstacks.ExtractAWSStandardInlinePoliciesRaw(appCfg)
-	if err != nil {
-		return nil, fmt.Errorf("extract aws inline policies: %w", err)
-	}
-	breakGlass, err := awsstacks.ExtractAWSRolesFromListRaw(appCfg.BreakGlassConfig.Roles)
-	if err != nil {
-		return nil, fmt.Errorf("extract break-glass roles: %w", err)
-	}
-	customRoles, err := awsstacks.ExtractAWSRolesFromListRaw(appCfg.PermissionsConfig.CustomRoles)
-	if err != nil {
-		return nil, fmt.Errorf("extract custom roles: %w", err)
-	}
-
 	// Customer install inputs — names only. Values come from the per-install
 	// inputs table at apply time, mirroring the TF tfvars contract which
 	// also writes `"name" = ""` and lets the runner read values at runtime.
+	// Cloud-agnostic, same for every provider.
 	var installInputs map[string]string
+	var requiredInputs []string
 	for _, in := range appCfg.InputConfig.AppInputs {
 		if in.Source != app.AppInputSourceCustomer {
 			continue
@@ -231,6 +222,9 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 			installInputs = map[string]string{}
 		}
 		installInputs[in.Name] = ""
+		if in.Required {
+			requiredInputs = append(requiredInputs, in.Name)
+		}
 	}
 
 	var autoGen []string
@@ -250,53 +244,120 @@ func (s *service) buildInstallerSDKConfig(ctx context.Context, installID string)
 		}
 	}
 
-	// Trust principal for operation roles. Same source the TF renderer reads
-	// (services/ctl-api/internal/pkg/stacks/aws/render.go:71 supportIAMRoleARN
-	// arg). Empty config = empty list = SDK falls back to account root, same
-	// as the TF module's `control_plane_assume` default.
-	var supportARNs []string
-	if s.cfg.RunnerDefaultSupportIAMRole != "" {
-		supportARNs = []string{s.cfg.RunnerDefaultSupportIAMRole}
+	cfg := &app.InstallerSDKConfig{
+		InstallID:           install.ID,
+		OrgID:               install.OrgID,
+		AppID:               install.AppID,
+		RunnerID:            install.RunnerID,
+		RunnerAPIURL:        runnerAPIURL,
+		InstallInputs:       installInputs,
+		RequiredInputs:      requiredInputs,
+		AutoGenerateSecrets: autoGen,
+		Secrets:             secrets,
 	}
 
-	// Cluster name mirrors the CloudFormation renderer's getClusterName: the
-	// install input "cluster_name" if set, else the install ID. This becomes
-	// the value of the kubernetes.io/cluster/<name> subnet tag the EKS sandbox
-	// terraform expects.
-	clusterName := install.ID
-	if install.CurrentInstallInputs != nil {
-		if v, ok := install.CurrentInstallInputs.Values["cluster_name"]; ok && v != nil && *v != "" {
-			clusterName = *v
+	switch appCfg.RunnerConfig.Type {
+	case app.AppRunnerTypeAWS:
+		if install.AWSAccount == nil || install.AWSAccount.Region == "" {
+			return nil, fmt.Errorf("install %s has no AWS region; aws SDK provisioner requires it", installID)
 		}
+
+		provMPAs, maintMPAs, deprovMPAs := awsstacks.ExtractAWSStandardPermissionsRaw(appCfg)
+		provDoc, maintDoc, deprovDoc, err := awsstacks.ExtractAWSStandardInlinePoliciesRaw(appCfg)
+		if err != nil {
+			return nil, fmt.Errorf("extract aws inline policies: %w", err)
+		}
+		breakGlass, err := awsstacks.ExtractAWSRolesFromListRaw(appCfg.BreakGlassConfig.Roles)
+		if err != nil {
+			return nil, fmt.Errorf("extract break-glass roles: %w", err)
+		}
+		customRoles, err := awsstacks.ExtractAWSRolesFromListRaw(appCfg.PermissionsConfig.CustomRoles)
+		if err != nil {
+			return nil, fmt.Errorf("extract custom roles: %w", err)
+		}
+
+		// Trust principal for operation roles. Same source the TF renderer reads
+		// (services/ctl-api/internal/pkg/stacks/aws/render.go:71 supportIAMRoleARN
+		// arg). Empty config = empty list = SDK falls back to account root, same
+		// as the TF module's `control_plane_assume` default.
+		var supportARNs []string
+		if s.cfg.RunnerDefaultSupportIAMRole != "" {
+			supportARNs = []string{s.cfg.RunnerDefaultSupportIAMRole}
+		}
+
+		// Cluster name mirrors the CloudFormation renderer's getClusterName: the
+		// install input "cluster_name" if set, else the install ID. This becomes
+		// the value of the kubernetes.io/cluster/<name> subnet tag the EKS sandbox
+		// terraform expects.
+		clusterName := install.ID
+		if install.CurrentInstallInputs != nil {
+			if v, ok := install.CurrentInstallInputs.Values["cluster_name"]; ok && v != nil && *v != "" {
+				clusterName = *v
+			}
+		}
+
+		cfg.Cloud = "aws"
+		cfg.AWS = &app.InstallerSDKAWSConfig{
+			Region:      install.AWSAccount.Region,
+			ClusterName: clusterName,
+
+			NuonSupportIAMRoleARNs: supportARNs,
+
+			ProvisionInlinePolicyDocument:   provDoc,
+			ProvisionManagedPolicyARNs:      provMPAs,
+			MaintenanceInlinePolicyDocument: maintDoc,
+			MaintenanceManagedPolicyARNs:    maintMPAs,
+			DeprovisionInlinePolicyDocument: deprovDoc,
+			DeprovisionManagedPolicyARNs:    deprovMPAs,
+
+			// break-glass: enabled=false in TF (created but disabled — SDK
+			// skips disabled entries via sortedEnabledKeys, matching TF's
+			// `count` gate). custom: enabled=true.
+			BreakGlassRoles: rolesToSDKConfigMap(breakGlass, false),
+			CustomRoles:     rolesToSDKConfigMap(customRoles, true),
+		}
+
+	case app.AppRunnerTypeGCP:
+		// NOTE: project + region are NOT known server-side — the customer
+		// supplies them at provision time via the CLI (--gcp-project /
+		// --gcp-region). ctl-api only provides the Nuon-generated inputs.
+
+		// GCP provisions via the Terraform module, which authenticates the
+		// runner with a real API token (no IID-based auth like AWS).
+		token, err := s.runnersHelpers.CreateToken(ctx, install.RunnerID)
+		if err != nil {
+			return nil, fmt.Errorf("create runner token: %w", err)
+		}
+		initScriptURL := defaultGCPRunnerInitScript
+		if appCfg.RunnerConfig.InitScriptURL != "" {
+			initScriptURL = appCfg.RunnerConfig.InitScriptURL
+		}
+
+		prov, maint, deprov := gcpstacks.ExtractGCPStandardRolesRaw(appCfg)
+		breakGlass := gcpstacks.ExtractGCPRolesRaw(appCfg.BreakGlassConfig.Roles)
+		customRoles := gcpstacks.ExtractGCPRolesRaw(appCfg.PermissionsConfig.CustomRoles)
+
+		cfg.Cloud = "gcp"
+		cfg.GCP = &app.InstallerSDKGCPConfig{
+			RunnerInitScriptURL: initScriptURL,
+			RunnerAPIToken:      token.Token,
+
+			ProvisionPermissions:      prov.Permissions,
+			ProvisionPredefinedRole:   prov.PredefinedRole,
+			MaintenancePermissions:    maint.Permissions,
+			MaintenancePredefinedRole: maint.PredefinedRole,
+			DeprovisionPermissions:    deprov.Permissions,
+			DeprovisionPredefinedRole: deprov.PredefinedRole,
+
+			BreakGlassRoles: gcpRolesToSDKMap(breakGlass, false),
+			CustomRoles:     gcpRolesToSDKMap(customRoles, true),
+		}
+
+	default:
+		return nil, fmt.Errorf("install %s: runner type %q is not supported by the SDK provisioner", installID, appCfg.RunnerConfig.Type)
 	}
 
-	return &app.InstallerSDKConfig{
-		InstallID:    install.ID,
-		OrgID:        install.OrgID,
-		AppID:        install.AppID,
-		AWSRegion:    install.AWSAccount.Region,
-		ClusterName:  clusterName,
-		RunnerID:     install.RunnerID,
-		RunnerAPIURL: runnerAPIURL,
-
-		NuonSupportIAMRoleARNs: supportARNs,
-		InstallInputs:          installInputs,
-		AutoGenerateSecrets:    autoGen,
-		Secrets:                secrets,
-
-		ProvisionInlinePolicyDocument:   provDoc,
-		ProvisionManagedPolicyARNs:      provMPAs,
-		MaintenanceInlinePolicyDocument: maintDoc,
-		MaintenanceManagedPolicyARNs:    maintMPAs,
-		DeprovisionInlinePolicyDocument: deprovDoc,
-		DeprovisionManagedPolicyARNs:    deprovMPAs,
-
-		// break-glass: enabled=false in TF (created but disabled — SDK
-		// skips disabled entries via sortedEnabledKeys, matching TF's
-		// `count` gate). custom: enabled=true.
-		BreakGlassRoles: rolesToSDKConfigMap(breakGlass, false),
-		CustomRoles:     rolesToSDKConfigMap(customRoles, true),
-	}, nil
+	return cfg, nil
 }
 
 func rolesToSDKConfigMap(rs []awsstacks.AWSRoleRaw, enabled bool) map[string]app.InstallerSDKRoleConfig {
@@ -309,6 +370,21 @@ func rolesToSDKConfigMap(rs []awsstacks.AWSRoleRaw, enabled bool) map[string]app
 			InlinePolicyDocument: r.InlinePolicyDocument,
 			ManagedPolicyARNs:    r.ManagedPolicyARNs,
 			Enabled:              enabled,
+		}
+	}
+	return out
+}
+
+func gcpRolesToSDKMap(rs []gcpstacks.GCPRoleRaw, enabled bool) map[string]app.InstallerSDKGCPRole {
+	if len(rs) == 0 {
+		return nil
+	}
+	out := make(map[string]app.InstallerSDKGCPRole, len(rs))
+	for _, r := range rs {
+		out[r.Name] = app.InstallerSDKGCPRole{
+			Permissions:    r.Permissions,
+			PredefinedRole: r.PredefinedRole,
+			Enabled:        enabled,
 		}
 	}
 	return out
