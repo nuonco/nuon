@@ -17,6 +17,7 @@ interface IDeployComponentModal extends Omit<IModal, 'onSubmit'> {
   onSubmit: (params: {
     buildId: string
     deployDependents: boolean
+    deployDependencies: boolean
     role: string
   }) => void
   onClose: () => void
@@ -46,6 +47,7 @@ export const DeployComponentModal = ({
 }: IDeployComponentModal) => {
   const [buildId, setBuildId] = useState<string>()
   const [deployDependents, setDeployDependents] = useState(false)
+  const [deployDependencies, setDeployDependencies] = useState(false)
   const [selectedRole, setSelectedRole] = useState<string>('')
 
   const isDeployDisabled = !buildId || isPending
@@ -98,31 +100,53 @@ export const DeployComponentModal = ({
           onSubmit({
             buildId: buildId!,
             deployDependents,
+            deployDependencies,
             role: selectedRole,
           })
         },
         variant: 'primary' as const,
       }}
       footerActions={
-        <CheckboxInput
-          checked={deployDependents}
-          onChange={(e) => setDeployDependents(e.target.checked)}
-          labelProps={{
-            className:
-              'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
-            labelText: (
-              <span className="flex flex-col gap-1">
-                <Text variant="base" weight="stronger" className="!leading-none">
-                  Deploy dependents
-                </Text>
-                <Text variant="subtext" theme="neutral" className="!leading-none">
-                  Deploy all dependents as well as the selected build.
-                </Text>
-              </span>
-            ),
-            labelTextProps: { as: 'div' },
-          }}
-        />
+        <div className="flex flex-col gap-3">
+          <CheckboxInput
+            checked={deployDependencies}
+            onChange={(e) => setDeployDependencies(e.target.checked)}
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text variant="base" weight="stronger" className="!leading-none">
+                    Sync dependency images
+                  </Text>
+                  <Text variant="subtext" theme="neutral" className="!leading-none">
+                    Sync any images that this component depends on.
+                  </Text>
+                </span>
+              ),
+              labelTextProps: { as: 'div' },
+            }}
+          />
+          <CheckboxInput
+            checked={deployDependents}
+            onChange={(e) => setDeployDependents(e.target.checked)}
+            labelProps={{
+              className:
+                'hover:!bg-transparent focus:!bg-transparent active:!bg-transparent !px-0 !py-1 gap-3 max-w-none items-start',
+              labelText: (
+                <span className="flex flex-col gap-1">
+                  <Text variant="base" weight="stronger" className="!leading-none">
+                    Deploy dependents
+                  </Text>
+                  <Text variant="subtext" theme="neutral" className="!leading-none">
+                    Trigger a deploy for any component that depends on this component.
+                  </Text>
+                </span>
+              ),
+              labelTextProps: { as: 'div' },
+            }}
+          />
+        </div>
       }
       {...props}
     >
