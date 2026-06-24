@@ -145,11 +145,10 @@ func (s *service) CreateWorkflowStepApprovalResponse(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, response)
 }
 
-// dispatchApprovalResponseSignal enqueues a workflow-step-approval-response Nuon Signal
-// onto the appropriate signals queue. The signal's Execute() forwards the approval to the
-// running workflow via the ApprovePlan update. Wrapping the wake-up in a Nuon Signal gives
-// us first-class lifecycle webhooks, queue persistence, and automatic retries if a worker
-// is briefly unavailable.
+// dispatchApprovalResponseSignal forwards an approval response to the running workflow.
+// For install-owned workflows, it enqueues a workflow-step-approval-response Nuon Signal
+// for lifecycle webhooks and retries. For app-branch workflows, it calls flowsClient.ApprovePlan
+// directly since the ApprovePlan activity is only registered on the installs worker.
 func (s *service) dispatchApprovalResponseSignal(
 	ctx *gin.Context,
 	workflowID, stepID, approvalID, approvalResponseID string,
@@ -163,30 +162,40 @@ func (s *service) dispatchApprovalResponseSignal(
 		return fmt.Errorf("workflow %s has no owner", workflowID)
 	}
 
-	var queueName string
 	switch wf.OwnerType {
 	case "installs":
-		queueName = "install-signals"
+		return s.dispatchInstallApprovalSignal(ctx, wf.OwnerID, workflowID, stepID, approvalID, approvalResponseID, responseType)
 	case "app_branches":
-		queueName = "app-branch-signals"
+		return s.flowsClient.ApprovePlan(ctx, &flowclient.ApprovePlanRequest{
+			InstallWorkflowID:  workflowID,
+			StepID:             stepID,
+			ApprovalResponseID: approvalResponseID,
+			ResponseType:       responseType,
+		})
 	default:
 		return fmt.Errorf("workflow %s has unsupported owner type %q", workflowID, wf.OwnerType)
 	}
+}
 
-	var queue app.Queue
-	if res := s.db.WithContext(ctx).Where("owner_id = ? AND name = ?", wf.OwnerID, queueName).First(&queue); res.Error != nil {
-		return fmt.Errorf("unable to resolve %s queue for owner %s: %w", queueName, wf.OwnerID, res.Error)
+func (s *service) dispatchInstallApprovalSignal(
+	ctx *gin.Context,
+	installID, workflowID, stepID, approvalID, approvalResponseID string,
+	responseType app.WorkflowStepResponseType,
+) error {
+	queueID, err := s.getInstallSignalsQueueID(ctx, installID)
+	if err != nil {
+		return fmt.Errorf("unable to resolve install-signals queue: %w", err)
 	}
 
 	sig := &workflowstepapprovalresponse.Signal{
-		InstallID:          wf.OwnerID,
+		InstallID:          installID,
 		InstallWorkflowID:  workflowID,
 		WorkflowStepID:     stepID,
 		ApprovalID:         approvalID,
 		ApprovalResponseID: approvalResponseID,
 		ResponseType:       responseType,
 	}
-	return s.enqueueInstallSignal(ctx, queue.ID, sig, approvalResponseID, "workflow_step_approval_responses")
+	return s.enqueueInstallSignal(ctx, queueID, sig, approvalResponseID, "workflow_step_approval_responses")
 }
 
 func (s *service) createWorkflowStepApprovalResponse(ctx *gin.Context, approvalID string, req *CreateWorkflowStepApprovalResponseRequest) (*app.WorkflowStepApprovalResponse, error) {
