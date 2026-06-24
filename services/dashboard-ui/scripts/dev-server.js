@@ -1,26 +1,64 @@
-import { watch } from "fs";
+import { readdirSync, statSync } from "fs";
+import { join } from "path";
 
 const BFF_PORT = Number(process.env.HTTP_PORT || 4000);
 const DEV_PORT = BFF_PORT + 1;
 const BFF_ORIGIN = `http://localhost:${BFF_PORT}`;
 
-const RELOAD_SCRIPT = `<script>new EventSource("/__dev/reload").onmessage=()=>location.reload()</script>`;
+const RELOAD_SCRIPT = `<script>(function(){var es,last=Date.now();function connect(){es=new EventSource("/__dev/reload");es.onmessage=function(e){last=Date.now();if(e.data==="reload")location.reload()};es.onerror=function(){try{es.close()}catch(_){}setTimeout(connect,1000)}}connect();setInterval(function(){if(Date.now()-last>50000){try{es.close()}catch(_){}connect()}},10000)})();</script>`;
 
 const clients = new Set();
 
-let debounce;
-watch("dist", { recursive: true }, () => {
-  clearTimeout(debounce);
-  debounce = setTimeout(() => {
-    for (const c of clients) {
-      try {
-        c.enqueue("data: reload\n\n");
-      } catch {
-        clients.delete(c);
+function broadcast(data) {
+  for (const c of clients) {
+    try {
+      c.enqueue(data);
+    } catch {
+      clients.delete(c);
+    }
+  }
+}
+
+// fs.watch({recursive:true}) is unreliable on Linux (inotify) — it silently
+// stops emitting after a while. dist/ is a handful of files, so we poll mtimes.
+function distSignature() {
+  const parts = [];
+  const walk = (dir) => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const e of entries) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) {
+        walk(p);
+      } else {
+        try {
+          const s = statSync(p);
+          parts.push(`${p}:${s.mtimeMs}:${s.size}`);
+        } catch {
+          continue;
+        }
       }
     }
-  }, 500);
-});
+  };
+  walk("dist");
+  return parts.sort().join("|");
+}
+
+let lastSig = distSignature();
+let debounce;
+setInterval(() => {
+  const sig = distSignature();
+  if (sig === lastSig) return;
+  lastSig = sig;
+  clearTimeout(debounce);
+  debounce = setTimeout(() => broadcast("data: reload\n\n"), 300);
+}, 250);
+
+setInterval(() => broadcast(": ping\n\ndata: ping\n\n"), 20000);
 
 Bun.serve({
   port: DEV_PORT,
@@ -42,6 +80,7 @@ Bun.serve({
         headers: {
           "content-type": "text/event-stream",
           "cache-control": "no-cache",
+          connection: "keep-alive",
         },
       });
     }
