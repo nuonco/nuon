@@ -12,7 +12,11 @@ import { Text } from '@/components/common/Text'
 import { CheckboxInputWithButton } from '@/components/common/form/CheckboxInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { InputValue } from '@/components/installs/management/InputValue'
-import { getInputDisplayName } from '@/utils/install-utils'
+import {
+  disabledToggleableDeps,
+  getEnabledOverrideComponent,
+  getInputDisplayName,
+} from '@/utils/install-utils'
 
 type TAttributeFilter = 'required' | 'sensitive'
 type TSourceFilter = 'vendor' | 'customer'
@@ -46,10 +50,19 @@ type TInputGroup = {
   }>
 }
 
+type TEnablementComponent = {
+  component_id?: string
+  component_name?: string
+  component_dependency_ids?: string[]
+  refs?: { type?: string; name?: string }[]
+}
+
 interface IViewCurrentInputsModal extends IModal {
   isLoading: boolean
   redactedValues: Record<string, any>
   inputGroups: TInputGroup[]
+  configComponents?: TEnablementComponent[]
+  effectiveEnabledByName?: Record<string, boolean | undefined>
   footerActions?: React.ReactNode
 }
 
@@ -57,6 +70,8 @@ export const ViewCurrentInputsModal = ({
   isLoading,
   redactedValues,
   inputGroups,
+  configComponents = [],
+  effectiveEnabledByName = {},
   footerActions,
   ...props
 }: IViewCurrentInputsModal) => {
@@ -357,6 +372,34 @@ export const ViewCurrentInputsModal = ({
                           <Text variant="label" family="mono" theme="neutral">
                             {input.name ? getInputDisplayName(input.name) : null}
                           </Text>
+                          {(() => {
+                            const comp = input.name
+                              ? getEnabledOverrideComponent(input.name)
+                              : null
+                            if (!comp) return null
+                            const own =
+                              input.name &&
+                              String(redacted[input.name]) === 'true'
+                            if (!own) return null
+                            if (effectiveEnabledByName[comp] !== false)
+                              return null
+                            const blockers = disabledToggleableDeps(
+                              comp,
+                              configComponents,
+                              effectiveEnabledByName
+                            )
+                            return (
+                              <Text
+                                variant="label"
+                                theme="warn"
+                                className="mt-0.5"
+                              >
+                                {blockers.length > 0
+                                  ? `Effectively disabled — requires ${blockers.join(', ')}`
+                                  : 'Effectively disabled — a required component is turned off'}
+                              </Text>
+                            )
+                          })()}
                         </span>
                       ),
                       value: (

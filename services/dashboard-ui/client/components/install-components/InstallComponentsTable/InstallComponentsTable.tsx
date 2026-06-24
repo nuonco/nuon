@@ -41,8 +41,7 @@ export function parseInstallComponentSummaryToTableData(
   deps: TComponentDeps[],
   orgId: string,
   installId: string,
-  configConnections?: TComponentConfig[],
-  componentToggles?: { [key: string]: boolean }
+  configConnections?: TComponentConfig[]
 ): InstallComponentRow[] {
   return components.map((component) => {
     const depIndex = deps?.findIndex((dep) => dep?.id === component?.id)
@@ -54,16 +53,19 @@ export function parseInstallComponentSummaryToTableData(
 
     let toggleStatusNode: ReactNode = <Icon variant="MinusIcon" />
     if (isToggleable) {
-      const componentId = component?.component_id
-      let isDisabled = false
-      if (componentToggles && componentId && componentId in componentToggles) {
-        isDisabled = !componentToggles[componentId]
-      } else {
-        isDisabled = !configConnection?.default_enabled
-      }
+      const isDisabled =
+        component?.enabled != null
+          ? !component.enabled
+          : !configConnection?.default_enabled
       toggleStatusNode = (
         <Badge size="sm" theme={isDisabled ? 'neutral' : 'success'}>
           {isDisabled ? 'Disabled' : 'Enabled'}
+        </Badge>
+      )
+    } else {
+      toggleStatusNode = (
+        <Badge size="sm" theme="neutral">
+          Not toggleable
         </Badge>
       )
     }

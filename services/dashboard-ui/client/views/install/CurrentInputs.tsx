@@ -12,9 +12,17 @@ import { EditInputsButton } from '@/components/installs/management/EditInputs'
 import { InputValue } from '@/components/installs/management/InputValue'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
-import { getAppConfig, getInstallCurrentInputs } from '@/lib'
+import {
+  getAppConfig,
+  getInstallComponents,
+  getInstallCurrentInputs,
+} from '@/lib'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
-import { getInputDisplayName } from '@/utils/install-utils'
+import {
+  disabledToggleableDeps,
+  getEnabledOverrideComponent,
+  getInputDisplayName,
+} from '@/utils/install-utils'
 
 export const CurrentInputs = () => {
   const { org } = useOrg()
@@ -39,8 +47,20 @@ export const CurrentInputs = () => {
     enabled: !!org?.id && !!install?.app_id && !!install?.app_config_id,
   })
 
+  const { data: componentsResult } = useQuery({
+    queryKey: ['install-components', org?.id, install?.id],
+    queryFn: () =>
+      getInstallComponents({ orgId: org.id, installId: install.id, limit: 100 }),
+    enabled: !!org?.id && !!install?.id,
+  })
+
   const isLoading = inputsLoading || configLoading
   const redacted = inputs?.redacted_values ?? {}
+  const configComponents = config?.component_config_connections ?? []
+  const effectiveEnabledByName: Record<string, boolean | undefined> = {}
+  for (const c of componentsResult?.data ?? []) {
+    if (c.component?.name) effectiveEnabledByName[c.component.name] = c.enabled
+  }
   const hasInputs = Object.keys(redacted).length > 0
   const inputGroups = config
     ? normalizeAppInputGroups(
@@ -131,6 +151,34 @@ export const CurrentInputs = () => {
                                 ? getInputDisplayName(input.name)
                                 : null}
                             </Text>
+                            {(() => {
+                              const comp = input.name
+                                ? getEnabledOverrideComponent(input.name)
+                                : null
+                              if (!comp) return null
+                              const own =
+                                input.name &&
+                                String(redacted[input.name]) === 'true'
+                              if (!own) return null
+                              if (effectiveEnabledByName[comp] !== false)
+                                return null
+                              const blockers = disabledToggleableDeps(
+                                comp,
+                                configComponents,
+                                effectiveEnabledByName
+                              )
+                              return (
+                                <Text
+                                  variant="label"
+                                  theme="warn"
+                                  className="mt-0.5"
+                                >
+                                  {blockers.length > 0
+                                    ? `Effectively disabled — requires ${blockers.join(', ')}`
+                                    : 'Effectively disabled — a required component is turned off'}
+                                </Text>
+                              )
+                            })()}
                           </span>
                         ),
                         value: (
