@@ -74,6 +74,20 @@ func (c *client) GetInstallComponentOutputs(ctx context.Context, installID, comp
 	return resp.Payload, nil
 }
 
+func (c *client) ToggleInstallComponent(ctx context.Context, installID, componentID string, req *models.ServiceToggleInstallComponentRequest) (*models.AppWorkflowResponse, error) {
+	resp, err := c.genClient.Operations.ToggleInstallComponent(&operations.ToggleInstallComponentParams{
+		InstallID:   installID,
+		ComponentID: componentID,
+		Context:     ctx,
+		Req:         req,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error) {
 	resp, err := c.genClient.Operations.TeardownInstallComponent(&operations.TeardownInstallComponentParams{
 		InstallID:   installID,

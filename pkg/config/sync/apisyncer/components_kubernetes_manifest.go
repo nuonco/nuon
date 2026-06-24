@@ -27,6 +27,12 @@ func (s *syncer) createKubernetesManifestComponentConfig(
 	if comp.KubernetesManifest.MaxAutoRetries != nil {
 		configRequest.MaxAutoRetries = int64(*comp.KubernetesManifest.MaxAutoRetries)
 	}
+	if comp.Toggleable != nil {
+		configRequest.Toggleable = *comp.Toggleable
+	}
+	if comp.DefaultEnabled != nil {
+		configRequest.DefaultEnabled = *comp.DefaultEnabled
+	}
 	if comp.KubernetesManifest.Kustomize != nil {
 		configRequest.Kustomize.Path = comp.KubernetesManifest.Kustomize.Path
 		configRequest.Kustomize.Patches = comp.KubernetesManifest.Kustomize.Patches

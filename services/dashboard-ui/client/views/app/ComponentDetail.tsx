@@ -120,6 +120,14 @@ export const ComponentDetail = () => {
               <Text variant="base" weight="strong">
                 {component?.name}
               </Text>
+              {config?.toggleable ? (
+                <>
+                  <Badge size="sm" theme="info">Toggleable</Badge>
+                  <Badge size="sm" theme={config?.default_enabled ? 'success' : 'neutral'}>
+                    {config?.default_enabled ? 'Default: on' : 'Default: off'}
+                  </Badge>
+                </>
+              ) : null}
             </span>
             {component?.id ? <ID>{component.id}</ID> : null}
             {component?.labels && Object.keys(component.labels).length > 0 ? (

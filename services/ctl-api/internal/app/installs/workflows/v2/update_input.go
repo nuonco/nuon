@@ -70,7 +70,7 @@ func InputUpdate(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRes
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appConfig, awData)
+	dg := newGenCtx(sg, flw, installID, appConfig, awData, WithInstallConfig(install.InstallConfig))
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreUpdateInputs)
 	if err != nil {

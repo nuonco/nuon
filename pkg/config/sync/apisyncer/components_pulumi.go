@@ -31,6 +31,12 @@ func (s *syncer) createPulumiComponentConfig(ctx context.Context, resource, comp
 	if obj.SkipNoops != nil {
 		configRequest.SkipNoops = *obj.SkipNoops
 	}
+	if comp.Toggleable != nil {
+		configRequest.Toggleable = *comp.Toggleable
+	}
+	if comp.DefaultEnabled != nil {
+		configRequest.DefaultEnabled = *comp.DefaultEnabled
+	}
 	if obj.AutoApproveOnPoliciesPassing != nil {
 		configRequest.AutoApproveOnPoliciesPassing = *obj.AutoApproveOnPoliciesPassing
 	}

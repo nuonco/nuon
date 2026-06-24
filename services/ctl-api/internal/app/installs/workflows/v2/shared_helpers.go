@@ -35,6 +35,10 @@ type genCtx struct {
 	appCfg    *app.AppConfig
 	awData    []*app.InstallActionWorkflow
 
+	// installConfig is the per-install configuration, used to check
+	// component toggle overrides. May be nil if no install config exists.
+	installConfig *app.InstallConfig
+
 	// Derived once from appCfg.ComponentConfigConnections for dep-aware
 	// deploys.
 	components   map[string]app.Component
@@ -47,9 +51,9 @@ type genCtx struct {
 	addedImageDepSyncs map[string]struct{}
 }
 
-func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow) *genCtx {
+func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.AppConfig, awData []*app.InstallActionWorkflow, opts ...genCtxOption) *genCtx {
 	components, depIDsByComp, cccByComp := buildComponentConfigMaps(appCfg)
-	return &genCtx{
+	dg := &genCtx{
 		sg:                 sg,
 		flw:                flw,
 		installID:          installID,
@@ -59,6 +63,18 @@ func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.A
 		depIDsByComp:       depIDsByComp,
 		cccByComp:          cccByComp,
 		addedImageDepSyncs: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(dg)
+	}
+	return dg
+}
+
+type genCtxOption func(*genCtx)
+
+func WithInstallConfig(ic *app.InstallConfig) genCtxOption {
+	return func(dg *genCtx) {
+		dg.installConfig = ic
 	}
 }
 
@@ -244,6 +260,15 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 		comp, has := dg.components[compID]
 		if !has {
 			return nil, errors.Errorf("component %s not found in app config", compID)
+		}
+
+		if ccc, ok := dg.cccByComp[compID]; ok && ccc.IsToggleable() {
+			if dg.installConfig != nil && !dg.installConfig.IsComponentEnabled(compID, ccc) {
+				continue
+			}
+			if dg.installConfig == nil && !ccc.GetDefaultEnabled() {
+				continue
+			}
 		}
 
 		// Dep-aware image-sync prepend.

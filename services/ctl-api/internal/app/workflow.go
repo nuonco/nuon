@@ -49,6 +49,10 @@ const (
 
 	// runbooks
 	WorkflowTypeRunbookRun WorkflowType = "runbook_run"
+
+	// toggleable components
+	WorkflowTypeComponentEnabled  WorkflowType = "component_enabled"
+	WorkflowTypeComponentDisabled WorkflowType = "component_disabled"
 )
 
 type WorkflowMetadataKey string
@@ -86,6 +90,10 @@ func (i WorkflowType) PastTenseName() string {
 		return "Built app config components"
 	case WorkflowTypeRunbookRun:
 		return "Runbook run"
+	case WorkflowTypeComponentEnabled:
+		return "Enabled component"
+	case WorkflowTypeComponentDisabled:
+		return "Disabled component"
 	default:
 	}
 
@@ -118,6 +126,10 @@ func (i WorkflowType) Name() string {
 		return "Building app config components"
 	case WorkflowTypeRunbookRun:
 		return "Running runbook"
+	case WorkflowTypeComponentEnabled:
+		return "Enabling component"
+	case WorkflowTypeComponentDisabled:
+		return "Disabling component"
 	default:
 	}
 
@@ -148,6 +160,10 @@ func (i WorkflowType) Description() string {
 		return "Builds all components defined in an app config."
 	case WorkflowTypeRunbookRun:
 		return "Executes an ordered set of deploy and action steps defined in a runbook."
+	case WorkflowTypeComponentEnabled:
+		return "Enables a toggleable component by deploying it."
+	case WorkflowTypeComponentDisabled:
+		return "Disables a toggleable component by tearing it down."
 	}
 
 	return "unknown"

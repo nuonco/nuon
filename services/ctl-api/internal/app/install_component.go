@@ -29,6 +29,7 @@ const (
 	InstallComponentStatusExecuting InstallComponentStatus = "executing"
 	InstallComponentStatusUnknown   InstallComponentStatus = "unknown"
 	InstallComponentStatusPending   InstallComponentStatus = "pending"
+	InstallComponentStatusDisabled  InstallComponentStatus = "disabled"
 )
 
 type InstallComponent struct {

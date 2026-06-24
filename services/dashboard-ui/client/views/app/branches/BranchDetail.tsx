@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useParams } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useParams, useSearchParams } from 'react-router'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -32,6 +32,7 @@ import { getBranchWorkflowRuns, getAppInstalls, cancelWorkflow } from '@/lib'
 import type { TAPIError, TInstall } from '@/types'
 
 const CANCELLABLE = new Set(['pending', 'queued', 'in-progress'])
+const LIMIT = 20
 
 const BranchDetailContent = () => {
   const { org } = useOrg()
@@ -40,9 +41,11 @@ const BranchDetailContent = () => {
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const params = useParams()
+  const [searchParams] = useSearchParams()
   const orgId = params.orgId as string
   const appId = params.appId as string
   const branchId = params.branchId as string
+  const offset = Number(searchParams.get('offset') ?? 0)
 
   const cancelMutation = useMutation({
     mutationFn: (workflowId: string) => cancelWorkflow({ orgId, workflowId }),
@@ -88,18 +91,22 @@ const BranchDetailContent = () => {
     [appInstallsResult]
   )
 
-  const { data: runs = [], isLoading: isLoadingRuns } = useQuery({
-    queryKey: ['branch-runs', orgId, appId, branchId],
+  const { data: runsResult, isLoading: isLoadingRuns } = useQuery({
+    queryKey: ['branch-runs', orgId, appId, branchId, offset],
     queryFn: () =>
       getBranchWorkflowRuns({
         orgId,
         appId,
         branchId,
-        limit: 5,
+        limit: LIMIT,
+        offset,
       }),
     enabled: !!orgId && !!appId && !!branchId,
     refetchInterval: 5000,
+    placeholderData: keepPreviousData,
   })
+
+  const runs = runsResult?.data ?? []
 
   return (
     <PageSection>
@@ -189,7 +196,7 @@ const BranchDetailContent = () => {
         ) : (
           <Timeline
             events={runs}
-            pagination={{ hasNext: false, offset: 0, limit: 5 }}
+            pagination={{ hasNext: runsResult?.pagination?.hasNext ?? false, offset, limit: LIMIT }}
             renderEvent={(run) => {
               const commitSha = run.app_branch_runs?.[0]?.commit_sha
               return (

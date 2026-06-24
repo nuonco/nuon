@@ -1,0 +1,133 @@
+package v2
+
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/pkg/errors"
+	"go.temporal.io/sdk/workflow"
+
+	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
+)
+
+func ComponentDisabledSteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResult, error) {
+	installID := generics.FromPtrStr(flw.Metadata["install_id"])
+	install, err := activities.AwaitGetByInstallID(ctx, installID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get install")
+	}
+
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{
+		InstallID: installID,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	sg := newStepGroup(flw)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallConfig(install.InstallConfig))
+	steps := make([]*app.WorkflowStep, 0)
+
+	sg.nextGroupEager()
+	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to check state-gen-v2 feature")
+	}
+	stateGenV2 := statemanager.UseStateGenV2(orgEnabled, install.Metadata)
+
+	if !stateGenV2 {
+		stateSignal := &generatestate.Signal{InstallID: installID}
+		step, err := sg.installSignalStep(ctx, installID, "generate install state", pgtype.Hstore{}, stateSignal, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, step)
+	}
+
+	componentID, ok := flw.Metadata["component_id"]
+	if !ok {
+		return nil, errors.New("component_id is not set on the workflow metadata")
+	}
+
+	step, err := sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
+		InstallID: installID,
+	}, flw.PlanOnly)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, step)
+
+	comp, err := activities.AwaitGetComponentByComponentID(ctx, generics.FromPtrStr(componentID))
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get component")
+	}
+
+	preDisableSteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePreDisableComponent)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, preDisableSteps...)
+
+	sg.nextGroup()
+	if !comp.Type.IsImage() {
+		installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
+			InstallID:   installID,
+			ComponentID: comp.ID,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get install component")
+		}
+
+		compIDStr := generics.FromPtrStr(componentID)
+		deployStep, err := sg.installSignalStep(ctx, install.ID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
+			InstallComponentID: installComp.ID,
+			InstallID:          install.ID,
+			ComponentID:        compIDStr,
+			FlowID:             "",
+			SandboxMode:        false,
+			Role:               flw.Role,
+		}, flw.PlanOnly, WithSkippable(false))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, deployStep)
+
+		applyStep, err := sg.installSignalStep(ctx, install.ID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
+			InstallComponentID: installComp.ID,
+			InstallID:          install.ID,
+			ComponentID:        compIDStr,
+			FlowID:             "",
+			SandboxMode:        false,
+		}, flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(appCfg, compIDStr)))
+		if err != nil {
+			return nil, err
+		}
+		steps = append(steps, applyStep)
+	} else {
+		deployStep, err := sg.installSignalStep(ctx, installID, "skipped image disable "+comp.Name, pgtype.Hstore{
+			"reason": generics.ToPtr("skipped image teardown"),
+		}, nil, false)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create skip step")
+		}
+		steps = append(steps, deployStep)
+	}
+
+	postDisableSteps, err := getComponentLifecycleActionsSteps(ctx, dg, comp, app.ActionWorkflowTriggerTypePostDisableComponent)
+	if err != nil {
+		return nil, err
+	}
+	steps = append(steps, postDisableSteps...)
+
+	return sg.Result(steps), nil
+}

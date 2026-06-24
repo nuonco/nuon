@@ -89,7 +89,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 			return nil, errors.Wrap(err, "unable to get action workflows")
 		}
 
-		dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
+		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallConfig(install.InstallConfig))
 		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
@@ -118,7 +118,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
 
-	dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
+	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallConfig(install.InstallConfig))
 	deploySteps, err := getComponentDeploySteps(ctx, dg, deployComponentIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")

@@ -858,6 +858,8 @@ type ClientService interface {
 
 	TeardownInstallComponents(params *TeardownInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentsCreated, error)
 
+	ToggleInstallComponent(params *ToggleInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ToggleInstallComponentCreated, error)
+
 	TriggerAppBranchRun(params *TriggerAppBranchRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TriggerAppBranchRunCreated, error)
 
 	UnlockTerraformWorkspace(params *UnlockTerraformWorkspaceParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*UnlockTerraformWorkspaceOK, error)
@@ -18094,6 +18096,52 @@ func (a *Client) TeardownInstallComponents(params *TeardownInstallComponentsPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for TeardownInstallComponents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ToggleInstallComponent toggles an install component on or off
+
+Enable or disable a toggleable component on an install. Enabling triggers a deploy workflow, disabling triggers a teardown workflow.
+*/
+func (a *Client) ToggleInstallComponent(params *ToggleInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ToggleInstallComponentCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewToggleInstallComponentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ToggleInstallComponent",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/toggle",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ToggleInstallComponentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ToggleInstallComponentCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ToggleInstallComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

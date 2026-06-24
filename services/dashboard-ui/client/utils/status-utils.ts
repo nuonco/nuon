@@ -69,6 +69,7 @@ const STATUS_THEME_MAP: Record<string, TStatusTheme> = {
   'shut-down': 'neutral',
   unknown: 'neutral',
   inactive: 'neutral',
+  disabled: 'neutral',
   pending: 'neutral',
   'Not deployed': 'neutral',
   'No build': 'neutral',
@@ -132,6 +133,7 @@ const STATUS_ICON_MAP: Record<string, TIconVariant> = {
   // Neutral
   noop: 'ClockCountdownIcon',
   inactive: 'WarningIcon',
+  disabled: 'ProhibitIcon',
   pending: 'ClockCountdownIcon',
   offline: 'ClockCountdownIcon',
   'Not deployed': 'ClockCountdownIcon',

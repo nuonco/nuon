@@ -6,21 +6,26 @@ import { DeployComponentButton } from '@/components/install-components/managemen
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
+import { ToggleComponentButton } from '@/components/install-components/management/ToggleComponent'
 import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
-import type { TComponent, TInstallComponent } from '@/types'
+import type { TComponent, TComponentConfig, TInstallComponent } from '@/types'
 
 export const ManagementDropdown = ({
   component,
+  componentConfig,
   currentBuildId,
   currentDeployStatus,
   installComponent,
 }: {
   component: TComponent
+  componentConfig?: TComponentConfig
   currentBuildId?: string
   currentDeployStatus?: string
   installComponent?: TInstallComponent
 }) => {
   const workspaceId = installComponent?.terraform_workspace?.id
+  const isToggleable = componentConfig?.toggleable === true
+  const isDisabled = currentDeployStatus === 'disabled'
 
   return (
     <Dropdown
@@ -35,17 +40,28 @@ export const ManagementDropdown = ({
     >
       <Menu>
         <Text>Controls</Text>
-        <DriftScanComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          isMenuButton
-        />
-        <DeployComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          currentDeployStatus={currentDeployStatus}
-          isMenuButton
-        />
+        {isToggleable ? (
+          <ToggleComponentButton
+            component={component}
+            enabling={isDisabled}
+            isMenuButton
+          />
+        ) : null}
+        {!isDisabled ? (
+          <>
+            <DriftScanComponentButton
+              component={component}
+              currentBuildId={currentBuildId}
+              isMenuButton
+            />
+            <DeployComponentButton
+              component={component}
+              currentBuildId={currentBuildId}
+              currentDeployStatus={currentDeployStatus}
+              isMenuButton
+            />
+          </>
+        ) : null}
         {(component?.type === 'terraform_module' || component?.type === 'pulumi') && workspaceId ? (
           <UnlockTerraformWorkspaceButton
             workspaceId={workspaceId}

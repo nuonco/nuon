@@ -38,6 +38,9 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -68,6 +71,9 @@ type ServiceCreateDockerBuildComponentConfigRequest struct {
 
 	// target
 	Target string `json:"target,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 }
 
 // Validate validates this service create docker build component config request

@@ -63,6 +63,12 @@ const (
 	// role change triggers
 	ActionWorkflowTriggerTypeRoleEnabled  ActionWorkflowTriggerType = "role-enabled"
 	ActionWorkflowTriggerTypeRoleDisabled ActionWorkflowTriggerType = "role-disabled"
+
+	// toggleable component triggers
+	ActionWorkflowTriggerTypePreEnableComponent   ActionWorkflowTriggerType = "pre-enable-component"
+	ActionWorkflowTriggerTypePostEnableComponent  ActionWorkflowTriggerType = "post-enable-component"
+	ActionWorkflowTriggerTypePreDisableComponent  ActionWorkflowTriggerType = "pre-disable-component"
+	ActionWorkflowTriggerTypePostDisableComponent ActionWorkflowTriggerType = "post-disable-component"
 )
 
 // These component types require a component to be passed with them
@@ -71,6 +77,10 @@ var AllActionWorkflowComponentTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypePostDeployComponent,
 	ActionWorkflowTriggerTypePreTeardownComponent,
 	ActionWorkflowTriggerTypePostTeardownComponent,
+	ActionWorkflowTriggerTypePreEnableComponent,
+	ActionWorkflowTriggerTypePostEnableComponent,
+	ActionWorkflowTriggerTypePreDisableComponent,
+	ActionWorkflowTriggerTypePostDisableComponent,
 }
 
 // All component types
@@ -100,6 +110,10 @@ var AllActionWorkflowTriggerTypes = []ActionWorkflowTriggerType{
 	ActionWorkflowTriggerTypePostUpdateInputs,
 	ActionWorkflowTriggerTypeRoleEnabled,
 	ActionWorkflowTriggerTypeRoleDisabled,
+	ActionWorkflowTriggerTypePreEnableComponent,
+	ActionWorkflowTriggerTypePostEnableComponent,
+	ActionWorkflowTriggerTypePreDisableComponent,
+	ActionWorkflowTriggerTypePostDisableComponent,
 }
 
 type ActionWorkflowTriggerConfig struct {

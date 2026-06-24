@@ -1,6 +1,7 @@
 import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
+import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { EmptyState } from '@/components/common/EmptyState/EmptyState'
 import { Icon } from '@/components/common/Icon'
@@ -15,7 +16,9 @@ import {
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
+import { Toggle } from '@/components/common/form/Toggle'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
+import { ToggleComponentModalContainer } from '@/components/install-components/management/ToggleComponent/ToggleComponentContainer'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { TerraformWorkspaceCard } from '@/components/terraform-workspace/TerraformWorkspaceCard'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -27,14 +30,28 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, getComponentBuilds, getInstallComponent } from '@/lib'
+import type { TComponentConfig, TInstall } from '@/types'
+
+function isComponentDisabled(
+  config?: TComponentConfig,
+  install?: TInstall,
+  componentId?: string
+): boolean {
+  if (!config?.toggleable) return false
+  const toggles = install?.install_config?.component_toggles
+  if (toggles && componentId && componentId in toggles) {
+    return !toggles[componentId]
+  }
+  return !config?.default_enabled
+}
 
 export const InstallComponentDetail = () => {
   const { componentId } = useParams()
   const { org } = useOrg()
   const { install } = useInstall()
-  const { addPanel } = useSurfaces()
+  const { addPanel, addModal } = useSurfaces()
 
-  const { data: installComponent, isLoading } = useQuery({
+  const { data: installComponent } = useQuery({
     queryKey: ['install-component', org?.id, install?.id, componentId],
     queryFn: () =>
       getInstallComponent({
@@ -68,6 +85,11 @@ export const InstallComponentDetail = () => {
   const config = appConfig?.component_config_connections?.find(
     (c) => c.component_id === componentId
   )
+
+  const isToggleable = config?.toggleable === true
+  const isDisabled =
+    installComponent?.status === 'disabled' ||
+    isComponentDisabled(config, install, componentId)
 
   const dependentIds = appConfig?.component_config_connections
     ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
@@ -124,6 +146,11 @@ export const InstallComponentDetail = () => {
               <Text variant="base" weight="strong">
                 {component?.name}
               </Text>
+              {isToggleable ? (
+                <Badge size="sm" theme={isDisabled ? 'neutral' : 'success'}>
+                  {isDisabled ? 'Disabled' : 'Enabled'}
+                </Badge>
+              ) : null}
             </span>
             {component?.id ? <ID>{component.id}</ID> : null}
             <AdminDashboardLink
@@ -155,8 +182,9 @@ export const InstallComponentDetail = () => {
               </div>
               <ManagementDropdown
                 component={component}
+                componentConfig={config}
                 currentBuildId={latestDeploy?.build_id}
-                currentDeployStatus={latestDeploy?.status_v2?.status}
+                currentDeployStatus={isDisabled ? 'disabled' : latestDeploy?.status_v2?.status}
                 installComponent={installComponent}
               />
             </div>
@@ -165,6 +193,28 @@ export const InstallComponentDetail = () => {
 
         <div className="grid grid-cols-1 @5xl:grid-cols-12 gap-6">
           <div className="@5xl:col-span-8 flex flex-col gap-6">
+            {isToggleable && component ? (
+              <div className="flex justify-end">
+                <Toggle
+                  checked={!isDisabled}
+                  onChange={() => {
+                    addModal(
+                      <ToggleComponentModalContainer
+                        component={component}
+                        enabling={isDisabled}
+                      />
+                    )
+                  }}
+                  label={isDisabled ? 'Component disabled' : 'Component enabled'}
+                  description={
+                    isDisabled
+                      ? `${component.name} is disabled on this install. Toggle to deploy.`
+                      : `${component.name} can be disabled on this install.`
+                  }
+                />
+              </div>
+            ) : null}
+
             {installComponent?.drifted_object ? (
               <DriftedBanner drifted={installComponent.drifted_object} />
             ) : null}

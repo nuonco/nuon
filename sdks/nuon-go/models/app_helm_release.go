@@ -19,9 +19,6 @@ import (
 // swagger:model app.HelmRelease
 type AppHelmRelease struct {
 
-	// The rspb.Release body, as a base64-encoded string
-	Body string `json:"body,omitempty"`
-
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
