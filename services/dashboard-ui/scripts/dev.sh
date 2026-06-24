@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
 set -e
 
+DEV_PGID=$(ps -o pgid= -p $$ | tr -d ' ')
+PGID_FILE="/tmp/nuon-dashboard-dev.pgid"
+
+# A previous session's bun build/css --watch hold no port, so a port-based
+# cleanup misses them and they pile up across restarts. Every child stays in
+# dev.sh's process group, so kill the previous session's whole group, then
+# sweep any strays whose marker was lost (e.g. clean-dist wiped an old dist/).
+if [ -f "$PGID_FILE" ]; then
+    OLD_PGID=$(cat "$PGID_FILE" 2>/dev/null || true)
+    if [ -n "$OLD_PGID" ] && [ "$OLD_PGID" != "$DEV_PGID" ]; then
+        kill -TERM -- "-$OLD_PGID" 2>/dev/null || true
+    fi
+fi
+pkill -f 'bun build client/index.tsx --outdir=dist/assets' 2>/dev/null || true
+pkill -f 'bun scripts/build-css.js --watch' 2>/dev/null || true
+pkill -f 'bun scripts/dev-server.js' 2>/dev/null || true
+
+echo "$DEV_PGID" > "$PGID_FILE"
+
 cleanup() {
-    kill $(jobs -p) 2>/dev/null
-    wait 2>/dev/null
+    kill -TERM -- "-$DEV_PGID" 2>/dev/null || true
+    wait 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
-
-# Kill any leftover processes on our ports from previous runs
-if [ -f dist/.port ]; then
-    OLD_PORT=$(cat dist/.port)
-    lsof -ti :"$OLD_PORT" 2>/dev/null | xargs kill 2>/dev/null || true
-    DEV_PORT=$((OLD_PORT + 1))
-    lsof -ti :"$DEV_PORT" 2>/dev/null | xargs kill 2>/dev/null || true
-fi
 
 echo "Building dashboard server..."
 go build -C "${NUON_DIR:-$NUON_ROOT/nuon}" -o /tmp/dashboard-server ./services/dashboard-ui/server
