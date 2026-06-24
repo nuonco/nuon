@@ -19,8 +19,7 @@ const (
 	ComponentBuildUnavailableReasonFailed ComponentBuildUnavailableReason = "failed"
 
 	// ComponentBuildUnavailableReasonMissing means no build exists for the
-	// component yet. (Not produced yet — reserved for a follow-up that surfaces
-	// missing builds at the workflow-step level.)
+	// component yet, so there is no artifact to deploy.
 	ComponentBuildUnavailableReasonMissing ComponentBuildUnavailableReason = "missing"
 )
 
@@ -47,7 +46,7 @@ func (e *ComponentBuildUnavailableError) Error() string {
 		name = "component"
 	}
 	if e.Reason == ComponentBuildUnavailableReasonMissing {
-		return fmt.Sprintf("No build available for %s", name)
+		return fmt.Sprintf("No build found for %s", name)
 	}
 	return fmt.Sprintf("Build for %s failed", name)
 }
@@ -68,9 +67,9 @@ func (e *ComponentBuildUnavailableError) Sections() []compositeerrors.Section {
 
 	var why string
 	if e.Reason == ComponentBuildUnavailableReasonMissing {
-		why = fmt.Sprintf("This deploy needs an active build for %s, but no build exists yet. Deploys can only run against a successfully built artifact.", name)
+		why = fmt.Sprintf("Deploying %s needs a build, but it hasn't been built yet.", name)
 	} else {
-		why = fmt.Sprintf("This deploy needs an active build for %s, but its most recent build did not complete successfully. Deploys can only run against a successfully built artifact.", name)
+		why = fmt.Sprintf("Deploying %s needs a build that completed successfully. Its most recent build failed, so the deploy can't continue.", name)
 	}
 	sections := []compositeerrors.Section{
 		{
@@ -96,9 +95,15 @@ func (e *ComponentBuildUnavailableError) Sections() []compositeerrors.Section {
 		})
 	}
 
+	var fix string
+	if e.Reason == ComponentBuildUnavailableReasonMissing {
+		fix = fmt.Sprintf("Build %s, wait for the build to become active, then retry the deploy.", name)
+	} else {
+		fix = fmt.Sprintf("Fix what caused the build to fail, then rebuild %s with the latest config. Once the build is active, retry the deploy.", name)
+	}
 	sections = append(sections, compositeerrors.Section{
 		Heading: "How to fix",
-		Body:    fmt.Sprintf("Build %s, wait for the build to become active, then retry this deploy.", name),
+		Body:    fix,
 	})
 
 	return sections

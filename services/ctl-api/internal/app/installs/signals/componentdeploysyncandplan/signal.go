@@ -215,22 +215,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	} else {
 		buildID := s.BuildID
 		if buildID == "" {
-			// Prefer the latest active (deployable) build. Only fall back to
-			// the latest build of any status when no active build exists, so a
-			// newer errored build can't mask an older deployable one.
-			activeBuild, err := activities.AwaitGetLatestActiveComponentBuildByComponentID(ctx, s.ComponentID)
+			componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
 			if err != nil {
-				return fmt.Errorf("unable to get latest active component build: %w", err)
+				return fmt.Errorf("unable to get component build: %w", err)
 			}
-			if activeBuild != nil {
-				buildID = activeBuild.ID
-			} else {
-				componentBuild, err := activities.AwaitGetComponentLatestBuildByComponentID(ctx, s.ComponentID)
-				if err != nil {
-					return fmt.Errorf("unable to get component build: %w", err)
-				}
-				buildID = componentBuild.ID
-			}
+			buildID = componentBuild.ID
 		}
 
 		installDeploy, err = activities.AwaitCreateInstallDeploy(ctx, activities.CreateInstallDeployRequest{
@@ -268,8 +257,11 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	err = s.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
 	if err != nil {
-		s.recordBuildFailureCompositeError(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
+		if s.recordBuildFailureCompositeError(ctx, installDeploy.ID, installDeploy.ComponentBuildID) {
+			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "component build failed")
+		} else {
+			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
+		}
 		return errors.Wrap(err, "failed to poll for build")
 	}
 
@@ -326,14 +318,14 @@ func isTerminalBuildFailure(status app.ComponentBuildStatus) bool {
 }
 
 // recordBuildFailureCompositeError freezes a ComponentBuildUnavailableError onto
-// the deploy when the build is in a terminal failure state, so the dashboard can
-// guide the user to rebuild the component. It is best-effort and never returns
-// an error: a build that is merely un-deployable for another reason (e.g. a
-// polling timeout while still building) is left with its plain status.
-func (s *Signal) recordBuildFailureCompositeError(ctx workflow.Context, deployID, componentBuildID string) {
+// the deploy when the build is in a terminal failure state, and reports whether
+// it did so. It is best-effort: a build that is merely un-deployable for another
+// reason (e.g. a polling timeout while still building) records nothing and
+// returns false, so the caller can leave it with its plain status.
+func (s *Signal) recordBuildFailureCompositeError(ctx workflow.Context, deployID, componentBuildID string) bool {
 	bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, componentBuildID)
 	if err != nil || bld == nil || !isTerminalBuildFailure(bld.Status) {
-		return
+		return false
 	}
 
 	_ = activities.AwaitRecordDeployBuildUnavailableCompositeError(ctx, activities.RecordDeployBuildUnavailableCompositeErrorRequest{
@@ -345,6 +337,7 @@ func (s *Signal) recordBuildFailureCompositeError(ctx workflow.Context, deployID
 		BuildStatus:            string(bld.Status),
 		BuildStatusDescription: bld.StatusDescription,
 	})
+	return true
 }
 
 func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, componentBuildID string) error {
@@ -388,7 +381,7 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 
 		if isTerminalBuildFailure(bld.Status) {
 			l.Error("component build is in a terminal failure state", zap.String("status", string(bld.Status)))
-			return fmt.Errorf("component build is in a %s state", bld.Status)
+			return fmt.Errorf("component build is in %s state", bld.Status)
 		}
 
 		workflow.Sleep(ctx, sleepTimer)
