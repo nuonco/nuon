@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast'
 import { BranchProvider } from '@/providers/branch-provider'
 import { getBranchWorkflowRun, cancelWorkflow } from '@/lib'
 import { useEffect, useState } from 'react'
-import type { TAPIError, TInstallWorkflowStep } from '@/types'
+import type { TAPIError } from '@/types'
 
 function statusTheme(status?: string) {
   if (status === 'success') return 'success'

@@ -160,7 +160,7 @@ function diffRowBg(op?: string) {
 
 // ─── Main Component ────────────────────────────────────────────────
 
-export const WorkflowStepDetail = ({ step, onClose }: IWorkflowStepDetail) => {
+export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDetail) => {
   const metadata = step.status?.metadata || {}
 
   const isCommitStep = step.name?.toLowerCase().includes('commit')
@@ -300,8 +300,6 @@ const CommitStepContent = ({ metadata }: { metadata: Record<string, any> }) => {
   const additions = metadata.additions as number | undefined
   const deletions = metadata.deletions as number | undefined
   const changedFiles = (metadata.changed_files as any[]) || []
-
-  const githubRepoUrl = repo ? `https://github.com/${repo}` : undefined
 
   if (!commitSha) {
     return (

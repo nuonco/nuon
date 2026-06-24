@@ -148,7 +148,7 @@ const DiffSummaryBadges = ({ entry }: { entry: IInstallMetadataEntry }) => {
 const PlanInstallCard = ({
   entry,
   planEntry,
-  orgId,
+  orgId: _orgId,
   isFirst,
 }: {
   entry: IInstallMetadataEntry
