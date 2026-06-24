@@ -13,6 +13,7 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/plan"
@@ -243,18 +244,25 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}()
 
-	err = s.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
-	if err != nil {
-		s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
-		return errors.Wrap(err, "failed to poll for build")
-	}
-
+	// Point the workflow step at this deploy up front so the dashboard can
+	// surface a composite error recorded below even when the build never
+	// becomes deployable.
 	if err := activities.AwaitUpdateInstallWorkflowStepTarget(ctx, activities.UpdateInstallWorkflowStepTargetRequest{
 		StepID:         s.WorkflowStepID,
 		StepTargetID:   installDeploy.ID,
 		StepTargetType: "install_deploys",
 	}); err != nil {
 		return errors.Wrap(err, "unable to update install workflow")
+	}
+
+	err = s.pollForDeployableBuild(ctx, installDeploy.ID, installDeploy.ComponentBuildID)
+	if err != nil {
+		if s.recordBuildFailureCompositeError(ctx, installDeploy.ID, installDeploy.ComponentBuildID) {
+			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusError, "component build failed")
+		} else {
+			s.updateDeployStatusWithoutStatusSync(ctx, installDeploy.ID, app.InstallDeployStatusNoop, "build is not deployable")
+		}
+		return errors.Wrap(err, "failed to poll for build")
 	}
 
 	defer func() {
@@ -302,6 +310,36 @@ func (s *Signal) isBuildDeployable(bld *app.ComponentBuild) bool {
 	return bld.Status == app.ComponentBuildStatusActive
 }
 
+// isTerminalBuildFailure reports whether a build is in a state it cannot
+// recover from, so the deploy should fail fast rather than keep polling.
+func isTerminalBuildFailure(status app.ComponentBuildStatus) bool {
+	return status == app.ComponentBuildStatusError ||
+		status == app.ComponentBuildStatusPolicyFailed
+}
+
+// recordBuildFailureCompositeError freezes a ComponentBuildUnavailableError onto
+// the deploy when the build is in a terminal failure state, and reports whether
+// it did so. It is best-effort: a build that is merely un-deployable for another
+// reason (e.g. a polling timeout while still building) records nothing and
+// returns false, so the caller can leave it with its plain status.
+func (s *Signal) recordBuildFailureCompositeError(ctx workflow.Context, deployID, componentBuildID string) bool {
+	bld, err := activities.AwaitGetComponentBuildByComponentBuildID(ctx, componentBuildID)
+	if err != nil || bld == nil || !isTerminalBuildFailure(bld.Status) {
+		return false
+	}
+
+	_ = activities.AwaitRecordDeployBuildUnavailableCompositeError(ctx, activities.RecordDeployBuildUnavailableCompositeErrorRequest{
+		DeployID:               deployID,
+		Reason:                 deployerrors.ComponentBuildUnavailableReasonFailed,
+		ComponentID:            s.ComponentID,
+		ComponentName:          bld.ComponentName,
+		BuildID:                bld.ID,
+		BuildStatus:            string(bld.Status),
+		BuildStatusDescription: bld.StatusDescription,
+	})
+	return true
+}
+
 func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, componentBuildID string) error {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -341,9 +379,9 @@ func (s *Signal) pollForDeployableBuild(ctx workflow.Context, installDeployId, c
 			return nil
 		}
 
-		if bld.Status == app.ComponentBuildStatusError {
-			l.Error("component build is in an error state")
-			return fmt.Errorf("component build is in an error state")
+		if isTerminalBuildFailure(bld.Status) {
+			l.Error("component build is in a terminal failure state", zap.String("status", string(bld.Status)))
+			return fmt.Errorf("component build is in %s state", bld.Status)
 		}
 
 		workflow.Sleep(ctx, sleepTimer)
