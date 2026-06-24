@@ -1,15 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Toast } from '@/components/surfaces/Toast'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
-import { getAppConfigs, getAppConfigDiff } from '@/lib'
+import { useToast } from '@/hooks/use-toast'
+import { getAppConfigs, getAppConfigDiff, approveWorkflowStep } from '@/lib'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
-import type { TInstallWorkflowStep } from '@/types'
+import type { TInstallWorkflowStep, TAPIError } from '@/types'
 import { useState } from 'react'
 
 function statusTheme(status?: string) {
@@ -157,12 +160,13 @@ function diffRowBg(op?: string) {
 
 // ─── Main Component ────────────────────────────────────────────────
 
-export const WorkflowStepDetail = ({ step, onClose }: IWorkflowStepDetail) => {
+export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDetail) => {
   const metadata = step.status?.metadata || {}
 
   const isCommitStep = step.name?.toLowerCase().includes('commit')
   const isBuildStep = step.name?.toLowerCase().includes('build')
   const isConfigStep = step.name?.toLowerCase().includes('config') && !step.name?.toLowerCase().includes('diff')
+  const isPlanGroupStep = step.name?.toLowerCase().includes('plan install group')
   const isDeployGroupStep = step.name?.toLowerCase().includes('deploy install group')
 
   const isInProgress = step.status?.status === 'in-progress'
@@ -252,11 +256,14 @@ export const WorkflowStepDetail = ({ step, onClose }: IWorkflowStepDetail) => {
         {/* ===== BUILD STEP ===== */}
         {isBuildStep && <BuildStepContent metadata={metadata} status={step.status?.status} />}
 
+        {/* ===== PLAN INSTALL GROUP STEP ===== */}
+        {isPlanGroupStep && <PlanGroupStepContent step={step} metadata={metadata} />}
+
         {/* ===== DEPLOY INSTALL GROUP STEP ===== */}
         {isDeployGroupStep && <DeployGroupStepContent step={step} metadata={metadata} />}
 
         {/* Generic fallback */}
-        {!isCommitStep && !isBuildStep && !isConfigStep && !isDeployGroupStep && step.status?.status_human_description && (
+        {!isCommitStep && !isBuildStep && !isConfigStep && !isPlanGroupStep && !isDeployGroupStep && step.status?.status_human_description && (
           <div className="p-3 bg-cool-grey-100 dark:bg-dark-grey-800 rounded-md">
             <Text variant="base">{step.status.status_human_description}</Text>
           </div>
@@ -293,8 +300,6 @@ const CommitStepContent = ({ metadata }: { metadata: Record<string, any> }) => {
   const additions = metadata.additions as number | undefined
   const deletions = metadata.deletions as number | undefined
   const changedFiles = (metadata.changed_files as any[]) || []
-
-  const githubRepoUrl = repo ? `https://github.com/${repo}` : undefined
 
   if (!commitSha) {
     return (
@@ -755,6 +760,241 @@ const BuildStepContent = ({ metadata, status }: { metadata: Record<string, any>;
   )
 }
 
+// ─── PLAN GROUP STEP ──────────────────────────────────────────────
+
+const PlanGroupStepContent = ({ step, metadata }: { step: TInstallWorkflowStep; metadata: Record<string, any> }) => {
+  const { org } = useOrg()
+  const orgId = org?.id ?? ''
+  const { addToast } = useToast()
+  const queryClient = useQueryClient()
+
+  const approvalId = step.approval?.id
+  const hasApproval = step.execution_type === 'approval' && !!approvalId
+  const hasResponse = !!step.approval?.response
+  const isAwaiting = step.status?.status === 'approval-awaiting'
+
+  const { data: plan } = useQuery({
+    queryKey: ['approval-plan', orgId, step.id, approvalId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/orgs/${orgId}/workflows/${step.install_workflow_id}/steps/${step.id}/approvals/${approvalId}/contents`
+      )
+      if (!res.ok) throw new Error(`Failed to fetch approval contents: ${res.status}`)
+      return res.json()
+    },
+    enabled: !!orgId && !!step.id && !!step.install_workflow_id && !!approvalId,
+  })
+
+  const { mutate: respond, isPending: isResponding } = useMutation({
+    mutationFn: (responseType: 'approve' | 'deny' | 'deny-skip-current') =>
+      approveWorkflowStep({
+        orgId,
+        workflowId: step.install_workflow_id,
+        workflowStepId: step.id,
+        approvalId: approvalId!,
+        body: { response_type: responseType, note: '' },
+      }),
+    onSuccess: () => {
+      addToast(
+        <Toast heading="Plan approved" theme="success">
+          <Text>Approved install group plan.</Text>
+        </Toast>
+      )
+      queryClient.invalidateQueries({ queryKey: ['branch-run'] })
+    },
+    onError: (err: TAPIError) => {
+      addToast(
+        <Toast heading="Approval failed" theme="error">
+          <Text>{err?.error || 'Unable to respond to approval.'}</Text>
+        </Toast>
+      )
+    },
+  })
+
+  const installs = (plan?.installs || metadata.installs || []) as any[]
+  const groupName = plan?.install_group || metadata.install_group_name || step.name?.replace(/^plan install group:\s*/i, '')
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon variant="ListChecksIcon" size={16} className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0" />
+          <span className="text-[13px] text-cool-grey-600 dark:text-cool-grey-300">
+            install group:{' '}
+            <span className="font-semibold text-cool-grey-900 dark:text-white">{groupName}</span>
+          </span>
+          <span className="text-[12px] text-cool-grey-400 dark:text-cool-grey-500">
+            {installs.length} {installs.length === 1 ? 'install' : 'installs'}
+          </span>
+        </div>
+      </div>
+
+      {hasResponse && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-[10px] border border-green-300 dark:border-green-700/40 bg-green-50 dark:bg-green-950/30">
+          <Icon variant="CheckCircleIcon" size={18} className="text-green-600 dark:text-green-400 shrink-0" />
+          <span className="text-[13px] text-green-700 dark:text-green-300">
+            Plan {step.approval?.response?.response_type === 'approve' ? 'approved' : step.approval?.response?.response_type || 'responded'}
+          </span>
+        </div>
+      )}
+
+      {installs.length > 0 && (
+        <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-[10px] divide-y divide-cool-grey-100 dark:divide-dark-grey-800 overflow-hidden">
+          {installs.map((inst: any, i: number) => (
+            <PlanInstallRow key={inst.install_id || i} install={inst} orgId={orgId} />
+          ))}
+        </div>
+      )}
+
+      {installs.length === 0 && (
+        <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
+          <Text variant="subtext" theme="neutral">
+            {step.status?.status === 'in-progress' ? 'Computing install diffs...' : 'Waiting to compute plan...'}
+          </Text>
+        </div>
+      )}
+
+      {hasApproval && isAwaiting && !hasResponse && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-[10px] border border-yellow-300 dark:border-yellow-700/40 bg-yellow-50 dark:bg-yellow-950/30">
+          <Icon variant="WarningCircleIcon" size={18} className="text-yellow-600 dark:text-yellow-400 shrink-0" />
+          <span className="text-[13px] text-yellow-700 dark:text-yellow-300 flex-1">
+            Review the changes above and approve to proceed with deployment.
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => respond('deny-skip-current')}
+              disabled={isResponding}
+            >
+              Skip
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => respond('approve')}
+              disabled={isResponding}
+            >
+              {isResponding ? 'Approving...' : 'Approve'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const PlanInstallRow = ({ install, orgId }: { install: any; orgId: string }) => {
+  const [expanded, setExpanded] = useState(false)
+  const diff = install.diff
+
+  const added = Array.isArray(diff?.added) ? diff.added : []
+  const changed = Array.isArray(diff?.changed) ? diff.changed : []
+  const removed = Array.isArray(diff?.removed) ? diff.removed : []
+
+  const addedCount = added.length || (install.added ?? 0)
+  const changedCount = changed.length || (install.changed ?? 0)
+  const removedCount = removed.length || (install.removed ?? 0)
+  const sandboxChanged = diff?.sandbox_changed || install.sandbox_changed
+  const stackChanged = diff?.stack_changed || install.stack_changed
+  const hasChanges = addedCount > 0 || changedCount > 0 || removedCount > 0 || sandboxChanged || stackChanged
+  const hasDetailedDiff = added.length > 0 || changed.length > 0 || removed.length > 0
+
+  const installLabels = install.install_labels as Record<string, string> | undefined
+  const labelEntries = installLabels ? Object.entries(installLabels) : []
+
+  return (
+    <div>
+      <button
+        className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-cool-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <svg
+          width="12" height="12" viewBox="0 0 12 12" fill="none"
+          className={`text-cool-grey-400 shrink-0 transition-transform ${expanded ? 'rotate-90' : ''}`}
+        >
+          <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+
+        <InstallStatusIcon status={install.status} />
+
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[13.5px] font-semibold text-cool-grey-900 dark:text-white truncate">
+            {install.install_name || install.install_id}
+          </span>
+          {install.install_id && (
+            <a
+              href={`/${orgId}/installs/${install.install_id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-cool-grey-400 hover:text-primary-500 dark:text-cool-grey-500 dark:hover:text-primary-400 shrink-0"
+            >
+              <Icon variant="ArrowSquareOutIcon" size={14} />
+            </a>
+          )}
+          {labelEntries.map(([k, v]) => (
+            <span key={k} className="inline-flex items-center px-1.5 py-0.5 rounded border border-cool-grey-200 dark:border-dark-grey-600 bg-cool-grey-50 dark:bg-dark-grey-800 font-mono text-[10.5px] text-cool-grey-500 dark:text-cool-grey-400 shrink-0">
+              {k}={v}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          {addedCount > 0 && (
+            <span className="text-[12px] font-semibold text-green-600 dark:text-green-400">+{addedCount}</span>
+          )}
+          {changedCount > 0 && (
+            <span className="text-[12px] font-semibold text-yellow-600 dark:text-yellow-400">~{changedCount}</span>
+          )}
+          {removedCount > 0 && (
+            <span className="text-[12px] font-semibold text-red-600 dark:text-red-400">-{removedCount}</span>
+          )}
+          {sandboxChanged && (
+            <Badge theme="warn" size="sm">sandbox</Badge>
+          )}
+          {stackChanged && (
+            <Badge theme="warn" size="sm">stack</Badge>
+          )}
+          {!hasChanges && (
+            <span className="text-[12px] text-cool-grey-400 dark:text-cool-grey-500">no changes</span>
+          )}
+        </div>
+      </button>
+
+      {expanded && hasChanges && hasDetailedDiff && (
+        <div className="px-4 pb-3 pl-[52px] space-y-1">
+          {added.map((c: any) => (
+            <div key={c.component_id} className="flex items-center gap-2">
+              <DiffMarker op="add" />
+              <span className="font-mono text-[12.5px] text-cool-grey-700 dark:text-cool-grey-200">{c.component_name || c.component_id}</span>
+              {c.component_type && (
+                <span className="font-mono text-[11px] text-cool-grey-400 dark:text-cool-grey-500">{c.component_type}</span>
+              )}
+            </div>
+          ))}
+          {changed.map((c: any) => (
+            <div key={c.component_id} className="flex items-center gap-2">
+              <DiffMarker op="change" />
+              <span className="font-mono text-[12.5px] text-cool-grey-700 dark:text-cool-grey-200">{c.component_name || c.component_id}</span>
+              {c.component_type && (
+                <span className="font-mono text-[11px] text-cool-grey-400 dark:text-cool-grey-500">{c.component_type}</span>
+              )}
+            </div>
+          ))}
+          {removed.map((c: any) => (
+            <div key={c.component_id} className="flex items-center gap-2">
+              <DiffMarker op="remove" />
+              <span className="font-mono text-[12.5px] text-cool-grey-700 dark:text-cool-grey-200">{c.component_name || c.component_id}</span>
+              {c.component_type && (
+                <span className="font-mono text-[11px] text-cool-grey-400 dark:text-cool-grey-500">{c.component_type}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── DEPLOY GROUP STEP ─────────────────────────────────────────────
 
 const DeployGroupStepContent = ({ step, metadata }: { step: TInstallWorkflowStep; metadata: Record<string, any> }) => {
@@ -822,9 +1062,8 @@ const DeployGroupStepContent = ({ step, metadata }: { step: TInstallWorkflowStep
             return (
               <div
                 key={inst.install_id || i}
-                className={`px-4 py-3 transition-colors ${
-                  isInstInProgress ? 'bg-blue-50/60 dark:bg-[rgba(63,116,224,0.06)]' : ''
-                } ${isPending ? 'opacity-[0.62]' : ''}`}
+                className={`px-4 py-3 transition-colors ${isInstInProgress ? 'bg-blue-50/60 dark:bg-[rgba(63,116,224,0.06)]' : ''
+                  } ${isPending ? 'opacity-[0.62]' : ''}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">

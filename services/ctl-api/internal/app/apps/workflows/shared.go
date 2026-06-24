@@ -40,6 +40,13 @@ func WithTargetQueueID(queueID string) WorkflowStepOptions {
 	}
 }
 
+// WithExecutionType overrides the default execution type for a step.
+func WithExecutionType(t app.WorkflowStepExecutionType) WorkflowStepOptions {
+	return func(s *app.WorkflowStep) {
+		s.ExecutionType = t
+	}
+}
+
 // stepGroup tracks the current group index for workflow steps
 type stepGroup struct {
 	idx          int

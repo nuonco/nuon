@@ -10,6 +10,7 @@ import (
 type CreateAppBranchRunRequest struct {
 	AppBranchID       string
 	AppBranchConfigID string
+	AppConfigID       string
 	Force             bool
 	PlanOnly          bool
 	EventType         string
@@ -36,6 +37,7 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 	run := &app.AppBranchRun{
 		AppBranchID:       req.AppBranchID,
 		AppBranchConfigID: req.AppBranchConfigID,
+		AppConfigID:       req.AppConfigID,
 		Force:             req.Force,
 		PlanOnly:          req.PlanOnly,
 		EventType:         req.EventType,
