@@ -44,7 +44,9 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 		// load app secrets for deploys
 		Preload("App.AppSecrets").
 		Preload("AppRunnerConfig").
-		Preload("InstallConfig").
+		Preload("InstallConfig", func(db *gorm.DB) *gorm.DB {
+			return db.Order("install_configs.created_at DESC").Limit(1)
+		}).
 
 		// load connected github
 		Preload("AppSandboxConfig.ConnectedGithubVCSConfig").

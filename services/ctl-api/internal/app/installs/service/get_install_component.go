@@ -68,5 +68,9 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 	}
 	installCmp.DriftedObject = *driftedObj
 
+	if err := s.populateComponentEnabled(ctx, installID, []*app.InstallComponent{&installCmp}); err != nil {
+		return nil, err
+	}
+
 	return &installCmp, nil
 }

@@ -193,6 +193,7 @@ func buildComponentOverrideInputs(cfg *config.AppConfig, inputCfg *app.AppInputC
 			Required:         false,
 			Sensitive:        false,
 			Type:             app.AppInputType(syn.Kind.InputType()),
+			Default:          syn.Default,
 			Index:            syn.Index,
 			Source:           app.AppInputSourceVendor,
 		})
@@ -208,6 +209,9 @@ func componentOverrideInputCopy(syn config.SyntheticOverrideInput) (description,
 	case config.ComponentOverrideKindTFVars:
 		return fmt.Sprintf("Install-level Terraform vars override for component %q (.tfvars, highest precedence).", syn.Component),
 			fmt.Sprintf("%s tf vars", syn.Component)
+	case config.ComponentOverrideKindEnabled:
+		return fmt.Sprintf("Whether component %q is deployed on this install. Set to false to tear it down, true to deploy it.", syn.Component),
+			fmt.Sprintf("%s enabled", syn.Component)
 	default:
 		return fmt.Sprintf("Install-level override for component %q.", syn.Component),
 			fmt.Sprintf("%s override", syn.Component)
