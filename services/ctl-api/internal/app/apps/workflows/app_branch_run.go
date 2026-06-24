@@ -11,6 +11,7 @@ import (
 	appconfig "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
@@ -37,41 +38,69 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		return nil, errors.New("config_id not found in workflow metadata")
 	}
 
+	appConfigID := generics.FromPtrStr(flw.Metadata["app_config_id"])
+	skipBuilds := generics.FromPtrStr(flw.Metadata["skip_builds"]) == "true"
+
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
-	// Step 1: Fetch commit from VCS and store on run
-	sg.nextGroup()
-	step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit", pgtype.Hstore{}, &fetchcommit.Signal{
-		RunID:       runID,
-		AppBranchID: appBranchID,
-	}, WithSkippable(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create fetch commit step")
-	}
-	steps = append(steps, step)
+	if appConfigID == "" {
+		// Normal flow: fetch commit and parse config from VCS
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit", pgtype.Hstore{}, &fetchcommit.Signal{
+			RunID:       runID,
+			AppBranchID: appBranchID,
+		}, WithSkippable(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create fetch commit step")
+		}
+		steps = append(steps, step)
 
-	// Step 2: Clone the repo and parse intermediate config
-	sg.nextGroup()
-	step, err = sg.appBranchSignalStep(ctx, appBranchID, "fetch app config", pgtype.Hstore{}, &appconfig.Signal{
-		AppBranchID: appBranchID,
-		RunID:       runID,
-	}, WithSkippable(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create app config step")
+		sg.nextGroup()
+		step, err = sg.appBranchSignalStep(ctx, appBranchID, "fetch app config", pgtype.Hstore{}, &appconfig.Signal{
+			AppBranchID: appBranchID,
+			RunID:       runID,
+		}, WithSkippable(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create app config step")
+		}
+		steps = append(steps, step)
+	} else {
+		// Pre-existing app config: skip VCS fetch and config parse
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit (skipped)", pgtype.Hstore{}, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create skipped fetch commit step")
+		}
+		steps = append(steps, step)
+
+		sg.nextGroup()
+		step, err = sg.appBranchSignalStep(ctx, appBranchID, "fetch app config (skipped)", pgtype.Hstore{}, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create skipped app config step")
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	// Step 3: Build all components and sandbox
-	sg.nextGroup()
-	step, err = sg.appBranchSignalStep(ctx, appBranchID, "building components and sandbox", pgtype.Hstore{}, &builds.Signal{
-		AppBranchID: appBranchID,
-		RunID:       runID,
-	}, WithSkippable(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create builds step")
+	if appConfigID != "" && skipBuilds {
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "building components and sandbox (skipped)", pgtype.Hstore{}, nil)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create skipped builds step")
+		}
+		steps = append(steps, step)
+	} else {
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "building components and sandbox", pgtype.Hstore{}, &builds.Signal{
+			AppBranchID: appBranchID,
+			RunID:       runID,
+		}, WithSkippable(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create builds step")
+		}
+		steps = append(steps, step)
 	}
-	steps = append(steps, step)
 
 	// Step 4: Deploy to install groups in order
 	// Fetch install groups for this config, ordered by the order field
@@ -97,18 +126,29 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		}
 	}
 
-	// Create sequential steps for each install group
+	// Create plan + deploy steps for each install group
 	for _, group := range installGroups {
 		sg.nextGroup()
-		step, err = sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &updateinstallgroup.Signal{
+		planStep, err := sg.appBranchSignalStep(ctx, appBranchID, "plan install group: "+group.Name, pgtype.Hstore{}, &planinstallgroup.Signal{
 			InstallGroupID: group.ID,
 			AppBranchID:    appBranchID,
 			RunID:          runID,
-		}, WithSkippable(false))
+		}, WithExecutionType(app.WorkflowStepExecutionTypeApproval))
+		if err != nil {
+			return nil, errors.Wrapf(err, "unable to create plan step for group %s", group.Name)
+		}
+		steps = append(steps, planStep)
+
+		sg.nextGroup()
+		deployStep, err := sg.appBranchSignalStep(ctx, appBranchID, "deploy install group: "+group.Name, pgtype.Hstore{}, &updateinstallgroup.Signal{
+			InstallGroupID: group.ID,
+			AppBranchID:    appBranchID,
+			RunID:          runID,
+		}, WithExecutionType(app.WorkflowStepExecutionTypeApproval), WithSkippable(true))
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create deploy step for group %s", group.Name)
 		}
-		steps = append(steps, step)
+		steps = append(steps, deployStep)
 	}
 
 	return sg.Result(steps), nil

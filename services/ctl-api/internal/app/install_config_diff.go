@@ -3,6 +3,7 @@ package app
 type ComponentDiffEntry struct {
 	ComponentID   string `json:"component_id"`
 	ComponentName string `json:"component_name,omitempty"`
+	ComponentType string `json:"component_type,omitempty"`
 	OldChecksum   string `json:"old_checksum,omitempty"`
 	NewChecksum   string `json:"new_checksum,omitempty"`
 }

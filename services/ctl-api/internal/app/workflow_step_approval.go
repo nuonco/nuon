@@ -24,6 +24,7 @@ const (
 	KubernetesManifestApprovalType WorkflowStepApprovalType = "kubernetes_manifest_approval"
 	HelmApprovalApprovalType       WorkflowStepApprovalType = "helm_approval"
 	PulumiApprovalType             WorkflowStepApprovalType = "pulumi_plan"
+	AppBranchPlanApprovalType      WorkflowStepApprovalType = "app_branch_plan"
 )
 
 type WorkflowStepApproval struct {

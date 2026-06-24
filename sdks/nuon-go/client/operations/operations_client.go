@@ -304,6 +304,8 @@ type ClientService interface {
 
 	DeleteApp(params *DeleteAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppOK, error)
 
+	DeleteAppBranch(params *DeleteAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppBranchOK, error)
+
 	DeleteAppComponent(params *DeleteAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppComponentOK, error)
 
 	DeleteAppSecret(params *DeleteAppSecretParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppSecretOK, error)
@@ -5289,6 +5291,52 @@ func (a *Client) DeleteApp(params *DeleteAppParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteApp: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteAppBranch deletes an app branch
+
+Deletes an app branch and all associated configs, runs, and install group runs.
+*/
+func (a *Client) DeleteAppBranch(params *DeleteAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteAppBranch",
+		Method:             "DELETE",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

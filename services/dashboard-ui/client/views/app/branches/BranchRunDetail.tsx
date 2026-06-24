@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast'
 import { BranchProvider } from '@/providers/branch-provider'
 import { getBranchWorkflowRun, cancelWorkflow } from '@/lib'
 import { useEffect, useState } from 'react'
-import type { TAPIError, TInstallWorkflowStep } from '@/types'
+import type { TAPIError } from '@/types'
 
 function statusTheme(status?: string) {
   if (status === 'success') return 'success'
@@ -38,7 +38,9 @@ const BranchRunDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
   const runId = params.runId as string
-  const [selectedStep, setSelectedStep] = useState<TInstallWorkflowStep | null>(null)
+  const [searchParams] = useSearchParams()
+  const targetStepId = searchParams.get('target')
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(targetStepId)
 
   const { addToast } = useToast()
   const queryClient = useQueryClient()
@@ -72,11 +74,13 @@ const BranchRunDetailContent = () => {
   const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
 
   useEffect(() => {
-    if (steps.length > 0 && !selectedStep) {
+    if (steps.length > 0 && !selectedStepId) {
       const inProgressStep = steps.find((step) => step.status?.status === 'in-progress')
-      setSelectedStep(inProgressStep || steps[0])
+      setSelectedStepId((inProgressStep || steps[0])?.id ?? null)
     }
-  }, [steps, selectedStep])
+  }, [steps, selectedStepId])
+
+  const selectedStep = selectedStepId ? steps.find((s) => s.id === selectedStepId) ?? null : null
 
   if (isLoading || !run) {
     return (
@@ -90,7 +94,7 @@ const BranchRunDetailContent = () => {
 
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
-  const isActive = ['pending', 'queued', 'in-progress'].includes(status)
+  const isActive = ['pending', 'queued', 'in-progress', 'approval-awaiting'].includes(status)
 
   return (
     <PageSection className="max-w-full space-y-4">
@@ -197,7 +201,7 @@ const BranchRunDetailContent = () => {
           <WorkflowStepsPipeline
             steps={steps}
             selectedStepId={selectedStep?.id}
-            onSelectStep={setSelectedStep}
+            onSelectStep={(step) => setSelectedStepId(step?.id ?? null)}
           />
         </div>
       </div>
@@ -211,7 +215,7 @@ const BranchRunDetailContent = () => {
           </div>
           <WorkflowStepDetail
             step={selectedStep}
-            onClose={() => setSelectedStep(null)}
+            onClose={() => setSelectedStepId(null)}
           />
         </>
       )}

@@ -7,6 +7,7 @@ import { Menu } from '@/components/common/Menu'
 interface IBranchDetailActions {
   editButton: ReactNode
   manageInstallsButton: ReactNode
+  deleteButton: ReactNode
   hasConfig: boolean
   isTriggerPending: boolean
   onTriggerRun: () => void
@@ -16,6 +17,7 @@ interface IBranchDetailActions {
 export const BranchDetailActions = ({
   editButton,
   manageInstallsButton,
+  deleteButton,
   hasConfig,
   isTriggerPending,
   onTriggerRun,
@@ -56,6 +58,7 @@ export const BranchDetailActions = ({
               <Icon variant="EyeIcon" size={16} />
               Preview run (plan only)
             </Button>
+            {deleteButton}
           </Menu>
         </Dropdown>
       </div>
