@@ -38,6 +38,9 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 	// checksum
 	Checksum string `json:"checksum,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -65,6 +68,9 @@ type ServiceCreateExternalImageComponentConfigRequest struct {
 
 	// tag
 	Tag string `json:"tag,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// UpdatePolicy is an optional Masterminds-compatible semver constraint
 	// (e.g. "~1.25.0", "^2"). When set, the runner lists tags from the

@@ -34,6 +34,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -68,6 +71,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 }
 
 // Validate validates this service create kubernetes manifest component config request

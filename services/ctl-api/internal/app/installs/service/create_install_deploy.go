@@ -55,11 +55,37 @@ func (c *CreateInstallComponentDeployRequest) Validate(v *validator.Validate) er
 func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
-	_, er := s.helpers.GetComponent(ctx, componentID)
+	component, er := s.helpers.GetComponent(ctx, componentID)
 	if er != nil {
 		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, er))
 		return
 	}
+
+	if len(component.ComponentConfigs) > 0 {
+		latestConfig := &component.ComponentConfigs[0]
+		if latestConfig.IsToggleable() {
+			installConfig, err := s.helpers.GetLatestInstallConfig(ctx, installID)
+			if err != nil {
+				ctx.Error(fmt.Errorf("unable to get install config: %w", err))
+				return
+			}
+			if installConfig != nil && !installConfig.IsComponentEnabled(componentID, latestConfig) {
+				ctx.Error(stderr.ErrUser{
+					Err:         fmt.Errorf("component is disabled"),
+					Description: "This component is disabled on this install. Enable it before deploying.",
+				})
+				return
+			}
+			if installConfig == nil && !latestConfig.GetDefaultEnabled() {
+				ctx.Error(stderr.ErrUser{
+					Err:         fmt.Errorf("component is disabled by default"),
+					Description: "This component is disabled by default. Enable it before deploying.",
+				})
+				return
+			}
+		}
+	}
+
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))

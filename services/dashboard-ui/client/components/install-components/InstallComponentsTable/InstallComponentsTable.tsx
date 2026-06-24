@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { LabelBadge } from '@/components/common/LabelBadge'
@@ -13,7 +14,7 @@ import { Tooltip } from '@/components/common/Tooltip'
 import { ComponentType } from '@/components/components/ComponentType'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { QuickComponentManagementDropdown } from '@/components/install-components/management/QuickComponentManagementDropdown'
-import type { TInstallComponent } from '@/types'
+import type { TComponentConfig, TInstallComponent } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 
 type TComponentDeps = {
@@ -26,6 +27,7 @@ export type InstallComponentRow = {
   componentId: string
   componentName: string
   componentType: ReactNode
+  toggleStatus: ReactNode
   deployStatus: ReactNode
   driftStatus: ReactNode
   href: string
@@ -38,10 +40,33 @@ export function parseInstallComponentSummaryToTableData(
   components: TInstallComponent[],
   deps: TComponentDeps[],
   orgId: string,
-  installId: string
+  installId: string,
+  configConnections?: TComponentConfig[],
+  componentToggles?: { [key: string]: boolean }
 ): InstallComponentRow[] {
   return components.map((component) => {
     const depIndex = deps?.findIndex((dep) => dep?.id === component?.id)
+
+    const configConnection = configConnections?.find(
+      (c) => c?.component_id === component?.component_id
+    )
+    const isToggleable = configConnection?.toggleable === true
+
+    let toggleStatusNode: ReactNode = <Icon variant="MinusIcon" />
+    if (isToggleable) {
+      const componentId = component?.component_id
+      let isDisabled = false
+      if (componentToggles && componentId && componentId in componentToggles) {
+        isDisabled = !componentToggles[componentId]
+      } else {
+        isDisabled = !configConnection?.default_enabled
+      }
+      toggleStatusNode = (
+        <Badge size="sm" theme={isDisabled ? 'neutral' : 'success'}>
+          {isDisabled ? 'Disabled' : 'Enabled'}
+        </Badge>
+      )
+    }
 
     return {
       componentId: component.component_id,
@@ -53,6 +78,7 @@ export function parseInstallComponentSummaryToTableData(
           colorVariant="color"
         />
       ),
+      toggleStatus: toggleStatusNode,
       deployStatus: (
         <Tooltip
           position="top"
@@ -165,6 +191,14 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     enableSorting: false,
     accessorKey: 'driftStatus',
     header: 'Drifted',
+    cell: (info) => (
+      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+    ),
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'toggleStatus',
+    header: 'Toggle',
     cell: (info) => (
       <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
     ),

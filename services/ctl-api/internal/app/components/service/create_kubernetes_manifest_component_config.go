@@ -31,6 +31,8 @@ type CreateKubernetesManifestComponentConfigRequest struct {
 	DeployTimeout                string  `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int    `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool   `json:"skip_noops,omitempty"`
+	Toggleable                   *bool   `json:"toggleable,omitempty"`
+	DefaultEnabled               *bool   `json:"default_enabled,omitempty"`
 	AutoApproveOnPoliciesPassing *bool   `json:"auto_approve_on_policies_passing,omitempty"`
 	DriftSchedule                *string `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
 
@@ -254,6 +256,8 @@ func (s *service) createKubernetesManifestComponentConfig(
 		DeployTimeout:                     req.DeployTimeout,
 		MaxAutoRetries:                    req.MaxAutoRetries,
 		SkipNoops:                         req.SkipNoops,
+		Toggleable:                        req.Toggleable,
+		DefaultEnabled:                    req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing:      req.AutoApproveOnPoliciesPassing,
 		OperationRoles:                    operationRoles,
 	}
