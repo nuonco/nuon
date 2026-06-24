@@ -341,21 +341,37 @@ func (a *Activities) prepareKubernetesManifestPolicyInputs(planContentsJSON []by
 		return nil, nil, errors.Wrap(err, "failed to unmarshal kubernetes manifest plan contents")
 	}
 
-	return a.yamlToAdmissionReviewInputs(planContents.DryRunOutput, planContentsJSON)
+	return a.yamlToAdmissionReviewInputs(planContents.DryRunOutput, planOpToAdmissionOperation(string(planContents.Op)), planContentsJSON)
 }
 
 func (a *Activities) prepareHelmPolicyInputs(planContentsJSON []byte) ([][]byte, []string, error) {
 	var planContents struct {
 		TemplateOutput string `json:"template_output"`
+		Op             string `json:"op"`
 	}
 	if err := json.Unmarshal(planContentsJSON, &planContents); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to unmarshal helm plan contents")
 	}
 
-	return a.yamlToAdmissionReviewInputs(planContents.TemplateOutput, planContentsJSON)
+	return a.yamlToAdmissionReviewInputs(planContents.TemplateOutput, planOpToAdmissionOperation(planContents.Op), planContentsJSON)
 }
 
-func (a *Activities) yamlToAdmissionReviewInputs(yamlManifests string, fallback []byte) ([][]byte, []string, error) {
+// planOpToAdmissionOperation maps a helm/kubernetes plan op to the admission
+// CREATE/UPDATE/DELETE vocabulary. Unknown ops return "" (omitted from input).
+func planOpToAdmissionOperation(op string) string {
+	switch op {
+	case "uninstall", "delete":
+		return "DELETE"
+	case "upgrade", "apply":
+		return "UPDATE"
+	case "install":
+		return "CREATE"
+	default:
+		return ""
+	}
+}
+
+func (a *Activities) yamlToAdmissionReviewInputs(yamlManifests string, operation string, fallback []byte) ([][]byte, []string, error) {
 	admissionReviews, err := plan.ParseMultiDocYAMLToAdmissionReviews(yamlManifests)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse manifests to admission reviews")
@@ -368,6 +384,7 @@ func (a *Activities) yamlToAdmissionReviewInputs(yamlManifests string, fallback 
 	inputs := make([][]byte, len(admissionReviews))
 	identities := make([]string, len(admissionReviews))
 	for i, review := range admissionReviews {
+		review.Review.Operation = operation
 		inputJSON, err := json.Marshal(review)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "failed to marshal admission review %d", i)
