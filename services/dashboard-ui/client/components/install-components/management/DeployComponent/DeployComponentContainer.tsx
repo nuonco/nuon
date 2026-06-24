@@ -97,11 +97,12 @@ export const DeployComponentModalContainer = ({
       installId={install.id}
       isPending={isPending}
       error={error as any}
-      onSubmit={({ buildId, deployDependents, role }) => {
+      onSubmit={({ buildId, deployDependents, deployDependencies, role }) => {
         execute({
           body: {
             build_id: buildId,
             deploy_dependents: deployDependents,
+            deploy_dependencies: deployDependencies,
             plan_only: false,
             ...(role && { role }),
           },
