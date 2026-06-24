@@ -8,6 +8,7 @@ import (
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -26,8 +27,9 @@ type RunnerJobPlan struct {
 
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
 
-	PlanJSON      string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
-	CompositePlan plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
+	PlanJSON          string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
+	CompositePlan     plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
+	CompositePlanBlob *blobstore.Blob         `json:"-" temporaljson:"-"`
 }
 
 func (r *RunnerJobPlan) Indexes(db *gorm.DB) []migrations.Index {
@@ -52,6 +54,10 @@ func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {
 
 	if r.OrgID == "" {
 		r.OrgID = orgIDFromContext(tx.Statement.Context)
+	}
+
+	if err := r.CompositePlanBlob.BeforeCreate(tx); err != nil {
+		return err
 	}
 
 	return nil

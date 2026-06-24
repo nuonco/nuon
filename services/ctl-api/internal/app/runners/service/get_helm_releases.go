@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/helm"
 )
 
@@ -48,9 +49,16 @@ func (s *service) GetHelmReleases(ctx *gin.Context) {
 		return
 	}
 
+	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
 	releases := make([]helm.Release, 0, len(helmReleases))
 	for _, helmRelease := range helmReleases {
-		release, err := helm.DecodeRelease(helmRelease.Body)
+		body, err := helmRelease.Body.Get(dbCtx)
+		if err != nil {
+			ctx.Error(fmt.Errorf("unable to load helm release body: %w", err))
+			return
+		}
+
+		release, err := helm.DecodeRelease(body)
 		if err != nil {
 			ctx.Error(fmt.Errorf("unable to decode helm release: %w", err))
 			return
