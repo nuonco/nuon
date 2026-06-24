@@ -67,7 +67,7 @@ func (s *service) ResendOrgInvite(ctx *gin.Context) {
 	if err := s.enqueueOrgSignal(ctx, queueID, &orginvitecreated.Signal{
 		OrgID:    org.ID,
 		InviteID: invite.ID,
-		LoginURL: fmt.Sprintf("%s/api/auth/login", s.cfg.AppURL),
+		LoginURL: s.cfg.AppURL,
 	}, org.ID); err != nil {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
