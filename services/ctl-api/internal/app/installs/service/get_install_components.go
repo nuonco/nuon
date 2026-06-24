@@ -203,12 +203,16 @@ func (s *service) populateComponentEnabled(ctx context.Context, installID string
 		return fmt.Errorf("unable to get install inputs: %w", err)
 	}
 
+	resolver := app.NewComponentEnablementResolver(cccByComp, enabledInputs)
 	for _, comp := range comps {
 		ccc := cccByComp[comp.ComponentID]
 		if ccc == nil || !ccc.IsToggleable() {
 			continue
 		}
-		enabled := app.ComponentEnabledFromInputs(enabledInputs, ccc)
+		// Report effective-enabled (own toggle AND every dependency enabled) so
+		// the displayed flag matches the deploy/teardown decision: a component
+		// whose dependency is disabled is torn down and must read as disabled.
+		enabled := resolver.EffectiveEnabled(comp.ComponentID)
 		comp.Enabled = &enabled
 	}
 
