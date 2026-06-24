@@ -73,7 +73,7 @@ type Component struct {
 	// KubernetesContext is the name of a kubernetes_context this component
 	// targets. Empty means fall back to the implicit sandbox default (when
 	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
-	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty"`
+	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`
