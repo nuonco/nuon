@@ -13,6 +13,7 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { WorkflowStepsPipeline } from '@/components/branches/WorkflowStepsPipeline'
 import { WorkflowStepDetail } from '@/components/branches/WorkflowStepDetail'
+import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
@@ -81,6 +82,9 @@ const BranchRunDetailContent = () => {
   }, [steps, selectedStepId])
 
   const selectedStep = selectedStepId ? steps.find((s) => s.id === selectedStepId) ?? null : null
+
+  const configStep = steps.find((s) => s.name?.toLowerCase().includes('config') && !s.name?.toLowerCase().includes('diff'))
+  const appConfigId = configStep?.status?.metadata?.app_config_id as string | undefined
 
   if (isLoading || !run) {
     return (
@@ -205,6 +209,20 @@ const BranchRunDetailContent = () => {
           />
         </div>
       </div>
+
+      {/* ── Config changes card ── */}
+      {appConfigId && (
+        <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm">
+          <div className="px-5 py-4 border-b border-cool-grey-100 dark:border-dark-grey-800">
+            <Text variant="h3" weight="strong">
+              Config changes
+            </Text>
+          </div>
+          <div className="p-5">
+            <AppConfigDiff appConfigId={appConfigId} />
+          </div>
+        </div>
+      )}
 
       {/* ── Step detail card ── */}
       {selectedStep && (
