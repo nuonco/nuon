@@ -1,4 +1,4 @@
-package updateinstallgroup
+package planinstallgroup
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
-const SignalType signal.SignalType = "app-branch-update-install-group"
+const SignalType signal.SignalType = "app-branch-plan-install-group"
 
 type Signal struct {
 	InstallGroupID string `json:"install_group_id" validate:"required"`
@@ -20,13 +20,10 @@ type Signal struct {
 
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
-
-	childWorkflowIDs []string
 }
 
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
-var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID

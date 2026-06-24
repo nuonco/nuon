@@ -31,7 +31,7 @@ func (m model) workflowIsCancellable() bool {
 		models.AppStatusInDashProgress,
 		models.AppStatusRetrying,
 		models.AppStatusApproved,
-		// models.AppStatus
+		models.AppStatusApprovalDashAwaiting,
 	}
 	return generics.SliceContains(m.workflow.Status.Status, cancellableStatuses)
 }

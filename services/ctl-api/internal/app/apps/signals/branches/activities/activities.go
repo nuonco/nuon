@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/authz"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
@@ -38,6 +39,7 @@ type Params struct {
 	RunbooksHelpers  *runbookshelpers.Helpers
 	InstallHelpers   *installhelpers.Helpers
 	QueueClient      *queueclient.Client
+	FlowsClient      *flowclient.Client
 }
 
 type Activities struct {
@@ -56,6 +58,7 @@ type Activities struct {
 	runbooksHelpers  *runbookshelpers.Helpers
 	installHelpers   *installhelpers.Helpers
 	queueClient      *queueclient.Client
+	flowsClient      *flowclient.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -75,5 +78,6 @@ func New(params Params) (*Activities, error) {
 		runbooksHelpers:  params.RunbooksHelpers,
 		installHelpers:   params.InstallHelpers,
 		queueClient:      params.QueueClient,
+		flowsClient:      params.FlowsClient,
 	}, nil
 }

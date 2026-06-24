@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/diff"
@@ -92,10 +93,10 @@ func (s *service) loadIntermediateConfig(ctx *gin.Context, orgID, appID, configI
 	}
 
 	if appCfg.IntermediateConfig == nil {
-		return nil, fmt.Errorf("config %s has no intermediate config", configID)
+		return nil, gorm.ErrRecordNotFound
 	}
 
-	intermediateJSON, err := appCfg.IntermediateConfig.Get(ctx)
+	intermediateJSON, err := appCfg.IntermediateConfig.Get(ctx.Request.Context())
 	if err != nil {
 		return nil, fmt.Errorf("unable to load intermediate config: %w", err)
 	}

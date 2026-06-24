@@ -77,9 +77,6 @@ func (s *Signal) Validate(ctx workflow.Context) error {
 		return errors.New("response_type is required")
 	}
 
-	if _, err := activities.AwaitGetByInstallID(ctx, s.InstallID); err != nil {
-		return errors.Wrap(err, "install not found")
-	}
 	return nil
 }
 

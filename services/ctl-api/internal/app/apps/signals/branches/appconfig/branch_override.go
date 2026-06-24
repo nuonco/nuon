@@ -1,35 +1,67 @@
 package appconfig
 
-import "github.com/nuonco/nuon/pkg/config"
+import (
+	"strings"
 
-// overrideComponentBranch checks if a component's connected repo matches the
-// branch config's repo. If so, it overrides the component's branch to match
-// the deploying branch. This ensures that when a component lives in the same
-// repo as the app config, it uses the correct branch.
+	"github.com/nuonco/nuon/pkg/config"
+)
+
+func overrideBranches(cfg *config.AppConfig, branchRepo, branchName string) {
+	for _, comp := range cfg.Components {
+		overrideComponentBranch(comp, branchRepo, branchName)
+	}
+
+	if cfg.Sandbox != nil {
+		overrideRepoConfigs(cfg.Sandbox.ConnectedRepo, cfg.Sandbox.PublicRepo, branchRepo, branchName)
+	}
+
+	for _, action := range cfg.Actions {
+		for _, step := range action.Steps {
+			overrideRepoConfigs(step.ConnectedRepo, step.PublicRepo, branchRepo, branchName)
+		}
+	}
+}
+
 func overrideComponentBranch(comp *config.Component, branchRepo, branchName string) {
-	if comp.TerraformModule != nil && comp.TerraformModule.ConnectedRepo != nil {
-		if comp.TerraformModule.ConnectedRepo.Repo == branchRepo {
-			comp.TerraformModule.ConnectedRepo.Branch = branchName
-		}
+	if comp.TerraformModule != nil {
+		overrideRepoConfigs(comp.TerraformModule.ConnectedRepo, comp.TerraformModule.PublicRepo, branchRepo, branchName)
 	}
-	if comp.HelmChart != nil && comp.HelmChart.ConnectedRepo != nil {
-		if comp.HelmChart.ConnectedRepo.Repo == branchRepo {
-			comp.HelmChart.ConnectedRepo.Branch = branchName
-		}
+	if comp.HelmChart != nil {
+		overrideRepoConfigs(comp.HelmChart.ConnectedRepo, comp.HelmChart.PublicRepo, branchRepo, branchName)
 	}
-	if comp.DockerBuild != nil && comp.DockerBuild.ConnectedRepo != nil {
-		if comp.DockerBuild.ConnectedRepo.Repo == branchRepo {
-			comp.DockerBuild.ConnectedRepo.Branch = branchName
-		}
+	if comp.DockerBuild != nil {
+		overrideRepoConfigs(comp.DockerBuild.ConnectedRepo, comp.DockerBuild.PublicRepo, branchRepo, branchName)
 	}
-	if comp.KubernetesManifest != nil && comp.KubernetesManifest.ConnectedRepo != nil {
-		if comp.KubernetesManifest.ConnectedRepo.Repo == branchRepo {
-			comp.KubernetesManifest.ConnectedRepo.Branch = branchName
-		}
+	if comp.KubernetesManifest != nil {
+		overrideRepoConfigs(comp.KubernetesManifest.ConnectedRepo, comp.KubernetesManifest.PublicRepo, branchRepo, branchName)
 	}
-	if comp.Pulumi != nil && comp.Pulumi.ConnectedRepo != nil {
-		if comp.Pulumi.ConnectedRepo.Repo == branchRepo {
-			comp.Pulumi.ConnectedRepo.Branch = branchName
-		}
+	if comp.Pulumi != nil {
+		overrideRepoConfigs(comp.Pulumi.ConnectedRepo, comp.Pulumi.PublicRepo, branchRepo, branchName)
 	}
+}
+
+func overrideRepoConfigs(connected *config.ConnectedRepoConfig, public *config.PublicRepoConfig, branchRepo, branchName string) {
+	if connected != nil && repoURLsMatch(connected.Repo, branchRepo) {
+		connected.Branch = branchName
+	}
+	if public != nil && repoURLsMatch(public.Repo, branchRepo) {
+		public.Branch = branchName
+	}
+}
+
+// repoURLsMatch normalizes and compares two repo identifiers.
+// Handles both formats:
+//   - ConnectedGithubVCSConfig: "owner/repo"
+//   - PublicGitVCSConfig: "https://github.com/owner/repo.git"
+func repoURLsMatch(a, b string) bool {
+	return normalizeRepo(a) == normalizeRepo(b)
+}
+
+func normalizeRepo(repo string) string {
+	repo = strings.TrimSuffix(repo, ".git")
+	repo = strings.TrimPrefix(repo, "https://github.com/")
+	repo = strings.TrimPrefix(repo, "http://github.com/")
+	repo = strings.TrimPrefix(repo, "git@github.com:")
+	repo = strings.TrimSuffix(repo, "/")
+	return strings.ToLower(repo)
 }

@@ -166,6 +166,7 @@ func (s *Signal) enqueueInstallUpdates(
 			"install_config_update_id", result.InstallConfigUpdateID,
 		)
 
+		s.childWorkflowIDs = append(s.childWorkflowIDs, result.WorkflowID)
 		enqueued = append(enqueued, enqueuedInstall{
 			installID:  installID,
 			workflowID: result.WorkflowID,
@@ -230,6 +231,27 @@ func (s *Signal) awaitInstallUpdates(
 	}
 
 	return completed, failed, nil
+}
+
+func (s *Signal) Cancel(ctx workflow.Context) error {
+	logger := workflow.GetLogger(ctx)
+	logger.Info("cancelling install group update",
+		"install_group_id", s.InstallGroupID,
+		"child_workflow_count", len(s.childWorkflowIDs),
+	)
+
+	for _, wfID := range s.childWorkflowIDs {
+		if err := activities.AwaitCancelInstallWorkflow(ctx, &activities.CancelInstallWorkflowInput{
+			WorkflowID: wfID,
+		}); err != nil {
+			logger.Warn("failed to cancel child workflow",
+				"workflow_id", wfID,
+				"error", err,
+			)
+		}
+	}
+
+	return nil
 }
 
 func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueuedInstall, results map[string]string) {

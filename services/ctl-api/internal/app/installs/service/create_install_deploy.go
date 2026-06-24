@@ -18,9 +18,10 @@ import (
 )
 
 type CreateInstallComponentDeployRequest struct {
-	BuildID          string `json:"build_id"`
-	DeployDependents bool   `json:"deploy_dependents"`
-	Role             string `json:"role,omitempty"`
+	BuildID            string `json:"build_id"`
+	DeployDependents   bool   `json:"deploy_dependents"`
+	DeployDependencies bool   `json:"deploy_dependencies"`
+	Role               string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -84,6 +85,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
+			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
 		},
 		req.PlanOnly,
 		req.Role,
@@ -115,9 +117,10 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 }
 
 type CreateInstallDeployRequest struct {
-	BuildID          string `json:"build_id"`
-	DeployDependents bool   `json:"deploy_dependents"`
-	Role             string `json:"role,omitempty"`
+	BuildID            string `json:"build_id"`
+	DeployDependents   bool   `json:"deploy_dependents"`
+	DeployDependencies bool   `json:"deploy_dependencies"`
+	Role               string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -176,6 +179,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
+			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
 		},
 		req.PlanOnly,
 		req.Role,

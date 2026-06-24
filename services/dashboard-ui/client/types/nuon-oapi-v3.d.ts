@@ -266,6 +266,11 @@ export interface paths {
      */
     get: operations["GetAppBranch"];
     /**
+     * delete an app branch
+     * @description Deletes an app branch and all associated configs, runs, and install group runs.
+     */
+    delete: operations["DeleteAppBranch"];
+    /**
      * update app branch metadata
      * @description Updates app branch metadata (name only). To update configuration, create a new AppBranchConfig via POST /branches/:id/configs
      */
@@ -3648,6 +3653,8 @@ export interface components {
       resolved_tag?: string;
       /** @description runner details */
       runner_job?: components["schemas"]["app.RunnerJob"];
+      /** @description checksum of the component's source directory at build time */
+      source_checksum?: string;
       /**
        * @description SourceDigest is the manifest list digest of the resolved source ref,
        * e.g. "sha256:abc...". This is the canonical content address of what was
@@ -4433,7 +4440,6 @@ export interface components {
       stale_at?: components["schemas"]["generics.NullTime"];
       /** @description StalePartials lists which state partials are stale and need regeneration on next read. */
       stale_partials?: components["schemas"]["state.PartialName"][];
-      state_blob?: components["schemas"]["blobstore.Blob"];
       triggered_by_id?: string;
       triggered_by_type?: string;
       updated_at?: string;
@@ -5723,7 +5729,7 @@ export interface components {
       workflow_step_id?: string;
     };
     /** @enum {string} */
-    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan";
+    "app.WorkflowStepApprovalType": "noop" | "approve-all" | "terraform_plan" | "kubernetes_manifest_approval" | "helm_approval" | "pulumi_plan" | "app_branch_plan";
     /** @enum {string} */
     "app.WorkflowStepExecutionType": "system" | "user" | "approval" | "skipped" | "hidden";
     "app.WorkflowStepGroup": {
@@ -7033,6 +7039,7 @@ export interface components {
     };
     "service.CreateInstallComponentDeployRequest": {
       build_id?: string;
+      deploy_dependencies?: boolean;
       deploy_dependents?: boolean;
       plan_only?: boolean;
       role?: string;
@@ -7048,6 +7055,7 @@ export interface components {
     };
     "service.CreateInstallDeployRequest": {
       build_id?: string;
+      deploy_dependencies?: boolean;
       deploy_dependents?: boolean;
       plan_only?: boolean;
       role?: string;
@@ -7580,12 +7588,16 @@ export interface components {
       warns?: number;
     };
     "service.TriggerAppBranchRunRequest": {
+      /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
+      app_config_id?: string;
       /** @description optional - use latest if not provided */
       config_id?: string;
       /** @description force run even if no changes detected */
       force?: boolean;
       /** @description plan-only preview mode (no apply) */
       plan_only?: boolean;
+      /** @description skip builds step (e.g. rollback to existing config with existing builds) */
+      skip_builds?: boolean;
     };
     "service.UpdateActionWorkflowRequest": {
       labels?: {
@@ -9950,6 +9962,58 @@ export interface operations {
       200: {
         content: {
           "application/json": components["schemas"]["app.AppBranch"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * delete an app branch
+   * @description Deletes an app branch and all associated configs, runs, and install group runs.
+   */
+  DeleteAppBranch: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+        /** @description app branch ID */
+        app_branch_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.EmptyResponse"];
         };
       };
       /** @description Bad Request */

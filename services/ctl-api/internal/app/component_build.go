@@ -65,6 +65,9 @@ type ComponentBuild struct {
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitzero" gorm:"default null" temporaljson:"checksum,omitzero,omitempty"`
 
+	// checksum of the component's source directory at build time
+	SourceChecksum string `json:"source_checksum,omitzero" gorm:"default null" temporaljson:"source_checksum,omitzero,omitempty"`
+
 	// Source identity for image-type builds.
 	//
 	// SourceRef is what the user wrote in the spec, e.g. "nginx:1.25.3" or
