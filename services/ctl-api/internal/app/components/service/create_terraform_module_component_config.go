@@ -35,11 +35,11 @@ type CreateTerraformModuleComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies   []string                      `json:"dependencies"`
-	References     []string                      `json:"references"`
-	Checksum       string                        `json:"checksum"`
-	DriftSchedule  *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
-	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	Dependencies      []string                      `json:"dependencies"`
+	References        []string                      `json:"references"`
+	Checksum          string                        `json:"checksum"`
+	DriftSchedule     *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
+	OperationRoles    map[app.OperationType]*string `json:"operation_roles,omitempty"`
 	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
 }
 
