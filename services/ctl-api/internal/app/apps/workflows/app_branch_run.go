@@ -133,7 +133,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 			InstallGroupID: group.ID,
 			AppBranchID:    appBranchID,
 			RunID:          runID,
-		})
+		}, WithExecutionType(app.WorkflowStepExecutionTypeApproval))
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create plan step for group %s", group.Name)
 		}

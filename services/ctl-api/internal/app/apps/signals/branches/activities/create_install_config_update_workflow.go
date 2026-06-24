@@ -146,6 +146,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 					diff.Removed = append(diff.Removed, app.ComponentDiffEntry{
 						ComponentID:   componentID,
 						ComponentName: oldConn.ComponentName,
+						ComponentType: string(oldConn.Type),
 						OldChecksum:   oldConn.Checksum,
 					})
 					continue
@@ -155,6 +156,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 					diff.Unchanged = append(diff.Unchanged, app.ComponentDiffEntry{
 						ComponentID:   componentID,
 						ComponentName: newConn.ComponentName,
+						ComponentType: string(newConn.Type),
 						OldChecksum:   oldConn.Checksum,
 						NewChecksum:   newConn.Checksum,
 					})
@@ -162,6 +164,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 					diff.Changed = append(diff.Changed, app.ComponentDiffEntry{
 						ComponentID:   componentID,
 						ComponentName: newConn.ComponentName,
+						ComponentType: string(newConn.Type),
 						OldChecksum:   oldConn.Checksum,
 						NewChecksum:   newConn.Checksum,
 					})
@@ -174,6 +177,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 				diff.Added = append(diff.Added, app.ComponentDiffEntry{
 					ComponentID:   componentID,
 					ComponentName: newConn.ComponentName,
+					ComponentType: string(newConn.Type),
 					NewChecksum:   newConn.Checksum,
 				})
 			}
@@ -197,6 +201,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 			diff.Added = append(diff.Added, app.ComponentDiffEntry{
 				ComponentID:   componentID,
 				ComponentName: newConn.ComponentName,
+				ComponentType: string(newConn.Type),
 				NewChecksum:   newConn.Checksum,
 			})
 		}
