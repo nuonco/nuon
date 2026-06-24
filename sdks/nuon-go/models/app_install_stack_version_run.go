@@ -84,6 +84,8 @@ func (m *AppInstallStackVersionRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateRunType(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateCompositeStatus(formats); err != nil {
 		res = append(res, err)
