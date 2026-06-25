@@ -1,5 +1,70 @@
 {
   "rules": {
-    "no-console": ["error", { "allow": ["error", "warn"] }]
-  }
+    "no-console": ["error", { "allow": ["error", "warn"] }],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "lucide-react",
+            "message": "Use the Icon component (@/components/common/Icon) for all icons. Add missing icons to its map."
+          },
+          {
+            "name": "@phosphor-icons/react",
+            "message": "Use the Icon component (@/components/common/Icon). Add a missing icon to its phosphorIcons map instead of importing directly."
+          },
+          {
+            "name": "@/types/nuon-oapi-v3",
+            "message": "Never import generated OpenAPI types directly. Extract the type in @/types/ctl-api.types and import from there."
+          },
+          {
+            "name": "react-router",
+            "importNames": ["Link"],
+            "message": "Use Link from @/components/common/Link (href, not to). For nav buttons use Button with href and variant=\"ghost\"."
+          },
+          {
+            "name": "@/components/surfaces/Modal",
+            "importNames": ["ModalBase"],
+            "message": "Use Modal, not ModalBase. See the Modal/Panel pattern in AGENTS.md."
+          },
+          {
+            "name": "@/components/surfaces/Panel",
+            "importNames": ["PanelBase"],
+            "message": "Use Panel, not PanelBase. See the Modal/Panel pattern in AGENTS.md."
+          }
+        ],
+        "patterns": [
+          {
+            "group": ["@heroicons/*"],
+            "message": "Use the Icon component (@/components/common/Icon) for all icons."
+          },
+          {
+            "group": ["react-icons", "react-icons/*"],
+            "message": "Use the Icon component (@/components/common/Icon). Add brand icons to its customIcons map instead of importing directly."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/components/common/Icon.tsx"],
+      "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      "files": [
+        "**/components/common/Link.tsx",
+        "**/components/common/Button.tsx"
+      ],
+      "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      "files": ["**/components/common/Markdown/Markdown.tsx"],
+      "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      "files": ["**/types/ctl-api.types.ts"],
+      "rules": { "no-restricted-imports": "off" }
+    }
+  ]
 }
