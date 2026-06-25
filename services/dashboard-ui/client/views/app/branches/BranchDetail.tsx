@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router'
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -11,7 +10,6 @@ import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Toast } from '@/components/surfaces/Toast'
 import { Timeline } from '@/components/common/Timeline'
 import { TimelineEvent } from '@/components/common/TimelineEvent'
 import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
@@ -21,50 +19,28 @@ import { PageTitle } from '@/components/navigation/PageTitle'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { useBranch } from '@/hooks/use-branch'
-import { useToast } from '@/hooks/use-toast'
 import { BranchProvider } from '@/providers/branch-provider'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import { getWorkflowBadge } from '@/utils/workflow-utils'
 
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
 import { InstallGroupsSection } from '@/components/branches/install-groups/InstallGroupsSection'
-import { getBranchWorkflowRuns, getAppInstalls, cancelWorkflow } from '@/lib'
-import type { TAPIError, TInstall } from '@/types'
+import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
+import { getBranchWorkflowRuns, getAppInstalls } from '@/lib'
+import type { TInstall } from '@/types'
 
-const CANCELLABLE = new Set(['pending', 'queued', 'in-progress'])
 const LIMIT = 20
 
 const BranchDetailContent = () => {
   const { org } = useOrg()
   const { app } = useApp()
   const { branch } = useBranch()
-  const { addToast } = useToast()
-  const queryClient = useQueryClient()
   const params = useParams()
   const [searchParams] = useSearchParams()
   const orgId = params.orgId as string
   const appId = params.appId as string
   const branchId = params.branchId as string
   const offset = Number(searchParams.get('offset') ?? 0)
-
-  const cancelMutation = useMutation({
-    mutationFn: (workflowId: string) => cancelWorkflow({ orgId, workflowId }),
-    onSuccess: () => {
-      addToast(
-        <Toast heading="Workflow cancelled" theme="success">
-          <Text>The workflow run has been cancelled.</Text>
-        </Toast>
-      )
-      queryClient.invalidateQueries({ queryKey: ['branch-runs'] })
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Cancel failed" theme="error">
-          <Text>{err?.error || 'Unable to cancel workflow.'}</Text>
-        </Toast>
-      )
-    },
-  })
 
   const currentConfig = useMemo(() => {
     if (!branch.configs?.length) return undefined
@@ -218,17 +194,7 @@ const BranchDetailContent = () => {
                       {commitSha.substring(0, 7)}
                     </span>
                   ) : undefined}
-                  actions={CANCELLABLE.has(run.status?.status) ? (
-                    <Button
-                      variant="danger"
-                      size="xs"
-                      onClick={() => cancelMutation.mutate(run.id)}
-                      disabled={cancelMutation.isPending}
-                    >
-                      <Icon variant="XCircleIcon" size={14} />
-                      Cancel
-                    </Button>
-                  ) : undefined}
+                  actions={<CancelWorkflowButton workflow={run} size="sm" />}
                 />
               )
             }}
