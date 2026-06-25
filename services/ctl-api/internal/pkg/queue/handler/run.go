@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
@@ -84,14 +86,25 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 			Status:            app.StatusError,
 			StatusDescription: desc,
 		})
+
+		tags := metrics.ToTags(map[string]string{
+			"workflow_type": "Handler",
+			"signal_type":   string(h.sig.Type()),
+		})
+		h.mw.Incr("workflow.terminated", tags)
+		h.mw.Event(&statsd.Event{
+			Title:     "Handler workflow terminated due to excessive history",
+			Text:      fmt.Sprintf("Handler %s (signal: %s) terminated at %d events (threshold: %d)", h.queueSignalID, h.sig.Type(), historyLen, handlerTerminateThreshold),
+			AlertType: statsd.Error,
+			Tags:      tags,
+		})
 	}))
 
-	// Create a temporal metrics writer for workflow size reporting.
-	if h.mw != nil && h.v != nil {
-		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {
-			mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
-		}
+	tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw))
+	if err != nil {
+		return false, errors.Wrap(err, "unable to create temporal metrics writer")
 	}
+	mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
 
 	mgrOpts = append(mgrOpts, workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
 		qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
