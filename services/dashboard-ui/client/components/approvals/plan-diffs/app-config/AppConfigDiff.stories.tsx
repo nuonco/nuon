@@ -9,36 +9,79 @@ const mockSections: DiffSectionData[] = [
   {
     name: 'Components',
     sectionKey: 'components',
+    grouped: true,
     additions: 1,
     removals: 1,
-    changed: 2,
-    entries: [
-      { op: 'add', name: 'redis', description: 'helm_chart' },
-      { op: 'remove', name: 'legacy-worker', description: 'docker_build' },
-      { op: 'change', name: 'ctl-api', description: 'terraform_module' },
-      { op: 'change', name: 'dashboard', description: 'kubernetes_manifest' },
+    changed: 1,
+    entities: [
+      {
+        name: 'redis',
+        op: 'add',
+        componentType: 'helm_chart',
+        fields: [
+          { key: 'type', op: 'add', diff: "'' -> 'helm_chart'" },
+          { key: 'chart_name', op: 'add', diff: "'' -> 'redis'" },
+          { key: 'namespace', op: 'add', diff: "'' -> 'cache'" },
+        ],
+      },
+      {
+        name: 'legacy-worker',
+        op: 'remove',
+        componentType: 'docker_build',
+        fields: [
+          { key: 'type', op: 'remove', diff: "'docker_build' -> ''" },
+          { key: 'dockerfile', op: 'remove', diff: "'Dockerfile.worker' -> ''" },
+        ],
+      },
+      {
+        name: 'ctl-api',
+        op: 'change',
+        componentType: 'helm_chart',
+        fields: [
+          { key: 'chart_name', op: 'change', diff: "'ctl-api-v1' -> 'ctl-api-v2'" },
+          { key: 'namespace', op: 'change', diff: "'default' -> 'app'" },
+        ],
+      },
     ],
+    fields: [],
   },
   {
     name: 'Actions',
     sectionKey: 'actions',
+    grouped: true,
     additions: 1,
     removals: 0,
     changed: 1,
-    entries: [
-      { op: 'add', name: 'run-migrations', description: 'timeout: 300s' },
-      { op: 'change', name: 'healthcheck', description: "role: 'admin' -> 'operator'" },
+    entities: [
+      {
+        name: 'run-migrations',
+        op: 'add',
+        fields: [
+          { key: 'timeout', op: 'add', diff: "'' -> '300s'" },
+          { key: 'role', op: 'add', diff: "'' -> 'admin'" },
+        ],
+      },
+      {
+        name: 'healthcheck',
+        op: 'change',
+        fields: [
+          { key: 'role', op: 'change', diff: "'admin' -> 'operator'" },
+        ],
+      },
     ],
+    fields: [],
   },
   {
-    name: 'Install inputs',
-    sectionKey: 'inputs',
-    additions: 2,
+    name: 'Runner',
+    sectionKey: 'runner',
+    grouped: false,
+    additions: 0,
     removals: 0,
-    changed: 0,
-    entries: [
-      { op: 'add', name: 'cluster_name', description: 'required string input' },
-      { op: 'add', name: 'region', description: "default: 'us-west-2'" },
+    changed: 2,
+    entities: [],
+    fields: [
+      { key: 'runner_type', op: 'change', diff: "'standard' -> 'gpu'" },
+      { key: 'init_script', op: 'change', diff: "'setup.sh' -> 'setup-gpu.sh'" },
     ],
   },
 ]
@@ -46,118 +89,115 @@ const mockSections: DiffSectionData[] = [
 export const Default = () => (
   <AppConfigDiff
     sections={mockSections}
-    summary={{ added: 4, removed: 1, changed: 3 }}
+    summary={{ added: 2, removed: 1, changed: 3 }}
   />
 )
 
 export const NoChanges = () => (
-  <AppConfigDiff
-    sections={[]}
-    summary={null}
-  />
+  <AppConfigDiff sections={[]} summary={null} />
 )
 
 export const Loading = () => (
+  <AppConfigDiff sections={[]} summary={null} isLoading />
+)
+
+export const ComponentsOnly = () => (
   <AppConfigDiff
-    sections={[]}
-    summary={null}
-    isLoading
+    sections={[mockSections[0]]}
+    summary={{ added: 1, removed: 1, changed: 1 }}
   />
 )
 
-export const SingleSection = () => (
+export const FieldsOnly = () => (
   <AppConfigDiff
-    sections={[mockSections[0]]}
-    summary={{ added: 1, removed: 1, changed: 2 }}
+    sections={[mockSections[2]]}
+    summary={{ added: 0, removed: 0, changed: 2 }}
   />
 )
 
 export const AllSections = () => {
   const allSections: DiffSectionData[] = [
-    {
-      name: 'Components',
-      sectionKey: 'components',
-      additions: 2,
-      removals: 1,
-      changed: 3,
-      entries: [
-        { op: 'add', name: 'redis', description: 'helm_chart' },
-        { op: 'add', name: 'monitoring', description: 'terraform_module' },
-        { op: 'remove', name: 'legacy-worker', description: 'docker_build' },
-        { op: 'change', name: 'ctl-api', description: 'helm_chart' },
-        { op: 'change', name: 'runner', description: 'external_image' },
-        { op: 'change', name: 'infra', description: 'pulumi' },
-      ],
-    },
-    {
-      name: 'Actions',
-      sectionKey: 'actions',
-      additions: 1,
-      removals: 0,
-      changed: 0,
-      entries: [
-        { op: 'add', name: 'run-migrations', description: 'timeout: 300s' },
-      ],
-    },
+    mockSections[0],
+    mockSections[1],
     {
       name: 'Install inputs',
       sectionKey: 'inputs',
+      grouped: true,
       additions: 2,
       removals: 0,
       changed: 0,
-      entries: [
-        { op: 'add', name: 'cluster_name', description: 'required string' },
-        { op: 'add', name: 'region', description: "default: 'us-west-2'" },
+      entities: [
+        {
+          name: 'cluster_name',
+          op: 'add',
+          fields: [
+            { key: 'type', op: 'add', diff: "'' -> 'string'" },
+            { key: 'required', op: 'add', diff: "'false' -> 'true'" },
+          ],
+        },
+        {
+          name: 'region',
+          op: 'add',
+          fields: [
+            { key: 'default', op: 'add', diff: "'' -> 'us-west-2'" },
+          ],
+        },
       ],
+      fields: [],
     },
     {
       name: 'Secrets',
       sectionKey: 'secrets',
+      grouped: true,
       additions: 1,
       removals: 0,
       changed: 0,
-      entries: [
-        { op: 'add', name: 'DATABASE_URL', description: 'required, no default' },
+      entities: [
+        {
+          name: 'DATABASE_URL',
+          op: 'add',
+          fields: [
+            { key: 'required', op: 'add', diff: "'' -> 'true'" },
+          ],
+        },
+      ],
+      fields: [],
+    },
+    mockSections[2],
+    {
+      name: 'Stack',
+      sectionKey: 'stack',
+      grouped: false,
+      additions: 0,
+      removals: 0,
+      changed: 1,
+      entities: [],
+      fields: [
+        { key: 'type', op: 'change', diff: "'eks' -> 'eks-v2'" },
       ],
     },
     {
       name: 'Sandbox',
       sectionKey: 'sandbox',
+      grouped: false,
       additions: 0,
       removals: 0,
       changed: 1,
-      entries: [
-        { op: 'change', name: 'terraform_version', description: "'1.5.0' -> '1.6.0'" },
-      ],
-    },
-    {
-      name: 'Runner',
-      sectionKey: 'runner',
-      additions: 0,
-      removals: 0,
-      changed: 1,
-      entries: [
-        { op: 'change', name: 'runner_type', description: "'standard' -> 'gpu'" },
+      entities: [],
+      fields: [
+        { key: 'terraform_version', op: 'change', diff: "'1.5.0' -> '1.6.0'" },
       ],
     },
     {
       name: 'Permissions',
       sectionKey: 'permissions',
+      grouped: false,
       additions: 1,
       removals: 0,
       changed: 0,
-      entries: [
-        { op: 'add', name: 'provision', description: 'arn:aws:iam::role/deploy' },
-      ],
-    },
-    {
-      name: 'Stack',
-      sectionKey: 'stack',
-      additions: 0,
-      removals: 0,
-      changed: 1,
-      entries: [
-        { op: 'change', name: 'type', description: "'eks' -> 'eks-v2'" },
+      entities: [],
+      fields: [
+        { key: 'provision', op: 'add', diff: "'' -> 'arn:aws:iam::role/deploy'" },
       ],
     },
   ]
@@ -165,7 +205,7 @@ export const AllSections = () => {
   return (
     <AppConfigDiff
       sections={allSections}
-      summary={{ added: 7, removed: 1, changed: 6 }}
+      summary={{ added: 6, removed: 1, changed: 5 }}
     />
   )
 }

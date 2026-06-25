@@ -11,6 +11,7 @@ import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { Expand } from '@/components/common/Expand'
 import { WorkflowStepsPipeline } from '@/components/branches/WorkflowStepsPipeline'
 import { WorkflowStepDetail } from '@/components/branches/WorkflowStepDetail'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
@@ -98,7 +99,7 @@ const BranchRunDetailContent = () => {
 
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
-  const isActive = ['pending', 'queued', 'in-progress', 'approval-awaiting'].includes(status)
+  const isActive = ['pending', 'queued', 'in-progress', 'approval-awaiting', 'retry-awaiting'].includes(status)
 
   return (
     <PageSection className="max-w-full space-y-4">
@@ -212,16 +213,16 @@ const BranchRunDetailContent = () => {
 
       {/* ── Config changes card ── */}
       {appConfigId && (
-        <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm">
-          <div className="px-5 py-4 border-b border-cool-grey-100 dark:border-dark-grey-800">
-            <Text variant="h3" weight="strong">
-              Config changes
-            </Text>
-          </div>
-          <div className="p-5">
+        <Expand
+          id="config-changes"
+          className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
+          headerClassName="px-5 py-4"
+          heading={<Text variant="h3" weight="strong">Config changes</Text>}
+        >
+          <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800">
             <AppConfigDiff appConfigId={appConfigId} />
           </div>
-        </div>
+        </Expand>
       )}
 
       {/* ── Step detail card ── */}
