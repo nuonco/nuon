@@ -11,9 +11,10 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useOrg } from '@/hooks/use-org'
 import type { IModal } from '@/components/surfaces/Modal'
 import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
-import { triggerBranchRun, deleteAppBranch } from '@/lib'
+import { deleteAppBranch } from '@/lib'
 import { EditBranchButton } from '@/components/branches/EditBranchNameModal'
 import { EditDeploymentPlanButton } from '@/components/branches/DeploymentPlanEditor'
+import { TriggerBranchRunModal } from '@/components/branches/TriggerBranchRunModal'
 import { BranchDetailActions } from './BranchDetailActions'
 
 interface IBranchDetailActionsContainer {
@@ -84,64 +85,20 @@ export const BranchDetailActionsContainer = ({
   appId,
   orgId,
 }: IBranchDetailActionsContainer) => {
-  const { addToast } = useToast()
   const { refresh } = useBranch()
   const { addModal } = useSurfaces()
 
-  const triggerRunMutation = useMutation({
-    mutationFn: (planOnly: boolean) =>
-      triggerBranchRun({
-        appId,
-        branchId: branch.id!,
-        orgId,
-        request: {
-          config_id: currentConfig?.id,
-          force: false,
-          plan_only: planOnly,
-        },
-      }),
-    onSuccess: (_, planOnly) => {
-      addToast(
-        <Toast theme="success" heading={planOnly ? 'Preview run triggered' : 'Run triggered'}>
-          <Text>{planOnly ? 'A plan-only preview run has been queued.' : 'Your app branch run has been queued.'}</Text>
-        </Toast>
-      )
-      refresh()
-    },
-    onError: (error: TAPIError) => {
-      const errorMessage = error.error || 'Unable to trigger run.'
-      addToast(
-        <Toast theme="error" heading="Branch run failed">
-          <Text>{errorMessage}</Text>
-        </Toast>
-      )
-    },
-  })
-
-  const handleTriggerRun = () => {
-    if (!currentConfig) {
-      addToast(
-        <Toast theme="error" heading="No configuration available">
-          <Text>Create a config first before triggering a run.</Text>
-        </Toast>
-      )
-      return
-    }
-
-    triggerRunMutation.mutate(false)
-  }
-
-  const handleTriggerPreview = () => {
-    if (!currentConfig) {
-      addToast(
-        <Toast theme="error" heading="No configuration available">
-          <Text>Create a config first before triggering a preview.</Text>
-        </Toast>
-      )
-      return
-    }
-
-    triggerRunMutation.mutate(true)
+  const openTriggerModal = (planOnly: boolean) => {
+    addModal(
+      <TriggerBranchRunModal
+        branch={branch}
+        currentConfig={currentConfig}
+        appId={appId}
+        orgId={orgId}
+        planOnly={planOnly}
+        onSuccess={refresh}
+      />
+    )
   }
 
   return (
@@ -159,20 +116,20 @@ export const BranchDetailActionsContainer = ({
       deleteButton={
         <Button
           isMenuButton
-          className="!text-red-800 dark:!text-red-500"
+          variant="danger"
           onClick={() => {
             const modal = <DeleteBranchModal branch={branch} appId={appId} />
             addModal(modal)
           }}
         >
-          <Icon variant="TrashIcon" size={16} />
           Delete branch
+          <Icon variant="TrashIcon" size={16} />
         </Button>
       }
       hasConfig={!!currentConfig}
-      isTriggerPending={triggerRunMutation.isPending}
-      onTriggerRun={handleTriggerRun}
-      onTriggerPreview={handleTriggerPreview}
+      isTriggerPending={false}
+      onTriggerRun={() => openTriggerModal(false)}
+      onTriggerPreview={() => openTriggerModal(true)}
     />
   )
 }

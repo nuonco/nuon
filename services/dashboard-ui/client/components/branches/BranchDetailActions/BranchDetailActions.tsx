@@ -55,10 +55,10 @@ export const BranchDetailActions = ({
         >
           <Menu>
             <Button isMenuButton onClick={onTriggerPreview}>
-              <Icon variant="EyeIcon" size={16} />
               Preview run (plan only)
+              <Icon variant="EyeIcon" size={16} />
             </Button>
-            {deleteButton}
+            <span>{deleteButton}</span>
           </Menu>
         </Dropdown>
       </div>

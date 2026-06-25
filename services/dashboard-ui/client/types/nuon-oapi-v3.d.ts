@@ -3137,6 +3137,8 @@ export interface components {
       org_id?: string;
       queue?: components["schemas"]["app.Queue"];
       updated_at?: string;
+      /** @description Read-only; populated by a COUNT subquery in GetAppBranches, not stored as a column. */
+      workflow_count?: number;
       workflows?: components["schemas"]["app.Workflow"][];
     };
     "app.AppBranchConfig": {

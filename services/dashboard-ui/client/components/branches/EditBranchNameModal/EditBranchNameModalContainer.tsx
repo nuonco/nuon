@@ -188,8 +188,9 @@ export const EditBranchButton = ({
   const modal = <EditBranchNameModalContainer branch={branch} currentConfig={currentConfig} onSuccess={onSuccess} />
   return (
     <Button variant="secondary" onClick={() => addModal(modal)} {...props}>
-      <Icon variant="PencilSimpleLineIcon" size={16} />
+      {props?.isMenuButton ? null : <Icon variant="PencilSimpleLineIcon" size={16} />}
       Edit branch
+      {props?.isMenuButton ? <Icon variant="PencilSimpleLineIcon" size={16} /> : null}
     </Button>
   )
 }

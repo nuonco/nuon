@@ -156,8 +156,9 @@ export const EditDeploymentPlanButton = ({
       onClick={() => addModal(modal)}
       {...props}
     >
-      <Icon variant="SlidersHorizontalIcon" size={16} />
+      {props?.isMenuButton ? null : <Icon variant="SlidersHorizontalIcon" size={16} />}
       Deployment plan
+      {props?.isMenuButton ? <Icon variant="SlidersHorizontalIcon" size={16} /> : null}
     </Button>
   )
 }

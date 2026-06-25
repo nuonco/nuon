@@ -18,6 +18,8 @@ title: 'Terraform'
 | **`labels`**<br/>object | Key/value labels used to organize and filter components. Metadata only; does not affect deployment | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`toggleable`**<br/>boolean | - | **Optional** | - |
+| **`default_enabled`**<br/>boolean | - | **Optional** | - |
 | **`env_vars`**<br/>object | environment variables Map of environment variables passed to Terraform as key-value pairs | **Optional** | - |
 | **`vars`**<br/>object | Terraform variables Map of Terraform input variables as key-value pairs. Supports templating | **Optional** | - |
 | **`var_file`**<br/>[array](#var_file) | Terraform variable files Array of external Terraform variable files to load. Each file contents support templating and external file sources: HTTP(S) URLs (https://example.com/vars.tfvars), git rep... | **Optional** | - |

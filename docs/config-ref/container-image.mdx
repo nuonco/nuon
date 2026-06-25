@@ -17,6 +17,8 @@ title: 'Container Image'
 | **`labels`**<br/>object | Key/value labels used to organize and filter components. Metadata only; does not affect deployment | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`toggleable`**<br/>boolean | - | **Optional** | - |
+| **`default_enabled`**<br/>boolean | - | **Optional** | - |
 | **`aws_ecr`**<br/>[AWSECRConfig](#aws_ecr) | AWS ECR image configuration Configuration for pulling images from AWS Elastic Container Registry. Use when deploying images from private ECR repositories | **Optional** | - |
 | **`gcp_gar`**<br/>[GCPGARConfig](#gcp_gar) | GCP Artifact Registry image configuration Configuration for pulling images from Google Artifact Registry. Use when deploying images from private GAR repositories | **Optional** | - |
 | **`azure_acr`**<br/>[AzureACRConfig](#azure_acr) | Azure Container Registry image configuration Configuration for pulling images from Azure Container Registry. Use when deploying images from private ACR repositories | **Optional** | - |
