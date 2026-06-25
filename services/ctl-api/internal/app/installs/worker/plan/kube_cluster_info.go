@@ -38,6 +38,25 @@ func (p *Planner) resolveKubernetesContext(
 	state *state.State,
 	cloudAuth *CloudAuth,
 ) (*kube.ClusterInfo, error) {
+	contextName := ""
+	if componentConfig != nil {
+		contextName = componentConfig.KubernetesContextName
+	}
+	return p.resolveKubernetesContextByName(ctx, contextName, appCfg, stack, state, cloudAuth)
+}
+
+// resolveKubernetesContextByName resolves a named kubernetes_context (or the
+// sandbox default when name is empty) to a templated *kube.ClusterInfo. It is
+// the shared core used by both component deploy planning and action workflow
+// run planning; see resolveKubernetesContext for the full semantics.
+func (p *Planner) resolveKubernetesContextByName(
+	ctx workflow.Context,
+	contextName string,
+	appCfg *app.AppConfig,
+	stack *app.InstallStack,
+	state *state.State,
+	cloudAuth *CloudAuth,
+) (*kube.ClusterInfo, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get logger")
@@ -46,11 +65,6 @@ func (p *Planner) resolveKubernetesContext(
 	stateData, err := state.WorkflowSafeAsMap(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get state data")
-	}
-
-	contextName := ""
-	if componentConfig != nil {
-		contextName = componentConfig.KubernetesContextName
 	}
 
 	var (
