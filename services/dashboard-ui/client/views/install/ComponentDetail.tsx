@@ -17,6 +17,7 @@ import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
 import { Toggle } from '@/components/common/form/Toggle'
+import { Tooltip } from '@/components/common/Tooltip'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
 import { ToggleComponentModalContainer } from '@/components/install-components/management/ToggleComponent/ToggleComponentContainer'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
@@ -30,17 +31,15 @@ import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { getAppConfig, getComponentBuilds, getInstallComponent } from '@/lib'
-import type { TComponentConfig, TInstall } from '@/types'
+import type { TComponentConfig, TInstallComponent } from '@/types'
 
 function isComponentDisabled(
   config?: TComponentConfig,
-  install?: TInstall,
-  componentId?: string
+  installComponent?: TInstallComponent
 ): boolean {
   if (!config?.toggleable) return false
-  const toggles = install?.install_config?.component_toggles
-  if (toggles && componentId && componentId in toggles) {
-    return !toggles[componentId]
+  if (installComponent?.enabled != null) {
+    return !installComponent.enabled
   }
   return !config?.default_enabled
 }
@@ -89,7 +88,9 @@ export const InstallComponentDetail = () => {
   const isToggleable = config?.toggleable === true
   const isDisabled =
     installComponent?.status === 'disabled' ||
-    isComponentDisabled(config, install, componentId)
+    isComponentDisabled(config, installComponent)
+  const isManagedByConfig =
+    install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   const dependentIds = appConfig?.component_config_connections
     ?.filter((c) => c.component_dependency_ids?.includes(componentId!))
@@ -195,23 +196,39 @@ export const InstallComponentDetail = () => {
           <div className="@5xl:col-span-8 flex flex-col gap-6">
             {isToggleable && component ? (
               <div className="flex justify-end">
-                <Toggle
-                  checked={!isDisabled}
-                  onChange={() => {
-                    addModal(
-                      <ToggleComponentModalContainer
-                        component={component}
-                        enabling={isDisabled}
-                      />
-                    )
-                  }}
-                  label={isDisabled ? 'Component disabled' : 'Component enabled'}
-                  description={
-                    isDisabled
-                      ? `${component.name} is disabled on this install. Toggle to deploy.`
-                      : `${component.name} can be disabled on this install.`
-                  }
-                />
+                {isManagedByConfig ? (
+                  <Tooltip
+                    tipContent="Managed by config. Edit and use nuon installs sync"
+                    position="left"
+                    tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
+                  >
+                    <Toggle
+                      checked={!isDisabled}
+                      onChange={() => {}}
+                      disabled
+                      label={isDisabled ? 'Component disabled' : 'Component enabled'}
+                      description={`${component.name} is managed by config. Edit the install config and run nuon installs sync.`}
+                    />
+                  </Tooltip>
+                ) : (
+                  <Toggle
+                    checked={!isDisabled}
+                    onChange={() => {
+                      addModal(
+                        <ToggleComponentModalContainer
+                          component={component}
+                          enabling={isDisabled}
+                        />
+                      )
+                    }}
+                    label={isDisabled ? 'Component disabled' : 'Component enabled'}
+                    description={
+                      isDisabled
+                        ? `${component.name} is disabled on this install. Toggle to deploy.`
+                        : `${component.name} can be disabled on this install.`
+                    }
+                  />
+                )}
               </div>
             ) : null}
 

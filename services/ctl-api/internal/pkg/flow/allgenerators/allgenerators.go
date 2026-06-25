@@ -37,6 +37,8 @@ func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeTeardownComponent:          v2workflows.TeardownComponent,
 		app.WorkflowTypeTeardownComponents:         v2workflows.TeardownComponents,
 		app.WorkflowTypeInputUpdate:                v2workflows.InputUpdate,
+		app.WorkflowTypeComponentEnabled:           v2workflows.ComponentEnabledSteps,
+		app.WorkflowTypeComponentDisabled:          v2workflows.ComponentDisabledSteps,
 		app.WorkflowTypeActionWorkflowRun:          v2workflows.RunActionWorkflow,
 		app.WorkflowTypeProvision:                  v2workflows.Provision,
 		app.WorkflowTypeReprovision:                v2workflows.Reprovision,
@@ -47,7 +49,5 @@ func installGenerators() map[app.WorkflowType]flow.WorkflowStepGenerator {
 		app.WorkflowTypeSyncSecrets:                v2workflows.SyncSecrets,
 		app.WorkflowTypeRunbookRun:                 v2workflows.RunRunbook,
 		app.WorkflowTypeAppBranchConfigUpdate:      v2workflows.AppBranchConfigUpdate,
-		app.WorkflowTypeComponentEnabled:           v2workflows.ComponentEnabledSteps,
-		app.WorkflowTypeComponentDisabled:          v2workflows.ComponentDisabledSteps,
 	}
 }

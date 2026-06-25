@@ -14,6 +14,8 @@ const WORKFLOW_TYPE_OPTIONS = [
   'deploy_components',
   'teardown_component',
   'teardown_components',
+  'component_enabled',
+  'component_disabled',
   'reprovision_sandbox',
   'drift_run_reprovision_sandbox',
   'action_workflow_run',

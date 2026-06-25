@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon/pkg/config/diff"
@@ -158,11 +159,6 @@ type Install struct {
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 
-	// ComponentToggles controls which toggleable components are enabled or disabled
-	// for this install, keyed by component name. true = enabled, false = disabled.
-	// Absent keys fall through to the component's default_enabled setting.
-	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
-
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved
@@ -179,6 +175,10 @@ type ComponentOverride struct {
 	// TFVars is a raw .tfvars (HCL or JSON) override for a Terraform component,
 	// appended as the final, highest-precedence -var-file at deploy time.
 	TFVars string `mapstructure:"tf_vars,omitempty" toml:"tf_vars,omitempty"`
+	// Enabled controls whether a toggleable component is deployed on this install.
+	// nil leaves the component at its default_enabled setting; false tears it down,
+	// true deploys it. Only meaningful for components declared toggleable.
+	Enabled *bool `mapstructure:"enabled,omitempty" toml:"enabled,omitempty"`
 }
 
 func (c ComponentOverride) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -186,7 +186,9 @@ func (c ComponentOverride) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("helm_values").Short("install-level Helm values override (YAML)").
 		Long("Raw YAML that deep-merges over the Helm component's app-config values and wins on overlapping keys. Only valid for Helm components.").
 		Field("tf_vars").Short("install-level Terraform vars override (.tfvars)").
-		Long("Raw .tfvars (HCL or JSON) appended as the final, highest-precedence -var-file. Variables must be declared in the module. Only valid for Terraform components.")
+		Long("Raw .tfvars (HCL or JSON) appended as the final, highest-precedence -var-file. Variables must be declared in the module. Only valid for Terraform components.").
+		Field("enabled").Short("whether the component is deployed on this install").
+		Long("Toggles a toggleable component on this install. true deploys it, false tears it down. Omit to leave it at the component's default_enabled setting. Only valid for components declared toggleable.")
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -269,6 +271,9 @@ func (i *Install) FlattenedInputs() map[string]string {
 		}
 		if override.TFVars != "" {
 			flattened[TFVarsOverrideInputName(compName)] = override.TFVars
+		}
+		if override.Enabled != nil {
+			flattened[EnabledOverrideInputName(compName)] = strconv.FormatBool(*override.Enabled)
 		}
 	}
 	return flattened
