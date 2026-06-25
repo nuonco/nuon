@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type AppConfig struct {
@@ -272,6 +273,17 @@ func (a *AppConfig) resolveKubernetesContexts() error {
 			return fmt.Errorf("component %q references unknown kubernetes_context %q", c.Name, c.KubernetesContext)
 		}
 		c.AddDependency(ctx.Component)
+	}
+
+	for _, action := range a.Actions {
+		if action == nil || action.KubernetesContext == "" {
+			continue
+		}
+		ctx, ok := contextsByName[action.KubernetesContext]
+		if !ok {
+			return fmt.Errorf("action %q references unknown kubernetes_context %q", action.Name, action.KubernetesContext)
+		}
+		action.Dependencies = generics.UniqueSlice(append(action.Dependencies, ctx.Component))
 	}
 
 	return nil
