@@ -68,7 +68,7 @@ var HintToPartials = map[HintType][]PartialName{
 	HintSandboxReprovisioned: {PartialSandbox, PartialDomain},
 	HintActionRan:            {PartialActions},
 	HintStackRunCompleted:    {PartialStack},
-	HintStackOutputsUpdated:  {PartialStack},
+	HintStackOutputsUpdated:  {PartialStack, PartialInputs},
 	HintInputsUpdated:        {PartialInputs},
 	HintSecretsUpdated:       {PartialSecrets},
 	HintRunnerUpdated:        {PartialRunner},
