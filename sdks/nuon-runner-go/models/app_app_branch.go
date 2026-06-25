@@ -47,6 +47,9 @@ type AppAppBranch struct {
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 
+	// workflow count
+	WorkflowCount int64 `json:"workflow_count,omitempty"`
+
 	// workflows
 	Workflows []*AppWorkflow `json:"workflows"`
 }
