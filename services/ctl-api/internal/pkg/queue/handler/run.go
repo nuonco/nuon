@@ -1,12 +1,16 @@
 package handler
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
@@ -17,6 +21,8 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/workflowmanager"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
+
+const handlerTerminateThreshold = 10000
 
 func (h *handler) run(ctx workflow.Context) (bool, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -61,7 +67,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Handler signals have explicit callbacks for completion, so the alive
 	// checker only needs to detect deletion/expiry. A longer interval reduces
 	// local activity overhead for long-running signals.
-	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(5*time.Minute))
+	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(1*time.Hour))
 
 	// don't continue-as-new mid-phase: it orphans the in-flight update and the
 	// successor run fails the signal while the work is still alive.
@@ -69,12 +75,36 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return h.validating || h.executing
 	}))
 
-	// Create a temporal metrics writer for workflow size reporting.
-	if h.mw != nil && h.v != nil {
-		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {
-			mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
-		}
+	mgrOpts = append(mgrOpts, workflowmanager.WithTerminateThreshold(handlerTerminateThreshold))
+	mgrOpts = append(mgrOpts, workflowmanager.WithOnTerminated(func(gCtx workflow.Context, historyLen int) {
+		desc := fmt.Sprintf("handler terminated: workflow history (%d) exceeded safety threshold (%d)", historyLen, handlerTerminateThreshold)
+		l.Error(desc,
+			zap.String("queue_signal_id", h.queueSignalID),
+			zap.Int("history_length", historyLen))
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     h.queueSignalID,
+			Status:            app.StatusError,
+			StatusDescription: desc,
+		})
+
+		tags := metrics.ToTags(map[string]string{
+			"workflow_type": "Handler",
+			"signal_type":   string(h.sig.Type()),
+		})
+		h.mw.Incr("workflow.terminated", tags)
+		h.mw.Event(&statsd.Event{
+			Title:     "Handler workflow terminated due to excessive history",
+			Text:      fmt.Sprintf("Handler %s (signal: %s) terminated at %d events (threshold: %d)", h.queueSignalID, h.sig.Type(), historyLen, handlerTerminateThreshold),
+			AlertType: statsd.Error,
+			Tags:      tags,
+		})
+	}))
+
+	tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw))
+	if err != nil {
+		return false, errors.Wrap(err, "unable to create temporal metrics writer")
 	}
+	mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
 
 	mgrOpts = append(mgrOpts, workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
 		qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
@@ -104,9 +134,17 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 
 	// execute the handler and handle a restart or stop
 	if err := workflow.Await(ctx, func() bool {
-		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, h.finished)
+		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, mgr.Terminated, h.finished)
 	}); err != nil {
 		return false, err
+	}
+
+	// Terminated = emergency exit. Write error status, send callbacks, exit
+	// immediately with no drain wait.
+	if mgr.Terminated {
+		h.setFinished(app.StatusError, "handler terminated due to excessive workflow history")
+		h.sendCompletionCallbacks(ctx)
+		return true, nil
 	}
 
 	// drain in-flight phase updates first: ending the run mid-handler drops its deferred completion callback and wedges the dispatcher. bounded so a stuck handler can't leak the workflow

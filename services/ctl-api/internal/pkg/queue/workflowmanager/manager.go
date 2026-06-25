@@ -31,18 +31,25 @@ type Manager struct {
 	// (history too large, hint requested, or error recovery).
 	Restarted bool
 
+	// Terminated is set to true when the workflow history exceeds the
+	// terminate threshold. Unlike Restarted, this fires immediately
+	// with no deferral — the workflow must exit without draining.
+	Terminated bool
+
 	opts options
 }
 
 type options struct {
-	historyMax    int
-	checkInterval time.Duration
-	aliveChecker  func(ctx workflow.Context) (bool, error)
-	canHint       CANHintChecker
-	expiryChecker func(ctx workflow.Context) (*time.Time, error)
-	mw            tmetrics.Writer
-	onStopped     func(ctx workflow.Context)
-	deferRestart  func() bool
+	historyMax         int
+	terminateThreshold int
+	checkInterval      time.Duration
+	aliveChecker       func(ctx workflow.Context) (bool, error)
+	canHint            CANHintChecker
+	expiryChecker      func(ctx workflow.Context) (*time.Time, error)
+	mw                 tmetrics.Writer
+	onStopped          func(ctx workflow.Context)
+	onTerminated       func(ctx workflow.Context, historyLen int)
+	deferRestart       func() bool
 }
 
 // Option configures a Manager.
@@ -52,6 +59,14 @@ type Option func(*options)
 // continue-as-new. Defaults to 10000.
 func WithHistoryMax(n int) Option {
 	return func(o *options) { o.historyMax = n }
+}
+
+// WithTerminateThreshold sets a hard ceiling on workflow history length.
+// When exceeded, the manager sets Terminated=true immediately — no deferral,
+// no draining. Callers should treat this as an emergency exit. A value of 0
+// (the default) disables the terminate threshold.
+func WithTerminateThreshold(n int) Option {
+	return func(o *options) { o.terminateThreshold = n }
 }
 
 // WithCheckInterval sets how often the background goroutine runs checks.
@@ -88,6 +103,14 @@ func WithMetricsWriter(mw tmetrics.Writer) Option {
 // Useful for writing terminal status to DB before the workflow exits.
 func WithOnStopped(fn func(ctx workflow.Context)) Option {
 	return func(o *options) { o.onStopped = fn }
+}
+
+// WithOnTerminated provides a callback invoked when the manager sets
+// Terminated=true. Use this to write error status or send notifications
+// before the workflow exits. Keep it fast — the workflow is in an
+// emergency-exit path.
+func WithOnTerminated(fn func(ctx workflow.Context, historyLen int)) Option {
+	return func(o *options) { o.onTerminated = fn }
 }
 
 // WithDeferRestart holds off continue-as-new while fn returns true. Stop
@@ -139,7 +162,7 @@ func (m *Manager) run(ctx workflow.Context) {
 	l, _ := log.WorkflowLogger(ctx)
 
 	for {
-		if m.Stopped || m.Restarted {
+		if m.Stopped || m.Restarted || m.Terminated {
 			return
 		}
 
@@ -154,8 +177,26 @@ func (m *Manager) run(ctx workflow.Context) {
 			return
 		}
 
-		if m.Stopped || m.Restarted {
+		if m.Stopped || m.Restarted || m.Terminated {
 			return
+		}
+
+		// Check 0: terminate threshold — hard ceiling, no deferral.
+		if m.opts.terminateThreshold > 0 {
+			info := workflow.GetInfo(ctx)
+			historyLen := info.GetCurrentHistoryLength()
+			if historyLen >= m.opts.terminateThreshold {
+				if l != nil {
+					l.Error("workflow history exceeded terminate threshold, forcing immediate termination",
+						zap.Int("history_length", historyLen),
+						zap.Int("terminate_threshold", m.opts.terminateThreshold))
+				}
+				m.Terminated = true
+				if m.opts.onTerminated != nil {
+					m.opts.onTerminated(ctx, historyLen)
+				}
+				return
+			}
 		}
 
 		// Check 1: continue-as-new (history size + hint).
