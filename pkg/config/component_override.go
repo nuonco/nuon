@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/hex"
-	"strconv"
 	"strings"
 )
 
@@ -41,11 +40,6 @@ type ComponentOverrideKind string
 const (
 	ComponentOverrideKindHelmValues ComponentOverrideKind = "helm_values"
 	ComponentOverrideKindTFVars     ComponentOverrideKind = "tf_vars"
-	// ComponentOverrideKindEnabled drives whether a toggleable component is
-	// deployed (enabled) or torn down (disabled) on an install. Unlike the
-	// helm_values / tf_vars kinds it applies to every component type, and its
-	// value is a boolean rather than a structured document.
-	ComponentOverrideKindEnabled ComponentOverrideKind = "enabled"
 )
 
 // InputType returns the dedicated AppInput type used for this override kind's
@@ -57,8 +51,6 @@ func (k ComponentOverrideKind) InputType() string {
 		return InputTypeYAML
 	case ComponentOverrideKindTFVars:
 		return InputTypeHCL
-	case ComponentOverrideKindEnabled:
-		return "bool"
 	}
 	return "string"
 }
@@ -81,12 +73,6 @@ func TFVarsOverrideInputName(componentName string) string {
 	return componentOverrideInputName(ComponentOverrideKindTFVars, componentName)
 }
 
-// EnabledOverrideInputName returns the reserved synthetic input name that carries
-// the install-level enabled/disabled toggle for the named toggleable component.
-func EnabledOverrideInputName(componentName string) string {
-	return componentOverrideInputName(ComponentOverrideKindEnabled, componentName)
-}
-
 // IsComponentOverrideInputName reports whether an input name is a reserved
 // component-override synthetic input.
 func IsComponentOverrideInputName(name string) bool {
@@ -105,9 +91,6 @@ type SyntheticOverrideInput struct {
 	Component string
 	// Index is the suggested ordering index, offset well past real inputs.
 	Index int
-	// Default is the synthetic input's default value. For the enabled kind this
-	// carries the component's default_enabled ("true"/"false"); empty otherwise.
-	Default string
 }
 
 // SyntheticComponentOverrideInputs enumerates the synthetic override inputs that
@@ -140,19 +123,6 @@ func SyntheticComponentOverrideInputs(components ComponentList) []SyntheticOverr
 			})
 			idx++
 		}
-
-		// Every toggleable component (regardless of type) gets an enabled input
-		// so its deploy/teardown state flows through the install input system.
-		if comp.Toggleable != nil && *comp.Toggleable {
-			out = append(out, SyntheticOverrideInput{
-				Name:      EnabledOverrideInputName(comp.Name),
-				Kind:      ComponentOverrideKindEnabled,
-				Component: comp.Name,
-				Index:     idx,
-				Default:   strconv.FormatBool(comp.DefaultEnabled != nil && *comp.DefaultEnabled),
-			})
-			idx++
-		}
 	}
 	return out
 }
@@ -169,7 +139,7 @@ func ParseComponentOverrideInputName(name string) (kind ComponentOverrideKind, c
 
 	// rest is "<kind>_<hex>"; kind values themselves contain underscores, so
 	// match against the known kinds rather than splitting on "_".
-	for _, k := range []ComponentOverrideKind{ComponentOverrideKindHelmValues, ComponentOverrideKindTFVars, ComponentOverrideKindEnabled} {
+	for _, k := range []ComponentOverrideKind{ComponentOverrideKindHelmValues, ComponentOverrideKindTFVars} {
 		prefix := string(k) + "_"
 		if !strings.HasPrefix(rest, prefix) {
 			continue

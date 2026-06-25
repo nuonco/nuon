@@ -9,15 +9,12 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/actionworkflowrun"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/awaitrunnerhealthy"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeployapplyplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentdeploysyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentsyncimage"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownapplyplan"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 )
@@ -38,20 +35,15 @@ type genCtx struct {
 	appCfg    *app.AppConfig
 	awData    []*app.InstallActionWorkflow
 
-	// enabledInputs holds the install's latest input values, used to resolve
-	// whether a toggleable component is enabled via its synthetic enabled input
-	// (see config.EnabledOverrideInputName). May be nil if no inputs exist.
-	enabledInputs map[string]*string
+	// installConfig is the per-install configuration, used to check
+	// component toggle overrides. May be nil if no install config exists.
+	installConfig *app.InstallConfig
 
 	// Derived once from appCfg.ComponentConfigConnections for dep-aware
 	// deploys.
 	components   map[string]app.Component
 	depIDsByComp map[string][]string
 	cccByComp    map[string]*app.ComponentConfigConnection
-
-	// enablement resolves effective-enabled state and cascade ordering from the
-	// pinned app config and the install's enabled inputs.
-	enablement *app.ComponentEnablementResolver
 
 	// addedImageDepSyncs tracks image-dep components that already had a
 	// sync step prepended in this workflow. Multiple non-image components
@@ -75,30 +67,15 @@ func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.A
 	for _, opt := range opts {
 		opt(dg)
 	}
-	dg.enablement = app.NewComponentEnablementResolver(dg.cccByComp, dg.enabledInputs)
 	return dg
 }
 
 type genCtxOption func(*genCtx)
 
-// WithInstallInputs supplies the install's latest input values so the step
-// generator can resolve toggleable-component enabled-state from the synthetic
-// enabled inputs (the source of truth for component toggles).
-func WithInstallInputs(ii *app.InstallInputs) genCtxOption {
+func WithInstallConfig(ic *app.InstallConfig) genCtxOption {
 	return func(dg *genCtx) {
-		if ii != nil {
-			dg.enabledInputs = ii.Values
-		}
+		dg.installConfig = ic
 	}
-}
-
-// componentEnabledFromInputs resolves whether a toggleable component is enabled
-// from a set of install input values. The synthetic enabled input
-// (config.EnabledOverrideInputName) is the source of truth; when unset it falls
-// back to the component's default_enabled. Non-toggleable components are always
-// enabled.
-func componentEnabledFromInputs(enabledInputs map[string]*string, ccc *app.ComponentConfigConnection) bool {
-	return app.ComponentEnabledFromInputs(enabledInputs, ccc)
 }
 
 // buildComponentConfigMaps builds the (components, depIDsByComp, cccByComp)
@@ -285,13 +262,13 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 			return nil, errors.Errorf("component %s not found in app config", compID)
 		}
 
-		// Skip a component that is not effectively enabled: either its own
-		// toggle is off, or a component it depends on (declared or
-		// output-referenced) is disabled. This guards every deploy path — not
-		// just toggle reconciliation — from deploying a component against a
-		// dependency that is gone.
-		if _, ok := dg.cccByComp[compID]; ok && !dg.effectiveEnabled(compID) {
-			continue
+		if ccc, ok := dg.cccByComp[compID]; ok && ccc.IsToggleable() {
+			if dg.installConfig != nil && !dg.installConfig.IsComponentEnabled(compID, ccc) {
+				continue
+			}
+			if dg.installConfig == nil && !ccc.GetDefaultEnabled() {
+				continue
+			}
 		}
 
 		// Dep-aware image-sync prepend.
@@ -416,59 +393,6 @@ func getComponentDeploySteps(ctx workflow.Context, dg *genCtx, componentIDs []st
 	}
 
 	return steps, nil
-}
-
-// getComponentTeardownSteps emits the steps that tear a single component down
-// off an install: a teardown sync-and-plan followed by an apply for
-// infrastructure components, or a no-op skip step for image components (whose
-// bytes live in the registry and have nothing to destroy). It opens its own
-// step group and does not include lifecycle action steps — callers weave those
-// in around it.
-func getComponentTeardownSteps(ctx workflow.Context, dg *genCtx, comp app.Component) ([]*app.WorkflowStep, error) {
-	steps := make([]*app.WorkflowStep, 0)
-	dg.sg.nextGroup()
-
-	if comp.Type.IsImage() {
-		skipStep, err := dg.sg.installSignalStep(ctx, dg.installID, "skipped image disable "+comp.Name, pgtype.Hstore{
-			"reason": generics.ToPtr("skipped image teardown"),
-		}, nil, false)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create image teardown skip step")
-		}
-		return append(steps, skipStep), nil
-	}
-
-	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
-		InstallID:   dg.installID,
-		ComponentID: comp.ID,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to get install component")
-	}
-
-	planStep, err := dg.sg.installSignalStep(ctx, dg.installID, "teardown sync and plan "+comp.Name, pgtype.Hstore{}, &componentteardownsyncandplan.Signal{
-		InstallComponentID: installComp.ID,
-		InstallID:          dg.installID,
-		ComponentID:        comp.ID,
-		Role:               dg.flw.Role,
-	}, dg.flw.PlanOnly, WithSkippable(false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create teardown sync and plan step")
-	}
-
-	applyStep, err := dg.sg.installSignalStep(ctx, dg.installID, "teardown apply plan "+comp.Name, pgtype.Hstore{}, &componentteardownapplyplan.Signal{
-		InstallComponentID: installComp.ID,
-		InstallID:          dg.installID,
-		ComponentID:        comp.ID,
-	}, dg.flw.PlanOnly, WithMaxAutoRetries(componentMaxAutoRetries(dg.appCfg, comp.ID)))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable to create teardown apply step")
-	}
-
-	if dg.flw.PlanOnly {
-		return append(steps, planStep), nil
-	}
-	return append(steps, planStep, applyStep), nil
 }
 
 // getImageDepSyncSteps returns image-dep sync steps to prepend before the

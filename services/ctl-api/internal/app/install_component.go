@@ -60,11 +60,6 @@ type InstallComponent struct {
 	Status            InstallComponentStatus `json:"status,omitzero" gorm:"default:''" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                 `json:"status_description,omitzero" gorm:"default:''" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus        `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`
-
-	// Enabled is the resolved enabled/disabled state for a toggleable component
-	// on this install (from the synthetic enabled install input, falling back to
-	// the component's default_enabled). It is nil for non-toggleable components.
-	Enabled *bool `json:"enabled,omitempty" gorm:"-" temporaljson:"-"`
 }
 
 type InstallComponentSummary struct {

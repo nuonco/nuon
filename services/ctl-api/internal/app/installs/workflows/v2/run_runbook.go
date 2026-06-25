@@ -82,11 +82,6 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 		return nil, errors.Wrap(err, "unable to get install")
 	}
 
-	var enabledInputs map[string]*string
-	if install.CurrentInstallInputs != nil {
-		enabledInputs = install.CurrentInstallInputs.Values
-	}
-
 	// Generate state
 	orgEnabled, err := activities.AwaitHasFeatureByFeature(ctx, string(app.OrgFeatureStateGenV2))
 	if err != nil {
@@ -109,7 +104,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	for _, stepCfg := range runbookSteps {
 		switch stepCfg.Type {
 		case app.RunbookStepTypeComponentDeploy:
-			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, flw, enabledInputs)
+			deploySteps, err := runbookDeploySteps(ctx, installID, &stepCfg, sg, flw)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to generate deploy step %s", stepCfg.Name)
 			}
@@ -142,7 +137,7 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 	return sg.Result(steps), nil
 }
 
-func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string) ([]*app.WorkflowStep, error) {
+func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.RunbookStepConfig, sg *stepGroup, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	// Find the primary component by name
 	component, err := activities.AwaitGetComponentByName(ctx, activities.GetComponentByNameRequest{
 		InstallID:     installID,
@@ -166,14 +161,14 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 		}
 
 		for _, compID := range componentIDs {
-			depSteps, err := runbookDeploySingleComponent(ctx, installID, compID, stepCfg.Name, sg, flw, enabledInputs)
+			depSteps, err := runbookDeploySingleComponent(ctx, installID, compID, stepCfg.Name, sg, flw)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unable to deploy dependent %s", compID)
 			}
 			result = append(result, depSteps...)
 		}
 	} else {
-		steps, err := runbookDeploySingleComponent(ctx, installID, component.ID, stepCfg.Name, sg, flw, enabledInputs)
+		steps, err := runbookDeploySingleComponent(ctx, installID, component.ID, stepCfg.Name, sg, flw)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +178,7 @@ func runbookDeploySteps(ctx workflow.Context, installID string, stepCfg *app.Run
 	return result, nil
 }
 
-func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow, enabledInputs map[string]*string) ([]*app.WorkflowStep, error) {
+func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow) ([]*app.WorkflowStep, error) {
 	installComp, err := activities.AwaitGetInstallComponent(ctx, activities.GetInstallComponentRequest{
 		InstallID:   installID,
 		ComponentID: componentID,
@@ -204,24 +199,6 @@ func runbookDeploySingleComponent(ctx workflow.Context, installID, componentID, 
 
 	name := fmt.Sprintf("%s/%s", stepName, component.Name)
 	result := make([]*app.WorkflowStep, 0)
-
-	// Install inputs are the source of truth for toggleable components: a
-	// component disabled on this install is skipped rather than deployed, even
-	// when a runbook step names it explicitly.
-	var latestConfig *app.ComponentConfigConnection
-	if len(component.ComponentConfigs) > 0 {
-		latestConfig = &component.ComponentConfigs[0]
-	}
-	if !componentEnabledFromInputs(enabledInputs, latestConfig) {
-		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (skipped)", name))
-		skipStep, err := sg.installSignalStep(ctx, installID, fmt.Sprintf("skipped %s — component disabled", name), pgtype.Hstore{
-			"reason": generics.ToPtr(fmt.Sprintf("%s is disabled on this install. Enable it in your install config ([components.%s] enabled = true) or via the dashboard before it will deploy.", component.Name, component.Name)),
-		}, nil, flw.PlanOnly)
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to create skip step")
-		}
-		return append(result, skipStep), nil
-	}
 
 	if component.Type.IsImage() {
 		sg.nextGroupNamed(fmt.Sprintf("deploy: %s (sync)", name))
@@ -496,7 +473,7 @@ func runbookSandboxLifecycleSteps(ctx workflow.Context, installID string, stepCf
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
 	deploySteps, err := deployAllComponents(ctx, dg)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")

@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
-import { Tooltip } from '@/components/common/Tooltip'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
 import { RoleSelector } from '@/components/roles/RoleSelector'
@@ -40,6 +39,7 @@ export const ToggleComponentModalContainer = ({
       toggleComponent({
         body: {
           enabled: enabling,
+          plan_only: false,
           ...(params.role && { role: params.role }),
         },
         componentId: component.id,
@@ -105,8 +105,6 @@ export const ToggleComponentModalContainer = ({
   )
 }
 
-const MANAGED_BY_CONFIG_TIP = 'Managed by config. Edit and use nuon installs sync'
-
 export const ToggleComponentButton = ({
   component,
   enabling,
@@ -116,32 +114,9 @@ export const ToggleComponentButton = ({
   enabling: boolean
 }) => {
   const { addModal } = useSurfaces()
-  const { install } = useInstall()
   const modal = (
     <ToggleComponentModalContainer component={component} enabling={enabling} />
   )
-
-  const isManagedByConfig = install?.metadata?.managed_by === 'nuon/cli/install-config'
-  const label = enabling ? 'Enable component' : 'Disable component'
-  const icon = <Icon variant={enabling ? 'ToggleRightIcon' : 'ToggleLeftIcon'} />
-
-  if (isManagedByConfig) {
-    return (
-      <Tooltip
-        tipContent={MANAGED_BY_CONFIG_TIP}
-        position="left"
-        tipContentClassName="!whitespace-normal !w-auto max-w-[200px] text-xs"
-        className="w-full"
-      >
-        <Button disabled className="pointer-events-none" {...props}>
-          {props?.isMenuButton ? null : icon}
-          {label}
-          {props?.isMenuButton ? icon : null}
-        </Button>
-      </Tooltip>
-    )
-  }
-
   return (
     <Button
       onClick={() => {
@@ -149,9 +124,13 @@ export const ToggleComponentButton = ({
       }}
       {...props}
     >
-      {props?.isMenuButton ? null : icon}
-      {label}
-      {props?.isMenuButton ? icon : null}
+      {props?.isMenuButton ? null : (
+        <Icon variant={enabling ? 'ToggleRightIcon' : 'ToggleLeftIcon'} />
+      )}
+      {enabling ? 'Enable component' : 'Disable component'}
+      {props?.isMenuButton ? (
+        <Icon variant={enabling ? 'ToggleRightIcon' : 'ToggleLeftIcon'} />
+      ) : null}
     </Button>
   )
 }

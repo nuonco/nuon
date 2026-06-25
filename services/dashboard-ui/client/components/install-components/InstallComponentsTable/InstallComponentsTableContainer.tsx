@@ -80,6 +80,7 @@ export const InstallComponentsTableContainer = ({
   }))
 
   const configConnections = configResult?.component_config_connections
+  const componentToggles = install?.install_config?.component_toggles
 
   return (
     <InstallComponentsTable
@@ -88,7 +89,8 @@ export const InstallComponentsTableContainer = ({
         deps,
         org?.id ?? '',
         install?.id ?? '',
-        configConnections
+        configConnections,
+        componentToggles
       )}
       filterActions={
         <div className="flex items-center gap-3">

@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -65,20 +64,22 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	if len(component.ComponentConfigs) > 0 {
 		latestConfig := &component.ComponentConfigs[0]
 		if latestConfig.IsToggleable() {
-			// Enabled-state is the synthetic enabled install input; fall back to
-			// the component's default_enabled when no value is set.
-			enabled := latestConfig.GetDefaultEnabled()
-			if ii, err := s.getLatestInstallInputs(ctx, installID); err == nil && ii != nil {
-				if v, ok := ii.Values[config.EnabledOverrideInputName(component.Name)]; ok && v != nil {
-					if parsed, perr := strconv.ParseBool(*v); perr == nil {
-						enabled = parsed
-					}
-				}
+			installConfig, err := s.helpers.GetLatestInstallConfig(ctx, installID)
+			if err != nil {
+				ctx.Error(fmt.Errorf("unable to get install config: %w", err))
+				return
 			}
-			if !enabled {
+			if installConfig != nil && !installConfig.IsComponentEnabled(componentID, latestConfig) {
 				ctx.Error(stderr.ErrUser{
 					Err:         fmt.Errorf("component is disabled"),
-					Description: "This component is disabled on this install. Enable it in your install config ([components." + component.Name + "] enabled = true) or via the dashboard before deploying.",
+					Description: "This component is disabled on this install. Enable it before deploying.",
+				})
+				return
+			}
+			if installConfig == nil && !latestConfig.GetDefaultEnabled() {
+				ctx.Error(stderr.ErrUser{
+					Err:         fmt.Errorf("component is disabled by default"),
+					Description: "This component is disabled by default. Enable it before deploying.",
 				})
 				return
 			}

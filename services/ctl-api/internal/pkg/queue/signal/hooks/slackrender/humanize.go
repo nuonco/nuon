@@ -95,10 +95,6 @@ func titleFromWorkflowType(wfType string) string {
 		return "Running app branch"
 	case WorkflowTypeRunbookRun:
 		return "Running runbook"
-	case WorkflowTypeComponentEnabled:
-		return "Enabling component"
-	case WorkflowTypeComponentDisabled:
-		return "Disabling component"
 	}
 	return ""
 }

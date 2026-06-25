@@ -70,7 +70,7 @@ func DeployAllComponents(ctx workflow.Context, flw *app.Workflow) (*app.Generate
 		return nil, errors.Wrap(err, "unable to get install graph")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallConfig(install.InstallConfig))
 
 	var lifecycleSteps []*app.WorkflowStep
 	if !flw.PlanOnly {

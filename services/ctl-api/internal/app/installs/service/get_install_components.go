@@ -1,8 +1,6 @@
 package service
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -119,102 +117,5 @@ func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, ty
 		return nil, fmt.Errorf("failed to paginate install components: %w", err)
 	}
 
-	ptrs := make([]*app.InstallComponent, len(paginatedComponents))
-	for i := range paginatedComponents {
-		ptrs[i] = &paginatedComponents[i]
-	}
-	if err := s.populateComponentEnabled(ctx, installID, ptrs); err != nil {
-		return nil, err
-	}
-
 	return paginatedComponents, nil
-}
-
-// populateComponentEnabled resolves and sets the Enabled field on each
-// toggleable install component from the install's current input values
-// (falling back to the component's default_enabled). Non-toggleable components
-// are left untouched (Enabled stays nil).
-func (s *service) populateComponentEnabled(ctx context.Context, installID string, comps []*app.InstallComponent) error {
-	if len(comps) == 0 {
-		return nil
-	}
-
-	var appConfigID string
-	if err := s.db.WithContext(ctx).
-		Model(&app.Install{}).
-		Select("app_config_id").
-		Where("id = ?", installID).
-		Scan(&appConfigID).Error; err != nil {
-		return fmt.Errorf("unable to get install app config: %w", err)
-	}
-	if appConfigID == "" {
-		return nil
-	}
-
-	var cccs []app.ComponentConfigConnection
-	if err := s.db.WithContext(ctx).
-		Preload("Component").
-		Where("app_config_id = ?", appConfigID).
-		Find(&cccs).Error; err != nil {
-		return fmt.Errorf("unable to get component config connections: %w", err)
-	}
-	cccByComp := make(map[string]*app.ComponentConfigConnection, len(cccs))
-	for i := range cccs {
-		cccByComp[cccs[i].ComponentID] = &cccs[i]
-	}
-
-	// Connections are only re-created when a component's checksum changes, so an
-	// app config produced by a no-op sync has no connection rows of its own and
-	// instead reuses connections pinned to an earlier config in its lineage. Mirror
-	// GetFullAppConfig and resolve any missing components via the latest-configs view.
-	var missingComponentIDs []string
-	for _, comp := range comps {
-		if _, ok := cccByComp[comp.ComponentID]; !ok {
-			missingComponentIDs = append(missingComponentIDs, comp.ComponentID)
-		}
-	}
-	if len(missingComponentIDs) > 0 {
-		var fallbackCccs []app.ComponentConfigConnection
-		if err := s.db.WithContext(ctx).
-			Scopes(
-				scopes.WithDisableViews,
-				scopes.WithOverrideTable("component_config_connections_latest_configs_view"),
-			).
-			Preload("Component").
-			Where("component_id IN ?", missingComponentIDs).
-			Find(&fallbackCccs).Error; err != nil {
-			return fmt.Errorf("unable to get fallback component config connections: %w", err)
-		}
-		for i := range fallbackCccs {
-			if _, ok := cccByComp[fallbackCccs[i].ComponentID]; !ok {
-				cccByComp[fallbackCccs[i].ComponentID] = &fallbackCccs[i]
-			}
-		}
-	}
-
-	enabledInputs := map[string]*string{}
-	var inputs app.InstallInputs
-	if err := s.db.WithContext(ctx).
-		Where("install_id = ?", installID).
-		Order("created_at DESC").
-		First(&inputs).Error; err == nil {
-		enabledInputs = inputs.Values
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("unable to get install inputs: %w", err)
-	}
-
-	resolver := app.NewComponentEnablementResolver(cccByComp, enabledInputs)
-	for _, comp := range comps {
-		ccc := cccByComp[comp.ComponentID]
-		if ccc == nil || !ccc.IsToggleable() {
-			continue
-		}
-		// Report effective-enabled (own toggle AND every dependency enabled) so
-		// the displayed flag matches the deploy/teardown decision: a component
-		// whose dependency is disabled is torn down and must read as disabled.
-		enabled := resolver.EffectiveEnabled(comp.ComponentID)
-		comp.Enabled = &enabled
-	}
-
-	return nil
 }

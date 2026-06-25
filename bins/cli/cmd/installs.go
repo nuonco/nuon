@@ -257,7 +257,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 				return fmt.Errorf("only one of --enable or --disable can be set")
 			}
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.ToggleComponent(cmd.Context(), id, componentID, enable, disable, PrintJSON)
+			return svc.ToggleComponent(cmd.Context(), id, componentID, enable, disable, planOnly, PrintJSON)
 		}),
 	}
 	componentsToggleCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
@@ -266,6 +266,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsToggleCmd.MarkFlagRequired("component-id")
 	componentsToggleCmd.Flags().BoolVar(&enable, "enable", false, "Enable the component")
 	componentsToggleCmd.Flags().BoolVar(&disable, "disable", false, "Disable the component")
+	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Plan without applying")
 	componentsCmd.AddCommand(componentsToggleCmd)
 
 	installsCmds.AddCommand(componentsCmd)
