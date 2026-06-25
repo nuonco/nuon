@@ -21,6 +21,9 @@ type inputMapping struct {
 	groupID          string
 	defaultValue     string
 	currentValue     string
+	// readOnly is set for customer-configurable inputs (source == "customer").
+	// They are displayed but cannot be edited or focused here.
+	readOnly bool
 }
 
 func fetchConfigCmd(m model) tea.Cmd {
@@ -71,6 +74,12 @@ func (m *model) createFormInputs() {
 		ti.SetWidth(50)
 		ti.Prompt = ""
 
+		// Only vendor-sourced inputs are editable via the API. Customer- and
+		// install-stack-sourced inputs are managed elsewhere and rejected by the
+		// update endpoint, so display them read-only. Treat an empty source as
+		// vendor (the server default).
+		readOnly := input.Source != "" && input.Source != string(models.AppAppInputSourceVendor)
+
 		curVal := current[input.Name]
 		if input.Sensitive {
 			// Mask sensitive values; pre-fill with the stored value so leaving
@@ -100,6 +109,7 @@ func (m *model) createFormInputs() {
 			sensitive:    input.Sensitive,
 			defaultValue: input.Default,
 			currentValue: curVal,
+			readOnly:     readOnly,
 		}
 		if group != nil {
 			mapping.groupName = group.DisplayName
@@ -124,13 +134,30 @@ func (m *model) createFormInputs() {
 		}
 	}
 
-	// Focus the first input.
-	if len(m.inputs) > 0 {
-		m.inputs[0].Focus()
-		m.focusIndex = 0
+	// Focus the first focusable (editable) input, falling back to the toggle
+	// when every input is read-only.
+	m.focusIndex = m.toggleIndex()
+	for i := range m.inputMappings {
+		if !m.inputMappings[i].readOnly {
+			m.inputs[i].Focus()
+			m.focusIndex = i
+			break
+		}
 	}
 
 	m.updateViewportContent()
+}
+
+// focusable reports whether the field at index can receive focus. The deploy
+// dependents toggle is always focusable; read-only inputs never are.
+func (m *model) focusable(index int) bool {
+	if index == m.toggleIndex() {
+		return true
+	}
+	if index < 0 || index >= len(m.inputMappings) {
+		return false
+	}
+	return !m.inputMappings[index].readOnly
 }
 
 // toggleIndex is the focusIndex of the "deploy dependents" toggle: it lives
@@ -149,9 +176,15 @@ func (m *model) nextInput() {
 		m.inputs[m.focusIndex].Blur()
 	}
 
-	m.focusIndex++
-	if m.focusIndex >= m.totalFields() {
-		m.focusIndex = 0
+	total := m.totalFields()
+	for i := 0; i < total; i++ {
+		m.focusIndex++
+		if m.focusIndex >= total {
+			m.focusIndex = 0
+		}
+		if m.focusable(m.focusIndex) {
+			break
+		}
 	}
 
 	if m.focusIndex < len(m.inputs) {
@@ -166,9 +199,15 @@ func (m *model) prevInput() {
 		m.inputs[m.focusIndex].Blur()
 	}
 
-	m.focusIndex--
-	if m.focusIndex < 0 {
-		m.focusIndex = m.totalFields() - 1
+	total := m.totalFields()
+	for i := 0; i < total; i++ {
+		m.focusIndex--
+		if m.focusIndex < 0 {
+			m.focusIndex = total - 1
+		}
+		if m.focusable(m.focusIndex) {
+			break
+		}
 	}
 
 	if m.focusIndex < len(m.inputs) {
@@ -204,6 +243,9 @@ func (m *model) insertAtCursor(idx int, content string) {
 
 func (m *model) validateForm() error {
 	for i, mapping := range m.inputMappings {
+		if mapping.readOnly {
+			continue
+		}
 		if mapping.required && strings.TrimSpace(m.inputs[i].Value()) == "" {
 			return fmt.Errorf("%s is required", mapping.label())
 		}
@@ -217,21 +259,22 @@ func (m *model) submitForm() tea.Cmd {
 			return inputsUpdatedMsg{err: err}
 		}
 
-		// The update endpoint expects the full set of inputs, so start from the
-		// existing values and merge in the form fields.
-		merged := make(map[string]string)
-		if m.currentInputs != nil && m.currentInputs.Values != nil {
-			for k, v := range m.currentInputs.Values {
-				merged[k] = v
-			}
-		}
+		// The update endpoint is a partial PATCH: it merges the provided subset
+		// over the install's existing values server-side and rejects any
+		// customer/install-stack sourced inputs in that subset. Send only the
+		// editable (vendor) inputs; existing customer-sourced values are
+		// preserved by the server-side merge.
+		inputs := make(map[string]string)
 		for i, mapping := range m.inputMappings {
-			merged[mapping.name] = m.inputs[i].Value()
+			if mapping.readOnly {
+				continue
+			}
+			inputs[mapping.name] = m.inputs[i].Value()
 		}
 
 		deployDependents := m.deployDependents
 		resp, err := m.api.UpdateInstallInputs(m.ctx, m.installID, &models.ServiceUpdateInstallInputsRequest{
-			Inputs:           merged,
+			Inputs:           inputs,
 			DeployDependents: &deployDependents,
 		})
 		if err != nil {

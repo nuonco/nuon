@@ -30,6 +30,14 @@ var (
 	groupTitleStyle = lipgloss.NewStyle().
 			Foreground(styles.SecondaryColor).
 			Bold(true)
+
+	readOnlyInputStyle = lipgloss.NewStyle().
+				BorderStyle(lipgloss.RoundedBorder()).
+				BorderForeground(styles.BorderInactiveColor).
+				Foreground(styles.SubtleColor).
+				Padding(0, 1)
+
+	readOnlyTagStyle = styles.TextDim.Italic(true)
 )
 
 func groupHeaderStyle(width int) lipgloss.Style {

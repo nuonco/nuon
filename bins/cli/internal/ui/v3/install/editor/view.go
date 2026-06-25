@@ -102,6 +102,18 @@ func (m model) viewContent() string {
 		Render(finalView.String())
 }
 
+// readOnlyValue renders the display value for a read-only (customer-configurable)
+// input, masking sensitive values and falling back to a placeholder when unset.
+func readOnlyValue(mapping inputMapping) string {
+	if mapping.currentValue == "" {
+		return styles.TextDim.Render("not set")
+	}
+	if mapping.sensitive {
+		return strings.Repeat("•", 8)
+	}
+	return mapping.currentValue
+}
+
 // updateViewportContent builds the form content and sets it in the viewport.
 func (m *model) updateViewportContent() {
 	width := min(m.width, maxWidth) - 4
@@ -147,7 +159,9 @@ func (m *model) updateViewportContent() {
 		inputSections := []string{}
 
 		label := labelStyle.Render(mapping.label())
-		if mapping.required {
+		if mapping.readOnly {
+			label += readOnlyTagStyle.Render(" customer-configurable")
+		} else if mapping.required {
 			label += styles.TextError.Render(" *")
 		}
 		inputSections = append(inputSections, label)
@@ -155,15 +169,21 @@ func (m *model) updateViewportContent() {
 		if mapping.description != "" {
 			inputSections = append(inputSections, styles.TextAccent.Render(mapping.description))
 		}
-		if mapping.defaultValue != "" {
-			inputSections = append(inputSections, descStyle.Render(fmt.Sprintf("default: %s", mapping.defaultValue)))
-		}
 
-		fieldContent := m.inputs[i].View()
-		if m.focusIndex == i {
-			inputSections = append(inputSections, focusedInputStyle.Render(fieldContent))
+		if mapping.readOnly {
+			inputSections = append(inputSections, readOnlyInputStyle.Render(readOnlyValue(mapping)))
+			inputSections = append(inputSections, descStyle.Render("configured by the customer · read-only"))
 		} else {
-			inputSections = append(inputSections, blurredInputStyle.Render(fieldContent))
+			if mapping.defaultValue != "" {
+				inputSections = append(inputSections, descStyle.Render(fmt.Sprintf("default: %s", mapping.defaultValue)))
+			}
+
+			fieldContent := m.inputs[i].View()
+			if m.focusIndex == i {
+				inputSections = append(inputSections, focusedInputStyle.Render(fieldContent))
+			} else {
+				inputSections = append(inputSections, blurredInputStyle.Render(fieldContent))
+			}
 		}
 		rendered := giStyle.Render(
 			lipgloss.JoinVertical(
