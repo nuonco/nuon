@@ -18,6 +18,8 @@ title: 'Docker Build'
 | **`labels`**<br/>object | Key/value labels used to organize and filter components. Metadata only; does not affect deployment | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`toggleable`**<br/>boolean | - | **Optional** | - |
+| **`default_enabled`**<br/>boolean | - | **Optional** | - |
 | **`env_vars`**<br/>object | build environment variables Map of environment variables to pass to the Docker build command. Available during the build process. Supports Go templating | **Optional** | `"GOLANG_VERSION"`, `"NODE_ENV"` |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository containing Dockerfile Clone a public GitHub repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | **Optional** | - |
 | **`connected_repo`**<br/>[ConnectedRepoConfig](#connected_repo) | connected repository containing Dockerfile Use a Nuon-connected repository containing the Dockerfile and build context. Requires repo, branch, and optionally directory | **Optional** | - |

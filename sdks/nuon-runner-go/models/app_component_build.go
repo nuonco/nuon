@@ -103,6 +103,9 @@ type AppComponentBuild struct {
 		AppRunnerJob
 	} `json:"runner_job,omitempty"`
 
+	// checksum of the component's source directory at build time
+	SourceChecksum string `json:"source_checksum,omitempty"`
+
 	// SourceDigest is the manifest list digest of the resolved source ref,
 	// e.g. "sha256:abc...". This is the canonical content address of what was
 	// pulled and is used for build dedup.

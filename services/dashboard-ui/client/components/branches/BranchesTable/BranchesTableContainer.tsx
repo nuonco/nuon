@@ -1,27 +1,42 @@
-import { useParams } from 'react-router'
-import type { TAppBranch } from '@/types'
+import { useSearchParams } from 'react-router'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useApp } from '@/hooks/use-app'
+import { useOrg } from '@/hooks/use-org'
+import { getAppBranches } from '@/lib'
 import { BranchesTable, parseBranchesToTableData } from './BranchesTable'
 
-interface IBranchesTableContainer {
-  branches: TAppBranch[]
-  isLoading: boolean
-  pagination?: { hasNext: boolean; offset: number; limit: number }
-}
+const LIMIT = 20
 
 export const BranchesTableContainer = ({
-  branches,
-  isLoading,
-  pagination,
-}: IBranchesTableContainer) => {
-  const params = useParams()
-  const orgId = params.orgId as string
-  const appId = params.appId as string
+  pollInterval = 20000,
+  shouldPoll = true,
+}: {
+  pollInterval?: number
+  shouldPoll?: boolean
+} = {}) => {
+  const { org } = useOrg()
+  const { app } = useApp()
+  const [searchParams] = useSearchParams()
+  const offset = Number(searchParams.get('offset') ?? 0)
+
+  const { data: result, isLoading } = useQuery({
+    queryKey: ['app-branches', org.id, app.id, offset],
+    queryFn: () =>
+      getAppBranches({ orgId: org.id!, appId: app.id!, limit: LIMIT, offset }),
+    enabled: !!org.id && !!app.id,
+    placeholderData: keepPreviousData,
+    refetchInterval: shouldPoll ? pollInterval : false,
+  })
 
   return (
     <BranchesTable
-      data={parseBranchesToTableData(branches, orgId, appId)}
+      data={parseBranchesToTableData(result?.data ?? [], org.id!, app.id!)}
       isLoading={isLoading}
-      pagination={pagination}
+      pagination={{
+        hasNext: result?.pagination?.hasNext ?? false,
+        offset,
+        limit: LIMIT,
+      }}
     />
   )
 }

@@ -22,11 +22,15 @@ export function BranchProvider({
   branchId,
   pollInterval = 20000,
   shouldPoll = false,
+  loadingElement = <ProviderLoading />,
+  errorElement,
 }: {
   children: ReactNode
   branchId: string
   pollInterval?: number
   shouldPoll?: boolean
+  loadingElement?: ReactNode
+  errorElement?: ReactNode
 }) {
   const { org } = useOrg()
   const { app } = useApp()
@@ -48,9 +52,9 @@ export function BranchProvider({
     }
   }, [error])
 
-  if (error && !branch) return <ProviderError error={error} />
+  if (error && !branch) return errorElement !== undefined ? <>{errorElement}</> : <ProviderError error={error} />
 
-  if (isLoading || !branch) return <ProviderLoading />
+  if (isLoading || !branch) return <>{loadingElement}</>
 
   return (
     <BranchContext.Provider value={{ branch, refresh: refetch }}>

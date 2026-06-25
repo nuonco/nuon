@@ -31,6 +31,9 @@ type AppBranch struct {
 	Configs []AppBranchConfig `json:"configs,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"configs,omitzero,omitempty"`
 
 	Workflows []Workflow `json:"workflows,omitzero" gorm:"polymorphic:Owner;constraint:OnDelete:CASCADE;" temporaljson:"workflows,omitzero,omitempty"`
+
+	// Read-only; populated by a COUNT subquery in GetAppBranches, not stored as a column.
+	WorkflowCount int `json:"workflow_count,omitzero" gorm:"->;-:migration" temporaljson:"workflow_count,omitzero,omitempty"`
 }
 
 func (a *AppBranch) Indexes(db *gorm.DB) []migrations.Index {
