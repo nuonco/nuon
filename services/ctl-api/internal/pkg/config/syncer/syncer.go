@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/kubernetescontexts"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/operationroles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/policies"
@@ -251,6 +252,15 @@ func (s *syncer) syncSteps() []syncStep {
 			},
 		})
 	}
+
+	// Sync kubernetes contexts after components: each context resolves its
+	// source-component name to an ID, which only exists once components are synced.
+	steps = append(steps, syncStep{
+		Resource: "app-kubernetes-contexts",
+		Method: func(ctx context.Context) error {
+			return kubernetescontexts.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+		},
+	})
 
 	// Ensure all actions exist (with full initialization: install action workflows)
 	for _, action := range s.cfg.Actions {

@@ -155,6 +155,7 @@ func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *v
 	// Create component config connection
 	componentConfigConnection := app.ComponentConfigConnection{
 		TerraformModuleComponentConfig: &cfg,
+		KubernetesContextName:          comp.KubernetesContext,
 		ComponentID:                    componentID,
 		AppConfigID:                    appConfigID,
 		ComponentDependencyIDs:         pq.StringArray(depIDs),
