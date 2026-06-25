@@ -35,11 +35,6 @@ type AppInstallComponent struct {
 	// drifted object
 	DriftedObject *AppDriftedObject `json:"drifted_object,omitempty"`
 
-	// Enabled is the resolved enabled/disabled state for a toggleable component
-	// on this install (from the synthetic enabled install input, falling back to
-	// the component's default_enabled). It is nil for non-toggleable components.
-	Enabled bool `json:"enabled,omitempty"`
-
 	// helm chart
 	HelmChart *AppHelmChart `json:"helm_chart,omitempty"`
 

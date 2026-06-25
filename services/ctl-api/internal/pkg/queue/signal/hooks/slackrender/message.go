@@ -476,9 +476,7 @@ func workflowSubjectIcon(e Event) string {
 		WorkflowTypeDeployComponents,
 		WorkflowTypeTeardownComponent,
 		WorkflowTypeTeardownComponents,
-		WorkflowTypeDriftRun,
-		WorkflowTypeComponentEnabled,
-		WorkflowTypeComponentDisabled:
+		WorkflowTypeDriftRun:
 		return "🧩"
 	case WorkflowTypeActionWorkflowRun:
 		return "🏃"

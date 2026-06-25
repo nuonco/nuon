@@ -40,93 +40,17 @@ export function getComponentOverrideKind(
 // getInputDisplayName maps a reserved synthetic component-override input name to
 // a user-facing key like "components.<name>.helm_values". Non-override input
 // names are returned unchanged. Mirrors the CLI installDiffKey helper.
-//
-// The name format is "<prefix><kind>_<hex(componentName)>". The kind may itself
-// contain underscores (e.g. "helm_values"), but the hex-encoded component name
-// never does, so the final "_<hex>" segment is always the component name and
-// everything before it is the kind. Parsing the kind generically (rather than
-// against a fixed list) keeps this decoder forward-compatible with new override
-// kinds added on the backend without a corresponding UI change.
 export function getInputDisplayName(name: string): string {
   if (!name.startsWith(COMPONENT_OVERRIDE_INPUT_PREFIX)) return name
   const rest = name.slice(COMPONENT_OVERRIDE_INPUT_PREFIX.length)
-  const sep = rest.lastIndexOf('_')
-  if (sep <= 0) return name
-  const kind = rest.slice(0, sep)
-  const component = decodeHex(rest.slice(sep + 1))
-  if (component === null) return name
-  return `components.${component}.${kind}`
-}
-
-// getEnabledOverrideComponent returns the component name targeted by an
-// "enabled" synthetic override input, or null when name is not an enabled
-// override input.
-export function getEnabledOverrideComponent(name: string): string | null {
-  if (!name.startsWith(COMPONENT_OVERRIDE_INPUT_PREFIX)) return null
-  const rest = name.slice(COMPONENT_OVERRIDE_INPUT_PREFIX.length)
-  const prefix = 'enabled_'
-  if (!rest.startsWith(prefix)) return null
-  return decodeHex(rest.slice(prefix.length))
-}
-
-type TEnablementComponent = {
-  component_id?: string
-  component_name?: string
-  component_dependency_ids?: string[]
-  refs?: { type?: string; name?: string }[]
-}
-
-// disabledToggleableDeps returns the names of the toggleable components in the
-// transitive dependency closure of componentName that are effectively disabled.
-// Dependencies are the union of declared dependencies (component_dependency_ids)
-// and components whose outputs are referenced (refs of type "component"),
-// mirroring the Go app.ComponentEnablementResolver. These are the actionable
-// components a user must turn back on to re-enable componentName.
-export function disabledToggleableDeps(
-  componentName: string,
-  components: TEnablementComponent[],
-  effectiveEnabledByName: Record<string, boolean | undefined>
-): string[] {
-  const nameToId = new Map<string, string>()
-  const byId = new Map<string, TEnablementComponent>()
-  for (const c of components) {
-    if (c.component_id) byId.set(c.component_id, c)
-    if (c.component_name && c.component_id)
-      nameToId.set(c.component_name, c.component_id)
+  for (const kind of COMPONENT_OVERRIDE_KINDS) {
+    const prefix = `${kind}_`
+    if (!rest.startsWith(prefix)) continue
+    const component = decodeHex(rest.slice(prefix.length))
+    if (component === null) return name
+    return `components.${component}.${kind}`
   }
-
-  const rootId = nameToId.get(componentName)
-  if (!rootId) return []
-
-  const depIds = (c: TEnablementComponent): string[] => {
-    const ids = new Set<string>()
-    for (const id of c.component_dependency_ids ?? []) {
-      if (byId.has(id)) ids.add(id)
-    }
-    for (const ref of c.refs ?? []) {
-      if (ref.type !== 'component' || !ref.name) continue
-      const id = nameToId.get(ref.name)
-      if (id) ids.add(id)
-    }
-    return [...ids]
-  }
-
-  const culprits = new Set<string>()
-  const visited = new Set<string>([rootId])
-  const queue = depIds(byId.get(rootId)!)
-  while (queue.length > 0) {
-    const id = queue.shift()!
-    if (visited.has(id)) continue
-    visited.add(id)
-    const comp = byId.get(id)
-    if (!comp) continue
-    if (comp.component_name && effectiveEnabledByName[comp.component_name] === false) {
-      culprits.add(comp.component_name)
-    }
-    queue.push(...depIds(comp))
-  }
-
-  return [...culprits].sort()
+  return name
 }
 
 type TTitleMap = Record<string, string>

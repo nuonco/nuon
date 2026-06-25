@@ -3,23 +3,23 @@ package service
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 
-	"github.com/nuonco/nuon/pkg/config"
-	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type ToggleInstallComponentRequest struct {
-	Enabled *bool  `json:"enabled" validate:"required"`
-	Role    string `json:"role,omitempty"`
+	Enabled  bool   `json:"enabled"`
+	Role     string `json:"role,omitempty"`
+	PlanOnly bool   `json:"plan_only"`
 }
 
 func (c *ToggleInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -59,12 +59,8 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 	componentID := ctx.Param("component_id")
 
 	var req ToggleInstallComponentRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
 		ctx.Error(stderr.NewInvalidRequest(err))
-		return
-	}
-	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
 		return
 	}
 
@@ -92,33 +88,88 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 		return
 	}
 
-	// Enabled-state is the synthetic enabled install input. Writing it through
-	// the normal install-input update flow lets the input-update workflow
-	// reconcile the deploy/teardown (and enable/disable lifecycle) for us.
-	enabledInputName := config.EnabledOverrideInputName(component.Name)
-	patch := map[string]*string{
-		enabledInputName: generics.ToPtr(strconv.FormatBool(*req.Enabled)),
+	installConfig, err := s.helpers.GetLatestInstallConfig(ctx, installID)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to get install config: %w", err))
+		return
 	}
 
-	// Drive the toggle through the shared install-inputs update flow, but tag
-	// the workflow with a dedicated type so it surfaces as "Enabling/Disabling
-	// component" in the UI rather than a generic input update. The synthetic
-	// enabled input remains the source of truth; the dedicated workflows
-	// delegate to the same reconcile logic.
+	currentlyEnabled := true
+	if installConfig != nil {
+		currentlyEnabled = installConfig.IsComponentEnabled(componentID, latestConfig)
+	} else {
+		currentlyEnabled = latestConfig.GetDefaultEnabled()
+	}
+
+	if currentlyEnabled == req.Enabled {
+		state := "enabled"
+		if !req.Enabled {
+			state = "disabled"
+		}
+		ctx.Error(stderr.ErrUser{
+			Err:         fmt.Errorf("component already %s", state),
+			Description: fmt.Sprintf("This component is already %s", state),
+		})
+		return
+	}
+
+	if err := s.updateComponentToggle(ctx, installID, componentID, req.Enabled, installConfig); err != nil {
+		ctx.Error(fmt.Errorf("unable to update component toggle: %w", err))
+		return
+	}
+
 	workflowType := app.WorkflowTypeComponentEnabled
-	if !*req.Enabled {
+	if !req.Enabled {
 		workflowType = app.WorkflowTypeComponentDisabled
 	}
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, req.Role, true, false, workflowType)
+	workflow, err := s.helpers.CreateWorkflowWithRole(ctx,
+		install.ID,
+		workflowType,
+		map[string]string{
+			"component_id": component.ID,
+		},
+		req.PlanOnly,
+		req.Role,
+	)
 	if err != nil {
 		ctx.Error(err)
 		return
 	}
 
-	workflowID := ""
-	if inputs.WorkflowID != nil {
-		workflowID = *inputs.WorkflowID
+	queueID, err := s.getInstallWorkflowsQueueID(ctx, installID)
+	if err != nil {
+		ctx.Error(err)
+		return
 	}
-	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflowID})
+	if err := s.enqueueInstallSignal(ctx, queueID, &executeflow.Signal{
+		WorkflowID: workflow.ID,
+	}, workflow.ID, "install_workflows"); err != nil {
+		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
+}
+
+func (s *service) updateComponentToggle(ctx *gin.Context, installID, componentID string, enabled bool, existingConfig *app.InstallConfig) error {
+	if existingConfig == nil {
+		installConfig := &app.InstallConfig{
+			InstallID:        installID,
+			ApprovalOption:   app.InstallApprovalOptionPrompt,
+			ComponentToggles: map[string]bool{componentID: enabled},
+		}
+		return s.db.WithContext(ctx).Create(installConfig).Error
+	}
+
+	toggles := existingConfig.ComponentToggles
+	if toggles == nil {
+		toggles = make(map[string]bool)
+	}
+	toggles[componentID] = enabled
+
+	return s.db.WithContext(ctx).
+		Model(existingConfig).
+		Update("component_toggles", toggles).
+		Error
 }

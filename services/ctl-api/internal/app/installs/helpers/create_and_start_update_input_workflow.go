@@ -15,8 +15,6 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 	changedInputValues string,
 	role string,
 	deployDependents bool,
-	planOnly bool,
-	workflowType app.WorkflowType,
 ) (*app.Workflow, error) {
 	metadata := map[string]string{
 		// NOTE(jm): this metadata field is not really designed to be used for anything serious, outside of
@@ -32,9 +30,9 @@ func (h *Helpers) CreateAndStartInputUpdateWorkflow(
 	workflow, err := h.CreateWorkflowWithRole(
 		ctx,
 		installID,
-		workflowType,
+		app.WorkflowTypeInputUpdate,
 		metadata,
-		planOnly,
+		false,
 		role,
 	)
 	if err != nil {

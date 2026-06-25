@@ -6,8 +6,6 @@ import {
   getInstallStatusTitle,
   getInputDisplayName,
   getComponentOverrideKind,
-  getEnabledOverrideComponent,
-  disabledToggleableDeps,
 } from './install-utils'
 
 describe('install-utils', () => {
@@ -48,14 +46,6 @@ describe('install-utils', () => {
       ).toBe('components.certificate.tf_vars')
     })
 
-    test('decodes enabled override input names', () => {
-      expect(
-        getInputDisplayName(
-          'nuon_component_override_v1_enabled_6365727469666963617465'
-        )
-      ).toBe('components.certificate.enabled')
-    })
-
     test('decodes component names containing dashes', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_666f6f2d626172')
@@ -67,99 +57,19 @@ describe('install-utils', () => {
       expect(getInputDisplayName('sub_domain')).toBe('sub_domain')
     })
 
-    test('decodes unknown/future override kinds generically', () => {
-      expect(
-        getInputDisplayName('nuon_component_override_v1_future_kind_77686f616d69')
-      ).toBe('components.whoami.future_kind')
-    })
-
-    test('returns names with invalid hex component segments unchanged', () => {
+    test('returns malformed override names unchanged', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_zz')
       ).toBe('nuon_component_override_v1_helm_values_zz')
+      expect(
+        getInputDisplayName('nuon_component_override_v1_unknown_77686f616d69')
+      ).toBe('nuon_component_override_v1_unknown_77686f616d69')
     })
 
     test('returns invalid-utf8 hex names unchanged', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_ff')
       ).toBe('nuon_component_override_v1_helm_values_ff')
-    })
-  })
-
-  describe('getEnabledOverrideComponent', () => {
-    test('returns the component name for an enabled override input', () => {
-      expect(
-        getEnabledOverrideComponent(
-          'nuon_component_override_v1_enabled_6365727469666963617465'
-        )
-      ).toBe('certificate')
-    })
-
-    test('returns null for non-enabled override inputs', () => {
-      expect(
-        getEnabledOverrideComponent(
-          'nuon_component_override_v1_tf_vars_6365727469666963617465'
-        )
-      ).toBeNull()
-      expect(getEnabledOverrideComponent('domain')).toBeNull()
-    })
-  })
-
-  describe('disabledToggleableDeps', () => {
-    const components = [
-      {
-        component_id: 'cmp_cert',
-        component_name: 'certificate',
-      },
-      {
-        component_id: 'cmp_api',
-        component_name: 'api_gateway',
-        component_dependency_ids: ['cmp_cert'],
-      },
-      {
-        component_id: 'cmp_app',
-        component_name: 'app',
-        refs: [{ type: 'component', name: 'api_gateway' }],
-      },
-    ]
-
-    test('names a directly-depended disabled toggleable component', () => {
-      expect(
-        disabledToggleableDeps('api_gateway', components, {
-          certificate: false,
-          api_gateway: false,
-        })
-      ).toEqual(['certificate'])
-    })
-
-    test('walks transitive deps via output refs', () => {
-      expect(
-        disabledToggleableDeps('app', components, {
-          certificate: false,
-          api_gateway: false,
-        })
-      ).toEqual(['api_gateway', 'certificate'])
-    })
-
-    test('only names effectively-disabled deps in the chain', () => {
-      expect(
-        disabledToggleableDeps('app', components, {
-          certificate: false,
-          api_gateway: true,
-        })
-      ).toEqual(['certificate'])
-    })
-
-    test('returns empty when all dependencies are enabled', () => {
-      expect(
-        disabledToggleableDeps('api_gateway', components, {
-          certificate: true,
-        })
-      ).toEqual([])
-    })
-
-    test('returns empty for an unknown component', () => {
-      expect(disabledToggleableDeps('missing', components, {})).toEqual([])
     })
   })
 

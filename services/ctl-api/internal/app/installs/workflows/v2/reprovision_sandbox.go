@@ -39,7 +39,7 @@ func ReprovisionSandbox(ctx workflow.Context, flw *app.Workflow) (*app.GenerateS
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+	dg := newGenCtx(sg, flw, installID, appCfg, awData)
 
 	sandboxReprovisionSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
 	if err != nil {

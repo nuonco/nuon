@@ -7,7 +7,6 @@ import (
 	"maps"
 	"net/http"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -148,10 +147,6 @@ func buildComponentOverridesFromInputs(installInputValues map[string]*string) ma
 			override.HelmValues = v
 		case config.ComponentOverrideKindTFVars:
 			override.TFVars = v
-		case config.ComponentOverrideKindEnabled:
-			if b, err := strconv.ParseBool(v); err == nil {
-				override.Enabled = generics.ToPtr(b)
-			}
 		}
 		components[compName] = override
 	}

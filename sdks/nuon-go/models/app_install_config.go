@@ -23,6 +23,9 @@ type AppInstallConfig struct {
 	// approval option
 	ApprovalOption AppInstallApprovalOption `json:"approval_option,omitempty"`
 
+	// component toggles
+	ComponentToggles map[string]bool `json:"component_toggles,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
