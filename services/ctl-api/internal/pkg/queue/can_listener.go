@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	canDefaultHintPeriod = 3 * time.Minute // fallback when config is unset
-	canStartJitter       = 60              // seconds of initial jitter
-	canDefaultHistoryMax = 10000           // fallback when config is unset
+	canDefaultHintPeriod        = 3 * time.Minute // fallback when config is unset
+	canStartJitter              = 60              // seconds of initial jitter
+	canDefaultHistoryMax        = 10000           // fallback when config is unset
+	canDefaultTerminateOverhead = 5000            // terminate threshold = historyMax + this
 )
 
 const CheckCANUpdateName string = "check-can"
