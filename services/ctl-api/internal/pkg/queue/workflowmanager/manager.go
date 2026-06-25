@@ -43,7 +43,6 @@ type options struct {
 	historyMax         int
 	terminateThreshold int
 	checkInterval      time.Duration
-	maxDeferrals       int
 	aliveChecker       func(ctx workflow.Context) (bool, error)
 	canHint            CANHintChecker
 	expiryChecker      func(ctx workflow.Context) (*time.Time, error)
@@ -117,19 +116,8 @@ func WithOnTerminated(fn func(ctx workflow.Context, historyLen int)) Option {
 // WithDeferRestart holds off continue-as-new while fn returns true. Stop
 // decisions are still honored. Continue-as-new abandons in-flight updates, so
 // restarting mid-phase would orphan it and be misread as a crash.
-//
-// Use WithMaxDeferrals to bound how many consecutive checks can be deferred
-// before forcing a restart anyway.
 func WithDeferRestart(fn func() bool) Option {
 	return func(o *options) { o.deferRestart = fn }
-}
-
-// WithMaxDeferrals limits the number of consecutive CAN checks that can be
-// deferred by WithDeferRestart. After n consecutive deferrals the manager
-// forces a restart regardless of the deferral function. A value of 0 (the
-// default) means unlimited deferrals.
-func WithMaxDeferrals(n int) Option {
-	return func(o *options) { o.maxDeferrals = n }
 }
 
 // New creates a Manager with the given options.
@@ -173,8 +161,6 @@ func (m *Manager) RunCANCheck(ctx workflow.Context) (bool, *CANResponse) {
 func (m *Manager) run(ctx workflow.Context) {
 	l, _ := log.WorkflowLogger(ctx)
 
-	var consecutiveDeferrals int
-
 	for {
 		if m.Stopped || m.Restarted || m.Terminated {
 			return
@@ -217,26 +203,13 @@ func (m *Manager) run(ctx workflow.Context) {
 		restarting, _ := m.checkCAN(ctx, l)
 		if restarting {
 			if m.restartDeferred() {
-				consecutiveDeferrals++
-				forceRestart := m.opts.maxDeferrals > 0 && consecutiveDeferrals >= m.opts.maxDeferrals
-				if forceRestart {
-					if l != nil {
-						l.Warn("continue-as-new forced after max consecutive deferrals",
-							zap.Int("consecutive_deferrals", consecutiveDeferrals))
-					}
-					m.Restarted = true
-					return
-				}
 				if l != nil {
-					l.Info("continue-as-new needed but deferred until in-flight phase completes",
-						zap.Int("consecutive_deferrals", consecutiveDeferrals))
+					l.Info("continue-as-new needed but deferred until in-flight phase completes")
 				}
 			} else {
 				m.Restarted = true
 				return
 			}
-		} else {
-			consecutiveDeferrals = 0
 		}
 
 		// Check 2: alive check.
