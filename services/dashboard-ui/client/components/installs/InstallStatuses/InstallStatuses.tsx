@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Icon } from '@/components/common/Icon'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { LabeledValue } from '@/components/common/LabeledValue'
@@ -13,6 +15,7 @@ import {
   getContextTooltipItemsFromInstallComponents,
 } from '@/components/components/ComponentsTooltip'
 import type { TInstall, TInstallComponent, TInstallStack } from '@/types'
+import { getInstallComponents } from '@/lib'
 import { cn } from '@/utils/classnames'
 import { Time } from '@/components/common/Time'
 import { getInstallStatusTitle } from '@/utils/install-utils'
@@ -23,10 +26,63 @@ export interface IInstallStatuses
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   collapsible?: boolean
   isLabelHidden?: boolean
+  lazyComponents?: boolean
   tooltipPosition?: ITooltip['position']
   variant?: 'badge' | 'icon'
   install: TInstall
   stack?: TInstallStack
+}
+
+const LazyComponentsStatus = ({
+  install,
+  tooltipPosition,
+  children,
+}: {
+  install: TInstall
+  tooltipPosition: ITooltip['position']
+  children: React.ReactNode
+}) => {
+  const [hovered, setHovered] = useState(false)
+
+  const { data } = useQuery({
+    queryKey: ['install-components', install.org_id, install.id],
+    queryFn: () =>
+      getInstallComponents({
+        orgId: install.org_id!,
+        installId: install.id!,
+        limit: 100,
+      }),
+    enabled: hovered && !!install.org_id && !!install.id,
+    staleTime: 30_000,
+  })
+
+  const components =
+    data?.data ??
+    (install.install_components as TInstallComponent[] | undefined) ??
+    []
+
+  return (
+    <span
+      onMouseEnter={() => setHovered(true)}
+      onFocus={() => setHovered(true)}
+    >
+      <ComponentsTooltip
+        title={getInstallStatusTitle(
+          'composite_component_status',
+          install?.composite_component_status,
+          install?.lifecycle_phase?.phase
+        )}
+        componentSummaries={getContextTooltipItemsFromInstallComponents(
+          components,
+          `/${install.org_id}/installs/${install.id}/components`,
+          install?.lifecycle_phase?.phase
+        )}
+        position={tooltipPosition}
+      >
+        {children}
+      </ComponentsTooltip>
+    </span>
+  )
 }
 
 type TStatusConfig = {
@@ -88,6 +144,7 @@ export const InstallStatuses = ({
   collapsible = false,
   install,
   isLabelHidden = false,
+  lazyComponents = false,
   tooltipPosition = 'bottom',
   variant = 'badge',
   stack,
@@ -255,7 +312,22 @@ export const InstallStatuses = ({
     </ContextTooltip>
   )
 
-  const componentsContent = (
+  const componentsBadge =
+    variant === 'icon' ? (
+      <Text theme={getStatusTheme(effectiveStatus(install.composite_component_status) ?? '')}>
+        <Icon variant="CardsIcon" size={14} className="cursor-default" />
+      </Text>
+    ) : (
+      <Status status={effectiveStatus(install.composite_component_status)} variant="badge">
+        {isLabelHidden ? 'Components' : effectiveStatus(install.composite_component_status)}
+      </Status>
+    )
+
+  const componentsContent = lazyComponents ? (
+    <LazyComponentsStatus install={install} tooltipPosition={tooltipPosition}>
+      {componentsBadge}
+    </LazyComponentsStatus>
+  ) : (
     <ComponentsTooltip
       title={getInstallStatusTitle(
         'composite_component_status',
@@ -269,15 +341,7 @@ export const InstallStatuses = ({
       )}
       position={tooltipPosition}
     >
-      {variant === 'icon' ? (
-        <Text theme={getStatusTheme(effectiveStatus(install.composite_component_status) ?? '')}>
-          <Icon variant="CardsIcon" size={14} className="cursor-default" />
-        </Text>
-      ) : (
-        <Status status={effectiveStatus(install.composite_component_status)} variant="badge">
-          {isLabelHidden ? 'Components' : effectiveStatus(install.composite_component_status)}
-        </Status>
-      )}
+      {componentsBadge}
     </ComponentsTooltip>
   )
 
