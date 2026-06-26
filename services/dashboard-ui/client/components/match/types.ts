@@ -23,7 +23,7 @@ export type Labels = Record<string, string>
 // same set as interests.ResourceKind: pkg/labels lives below internal/ in
 // the import graph and the resource taxonomy is a property of the
 // dispatch layer, not of label matching.
-export type TargetKind = 'installs' | 'components' | 'actions'
+export type TargetKind = 'installs' | 'components' | 'actions' | 'app_branches'
 
 // Selector mirrors pkg/labels.Selector. Both MatchLabels and
 // NotMatchLabels values may be a literal (`env=prod`) or the wildcard
@@ -54,6 +54,7 @@ export interface SubscriptionMatch {
   installs?: TargetMatch
   components?: TargetMatch
   actions?: TargetMatch
+  app_branches?: TargetMatch
 }
 
 // Canonical, ordered list of target kinds. Mirrors the Slack subscribe
@@ -62,6 +63,7 @@ export const ALL_TARGET_KINDS: TargetKind[] = [
   'installs',
   'components',
   'actions',
+  'app_branches',
 ]
 
 // Sentence-case display labels per kind. Mirror Slack modal's
@@ -70,6 +72,7 @@ export const TARGET_KIND_LABELS: Record<TargetKind, string> = {
   installs: 'Installs',
   components: 'Components',
   actions: 'Actions',
+  app_branches: 'App branches',
 }
 
 // Singular forms for prose like "Any install" / "Match by".
@@ -77,6 +80,7 @@ export const TARGET_KIND_LABELS_SINGULAR: Record<TargetKind, string> = {
   installs: 'install',
   components: 'component',
   actions: 'action',
+  app_branches: 'app branch',
 }
 
 // Plural forms (lowercase) for prose like "Search installs", "Match every component in this org".
@@ -84,6 +88,7 @@ export const TARGET_KIND_LABELS_PLURAL: Record<TargetKind, string> = {
   installs: 'installs',
   components: 'components',
   actions: 'actions',
+  app_branches: 'app branches',
 }
 
 // Predicate is the per-kind matcher selector exposed in the picker UI.

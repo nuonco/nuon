@@ -4,6 +4,7 @@ package allsignals
 
 import (
 	// apps signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsynced"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/created"
