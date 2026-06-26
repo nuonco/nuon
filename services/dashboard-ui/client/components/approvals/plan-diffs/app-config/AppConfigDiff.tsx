@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
+import { CodeBlock } from '@/components/common/CodeBlock'
 import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
+import { diffLines } from '@/utils/code-utils'
 
 const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
   components: { displayName: 'Components', icon: 'CubeIcon', grouped: true },
@@ -34,11 +37,19 @@ export type DiffFieldEntry = {
   diff: string
 }
 
+export type DiffFileEntry = {
+  name: string
+  op: 'add' | 'remove' | 'change'
+  before?: string
+  after?: string
+}
+
 export type DiffEntityEntry = {
   name: string
   op: 'add' | 'remove' | 'change'
   componentType?: string
   fields: DiffFieldEntry[]
+  files?: DiffFileEntry[]
 }
 
 export type DiffSectionData = {
@@ -50,6 +61,8 @@ export type DiffSectionData = {
   grouped: boolean
   entities: DiffEntityEntry[]
   fields: DiffFieldEntry[]
+  files?: DiffFileEntry[]
+  content?: { op: 'add' | 'remove' | 'change'; before?: string; after?: string }
 }
 
 type AppConfigOp = 'add' | 'remove' | 'change'
@@ -153,18 +166,38 @@ function getEntityOp(node: TDiffNode): 'add' | 'remove' | 'change' {
   return 'change'
 }
 
-function collectFields(node: TDiffNode): DiffFieldEntry[] {
+function isFileNode(n: TDiffNode): boolean {
+  return (
+    !!n.diff &&
+    (n.diff.before !== undefined || n.diff.after !== undefined)
+  )
+}
+
+function collectEntries(node: TDiffNode): {
+  fields: DiffFieldEntry[]
+  files: DiffFileEntry[]
+} {
   const fields: DiffFieldEntry[] = []
+  const files: DiffFileEntry[] = []
 
   const walk = (n: TDiffNode) => {
     if (n.diff && n.diff.op !== 'noop' && n.diff.op !== '') {
-      fields.push({ key: n.key, op: n.diff.op, diff: n.diff.diff })
+      if (isFileNode(n)) {
+        files.push({
+          name: n.key,
+          op: n.diff.op as 'add' | 'remove' | 'change',
+          before: n.diff.before,
+          after: n.diff.after,
+        })
+      } else {
+        fields.push({ key: n.key, op: n.diff.op, diff: n.diff.diff })
+      }
     }
     if (n.children) n.children.forEach(walk)
   }
 
   if (node.children) node.children.forEach(walk)
-  return fields
+  return { fields, files }
 }
 
 function findComponentType(node: TDiffNode): string | undefined {
@@ -197,13 +230,14 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
       grouped: config.grouped,
       entities: [],
       fields: [],
+      files: [],
     }
 
     if (config.grouped) {
       for (const entityNode of child.children) {
         const op = getEntityOp(entityNode)
-        const fields = collectFields(entityNode)
-        if (fields.length === 0) continue
+        const { fields, files } = collectEntries(entityNode)
+        if (fields.length === 0 && files.length === 0) continue
 
         const componentType = child.key === 'components' ? findComponentType(entityNode) : undefined
 
@@ -212,6 +246,7 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
           op,
           componentType,
           fields,
+          files,
         })
 
         if (op === 'add') section.additions++
@@ -219,16 +254,33 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
         else section.changed++
       }
     } else {
-      const fields = collectFields(child)
+      const { fields, files } = collectEntries(child)
       section.fields = fields
-      for (const f of fields) {
-        if (f.op === 'add') section.additions++
-        else if (f.op === 'remove') section.removals++
-        else if (f.op === 'change') section.changed++
+      section.files = files
+      for (const op of [...fields, ...files].map((e) => e.op)) {
+        if (op === 'add') section.additions++
+        else if (op === 'remove') section.removals++
+        else if (op === 'change') section.changed++
       }
     }
 
-    if (section.entities.length > 0 || section.fields.length > 0) {
+    if (
+      child.diff &&
+      (child.diff.before !== undefined || child.diff.after !== undefined)
+    ) {
+      section.content = {
+        op: child.diff.op as 'add' | 'remove' | 'change',
+        before: child.diff.before,
+        after: child.diff.after,
+      }
+    }
+
+    if (
+      section.entities.length > 0 ||
+      section.fields.length > 0 ||
+      (section.files?.length ?? 0) > 0 ||
+      !!section.content
+    ) {
       sections.push(section)
     }
   }
@@ -286,6 +338,56 @@ const FieldsDiff = ({ fields }: { fields: DiffFieldEntry[] }) => (
   </div>
 )
 
+function langForFile(name: string): string {
+  const lower = name.toLowerCase()
+  if (lower.endsWith('.yaml') || lower.endsWith('.yml')) return 'yaml'
+  if (lower.endsWith('.json')) return 'json'
+  if (lower.endsWith('.tf') || lower.endsWith('.tfvars') || lower.startsWith('var_file')) {
+    return 'hcl'
+  }
+  if (lower === 'dockerfile' || lower.endsWith('inline_contents') || lower.endsWith('.sh')) {
+    return 'bash'
+  }
+  return 'yaml'
+}
+
+const FileDiffRow = ({
+  file,
+  entityKey,
+  idx,
+}: {
+  file: DiffFileEntry
+  entityKey: string
+  idx: number
+}) => {
+  const bgColor = getOpBgColor(file.op)
+  const borderColor = getOpBorderColor(file.op)
+
+  return (
+    <Expand
+      id={`file-${entityKey}-${file.name}-${idx}`}
+      className={`border-l-4 ${borderColor}`}
+      headerClassName={`w-full px-4 py-2 gap-3 text-left focus:outline-none ${bgColor}`}
+      heading={
+        <div className="flex items-center justify-between w-full">
+          <Text family="mono" variant="subtext" weight="strong" className="truncate">
+            {file.name}
+          </Text>
+          <div className="flex items-center pr-4 self-center">
+            <Badge theme={OP_BADGE_THEME[file.op] || 'neutral'} size="sm">
+              {file.op}
+            </Badge>
+          </div>
+        </div>
+      }
+    >
+      <CodeBlock className="!rounded-none border-t" language={langForFile(file.name)} isDiff>
+        {diffLines(file.before, file.after)}
+      </CodeBlock>
+    </Expand>
+  )
+}
+
 const ComponentIcon = ({ type }: { type?: string }) => {
   if (!type) return null
   const config = COMPONENT_TYPE_ICON[type]
@@ -326,7 +428,15 @@ const EntityRow = ({ entity, sectionKey, idx }: { entity: DiffEntityEntry; secti
         </div>
       }
     >
-      <FieldsDiff fields={entity.fields} />
+      {entity.fields.length > 0 && <FieldsDiff fields={entity.fields} />}
+      {(entity.files ?? []).map((file, i) => (
+        <FileDiffRow
+          key={`${file.name}-${i}`}
+          file={file}
+          entityKey={`${sectionKey}-${entity.name}`}
+          idx={i}
+        />
+      ))}
     </Expand>
   )
 }
@@ -344,6 +454,83 @@ const FieldRow = ({ field, sectionKey, idx }: { field: DiffFieldEntry; sectionKe
       <Badge theme={OP_BADGE_THEME[field.op as AppConfigOp] || 'neutral'} size="sm">
         {field.op}
       </Badge>
+    </div>
+  )
+}
+
+const SectionCounts = ({ section }: { section: DiffSectionData }) => {
+  if (!section.additions && !section.changed && !section.removals) return null
+  return (
+    <span className="flex items-center gap-2.5">
+      {section.additions > 0 && (
+        <Text variant="subtext" theme="success" weight="strong">
+          +{section.additions}
+        </Text>
+      )}
+      {section.changed > 0 && (
+        <Text variant="subtext" theme="warn" weight="strong">
+          ~{section.changed}
+        </Text>
+      )}
+      {section.removals > 0 && (
+        <Text variant="subtext" theme="error" weight="strong">
+          -{section.removals}
+        </Text>
+      )}
+    </span>
+  )
+}
+
+const SectionGroup = ({ section }: { section: DiffSectionData }) => {
+  const [open, setOpen] = useState(true)
+  const sectionIcon = SECTION_CONFIG[section.sectionKey]?.icon
+
+  return (
+    <div className="border-t first:border-t-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className={`w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-3 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5 ${open ? 'border-b' : ''}`}
+      >
+        <Text flex className="gap-2 items-center" variant="base" weight="strong">
+          {sectionIcon && <Icon variant={sectionIcon} size="16" />}
+          {section.name}
+        </Text>
+        <span className="flex items-center gap-3">
+          <SectionCounts section={section} />
+          <Icon
+            variant={open ? 'CaretUpIcon' : 'CaretDownIcon'}
+            size={16}
+            className="text-cool-grey-500 dark:text-dark-grey-400"
+          />
+        </span>
+      </button>
+
+      {open && (
+        <div className="flex flex-col divide-y">
+          {section.content ? (
+            <div className={`border-l-4 ${getOpBorderColor(section.content.op)}`}>
+              <CodeBlock className="!rounded-none" language="toml" isDiff>
+                {diffLines(section.content.before, section.content.after)}
+              </CodeBlock>
+            </div>
+          ) : section.grouped ? (
+            section.entities.map((entity, idx) => (
+              <EntityRow key={`${entity.name}-${idx}`} entity={entity} sectionKey={section.sectionKey} idx={idx} />
+            ))
+          ) : (
+            <>
+              {section.fields.map((field, idx) => (
+                <FieldRow key={`field-${field.key}-${idx}`} field={field} sectionKey={section.sectionKey} idx={idx} />
+              ))}
+              {(section.files ?? []).map((file, idx) => (
+                <FileDiffRow key={`file-${file.name}-${idx}`} file={file} entityKey={section.sectionKey} idx={idx} />
+              ))}
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -380,34 +567,14 @@ export const AppConfigDiff = ({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {sections.map((section) => {
-        const sectionIcon = SECTION_CONFIG[section.sectionKey]?.icon
+    <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
+      {summary && <AppConfigSummary summary={summary} />}
 
-        return (
-          <Card key={section.name} className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-            <div className="px-4 sm:px-6 py-4 border-b">
-              <Text flex className="gap-2 items-center" variant="base" weight="strong">
-                {sectionIcon && <Icon variant={sectionIcon} size="16" />}
-                {section.name}
-              </Text>
-            </div>
-
-            <AppConfigSummary summary={{ added: section.additions, removed: section.removals, changed: section.changed }} />
-
-            <div className="flex flex-col divide-y">
-              {section.grouped
-                ? section.entities.map((entity, idx) => (
-                    <EntityRow key={`${entity.name}-${idx}`} entity={entity} sectionKey={section.sectionKey} idx={idx} />
-                  ))
-                : section.fields.map((field, idx) => (
-                    <FieldRow key={`${field.key}-${idx}`} field={field} sectionKey={section.sectionKey} idx={idx} />
-                  ))
-              }
-            </div>
-          </Card>
-        )
-      })}
-    </div>
+      <div className="flex flex-col">
+        {sections.map((section) => (
+          <SectionGroup key={section.name} section={section} />
+        ))}
+      </div>
+    </Card>
   )
 }

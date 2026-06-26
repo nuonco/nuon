@@ -23,6 +23,7 @@ const mockSections: DiffSectionData[] = [
           { key: 'chart_name', op: 'add', diff: "'' -> 'redis'" },
           { key: 'namespace', op: 'add', diff: "'' -> 'cache'" },
         ],
+        files: [],
       },
       {
         name: 'legacy-worker',
@@ -32,6 +33,7 @@ const mockSections: DiffSectionData[] = [
           { key: 'type', op: 'remove', diff: "'docker_build' -> ''" },
           { key: 'dockerfile', op: 'remove', diff: "'Dockerfile.worker' -> ''" },
         ],
+        files: [],
       },
       {
         name: 'ctl-api',
@@ -41,9 +43,24 @@ const mockSections: DiffSectionData[] = [
           { key: 'chart_name', op: 'change', diff: "'ctl-api-v1' -> 'ctl-api-v2'" },
           { key: 'namespace', op: 'change', diff: "'default' -> 'app'" },
         ],
+        files: [
+          {
+            name: './values/prod.yaml',
+            op: 'change',
+            before: 'replicas: 1\nimage:\n  tag: v1\nresources:\n  limits:\n    cpu: 500m\n',
+            after: 'replicas: 3\nimage:\n  tag: v2\nresources:\n  limits:\n    cpu: 1000m\n',
+          },
+          {
+            name: './values/feature-flags.yaml',
+            op: 'add',
+            before: '',
+            after: 'featureFlags:\n  beta: true\n  newDashboard: true\n',
+          },
+        ],
       },
     ],
     fields: [],
+    files: [],
   },
   {
     name: 'Actions',
@@ -60,16 +77,24 @@ const mockSections: DiffSectionData[] = [
           { key: 'timeout', op: 'add', diff: "'' -> '300s'" },
           { key: 'role', op: 'add', diff: "'' -> 'admin'" },
         ],
+        files: [],
       },
       {
         name: 'healthcheck',
         op: 'change',
-        fields: [
-          { key: 'role', op: 'change', diff: "'admin' -> 'operator'" },
+        fields: [{ key: 'role', op: 'change', diff: "'admin' -> 'operator'" }],
+        files: [
+          {
+            name: 'inline_contents',
+            op: 'change',
+            before: '#!/bin/bash\ncurl -f http://localhost:8080/health\n',
+            after: '#!/bin/bash\ncurl -f http://localhost:8080/healthz\nexit 0\n',
+          },
         ],
       },
     ],
     fields: [],
+    files: [],
   },
   {
     name: 'Runner',
@@ -83,6 +108,12 @@ const mockSections: DiffSectionData[] = [
       { key: 'runner_type', op: 'change', diff: "'standard' -> 'gpu'" },
       { key: 'init_script', op: 'change', diff: "'setup.sh' -> 'setup-gpu.sh'" },
     ],
+    files: [],
+    content: {
+      op: 'change',
+      before: 'runner_type = "standard"\nhelm_driver = "secret"\ninit_script = "setup.sh"\n',
+      after: 'runner_type = "gpu"\nhelm_driver = "secret"\ninit_script = "setup-gpu.sh"\n',
+    },
   },
 ]
 
@@ -134,16 +165,23 @@ export const AllSections = () => {
             { key: 'type', op: 'add', diff: "'' -> 'string'" },
             { key: 'required', op: 'add', diff: "'false' -> 'true'" },
           ],
+          files: [],
         },
         {
           name: 'region',
           op: 'add',
-          fields: [
-            { key: 'default', op: 'add', diff: "'' -> 'us-west-2'" },
-          ],
+          fields: [{ key: 'default', op: 'add', diff: "'' -> 'us-west-2'" }],
+          files: [],
         },
       ],
       fields: [],
+      files: [],
+      content: {
+        op: 'add',
+        before: '',
+        after:
+          '[[input]]\nname = "cluster_name"\ntype = "string"\nrequired = true\n\n[[input]]\nname = "region"\ndefault = "us-west-2"\n',
+      },
     },
     {
       name: 'Secrets',
@@ -156,12 +194,17 @@ export const AllSections = () => {
         {
           name: 'DATABASE_URL',
           op: 'add',
-          fields: [
-            { key: 'required', op: 'add', diff: "'' -> 'true'" },
-          ],
+          fields: [{ key: 'required', op: 'add', diff: "'' -> 'true'" }],
+          files: [],
         },
       ],
       fields: [],
+      files: [],
+      content: {
+        op: 'add',
+        before: '',
+        after: '[[secret]]\nname = "DATABASE_URL"\nrequired = true\n',
+      },
     },
     mockSections[2],
     {
@@ -172,9 +215,13 @@ export const AllSections = () => {
       removals: 0,
       changed: 1,
       entities: [],
-      fields: [
-        { key: 'type', op: 'change', diff: "'eks' -> 'eks-v2'" },
-      ],
+      fields: [{ key: 'type', op: 'change', diff: "'eks' -> 'eks-v2'" }],
+      files: [],
+      content: {
+        op: 'change',
+        before: 'type = "eks"\nname = "platform"\n',
+        after: 'type = "eks-v2"\nname = "platform"\n',
+      },
     },
     {
       name: 'Sandbox',
@@ -187,6 +234,12 @@ export const AllSections = () => {
       fields: [
         { key: 'terraform_version', op: 'change', diff: "'1.5.0' -> '1.6.0'" },
       ],
+      files: [],
+      content: {
+        op: 'change',
+        before: 'terraform_version = "1.5.0"\n\n[public_repo]\nbranch = "main"\n',
+        after: 'terraform_version = "1.6.0"\n\n[public_repo]\nbranch = "main"\n',
+      },
     },
     {
       name: 'Permissions',
@@ -199,6 +252,12 @@ export const AllSections = () => {
       fields: [
         { key: 'provision', op: 'add', diff: "'' -> 'arn:aws:iam::role/deploy'" },
       ],
+      files: [],
+      content: {
+        op: 'add',
+        before: '',
+        after: '[provision_role]\narn = "arn:aws:iam::role/deploy"\n',
+      },
     },
   ]
 
