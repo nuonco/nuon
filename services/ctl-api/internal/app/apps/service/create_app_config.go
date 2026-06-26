@@ -100,6 +100,8 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 		return
 	}
 
+	s.emitAppConfigSyncedSignal(ctx, org.ID, appID, req.AppBranchID)
+
 	ctx.JSON(http.StatusCreated, cfg)
 }
 
