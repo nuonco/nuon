@@ -69,8 +69,7 @@ func (s *GetInstallActionWorkflowsTestSuite) SetupSuite() {
 	gin.SetMode(gin.TestMode)
 	options := append(
 		tests.CtlApiFXOptionsWithMocks(tests.TestOpts{
-			T: s.T(),
-
+			T:               s.T(),
 			CustomValidator: true,
 		}),
 		fx.Provide(New),
@@ -122,19 +121,12 @@ func (s *GetInstallActionWorkflowsTestSuite) makeRequest(method, path string, bo
 	return rr
 }
 
-func (s *GetInstallActionWorkflowsTestSuite) createInstall(appID string) *app.Install {
-	install := &app.Install{
-		ID:    domains.NewInstallID(),
-		Name:  fmt.Sprintf("test-install-%s", domains.NewInstallID()),
-		AppID: appID,
-	}
-	ctx := cctx.SetAccountContext(s.ctx, s.testAcc)
-	ctx = cctx.SetOrgContext(ctx, s.testOrg)
-	res := s.service.DB.WithContext(ctx).
-		Omit("app_config_id", "app_sandbox_config_id", "app_runner_config_id").
-		Create(install)
-	require.NoError(s.T(), res.Error)
-	return install
+// createInstall creates a full app config and then an install with app_config_id set.
+// This is required so the currentAppConfigActionFilter in the handler has a config ID to match against.
+func (s *GetInstallActionWorkflowsTestSuite) createInstall(appID string) (*app.Install, *app.AppConfig) {
+	appCfg := s.service.Seeder.CreateAppConfig(s.ctx, s.T(), appID)
+	install := s.service.Seeder.CreateInstall(s.ctx, s.T(), s.testApp)
+	return install, appCfg
 }
 
 func (s *GetInstallActionWorkflowsTestSuite) createActionWorkflow(appID, name string) *app.ActionWorkflow {
@@ -149,6 +141,11 @@ func (s *GetInstallActionWorkflowsTestSuite) createActionWorkflow(appID, name st
 	res := s.service.DB.WithContext(ctx).Create(action)
 	require.NoError(s.T(), res.Error)
 	return action
+}
+
+// createActionWorkflowConfig ties an action to an app config, making it visible to the filter.
+func (s *GetInstallActionWorkflowsTestSuite) createActionWorkflowConfig(appConfigID, actionID string) *app.ActionWorkflowConfig {
+	return s.service.Seeder.CreateActionWorkflowConfig(s.ctx, s.T(), s.testApp.ID, appConfigID, actionID)
 }
 
 func (s *GetInstallActionWorkflowsTestSuite) createInstallActionWorkflow(installID, actionID string) *app.InstallActionWorkflow {
@@ -177,7 +174,7 @@ func (s *GetInstallActionWorkflowsTestSuite) TestGetInstallActions() {
 		{
 			name: "returns empty array when no actions",
 			setupFunc: func() string {
-				install := s.createInstall(s.testApp.ID)
+				install, _ := s.createInstall(s.testApp.ID)
 				return install.ID
 			},
 			queryParams:   "",
@@ -185,11 +182,13 @@ func (s *GetInstallActionWorkflowsTestSuite) TestGetInstallActions() {
 			expectedCode:  http.StatusOK,
 		},
 		{
-			name: "returns install actions",
+			name: "returns install actions with current app config",
 			setupFunc: func() string {
-				install := s.createInstall(s.testApp.ID)
+				install, appCfg := s.createInstall(s.testApp.ID)
 				action1 := s.createActionWorkflow(s.testApp.ID, "action-1")
 				action2 := s.createActionWorkflow(s.testApp.ID, "action-2")
+				s.createActionWorkflowConfig(appCfg.ID, action1.ID)
+				s.createActionWorkflowConfig(appCfg.ID, action2.ID)
 				s.createInstallActionWorkflow(install.ID, action1.ID)
 				s.createInstallActionWorkflow(install.ID, action2.ID)
 				return install.ID
@@ -205,9 +204,10 @@ func (s *GetInstallActionWorkflowsTestSuite) TestGetInstallActions() {
 		{
 			name: "respects pagination",
 			setupFunc: func() string {
-				install := s.createInstall(s.testApp.ID)
+				install, appCfg := s.createInstall(s.testApp.ID)
 				for i := 0; i < 15; i++ {
 					action := s.createActionWorkflow(s.testApp.ID, fmt.Sprintf("action-pagination-%d", i))
+					s.createActionWorkflowConfig(appCfg.ID, action.ID)
 					s.createInstallActionWorkflow(install.ID, action.ID)
 				}
 				return install.ID
@@ -215,6 +215,32 @@ func (s *GetInstallActionWorkflowsTestSuite) TestGetInstallActions() {
 			queryParams:   "?limit=5",
 			expectedCount: 5,
 			expectedCode:  http.StatusOK,
+		},
+		{
+			name: "hides action whose config belongs to a different app config",
+			setupFunc: func() string {
+				install, currentAppCfg := s.createInstall(s.testApp.ID)
+
+				// Action visible in current app config.
+				visibleAction := s.createActionWorkflow(s.testApp.ID, "current-action")
+				s.createActionWorkflowConfig(currentAppCfg.ID, visibleAction.ID)
+				s.createInstallActionWorkflow(install.ID, visibleAction.ID)
+
+				// Action that was removed in a later sync: its ActionWorkflowConfig
+				// points to a different (older) app config, not the install's current one.
+				olderAppCfg := s.service.Seeder.CreateBareAppConfig(s.ctx, s.T(), s.testApp.ID)
+				hiddenAction := s.createActionWorkflow(s.testApp.ID, "old-action")
+				s.createActionWorkflowConfig(olderAppCfg.ID, hiddenAction.ID)
+				s.createInstallActionWorkflow(install.ID, hiddenAction.ID)
+
+				return install.ID
+			},
+			queryParams:   "",
+			expectedCount: 1,
+			expectedCode:  http.StatusOK,
+			validateFunc: func(iaws []app.InstallActionWorkflow) {
+				require.Equal(s.T(), "current-action", iaws[0].ActionWorkflow.Name)
+			},
 		},
 		{
 			name: "not found for non-existent install",

@@ -171,7 +171,12 @@ func (h *handler) installDiff(ctx context.Context, l *zap.Logger, actionCfg *act
 }
 
 func (h *handler) uninstallDiff(ctx context.Context, l *zap.Logger, actionCfg *action.Configuration, kubeCfg *rest.Config, prevRel *release.Release) (string, *[]diff.ResourceDiff, string, error) {
-	// not functional atm (panics)
+	if prevRel == nil {
+		l.Info("no existing helm release found, nothing to uninstall")
+		empty := make([]diff.ResourceDiff, 0)
+		return "no changes", &empty, "", nil
+	}
+
 	l.Info("loading chart options")
 	chart, err := helm.GetChartByPath(h.state.chartPath)
 	if err != nil {
