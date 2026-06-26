@@ -360,15 +360,6 @@ func (s *Signal) executeSandboxPlan(ctx workflow.Context, install *app.Install, 
 	if err != nil {
 		msg := job.JobErrorMessage(err, "reprovision plan job failed")
 		s.updateRunStatusWithoutStatusSync(ctx, installRun.ID, app.SandboxRunStatusError, msg)
-		if s.runnerJobID != "" {
-			if rerr := activities.AwaitRecordSandboxRunCompositeError(ctx, activities.RecordSandboxRunCompositeErrorRequest{
-				SandboxRunID:    installRun.ID,
-				RunnerJobID:     s.runnerJobID,
-				FallbackMessage: msg,
-			}); rerr != nil {
-				l.Warn("unable to record sandbox run composite error", zap.Error(rerr))
-			}
-		}
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 	if status != app.RunnerJobStatusFinished {
