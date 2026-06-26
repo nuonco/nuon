@@ -283,6 +283,211 @@ func (s *AppConfigDiffSuite) TestHelmChartDiff() {
 	s.Equal(diff.OpAdd, logLevel.Diff.Op)
 }
 
+// --- Test: ungrouped section TOML content diff ---
+
+func (s *AppConfigDiffSuite) TestRunnerSectionTOMLDiff() {
+	old := baseConfig()
+	new := baseConfig()
+	new.Runner.RunnerType = "gpu"
+
+	d := new.Diff(old)
+	runner := findChild(d, "runner")
+	s.Require().NotNil(runner)
+	s.Require().NotNil(runner.Diff)
+	s.Equal(diff.OpChange, runner.Diff.Op)
+	s.Contains(runner.Diff.Before, "aws")
+	s.Contains(runner.Diff.After, "gpu")
+	// field children are retained for change counting
+	s.Require().NotNil(findChild(runner, "runner_type"))
+}
+
+func (s *AppConfigDiffSuite) TestInputsSectionTOMLDiff() {
+	old := baseConfig()
+	new := baseConfig()
+	new.Inputs = &AppInputConfig{
+		Inputs: []AppInput{
+			{Name: "cluster_name", Type: "string", Required: true},
+		},
+	}
+
+	d := new.Diff(old)
+	inputs := findChild(d, "inputs")
+	s.Require().NotNil(inputs)
+	s.Require().NotNil(inputs.Diff)
+	s.Equal(diff.OpAdd, inputs.Diff.Op)
+	s.Contains(inputs.Diff.After, "cluster_name")
+}
+
+func (s *AppConfigDiffSuite) TestActionInlineScriptContentDiff() {
+	old := baseConfig()
+	old.Actions = []*ActionConfig{
+		{
+			Name:  "migrate",
+			Steps: []*ActionStepConfig{{Name: "run", InlineContents: "#!/bin/bash\necho v1\n"}},
+		},
+	}
+	new := baseConfig()
+	new.Actions = []*ActionConfig{
+		{
+			Name:  "migrate",
+			Steps: []*ActionStepConfig{{Name: "run", InlineContents: "#!/bin/bash\necho v2\n"}},
+		},
+	}
+
+	d := new.Diff(old)
+	step := findChild(findChild(findChild(d, "actions"), "action.migrate"), "step.run")
+	s.Require().NotNil(step)
+	script := findChild(step, "inline_contents")
+	s.Require().NotNil(script)
+	s.Equal(diff.OpChange, script.Diff.Op)
+	s.Contains(script.Diff.Before, "echo v1")
+	s.Contains(script.Diff.After, "echo v2")
+}
+
+// --- Test: Helm values file content diff ---
+
+func (s *AppConfigDiffSuite) TestHelmValuesFilesContentDiff() {
+	old := baseConfig()
+	old.Components = ComponentList{
+		{
+			Name: "chart",
+			Type: HelmChartComponentType,
+			HelmChart: &HelmChartComponentConfig{
+				ChartName: "prometheus",
+				ValuesFiles: []HelmValuesFile{
+					{Path: "./values/prod.yaml", Contents: "replicas: 1\n"},
+					{Path: "./values/legacy.yaml", Contents: "enabled: true\n"},
+				},
+			},
+		},
+	}
+	new := baseConfig()
+	new.Components = ComponentList{
+		{
+			Name: "chart",
+			Type: HelmChartComponentType,
+			HelmChart: &HelmChartComponentConfig{
+				ChartName: "prometheus",
+				ValuesFiles: []HelmValuesFile{
+					{Path: "./values/prod.yaml", Contents: "replicas: 3\n"},
+					{Path: "./values/new.yaml", Contents: "log_level: info\n"},
+				},
+			},
+		},
+	}
+
+	d := new.Diff(old)
+	comps := findChild(d, "components")
+	chart := findChild(comps, "component.chart")
+	s.Require().NotNil(chart)
+
+	files := findChild(chart, "values_files")
+	s.Require().NotNil(files)
+
+	changed := findChild(files, "./values/prod.yaml")
+	s.Require().NotNil(changed)
+	s.Equal(diff.OpChange, changed.Diff.Op)
+	s.Equal("modified", changed.Diff.Diff)
+	s.Equal("replicas: 1\n", changed.Diff.Before)
+	s.Equal("replicas: 3\n", changed.Diff.After)
+
+	added := findChild(files, "./values/new.yaml")
+	s.Require().NotNil(added)
+	s.Equal(diff.OpAdd, added.Diff.Op)
+	s.Equal("", added.Diff.Before)
+	s.Equal("log_level: info\n", added.Diff.After)
+
+	removed := findChild(files, "./values/legacy.yaml")
+	s.Require().NotNil(removed)
+	s.Equal(diff.OpRemove, removed.Diff.Op)
+	s.Equal("enabled: true\n", removed.Diff.Before)
+	s.Equal("", removed.Diff.After)
+}
+
+// --- Test: Terraform variables file content diff ---
+
+func (s *AppConfigDiffSuite) TestTerraformVariablesFilesContentDiff() {
+	old := baseConfig()
+	old.Components = ComponentList{
+		{
+			Name: "vpc",
+			Type: TerraformModuleComponentType,
+			TerraformModule: &TerraformModuleComponentConfig{
+				TerraformVersion: "1.5.0",
+				VariablesFiles: []TerraformVariablesFile{
+					{Contents: "region = \"us-east-1\"\n"},
+				},
+			},
+		},
+	}
+	new := baseConfig()
+	new.Components = ComponentList{
+		{
+			Name: "vpc",
+			Type: TerraformModuleComponentType,
+			TerraformModule: &TerraformModuleComponentConfig{
+				TerraformVersion: "1.5.0",
+				VariablesFiles: []TerraformVariablesFile{
+					{Contents: "region = \"us-west-2\"\n"},
+				},
+			},
+		},
+	}
+
+	d := new.Diff(old)
+	comps := findChild(d, "components")
+	vpc := findChild(comps, "component.vpc")
+	s.Require().NotNil(vpc)
+
+	files := findChild(vpc, "var_file")
+	s.Require().NotNil(files)
+
+	changed := findChild(files, "var_file[0]")
+	s.Require().NotNil(changed)
+	s.Equal(diff.OpChange, changed.Diff.Op)
+	s.Equal("region = \"us-east-1\"\n", changed.Diff.Before)
+	s.Equal("region = \"us-west-2\"\n", changed.Diff.After)
+}
+
+// --- Test: Kubernetes manifest content diff ---
+
+func (s *AppConfigDiffSuite) TestKubernetesManifestContentDiff() {
+	old := baseConfig()
+	old.Components = ComponentList{
+		{
+			Name: "manifests",
+			Type: KubernetesManifestComponentType,
+			KubernetesManifest: &KubernetesManifestComponentConfig{
+				Namespace: "default",
+				Manifest:  "kind: Service\nspec:\n  replicas: 1\n",
+			},
+		},
+	}
+	new := baseConfig()
+	new.Components = ComponentList{
+		{
+			Name: "manifests",
+			Type: KubernetesManifestComponentType,
+			KubernetesManifest: &KubernetesManifestComponentConfig{
+				Namespace: "default",
+				Manifest:  "kind: Service\nspec:\n  replicas: 3\n",
+			},
+		},
+	}
+
+	d := new.Diff(old)
+	comps := findChild(d, "components")
+	manifests := findChild(comps, "component.manifests")
+	s.Require().NotNil(manifests)
+
+	manifest := findChild(manifests, "manifest")
+	s.Require().NotNil(manifest)
+	s.Equal(diff.OpChange, manifest.Diff.Op)
+	s.Equal("modified", manifest.Diff.Diff)
+	s.Equal("kind: Service\nspec:\n  replicas: 1\n", manifest.Diff.Before)
+	s.Equal("kind: Service\nspec:\n  replicas: 3\n", manifest.Diff.After)
+}
+
 // --- Test: Terraform module diff ---
 
 func (s *AppConfigDiffSuite) TestTerraformModuleDiff() {

@@ -8,20 +8,49 @@ import type { DiffSectionData } from './lib'
 const sections: DiffSectionData[] = [
   {
     name: 'Components',
+    sectionKey: 'components',
+    grouped: true,
     additions: 1,
     removals: 0,
     changed: 1,
-    entries: [
-      { op: 'add', name: 'worker', description: 'new docker_build component' },
-      { op: 'change', name: 'api', description: 'image tag updated' },
+    entities: [
+      {
+        name: 'worker',
+        op: 'add',
+        componentType: 'docker_build',
+        fields: [
+          { key: 'type', op: 'add', diff: "'' -> 'docker_build'" },
+          { key: 'dockerfile', op: 'add', diff: "'' -> 'Dockerfile'" },
+        ],
+      },
+      {
+        name: 'api',
+        op: 'change',
+        componentType: 'helm_chart',
+        fields: [
+          { key: 'image_tag', op: 'change', diff: "'v1.0' -> 'v1.1'" },
+        ],
+      },
     ],
+    fields: [],
   },
   {
     name: 'Actions',
+    sectionKey: 'actions',
+    grouped: true,
     additions: 0,
     removals: 1,
     changed: 0,
-    entries: [{ op: 'remove', name: 'seed-db', description: 'action removed' }],
+    entities: [
+      {
+        name: 'seed-db',
+        op: 'remove',
+        fields: [
+          { key: 'timeout', op: 'remove', diff: "'60s' -> ''" },
+        ],
+      },
+    ],
+    fields: [],
   },
 ]
 

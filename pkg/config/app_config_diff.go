@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 
 	"github.com/nuonco/nuon/pkg/config/diff"
@@ -95,6 +96,40 @@ func diffBranch(old, new *AppBranchConfig) *diff.Diff {
 
 // --- Sandbox ---
 
+func toTOMLString(v any) string {
+	b, err := ToTOML(v)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+// sectionTOML serializes a section sub-config to TOML, treating a zero-valued
+// (absent) sub-config as empty. Without this, a newly added section would read
+// as a change from its empty-default TOML (e.g. "input = []") rather than an add.
+func sectionTOML(v any) string {
+	s := toTOMLString(v)
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr && !rv.IsNil() {
+		if s == toTOMLString(reflect.New(rv.Type().Elem()).Interface()) {
+			return ""
+		}
+	}
+	return s
+}
+
+// sectionDiff builds a section node from its field children and, when the
+// section's TOML serialization changed, also attaches a before/after content
+// diff so the dashboard can render the whole section as a TOML line diff. The
+// field children are retained for change counting.
+func sectionDiff(key string, old, new any, children []*diff.Diff) *diff.Diff {
+	opts := []diff.DiffOption{diff.WithKey(key), diff.WithChildren(children...)}
+	if oldTOML, newTOML := sectionTOML(old), sectionTOML(new); oldTOML != newTOML {
+		opts = append(opts, diff.WithContentDiff(oldTOML, newTOML))
+	}
+	return diff.NewDiff(opts...)
+}
+
 func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 	if old == nil && new == nil {
 		return nil
@@ -119,7 +154,7 @@ func diffSandbox(old, new *AppSandboxConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return diff.NewDiff(diff.WithKey("sandbox"), diff.WithChildren(children...))
+	return sectionDiff("sandbox", old, new, children)
 }
 
 // --- Runner ---
@@ -144,7 +179,7 @@ func diffRunner(old, new *AppRunnerConfig) *diff.Diff {
 		children = append(children, d)
 	}
 
-	return diff.NewDiff(diff.WithKey("runner"), diff.WithChildren(children...))
+	return sectionDiff("runner", old, new, children)
 }
 
 // --- Stack ---
@@ -171,7 +206,7 @@ func diffStack(old, new *StackConfig) *diff.Diff {
 	// Custom nested stacks matched by name
 	children = append(children, diffCustomNestedStacks(old.CustomNestedStacks, new.CustomNestedStacks)...)
 
-	return diff.NewDiff(diff.WithKey("stack"), diff.WithChildren(children...))
+	return sectionDiff("stack", old, new, children)
 }
 
 func diffCustomNestedStacks(old, new []CustomNestedStack) []*diff.Diff {
@@ -230,7 +265,7 @@ func diffInputs(old, new *AppInputConfig) *diff.Diff {
 	// Inputs matched by name
 	children = append(children, diffAppInputs(old.Inputs, new.Inputs)...)
 
-	return diff.NewDiff(diff.WithKey("inputs"), diff.WithChildren(children...))
+	return sectionDiff("inputs", old, new, children)
 }
 
 func diffInputGroups(old, new []AppInputGroup) []*diff.Diff {
@@ -342,7 +377,7 @@ func diffPermissions(old, new *PermissionsConfig) *diff.Diff {
 	// Custom roles matched by name
 	children = append(children, diffIAMRoles("custom_role", old.CustomRoles, new.CustomRoles)...)
 
-	return diff.NewDiff(diff.WithKey("permissions"), diff.WithChildren(children...))
+	return sectionDiff("permissions", old, new, children)
 }
 
 func diffIAMRole(key string, old, new *AppAWSIAMRole) *diff.Diff {
@@ -500,7 +535,7 @@ func diffSecrets(old, new *SecretsConfig) *diff.Diff {
 		}
 	}
 
-	return diff.NewDiff(diff.WithKey("secrets"), diff.WithChildren(children...))
+	return sectionDiff("secrets", old, new, children)
 }
 
 // --- BreakGlass ---
@@ -709,20 +744,13 @@ func diffHelmValuesFiles(old, new []HelmValuesFile) *diff.Diff {
 
 		of := oldByPath[key]
 		if of.Contents != f.Contents {
-			op := diff.OpChange
-			label := "modified"
-			if of.Contents == "" {
-				op = diff.OpAdd
-				label = "added"
-			}
-			children = append(children, diff.NewDiff(diff.WithKey(key), withFixedDiff(label, op)))
+			children = append(children, diff.NewDiff(diff.WithKey(key), diff.WithContentDiff(of.Contents, f.Contents)))
 		}
 	}
 
 	for key, f := range oldByPath {
 		if !seen[key] {
-			_ = f
-			children = append(children, diff.NewDiff(diff.WithKey(key), withFixedDiff("removed", diff.OpRemove)))
+			children = append(children, diff.NewDiff(diff.WithKey(key), diff.WithContentDiff(f.Contents, "")))
 		}
 	}
 
@@ -730,12 +758,6 @@ func diffHelmValuesFiles(old, new []HelmValuesFile) *diff.Diff {
 		return nil
 	}
 	return diff.NewDiff(diff.WithKey("values_files"), diff.WithChildren(children...))
-}
-
-func withFixedDiff(label string, op diff.Op) diff.DiffOption {
-	return func(dt *diff.Diff) {
-		dt.Diff = &diff.DiffKey{Op: op, Diff: label}
-	}
 }
 
 func diffTerraformModule(old, new *TerraformModuleComponentConfig) []*diff.Diff {
@@ -764,10 +786,44 @@ func diffTerraformModule(old, new *TerraformModuleComponentConfig) []*diff.Diff 
 		diffs = append(diffs, d)
 	}
 
+	if d := diffTerraformVariablesFiles(old.VariablesFiles, new.VariablesFiles); d != nil {
+		diffs = append(diffs, d)
+	}
+
 	diffs = append(diffs, diffPublicRepo("public_repo", old.PublicRepo, new.PublicRepo)...)
 	diffs = append(diffs, diffConnectedRepo("connected_repo", old.ConnectedRepo, new.ConnectedRepo)...)
 
 	return diffs
+}
+
+func diffTerraformVariablesFiles(old, new []TerraformVariablesFile) *diff.Diff {
+	maxLen := len(old)
+	if len(new) > maxLen {
+		maxLen = len(new)
+	}
+	if maxLen == 0 {
+		return nil
+	}
+
+	var children []*diff.Diff
+	for i := 0; i < maxLen; i++ {
+		var oldContents, newContents string
+		if i < len(old) {
+			oldContents = old[i].Contents
+		}
+		if i < len(new) {
+			newContents = new[i].Contents
+		}
+		if oldContents == newContents {
+			continue
+		}
+		children = append(children, diff.NewDiff(diff.WithKey(fmt.Sprintf("var_file[%d]", i)), diff.WithContentDiff(oldContents, newContents)))
+	}
+
+	if len(children) == 0 {
+		return nil
+	}
+	return diff.NewDiff(diff.WithKey("var_file"), diff.WithChildren(children...))
 }
 
 func diffDockerBuild(old, new *DockerBuildComponentConfig) []*diff.Diff {
@@ -897,7 +953,7 @@ func diffKubernetesManifest(old, new *KubernetesManifestComponentConfig) []*diff
 
 	var diffs []*diff.Diff
 	diffs = append(diffs,
-		diff.NewDiff(diff.WithKey("manifest"), diff.WithStringDiff(old.Manifest, new.Manifest)),
+		diff.NewDiff(diff.WithKey("manifest"), diff.WithContentDiff(old.Manifest, new.Manifest)),
 		diff.NewDiff(diff.WithKey("namespace"), diff.WithStringDiff(old.Namespace, new.Namespace)),
 		diff.NewDiff(diff.WithKey("drift_schedule"), diff.WithOptionalStringDiff(old.DriftSchedule, new.DriftSchedule)),
 		diff.NewDiff(diff.WithKey("build_timeout"), diff.WithStringDiff(old.BuildTimeout, new.BuildTimeout)),
@@ -1104,7 +1160,7 @@ func diffActionSteps(old, new []*ActionStepConfig) []*diff.Diff {
 	diffStep := func(os, s *ActionStepConfig) *diff.Diff {
 		stepChildren := []*diff.Diff{
 			diff.NewDiff(diff.WithKey("command"), diff.WithStringDiff(os.Command, s.Command)),
-			diff.NewDiff(diff.WithKey("inline_contents"), diff.WithStringDiff(os.InlineContents, s.InlineContents)),
+			diff.NewDiff(diff.WithKey("inline_contents"), diff.WithContentDiff(os.InlineContents, s.InlineContents)),
 		}
 		if d := diff.MapDiff("env_vars", os.EnvVarMap, s.EnvVarMap); d != nil {
 			stepChildren = append(stepChildren, d)
