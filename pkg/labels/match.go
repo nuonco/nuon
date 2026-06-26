@@ -28,9 +28,10 @@ import (
 type TargetKind string
 
 const (
-	TargetKindInstalls   TargetKind = "installs"
-	TargetKindComponents TargetKind = "components"
-	TargetKindActions    TargetKind = "actions"
+	TargetKindInstalls    TargetKind = "installs"
+	TargetKindComponents  TargetKind = "components"
+	TargetKindActions     TargetKind = "actions"
+	TargetKindAppBranches TargetKind = "app_branches"
 )
 
 // EventTargets is the projection of a dispatched event the matcher needs:
@@ -41,6 +42,7 @@ type EventTargets struct {
 	InstallID       string
 	ComponentID     string
 	ActionID        string
+	AppBranchID     string
 	InstallLabels   Labels
 	ComponentLabels Labels
 	ActionLabels    Labels
@@ -105,9 +107,10 @@ func (t *TargetMatch) Validate() error {
 // kinds in one row (CLI uses this); the v1 modal will only ever write one
 // kind at a time.
 type SubscriptionMatch struct {
-	Installs   *TargetMatch `json:"installs,omitempty"`
-	Components *TargetMatch `json:"components,omitempty"`
-	Actions    *TargetMatch `json:"actions,omitempty"`
+	Installs    *TargetMatch `json:"installs,omitempty"`
+	Components  *TargetMatch `json:"components,omitempty"`
+	Actions     *TargetMatch `json:"actions,omitempty"`
+	AppBranches *TargetMatch `json:"app_branches,omitempty"`
 }
 
 // Matches returns true if any non-nil kind matches its corresponding event
@@ -125,6 +128,9 @@ func (m *SubscriptionMatch) Matches(t EventTargets) bool {
 	if m.Actions != nil && m.Actions.matches(t.ActionID, t.ActionLabels) {
 		return true
 	}
+	if m.AppBranches != nil && m.AppBranches.matches(t.AppBranchID, nil) {
+		return true
+	}
 	return false
 }
 
@@ -135,7 +141,7 @@ func (m *SubscriptionMatch) isZero() bool {
 	if m == nil {
 		return true
 	}
-	return m.Installs == nil && m.Components == nil && m.Actions == nil
+	return m.Installs == nil && m.Components == nil && m.Actions == nil && m.AppBranches == nil
 }
 
 // Validate requires at least one populated kind and recurses into each. A
@@ -161,6 +167,11 @@ func (m *SubscriptionMatch) Validate() error {
 	if m.Actions != nil {
 		if err := m.Actions.Validate(); err != nil {
 			return errors.Wrap(err, "actions")
+		}
+	}
+	if m.AppBranches != nil {
+		if err := m.AppBranches.Validate(); err != nil {
+			return errors.Wrap(err, "app_branches")
 		}
 	}
 	return nil
@@ -192,13 +203,15 @@ func (m *SubscriptionMatch) Canonical() string {
 		return out
 	}
 	b, _ := json.Marshal(struct {
-		Installs   *tmCanon `json:"installs,omitempty"`
-		Components *tmCanon `json:"components,omitempty"`
-		Actions    *tmCanon `json:"actions,omitempty"`
+		Installs    *tmCanon `json:"installs,omitempty"`
+		Components  *tmCanon `json:"components,omitempty"`
+		Actions     *tmCanon `json:"actions,omitempty"`
+		AppBranches *tmCanon `json:"app_branches,omitempty"`
 	}{
-		Installs:   canon(m.Installs),
-		Components: canon(m.Components),
-		Actions:    canon(m.Actions),
+		Installs:    canon(m.Installs),
+		Components:  canon(m.Components),
+		Actions:     canon(m.Actions),
+		AppBranches: canon(m.AppBranches),
 	})
 	return string(b)
 }

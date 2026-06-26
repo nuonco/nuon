@@ -27,6 +27,7 @@ const (
 	KindRoleChange           = "role_change"
 	KindInputsUpdated        = "inputs_updated"
 	KindStackRun             = "stack_run"
+	KindAppConfigSynced      = "app_config_synced"
 )
 
 // Transition values for Event.Transition. British "cancelled" is the
@@ -51,22 +52,24 @@ const (
 
 // WorkflowType values for WorkflowRef.Type.
 const (
-	WorkflowTypeProvision          = "provision"
-	WorkflowTypeReprovision        = "reprovision"
-	WorkflowTypeManualDeploy       = "manual_deploy"
-	WorkflowTypeActionWorkflowRun  = "action_workflow_run"
-	WorkflowTypeDriftRun           = "drift_run"
-	WorkflowTypeDeployComponents   = "deploy_components"
-	WorkflowTypeTeardownComponent  = "teardown_component"
-	WorkflowTypeTeardownComponents = "teardown_components"
-	WorkflowTypeInputUpdate        = "input_update"
-	WorkflowTypeSyncSecrets        = "sync_secrets"
-	WorkflowTypeDeprovision        = "deprovision"
-	WorkflowTypeDeprovisionSandbox = "deprovision_sandbox"
-	WorkflowTypeReprovisionSandbox = "reprovision_sandbox"
-	WorkflowTypeAppConfigBuild     = "app_config_build"
-	WorkflowTypeAppBranchesRun     = "app_branches_manual_update"
-	WorkflowTypeRunbookRun         = "runbook_run"
+	WorkflowTypeProvision                      = "provision"
+	WorkflowTypeReprovision                    = "reprovision"
+	WorkflowTypeManualDeploy                   = "manual_deploy"
+	WorkflowTypeActionWorkflowRun              = "action_workflow_run"
+	WorkflowTypeDriftRun                       = "drift_run"
+	WorkflowTypeDeployComponents               = "deploy_components"
+	WorkflowTypeTeardownComponent              = "teardown_component"
+	WorkflowTypeTeardownComponents             = "teardown_components"
+	WorkflowTypeInputUpdate                    = "input_update"
+	WorkflowTypeSyncSecrets                    = "sync_secrets"
+	WorkflowTypeDeprovision                    = "deprovision"
+	WorkflowTypeDeprovisionSandbox             = "deprovision_sandbox"
+	WorkflowTypeReprovisionSandbox             = "reprovision_sandbox"
+	WorkflowTypeAppConfigBuild                 = "app_config_build"
+	WorkflowTypeAppBranchesRun                 = "app_branches_manual_update"
+	WorkflowTypeAppBranchesConfigRepoUpdate    = "app_branches_config_repo_update"
+	WorkflowTypeAppBranchesComponentRepoUpdate = "app_branches_component_repo_update"
+	WorkflowTypeRunbookRun                     = "runbook_run"
 )
 
 // TargetType values for StepRef.TargetType. Matches the actual string
