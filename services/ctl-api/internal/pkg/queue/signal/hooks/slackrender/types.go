@@ -67,6 +67,8 @@ const (
 	WorkflowTypeAppConfigBuild     = "app_config_build"
 	WorkflowTypeAppBranchesRun     = "app_branches_manual_update"
 	WorkflowTypeRunbookRun         = "runbook_run"
+	WorkflowTypeComponentEnabled   = "component_enabled"
+	WorkflowTypeComponentDisabled  = "component_disabled"
 )
 
 // TargetType values for StepRef.TargetType. Matches the actual string

@@ -3137,7 +3137,6 @@ export interface components {
       org_id?: string;
       queue?: components["schemas"]["app.Queue"];
       updated_at?: string;
-      /** @description Read-only; populated by a COUNT subquery in GetAppBranches, not stored as a column. */
       workflow_count?: number;
       workflows?: components["schemas"]["app.Workflow"][];
     };
@@ -4092,6 +4091,12 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       drifted_object?: components["schemas"]["app.DriftedObject"];
+      /**
+       * @description Enabled is the resolved enabled/disabled state for a toggleable component
+       * on this install (from the synthetic enabled install input, falling back to
+       * the component's default_enabled). It is nil for non-toggleable components.
+       */
+      enabled?: boolean;
       helm_chart?: components["schemas"]["app.HelmChart"];
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -7614,8 +7619,7 @@ export interface components {
       warns?: number;
     };
     "service.ToggleInstallComponentRequest": {
-      enabled?: boolean;
-      plan_only?: boolean;
+      enabled: boolean;
       role?: string;
     };
     "service.TriggerAppBranchRunRequest": {
