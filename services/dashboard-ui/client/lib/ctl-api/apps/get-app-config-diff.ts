@@ -6,6 +6,8 @@ export type TDiffOp = 'add' | 'remove' | 'change' | 'noop' | ''
 export type TDiffKey = {
   op: TDiffOp
   diff: string
+  before?: string
+  after?: string
 }
 
 export type TDiffNode = {

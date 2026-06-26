@@ -19,6 +19,8 @@ type installPlanEntry struct {
 	Status                string                 `json:"status"`
 	InstallConfigUpdateID string                 `json:"install_config_update_id,omitempty"`
 	Diff                  *app.InstallConfigDiff `json:"diff,omitempty"`
+	OldAppConfigID        string                 `json:"old_app_config_id,omitempty"`
+	NewAppConfigID        string                 `json:"new_app_config_id,omitempty"`
 }
 
 type installGroupPlan struct {
@@ -73,6 +75,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		entries[i].Diff = result.Diff
 		entries[i].InstallName = result.InstallName
 		entries[i].InstallLabels = result.InstallLabels
+		entries[i].OldAppConfigID = result.OldAppConfigID
+		entries[i].NewAppConfigID = result.NewAppConfigID
 
 		entries[i].Status = "success"
 		s.updatePlanMetadata(ctx, groupName, entries)

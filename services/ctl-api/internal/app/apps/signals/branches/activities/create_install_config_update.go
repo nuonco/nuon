@@ -21,6 +21,8 @@ type CreateInstallConfigUpdateOutput struct {
 	Diff                  *app.InstallConfigDiff `json:"diff,omitempty"`
 	InstallName           string                 `json:"install_name,omitempty"`
 	InstallLabels         map[string]string      `json:"install_labels,omitempty"`
+	OldAppConfigID        string                 `json:"old_app_config_id,omitempty"`
+	NewAppConfigID        string                 `json:"new_app_config_id,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -57,5 +59,7 @@ func (a *Activities) CreateInstallConfigUpdate(ctx context.Context, input *Creat
 		Diff:                  diff,
 		InstallName:           install.Name,
 		InstallLabels:         install.Labels,
+		OldAppConfigID:        install.AppConfigID,
+		NewAppConfigID:        input.NewAppConfigID,
 	}, nil
 }

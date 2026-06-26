@@ -107,6 +107,14 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 	var newAppCfg app.AppConfig
 	if err := a.db.WithContext(ctx).
 		Preload("ComponentConfigConnections").
+		Preload("ComponentConfigConnections.Component").
+		Preload("ComponentConfigConnections.HelmComponentConfig").
+		Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnections.DockerBuildComponentConfig").
+		Preload("ComponentConfigConnections.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnections.JobComponentConfig").
+		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
+		Preload("ComponentConfigConnections.PulumiComponentConfig").
 		Preload("SandboxConfig").
 		Preload("StackConfig").
 		First(&newAppCfg, "id = ?", newAppConfigID).Error; err != nil {
@@ -130,6 +138,14 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 		var oldAppCfg app.AppConfig
 		if err := a.db.WithContext(ctx).
 			Preload("ComponentConfigConnections").
+			Preload("ComponentConfigConnections.Component").
+			Preload("ComponentConfigConnections.HelmComponentConfig").
+			Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
+			Preload("ComponentConfigConnections.DockerBuildComponentConfig").
+			Preload("ComponentConfigConnections.ExternalImageComponentConfig").
+			Preload("ComponentConfigConnections.JobComponentConfig").
+			Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
+			Preload("ComponentConfigConnections.PulumiComponentConfig").
 			Preload("SandboxConfig").
 			Preload("StackConfig").
 			First(&oldAppCfg, "id = ?", oldAppConfigID).Error; err == nil {
