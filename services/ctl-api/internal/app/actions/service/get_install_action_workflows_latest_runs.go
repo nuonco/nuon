@@ -105,7 +105,8 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		}).
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
-		})
+		}).
+		Where(currentAppConfigActionFilter)
 
 	if len(triggerTypes) > 0 {
 		tx = tx.

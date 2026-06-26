@@ -13,6 +13,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// currentAppConfigRunbookFilter keeps only runbooks present in the install's current app config.
+const currentAppConfigRunbookFilter = `EXISTS (
+	SELECT 1 FROM runbook_configs rc
+	JOIN installs i ON i.id = install_runbooks.install_id
+	WHERE rc.runbook_id = install_runbooks.runbook_id
+		AND rc.app_config_id = i.app_config_id
+		AND rc.deleted_at = 0
+)`
+
 // @ID				GetInstallRunbooks
 // @Summary		get runbooks for an install
 // @Tags			runbooks
@@ -64,6 +73,7 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
+		Where(currentAppConfigRunbookFilter).
 		Order("install_runbooks.created_at DESC")
 
 	if q != "" {
