@@ -39,7 +39,6 @@ export const ToggleComponentModalContainer = ({
       toggleComponent({
         body: {
           enabled: enabling,
-          plan_only: false,
           ...(params.role && { role: params.role }),
         },
         componentId: component.id,

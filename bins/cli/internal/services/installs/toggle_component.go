@@ -32,14 +32,16 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 		return ui.PrintError(err)
 	}
 
-	installComponents, _, err := s.api.GetInstallComponents(ctx, installID, nil)
+	installComponents, _, err := s.api.GetInstallComponents(ctx, installID, &models.GetPaginatedQuery{Limit: 100})
 	if err != nil {
 		return ui.PrintError(err)
 	}
 	currentlyEnabled := true
 	for _, ic := range installComponents {
 		if ic.ComponentID == componentID {
-			currentlyEnabled = ic.Enabled
+			if ic.Enabled != nil {
+				currentlyEnabled = *ic.Enabled
+			}
 			break
 		}
 	}
