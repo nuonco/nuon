@@ -159,7 +159,8 @@ func (h *SlackSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) bool 
 		signalTypeDriftDetected,
 		signalTypeStackRun,
 		signalTypeRoleChange,
-		signalTypeInputsUpdated:
+		signalTypeInputsUpdated,
+		signalTypeAppConfigSynced:
 		return true
 	default:
 		return false
@@ -607,6 +608,23 @@ func (h *SlackSignalLifecycleHook) postFlatRoleChange(
 	return nil
 }
 
+func (h *SlackSignalLifecycleHook) postFlatAppConfigSynced(
+	ctx context.Context,
+	install *app.SlackInstallation,
+	sub app.SlackChannelSubscription,
+	rendered renderEvent,
+) error {
+	msg := slackrender.BuildAppConfigSyncedMessage(rendered.event)
+	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{
+		Channel: sub.ChannelID,
+		Text:    msg.Text,
+		Blocks:  msg.Blocks,
+	}); err != nil {
+		return fmt.Errorf("post slack app-config-synced message: %w", err)
+	}
+	return nil
+}
+
 func (h *SlackSignalLifecycleHook) postFlatNotification(
 	ctx context.Context,
 	install *app.SlackInstallation,
@@ -619,6 +637,9 @@ func (h *SlackSignalLifecycleHook) postFlatNotification(
 	}
 	if signalType == signalTypeRoleChange {
 		return h.postFlatRoleChange(ctx, install, sub, rendered)
+	}
+	if signalType == signalTypeAppConfigSynced {
+		return h.postFlatAppConfigSynced(ctx, install, sub, rendered)
 	}
 	msg := slackrender.BuildFlatMessage(rendered.event)
 	if _, err := h.slackClient.PostMessage(ctx, install.BotAccessToken, slackclient.PostMessageRequest{

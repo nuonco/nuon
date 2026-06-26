@@ -44,6 +44,7 @@ const (
 	kindOptionInstalls    = "installs"
 	kindOptionComponents  = "components"
 	kindOptionActions     = "actions"
+	kindOptionAppBranches = "app_branches"
 
 	// Predicate radio. Only rendered when match=Specific. Toggling
 	// re-renders to surface either the multi_external_select or the
@@ -64,10 +65,11 @@ const (
 	// Entity multi_external_select. Only one block at any time, but the
 	// action_id varies by kind so the block_suggestion handler in Packet E
 	// can dispatch on action_id without re-decoding state.
-	subscribeEntitiesBlockID            = "nuon_subscribe_entities_block"
-	subscribeEntitiesActionIDInstalls   = "nuon_subscribe_entities_installs"
-	subscribeEntitiesActionIDComponents = "nuon_subscribe_entities_components"
-	subscribeEntitiesActionIDActions    = "nuon_subscribe_entities_actions"
+	subscribeEntitiesBlockID             = "nuon_subscribe_entities_block"
+	subscribeEntitiesActionIDInstalls    = "nuon_subscribe_entities_installs"
+	subscribeEntitiesActionIDComponents  = "nuon_subscribe_entities_components"
+	subscribeEntitiesActionIDActions     = "nuon_subscribe_entities_actions"
+	subscribeEntitiesActionIDAppBranches = "nuon_subscribe_entities_app_branches"
 
 	// Labels selector textinput. Only rendered when predicate=Labels.
 	// subscribeLabelsBlockID drives the positive (include) selector;
@@ -424,13 +426,19 @@ func buildSubscribeModalView(
 			"text":  map[string]any{"type": "plain_text", "text": "Actions"},
 			"value": kindOptionActions,
 		}
-		kindOptions := []any{kindOptInstalls, kindOptComponents, kindOptActions}
+		kindOptAppBranches := map[string]any{
+			"text":  map[string]any{"type": "plain_text", "text": "App branches"},
+			"value": kindOptionAppBranches,
+		}
+		kindOptions := []any{kindOptInstalls, kindOptComponents, kindOptActions, kindOptAppBranches}
 		kindInitial := kindOptInstalls
 		switch render.TargetKind {
 		case labels.TargetKindComponents:
 			kindInitial = kindOptComponents
 		case labels.TargetKindActions:
 			kindInitial = kindOptActions
+		case labels.TargetKindAppBranches:
+			kindInitial = kindOptAppBranches
 		}
 		blocks = append(blocks, map[string]any{
 			"type":     "input",
@@ -1024,6 +1032,11 @@ func targetKindLabel(k labels.TargetKind, plural bool) string {
 			return "actions"
 		}
 		return "action"
+	case labels.TargetKindAppBranches:
+		if plural {
+			return "app branches"
+		}
+		return "app branch"
 	default:
 		// Default to installs so an unset TargetKind still produces
 		// useful labels during the first render of the Specific path.
@@ -1048,7 +1061,7 @@ func titleCase(s string) string {
 // the modal surfaces an app picker first; installs are listed org-wide.
 func targetKindNeedsApp(k labels.TargetKind) bool {
 	switch k {
-	case labels.TargetKindComponents, labels.TargetKindActions:
+	case labels.TargetKindComponents, labels.TargetKindActions, labels.TargetKindAppBranches:
 		return true
 	default:
 		return false
@@ -1066,6 +1079,8 @@ func subscribeEntitiesActionIDForKind(k labels.TargetKind) string {
 		return subscribeEntitiesActionIDComponents
 	case labels.TargetKindActions:
 		return subscribeEntitiesActionIDActions
+	case labels.TargetKindAppBranches:
+		return subscribeEntitiesActionIDAppBranches
 	default:
 		return subscribeEntitiesActionIDInstalls
 	}
@@ -1080,6 +1095,8 @@ func targetKindFromString(s string) labels.TargetKind {
 		return labels.TargetKindComponents
 	case kindOptionActions:
 		return labels.TargetKindActions
+	case kindOptionAppBranches:
+		return labels.TargetKindAppBranches
 	default:
 		return labels.TargetKindInstalls
 	}
@@ -1313,6 +1330,8 @@ func (s *service) renderStateFromSubscription(
 			kind, tm = labels.TargetKindComponents, sub.Match.Components
 		case sub.Match.Actions != nil:
 			kind, tm = labels.TargetKindActions, sub.Match.Actions
+		case sub.Match.AppBranches != nil:
+			kind, tm = labels.TargetKindAppBranches, sub.Match.AppBranches
 		}
 		rs.TargetKind = kind
 		switch {
@@ -1525,6 +1544,8 @@ func tableForTargetKind(kind labels.TargetKind) string {
 		return "components"
 	case labels.TargetKindActions:
 		return "action_workflows"
+	case labels.TargetKindAppBranches:
+		return "app_branches"
 	default:
 		return ""
 	}
@@ -1780,6 +1801,8 @@ func buildSubscriptionMatchFromRender(render subscribeModalRenderState) (*labels
 		out.Components = tm
 	case labels.TargetKindActions:
 		out.Actions = tm
+	case labels.TargetKindAppBranches:
+		out.AppBranches = tm
 	default:
 		out.Installs = tm
 	}
@@ -1831,6 +1854,9 @@ func (s *service) validateMatchEntityIDs(ctx context.Context, orgID, appID strin
 		return b, msg
 	}
 	if b, msg := check(labels.TargetKindActions, m.Actions); msg != "" {
+		return b, msg
+	}
+	if b, msg := check(labels.TargetKindAppBranches, m.AppBranches); msg != "" {
 		return b, msg
 	}
 	return "", ""

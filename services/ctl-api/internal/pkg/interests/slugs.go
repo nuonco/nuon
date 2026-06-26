@@ -51,6 +51,7 @@ const (
 const (
 	SlugEventRoleChange    = SlugPrefixEvent + "role.change"
 	SlugEventInputsUpdated = SlugPrefixEvent + "inputs.updated"
+	SlugEventConfigSynced  = SlugPrefixEvent + "config.synced"
 )
 
 // ResourceSlug returns "resource:<kind>".
