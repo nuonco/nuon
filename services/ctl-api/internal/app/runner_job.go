@@ -334,6 +334,14 @@ func (a *RunnerJob) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &RunnerJob{}, "runner_id_deleted_at_created_at_desc"),
+			Columns: []string{
+				"runner_id",
+				"deleted_at",
+				"created_at DESC",
+			},
+		},
 	}
 }
 
