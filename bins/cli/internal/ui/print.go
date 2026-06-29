@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors/withstack"
+	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 
@@ -31,6 +32,10 @@ func (u *CLIUserError) Error() string {
 }
 
 func PrintError(err error) error {
+	if agentEnabled() {
+		return emitAgentError(err)
+	}
+
 	if os.Getenv(debugEnvVar) != "" {
 		fmt.Println(bubbles.ErrorStyle.Render(fmt.Sprintf("DEBUG: %v", err)))
 	}
@@ -131,24 +136,24 @@ func containsTechnicalError(msg string) bool {
 }
 
 func PrintRaw(msg string) {
-	fmt.Print(msg)
+	fmt.Fprint(agentmode.HumanWriter(), msg)
 }
 
 func PrintLn(msg string) {
-	fmt.Println(bubbles.InfoStyle.Render(msg))
+	fmt.Fprintln(agentmode.HumanWriter(), bubbles.InfoStyle.Render(msg))
 }
 
 func PrintWarning(msg string) {
-	fmt.Println(bubbles.WarningStyle.Render(msg))
+	fmt.Fprintln(agentmode.HumanWriter(), bubbles.WarningStyle.Render(msg))
 }
 
 func PrintSuccess(msg string) {
-	fmt.Println(bubbles.SuccessStyle.Render(msg))
+	fmt.Fprintln(agentmode.HumanWriter(), bubbles.SuccessStyle.Render(msg))
 }
 
 func PrintDebug(msg string) {
 	if os.Getenv(debugEnvVar) != "true" {
 		return
 	}
-	fmt.Println(bubbles.InfoStyle.Render("DEBUG: " + msg))
+	fmt.Fprintln(agentmode.HumanWriter(), bubbles.InfoStyle.Render("DEBUG: "+msg))
 }
