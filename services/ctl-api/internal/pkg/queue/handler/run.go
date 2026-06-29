@@ -163,11 +163,12 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return true, nil
 	}
 
-	// drain in-flight phase updates first: ending the run mid-handler drops its deferred completion callback and wedges the dispatcher. bounded so a stuck handler can't leak the workflow
-	if _, err := workflow.AwaitWithTimeout(ctx, callback.QuickTimeout, func() bool {
-		return workflow.AllHandlersFinished(ctx)
-	}); err != nil {
-		return false, err
+	if !workflow.AllHandlersFinished(ctx) {
+		if _, err := workflow.AwaitWithTimeout(ctx, callback.QuickTimeout, func() bool {
+			return workflow.AllHandlersFinished(ctx)
+		}); err != nil {
+			return false, err
+		}
 	}
 
 	if mgr.Restarted {
