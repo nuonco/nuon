@@ -78,6 +78,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		general.POST("/promotion", s.AdminPromotion)
 		general.POST("/slack-auto-link", s.AdminSlackAutoLink)
 		general.GET("/waitlist", s.AdminGetWaitlist)
+		general.POST("/backfill-blobs", s.AdminBackfillBlobs)
+		general.GET("/backfill-blobs", s.GetBackfillBlobsStatus)
+		general.POST("/verify-blobs", s.AdminVerifyBlobs)
+		general.GET("/verify-blobs", s.GetVerifyBlobsStatus)
 
 		// temporal codec
 		general.POST("/temporal-codec/decode", s.TemporalCodecDecode)

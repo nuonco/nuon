@@ -409,6 +409,9 @@ type Config struct {
 	// When enabled, the daily cron hard-deletes process_healthcheck queue signals older than 7 days.
 	QueueSignalCleanupEnabled bool `config:"queue_signal_cleanup_enabled"`
 
+	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 100 when unset.
+	BlobBackfillRatePerSecond int `config:"blob_backfill_rate_per_second"`
+
 	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
 	// ChannelID is optional and seeds a default org-wide subscription per link.
 	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`
