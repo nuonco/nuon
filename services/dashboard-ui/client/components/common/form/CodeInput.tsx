@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { json } from '@codemirror/lang-json'
 import { StreamLanguage } from '@codemirror/language'
 import { shell } from '@codemirror/legacy-modes/mode/shell'
+import { yaml } from '@codemirror/legacy-modes/mode/yaml'
 import { EditorView } from '@codemirror/view'
 import { Label, type ILabel } from '@/components/common/form/Label'
 import { Text, type IText } from '@/components/common/Text'
@@ -21,7 +22,7 @@ export interface ICodeInput
   errorMessage?: string
   errorMessageProps?: Omit<IText, 'children'>
   size?: 'sm' | 'md' | 'lg'
-  language?: 'json' | 'shell' | 'bash'
+  language?: 'json' | 'shell' | 'bash' | 'yaml' | 'hcl'
   minHeight?: number
   onChange?: (e: { target: { value: string; name?: string } }) => void
 }
@@ -30,9 +31,13 @@ function getLanguageExtension(language: string) {
   switch (language) {
     case 'json':
       return json()
+    case 'yaml':
+      return StreamLanguage.define(yaml)
     case 'shell':
     case 'bash':
       return StreamLanguage.define(shell)
+    case 'hcl':
+      return null
     default:
       return json()
   }
