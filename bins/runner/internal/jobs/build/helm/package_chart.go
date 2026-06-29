@@ -3,6 +3,7 @@ package helm
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"io"
 	"net"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v4/pkg/action"
+	chartv2 "helm.sh/helm/v4/pkg/chart/v2"
 	"helm.sh/helm/v4/pkg/chart/v2/loader"
 	chartutil "helm.sh/helm/v4/pkg/chart/v2/util"
 	"helm.sh/helm/v4/pkg/cli"
@@ -90,25 +92,32 @@ func (h *handler) loadAndPackageChart(l *zap.Logger, chartDir, dstDir string) (s
 	}
 	l.Info("successfully loaded chart", zap.String("chart_dir", chartDir), zap.String("dst_dir", dstDir))
 
-	// check for dependencies
 	dependencies := chart.Metadata.Dependencies
-	dep_repos := map[string]string{}
 	if len(dependencies) > 0 {
-		l.Info("dependencies: chart has dependencies", zap.String("chart_dir", chartDir), zap.String("dst_dir", dstDir))
+		l.Info("dependencies: chart has dependencies", zap.String("chart_dir", chartDir), zap.Int("count", len(dependencies)))
 
-		// populate dep_repos from dependencies
+		// OCI and file:// deps are resolved without a repo entry; registering them errors.
+		repoURLs := map[string]struct{}{}
 		for _, dep := range dependencies {
-			if dep.Repository != "" {
-				dep_repos[dep.Repository] = dep.Name
+			if dep.Repository == "" || registry.IsOCI(dep.Repository) || strings.HasPrefix(dep.Repository, "file://") {
+				continue
 			}
+			repoURLs[dep.Repository] = struct{}{}
 		}
 
-		// 1. add repos and update dependencies
-		h.addDependencyReposAndUpdate(l, chartDir, dep_repos)
-		// 2. reload the chart now that the deps are in place
+		// An update error is not fatal: a chart pulled with deps already vendored
+		// stays valid. verifyDependenciesPresent below decides if the package is complete.
+		if err := h.addDependencyReposAndUpdate(l, chartDir, repoURLs); err != nil {
+			l.Warn("dependency update reported an error; verifying vendored dependencies", zap.Error(err))
+		}
+
 		chart, err = loader.Load(chartDir)
 		if err != nil {
 			return "", fmt.Errorf("unable to load chart with dependencies: %w", err)
+		}
+
+		if err := verifyDependenciesPresent(dependencies, chart); err != nil {
+			return "", err
 		}
 	}
 
@@ -310,18 +319,53 @@ func (h *handler) addRepo(l *zap.Logger, out io.Writer, settings *cli.EnvSetting
 	return nil
 }
 
-func (h *handler) addDependencyReposAndUpdate(l *zap.Logger, chartDir string, repos map[string]string) error {
+// repoNameForURL returns a stable, unique repo name per URL so distinct repos
+// never collide on a name and the entry is idempotent across builds.
+func repoNameForURL(url string) string {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(url))
+	return fmt.Sprintf("dep-repo-%x", h.Sum32())
+}
+
+// verifyDependenciesPresent fails if any declared dependency was not vendored,
+// which would otherwise package an incomplete chart (commonly dropping CRDs).
+func verifyDependenciesPresent(declared []*chartv2.Dependency, c *chartv2.Chart) error {
+	loaded := map[string]struct{}{}
+	for _, dep := range c.Dependencies() {
+		loaded[dep.Name()] = struct{}{}
+	}
+
+	var missing []string
+	for _, dep := range declared {
+		if _, ok := loaded[dep.Name]; ok {
+			continue
+		}
+		if dep.Alias != "" {
+			if _, ok := loaded[dep.Alias]; ok {
+				continue
+			}
+		}
+		missing = append(missing, fmt.Sprintf("%s (repository %q)", dep.Name, dep.Repository))
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("chart dependencies were not packaged: %s; verify the dependency repositories are reachable", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+func (h *handler) addDependencyReposAndUpdate(l *zap.Logger, chartDir string, repoURLs map[string]struct{}) error {
 	hcLog := log.NewHClog(l)
 	lw := hcLog.StandardWriter(&hclog.StandardLoggerOptions{})
 
-	// make some settings
 	settings := cli.New()
 	settings.BurstLimit = 10
 	settings.QPS = 5
 
-	// add repos
-	for url, name := range repos {
-		h.addRepo(l, lw, settings, chartDir, name, url)
+	// addRepo failures are non-fatal: the caller verifies dependencies were vendored.
+	for url := range repoURLs {
+		if err := h.addRepo(l, lw, settings, chartDir, repoNameForURL(url), url); err != nil {
+			l.Warn("unable to add dependency repo", zap.String("repo_url", url), zap.Error(err))
+		}
 	}
 
 	// make a helm client
@@ -355,11 +399,9 @@ func (h *handler) addDependencyReposAndUpdate(l *zap.Logger, chartDir string, re
 	}
 
 	// update dependencies
-	err = man.Update()
-	if err == nil {
-		client.List(chartDir, lw)
-		return nil
-	} else {
-		return err
+	if err := man.Update(); err != nil {
+		return fmt.Errorf("unable to update chart dependencies: %w", err)
 	}
+	client.List(chartDir, lw)
+	return nil
 }
