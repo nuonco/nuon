@@ -1,6 +1,6 @@
 package v2
 
-// The effective-enabled / cascade logic lives in app.ComponentEnablementResolver
+// The effective-enabled / cascade logic lives in appconfiggraph.ComponentEnablementResolver
 // so it is shared by the workflow step generator and the service-side enable
 // validation. genCtx holds one resolver and exposes thin wrappers.
 

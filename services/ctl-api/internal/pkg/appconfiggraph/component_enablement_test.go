@@ -1,4 +1,4 @@
-package app
+package appconfiggraph
 
 import (
 	"strconv"
@@ -9,24 +9,25 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/refs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-func cccToggleable(id, name string, defaultEnabled bool, depIDs ...string) *ComponentConfigConnection {
+func cccToggleable(id, name string, defaultEnabled bool, depIDs ...string) *app.ComponentConfigConnection {
 	tr := true
 	de := defaultEnabled
-	return &ComponentConfigConnection{
+	return &app.ComponentConfigConnection{
 		ComponentID:            id,
-		Component:              Component{ID: id, Name: name},
+		Component:              app.Component{ID: id, Name: name},
 		Toggleable:             &tr,
 		DefaultEnabled:         &de,
 		ComponentDependencyIDs: pq.StringArray(depIDs),
 	}
 }
 
-func cccPlain(id, name string, depIDs ...string) *ComponentConfigConnection {
-	return &ComponentConfigConnection{
+func cccPlain(id, name string, depIDs ...string) *app.ComponentConfigConnection {
+	return &app.ComponentConfigConnection{
 		ComponentID:            id,
-		Component:              Component{ID: id, Name: name},
+		Component:              app.Component{ID: id, Name: name},
 		ComponentDependencyIDs: pq.StringArray(depIDs),
 	}
 }
@@ -34,8 +35,8 @@ func cccPlain(id, name string, depIDs ...string) *ComponentConfigConnection {
 // resolverFor returns a builder that takes per-component-name enabled toggles
 // and materializes them as the reserved synthetic enabled inputs the resolver
 // reads. In these tests component name == component id.
-func resolverFor(cccs ...*ComponentConfigConnection) func(map[string]bool) *ComponentEnablementResolver {
-	byID := make(map[string]*ComponentConfigConnection, len(cccs))
+func resolverFor(cccs ...*app.ComponentConfigConnection) func(map[string]bool) *ComponentEnablementResolver {
+	byID := make(map[string]*app.ComponentConfigConnection, len(cccs))
 	for _, c := range cccs {
 		byID[c.ComponentID] = c
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 	"gorm.io/gorm"
@@ -203,7 +204,7 @@ func (s *service) populateComponentEnabled(ctx context.Context, installID string
 		return fmt.Errorf("unable to get install inputs: %w", err)
 	}
 
-	resolver := app.NewComponentEnablementResolver(cccByComp, enabledInputs)
+	resolver := appconfiggraph.NewComponentEnablementResolver(cccByComp, enabledInputs)
 	for _, comp := range comps {
 		ccc := cccByComp[comp.ComponentID]
 		if ccc == nil || !ccc.IsToggleable() {

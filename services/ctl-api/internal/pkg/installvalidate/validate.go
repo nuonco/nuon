@@ -2,6 +2,7 @@ package installvalidate
 
 import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 )
 
 // OperationKind identifies the mutation being validated, which scopes how the
@@ -27,7 +28,7 @@ type Operation struct {
 // state: the dependency/enablement resolver, the component config snapshot, and
 // the operation being validated.
 type Context struct {
-	Resolver *app.ComponentEnablementResolver
+	Resolver *appconfiggraph.ComponentEnablementResolver
 	CCCByID  map[string]*app.ComponentConfigConnection
 	Op       Operation
 }
@@ -37,7 +38,7 @@ type Context struct {
 // per-component enabled toggles.
 func NewContext(cccByID map[string]*app.ComponentConfigConnection, enabledInputs map[string]*string, op Operation) *Context {
 	return &Context{
-		Resolver: app.NewComponentEnablementResolver(cccByID, enabledInputs),
+		Resolver: appconfiggraph.NewComponentEnablementResolver(cccByID, enabledInputs),
 		CCCByID:  cccByID,
 		Op:       op,
 	}

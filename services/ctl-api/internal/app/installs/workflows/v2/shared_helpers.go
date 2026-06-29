@@ -20,6 +20,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/componentteardownsyncandplan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/executeactionworkflow"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/appconfiggraph"
 )
 
 // genCtx is the per-workflow-invocation context for step generation. It bundles
@@ -51,7 +52,7 @@ type genCtx struct {
 
 	// enablement resolves effective-enabled state and cascade ordering from the
 	// pinned app config and the install's enabled inputs.
-	enablement *app.ComponentEnablementResolver
+	enablement *appconfiggraph.ComponentEnablementResolver
 
 	// addedImageDepSyncs tracks image-dep components that already had a
 	// sync step prepended in this workflow. Multiple non-image components
@@ -75,7 +76,7 @@ func newGenCtx(sg *stepGroup, flw *app.Workflow, installID string, appCfg *app.A
 	for _, opt := range opts {
 		opt(dg)
 	}
-	dg.enablement = app.NewComponentEnablementResolver(dg.cccByComp, dg.enabledInputs)
+	dg.enablement = appconfiggraph.NewComponentEnablementResolver(dg.cccByComp, dg.enabledInputs)
 	return dg
 }
 
