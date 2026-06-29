@@ -33,6 +33,22 @@ func (s *service) AdminToggleOrgsFeature(ctx *gin.Context) {
 		return
 	}
 
+	if len(req.Features) == 0 {
+		ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("at least one feature is required")))
+		return
+	}
+
+	validFeatures := make(map[string]bool, len(app.GetFeatures()))
+	for _, f := range app.GetFeatures() {
+		validFeatures[string(f)] = true
+	}
+	for feature := range req.Features {
+		if !validFeatures[feature] {
+			ctx.Error(stderr.NewInvalidRequest(fmt.Errorf("invalid feature: %s", feature)))
+			return
+		}
+	}
+
 	if err := s.features.ToggleForAllOrgs(ctx, req.Features); err != nil {
 		ctx.Error(fmt.Errorf("unable to toggle feature for all orgs: %w", err))
 		return
