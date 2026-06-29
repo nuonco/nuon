@@ -71,6 +71,10 @@ type handler struct {
 	finished  bool
 	canceled  bool
 
+	// autoRewarmStarted guards the resident terminal-success re-warm path so the
+	// internal validate→execute is launched at most once per Handler run.
+	autoRewarmStarted bool
+
 	// in-flight phase flags; manager defers continue-as-new while either is set.
 	validating bool
 	executing  bool
