@@ -31,10 +31,18 @@ func (h *handler) finishJob(ctx context.Context, job *models.AppRunnerJob, jobEx
 			return err
 		}
 
+		// On Azure, don't power the VM off. An instance refresh in Azure takes 10m+ to complete.
+		// Keep the VM on and let the Azure control plane replace it.
+		if h.settings.Platform == "azure" {
+			l.Info("vm shutdown - marking vm as unhealthy; letting azure vmss replace the instance")
+			h.health.SetUnhealthy()
+			return nil
+		}
+
 		// NOTE(fd): this shuts down so quickly we do lose the tail end of the logs.
 		// executes an os shutdown ↴ via dbus w/ a shell fallback w/ a sudo shell fallback
-		err = pkgshutdown.Shutdown(ctx, l, h.v)
-		if err != nil {
+		if err := pkgshutdown.Shutdown(ctx, l, h.v); err != nil {
+			l.Error("failed to shut down vm", zap.Error(err))
 		}
 	}
 

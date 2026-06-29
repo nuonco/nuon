@@ -16,7 +16,6 @@ export type TRuntimeConfig = {
   version?: string
   gitRef?: string
   isByoc: boolean
-  sfTrialEndpoint?: string
   onboardingV2?: boolean
   adminDashboardUrl?: string
   isDev?: boolean

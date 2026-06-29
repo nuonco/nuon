@@ -141,6 +141,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			{
 				component.GET("", s.GetInstallComponent)
 				component.POST("/teardown", s.TeardownInstallComponent)
+				component.POST("/toggle", s.ToggleInstallComponent)
 				component.POST("/forget", s.ForgetInstallComponent)
 				component.GET("/deploys", s.GetInstallComponentDeploys)
 				component.GET("/outputs", s.GetInstallComponentOutputs)
@@ -205,6 +206,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			configs.POST("", s.CreateInstallConfig)
 			configs.PATCH("/:config_id", s.UpdateInstallConfig)
 		}
+
+		// install app config updates
+		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
 
 		// install audit logs
 		installs.GET("/audit_logs", s.GetInstallAuditLogs)

@@ -317,6 +317,126 @@ func plainDriftHeadline(e Event) string {
 	return "🌊 Drift detected — " + subject
 }
 
+// BuildRoleChangeMessage renders a standalone role-change notification card.
+// Role-change events are notification-only signals (like drift) — each lands
+// as its own top-level message indicating that a role was enabled or disabled.
+func BuildRoleChangeMessage(e Event) Message {
+	blocks := []slack.Block{headerBlock(roleChangeHeaderText(e))}
+	if fields := roleChangeFields(e); len(fields) > 0 {
+		blocks = append(blocks, slack.NewDividerBlock(), fieldsSection(fields))
+	}
+	if actions, ok := actionsBlock(roleChangeLinks(e)); ok {
+		blocks = append(blocks, actions)
+	}
+	return Message{Text: plainRoleChangeHeadline(e), Blocks: blocks}
+}
+
+// roleChangeHeaderText renders the header with the role name appended when
+// available. Break-glass roles get 🚨, others get 🔐.
+func roleChangeHeaderText(e Event) string {
+	changeType := roleChangeType(e)
+	emoji := "🔐"
+	if isBreakGlassRoleType(roleChangeRoleType(e)) {
+		emoji = "🚨"
+	}
+	text := emoji + " Role " + changeType
+	if name := roleChangeName(e); name != "" {
+		text = text + " · " + name
+	}
+	return text
+}
+
+func isBreakGlassRoleType(roleType string) bool {
+	return roleType == "breakglass" || roleType == "runner_breakglass"
+}
+
+// roleChangeType extracts the change_type from event metadata. Defaults to
+// "changed" when the field is missing.
+func roleChangeType(e Event) string {
+	if e.Metadata != nil {
+		if v, ok := e.Metadata["change_type"].(string); ok && v != "" {
+			return v
+		}
+	}
+	return "changed"
+}
+
+// roleChangeName extracts the role_name from event metadata.
+func roleChangeName(e Event) string {
+	if e.Metadata != nil {
+		if v, ok := e.Metadata["role_name"].(string); ok {
+			return v
+		}
+	}
+	return ""
+}
+
+// roleChangeRoleType extracts the role_type from event metadata.
+func roleChangeRoleType(e Event) string {
+	if e.Metadata != nil {
+		if v, ok := e.Metadata["role_type"].(string); ok {
+			return v
+		}
+	}
+	return ""
+}
+
+// roleChangeFields builds the role-change card's field grid.
+func roleChangeFields(e Event) []kv {
+	fields := []kv{}
+	if name := roleChangeName(e); name != "" {
+		fields = append(fields, kv{"Role", slackEscape(name)})
+	}
+	if roleType := roleChangeRoleType(e); roleType != "" {
+		fields = append(fields, kv{"Type", slackEscape(roleType)})
+	}
+	if name := installName(e); name != "" {
+		fields = append(fields, kv{"Install", slackEscape(name)})
+	}
+	if name := orgName(e); name != "" {
+		fields = append(fields, kv{"Org", slackEscape(name)})
+	}
+	if names := roleChangeActionTriggers(e); names != "" {
+		fields = append(fields, kv{"Action triggers", names})
+	}
+	return fields
+}
+
+func roleChangeActionTriggers(e Event) string {
+	if e.Metadata == nil {
+		return ""
+	}
+	if v, ok := e.Metadata["action_trigger_names"].(string); ok && v != "" {
+		return slackEscape(v)
+	}
+	return ""
+}
+
+// roleChangeLinks returns the role-change card button targets.
+func roleChangeLinks(e Event) []LinkChip {
+	links := []LinkChip{}
+	if e.Links == nil {
+		return links
+	}
+	if l := firstNonEmptyLink(e.Links,
+		func(l *ContextLinks) string { return l.Install },
+		func(l *ContextLinks) string { return l.Org },
+	); l != "" {
+		links = append(links, LinkChip{Label: "Open in Nuon", URL: l})
+	}
+	return links
+}
+
+// plainRoleChangeHeadline renders the message-text fallback for role-change events.
+func plainRoleChangeHeadline(e Event) string {
+	changeType := roleChangeType(e)
+	name := roleChangeName(e)
+	if name == "" {
+		return "🔐 Role " + changeType
+	}
+	return "🔐 Role " + changeType + " — " + name
+}
+
 // workflowSubjectLabel returns a workflow-scoped subject for the parent
 // header. For runbook_run workflows that is the runbook's name; other
 // workflow types return "" so the header stays the workflow title alone.
@@ -324,7 +444,20 @@ func workflowSubjectLabel(e Event) string {
 	if e.Workflow.Type == WorkflowTypeRunbookRun && e.Workflow.RunbookName != "" {
 		return e.Workflow.RunbookName
 	}
+	if isAppBranchWorkflow(e) && e.Workflow.OwnerName != "" {
+		return e.Workflow.OwnerName
+	}
 	return ""
+}
+
+func isAppBranchWorkflow(e Event) bool {
+	switch e.Workflow.Type {
+	case WorkflowTypeAppBranchesRun,
+		WorkflowTypeAppBranchesConfigRepoUpdate,
+		WorkflowTypeAppBranchesComponentRepoUpdate:
+		return true
+	}
+	return e.Workflow.OwnerType == OwnerTypeAppBranches
 }
 
 // workflowHeaderTitle returns the title for the parent card — always
@@ -362,6 +495,10 @@ func workflowSubjectIcon(e Event) string {
 		return "🏃"
 	case WorkflowTypeRunbookRun:
 		return "📒"
+	case WorkflowTypeAppBranchesRun,
+		WorkflowTypeAppBranchesConfigRepoUpdate,
+		WorkflowTypeAppBranchesComponentRepoUpdate:
+		return "🌿"
 	}
 	return ""
 }
@@ -708,6 +845,74 @@ func buttonActionID(label string) string {
 		return "action"
 	}
 	return id
+}
+
+// BuildAppConfigSyncedMessage renders a standalone notification card for app
+// config sync events. Metadata fields: actor_email, app_name, branch_name.
+func BuildAppConfigSyncedMessage(e Event) Message {
+	blocks := []slack.Block{headerBlock(appConfigSyncedHeaderText(e))}
+	if fields := appConfigSyncedFields(e); len(fields) > 0 {
+		blocks = append(blocks, slack.NewDividerBlock(), fieldsSection(fields))
+	}
+	if actions, ok := actionsBlock(appConfigSyncedLinks(e)); ok {
+		blocks = append(blocks, actions)
+	}
+	return Message{Text: plainAppConfigSyncedHeadline(e), Blocks: blocks}
+}
+
+func appConfigSyncedHeaderText(e Event) string {
+	text := "📦 App config synced"
+	if name := metadataString(e, "app_name"); name != "" {
+		text = text + " · " + name
+	}
+	return text
+}
+
+func appConfigSyncedFields(e Event) []kv {
+	fields := []kv{}
+	if name := metadataString(e, "app_name"); name != "" {
+		fields = append(fields, kv{"App", slackEscape(name)})
+	}
+	if name := metadataString(e, "branch_name"); name != "" {
+		fields = append(fields, kv{"Branch", slackEscape(name)})
+	}
+	if actor := metadataString(e, "actor_email"); actor != "" {
+		fields = append(fields, kv{"By", slackEscape(actor)})
+	}
+	if name := orgName(e); name != "" {
+		fields = append(fields, kv{"Org", slackEscape(name)})
+	}
+	return fields
+}
+
+func appConfigSyncedLinks(e Event) []LinkChip {
+	if e.Links == nil {
+		return nil
+	}
+	if l := firstNonEmptyLink(e.Links,
+		func(l *ContextLinks) string { return l.Org },
+	); l != "" {
+		return []LinkChip{{Label: "Open in Nuon", URL: l}}
+	}
+	return nil
+}
+
+func plainAppConfigSyncedHeadline(e Event) string {
+	text := "📦 App config synced"
+	if name := metadataString(e, "app_name"); name != "" {
+		text = text + " — " + name
+	}
+	return text
+}
+
+func metadataString(e Event, key string) string {
+	if e.Metadata == nil {
+		return ""
+	}
+	if v, ok := e.Metadata[key].(string); ok {
+		return v
+	}
+	return ""
 }
 
 // slackEscape escapes the three characters Slack treats specially in

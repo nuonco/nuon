@@ -55,6 +55,56 @@ func TestGetAzureTemplate_WithSecrets(t *testing.T) {
 	assertNoNestedBrackets(t, tmplBytes)
 }
 
+// TestDefaultVNet_NonPruningSubnetSemantics guards the fix for
+// InUseSubnetCannotBeDeleted on reprovision: subnets are declared as standalone
+// child resources and omitted from the VNet's own properties, which only
+// preserves existing subnets on a VNet PUT when the API version is >= 2023-09-01.
+func TestDefaultVNet_NonPruningSubnetSemantics(t *testing.T) {
+	tmpl := &Templates{cfg: &internal.Config{}}
+
+	deployment := tmpl.getDefaultVNetDeployment(minimalTemplateInput())
+
+	props, ok := deployment["properties"].(map[string]any)
+	if !ok {
+		t.Fatalf("vnetDeployment missing properties")
+	}
+	innerTmpl, ok := props["template"].(map[string]any)
+	if !ok {
+		t.Fatalf("vnetDeployment missing inner template")
+	}
+	resources, ok := innerTmpl["resources"].([]any)
+	if !ok {
+		t.Fatalf("inner template missing resources")
+	}
+
+	var foundVNet bool
+	for _, r := range resources {
+		res, ok := r.(map[string]any)
+		if !ok || res["type"] != "Microsoft.Network/virtualNetworks" {
+			continue
+		}
+		foundVNet = true
+
+		if got := res["apiVersion"]; got != azureVNetAPIVersion {
+			t.Errorf("VNet apiVersion = %v, want %s", got, azureVNetAPIVersion)
+		}
+		if azureVNetAPIVersion < "2023-09-01" {
+			t.Errorf("azureVNetAPIVersion %s is < 2023-09-01; omitting subnets on a VNet PUT would prune in-use subnets", azureVNetAPIVersion)
+		}
+
+		vnetProps, ok := res["properties"].(map[string]any)
+		if !ok {
+			t.Fatalf("VNet missing properties")
+		}
+		if _, hasSubnets := vnetProps["subnets"]; hasSubnets {
+			t.Error("VNet properties must NOT declare inline subnets; they are standalone child resources to avoid pruning foreign/out-of-band subnets")
+		}
+	}
+	if !foundVNet {
+		t.Fatal("no Microsoft.Network/virtualNetworks resource found in default VNet deployment")
+	}
+}
+
 func assertNoNestedBrackets(t *testing.T, tmplBytes []byte) {
 	t.Helper()
 

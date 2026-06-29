@@ -8,11 +8,21 @@ import (
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/google/go-github/v50/github"
+	"go.temporal.io/sdk/temporal"
+
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"golang.org/x/oauth2"
 )
 
 func (H *Helpers) GetVCSConnectionClient(ctx context.Context, vcsConn *app.VCSConnection) (*github.Client, error) {
+	if H.ghClient == nil {
+		return nil, temporal.NewNonRetryableApplicationError(
+			"github app client not configured",
+			"GITHUB_CLIENT_NOT_CONFIGURED",
+			fmt.Errorf("github app client not configured"),
+		)
+	}
+
 	installID, err := strconv.ParseInt(vcsConn.GithubInstallID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get install ID: %w", err)

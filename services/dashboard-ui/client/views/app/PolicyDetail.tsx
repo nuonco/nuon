@@ -1,6 +1,7 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
+import { Link } from '@/components/common/Link'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { CodeBlock } from '@/components/common/CodeBlock'
@@ -151,7 +152,7 @@ export const PolicyDetail = () => {
                   return componentId ? (
                     <Link
                       key={comp}
-                      to={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
+                      href={`/${org?.id}/apps/${app?.id}/components/${componentId}`}
                       className="flex items-center gap-2 rounded px-3 py-2 text-sm border border-cool-grey-200 dark:border-dark-grey-600 hover:bg-grey-50 dark:hover:bg-dark-grey-800 transition-colors"
                     >
                       <Icon variant="CardsIcon" size={14} />

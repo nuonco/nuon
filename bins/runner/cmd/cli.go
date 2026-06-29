@@ -7,6 +7,7 @@ import (
 	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/api"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
@@ -39,6 +40,7 @@ func (c *cli) commonProviders() []fx.Option {
 		fx.Provide(heartbeater.New),
 		fx.Provide(process.New),
 		fx.Provide(process.NewShutdownPoller),
+		fx.Provide(drain.New),
 		fx.Provide(metrics.New),
 	}
 }

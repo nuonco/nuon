@@ -27,6 +27,7 @@ import (
 	temporal "github.com/nuonco/nuon/pkg/temporal/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
+	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
 )
@@ -97,7 +98,9 @@ func (s *InstallsServiceTestSuite) SetupSuite() {
 			},
 			CustomValidator: true,
 		}),
-		// Service under test
+		// Service under test. flowclient is provided here rather than in
+		// testfx — see the note in tests/testfx.go about import cycles.
+		fx.Provide(flowclient.New),
 		fx.Provide(New),
 		fx.Populate(&s.deps, &s.installsService),
 	)
@@ -145,7 +148,7 @@ func (s *InstallsServiceTestSuite) expectQueueCreation() {
 		gomock.Any(), // options
 		gomock.Any(), // workflow
 		gomock.Any(), // args
-	).Return(&mockWorkflowRun{}, nil)
+	).Return(&mockWorkflowRun{}, nil).AnyTimes()
 }
 
 func (s *InstallsServiceTestSuite) setupTestData() {
@@ -212,7 +215,7 @@ func (s *InstallsServiceTestSuite) createTestInstallViaAPI() testInstallWithWork
 	}
 
 	rr := s.makeRequest(http.MethodPost, "/v1/installs", body)
-	require.Equal(s.T(), http.StatusCreated, rr.Code)
+	require.Equal(s.T(), http.StatusCreated, rr.Code, "body: %s", rr.Body.String())
 
 	var install app.Install
 	require.NoError(s.T(), json.Unmarshal(rr.Body.Bytes(), &install))

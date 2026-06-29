@@ -54,6 +54,10 @@ type SignalPhaseEvent struct {
 	OwnerID   string `json:"owner_id,omitempty"`
 	OwnerType string `json:"owner_type,omitempty"`
 	OwnerName string `json:"owner_name,omitempty"`
+
+	// Metadata carries arbitrary key-value data from the signal through to
+	// lifecycle hooks. See SignalLifecycleContext.Metadata.
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 type SignalPhaseOutcome struct {
@@ -117,6 +121,12 @@ type SignalLifecycleContext struct {
 	// lifecycle hooks (e.g. webhook) can emit owner_name without a per-event
 	// DB lookup.
 	OwnerName string `json:"owner_name,omitempty"`
+
+	// Metadata carries arbitrary key-value data from the signal to lifecycle
+	// hooks. Used by notification-only signals (e.g. role-change) to pass
+	// domain-specific fields (role_name, change_type, etc.) through to
+	// renderers without adding typed fields to the generic event struct.
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // SignalWithMutableLifecycleContext is an optional interface signals can

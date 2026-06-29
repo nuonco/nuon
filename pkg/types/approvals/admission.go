@@ -15,8 +15,10 @@ type AdmissionReviewInput struct {
 
 // AdmissionReviewRequest contains the object being reviewed and its kind information.
 type AdmissionReviewRequest struct {
-	Kind   AdmissionReviewKind    `json:"kind"`
-	Object map[string]interface{} `json:"object"`
+	Kind AdmissionReviewKind `json:"kind"`
+	// Operation is the plan operation: CREATE, UPDATE or DELETE. Omitted when unknown.
+	Operation string                 `json:"operation,omitempty"`
+	Object    map[string]interface{} `json:"object"`
 }
 
 // AdmissionReviewKind contains the GVK (Group, Version, Kind) of the object.

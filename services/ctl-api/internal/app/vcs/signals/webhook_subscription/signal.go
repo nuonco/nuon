@@ -59,5 +59,15 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			s.VCSConnectionID, result.SubscriptionID, result.WebhookURL))
 	}
 
+	// Ensure the subscription has a queue for processing github events.
+	queueResult, err := activities.AwaitEnsureSubscriptionQueue(ctx, activities.EnsureSubscriptionQueueRequest{
+		SubscriptionID: result.SubscriptionID,
+	})
+	if err != nil {
+		return errors.Wrap(err, "unable to ensure subscription queue")
+	}
+
+	l.Info(fmt.Sprintf("subscription queue ensured: %s", queueResult.QueueID))
+
 	return nil
 }

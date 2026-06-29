@@ -68,7 +68,14 @@ func (h *HeartBeater) loop(ctx context.Context) {
 
 		h.l.Info("recording heart beat")
 
-		if err := h.writeHeartBeat(ctx); err != nil {
+		// Bound each heartbeat write so a hung HTTP request (e.g. a stalled
+		// HTTP/2 stream where http.DefaultTransport has no
+		// ResponseHeaderTimeout) cannot park the loop forever and silently
+		// stop heartbeats from reaching the API.
+		writeCtx, cancel := context.WithTimeout(ctx, heartBeatErrBackoff)
+		err := h.writeHeartBeat(writeCtx)
+		cancel()
+		if err != nil {
 			h.l.Error("unable to write heart beat", zap.Error(err))
 		}
 	}

@@ -25,6 +25,13 @@ const EXAMPLE_APPS: IExampleApp[] = [
     dir: 'example-app-configs/eks-simple',
   },
   {
+    id: 'cde',
+    name: 'AWS EC2 and Claude Code',
+    description: 'A VM accessible with SSH and VS Code Web',
+    repo: 'https://github.com/nuonco/example-app-configs',
+    dir: 'example-app-configs/cde',
+  },
+  {
     id: 'aws-lambda',
     name: 'AWS Lambda',
     description: 'Serverless function deployed to AWS Lambda',
@@ -33,24 +40,24 @@ const EXAMPLE_APPS: IExampleApp[] = [
   },
   {
     id: 'httpbin',
-    name: 'AWS EC2 / httpbin',
+    name: 'AWS EC2 Simple',
     description: 'HTTP testing service running on EC2',
     repo: 'https://github.com/nuonco/example-app-configs',
     dir: 'example-app-configs/httpbin',
   },
   {
-    id: 'coder',
-    name: 'Coder',
-    description: 'Remote development environments with Coder',
+    id: 'ecs-simple',
+    name: 'AWS ECS Simple',
+    description: 'A simple containerized service deployed to AWS ECS',
     repo: 'https://github.com/nuonco/example-app-configs',
-    dir: 'example-app-configs/coder',
+    dir: 'example-app-configs/ecs-simple',
   },
   {
-    id: 'mattermost',
-    name: 'Mattermost',
-    description: 'Open-source team messaging platform',
+    id: 'coder',
+    name: 'Coder & Grafana on AWS EKS',
+    description: 'Dev environments for Claude Code agents and devs with coder.com',
     repo: 'https://github.com/nuonco/example-app-configs',
-    dir: 'example-app-configs/mattermost',
+    dir: 'example-app-configs/coder',
   },
 ]
 
@@ -120,7 +127,7 @@ export const CreateAppStep = ({ onAdvance, setSharedData, nextStepTitle }: IWiza
             </div>
           </div>
           <div className="flex flex-col gap-3">
-            <Text variant="subtext" theme="neutral">Create your app</Text>
+            <Text variant="subtext" theme="neutral">Create your app (required to proceed)</Text>
             <div className="relative">
               <ClickToCopyButton className="w-fit !absolute right-2 top-3" textToCopy={`nuon apps create -n ${selectedApp.id}`} />
               <CodeBlock language="bash">{`nuon apps create -n ${selectedApp.id}`}</CodeBlock>

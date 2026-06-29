@@ -50,6 +50,9 @@ type AppComponentConfigConnection struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
@@ -94,6 +97,9 @@ type AppComponentConfigConnection struct {
 
 	// terraform module
 	TerraformModule *AppTerraformModuleComponentConfig `json:"terraform_module,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// type
 	Type AppComponentType `json:"type,omitempty"`

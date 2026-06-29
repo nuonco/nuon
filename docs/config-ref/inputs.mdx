@@ -26,7 +26,7 @@ title: 'Inputs'
 | **`default`**<br/>object | default value for the input Default value used if customer does not provide one. Type must match the input type | **Optional** | `"production"`, `"5432"` |
 | **`required`**<br/>boolean | whether input is required If true, customer must provide a value during installation. If false, can be skipped | **Optional** | - |
 | **`sensitive`**<br/>boolean | whether input is sensitive If true, the value will be masked/hidden in the UI and logs after the install is created. Use for passwords, tokens, and API keys | **Optional** | - |
-| **`type`**<br/>string | input type Data type for the input. Supported types: string, number, list, json, bool | **Optional** | `"string"`, `"number"`, `"json"`, `"bool"` |
+| **`type`**<br/>string | input type Data type for the input. Supported types: string, number, list, json, bool, yaml, hcl | **Optional** | `"string"`, `"number"`, `"json"`, `"bool"`, `"yaml"`, `"hcl"` |
 | **`internal`**<br/>boolean | Deprecated: this field has no effect and will be ignored. | **Optional** | - |
 | **`user_configurable`**<br/>boolean | whether input is user configurable If true, input can be modified by end users after installation | **Optional** | - |
 

@@ -44,9 +44,7 @@ func (c *client) GetSandboxConfigs(ctx context.Context) ([]*SandboxConfig, error
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.APIToken)
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch sandbox configs: %w", err)
 	}
@@ -81,9 +79,7 @@ func (c *client) GetSandboxConfig(ctx context.Context, jobType, operation string
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+c.APIToken)
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch sandbox config: %w", err)
 	}

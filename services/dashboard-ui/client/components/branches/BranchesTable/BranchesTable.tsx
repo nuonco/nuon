@@ -1,11 +1,11 @@
+import type { ReactNode } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Link } from '@/components/common/Link'
 import { Table } from '@/components/common/Table'
-import { TableSkeleton } from '@/components/common/TableSkeleton'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { BranchManagementDropdown } from '@/components/branches/management/BranchManagementDropdown'
 import type { TAppBranch } from '@/types'
 
 type TBranchRow = {
@@ -14,6 +14,7 @@ type TBranchRow = {
   workflowCount: number
   createdAt: string
   href: string
+  action?: ReactNode
 }
 
 export function parseBranchesToTableData(
@@ -24,9 +25,14 @@ export function parseBranchesToTableData(
   return branches.map((branch) => ({
     branchId: branch.id || '',
     branchName: branch.name || '',
-    workflowCount: branch.workflows?.length || 0,
+    workflowCount: branch.workflow_count ?? 0,
     createdAt: branch.created_at || '',
     href: `/${orgId}/apps/${appId}/branches/${branch.id}`,
+    action: (
+      <div className="hidden md:flex justify-end">
+        <BranchManagementDropdown branch={branch} appId={appId} orgId={orgId} />
+      </div>
+    ),
   }))
 }
 
@@ -63,16 +69,10 @@ const columns: ColumnDef<TBranchRow>[] = [
   },
   {
     enableSorting: false,
-    accessorKey: 'href',
+    accessorKey: 'action',
     id: 'action',
     header: '',
-    cell: (info) => (
-      <Text>
-        <Link className="text-left" href={info.getValue() as string}>
-          View <Icon variant="CaretRightIcon" />
-        </Link>
-      </Text>
-    ),
+    cell: (info) => info.row.original.action,
   },
 ]
 

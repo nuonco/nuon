@@ -22,9 +22,11 @@ type ServiceInstallGroupRequest struct {
 	// install ids
 	InstallIds []string `json:"install_ids"`
 
-	// max parallel
-	// Minimum: 1
-	MaxParallel int64 `json:"max_parallel,omitempty"`
+	// LabelSelector dynamically resolves installs at deploy time.
+	// Mutually exclusive with InstallIDs.
+	LabelSelector struct {
+		GithubComNuoncoNuonPkgLabelsSelector
+	} `json:"label_selector,omitempty"`
 
 	// name
 	// Required: true
@@ -35,18 +37,15 @@ type ServiceInstallGroupRequest struct {
 	// Minimum: 0
 	Order *int64 `json:"order,omitempty"`
 
-	// requires approval
-	RequiresApproval bool `json:"requires_approval,omitempty"`
-
-	// rollback on failure
-	RollbackOnFailure bool `json:"rollback_on_failure,omitempty"`
+	// use for previews
+	UseForPreviews bool `json:"use_for_previews,omitempty"`
 }
 
 // Validate validates this service install group request
 func (m *ServiceInstallGroupRequest) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateMaxParallel(formats); err != nil {
+	if err := m.validateLabelSelector(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -64,13 +63,9 @@ func (m *ServiceInstallGroupRequest) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ServiceInstallGroupRequest) validateMaxParallel(formats strfmt.Registry) error {
-	if swag.IsZero(m.MaxParallel) { // not required
+func (m *ServiceInstallGroupRequest) validateLabelSelector(formats strfmt.Registry) error {
+	if swag.IsZero(m.LabelSelector) { // not required
 		return nil
-	}
-
-	if err := validate.MinimumInt("max_parallel", "body", m.MaxParallel, 1, false); err != nil {
-		return err
 	}
 
 	return nil
@@ -101,8 +96,22 @@ func (m *ServiceInstallGroupRequest) validateOrder(formats strfmt.Registry) erro
 	return nil
 }
 
-// ContextValidate validates this service install group request based on context it is used
+// ContextValidate validate this service install group request based on the context it is used
 func (m *ServiceInstallGroupRequest) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLabelSelector(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceInstallGroupRequest) contextValidateLabelSelector(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 

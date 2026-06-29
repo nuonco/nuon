@@ -31,6 +31,7 @@ const (
 	ResourceInstallConfigurations ResourceKind = "install_configurations"
 	ResourceRunners               ResourceKind = "runners"
 	ResourceActions               ResourceKind = "actions"
+	ResourceAppBranches           ResourceKind = "app_branches"
 )
 
 // AllResources is the canonical, ordered list of resource kinds. UI code
@@ -43,6 +44,7 @@ var AllResources = []ResourceKind{
 	ResourceInstallConfigurations,
 	ResourceRunners,
 	ResourceActions,
+	ResourceAppBranches,
 }
 
 // Outcome filters lifecycle events on terminal status. Approval events are
@@ -78,12 +80,13 @@ const (
 // event that only fires when the plan-only check observes actual changes.
 var SubOps = map[ResourceKind][]string{
 	ResourceInstalls:              {"provision", "deprovision", "reprovision"},
-	ResourceStacks:                {"version_active"},
+	ResourceStacks:                {"version_active", "stack_run", "role_change", "inputs_updated"},
 	ResourceComponents:            {"deploy", "teardown"},
 	ResourceSandboxes:             {"provision", "reprovision", "deprovision"},
 	ResourceInstallConfigurations: {"inputs", "secrets"},
 	ResourceRunners:               {"provision", "reprovision", "inactive"},
 	ResourceActions:               {"run"},
+	ResourceAppBranches:           {"run"},
 }
 
 // SupportsDriftDetected reports whether DriftDetected is meaningful for the
@@ -91,6 +94,18 @@ var SubOps = map[ResourceKind][]string{
 // resources whose workflows can produce a drift-detected event.
 func SupportsDriftDetected(kind ResourceKind) bool {
 	return kind == ResourceComponents || kind == ResourceSandboxes
+}
+
+func SupportsRoleChanges(kind ResourceKind) bool {
+	return kind == ResourceStacks
+}
+
+func SupportsInputsUpdated(kind ResourceKind) bool {
+	return kind == ResourceStacks
+}
+
+func SupportsConfigSynced(kind ResourceKind) bool {
+	return kind == ResourceAppBranches
 }
 
 // Interests is the full per-subscriber config. Stored as JSONB on both
@@ -130,6 +145,9 @@ type ResourceCfg struct {
 	ApprovalRequests  bool     `json:"approval_requests,omitempty"`
 	ApprovalResponses bool     `json:"approval_responses,omitempty"`
 	DriftDetected     bool     `json:"drift_detected,omitempty"`
+	RoleChanges       bool     `json:"role_changes,omitempty"`
+	InputsUpdated     bool     `json:"inputs_updated,omitempty"`
+	ConfigSynced      bool     `json:"config_synced,omitempty"`
 }
 
 // IsZero is true for the zero-value Interests (no AllEvents, no resources).

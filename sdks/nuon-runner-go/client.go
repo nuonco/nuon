@@ -3,17 +3,61 @@ package nuonrunner
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-playground/validator/v10"
+	"golang.org/x/net/http2"
 
 	genclient "github.com/nuonco/nuon/sdks/nuon-runner-go/client"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
+
+const (
+	// defaultRequestTimeout bounds every SDK call so a stalled HTTP/2
+	// stream or a hung server response can never park a caller forever.
+	// Callers that need shorter (heartbeats, polling) can pass a tighter
+	// ctx; callers that need longer can override via WithRequestTimeout.
+	defaultRequestTimeout = 60 * time.Second
+
+	// HTTP/2 ping config — without these, a half-open stream on a
+	// dropped LB connection blocks indefinitely even with
+	// ResponseHeaderTimeout set on the HTTP/1 transport.
+	defaultH2ReadIdleTimeout = 30 * time.Second
+	defaultH2PingTimeout     = 15 * time.Second
+)
+
+// newDefaultTransport builds an *http.Transport that does not share state with
+// http.DefaultTransport. Sharing the default is unsafe: other code in the
+// runner mutates http.DefaultTransport globally (see helm chart packaging),
+// which silently invalidates our connection pool and obscures network errors.
+func newDefaultTransport() *http.Transport {
+	t := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          16,
+		MaxIdleConnsPerHost:   8,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+
+	if h2, err := http2.ConfigureTransports(t); err == nil {
+		h2.ReadIdleTimeout = defaultH2ReadIdleTimeout
+		h2.PingTimeout = defaultH2PingTimeout
+	}
+
+	return t
+}
 
 //go:generate ./generate.sh
 type Client interface {
@@ -90,12 +134,15 @@ var _ Client = (*client)(nil)
 type client struct {
 	v *validator.Validate
 
-	APIURL   string `validate:"required"`
-	APIToken string
-	RunnerID string
+	APIURL         string `validate:"required"`
+	APIToken       string
+	RunnerID       string
+	RequestTimeout time.Duration
 
 	genClient    *genclient.NuonRunnerAPI
 	appTransport *appTransport
+	httpClient   *http.Client
+	unauthClient *http.Client
 	retryer      Retryer
 }
 
@@ -103,7 +150,8 @@ type clientOption func(*client) error
 
 func New(opts ...clientOption) (*client, error) {
 	c := &client{
-		retryer: &defaultRetryer{},
+		retryer:        &defaultRetryer{},
+		RequestTimeout: defaultRequestTimeout,
 	}
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
@@ -124,15 +172,32 @@ func New(opts ...clientOption) (*client, error) {
 		return nil, fmt.Errorf("unable to parse api url: %w", err)
 	}
 
-	transport := httptransport.New(apiURL.Host, apiURL.Path, []string{apiURL.Scheme})
+	base := newDefaultTransport()
 	appTransport := &appTransport{
 		authToken: c.APIToken,
-		transport: http.DefaultTransport,
+		transport: base,
 	}
 	c.appTransport = appTransport
-	transport.Transport = appTransport
-	genClient := genclient.New(transport, nil)
-	c.genClient = genClient
+
+	// http.Client.Timeout backstops every request — including a slow body
+	// read, which ResponseHeaderTimeout does not cover. The caller's ctx
+	// deadline still wins if shorter.
+	c.httpClient = &http.Client{
+		Transport: appTransport,
+		Timeout:   c.RequestTimeout,
+	}
+
+	// unauthClient shares the tuned base transport (timeouts, HTTP/2 pings,
+	// connection pool) but skips appTransport's Authorization injection. It is
+	// used for endpoints that are public by design — runner-auth bootstrap and
+	// shutdown polling — so SDK requests to those routes carry no auth header.
+	c.unauthClient = &http.Client{
+		Transport: base,
+		Timeout:   c.RequestTimeout,
+	}
+
+	transport := httptransport.NewWithClient(apiURL.Host, apiURL.Path, []string{apiURL.Scheme}, c.httpClient)
+	c.genClient = genclient.New(transport, nil)
 
 	return c, nil
 }
@@ -173,6 +238,16 @@ func WithValidator(v *validator.Validate) clientOption {
 func WithRetryer(r Retryer) clientOption {
 	return func(c *client) error {
 		c.retryer = r
+		return nil
+	}
+}
+
+// WithRequestTimeout overrides the default per-request timeout enforced by the
+// underlying http.Client. A caller-supplied context deadline still wins if
+// shorter. Pass 0 to rely solely on caller contexts (discouraged for loops).
+func WithRequestTimeout(d time.Duration) clientOption {
+	return func(c *client) error {
+		c.RequestTimeout = d
 		return nil
 	}
 }

@@ -7,10 +7,11 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
+import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import type { TInstall, TWorkflow } from '@/types'
 import { cn } from '@/utils/classnames'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { getPendingApprovalCount } from '@/utils/workflow-utils'
+import { getWorkflowPendingApprovals } from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
 export const ActiveWorkflowCard = ({
@@ -29,16 +30,15 @@ export const ActiveWorkflowCard = ({
   compact?: boolean
 }) => {
   const { org } = useOrg()
+  const { approvals } = useWorkflowApprovals()
   const installId = workflow.owner_id
   const installName = workflow.metadata?.owner_name
-  const pendingApprovals = getPendingApprovalCount(workflow)
-  const pendingApprovalStep = workflow?.steps?.find(
-    (s) =>
-      s?.execution_type === 'approval' &&
-      s?.status?.status === 'approval-awaiting' &&
-      !!s?.approval &&
-      !s?.approval?.response
+  const pendingWorkflowApprovals = getWorkflowPendingApprovals(
+    approvals,
+    workflow?.id
   )
+  const pendingApprovals = pendingWorkflowApprovals.length
+  const pendingApprovalStep = pendingWorkflowApprovals.at(0)?.workflow_step
   const showDriftDetected =
     workflow.plan_only &&
     !!install?.drifted_objects?.find(
@@ -64,7 +64,7 @@ export const ActiveWorkflowCard = ({
         </Text>
       </Link>
       {pendingApprovals > 0 &&
-        (pendingApprovalStep ? (
+        (pendingApprovalStep?.id ? (
           <Link
             href={`/${org.id}/installs/${installId}/workflows/${workflow.id}?panel=${pendingApprovalStep.id}`}
             className="shrink-0 hover:opacity-80 transition-opacity !text-inherit"

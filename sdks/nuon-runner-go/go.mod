@@ -11,6 +11,7 @@ require (
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/go-swagger/go-swagger v0.30.5
 	github.com/golang/mock v1.7.0-rc.1
+	golang.org/x/net v0.41.0
 )
 
 require (
@@ -70,7 +71,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.15.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect

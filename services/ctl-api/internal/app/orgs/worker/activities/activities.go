@@ -12,6 +12,7 @@ import (
 	runnershelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/salesforce"
 )
 
 type Params struct {
@@ -26,6 +27,7 @@ type Params struct {
 	InstallsHelpers  *installshelpers.Helpers
 	VCSHelpers       *vcshelpers.Helpers
 	Features         *features.Features
+	Salesforce       salesforce.Client
 }
 
 type Activities struct {
@@ -37,6 +39,7 @@ type Activities struct {
 	installsHelpers  *installshelpers.Helpers
 	vcsHelpers       *vcshelpers.Helpers
 	features         *features.Features
+	salesforce       salesforce.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -49,5 +52,6 @@ func New(params Params) (*Activities, error) {
 		installsHelpers:  params.InstallsHelpers,
 		vcsHelpers:       params.VCSHelpers,
 		features:         params.Features,
+		salesforce:       params.Salesforce,
 	}, nil
 }

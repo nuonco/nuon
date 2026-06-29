@@ -46,7 +46,7 @@ func (c *client) GetProcessShutdowns(ctx context.Context, processID string) ([]*
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 
-	httpResp, err := http.DefaultClient.Do(httpReq)
+	httpResp, err := c.unauthClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get process shutdowns: %w", err)
 	}
@@ -121,7 +121,7 @@ func (c *client) CompleteShutdown(ctx context.Context, processID, shutdownID str
 		return nil, fmt.Errorf("unable to create request: %w", err)
 	}
 
-	httpResp, err := c.appTransport.RoundTrip(httpReq)
+	httpResp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("unable to complete shutdown: %w", err)
 	}

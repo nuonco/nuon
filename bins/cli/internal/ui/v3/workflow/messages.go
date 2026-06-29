@@ -21,6 +21,14 @@ func (m model) fetchWorkflowCmd() tea.Msg {
 		return workflowFetchedMsg{workflow: workflow, err: err}
 	}
 
+	if workflow != nil {
+		steps, stepsErr := m.api.GetWorkflowSteps(m.ctx, m.workflowID)
+		if stepsErr != nil {
+			return workflowFetchedMsg{workflow: workflow, err: stepsErr}
+		}
+		workflow.Steps = steps
+	}
+
 	var policiesConfig *models.AppAppPoliciesConfig
 	if workflow != nil && workflow.OwnerType == "installs" {
 		install, installErr := m.api.GetInstall(m.ctx, workflow.OwnerID)

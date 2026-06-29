@@ -8,7 +8,7 @@ import type { TWorkflowQueueItem, TWorkflowQueuePosition } from '@/lib/ctl-api/w
 import { getStatusTheme } from '@/utils/status-utils'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
 import type { TWorkflow } from '@/types'
-import { Link } from 'react-router'
+import { Link } from '@/components/common/Link'
 
 interface IWorkflowStatusSection {
   workflow: TWorkflow
@@ -123,7 +123,7 @@ const QueueItem = ({
       <div className="flex items-center gap-2 shrink-0">
         {workflowLink && (
           <Link
-            to={workflowLink}
+            href={workflowLink}
             className="text-xs hover:underline flex items-center gap-1 opacity-60 hover:opacity-100 transition-opacity"
           >
             <Icon variant="ArrowSquareOutIcon" size="14" />

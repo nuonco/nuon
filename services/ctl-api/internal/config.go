@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
+	"github.com/nuonco/nuon/pkg/aws/credentials"
 	"github.com/nuonco/nuon/pkg/services/config"
 	"github.com/nuonco/nuon/pkg/workflows/worker"
 )
@@ -148,6 +149,13 @@ func init() {
 
 	// Flow check thresholds
 	config.RegisterDefault("stale_plan_threshold", "72h") // override with STALE_PLAN_THRESHOLD env var
+
+	// When true, the lowest-precedence operation role is defaulted from the parent
+	// install workflow type (provision/reprovision -> provision role, deprovision ->
+	// deprovision role; everything else -> maintenance role). When false, deploys and
+	// action runs default to the maintenance role. Global rollout switch for all orgs;
+	// override with WORKFLOW_DEFAULT_ROLE_ENABLED env var.
+	config.RegisterDefault("workflow_default_role_enabled", false)
 }
 
 type Config struct {
@@ -303,6 +311,7 @@ type Config struct {
 	AWSCloudFormationStackTemplateBucketRegion string `config:"aws_cloudformation_stack_template_bucket_region"`
 	AWSCloudFormationStackTemplateBucket       string `config:"aws_cloudformation_stack_template_bucket"`
 	AWSCloudFormationStackTemplateBaseURL      string `config:"aws_cloudformation_stack_template_base_url"`
+	AWSCloudFormationStackTemplateRoleARN      string `config:"aws_cloudformation_stack_template_role_arn"`
 	RunnerEnableSupport                        bool   `config:"runner_enable_support"`
 	RunnerDefaultSupportIAMRole                string `config:"runner_default_support_iam_role_arn"`
 
@@ -411,6 +420,10 @@ type Config struct {
 	// slack-auto-link label seeding in CreateOrg.
 	InternalEmailDomains []string `config:"internal_email_domains"`
 
+	// SFTrialEndpoint posts a Salesforce trial-signup record when a user creates
+	// their first org. Empty disables the integration (e.g. BYOC/self-hosted).
+	SFTrialEndpoint string `config:"sf_trial_access_endpoint"`
+
 	// Blob storage configuration
 	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
 	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
@@ -428,6 +441,10 @@ type Config struct {
 
 	// Flow check thresholds
 	StalePlanThreshold string `config:"stale_plan_threshold"`
+
+	// WorkflowDefaultRoleEnabled is a global switch (all orgs) that defaults the
+	// lowest-precedence operation role from the parent install workflow type.
+	WorkflowDefaultRoleEnabled bool `config:"workflow_default_role_enabled"`
 }
 
 func (c *Config) IsAWS() bool {
@@ -442,6 +459,24 @@ func (c *Config) IsAzure() bool {
 	return c.CloudProvider == "azure"
 }
 
+func (c *Config) CFTemplateUploadCreds() *credentials.Config {
+	if c.IsGCP() && c.AWSCloudFormationStackTemplateRoleARN != "" {
+		return &credentials.Config{
+			Region: c.AWSCloudFormationStackTemplateBucketRegion,
+			AssumeRole: &credentials.AssumeRoleConfig{
+				RoleARN:                c.AWSCloudFormationStackTemplateRoleARN,
+				SessionName:            "ctl-api-install-templates",
+				SessionDurationSeconds: 30 * 60,
+				UseGCPOIDC:             true,
+			},
+		}
+	}
+	return &credentials.Config{
+		Region:     c.AWSCloudFormationStackTemplateBucketRegion,
+		UseDefault: true,
+	}
+}
+
 func NewConfig() (*Config, error) {
 	var cfg Config
 	if err := config.LoadInto(nil, &cfg); err != nil {
@@ -451,6 +486,24 @@ func NewConfig() (*Config, error) {
 	v := validator.New()
 	if err := v.Struct(cfg); err != nil {
 		return nil, fmt.Errorf("unable to validate config: %w", err)
+	}
+
+	switch {
+	case cfg.IsGCP():
+		if cfg.ManagementGARRepositoryURL == "" {
+			return nil, fmt.Errorf("management_gar_repository_url is required when cloud_provider=gcp")
+		}
+	case cfg.IsAzure():
+		if cfg.ManagementACRRegistryURL == "" {
+			return nil, fmt.Errorf("management_acr_registry_url is required when cloud_provider=azure")
+		}
+	default:
+		if cfg.ManagementIAMRoleARN == "" {
+			return nil, fmt.Errorf("management_iam_role_arn is required when cloud_provider=aws")
+		}
+		if cfg.ManagementECRRegistryID == "" {
+			return nil, fmt.Errorf("management_ecr_registry_id is required when cloud_provider=aws")
+		}
 	}
 
 	return &cfg, nil

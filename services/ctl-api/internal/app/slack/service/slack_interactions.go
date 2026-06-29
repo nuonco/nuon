@@ -168,6 +168,10 @@ func (s *service) SlackInteractions(ctx *gin.Context) {
 				body := s.handleSubscribeModalActionsBlockSuggestion(ctx, payload)
 				ctx.JSON(http.StatusOK, body)
 				return
+			case subscribeEntitiesActionIDAppBranches:
+				body := s.handleSubscribeModalAppBranchesBlockSuggestion(ctx, payload)
+				ctx.JSON(http.StatusOK, body)
+				return
 			}
 		}
 		ctx.JSON(http.StatusOK, gin.H{"options": []any{}})

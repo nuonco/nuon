@@ -180,7 +180,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to fetch install input values from stack outputs")
 	}
 	if len(installInputValues) > 0 {
-		if err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
+		if _, err := activities.AwaitUpdateInstallInputsFromStack(ctx, &activities.UpdateInstallInputsFromStackRequest{
 			InstallID:               install.ID,
 			InputConfigID:           appCfg.InputConfig.ID,
 			InputValues:             installInputValues,

@@ -2,9 +2,9 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
 
 type GetCurrentRunnerProcessRequest struct {
@@ -22,7 +22,7 @@ func (a *Activities) GetCurrentRunnerProcess(ctx context.Context, req GetCurrent
 		Order("created_at DESC").
 		First(&process)
 	if res.Error != nil {
-		return nil, fmt.Errorf("unable to get current runner process: %w", res.Error)
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get current runner process")
 	}
 
 	return &process, nil

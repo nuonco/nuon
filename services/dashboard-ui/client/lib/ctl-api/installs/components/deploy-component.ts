@@ -4,6 +4,7 @@ import type { TDeploy } from '@/types'
 export type TDeployComponentBody = {
   build_id: string
   deploy_dependents?: boolean
+  deploy_dependencies?: boolean
   plan_only?: boolean
 }
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -25,6 +26,7 @@ type EmitSignalResponse struct {
 }
 
 // @temporal-gen-v2 activity
+// @max-retries 10
 func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*EmitSignalResponse, error) {
 	// Get the emitter to access its signal template
 	var emitter app.QueueEmitter
@@ -35,7 +37,11 @@ func (a *Activities) EmitSignal(ctx context.Context, req *EmitSignalRequest) (*E
 	}
 
 	if emitter.SignalTemplate.Signal == nil {
-		return nil, errors.New("emitter has no signal template configured")
+		return nil, temporal.NewNonRetryableApplicationError(
+			"emitter has no signal template configured",
+			"EMITTER_CONFIG_ERROR",
+			nil,
+		)
 	}
 
 	// Check for existing in-flight signals from this emitter to prevent backup

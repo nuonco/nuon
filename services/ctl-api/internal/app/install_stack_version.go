@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -48,6 +49,8 @@ type InstallStackVersion struct {
 	// artifact lives below. The dashboard shows both during the await step.
 	TerraformContents []byte `json:"terraform_contents,omitzero" gorm:"type:jsonb" swaggertype:"string" temporaljson:"terraform_contents,omitzero,omitempty"`
 	TerraformChecksum string `json:"terraform_checksum,omitzero" temporaljson:"terraform_checksum,omitzero,omitempty"`
+
+	CallbackRef callback.Ref `json:"callback_ref,omitzero" gorm:"type:jsonb" temporaljson:"callback_ref,omitzero,omitempty"`
 }
 
 func (a *InstallStackVersion) Indexes(db *gorm.DB) []migrations.Index {

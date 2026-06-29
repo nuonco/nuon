@@ -20,6 +20,9 @@ import (
 // swagger:model app.ComponentBuild
 type AppComponentBuild struct {
 
+	// app branch run id
+	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
+
 	// checksum of our intermediate component config
 	Checksum string `json:"checksum,omitempty"`
 
@@ -99,6 +102,9 @@ type AppComponentBuild struct {
 	RunnerJob struct {
 		AppRunnerJob
 	} `json:"runner_job,omitempty"`
+
+	// checksum of the component's source directory at build time
+	SourceChecksum string `json:"source_checksum,omitempty"`
 
 	// SourceDigest is the manifest list digest of the resolved source ref,
 	// e.g. "sha256:abc...". This is the canonical content address of what was

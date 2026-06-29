@@ -16,6 +16,8 @@ type CreateComponentBuildRecordRequest struct {
 	GitRef *string
 	// VCSConnectionCommitID is a pre-resolved commit to attach to the build record.
 	VCSConnectionCommitID *string
+	// AppBranchRunID links this build to the branch run that triggered it.
+	AppBranchRunID string
 }
 
 // CreateComponentBuildRecord creates a component build record. Used by queue signals
@@ -37,6 +39,13 @@ func (a *Activities) CreateComponentBuildRecord(ctx context.Context, req CreateC
 			return nil, fmt.Errorf("update build commit: %w", res.Error)
 		}
 		build.VCSConnectionCommitID = req.VCSConnectionCommitID
+	}
+
+	if req.AppBranchRunID != "" {
+		if res := a.db.WithContext(ctx).Model(build).Update("app_branch_run_id", req.AppBranchRunID); res.Error != nil {
+			return nil, fmt.Errorf("update build branch run: %w", res.Error)
+		}
+		build.AppBranchRunID = &req.AppBranchRunID
 	}
 
 	return build, nil

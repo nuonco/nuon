@@ -3,13 +3,13 @@ package containerimage
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/pkg/oci/imageref"
 	"github.com/nuonco/nuon/pkg/oci/updatepolicy"
 )
 
@@ -22,31 +22,34 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	srcCfg := h.state.cfg.RepoCfg
 	dstCfg := h.state.regCfg
 
-	// When the user has set an `update_policy` semver constraint on the
-	// component, pick the concrete tag to resolve by listing tags from
-	// the source registry and semver-selecting the highest match. The
-	// constraint is recorded as the SourceRef so we keep a faithful
-	// record of what the user asked for; ResolvedTag records the
-	// concrete tag we actually pulled.
-	//
-	// When unset, use h.state.cfg.Tag literally.
-	srcTag := h.state.cfg.Tag
-	policy := h.state.cfg.UpdatePolicy
-	if policy != "" {
-		l.Info(fmt.Sprintf("resolving image source %s with update_policy %q", h.state.cfg.Image, policy))
+	// imageref owns the rules that turn the planner-provided image+tag into
+	// the pull ref and the recorded source identity, so they can never
+	// disagree. When the user set an `update_policy` semver constraint, pick
+	// the concrete tag by listing tags from the source registry and
+	// semver-selecting the highest match; otherwise the pull ref comes
+	// straight from the spec.
+	spec := imageref.Spec{
+		Image:        h.state.cfg.Image,
+		Tag:          h.state.cfg.Tag,
+		UpdatePolicy: h.state.cfg.UpdatePolicy,
+	}
+	var selected string
+	if spec.UpdatePolicy != "" {
+		l.Info(fmt.Sprintf("resolving image source %s with update_policy %q", spec.Image, spec.UpdatePolicy))
 		tags, terr := h.ociResolve.Tags(ctx, srcCfg)
 		if terr != nil {
 			h.writeErrorResult(ctx, "list tags for update_policy", terr)
 			return fmt.Errorf("unable to list source tags: %w", terr)
 		}
-		selected, serr := updatepolicy.SelectHighestMatching(tags, policy)
+		var serr error
+		selected, serr = updatepolicy.SelectHighestMatching(tags, spec.UpdatePolicy)
 		if serr != nil {
 			h.writeErrorResult(ctx, "select tag for update_policy", serr)
-			return fmt.Errorf("unable to select tag for update_policy %q: %w", policy, serr)
+			return fmt.Errorf("unable to select tag for update_policy %q: %w", spec.UpdatePolicy, serr)
 		}
-		l.Info(fmt.Sprintf("update_policy %q selected tag %q from %d source tags", policy, selected, len(tags)))
-		srcTag = selected
+		l.Info(fmt.Sprintf("update_policy %q selected tag %q from %d source tags", spec.UpdatePolicy, selected, len(tags)))
 	}
+	srcTag := spec.PullRef(selected)
 
 	// Resolve the upstream source ref to its manifest descriptor BEFORE
 	// pulling/pushing any blobs. The descriptor's digest is the canonical
@@ -85,7 +88,10 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 
 	resolvedAt := time.Now().UTC()
 	resultReq := registry.ToAPIResult(desc)
-	resultReq.SourceRef, resultReq.SourceImage, resultReq.ResolvedTag = buildSourceIdentity(h.state.cfg.Image, h.state.cfg.Tag, policy, srcTag)
+	src := spec.Identity(selected)
+	resultReq.SourceRef = src.SourceRef
+	resultReq.SourceImage = src.SourceImage
+	resultReq.ResolvedTag = src.ResolvedTag
 	resultReq.SourceDigest = resolvedDigest
 	resultReq.SourceMediaType = desc.MediaType
 	resultReq.ResolvedAt = resolvedAt.Format(time.RFC3339Nano)
@@ -96,58 +102,4 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	}
 
 	return nil
-}
-
-// buildSourceIdentity computes the SourceRef, SourceImage, and ResolvedTag
-// strings from the planner-provided image+tag.
-//
-//   - SourceRef is what the user wrote: "<image>:<tag>" for tag-based refs,
-//     "<image>@<digest>" for digest-pinned refs, or "<image>:<update_policy>"
-//     when an update_policy semver constraint is set.
-//   - SourceImage is always the image repository portion (no tag, no digest).
-//   - ResolvedTag is the tag the runner actually pulled — for update_policy
-//     this is the semver-selected tag; for plain tag-based refs it is the
-//     literal tag; empty for digest-pinned refs.
-//
-// A "@sha256:..." substring in either Image or Tag indicates a digest-pinned
-// ref. The plan currently splits these inconsistently (the planner copies the
-// Tag field straight from the user spec) so we accept both shapes.
-//
-// When updatePolicy is non-empty it takes precedence over Tag for the
-// SourceRef field — the user's "intent" was the constraint, not the tag we
-// selected on this particular build — and selectedTag is recorded as the
-// ResolvedTag.
-func buildSourceIdentity(image, tag, updatePolicy, selectedTag string) (sourceRef, sourceImage, resolvedTag string) {
-	if updatePolicy != "" {
-		sourceImage = image
-		sourceRef = fmt.Sprintf("%s:%s", image, updatePolicy)
-		resolvedTag = selectedTag
-		return sourceRef, sourceImage, resolvedTag
-	}
-	switch {
-	case strings.Contains(tag, "@sha256:"):
-		// User wrote `nginx@sha256:...` and the planner kept that as the tag.
-		sourceImage = image
-		sourceRef = tag
-		if image == "" {
-			// Best-effort split: take the part before "@sha256:" as the image.
-			sourceImage = strings.SplitN(tag, "@sha256:", 2)[0]
-		}
-		resolvedTag = ""
-	case strings.HasPrefix(tag, "sha256:"):
-		// Tag is a bare digest. Build the canonical "<image>@<digest>" form.
-		sourceImage = image
-		sourceRef = fmt.Sprintf("%s@%s", image, tag)
-		resolvedTag = ""
-	case strings.Contains(image, "@sha256:"):
-		// Digest baked into image; tag (if any) is ignored.
-		sourceImage = strings.SplitN(image, "@sha256:", 2)[0]
-		sourceRef = image
-		resolvedTag = ""
-	default:
-		sourceImage = image
-		sourceRef = fmt.Sprintf("%s:%s", image, tag)
-		resolvedTag = tag
-	}
-	return sourceRef, sourceImage, resolvedTag
 }

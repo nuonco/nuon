@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>001 — Runner Health Check</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
+    --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff; --green: #3fb950;
+    --red: #f85149; --yellow: #d29922;
+    --diff-add-bg: #0d2818; --diff-add-border: #1b4332;
+    --comment-bg: #1a1f2b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+  .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+  h2 { font-size: 1.3rem; margin: 2rem 0 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+  p, li { color: var(--text-muted); }
+  ul { padding-left: 1.5rem; margin: 0.5rem 0; }
+  li { margin: 0.3rem 0; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85em; background: var(--surface2); padding: 0.15em 0.4em; border-radius: 4px; color: var(--text); }
+  .badge { display: inline-block; padding: 0.15em 0.6em; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+  .badge-new { background: var(--diff-add-bg); color: var(--green); border: 1px solid var(--diff-add-border); }
+  .badge-mod { background: #1a1a00; color: var(--yellow); border: 1px solid #3d3d00; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+  .file-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin: 1.5rem 0; overflow: hidden; }
+  .file-header { background: var(--surface2); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.75rem; cursor: pointer; user-select: none; }
+  .file-header:hover { background: #22272e; }
+  .file-header .path { font-family: 'SF Mono', monospace; font-size: 0.85rem; flex: 1; }
+  .file-body { display: none; }
+  .file-body.open { display: block; }
+  .code-block { overflow-x: auto; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.5; }
+  .code-line { display: flex; min-height: 1.5em; position: relative; }
+  .code-line:hover { background: rgba(88,166,255,0.06); }
+  .code-line.add { background: var(--diff-add-bg); }
+  .line-num { display: inline-block; min-width: 3.5em; padding: 0 0.75em; text-align: right; color: var(--text-muted); opacity: 0.5; user-select: none; flex-shrink: 0; }
+  .line-content { padding: 0 1em; white-space: pre; flex: 1; }
+  .comment-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; background: var(--accent); color: #fff; border: none; border-radius: 50%; font-size: 14px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 10; line-height: 1; }
+  .code-line:hover .comment-btn { display: flex; }
+  .inline-comment { background: var(--comment-bg); border: 1px solid var(--accent); border-radius: 6px; margin: 0.25rem 1rem 0.25rem 4.5em; padding: 0.75rem; }
+  .inline-comment textarea { width: 100%; min-height: 60px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-family: inherit; font-size: 0.85rem; padding: 0.5rem; resize: vertical; }
+  .inline-comment textarea:focus { outline: none; border-color: var(--accent); }
+  .inline-comment .actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; justify-content: flex-end; }
+  .btn { padding: 0.35em 1em; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; font-size: 0.8rem; }
+  .btn:hover { background: #2d333b; }
+  .btn-primary { background: #238636; border-color: #2ea043; }
+  .btn-primary:hover { background: #2ea043; }
+  .saved-comment { background: var(--comment-bg); border-left: 3px solid var(--accent); margin: 0.25rem 1rem 0.25rem 4.5em; padding: 0.5rem 0.75rem; font-size: 0.85rem; border-radius: 0 4px 4px 0; position: relative; }
+  .saved-comment .meta { color: var(--text-muted); font-size: 0.75rem; margin-bottom: 0.25rem; }
+  .saved-comment .del { position: absolute; top: 0.25rem; right: 0.5rem; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.75rem; }
+  .saved-comment .del:hover { color: var(--red); }
+  #diagram-container { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; overflow-x: auto; }
+  .tbl { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+  .tbl th, .tbl td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; }
+  .tbl th { background: var(--surface2); font-weight: 600; }
+  .tbl td { color: var(--text-muted); }
+  .arrow { color: var(--text-muted); font-size: 0.8rem; transition: transform 0.15s; }
+  .arrow.open { transform: rotate(90deg); }
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: #238636; color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.85rem; opacity: 0; transition: opacity 0.3s; z-index: 100; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<h1>001 — Runner Health Check</h1>
+<p class="subtitle">Periodic runner-level health check signal that aggregates process state into runner status. Click <code>+</code> on any code line to leave an inline comment.</p>
+
+<h2>Problem</h2>
+<div class="card">
+  <p>Runner health is monitored at the process level (<code>process_healthcheck</code>, every 5-15 min) but there is no periodic runner-level check. The existing <code>offline_check</code> uses a 24-hour threshold and is admin-triggered only. A runner can have zero active processes and still appear "active" indefinitely.</p>
+</div>
+
+<h2>Architecture</h2>
+<div id="diagram-container"><div id="diagram"></div></div>
+
+<h2>Requirements</h2>
+<div class="card">
+<ul>
+  <li>Signal fires every <strong>15 minutes</strong> via cron emitter on <code>runner-signals</code> queue</li>
+  <li><strong>Org runners</strong>: check for active <code>org</code> process &rarr; active or offline</li>
+  <li><strong>Install runners</strong>: check for active <code>install</code> process (primary) &rarr; active or offline. Check for <code>mng</code> process &rarr; metadata warning if absent</li>
+  <li>Skip runners in transitional states</li>
+  <li>Emit <code>runner.health_check</code> counter with per-check tags</li>
+  <li>Emit Datadog event on active &rarr; offline transitions with full owner context</li>
+</ul>
+</div>
+
+<h2>Metrics</h2>
+<table class="tbl">
+  <thead><tr><th>Metric</th><th>Type</th><th>Tags</th><th>When</th></tr></thead>
+  <tbody>
+    <tr><td><code>runner.health_check</code></td><td>Counter</td><td><code>runner_id</code>, <code>runner_type</code>, <code>runner_status</code>, <code>org_id</code>, <code>org_name</code>, <code>install_id</code>, <code>result</code>, <code>missing_*_process</code></td><td>Every execution</td></tr>
+  </tbody>
+</table>
+
+<h3>Datadog Event (active &rarr; offline)</h3>
+<table class="tbl">
+  <thead><tr><th>Field</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Title</td><td><code>Runner {display_name} went offline</code></td></tr>
+    <tr><td>Alert Type</td><td>Error</td></tr>
+    <tr><td>Tags</td><td><code>runner_id</code>, <code>runner_type</code>, <code>org_id</code>, <code>org_name</code>, <code>install_id</code>, <code>install_name</code>, <code>app_id</code>, <code>app_name</code>, <code>created_by</code></td></tr>
+    <tr><td>Body (install)</td><td>Runner {id} (org: {org}, app: {app}, install: {install}) transitioned from active to offline. Reason: {reason}. Install created by: {email}</td></tr>
+    <tr><td>Aggregation Key</td><td><code>runner-health-check</code></td></tr>
+  </tbody>
+</table>
+
+<h2>Changed Files</h2>
+
+<div class="file-section" data-file="signal.go">
+  <div class="file-header" onclick="toggle(this)"><span class="arrow">&#9654;</span><span class="badge badge-new">New</span><span class="path">services/ctl-api/internal/app/runners/signals/runnerhealthcheck/signal.go</span></div>
+  <div class="file-body"><div class="code-block" id="f-signal"></div></div>
+</div>
+
+<div class="file-section" data-file="init.go">
+  <div class="file-header" onclick="toggle(this)"><span class="arrow">&#9654;</span><span class="badge badge-new">New</span><span class="path">services/ctl-api/internal/app/runners/signals/runnerhealthcheck/init.go</span></div>
+  <div class="file-body"><div class="code-block" id="f-init"></div></div>
+</div>
+
+<div class="file-section" data-file="ensure_runner_queues.go">
+  <div class="file-header" onclick="toggle(this)"><span class="arrow">&#9654;</span><span class="badge badge-mod">Modified</span><span class="path">services/ctl-api/internal/app/runners/helpers/ensure_runner_queues.go</span></div>
+  <div class="file-body"><div class="code-block" id="f-ensure"></div></div>
+</div>
+
+<div class="file-section" data-file="create_runner_group.go">
+  <div class="file-header" onclick="toggle(this)"><span class="arrow">&#9654;</span><span class="badge badge-mod">Modified</span><span class="path">services/ctl-api/internal/app/runners/helpers/create_runner_group.go <span style="color:var(--text-muted)">(lines 193-231)</span></span></div>
+  <div class="file-body"><div class="code-block" id="f-group"></div></div>
+</div>
+
+<div class="file-section" data-file="update.go">
+  <div class="file-header" onclick="toggle(this)"><span class="arrow">&#9654;</span><span class="badge badge-mod">Modified</span><span class="path">services/ctl-api/internal/pkg/workflows/status/activities/update.go <span style="color:var(--text-muted)">(UpdateRunnerStatusV2)</span></span></div>
+  <div class="file-body"><div class="code-block" id="f-update"></div></div>
+</div>
+
+<div class="file-section" data-file="allsignals.go">
+  <div class="file-header" onclick="toggle(this)"><span class="arrow">&#9654;</span><span class="badge badge-mod">Modified</span><span class="path">services/ctl-api/internal/pkg/queue/catalog/allsignals/allsignals.go <span style="color:var(--text-muted)">(+1 line)</span></span></div>
+  <div class="file-body"><div class="code-block" id="f-allsignals"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({theme:'dark',startOnLoad:false});
+(async()=>{
+const {svg}=await mermaid.render('md',`
+flowchart TD
+  subgraph Emitter ["Cron Emitter (*/15 * * * *)"]
+    E[runner-healthcheck emitter]
+  end
+  E -->|enqueue| Q["runner-signals queue"]
+  Q -->|dispatch| S["runner_healthcheck signal"]
+  S --> V{Validate}
+  V -->|empty runner_id| ERR[Error]
+  V -->|ok| GET[Get Runner]
+  GET --> SKIP{Skippable?}
+  SKIP -->|provisioning etc| M_SKIP["metric: result=skipped"]
+  SKIP -->|checkable| TYPE{Runner Group Type}
+  TYPE -->|Org| ORG["GetCurrentProcess(org)"]
+  TYPE -->|Install| INST["GetCurrentProcess(install)"]
+  ORG -->|found| ORG_OK[Active]
+  ORG -->|not found| ORG_FAIL["Offline\\nmissing_org_process"]
+  INST -->|found| INST_OK[Primary: Active]
+  INST -->|not found| INST_FAIL["Primary: Offline\\nmissing_install_process"]
+  INST_OK --> MNG["GetCurrentProcess(mng)"]
+  INST_FAIL --> MNG
+  MNG -->|found| MNG_OK["missing_mng_process=false"]
+  MNG -->|not found| MNG_WARN["missing_mng_process=true\\n(metadata warning)"]
+  ORG_OK --> METRIC["Emit: runner.health_check"]
+  ORG_FAIL --> EVT["DD Event\\n(if was active)"]
+  EVT --> METRIC
+  INST_OK --> METRIC
+  INST_FAIL --> EVT2["DD Event\\n(if was active)"]
+  EVT2 --> METRIC
+  MNG_OK --> UPD["Update Runner Status\\n(v1 + v2)"]
+  MNG_WARN --> UPD
+  METRIC --> UPD
+  style E fill:#1a3a5c,stroke:#58a6ff
+  style Q fill:#1a3a2c,stroke:#3fb950
+  style S fill:#2d1a3a,stroke:#bc8cff
+  style EVT fill:#3a1a1a,stroke:#f85149
+  style EVT2 fill:#3a1a1a,stroke:#f85149
+  style MNG_WARN fill:#3a2d00,stroke:#d29922
+  style M_SKIP fill:#1c2128,stroke:#8b949e
+`);
+document.getElementById('diagram').innerHTML=svg;
+})();
+
+const F={
+"f-signal":{s:1,n:true,l:[
+"package runnerhealthcheck","",
+"import (",
+'\t"fmt"','\t"strings"','\t"time"',"",
+'\t"github.com/DataDog/datadog-go/v5/statsd"',
+'\t"github.com/go-playground/validator/v10"',
+'\t"github.com/pkg/errors"',
+'\t"go.temporal.io/sdk/workflow"',
+'\t"go.uber.org/zap"',"",
+'\t"github.com/nuonco/nuon/pkg/metrics"',
+'\ttmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"',
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/app"',
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/worker/activities"',
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"',
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"',
+'\tstatusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"',
+")","",'const SignalType signal.SignalType = "runner_healthcheck"',"",
+"type Signal struct {",
+'\tRunnerID string `json:"runner_id"`',"",
+"\tmw metrics.Writer","\tv  *validator.Validate","}","",
+"var (",
+"\t_ signal.Signal                   = (*Signal)(nil)",
+"\t_ signal.SleepAfter               = (*Signal)(nil)",
+"\t_ signal.SignalWithMaxInFlightAge = (*Signal)(nil)",
+"\t_ signal.SignalWithParams         = (*Signal)(nil)",
+")","",
+"func (s *Signal) WithParams(params *signal.Params) {",
+"\ts.mw = params.MW","\ts.v = params.V","}","",
+"func (s *Signal) Type() signal.SignalType {","\treturn SignalType","}","",
+"func (s *Signal) SleepAfter() time.Duration {","\treturn 0","}","",
+"func (s *Signal) MaxInFlightAge() time.Duration {","\treturn 10 * time.Minute","}","",
+"func (s *Signal) Validate(ctx workflow.Context) error {",
+'\tif s.RunnerID == "" {','\t\treturn errors.New("runner_id is required")',"\t}","\treturn nil","}","",
+"func (s *Signal) Execute(ctx workflow.Context) error {",
+"\ttmw, err := tmetrics.New(s.v, tmetrics.WithMetricsWriter(s.mw))",
+"\tif err != nil {",'\t\treturn errors.Wrap(err, "unable to create temporal metrics writer")',"\t}","",
+"\tl, err := log.WorkflowLogger(ctx)",
+"\tif err != nil {",'\t\treturn errors.Wrap(err, "unable to get logger")',"\t}","",
+"\trunner, err := activities.AwaitGet(ctx, activities.GetRequest{RunnerID: s.RunnerID})",
+"\tif err != nil {",'\t\treturn errors.Wrap(err, "unable to get runner")',"\t}","",
+"\ttags := map[string]string{",
+'\t\t"runner_id":     s.RunnerID,',
+'\t\t"runner_type":   string(runner.RunnerGroup.Type),',
+'\t\t"runner_status": string(runner.Status),',
+'\t\t"org_id":        runner.OrgID,',
+'\t\t"org_name":      runner.Org.Name,',"\t}","",
+'\tif runner.RunnerGroup.OwnerType == "installs" {',
+'\t\ttags["install_id"] = runner.RunnerGroup.OwnerID',"\t}","",
+"\tif isSkippableStatus(runner.Status) {",
+'\t\ttmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "skipped"))...)',
+"\t\treturn nil","\t}","",
+"\tswitch runner.RunnerGroup.Type {",
+"\tcase app.RunnerGroupTypeOrg:","\t\treturn s.checkOrgRunner(ctx, l, tmw, runner, tags)",
+"\tcase app.RunnerGroupTypeInstall:","\t\treturn s.checkInstallRunner(ctx, l, tmw, runner, tags)",
+"\tdefault:","\t\treturn nil","\t}","}","",
+"func (s *Signal) checkOrgRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {",
+"\t_, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{",
+"\t\tRunnerID:    s.RunnerID,",
+"\t\tProcessType: string(app.RunnerProcessTypeOrg),",
+"\t})","",
+'\ttags["missing_org_process"] = "false"',
+"\tif err != nil {","\t\tif isNotFound(err) {",
+'\t\t\tl.Warn("org runner has no active org process",',
+'\t\t\t\tzap.String("runner_id", s.RunnerID),',"\t\t\t)",
+'\t\t\ttags["missing_org_process"] = "true"',
+'\t\t\ttmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)',
+"\t\t\tif runner.Status == app.RunnerStatusActive {",
+'\t\t\t\ts.emitOfflineEvent(ctx, runner, "no active org process")',"\t\t\t}",
+'\t\t\treturn s.updateRunnerStatus(ctx, runner, app.RunnerStatusOffline, "no active org process", nil)',
+"\t\t}",'\t\treturn errors.Wrap(err, "unable to get current org process")',"\t}","",
+'\ttmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)',
+'\treturn s.updateRunnerStatus(ctx, runner, app.RunnerStatusActive, "runner healthy", nil)',"}","",
+"func (s *Signal) checkInstallRunner(ctx workflow.Context, l *zap.Logger, tmw tmetrics.Writer, runner *app.Runner, tags map[string]string) error {",
+"\t_, err := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{",
+"\t\tRunnerID:    s.RunnerID,",
+"\t\tProcessType: string(app.RunnerProcessTypeInstall),",
+"\t})","","\tvar (","\t\tstatus      app.RunnerStatus","\t\tdescription string","\t)","",
+'\ttags["missing_install_process"] = "false"',
+"\tif err != nil {","\t\tif isNotFound(err) {",
+'\t\t\tl.Warn("install runner has no active install process",',
+'\t\t\t\tzap.String("runner_id", s.RunnerID),',"\t\t\t)",
+'\t\t\ttags["missing_install_process"] = "true"',
+"\t\t\tstatus = app.RunnerStatusOffline",
+'\t\t\tdescription = "no active install process"',
+"\t\t} else {",
+'\t\t\treturn errors.Wrap(err, "unable to get current install process")',
+"\t\t}","\t} else {","\t\tstatus = app.RunnerStatusActive",
+'\t\tdescription = "runner healthy"',"\t}","",
+"\tvar metadata map[string]any",
+"\t_, mngErr := activities.AwaitGetCurrentRunnerProcess(ctx, activities.GetCurrentRunnerProcessRequest{",
+"\t\tRunnerID:    s.RunnerID,",
+"\t\tProcessType: string(app.RunnerProcessTypeMng),",
+"\t})","",
+'\ttags["missing_mng_process"] = "false"',
+"\tif mngErr != nil {","\t\tif isNotFound(mngErr) {",
+'\t\t\tl.Warn("install runner missing management process",',
+'\t\t\t\tzap.String("runner_id", s.RunnerID),',"\t\t\t)",
+'\t\t\ttags["missing_mng_process"] = "true"',
+'\t\t\tmetadata = map[string]any{"missing_mng_process": true}',
+"\t\t} else {",
+'\t\t\tl.Warn("unable to check management process",',
+'\t\t\t\tzap.String("runner_id", s.RunnerID),',
+"\t\t\t\tzap.Error(mngErr),","\t\t\t)","\t\t}",
+'\t} else {','\t\tmetadata = map[string]any{"missing_mng_process": false}',"\t}","",
+"\tif status == app.RunnerStatusActive {",
+'\t\ttmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "healthy"))...)',
+"\t} else {",
+'\t\ttmw.Incr(ctx, "runner.health_check", metrics.ToTags(tags, metrics.ToTag("result", "unhealthy"))...)',
+"\t\tif runner.Status == app.RunnerStatusActive {",
+"\t\t\ts.emitOfflineEvent(ctx, runner, description)","\t\t}","\t}","",
+"\treturn s.updateRunnerStatus(ctx, runner, status, description, metadata)","}","",
+"func (s *Signal) emitOfflineEvent(ctx workflow.Context, runner *app.Runner, reason string) {",
+"\teventTags := []string{",
+'\t\tmetrics.ToTag("runner_id", s.RunnerID),',
+'\t\tmetrics.ToTag("runner_type", string(runner.RunnerGroup.Type)),',
+'\t\tmetrics.ToTag("org_id", runner.OrgID),',
+'\t\tmetrics.ToTag("org_name", runner.Org.Name),',"\t}","",
+'\ttitle := fmt.Sprintf("Runner %s went offline", runner.DisplayName)',
+"\ttext := fmt.Sprintf(",
+'\t\t"Runner %s (org: %s) transitioned from active to offline.\\nReason: %s",',
+"\t\ts.RunnerID, runner.Org.Name, reason,","\t)","",
+'\tif runner.RunnerGroup.OwnerType == "installs" {',
+"\t\tinstall, err := activities.AwaitGetInstall(ctx, activities.GetInstallRequest{",
+"\t\t\tInstallID: runner.RunnerGroup.OwnerID,","\t\t})",
+"\t\tif err == nil {","\t\t\teventTags = append(eventTags,",
+'\t\t\t\tmetrics.ToTag("install_id", install.ID),',
+'\t\t\t\tmetrics.ToTag("install_name", install.Name),',
+'\t\t\t\tmetrics.ToTag("app_id", install.AppID),',
+'\t\t\t\tmetrics.ToTag("app_name", install.App.Name),',
+'\t\t\t\tmetrics.ToTag("created_by", install.CreatedBy.Email),',"\t\t\t)",
+"\t\t\ttext = fmt.Sprintf(",
+'\t\t\t\t"Runner %s (org: %s, app: %s, install: %s) transitioned from active to offline.\\nReason: %s\\nInstall created by: %s",',
+"\t\t\t\ts.RunnerID, runner.Org.Name, install.App.Name, install.Name, reason, install.CreatedBy.Email,",
+"\t\t\t)","\t\t}","\t}","",
+"\ts.mw.Event(&statsd.Event{",
+"\t\tTitle:          title,","\t\tText:           text,",
+"\t\tTags:           eventTags,",
+'\t\tSourceTypeName: "nuon-runner",',
+"\t\tPriority:       statsd.Normal,",
+"\t\tAlertType:      statsd.Error,",
+'\t\tAggregationKey: "runner-health-check",',"\t})","}","",
+"func (s *Signal) updateRunnerStatus(ctx workflow.Context, runner *app.Runner, status app.RunnerStatus, description string, metadata map[string]any) error {",
+"\tif runner.Status != status {",
+"\t\tif err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{",
+"\t\t\tRunnerID:          s.RunnerID,","\t\t\tStatus:            status,",
+"\t\t\tStatusDescription: description,",
+"\t\t}); err != nil {",'\t\t\treturn errors.Wrap(err, "unable to update runner status")',"\t\t}","\t}","",
+"\tstatusactivities.AwaitUpdateRunnerStatusV2(ctx, statusactivities.UpdateRunnerStatusV2Request{",
+"\t\tRunnerID:          s.RunnerID,","\t\tStatus:            status,",
+"\t\tStatusDescription: description,","\t\tMetadata:          metadata,","\t})","",
+"\treturn nil","}","",
+"func isNotFound(err error) bool {",
+'\treturn strings.Contains(err.Error(), "not found")',"}","",
+"func isSkippableStatus(status app.RunnerStatus) bool {",
+"\tswitch status {",
+"\tcase app.RunnerStatusProvisioning,",
+"\t\tapp.RunnerStatusDeprovisioning,",
+"\t\tapp.RunnerStatusReprovisioning,",
+"\t\tapp.RunnerStatusDeprovisioned,",
+"\t\tapp.RunnerStatusPending:","\t\treturn true","\t}","\treturn false","}",
+]},
+"f-init":{s:1,n:true,l:[
+"package runnerhealthcheck","",
+"import (",
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/catalog"',
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"',
+")","",
+"func init() {",
+"\tcatalog.Register(SignalType, func() signal.Signal {",
+"\t\treturn &Signal{}","\t})","}",
+]},
+"f-ensure":{s:1,a:[6,10,11,18,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61],l:[
+"package helpers","",
+"import (",'\t"context"','\t"fmt"','\t"time"',"",
+'\t"github.com/nuonco/nuon/services/ctl-api/internal/app"',
+'\tqueueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"',
+'\temitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"',
+'\tqueuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"',
+")","",
+'const runnerSignalsQueueName = "runner-signals"',"",
+"func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string) error {",
+"\tq, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{",
+"\t\tOwnerID:     runnerID,",'\t\tOwnerType:   "runners",',
+'\t\tNamespace:   "runners",',"\t\tName:        runnerSignalsQueueName,",
+"\t\tMaxInFlight: 10,","\t\tMaxDepth:    50,","\t})",
+"\tif err != nil {",
+'\t\treturn fmt.Errorf("unable to ensure runner-signals queue: %w", err)',"\t}","",
+"\temitters, err := h.emitterClient.GetEmittersByQueueID(ctx, q.ID)",
+"\tif err != nil {",
+'\t\treturn fmt.Errorf("unable to list emitters for runner-signals queue: %w", err)',"\t}","",
+"\thasHealthcheckEmitter := false",
+"\tfor _, em := range emitters {",
+'\t\tif em.Name == "runner-healthcheck" {',
+"\t\t\thasHealthcheckEmitter = true","\t\t\tbreak","\t\t}","\t}","",
+"\tif !hasHealthcheckEmitter {",
+"\t\tif _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{",
+"\t\t\tQueueID:         q.ID,",
+'\t\t\tName:            "runner-healthcheck",',
+'\t\t\tDescription:     "Periodic runner-level health check",',
+"\t\t\tMode:            app.QueueEmitterModeCron,",
+'\t\t\tCronSchedule:    "*/15 * * * *",',
+"\t\t\tJitterWindow:    30 * time.Second,",
+'\t\t\tSignalType:      "runner_healthcheck",',
+"\t\t\tSignalExpiresIn: 15 * time.Minute,",
+'\t\t\tSignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{',
+'\t\t\t\t"runner_id": runnerID,',"\t\t\t}),",
+"\t\t}); err != nil {",
+'\t\t\treturn fmt.Errorf("unable to create runner healthcheck emitter: %w", err)',
+"\t\t}","\t}","","\treturn nil","}","",
+"func (h *Helpers) EnsureRunnerJobGroupQueues(ctx context.Context, runner *app.Runner, settings *app.RunnerGroupSettings) error {",
+"\tfor _, group := range allRunnerJobGroups {",
+"\t\tif _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{",
+"\t\t\tOwnerID:     runner.ID,",'\t\t\tOwnerType:   "runners",',
+'\t\t\tNamespace:   "runners",',"\t\t\tName:        string(group),",
+"\t\t\tMaxInFlight: settings.MaxInFlightForGroup(group),",
+"\t\t\tMaxDepth:    100,","\t\t}); err != nil {",
+'\t\t\treturn fmt.Errorf("unable to ensure queue for job group %s: %w", group, err)',"\t\t}","\t}","",
+"\treturn nil","}",
+]},
+"f-group":{s:193,a:[210,211,212,213,214,215,216,217,218,219,220,221,222,223,224],l:[
+"\tres := h.db.WithContext(ctx).Create(&runnerGroup)",
+"\tif res.Error != nil {","\t\treturn nil, res.Error","\t}","",
+"\tq, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{",
+"\t\tOwnerID:     runnerGroup.Runners[0].ID,",
+'\t\tOwnerType:   "runners",','\t\tNamespace:   "runners",',
+'\t\tName:        "runner-signals",',
+"\t\tMaxInFlight: 10,","\t\tMaxDepth:    50,","\t})",
+"\tif err != nil {",
+'\t\treturn nil, fmt.Errorf("unable to create runner queue: %w", err)',"\t}","",
+"\tif _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{",
+"\t\tQueueID:         q.ID,",
+'\t\tName:            "runner-healthcheck",',
+'\t\tDescription:     "Periodic runner-level health check",',
+"\t\tMode:            app.QueueEmitterModeCron,",
+'\t\tCronSchedule:    "*/15 * * * *",',
+"\t\tJitterWindow:    30 * time.Second,",
+'\t\tSignalType:      "runner_healthcheck",',
+"\t\tSignalExpiresIn: 15 * time.Minute,",
+'\t\tSignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{',
+'\t\t\t"runner_id": runnerGroup.Runners[0].ID,',
+"\t\t}),","\t}); err != nil {",
+'\t\treturn nil, fmt.Errorf("unable to create runner healthcheck emitter: %w", err)',
+"\t}","",
+"\tif err := h.CreateRunnerQueues(ctx, &runnerGroup.Runners[0], &runnerGroup.Settings); err != nil {",
+'\t\treturn nil, fmt.Errorf("unable to create runner queues: %w", err)',"\t}","",
+"\treturn &runnerGroup, nil","}",
+]},
+"f-update":{s:434,a:[438,455,456,457],l:[
+"type UpdateRunnerStatusV2Request struct {",
+'\tRunnerID          string           `validate:"required"`',
+'\tStatus            app.RunnerStatus `validate:"required"`',
+'\tStatusDescription string           `validate:"required"`',
+"\tMetadata          map[string]any","}","",
+"// @temporal-gen-v2 activity",
+"func (a *Activities) UpdateRunnerStatusV2(ctx context.Context, req UpdateRunnerStatusV2Request) error {",
+"\tobj := app.Runner{ID: req.RunnerID}","",
+"\tgetter := func(ctx context.Context) (app.CompositeStatus, error) {",
+"\t\tvar obj app.Runner",
+"\t\tif err := a.getStatus(ctx, &obj, req.RunnerID); err != nil {",
+"\t\t\treturn app.CompositeStatus{}, err","\t\t}",
+"\t\treturn obj.StatusV2, nil","\t}","",
+"\tstatus := app.NewCompositeStatus(ctx, app.Status(req.Status))",
+"\tstatus.StatusHumanDescription = req.StatusDescription",
+"\tfor k, v := range req.Metadata {","\t\tstatus.Metadata[k] = v","\t}",
+"\treturn a.updateStatusV2(ctx, &obj, status, getter)","}",
+]},
+"f-allsignals":{s:125,a:[127],l:[
+'\t_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"',
+'\t_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"',
+'\t_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerhealthcheck"',
+'\t_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/triggershutdown"',
+'\t_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updatetag"',
+'\t_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updateversion"',
+]},
+};
+
+Object.entries(F).forEach(([id,f])=>{
+  const c=document.getElementById(id);if(!c)return;
+  f.l.forEach((ln,i)=>{
+    const num=f.s+i;const added=f.n||(f.a&&f.a.includes(num));
+    const d=document.createElement('div');
+    d.className='code-line'+(added?' add':'');
+    d.dataset.file=id;d.dataset.line=num;
+    const b=document.createElement('button');b.className='comment-btn';b.textContent='+';
+    b.onclick=e=>{e.stopPropagation();addCmt(d,id,num);};
+    const n=document.createElement('span');n.className='line-num';n.textContent=num;
+    const t=document.createElement('span');t.className='line-content';t.textContent=ln.replace(/\t/g,'    ');
+    d.appendChild(b);d.appendChild(n);d.appendChild(t);c.appendChild(d);
+  });
+});
+
+function toggle(h){const b=h.nextElementSibling,a=h.querySelector('.arrow');b.classList.toggle('open');a.classList.toggle('open');}
+document.querySelector('[data-file="signal.go"] .file-header').click();
+
+const SPEC_DIR='specs/001-runner-health-check';
+const fmap={'f-signal':'signal.go','f-init':'init.go','f-ensure':'ensure_runner_queues.go','f-group':'create_runner_group.go','f-update':'update.go','f-allsignals':'allsignals.go'};
+
+function addCmt(el,fid,ln){
+  if(el.nextElementSibling&&el.nextElementSibling.classList.contains('inline-comment'))return;
+  const d=document.createElement('div');d.className='inline-comment';
+  d.innerHTML=`<textarea placeholder="Comment on line ${ln}..." autofocus></textarea><div class="actions"><button class="btn" onclick="this.closest('.inline-comment').remove()">Cancel</button><button class="btn btn-primary" onclick="saveCmt(this,'${fid}',${ln})">Save</button></div>`;
+  el.after(d);d.querySelector('textarea').focus();
+}
+
+function saveCmt(btn,fid,ln){
+  const box=btn.closest('.inline-comment'),txt=box.querySelector('textarea').value.trim();
+  if(!txt)return;
+  const ts=new Date().toISOString().replace(/[:.]/g,'-');
+  const fname=`comment-${fmap[fid]||fid}-L${ln}-${ts}.md`;
+  const md=`# Comment on ${fmap[fid]||fid}:${ln}\n\n${txt}\n`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([md],{type:'text/markdown'}));
+  a.download=fname;a.click();URL.revokeObjectURL(a.href);
+  const s=document.createElement('div');s.className='saved-comment';
+  s.innerHTML=`<div class="meta">Line ${ln} &middot; ${new Date().toLocaleTimeString()} &middot; <code>${fname}</code></div><div>${txt.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div><button class="del" onclick="this.parentElement.remove()">&times;</button>`;
+  box.replaceWith(s);
+  toast('Comment saved — move downloaded file to '+SPEC_DIR+'/');
+}
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+</script>
+</body>
+</html>

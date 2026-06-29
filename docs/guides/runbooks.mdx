@@ -36,7 +36,15 @@ Common uses:
 * data backfills
 * recovery steps
 
-Each step is either a **deploy** (deploy a component) or an **action** (run an [action](/guides/actions), or a command defined inline). Steps run in order, and every run is recorded in the install's workflow history: a durable, auditable record of what ran, when, and against which install.
+Each step has a `type` that determines what it does:
+
+* **`component_deploy`** — Deploy a component. Set `deploy_dependents` to also roll out the component's downstream dependents, in dependency order. (`deploy` is accepted as a legacy alias.)
+* **`component_tear_down`** — Tear down a component. Set `tear_down_dependents` to also tear down its downstream dependents, with dependents removed first.
+* **`action`** — Run an existing [action](/guides/actions), or an inline command or script defined directly on the step.
+* **`sandbox_reprovision`** — Reprovision the install's sandbox infrastructure. Set `skip_component_deploys` to reprovision the infrastructure only, without redeploying components on top.
+* **`sandbox_deprovision`** — Deprovision the install's sandbox infrastructure.
+
+Steps run in order, and every run is recorded in the install's workflow history: a durable, auditable record of what ran, when, and against which install.
 
 ## Where runbooks live
 
@@ -90,12 +98,12 @@ timeout = "5m"
 | `labels` | map | No | Key/value labels for organizing runbooks. |
 | `steps` | array | Yes | Ordered list of steps to execute. See below. |
 
-### Step (`[[steps]]`)
+### Step
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | string | Yes | Step name shown in the workflow UI and runbook detail page. |
-| `type` | string | Yes | `component_deploy`, `component_tear_down`, `action`, `sandbox_reprovision`, or `sandbox_deprovision`. `deploy` is accepted as a legacy alias for `component_deploy`. |
+| `type` | string | Yes | `component_deploy`, `component_tear_down`, `action`, `sandbox_reprovision`, or `sandbox_deprovision`. `deploy` is accepted as a legacy alias. |
 | `component_name` | string | component steps | Component to deploy or tear down. Required when `type = "component_deploy"` or `"component_tear_down"`. |
 | `deploy_dependents` | bool | No | When true, also deploys the component's transitive dependents (downstream subgraph) in dependency order. Only applies to `component_deploy` steps. |
 | `tear_down_dependents` | bool | No | When true, also tears down the component's transitive dependents (downstream subgraph), with dependents torn down first. Only applies to `component_tear_down` steps. |

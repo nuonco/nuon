@@ -43,7 +43,9 @@ export function parseInstallRunbooksToTableData(
             {runbook.description}
           </Text>
         </div>
-      ) : null,
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       labels:
         runbook?.labels && Object.keys(runbook.labels).length > 0 ? (
           <span className="flex flex-wrap gap-1">
@@ -61,7 +63,9 @@ export function parseInstallRunbooksToTableData(
           <Icon variant="CalendarBlankIcon" />
           <Time time={runbook.updated_at} format="relative" variant="subtext" nowrap />
         </Text>
-      ) : null,
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       lastRun: ir.runs?.[0] ? (
         <Text flex nowrap className="gap-2">
           <Icon variant="CalendarBlankIcon" />
@@ -72,7 +76,9 @@ export function parseInstallRunbooksToTableData(
             nowrap
           />
         </Text>
-      ) : null,
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       href: `${basePath}/runbooks/${ir.runbook_id ?? ir.id}`,
       latestRunHref: (() => {
         const latestRun = ir.runs?.[0]

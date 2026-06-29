@@ -18,7 +18,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionsandboxplan"
 	statepartialgenerate "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/state/statepartialgenerate"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statemanager "github.com/nuonco/nuon/services/ctl-api/internal/pkg/state"
@@ -93,15 +92,6 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 	}
 	steps = append(steps, step)
 
-	step, err = sg.installSignalStep(ctx, installID, "update install stack outputs", pgtype.Hstore{}, &updateinstallstackoutputs.Signal{
-		InstallStackID:          stackID,
-		SkipInputUpdateWorkflow: true,
-	}, flw.PlanOnly)
-	if err != nil {
-		return nil, err
-	}
-	steps = append(steps, step)
-
 	step, err = sg.installSignalStep(ctx, installID, "runner healthy", pgtype.Hstore{}, &awaitrunnerhealthy.Signal{
 		InstallID: installID,
 	}, flw.PlanOnly)
@@ -122,7 +112,7 @@ func Provision(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResul
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallConfig(install.InstallConfig))
 
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreProvision)
 	if err != nil {

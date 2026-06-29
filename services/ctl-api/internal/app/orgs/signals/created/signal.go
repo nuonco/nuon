@@ -17,7 +17,8 @@ import (
 const SignalType signal.SignalType = "org-created"
 
 type Signal struct {
-	OrgID string `json:"org_id"`
+	OrgID  string `json:"org_id"`
+	Source string `json:"source,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -64,6 +65,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				zap.Error(err),
 				zap.String("org_id", s.OrgID))
 		}
+	}
+
+	if _, err := activities.AwaitSendTrialSignup(ctx, activities.SendTrialSignupRequest{
+		OrgID:  s.OrgID,
+		Source: s.Source,
+	}); err != nil {
+		l := workflow.GetLogger(ctx)
+		l.Error("unable to send salesforce trial signup",
+			zap.Error(err),
+			zap.String("org_id", s.OrgID))
 	}
 
 	return nil

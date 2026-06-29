@@ -12,8 +12,13 @@ func (j *jobLoop) Start() error {
 	return nil
 }
 
+func (j *jobLoop) Drain() {
+	j.pollCancel()
+}
+
 func (j *jobLoop) Stop() error {
-	j.ctxCancel()
+	j.pollCancel()
+	j.jobCancel()
 	j.pool.Wait()
 	j.setStopped()
 	return nil
@@ -21,12 +26,9 @@ func (j *jobLoop) Stop() error {
 
 func (j *jobLoop) LifecycleHook() fx.Hook {
 	return fx.Hook{
-		// start the background loop to update the settings
 		OnStart: func(context.Context) error {
 			return j.Start()
 		},
-
-		// stop the loop and wait for the background goroutine to return
 		OnStop: func(context.Context) error {
 			return j.Stop()
 		},

@@ -6,7 +6,9 @@ import (
 	"github.com/pkg/errors"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 )
 
 func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanRequest) (*plantypes.SyncOCIPlan, error) {
@@ -47,7 +49,17 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		return nil, errors.Wrap(err, "unable to get install state")
 	}
 
-	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState)
+	l, err := log.WorkflowLogger(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get logger")
+	}
+
+	roleSelection, _, err := p.getRoleForDeploy(ctx, l, appCfg, deploy, compBuild, stack, installState)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get role for deploy")
+	}
+
+	dstCfg, err := p.getInstallRegistryRepositoryConfig(ctx, deploy, compBuild, appCfg, stack, installState, roleSelection)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get install registry repository")
 	}
@@ -75,6 +87,11 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 		dstTag = compBuild.ResolvedTag
 		if dstTag == "" {
 			dstTag = compBuild.ID
+		} else if dstCfg.RegistryType == configs.OCIRegistryTypeECR {
+			// ECR keeps one shared repo (repos must be pre-created), so
+			// prefix the tag to keep resolved versions from colliding
+			// across components.
+			dstTag = imageNameSegment(deploy.ComponentName) + "-" + dstTag
 		}
 	}
 
@@ -92,11 +109,13 @@ func (p *Planner) createSyncPlan(ctx workflow.Context, req *CreateSyncPlanReques
 			Outputs: map[string]any{
 				"image": map[string]interface{}{
 					// Sandbox outputs mirror the live runner sync outputs
-					// shape: `repository` and `ref` are the auto-rendered
-					// digest-pinned forms; `tag` is intentionally empty;
-					// `display_tag` carries the human-friendly tag.
-					"repository":    "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
-					"tag":           "",
+					// shape: `repository` and `tag` are the bare repo and
+					// resolved tag that user templates compose as
+					// `{{.repository}}:{{.tag}}`; `ref` is the additive
+					// digest-pinned form; `display_tag` carries the
+					// human-friendly tag.
+					"repository":    "registry.example.com/nuon/app-service",
+					"tag":           "v1.2.3",
 					"ref":           "registry.example.com/nuon/app-service@sha256:a123b456c789d012e345f678g901h234i567j890k123l456m789n012o345p",
 					"display_tag":   "v1.2.3",
 					"media_type":    "application/vnd.docker.distribution.manifest.v2+json",

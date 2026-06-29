@@ -5,6 +5,7 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	qcctx "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/cctx"
 )
@@ -37,6 +38,9 @@ func Apply(ctx context.Context, sc qcctx.SignalContext) context.Context {
 	if sc.TraceID != "" {
 		ctx = cctx.SetTraceIDContext(ctx, sc.TraceID)
 	}
+	if sc.LogStreamID != "" {
+		ctx = cctx.SetLogStreamContext(ctx, &app.LogStream{ID: sc.LogStreamID})
+	}
 	return ctx
 }
 
@@ -53,6 +57,9 @@ func ApplyWorkflow(ctx workflow.Context, sc qcctx.SignalContext) workflow.Contex
 	}
 	if sc.TraceID != "" {
 		ctx = cctx.SetTraceIDWorkflowContext(ctx, sc.TraceID)
+	}
+	if sc.LogStreamID != "" {
+		ctx = cctx.SetLogStreamWorkflowContext(ctx, &app.LogStream{ID: sc.LogStreamID})
 	}
 	return ctx
 }

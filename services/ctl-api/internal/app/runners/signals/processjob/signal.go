@@ -204,6 +204,19 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
+	// All execution attempts are exhausted. If the final attempt ended in a
+	// retryable-but-non-terminal state (e.g. the execution was cancelled by a
+	// runner restart with no retries remaining), no terminal job status was
+	// written. Leaving the job non-terminal makes downstream workflows read it
+	// as success, so mark it failed.
+	finalStatus, err := activities.AwaitGetJobStatusByID(ctx, s.JobID)
+	if err != nil {
+		return err
+	}
+	if !finalStatus.IsTerminal() {
+		s.updateJobStatus(ctx, s.JobID, app.RunnerJobStatusFailed, "job execution attempts exhausted without completing")
+	}
+
 	return nil
 }
 

@@ -7,7 +7,9 @@ package models
 
 import (
 	"context"
+	stderrors "errors"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -32,6 +34,9 @@ type AppAppBranchInstallGroup struct {
 	// install ids
 	InstallIds []string `json:"install_ids"`
 
+	// label selector
+	LabelSelector *GithubComNuoncoNuonPkgLabelsSelector `json:"label_selector,omitempty"`
+
 	// max parallel
 	MaxParallel int64 `json:"max_parallel,omitempty"`
 
@@ -44,23 +49,86 @@ type AppAppBranchInstallGroup struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
-	// requires approval
-	RequiresApproval bool `json:"requires_approval,omitempty"`
-
-	// rollback on failure
-	RollbackOnFailure bool `json:"rollback_on_failure,omitempty"`
-
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// UseForPreviews marks this group for plan-only preview runs (e.g., PR previews).
+	UseForPreviews bool `json:"use_for_previews,omitempty"`
 }
 
 // Validate validates this app app branch install group
 func (m *AppAppBranchInstallGroup) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateLabelSelector(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
 	return nil
 }
 
-// ContextValidate validates this app app branch install group based on context it is used
+func (m *AppAppBranchInstallGroup) validateLabelSelector(formats strfmt.Registry) error {
+	if swag.IsZero(m.LabelSelector) { // not required
+		return nil
+	}
+
+	if m.LabelSelector != nil {
+		if err := m.LabelSelector.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("label_selector")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("label_selector")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ContextValidate validate this app app branch install group based on the context it is used
 func (m *AppAppBranchInstallGroup) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.contextValidateLabelSelector(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *AppAppBranchInstallGroup) contextValidateLabelSelector(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.LabelSelector != nil {
+
+		if swag.IsZero(m.LabelSelector) { // not required
+			return nil
+		}
+
+		if err := m.LabelSelector.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("label_selector")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("label_selector")
+			}
+
+			return err
+		}
+	}
+
 	return nil
 }
 

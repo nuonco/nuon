@@ -319,7 +319,101 @@ func (c *cli) appsCmd() *cobra.Command {
 	variablesCmd := c.variablesCmd()
 	appsCmd.AddCommand(variablesCmd)
 
+	// branches subcommand
+	branchesCmd := c.branchesCmd()
+	appsCmd.AddCommand(branchesCmd)
+
 	return appsCmd
+}
+
+func (c *cli) branchesCmd() *cobra.Command {
+	var (
+		appID    string
+		branchID string
+	)
+
+	branchesCmd := &cobra.Command{
+		Use:               "branches",
+		Short:             "Manage app branches",
+		Aliases:           []string{"br"},
+		PersistentPreRunE: c.persistentPreRunE,
+	}
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List branches for an app",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.ListBranches(cmd.Context(), appID, PrintJSON)
+		}),
+	}
+	listCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	listCmd.MarkFlagRequired("app-id")
+	branchesCmd.AddCommand(listCmd)
+
+	getCmd := &cobra.Command{
+		Use:   "get",
+		Short: "Get branch details",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.GetBranch(cmd.Context(), appID, branchID, PrintJSON)
+		}),
+	}
+	getCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	getCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID of the branch")
+	getCmd.MarkFlagRequired("app-id")
+	getCmd.MarkFlagRequired("branch-id")
+	branchesCmd.AddCommand(getCmd)
+
+	var branchName string
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a new branch",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.CreateBranch(cmd.Context(), appID, branchName, PrintJSON)
+		}),
+	}
+	createCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	createCmd.Flags().StringVarP(&branchName, "name", "n", "", "Branch name")
+	createCmd.MarkFlagRequired("app-id")
+	createCmd.MarkFlagRequired("name")
+	branchesCmd.AddCommand(createCmd)
+
+	var (
+		planOnly bool
+		force    bool
+	)
+	triggerCmd := &cobra.Command{
+		Use:         "trigger",
+		Short:       "Trigger a branch run",
+		Annotations: tuiAnnotation(TUIAltScreen),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.TriggerBranchRun(cmd.Context(), appID, branchID, planOnly, force, PrintJSON)
+		}),
+	}
+	triggerCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	triggerCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
+	triggerCmd.Flags().BoolVar(&planOnly, "preview", false, "Plan-only preview mode (no apply)")
+	triggerCmd.Flags().BoolVar(&force, "force", false, "Force rebuild all components")
+	branchesCmd.AddCommand(triggerCmd)
+
+	runsCmd := &cobra.Command{
+		Use:         "runs",
+		Short:       "List branch runs and monitor a selected workflow",
+		Annotations: tuiAnnotation(TUIAltScreen),
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.ListBranchRuns(cmd.Context(), appID, branchID, PrintJSON)
+		}),
+	}
+	runsCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	runsCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
+	branchesCmd.AddCommand(runsCmd)
+
+	return branchesCmd
 }
 
 func (c *cli) variablesCmd() *cobra.Command {

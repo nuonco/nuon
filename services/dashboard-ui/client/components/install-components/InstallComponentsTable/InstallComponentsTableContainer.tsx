@@ -79,13 +79,18 @@ export const InstallComponentsTableContainer = ({
     )?.component_dependency_ids,
   }))
 
+  const configConnections = configResult?.component_config_connections
+  const componentToggles = install?.install_config?.component_toggles
+
   return (
     <InstallComponentsTable
       data={parseInstallComponentSummaryToTableData(
         components,
         deps,
         org?.id ?? '',
-        install?.id ?? ''
+        install?.id ?? '',
+        configConnections,
+        componentToggles
       )}
       filterActions={
         <div className="flex items-center gap-3">

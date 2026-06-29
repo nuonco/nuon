@@ -12,17 +12,19 @@ import { TimelineSkeleton } from '@/components/common/TimelineSkeleton'
 import type { TInstall, TWorkflow } from '@/types'
 import {
   getWorkflowBadge,
-  getPendingApprovalCount,
+  getWorkflowPendingApprovals,
 } from '@/utils/workflow-utils'
+import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import { CancelWorkflowButton } from '../CancelWorkflow'
 
 export interface IWorkflowTimeline {
   workflows: TWorkflow[]
   pagination: { hasNext: boolean; offset: number; limit: number }
   orgId: string
-  installId: string
+  installId?: string
   install?: TInstall
   isLoading?: boolean
+  getWorkflowHref?: (workflow: TWorkflow) => string
 }
 
 export const WorkflowTimeline = ({
@@ -32,7 +34,10 @@ export const WorkflowTimeline = ({
   installId,
   install,
   isLoading,
+  getWorkflowHref,
 }: IWorkflowTimeline) => {
+  const { approvals } = useWorkflowApprovals()
+
   if (isLoading) return <WorkflowTimelineSkeleton />
 
   return workflows?.length ? (
@@ -44,7 +49,11 @@ export const WorkflowTimeline = ({
           <span className="flex items-center gap-4 mb-1">
             <Link
               className="inline-flex gap-2 items-center"
-              href={`/${orgId}/installs/${installId}/workflows/${workflow.id}`}
+              href={
+                getWorkflowHref
+                  ? getWorkflowHref(workflow)
+                  : `/${orgId}/installs/${installId}/workflows/${workflow.id}`
+              }
             >
               {workflow.name}
             </Link>
@@ -55,7 +64,7 @@ export const WorkflowTimeline = ({
             ) : null}
             {workflow?.approval_option === 'prompt' &&
             workflow?.status?.status !== 'approval-awaiting' &&
-            getPendingApprovalCount(workflow) ? (
+            getWorkflowPendingApprovals(approvals, workflow?.id).length ? (
               <Badge size="sm" theme="warn">
                 Pending approval
               </Badge>
@@ -112,6 +121,17 @@ export const WorkflowTimeline = ({
             caption={<ID>{workflow?.id}</ID>}
             underline={
               <span className="flex items-center gap-6 mt-1">
+                {workflow.app_branch_runs?.[0]?.commit_sha ? (
+                  <Text
+                    flex
+                    className="gap-1"
+                    variant="subtext"
+                    theme="neutral"
+                  >
+                    <Icon variant="GitCommitIcon" size={12} />
+                    {workflow.app_branch_runs[0].commit_sha.substring(0, 7)}
+                  </Text>
+                ) : null}
                 <Text
                   flex
                   className="gap-1"

@@ -19,6 +19,13 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 		DeployTimeout: containerImage.DeployTimeout,
 	}
 
+	if comp.Toggleable != nil {
+		configRequest.Toggleable = *comp.Toggleable
+	}
+	if comp.DefaultEnabled != nil {
+		configRequest.DefaultEnabled = *comp.DefaultEnabled
+	}
+
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}
@@ -40,6 +47,15 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 			GcpRegion:                containerImage.GCPGARImageConfig.GCPRegion,
 			ServiceAccountEmail:      containerImage.GCPGARImageConfig.ServiceAccountEmail,
 			WorkloadIdentityProvider: containerImage.GCPGARImageConfig.WorkloadIdentityProvider,
+		}
+	} else if containerImage.AzureACRImageConfig != nil {
+		configRequest.ImageURL = generics.ToPtr(containerImage.AzureACRImageConfig.ImageURL)
+		configRequest.Tag = containerImage.AzureACRImageConfig.Tag
+		configRequest.UpdatePolicy = containerImage.AzureACRImageConfig.UpdatePolicy
+		configRequest.AzureAcrImageConfig = &models.ServiceAzureACRImageConfigRequest{
+			RegistryURL: containerImage.AzureACRImageConfig.RegistryURL,
+			TenantID:    containerImage.AzureACRImageConfig.TenantID,
+			ClientID:    containerImage.AzureACRImageConfig.ClientID,
 		}
 	} else if containerImage.PublicImageConfig != nil {
 		configRequest.ImageURL = generics.ToPtr(containerImage.PublicImageConfig.ImageURL)

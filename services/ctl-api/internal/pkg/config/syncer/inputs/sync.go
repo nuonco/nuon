@@ -23,6 +23,8 @@ var (
 		"list":   true,
 		"number": true,
 		"string": true,
+		"yaml":   true,
+		"hcl":    true,
 	}
 )
 
@@ -69,6 +71,16 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		})
 	}
 
+	// Add synthetic override group if components need it
+	if synthetic := config.SyntheticComponentOverrideInputs(cfg.Components); len(synthetic) > 0 {
+		groups = append(groups, app.AppInputGroup{
+			Name:        config.ComponentOverrideInputGroup,
+			Description: "Reserved group for per-component install-level overrides (Helm values / Terraform vars).",
+			DisplayName: "Component overrides",
+			Index:       config.ComponentOverrideInputGroupIndex,
+		})
+	}
+
 	inputCfg := app.AppInputConfig{
 		AppConfigID:    appConfigID,
 		OrgID:          orgID,
@@ -85,11 +97,10 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 	}
 
 	// Create inputs
-	if len(cfg.Inputs.Inputs) > 0 {
-		inputs := make([]app.AppInput, 0, len(cfg.Inputs.Inputs))
+	var allInputs []app.AppInput
 
+	if len(cfg.Inputs.Inputs) > 0 {
 		for idx, input := range cfg.Inputs.Inputs {
-			// Find group ID
 			var groupID string
 			for _, group := range inputCfg.AppInputGroups {
 				if group.Name == input.Group {
@@ -98,13 +109,11 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 				}
 			}
 
-			// Determine source
 			source := app.AppInputSourceVendor
 			if input.UserConfigurable {
 				source = app.AppInputSourceCustomer
 			}
 
-			// Validate JSON defaults
 			if input.Type == "json" && input.Default != nil {
 				defaultStr := fmt.Sprintf("%v", input.Default)
 				if defaultStr != "" && !json.Valid([]byte(defaultStr)) {
@@ -122,7 +131,7 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 
 			inputType := generics.ValOrDefault(input.Type, "string")
 
-			inputs = append(inputs, app.AppInput{
+			allInputs = append(allInputs, app.AppInput{
 				OrgID:            inputCfg.OrgID,
 				AppInputConfigID: inputCfg.ID,
 				AppInputGroupID:  groupID,
@@ -137,8 +146,14 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 				Source:           source,
 			})
 		}
+	}
 
-		res := db.WithContext(ctx).Create(&inputs)
+	// Add synthetic component override inputs
+	syntheticInputs := buildComponentOverrideInputs(cfg, &inputCfg)
+	allInputs = append(allInputs, syntheticInputs...)
+
+	if len(allInputs) > 0 {
+		res := db.WithContext(ctx).Create(&allInputs)
 		if res.Error != nil {
 			return sync.SyncInternalErr{
 				Description: "unable to create app inputs",
@@ -149,6 +164,54 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 
 	state.InputConfigID = inputCfg.ID
 	return nil
+}
+
+func buildComponentOverrideInputs(cfg *config.AppConfig, inputCfg *app.AppInputConfig) []app.AppInput {
+	synthetic := config.SyntheticComponentOverrideInputs(cfg.Components)
+	if len(synthetic) == 0 {
+		return nil
+	}
+
+	var overrideGroupID string
+	for _, g := range inputCfg.AppInputGroups {
+		if g.Name == config.ComponentOverrideInputGroup {
+			overrideGroupID = g.ID
+			break
+		}
+	}
+
+	var inputs []app.AppInput
+	for _, syn := range synthetic {
+		desc, display := componentOverrideInputCopy(syn)
+		inputs = append(inputs, app.AppInput{
+			OrgID:            inputCfg.OrgID,
+			AppInputConfigID: inputCfg.ID,
+			AppInputGroupID:  overrideGroupID,
+			Name:             syn.Name,
+			Description:      desc,
+			DisplayName:      display,
+			Required:         false,
+			Sensitive:        false,
+			Type:             app.AppInputType(syn.Kind.InputType()),
+			Index:            syn.Index,
+			Source:           app.AppInputSourceVendor,
+		})
+	}
+	return inputs
+}
+
+func componentOverrideInputCopy(syn config.SyntheticOverrideInput) (description, displayName string) {
+	switch syn.Kind {
+	case config.ComponentOverrideKindHelmValues:
+		return fmt.Sprintf("Install-level Helm values override for component %q (YAML, deep-merged over app config).", syn.Component),
+			fmt.Sprintf("%s helm values", syn.Component)
+	case config.ComponentOverrideKindTFVars:
+		return fmt.Sprintf("Install-level Terraform vars override for component %q (.tfvars, highest precedence).", syn.Component),
+			fmt.Sprintf("%s tf vars", syn.Component)
+	default:
+		return fmt.Sprintf("Install-level override for component %q.", syn.Component),
+			fmt.Sprintf("%s override", syn.Component)
+	}
 }
 
 // validateInputs validates input names, group references, and types.
@@ -183,7 +246,7 @@ func validateInputs(cfg *config.AppConfig) error {
 		if !validInputTypes[inputType] {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("invalid input type: %s", inputType),
-				Description: fmt.Sprintf("Input '%s' has invalid type '%s'. Valid types are: bool, json, list, number, string", input.Name, inputType),
+				Description: fmt.Sprintf("Input '%s' has invalid type '%s'. Valid types are: bool, json, list, number, string, yaml, hcl", input.Name, inputType),
 			}
 		}
 	}

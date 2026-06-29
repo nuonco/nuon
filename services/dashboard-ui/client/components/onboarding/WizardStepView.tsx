@@ -41,7 +41,7 @@ export function WizardStepView() {
             {visibleStep.title}
           </Text>
           {visibleStep.description && (
-            <Text variant="body" theme="neutral" as="p" className="max-w-md !text-pretty">
+            <Text variant="body" theme="neutral" as="div" className="max-w-2xl !text-pretty">
               {visibleStep.description}
             </Text>
           )}

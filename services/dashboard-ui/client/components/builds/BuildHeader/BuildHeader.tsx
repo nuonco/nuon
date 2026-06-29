@@ -1,5 +1,8 @@
+import { useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { ClickToCopy } from '@/components/common/ClickToCopy'
 import { Duration } from '@/components/common/Duration'
 import { Icon } from '@/components/common/Icon'
@@ -9,13 +12,16 @@ import { LabeledValue } from '@/components/common/LabeledValue'
 import { LabeledStatus } from '@/components/common/LabeledStatus'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { Toast } from '@/components/surfaces/Toast'
 import { ComponentType } from '@/components/components/ComponentType'
 import { ComponentConfigContextTooltip } from '@/components/components/ComponentConfigContextTooltip'
 import { CommitDetails } from '@/components/common/CommitDetails'
 import { RunnerJobPlanButton } from '@/components/runners/RunnerJobPlan'
-import { CancelRunnerJobButton } from '@/components/runners/CancelRunnerJob'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
-import type { TApp, TBuild, TComponent } from '@/types'
+import { useOrg } from '@/hooks/use-org'
+import { useToast } from '@/hooks/use-toast'
+import { cancelComponentBuild } from '@/lib'
+import type { TApp, TAPIError, TBuild, TComponent } from '@/types'
 import { isImageBuild } from '@/utils/image-ref'
 import { toSentenceCase } from '@/utils/string-utils'
 
@@ -26,6 +32,44 @@ interface IBuildHeader {
 }
 
 export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
+  const { org } = useOrg()
+  const { addToast } = useToast()
+  const [hasBeenCanceled, setHasBeenCanceled] = useState(false)
+
+  const { mutate: cancelBuild, isPending: isCanceling } = useMutation<
+    unknown,
+    TAPIError
+  >({
+    mutationFn: () =>
+      cancelComponentBuild({
+        orgId: org.id,
+        appId: app.id,
+        componentId: component.id,
+        buildId: build.id,
+      }),
+    onSuccess: () => {
+      setHasBeenCanceled(true)
+      addToast(
+        <Toast heading="Build cancelled." theme="success">
+          <Text>Successfully cancelled the build.</Text>
+        </Toast>,
+      )
+    },
+    onError: (err: { error?: string }) => {
+      addToast(
+        <Toast heading="Cancel build failed." theme="error">
+          <Text>{err?.error || 'Unknown error occurred.'}</Text>
+        </Toast>,
+      )
+    },
+  })
+
+  const isCancelable =
+    build?.queue_signal &&
+    build?.status_v2?.status !== 'active' &&
+    build?.status_v2?.status !== 'error' &&
+    build?.status_v2?.status !== 'cancelled'
+
   return (
     <header className="p-6 border-b flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -103,17 +147,27 @@ export const BuildHeader = ({ component, build, app }: IBuildHeader) => {
             </Text>
           </div>
           <div className="flex items-center gap-4">
-            {build?.runner_job &&
-            build?.status_v2?.status !== 'active' &&
-            build?.status_v2?.status !== 'error' ? (
-              <CancelRunnerJobButton
-                jobType="build"
-                runnerJob={build?.runner_job}
-              />
+            {isCancelable ? (
+              <Button
+                variant="danger"
+                disabled={isCanceling || hasBeenCanceled}
+                onClick={() => cancelBuild()}
+              >
+                {isCanceling ? (
+                  <span className="flex items-center gap-2">
+                    <Icon variant="Loading" className="animate-spin" />
+                    Canceling
+                  </span>
+                ) : hasBeenCanceled ? (
+                  'Canceled'
+                ) : (
+                  'Cancel build'
+                )}
+              </Button>
             ) : null}
             {build?.queue_signal ? (
               <AdminDashboardLink
-                path={`/queue-signals?search=${build.id}`}
+                path={`/queues/${build.queue_signal.queue_id}/signals/${build.queue_signal.id}`}
                 label="View signal"
               />
             ) : null}

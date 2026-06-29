@@ -25,29 +25,35 @@ const MockManageButton = () => (
 export const Default = () => (
   <BranchDetailActions
     editButton={<MockEditButton />}
+    deleteButton={null}
     manageInstallsButton={<MockManageButton />}
     hasConfig={true}
     isTriggerPending={false}
     onTriggerRun={noop}
+    onTriggerPreview={noop}
   />
 )
 
 export const NoConfig = () => (
   <BranchDetailActions
     editButton={<MockEditButton />}
+    deleteButton={null}
     manageInstallsButton={<MockManageButton />}
     hasConfig={false}
     isTriggerPending={false}
     onTriggerRun={noop}
+    onTriggerPreview={noop}
   />
 )
 
 export const TriggerPending = () => (
   <BranchDetailActions
     editButton={<MockEditButton />}
+    deleteButton={null}
     manageInstallsButton={<MockManageButton />}
     hasConfig={true}
     isTriggerPending={true}
     onTriggerRun={noop}
+    onTriggerPreview={noop}
   />
 )

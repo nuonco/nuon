@@ -21,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) getInstallRegistryRepositoryConfig(
@@ -30,6 +31,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	appCfg *app.AppConfig,
 	stack *app.InstallStack,
 	installState *state.State,
+	roleSelection *operationroles.RoleSelection,
 ) (*configs.OCIRegistryRepository, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -42,7 +44,7 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	sessionName := fmt.Sprintf("oci-sync-%s-%s", installDeploy.InstallID, installDeploy.ID)
-	cloudAuth, err := p.getAuthForDeploy(ctx, installDeploy, compBuild, appCfg, stack, installState, sessionName)
+	cloudAuth, err := p.getAuthForDeploy(ctx, roleSelection, stack, sessionName)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get auth for install registry")
 	}
@@ -92,7 +94,9 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			)
 			return nil, errors.Wrap(err, "unable to render acr repository name")
 		}
-		cfg.Repository = repositoryStr
+		// Per-component paths so resolved-version tags can't collide across
+		// components. ACR creates nested repositories implicitly on push.
+		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.acr.login_server}}", stateData)
 		if err != nil {
 			l.Error("error rendering registy url",
@@ -119,8 +123,9 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 			)
 			return nil, errors.Wrap(err, "unable to render gar repository url")
 		}
-		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE
-		cfg.Repository = repositoryStr + "/app"
+		// GAR requires an image name within the repo: HOST/PROJECT/REPO/IMAGE.
+		// Per-component paths so resolved-version tags can't collide across components.
+		cfg.Repository = repositoryStr + "/" + imageNameSegment(installDeploy.ComponentName)
 		loginServer, err := render.RenderV2("{{.nuon.sandbox.outputs.gar.registry_url}}", stateData)
 		if err != nil {
 			l.Error("error rendering registy url",
@@ -135,6 +140,29 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 	}
 
 	return cfg, nil
+}
+
+// imageNameSegment reduces a component name to a docker image path segment /
+// tag prefix: lowercase, every run of non-alphanumerics (including "_")
+// collapsed to a single "-", no leading or trailing separator.
+func imageNameSegment(componentName string) string {
+	var b strings.Builder
+	lastDash := false
+	for _, r := range strings.ToLower(componentName) {
+		switch {
+		case r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			b.WriteRune(r)
+			lastDash = false
+		case !lastDash:
+			b.WriteRune('-')
+			lastDash = true
+		}
+	}
+	segment := strings.Trim(b.String(), "-")
+	if segment == "" {
+		return "app"
+	}
+	return segment
 }
 
 func (b *Planner) getOrgRegistryRepositoryConfig(ctx workflow.Context, installID, deployID string) (*configs.OCIRegistryRepository, error) {

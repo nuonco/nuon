@@ -326,11 +326,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		checksum = armResult.Checksum
 	}
 
-	// AWS and Azure converge here, after template generation is complete.
-	// We upload both types of stacks to S3.
-	// Even though Azure cannot use the AWS Quickcreate flow, the Azure CLI can still pull a bicep template file via HTTP.
-
-	// upload and publish the stack
 	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
 		BucketKey: stackVersion.AWSBucketKey,
 		Template:  tmplByts,

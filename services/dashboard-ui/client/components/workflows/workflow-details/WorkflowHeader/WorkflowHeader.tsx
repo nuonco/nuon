@@ -1,4 +1,5 @@
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
+import { Link } from '@/components/common/Link'
 import { Badge } from '@/components/common/Badge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Icon } from '@/components/common/Icon'
@@ -24,7 +25,7 @@ export const WorkflowHeader = ({ workflow, install }: IWorkflowHeader) => {
     <div className="flex flex-wrap items-center gap-3 justify-between w-full">
       <div className="flex flex-col gap-4">
         <Link
-          to={`/${orgId}/installs/${installId}/workflows`}
+          href={`/${orgId}/installs/${installId}/workflows`}
           className="flex items-center gap-1.5 w-fit text-base leading-6 tracking-[-0.2px] font-strong text-primary-600 dark:text-primary-500 hover:text-primary-800 hover:dark:text-primary-400 focus:text-primary-800 focus:dark:text-primary-400 active:text-primary-900 active:dark:text-primary-600 focus-visible:rounded"
         >
           <Icon variant="CaretLeftIcon" weight="bold" /> All workflows

@@ -100,6 +100,12 @@ type GetActionWorkflowsParams struct {
 	*/
 	Q *string
 
+	/* TriggerTypes.
+
+	   filter by action workflow trigger type
+	*/
+	TriggerTypes *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -236,6 +242,17 @@ func (o *GetActionWorkflowsParams) SetQ(q *string) {
 	o.Q = q
 }
 
+// WithTriggerTypes adds the triggerTypes to the get action workflows params
+func (o *GetActionWorkflowsParams) WithTriggerTypes(triggerTypes *string) *GetActionWorkflowsParams {
+	o.SetTriggerTypes(triggerTypes)
+	return o
+}
+
+// SetTriggerTypes adds the triggerTypes to the get action workflows params
+func (o *GetActionWorkflowsParams) SetTriggerTypes(triggerTypes *string) {
+	o.TriggerTypes = triggerTypes
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetActionWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -329,6 +346,23 @@ func (o *GetActionWorkflowsParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if qQ != "" {
 
 			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.TriggerTypes != nil {
+
+		// query param trigger_types
+		var qrTriggerTypes string
+
+		if o.TriggerTypes != nil {
+			qrTriggerTypes = *o.TriggerTypes
+		}
+		qTriggerTypes := qrTriggerTypes
+		if qTriggerTypes != "" {
+
+			if err := r.SetQueryParam("trigger_types", qTriggerTypes); err != nil {
 				return err
 			}
 		}

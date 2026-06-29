@@ -11,6 +11,7 @@ import (
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 )
 
@@ -20,6 +21,7 @@ type handler struct {
 	settings    *settings.Settings
 	shutdowner  fx.Shutdowner
 	errRecorder *errs.Recorder
+	health      *health.Server
 }
 
 var _ jobs.JobHandler = (*handler)(nil)
@@ -32,6 +34,7 @@ type HandlerParams struct {
 	Settings    *settings.Settings
 	Shutdowner  fx.Shutdowner
 	ErrRecorder *errs.Recorder
+	Health      *health.Server
 }
 
 func New(params HandlerParams) *handler {
@@ -41,6 +44,7 @@ func New(params HandlerParams) *handler {
 		settings:    params.Settings,
 		shutdowner:  params.Shutdowner,
 		errRecorder: params.ErrRecorder,
+		health:      params.Health,
 	}
 }
 

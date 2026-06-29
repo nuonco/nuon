@@ -124,5 +124,13 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "112-runner-job-available-notify-trigger",
 			Fn:   m.Migration112RunnerJobAvailableNotifyTrigger,
 		},
+		{
+			Name: "113-backfill-runner-healthcheck-emitter",
+			Fn:   m.Migration113BackfillRunnerHealthcheckEmitter,
+		},
+		{
+			Name: "114-helm-releases-drop-body-column",
+			SQL:  `ALTER TABLE helm_releases DROP COLUMN IF EXISTS body;`,
+		},
 	}
 }

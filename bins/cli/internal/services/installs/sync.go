@@ -191,5 +191,9 @@ func parseInstallConfig(raw io.Reader) (*config.Install, error) {
 		return nil, fmt.Errorf("error parsing config: %w", err)
 	}
 
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("error validating config: %w", err)
+	}
+
 	return &cfg, nil
 }

@@ -72,12 +72,15 @@ func (w *Workflows) ExecuteJob(ctx workflow.Context, req *ExecuteJobRequest) (ap
 		return app.RunnerJobStatus(""), errors.Wrap(err, "unable to get job")
 	}
 
-	if generics.SliceContains(job.Status, failureStatuses) {
+	// Only an explicit "finished" status counts as success. Any other status —
+	// including non-terminal ones like "in-progress" or "available" left behind
+	// by a dropped execution — must fail the job rather than be read as success.
+	if job.Status != app.RunnerJobStatusFinished {
 		msg := "job did not succeed"
 		if job.StatusDescription != "" {
 			msg = fmt.Sprintf("job did not succeed: %s", job.StatusDescription)
 		}
-		return job.Status, temporal.NewNonRetryableApplicationError(msg, "api", fmt.Errorf("job failed with status %s: %s", job.Status, job.StatusDescription))
+		return job.Status, temporal.NewNonRetryableApplicationError(msg, "api", fmt.Errorf("job did not finish successfully, status %s: %s", job.Status, job.StatusDescription))
 	}
 
 	return job.Status, nil

@@ -31,6 +31,8 @@ type CreateHelmComponentConfigRequest struct {
 	DeployTimeout                string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool              `json:"skip_noops,omitempty"`
+	Toggleable                   *bool              `json:"toggleable,omitempty"`
+	DefaultEnabled               *bool              `json:"default_enabled,omitempty"`
 	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
@@ -229,6 +231,8 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		DeployTimeout:                req.DeployTimeout,
 		MaxAutoRetries:               req.MaxAutoRetries,
 		SkipNoops:                    req.SkipNoops,
+		Toggleable:                   req.Toggleable,
+		DefaultEnabled:               req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
 		OperationRoles:               operationRoles,
 	}

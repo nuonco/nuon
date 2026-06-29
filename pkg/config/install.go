@@ -157,6 +157,36 @@ type Install struct {
 	InputGroups    []InputGroup          `mapstructure:"inputs,omitempty" toml:"inputs,omitempty"`
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
+
+	// ComponentToggles controls which toggleable components are enabled or disabled
+	// for this install, keyed by component name. true = enabled, false = disabled.
+	// Absent keys fall through to the component's default_enabled setting.
+	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
+
+	// Components holds per-component install-level overrides, keyed by component
+	// name. Each override deep-merges over the component's app-config values and
+	// wins. It is carried through the install input system under a reserved
+	// synthetic input name (see component_override.go).
+	Components map[string]ComponentOverride `mapstructure:"components,omitempty" toml:"components,omitempty"`
+}
+
+// ComponentOverride is a per-component install-level override. Exactly one field
+// is meaningful per component, matching the component's type (Helm vs Terraform).
+type ComponentOverride struct {
+	// HelmValues is a raw YAML values override for a Helm component, merged as the
+	// highest-precedence values layer at deploy time.
+	HelmValues string `mapstructure:"helm_values,omitempty" toml:"helm_values,omitempty"`
+	// TFVars is a raw .tfvars (HCL or JSON) override for a Terraform component,
+	// appended as the final, highest-precedence -var-file at deploy time.
+	TFVars string `mapstructure:"tf_vars,omitempty" toml:"tf_vars,omitempty"`
+}
+
+func (c ComponentOverride) JSONSchemaExtend(schema *jsonschema.Schema) {
+	NewSchemaBuilder(schema).
+		Field("helm_values").Short("install-level Helm values override (YAML)").
+		Long("Raw YAML that deep-merges over the Helm component's app-config values and wins on overlapping keys. Only valid for Helm components.").
+		Field("tf_vars").Short("install-level Terraform vars override (.tfvars)").
+		Long("Raw .tfvars (HCL or JSON) appended as the final, highest-precedence -var-file. Variables must be declared in the module. Only valid for Terraform components.")
 }
 
 func (a Install) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -203,6 +233,23 @@ func (i *Install) Validate() error {
 		return nil
 	}
 
+	// Catch malformed override documents at config-parse time, before any API
+	// call or deploy, so a YAML/HCL typo surfaces immediately.
+	for compName, override := range i.Components {
+		if err := ValidateInputValueSyntax(InputTypeYAML, override.HelmValues); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("component %q helm_values override is not valid YAML", compName),
+				Err:         fmt.Errorf("component %q helm_values override: %w", compName, err),
+			}
+		}
+		if err := ValidateInputValueSyntax(InputTypeHCL, override.TFVars); err != nil {
+			return ErrConfig{
+				Description: fmt.Sprintf("component %q tf_vars override is not valid HCL/tfvars", compName),
+				Err:         fmt.Errorf("component %q tf_vars override: %w", compName, err),
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -211,6 +258,17 @@ func (i *Install) FlattenedInputs() map[string]string {
 	for _, group := range i.InputGroups {
 		for key, val := range group.Inputs {
 			flattened[key] = val
+		}
+	}
+	// Per-component overrides are carried through the input system under reserved
+	// synthetic input names so they reuse install-input storage, redaction,
+	// diffing, and the input-update redeploy flow.
+	for compName, override := range i.Components {
+		if override.HelmValues != "" {
+			flattened[HelmValuesOverrideInputName(compName)] = override.HelmValues
+		}
+		if override.TFVars != "" {
+			flattened[TFVarsOverrideInputName(compName)] = override.TFVars
 		}
 	}
 	return flattened
@@ -302,6 +360,33 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 		}
 	}
 
+	if len(i.Labels) > 0 || len(upstreamInstall.Labels) > 0 {
+		labelDiffs := make([]*diff.Diff, 0)
+		seen := make(map[string]bool)
+		for k, v := range i.Labels {
+			seen[k] = true
+			labelDiffs = append(labelDiffs, diff.NewDiff(
+				diff.WithKey(k),
+				diff.WithStringDiff(upstreamInstall.Labels[k], v),
+			))
+		}
+		for k, v := range upstreamInstall.Labels {
+			if seen[k] {
+				continue
+			}
+			labelDiffs = append(labelDiffs, diff.NewDiff(
+				diff.WithKey(k),
+				diff.WithStringDiff(v, ""),
+			))
+		}
+		if len(labelDiffs) > 0 {
+			diffs = append(diffs, diff.NewDiff(
+				diff.WithKey("labels"),
+				diff.WithChildren(labelDiffs...),
+			))
+		}
+	}
+
 	if i.AWSAccount != nil {
 		diffs = append(diffs, diff.NewDiff(
 			diff.WithKey("aws_account"), diff.WithChildren(diff.NewDiff(
@@ -341,16 +426,22 @@ func (i *Install) Diff(upstreamInstall *Install) (*diff.Diff, error) {
 	upstreamInputs := upstreamInstall.FlattenedInputs()
 
 	for key, val := range installInputs {
-		current, ok := upstreamInputs[key]
-		if !ok {
-			// for new installs, upstreamInputs will be empty,
-			// this handles the case separately.
-			current = ""
+		// upstreamInputs[key] is "" when absent, e.g. for new installs.
+		inputDiffs = append(inputDiffs, inputDiffNode(key, upstreamInputs[key], val))
+	}
+
+	// Detect cleared component overrides: present upstream but no longer set
+	// locally. Normal inputs are additive (omitting one does not clear it), so
+	// this removal pass is scoped to reserved synthetic override keys, which
+	// revert their component to app-config values when set back to empty.
+	for key, current := range upstreamInputs {
+		if _, ok := installInputs[key]; ok {
+			continue
 		}
-		inputDiffs = append(inputDiffs, diff.NewDiff(
-			diff.WithKey(key),
-			diff.WithStringDiff(current, val),
-		))
+		if !IsComponentOverrideInputName(key) {
+			continue
+		}
+		inputDiffs = append(inputDiffs, inputDiffNode(key, current, ""))
 	}
 	diffs = append(diffs, diff.NewDiff(
 		diff.WithKey("inputs"),

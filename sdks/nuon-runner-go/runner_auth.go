@@ -9,8 +9,9 @@ import (
 
 func (c *client) RunnerAuthAWS(ctx context.Context, req *models.ServiceRunnerAuthAWSRequest) (*models.ServiceRunnerAuthAWSResponse, error) {
 	resp, err := c.genClient.Operations.RunnerAuthAWS(&operations.RunnerAuthAWSParams{
-		Req:     req,
-		Context: ctx,
+		Req:        req,
+		Context:    ctx,
+		HTTPClient: c.unauthClient,
 	})
 	if err != nil {
 		return nil, err
@@ -21,8 +22,9 @@ func (c *client) RunnerAuthAWS(ctx context.Context, req *models.ServiceRunnerAut
 
 func (c *client) RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunnerAuthAWSIIDRequest) (*models.ServiceRunnerAuthAWSIIDResponse, error) {
 	resp, err := c.genClient.Operations.RunnerAuthAWSIID(&operations.RunnerAuthAWSIIDParams{
-		Req:     req,
-		Context: ctx,
+		Req:        req,
+		Context:    ctx,
+		HTTPClient: c.unauthClient,
 	})
 	if err != nil {
 		return nil, err
@@ -33,8 +35,9 @@ func (c *client) RunnerAuthAWSIID(ctx context.Context, req *models.ServiceRunner
 
 func (c *client) RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAuthGCPRequest) (*models.ServiceRunnerAuthGCPResponse, error) {
 	resp, err := c.genClient.Operations.RunnerAuthGCP(&operations.RunnerAuthGCPParams{
-		Req:     req,
-		Context: ctx,
+		Req:        req,
+		Context:    ctx,
+		HTTPClient: c.unauthClient,
 	})
 	if err != nil {
 		return nil, err
@@ -45,8 +48,9 @@ func (c *client) RunnerAuthGCP(ctx context.Context, req *models.ServiceRunnerAut
 
 func (c *client) RunnerAuthAzure(ctx context.Context, req *models.ServiceRunnerAuthAzureRequest) (*models.ServiceRunnerAuthAzureResponse, error) {
 	resp, err := c.genClient.Operations.RunnerAuthAzure(&operations.RunnerAuthAzureParams{
-		Req:     req,
-		Context: ctx,
+		Req:        req,
+		Context:    ctx,
+		HTTPClient: c.unauthClient,
 	})
 	if err != nil {
 		return nil, err

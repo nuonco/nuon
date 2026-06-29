@@ -23,11 +23,17 @@ func (a *Activities) CreateActionWorkflowRunRunnerJob(ctx context.Context, req *
 		return nil, errors.Wrap(err, "unable to get action workflow run")
 	}
 
+	// adhoc runs have no ActionWorkflowConfig; their timeout lives on the run
+	cfg := run.ActionWorkflowConfig
+	if cfg.Timeout == 0 {
+		cfg.Timeout = run.Timeout
+	}
+
 	job, err := a.runnersHelpers.CreateActionsWorkflowRunJob(ctx,
 		req.RunnerID,
 		req.ActionWorkflowRunID,
 		req.LogStreamID,
-		&run.ActionWorkflowConfig,
+		&cfg,
 		req.Metadata,
 	)
 	if err != nil {

@@ -17,8 +17,11 @@ import (
 )
 
 type TriggerAppBranchRunRequest struct {
-	ConfigID string `json:"config_id"` // optional - use latest if not provided
-	Force    bool   `json:"force"`     // force run even if no changes detected
+	ConfigID    string `json:"config_id"`     // optional - use latest if not provided
+	Force       bool   `json:"force"`         // force run even if no changes detected
+	PlanOnly    bool   `json:"plan_only"`     // plan-only preview mode (no apply)
+	AppConfigID string `json:"app_config_id"` // optional - use pre-existing app config (skips VCS fetch + config parse)
+	SkipBuilds  bool   `json:"skip_builds"`   // skip builds step (e.g. rollback to existing config with existing builds)
 }
 
 func (c *TriggerAppBranchRunRequest) Validate(v *validator.Validate) error {
@@ -90,6 +93,21 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 		return
 	}
 
+	// Validate app_config_id if provided
+	if req.AppConfigID != "" {
+		var appCfg app.AppConfig
+		res = s.db.WithContext(ctx).
+			Where(app.AppConfig{
+				AppID: appID,
+				OrgID: org.ID,
+			}).
+			First(&appCfg, "id = ?", req.AppConfigID)
+		if res.Error != nil {
+			ctx.Error(fmt.Errorf("unable to find app config: %w", res.Error))
+			return
+		}
+	}
+
 	// Load config (by ID or latest)
 	var config app.AppBranchConfig
 	if req.ConfigID != "" {
@@ -116,7 +134,10 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	run, err := s.helpers.CreateAppBranchRun(ctx, &helpers.CreateAppBranchRunRequest{
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: config.ID,
+		AppConfigID:       req.AppConfigID,
 		Force:             req.Force,
+		PlanOnly:          req.PlanOnly,
+		EventType:         "manual",
 	})
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch run: %w", err))
@@ -124,17 +145,28 @@ func (s *service) TriggerAppBranchRun(ctx *gin.Context) {
 	}
 
 	// 2. CREATE WORKFLOW (with run_id in metadata)
+	workflowMeta := map[string]string{
+		"run_id":        run.ID,
+		"app_id":        appID,
+		"config_id":     config.ID,
+		"config_number": strconv.Itoa(config.ConfigNumber),
+		"force":         strconv.FormatBool(req.Force),
+		"event_type":    "manual",
+		"commit_sha":    run.CommitSHA,
+	}
+	if req.AppConfigID != "" {
+		workflowMeta["app_config_id"] = req.AppConfigID
+	}
+	if req.SkipBuilds {
+		workflowMeta["skip_builds"] = "true"
+	}
+
 	workflow, err := s.helpers.CreateWorkflow(
 		ctx,
 		appBranchID,
 		app.WorkflowTypeAppBranchesRun,
-		map[string]string{
-			"run_id":        run.ID, // NEW: Include run ID
-			"config_id":     config.ID,
-			"config_number": strconv.Itoa(config.ConfigNumber),
-			"force":         strconv.FormatBool(req.Force),
-		},
-		false, // not plan only
+		workflowMeta,
+		req.PlanOnly,
 	)
 	if err != nil {
 		// Mark run as failed before returning

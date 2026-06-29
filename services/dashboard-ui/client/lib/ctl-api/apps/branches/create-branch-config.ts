@@ -17,11 +17,11 @@ export type TCreateBranchConfigRequest = {
   }
   install_groups?: Array<{
     name: string
-    install_ids: string[]
+    install_ids?: string[]
+    label_selector?: { match_labels?: Record<string, string>; not_match_labels?: Record<string, string> } | null
     order: number
     max_parallel?: number
-    requires_approval?: boolean
-    rollback_on_failure?: boolean
+    use_for_previews?: boolean
   }>
 }
 

@@ -63,6 +63,11 @@ func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.A
 	branches := make([]app.AppBranch, 0)
 
 	res := s.db.WithContext(ctx).
+		Model(&app.AppBranch{}).
+		Select(fmt.Sprintf("app_branches.*, "+
+			"(SELECT COUNT(*) FROM %s w "+
+			"WHERE w.owner_type = 'app_branches' AND w.owner_id = app_branches.id AND w.deleted_at = 0) AS workflow_count",
+			(&app.Workflow{}).TableName())).
 		Scopes(scopes.WithOffsetPagination).
 		Where(app.AppBranch{
 			OrgID: orgID,

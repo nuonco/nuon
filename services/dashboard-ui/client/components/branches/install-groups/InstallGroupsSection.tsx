@@ -1,8 +1,7 @@
-import { Badge } from '@/components/common/Badge'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import { SimpleInstallStatuses } from '@/components/installs/InstallStatuses'
+import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import type { TAppBranchConfig, TInstall } from '@/types'
 
 interface IInstallGroupsSection {
@@ -42,20 +41,10 @@ export const InstallGroupsSection = ({
               {group.name}
             </Text>
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              {group.requires_approval && (
-                <Badge theme="warn" size="sm">
-                  Requires approval
-                </Badge>
-              )}
               {(group.max_parallel || 1) > 1 && (
                 <Text variant="subtext" theme="neutral">
                   Max {group.max_parallel} parallel
                 </Text>
-              )}
-              {group.rollback_on_failure && (
-                <Badge theme="info" size="sm">
-                  Rollback on failure
-                </Badge>
               )}
             </div>
           </div>
@@ -90,9 +79,11 @@ export const InstallGroupsSection = ({
                     </div>
                     {install && (
                       <div className="shrink-0">
-                        <SimpleInstallStatuses
+                        <InstallStatuses
                           install={install}
                           isLabelHidden
+                          lazyComponents
+                          tooltipPosition="top"
                         />
                       </div>
                     )}

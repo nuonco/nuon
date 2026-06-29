@@ -18,6 +18,8 @@ title: 'Kubernetes Manifest'
 | **`labels`**<br/>object | Key/value labels used to organize and filter components. Metadata only; does not affect deployment | **Optional** | - |
 | **`dependencies`**<br/>array | component dependencies List of other components that must be deployed before this component. Automatically extracted from template references | **Optional** | `"database"`, `"infrastructure"` |
 | **`operation_roles`**<br/>[array](#operation_roles) | operation-specific IAM role assignments Map of component operations to IAM role names. Allows using different roles for different operations (provision, deprovision, update). Roles must be defined ... | **Optional** | - |
+| **`toggleable`**<br/>boolean | - | **Optional** | - |
+| **`default_enabled`**<br/>boolean | - | **Optional** | - |
 | **`manifest`**<br/>string | Kubernetes manifest Path to a YAML manifest file or inline manifest content for Kubernetes resources. Supports templating with variables like \{\{.nuon.install.id\}\}. Mutually exclusive with kusto... | **Optional** | `"./manifests/deployment.yaml"` |
 | **`kustomize`**<br/>[KustomizeConfig](#kustomize) | Kustomize configuration Configuration for building manifests from a kustomize overlay. Mutually exclusive with manifest. Requires either public_repo or connected_repo | **Optional** | - |
 | **`public_repo`**<br/>[PublicRepoConfig](#public_repo) | public repository with kustomize source Configuration for a public Git repository containing kustomize overlays. Only valid when using kustomize, not inline manifests | **Optional** | - |

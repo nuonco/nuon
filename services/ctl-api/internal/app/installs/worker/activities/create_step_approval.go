@@ -7,6 +7,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx/keys"
 )
 
 type CreateStepApprovalRequest struct {
@@ -46,6 +49,20 @@ func (a *Activities) CreateStepApproval(ctx context.Context, req *CreateStepAppr
 		OwnerID:               req.OwnerID,
 		Contents:              plan,
 		Type:                  req.Type,
+	}
+
+	if plan != "" {
+		// the blob upload in WorkflowStepApproval's BeforeCreate hook requires org_id on the context
+		if keys.OrgIDFromContext(ctx) == "" {
+			var step app.WorkflowStep
+			if res := a.db.WithContext(ctx).Select("org_id").First(&step, "id = ?", req.StepID); res.Error != nil {
+				return nil, errors.Wrap(res.Error, "unable to look up step org for approval contents")
+			}
+			ctx = cctx.SetOrgIDContext(ctx, step.OrgID)
+		}
+
+		sa.ContentsBlob = &blobstore.Blob{}
+		sa.ContentsBlob.Set(plan)
 	}
 
 	// workflows polymorphic step approvals do not have a runner job ID

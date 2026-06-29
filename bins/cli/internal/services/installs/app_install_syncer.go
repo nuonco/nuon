@@ -3,6 +3,7 @@ package installs
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"time"
@@ -137,6 +138,7 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 	req := models.ServiceCreateInstallRequest{
 		Name:   &installCfg.Name,
 		Inputs: installCfg.FlattenedInputs(),
+		Labels: installCfg.Labels,
 		Metadata: &models.HelpersInstallMetadata{
 			ManagedBy: ManagedByNuonCLIConfig,
 		},
@@ -212,12 +214,25 @@ func (s *appInstallSyncer) syncExistingInstall(
 	}
 
 	definedInputs := installCfg.FlattenedInputs()
+	var inputErrs []error
 	for _, ic := range appConfig.Input.Inputs {
-		if ic.Required {
-			if _, ok := definedInputs[ic.Name]; !ok {
-				return nil, fmt.Errorf("missing required input %s", ic.Name)
+		_, defined := definedInputs[ic.Name]
+
+		// user_configurable (source=customer) inputs are owned by the customer/install
+		// stack, not the install config, so they cannot be set via sync.
+		if ic.Source == string(models.AppAppInputSourceCustomer) {
+			if defined {
+				inputErrs = append(inputErrs, fmt.Errorf("refusing to set user_configurable input %s", ic.Name))
 			}
+			continue
 		}
+
+		if ic.Required && !defined {
+			inputErrs = append(inputErrs, fmt.Errorf("missing required input %s", ic.Name))
+		}
+	}
+	if len(inputErrs) > 0 {
+		return nil, fmt.Errorf("\n%w", errors.Join(inputErrs...))
 	}
 
 	upstreamRawConfig, err := s.api.GenerateCLIInstallConfig(ctx, appInstall.ID)
@@ -317,6 +332,23 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
+	// Clearing a component override means reverting that component to its
+	// app-config values. The inputs API merges, so an omitted key is left
+	// untouched; to actually clear it we must send the reserved synthetic key
+	// with an empty value. Re-add override keys that exist on the install but
+	// are no longer set in the config.
+	for k, cur := range currInputs.Values {
+		if cur == "" {
+			continue
+		}
+		if _, ok := definedInputs[k]; ok {
+			continue
+		}
+		if config.IsComponentOverrideInputName(k) {
+			definedInputs[k] = ""
+		}
+	}
+
 	// Only send the inputs explicitly defined in the install config file. The API
 	// merges them with the install's existing values server-side, so we don't
 	// re-send the full set — in particular install_stack sourced inputs, which the
@@ -345,8 +377,40 @@ func (s *appInstallSyncer) syncExistingInstall(
 		}
 	}
 
+	if err := s.syncLabels(ctx, appInstall.ID, installCfg.Labels, upstreamConfig.Labels); err != nil {
+		return nil, fmt.Errorf("error syncing labels for install %s: %w", appInstall.Name, err)
+	}
+
 	ui.PrintSuccess(fmt.Sprintf("install %s updated successfully", appInstall.Name))
 	return appInstall, nil
+}
+
+func (s *appInstallSyncer) syncLabels(ctx context.Context, installID string, desired, current map[string]string) error {
+	toSet := make(map[string]string)
+	for k, v := range desired {
+		if cur, ok := current[k]; !ok || cur != v {
+			toSet[k] = v
+		}
+	}
+
+	var toRemove []string
+	for k := range current {
+		if _, ok := desired[k]; !ok {
+			toRemove = append(toRemove, k)
+		}
+	}
+
+	if len(toSet) > 0 {
+		if _, err := s.api.AddInstallLabels(ctx, installID, toSet); err != nil {
+			return fmt.Errorf("unable to set labels: %w", err)
+		}
+	}
+	if len(toRemove) > 0 {
+		if _, err := s.api.RemoveInstallLabels(ctx, installID, toRemove); err != nil {
+			return fmt.Errorf("unable to remove labels: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *appInstallSyncer) handleWorkflow(ctx context.Context, workflowID string, installID string, autoApprove, wait bool) error {
@@ -469,7 +533,7 @@ func installDiffToString(d *diff.Diff, indent string) string {
 	}
 
 	if d.Diff != nil {
-		str := fmt.Sprintf("%s: %s", d.Key, d.Diff.Diff)
+		str := fmt.Sprintf("%s: %s", installDiffKey(d.Key), d.Diff.Diff)
 		switch d.Diff.Op {
 		case diff.OpAdd:
 			str = bubbles.Green(str)
@@ -481,9 +545,21 @@ func installDiffToString(d *diff.Diff, indent string) string {
 		return indent + str + "\n"
 	}
 
-	diff := indent + d.Key + ":\n"
+	diff := indent + installDiffKey(d.Key) + ":\n"
 	for _, child := range d.Children {
 		diff = diff + installDiffToString(child, indent+"\t")
 	}
 	return diff
+}
+
+// installDiffKey maps a raw diff key to its user-facing form. Per-component
+// override inputs are stored under reserved synthetic names
+// (nuon_component_override_v1_<kind>_<hex>); decode those back to the
+// components.<name>.<kind> form the user wrote in the install config so the diff
+// never leaks the reserved keys.
+func installDiffKey(key string) string {
+	if kind, component, ok := config.ParseComponentOverrideInputName(key); ok {
+		return fmt.Sprintf("components.%s.%s", component, kind)
+	}
+	return key
 }

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -122,6 +123,28 @@ func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovals() {
 			assert.Equal(s.T(), tc.wantInResult, found, "approval %s: wantInResult=%v", approval.ID, tc.wantInResult)
 		})
 	}
+}
+
+func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsOmitsContents() {
+	install := s.createTestInstall()
+	workflow := s.deps.Seeder.CreateWorkflow(s.ctx, s.T(), install.ID, app.WorkflowTypeReprovision)
+	step := s.deps.Seeder.CreateWorkflowStep(s.ctx, s.T(), workflow.ID)
+	approval := s.deps.Seeder.CreateWorkflowStepApproval(s.ctx, s.T(), step.ID, app.TerraformPlanApprovalType, "terraform plan output")
+
+	// Contents is json:"-", so the omit can only be asserted against the
+	// query result directly.
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	approvals, err := s.installsService.getOrgPendingApprovals(c, s.testOrg.ID)
+	require.NoError(s.T(), err)
+
+	found := false
+	for _, a := range approvals {
+		if a.ID == approval.ID {
+			found = true
+			assert.Empty(s.T(), a.Contents)
+		}
+	}
+	require.True(s.T(), found, "seeded approval not returned")
 }
 
 func (s *InstallsServiceTestSuite) TestGetOrgPendingApprovalsPagination() {

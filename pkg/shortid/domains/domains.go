@@ -34,6 +34,14 @@ func NewAppBranchRunID() string {
 	return shortid.NewNanoID("arn")
 }
 
+func NewInstallConfigUpdateID() string {
+	return shortid.NewNanoID("icu")
+}
+
+func NewInstallGroupRunID() string {
+	return shortid.NewNanoID("igr")
+}
+
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }
@@ -364,6 +372,14 @@ func NewVCSCommitID() string {
 
 func NewVCSEventID() string {
 	return shortid.NewNanoID("vce")
+}
+
+func NewGithubEventID() string {
+	return shortid.NewNanoID("ghe")
+}
+
+func NewVCSConnectionEventID() string {
+	return shortid.NewNanoID("vcx")
 }
 
 func NewVCSWebhookSubscriptionID() string {

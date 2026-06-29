@@ -1,0 +1,10 @@
+module.network.aws_vpc.main: Creating...
+╷
+│ Error: creating EC2 VPC: UnauthorizedOperation: You are not authorized to perform this operation. Encoded authorization failure message: aBcDeFgHiJkLmNoPqRsTuVwXyZ012345 Operation: ec2:CreateVpc
+│ 	status code: 403, request id: 11112222-aaaa-bbbb-cccc-333344445555
+│
+│   with module.network.aws_vpc.main,
+│   on .terraform/modules/network/vpc.tf line 8, in resource "aws_vpc" "main":
+│    8: resource "aws_vpc" "main" {
+│
+╵

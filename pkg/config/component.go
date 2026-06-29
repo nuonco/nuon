@@ -67,6 +67,8 @@ type Component struct {
 	Labels         map[string]string     `mapstructure:"labels,omitempty" toml:"labels,omitempty"`
 	Dependencies   []string              `mapstructure:"dependencies,omitempty" toml:"dependencies,omitempty"`
 	OperationRoles []EntityOperationRole `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
+	Toggleable     *bool                 `mapstructure:"toggleable,omitempty" toml:"toggleable,omitempty"`
+	DefaultEnabled *bool                 `mapstructure:"default_enabled,omitempty" toml:"default_enabled,omitempty"`
 
 	// WARNING: properties below should be ignored by nuonhash when empty
 	HelmChart          *HelmChartComponentConfig          `mapstructure:"helm_chart,omitempty" toml:"helm_chart,omitempty" jsonschema:"oneof_required=helm" nuonhash:"omitempty"`

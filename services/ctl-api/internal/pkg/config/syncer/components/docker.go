@@ -20,7 +20,7 @@ import (
 
 // SyncDockerBuildComponent creates or updates a Docker build component configuration.
 // Duplicates logic from services/ctl-api/internal/app/components/service/create_docker_build_component_config.go
-func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	// Validate Docker build component
 	if err := validateDockerBuildComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
@@ -44,7 +44,6 @@ func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, comp *config.Com
 	}
 
 	// Build VCS configs using helpers
-	vcsHelper := vcshelpers.New(vcshelpers.Params{})
 
 	var githubVCSConfig *app.ConnectedGithubVCSConfig
 	var publicGitConfig *app.PublicGitVCSConfig

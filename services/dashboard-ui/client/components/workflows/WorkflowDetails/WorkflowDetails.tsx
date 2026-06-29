@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Text } from '@/components/common/Text'
+import { useDismissedStepBanners } from '@/hooks/use-dismissed-step-banners'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { StepBanner } from '../step-details/StepBanner'
 import {
@@ -72,10 +73,10 @@ export const WorkflowDetails = ({ workflow, failedSteps }: IWorkflowDetails) => 
 
 const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
   const [expanded, setExpanded] = useState(false)
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const { isDismissed, dismiss } = useDismissedStepBanners()
   const { addPanel } = useSurfaces()
 
-  const visibleSteps = steps.filter((s) => !dismissed.has(s.id))
+  const visibleSteps = steps.filter((s) => !isDismissed(s.id))
 
   if (visibleSteps.length === 0) return null
 
@@ -104,7 +105,7 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
         <StepBanner
           step={step}
           planOnly
-          onDismiss={isRetried(step) ? () => setDismissed((prev) => new Set(prev).add(step.id)) : undefined}
+          onDismiss={isRetried(step) ? () => dismiss(step.id) : undefined}
           onViewDetails={() => openPanel(step)}
         />
       </div>
@@ -120,7 +121,7 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
         <StepBanner
           step={mostRecent}
           planOnly
-          onDismiss={isRetried(mostRecent) ? () => setDismissed((prev) => new Set(prev).add(mostRecent.id)) : undefined}
+          onDismiss={isRetried(mostRecent) ? () => dismiss(mostRecent.id) : undefined}
           onViewDetails={() => openPanel(mostRecent)}
         />
       </div>
@@ -144,7 +145,7 @@ const FailedStepBanners = ({ steps }: { steps: TWorkflowStep[] }) => {
             <StepBanner
               step={step}
               planOnly
-              onDismiss={isRetried(step) ? () => setDismissed((prev) => new Set(prev).add(step.id)) : undefined}
+              onDismiss={isRetried(step) ? () => dismiss(step.id) : undefined}
               onViewDetails={() => openPanel(step)}
             />
           </div>

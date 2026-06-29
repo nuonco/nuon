@@ -26,7 +26,9 @@ func Default() Interests {
 				ApprovalResponses: true,
 			},
 			ResourceStacks: {
-				Outcome: OutcomeCompletion,
+				Outcome:       OutcomeCompletion,
+				RoleChanges:   true,
+				InputsUpdated: true,
 			},
 			ResourceComponents: {
 				Outcome:           OutcomeCompletion,
@@ -44,6 +46,10 @@ func Default() Interests {
 				Outcome:           OutcomeCompletion,
 				ApprovalRequests:  true,
 				ApprovalResponses: true,
+			},
+			ResourceAppBranches: {
+				Outcome:      OutcomeCompletion,
+				ConfigSynced: true,
 			},
 		},
 	}

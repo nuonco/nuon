@@ -32,14 +32,30 @@ const STEPS = [
     id: 'step-1',
     title: 'Welcome to Nuon',
     navLabel: 'Get Started',
-    description: "Let's setup your account.",
     component: WelcomeStep,
   },
   {
     id: 'step-2',
     title: 'Create your org',
     navLabel: 'Create Org',
-    description: 'Set up your organization.',
+    description: (
+      <div className="flex flex-col gap-2">
+        <p>
+          An org is an isolated place for metadata about your apps, installs, workflows and logs in Nuon Cloud.
+        </p>
+        <p className="text-sm opacity-80">
+          <a
+            href="https://nuon.co/contact-sales"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 dark:text-primary-400 underline underline-offset-2"
+          >
+            Contact sales
+          </a>{' '}
+          if you want to run Nuon&apos;s control plane in your AWS, Azure, or GCP.
+        </p>
+      </div>
+    ),
     component: CreateOrgStep,
   },
   {
@@ -60,17 +76,25 @@ const STEPS = [
   },
   {
     id: 'step-5',
-    title: 'Sync your app config',
+    title: 'Sync your app',
     navLabel: 'Sync App',
-    description:
-      'Syncing pushes your app config to Nuon and triggers a build. Run this from inside your cloned app directory.',
+    description: (
+      <div className="flex flex-col gap-2">
+        <p>
+          Syncing pushes your app to Nuon and triggers a build. Run this from inside your cloned app directory.
+        </p>
+        <p className="text-sm opacity-80">
+          A build creates OCI artifacts for the components in your app (e.g., Helm, Terraform, container image, Kubernetes manifest, etc.) and stores them in an isolated container registry in your org.
+        </p>
+      </div>
+    ),
     component: SyncAppStep,
   },
   {
     id: 'step-6',
     title: 'Create an install',
     navLabel: 'Deploy Install',
-    description: 'Create an install to deploy your app to a cloud account.',
+    description: 'Create an install to deploy your app to a cloud account. (Scroll down to find the Create install button.)',
     component: CreateInstallStep,
   },
 ]

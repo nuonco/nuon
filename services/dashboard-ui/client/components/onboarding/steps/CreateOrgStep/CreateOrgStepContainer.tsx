@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { createOrg, getOrg } from '@/lib'
-import { useAuth } from '@/hooks/use-auth'
-import { useConfig } from '@/hooks/use-config'
 import { useOnboardingJourney } from '@/hooks/use-onboarding-journey'
 import type { IWizardStepComponentProps } from '@/providers/onboarding-wizard-provider'
 import type { TOrg } from '@/types'
@@ -12,12 +10,9 @@ export const CreateOrgStepContainer = ({
   onAdvance,
   nextStepTitle,
   setSharedData,
-  sharedData,
 }: IWizardStepComponentProps) => {
   const [createdOrg, setCreatedOrg] = useState<TOrg | null>(null)
   const [orgName, setOrgName] = useState('')
-  const { user } = useAuth()
-  const { isByoc, sfTrialEndpoint } = useConfig()
   const { isStepComplete, getStepMetadata } = useOnboardingJourney()
 
   const orgCreated = isStepComplete('org_created')
@@ -31,25 +26,6 @@ export const CreateOrgStepContainer = ({
     onSuccess: (org) => {
       setCreatedOrg(org)
       setSharedData('orgId', org.id)
-
-      if (!isByoc && sfTrialEndpoint) {
-        const nameParts = (user?.name ?? '').split(' ')
-        const firstName = nameParts[0] ?? ''
-        const lastName = nameParts.slice(1).join(' ') || 'ULN'
-        fetch(sfTrialEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firstName,
-            lastName,
-            email: user?.email,
-            companyName: `${sharedData.companyName ?? ''} | ${org.name}`,
-            jobTitle: sharedData.jobTitle,
-            notes: sharedData.tellUsMore,
-            subject: 'trial-signup',
-          }),
-        }).catch(() => {})
-      }
     },
   })
 

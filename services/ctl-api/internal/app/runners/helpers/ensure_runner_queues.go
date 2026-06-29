@@ -3,9 +3,12 @@ package helpers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
+	queuesignal "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 )
 
 const runnerSignalsQueueName = "runner-signals"
@@ -13,7 +16,7 @@ const runnerSignalsQueueName = "runner-signals"
 // EnsureRunnerSignalsQueue creates the runner-signals queue if it doesn't exist.
 // Safe to call multiple times — queueClient.Create is idempotent.
 func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string) error {
-	_, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
+	q, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{
 		OwnerID:     runnerID,
 		OwnerType:   "runners",
 		Namespace:   "runners",
@@ -24,6 +27,38 @@ func (h *Helpers) EnsureRunnerSignalsQueue(ctx context.Context, runnerID string)
 	if err != nil {
 		return fmt.Errorf("unable to ensure runner-signals queue: %w", err)
 	}
+
+	emitters, err := h.emitterClient.GetEmittersByQueueID(ctx, q.ID)
+	if err != nil {
+		return fmt.Errorf("unable to list emitters for runner-signals queue: %w", err)
+	}
+
+	hasHealthcheckEmitter := false
+	for _, em := range emitters {
+		if em.Name == "runner-healthcheck" {
+			hasHealthcheckEmitter = true
+			break
+		}
+	}
+
+	if !hasHealthcheckEmitter {
+		if _, err := h.emitterClient.CreateEmitter(ctx, &emitterclient.CreateEmitterRequest{
+			QueueID:         q.ID,
+			Name:            "runner-healthcheck",
+			Description:     "Periodic runner-level health check",
+			Mode:            app.QueueEmitterModeCron,
+			CronSchedule:    runnerHealthcheckSchedule(h.cfg.Env),
+			JitterWindow:    30 * time.Second,
+			SignalType:      "runner_healthcheck",
+			SignalExpiresIn: runnerHealthcheckSignalExpiry,
+			SignalTemplate: queuesignal.NewRaw("runner_healthcheck", map[string]any{
+				"runner_id": runnerID,
+			}),
+		}); err != nil {
+			return fmt.Errorf("unable to create runner healthcheck emitter: %w", err)
+		}
+	}
+
 	return nil
 }
 

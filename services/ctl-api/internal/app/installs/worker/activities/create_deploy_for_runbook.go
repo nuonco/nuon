@@ -25,11 +25,15 @@ func (a *Activities) CreateDeployForRunbook(ctx context.Context, req CreateDeplo
 		return nil, fmt.Errorf("unable to find install component: %w", res.Error)
 	}
 
-	// Get latest build for this component
+	// Get latest build for this component. ComponentBuild.ComponentID is
+	// gorm:"-" (derived in AfterQuery), so it cannot be used as a query
+	// predicate; join through component_config_connections to filter on the
+	// real component_id column.
 	var build app.ComponentBuild
 	res = a.db.WithContext(ctx).
-		Where(app.ComponentBuild{ComponentID: req.ComponentID}).
-		Order("created_at DESC").
+		Joins("JOIN component_config_connections ON component_config_connections.id = component_builds.component_config_connection_id").
+		Where("component_config_connections.component_id = ?", req.ComponentID).
+		Order("component_builds.created_at DESC").
 		First(&build)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to find latest build for component: %w", res.Error)

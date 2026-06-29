@@ -242,6 +242,333 @@ export const IsRetryAuto = () =>
     } as TWorkflowStep,
   ])
 
+const retryGroupAttempt = (idx: number, overrides: Partial<TWorkflowStep>) =>
+  ({
+    ...base,
+    id: `step-cert-${idx}`,
+    name: 'sync and plan certificate',
+    group_idx: 3,
+    finished: true,
+    execution_time: 12000000000 + idx * 1000000000,
+    ...overrides,
+  }) as TWorkflowStep
+
+export const RetriedGroup = () =>
+  wrap([
+    retryGroupAttempt(1, {
+      status: {
+        status: 'error',
+        status_human_description: 'failed to sync certificate',
+        history: [],
+        metadata: { auto_retried: true, retry_idx: 1, max_retries: 15 },
+      },
+    }),
+    retryGroupAttempt(2, {
+      status: {
+        status: 'error',
+        status_human_description: 'failed to sync certificate',
+        history: [],
+        metadata: { auto_retried: true, retry_idx: 2, max_retries: 15 },
+      },
+    }),
+    retryGroupAttempt(3, {
+      status: {
+        status: 'error',
+        status_human_description: 'failed to sync certificate',
+        history: [],
+        metadata: { auto_retried: true, retry_idx: 3, max_retries: 15 },
+      },
+    }),
+    retryGroupAttempt(4, {
+      retryable: true,
+      execution_time: 13000000000,
+      status: {
+        status: 'error',
+        status_human_description: 'failed to sync certificate',
+        history: [],
+        metadata: { is_retry: true, retry_idx: 3, max_retries: 15 },
+      },
+    }),
+  ])
+
+export const RetriedGroupAmongSteps = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-runner-healthy',
+      name: 'runner healthy',
+      group_idx: 1,
+      finished: true,
+      execution_time: 2000000000,
+      status: { status: 'success', history: [] },
+    } as TWorkflowStep,
+    retryGroupAttempt(1, {
+      status: {
+        status: 'error',
+        status_human_description: 'failed to sync certificate',
+        history: [],
+        metadata: { auto_retried: true, retry_idx: 1, max_retries: 15 },
+      },
+    }),
+    retryGroupAttempt(2, {
+      retryable: true,
+      execution_time: 13000000000,
+      status: {
+        status: 'error',
+        status_human_description: 'failed to sync certificate',
+        history: [],
+        metadata: { is_retry: true, retry_idx: 1, max_retries: 15 },
+      },
+    }),
+    {
+      ...base,
+      id: 'step-apply-cert',
+      name: 'apply certificate',
+      group_idx: 3,
+      started_at: undefined,
+      status: { status: 'pending', history: [] },
+    } as TWorkflowStep,
+  ])
+
+// --- Group retries (interleaved plan/apply) ---
+
+const planAttempt = (round: number, overrides: Partial<TWorkflowStep>) =>
+  ({
+    ...base,
+    id: `step-plan-${round}`,
+    name: 'sync and plan whoami',
+    step_target_type: 'install_deploys',
+    execution_type: 'approval',
+    group_idx: 7,
+    group_retry_idx: round,
+    ...overrides,
+  }) as TWorkflowStep
+
+const applyAttempt = (round: number, overrides: Partial<TWorkflowStep>) =>
+  ({
+    ...base,
+    id: `step-apply-${round}`,
+    name: 'apply whoami',
+    step_target_type: 'install_deploys',
+    group_idx: 7,
+    group_retry_idx: round,
+    ...overrides,
+  }) as TWorkflowStep
+
+export const InterleavedGroupRetry = () =>
+  wrap([
+    planAttempt(0, {
+      retried: true,
+      finished: true,
+      execution_time: 28000000000,
+      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+    }),
+    applyAttempt(0, {
+      finished: true,
+      execution_time: 7000000000,
+      status: {
+        status: 'error',
+        history: [],
+        metadata: { auto_retried: true, retry_idx: 1, max_retries: 15 },
+      },
+    }),
+    planAttempt(1, {
+      retried: true,
+      finished: true,
+      execution_time: 25000000000,
+      status: { status: 'success', history: [], metadata: { status: 'approved' } },
+    }),
+    applyAttempt(1, {
+      finished: true,
+      execution_time: 7000000000,
+      status: {
+        status: 'error',
+        history: [],
+        metadata: { auto_retried: true, retry_idx: 2, max_retries: 15 },
+      },
+    }),
+    planAttempt(2, {
+      execution_type: 'approval',
+      status: {
+        status: 'approval-awaiting',
+        history: [],
+        metadata: { is_retry: true, retry_idx: 2 },
+      },
+      approval: { id: 'apr-1', type: 'terraform_plan' },
+    }),
+    applyAttempt(2, {
+      started_at: undefined,
+      status: {
+        status: 'pending',
+        history: [],
+        metadata: { is_retry: true, retry_idx: 2 },
+      },
+    }),
+    {
+      ...base,
+      id: 'step-alb',
+      name: 'sync and plan application_load_balancer',
+      group_idx: 8,
+      started_at: undefined,
+      status: { status: 'pending', history: [] },
+    } as TWorkflowStep,
+  ])
+
+// --- Policy results ---
+
+export const PolicyWarning = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-policy-warn',
+      name: 'provision sandbox plan',
+      finished: true,
+      execution_time: 60000000000,
+      status: {
+        status: 'success',
+        history: [],
+        metadata: {
+          passed_policy_ids: ['pol-tags', 'pol-region'],
+          warn_violations: [
+            {
+              policy_id: 'pol-public-endpoint',
+              message:
+                "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled - ensure this is intentional for demo/development environments",
+              severity: 'warn',
+            },
+          ],
+        },
+      },
+    } as TWorkflowStep,
+  ])
+
+export const PolicyViolations = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-policy-deny',
+      name: 'apply terraform',
+      finished: true,
+      execution_time: 45000000000,
+      status: {
+        status: 'error',
+        history: [],
+        metadata: {
+          deny_violations: [
+            {
+              policy_id: 'pol-public-read',
+              message:
+                "S3 bucket 'module.storage.aws_s3_bucket.artifacts[0]' must not allow public read access - set 'block_public_acls' and 'restrict_public_buckets' to true before this can be applied",
+              severity: 'deny',
+            },
+            {
+              policy_id: 'pol-encryption',
+              message:
+                "EBS volume 'module.eks.aws_ebs_volume.data' is not encrypted at rest - all persistent volumes must use a customer-managed KMS key per the security baseline",
+              severity: 'deny',
+            },
+          ],
+          warn_violations: [
+            {
+              policy_id: 'pol-public-endpoint',
+              message:
+                "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled - ensure this is intentional for demo/development environments",
+              severity: 'warn',
+            },
+          ],
+        },
+      },
+    } as TWorkflowStep,
+  ])
+
+export const PolicyViolationAndWarning = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-policy-mixed',
+      name: 'apply terraform',
+      finished: true,
+      execution_time: 45000000000,
+      status: {
+        status: 'error',
+        history: [],
+        metadata: {
+          deny_violations: [
+            {
+              policy_id: 'pol-public-read',
+              message:
+                "S3 bucket 'module.storage.aws_s3_bucket.artifacts[0]' must not allow public read access - set 'block_public_acls' and 'restrict_public_buckets' to true before this can be applied",
+              severity: 'deny',
+            },
+          ],
+          warn_violations: [
+            {
+              policy_id: 'pol-public-endpoint',
+              message:
+                "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled - ensure this is intentional for demo/development environments",
+              severity: 'warn',
+            },
+          ],
+        },
+      },
+    } as TWorkflowStep,
+  ])
+
+export const PolicyResultsAmongSteps = () =>
+  wrap([
+    {
+      ...base,
+      id: 'step-runner-healthy',
+      name: 'runner healthy',
+      finished: true,
+      execution_time: 2000000000,
+      status: { status: 'success', history: [] },
+    } as TWorkflowStep,
+    {
+      ...base,
+      id: 'step-policy-warn-2',
+      name: 'provision sandbox plan',
+      finished: true,
+      execution_time: 60000000000,
+      status: {
+        status: 'success',
+        history: [],
+        metadata: {
+          passed_policy_ids: ['pol-tags'],
+          warn_violations: [
+            {
+              policy_id: 'pol-public-endpoint',
+              message:
+                "EKS cluster 'module.eks.aws_eks_cluster.this[0]' has public endpoint access enabled - ensure this is intentional for demo/development environments",
+              severity: 'warn',
+            },
+          ],
+        },
+      },
+    } as TWorkflowStep,
+    {
+      ...base,
+      id: 'step-policy-deny-2',
+      name: 'apply terraform',
+      finished: true,
+      execution_time: 45000000000,
+      status: {
+        status: 'error',
+        history: [],
+        metadata: {
+          deny_violations: [
+            {
+              policy_id: 'pol-encryption',
+              message:
+                "EBS volume 'module.eks.aws_ebs_volume.data' is not encrypted at rest - all persistent volumes must use a customer-managed KMS key per the security baseline",
+              severity: 'deny',
+            },
+          ],
+        },
+      },
+    } as TWorkflowStep,
+  ])
+
 // --- Approval states ---
 
 export const ApprovalAwaiting = () =>

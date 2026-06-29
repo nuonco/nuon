@@ -92,6 +92,11 @@ func (d *dataConverter) decodePayload(payload *commonpb.Payload) (*commonpb.Payl
 	}
 
 	size = float64(len(data))
+
+	if err := d.cache.Put(blobID, data); err != nil {
+		d.l.Warn("error writing decoded blob to cache", zap.Error(err), zap.String("blob_id", blobID))
+	}
+
 	return d.restorePayload(payload, data, metadataPrefix), nil
 }
 

@@ -4,13 +4,16 @@ package allsignals
 
 import (
 	// apps signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/appconfigsynced"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/appconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/created"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/deploygrouptoqueue"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/run"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/sandboxbuild"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/vcspush"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/created"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/customstacks"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/deprovision"
@@ -59,6 +62,8 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateinstallstackversion"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generatestate"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/inputsupdated"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/installconfigdiff"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/polldependencies"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisiondns"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/provisionrunner"
@@ -69,6 +74,8 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/reprovisionsandboxplan"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restart"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/restartchildren"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/rolechange"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
@@ -124,11 +131,13 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/reprovisionserviceaccount"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/restart"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/runnerhealthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/triggershutdown"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updatetag"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/signals/updateversion"
 
 	// vcs signals
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/github_event"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/healthcheck"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/signals/webhook_subscription"
 

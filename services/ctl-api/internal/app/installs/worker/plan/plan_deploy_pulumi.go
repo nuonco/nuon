@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	operationroles "github.com/nuonco/nuon/services/ctl-api/internal/pkg/operation-roles"
 )
 
 func (p *Planner) createPulumiDeployPlan(
@@ -23,6 +24,7 @@ func (p *Planner) createPulumiDeployPlan(
 	stack *app.InstallStack,
 	state *state.State,
 	installDeploy *app.InstallDeploy,
+	roleSelection *operationroles.RoleSelection,
 ) (*plantypes.PulumiDeployPlan, error) {
 	l, err := log.WorkflowLogger(ctx)
 	if err != nil {
@@ -81,11 +83,8 @@ func (p *Planner) createPulumiDeployPlan(
 
 	cloudAuth, err := p.getAuthForDeploy(
 		ctx,
-		installDeploy,
-		compBuild,
-		appCfg,
+		roleSelection,
 		stack,
-		state,
 		fmt.Sprintf("component-deploy-%s", installDeploy.ID),
 	)
 	if err != nil {
