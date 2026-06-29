@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
@@ -43,6 +44,13 @@ type RunnerJobExecutionResult struct {
 	// columns for storage of gzipped contents and plans
 	ContentsGzip        []byte `json:"contents_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"contents_binary"`
 	ContentsDisplayGzip []byte `json:"contents_display_gzip,omitzero" gorm:"type:bytea" swaggertype:"string" temporaljson:"-"`
+
+	// CompositeError is the typed, structured error parsed from this execution's
+	// failure output at write time. It is the canonical, execution-scoped store
+	// for runner-driven composite errors: strictly 1:1 with the attempt and
+	// never reused, so it cannot go stale across retries. Aggregate rows derive
+	// their displayed error from the latest relevant result; they do not own it.
+	CompositeError *compositeerrors.CompositeErrorData `json:"composite_error,omitempty" gorm:"type:jsonb" swaggertype:"object" temporaljson:"composite_error,omitzero,omitempty"`
 }
 
 func (r *RunnerJobExecutionResult) Indexes(db *gorm.DB) []migrations.Index {

@@ -53,7 +53,12 @@ func (a *Activities) RecordDeployBuildUnavailableCompositeError(ctx context.Cont
 		BuildStatusDescription: req.BuildStatusDescription,
 	}
 
-	data := compositeerrors.New(ce)
+	var opts []compositeerrors.Option
+	if req.BuildID != "" {
+		opts = append(opts, compositeerrors.WithSource("component_builds", req.BuildID))
+	}
+
+	data := compositeerrors.New(ce, opts...)
 	res := a.db.WithContext(ctx).
 		Model(&app.InstallDeploy{ID: req.DeployID}).
 		Select("composite_error").

@@ -1,4 +1,5 @@
 import { Plan } from '@/components/approvals/Plan'
+import { CompositeError } from '@/components/common/CompositeError'
 import { Duration } from '@/components/common/Duration'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
@@ -75,6 +76,10 @@ export const SandboxRunStepDetails = ({
           </Text>
         ) : null}
       </div>
+
+      {sandboxRun?.composite_error ? (
+        <CompositeError error={sandboxRun.composite_error} />
+      ) : null}
 
       {step?.execution_type === 'approval' ? (
         <ApprovalStepTabs step={step} sandboxRun={sandboxRun} />
