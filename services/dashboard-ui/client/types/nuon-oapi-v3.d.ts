@@ -21806,6 +21806,12 @@ export interface operations {
       query: {
         /** @description unrendered role name template */
         role_name: string;
+        /** @description offset of results to return */
+        offset?: number;
+        /** @description limit of results to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
       };
       path: {
         /** @description install ID */

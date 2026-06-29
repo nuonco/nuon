@@ -69,3 +69,16 @@ export const proseClassName = cn(
   'prose dark:prose-invert max-w-[100%]',
   'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono'
 )
+
+export const compactProseClassName = cn(
+  'prose prose-sm dark:prose-invert max-w-none',
+  'prose-code:bg-code prose-code:text-sm prose-code:text-blue-500 prose-code:font-mono prose-code:font-normal',
+  'prose-p:my-0 prose-p:text-[0.8125rem] prose-p:leading-relaxed',
+  'prose-strong:font-semibold',
+  'prose-ul:my-0 prose-ul:pl-5 prose-ol:my-0 prose-ol:pl-5 prose-li:my-0.5 prose-li:pl-0',
+  'prose-headings:my-0 prose-headings:text-sm prose-headings:font-semibold',
+  '[&_.readme-table]:!my-0 [&_table]:!text-xs',
+  '[&_th]:!py-1.5 [&_th]:!px-3 [&_th]:bg-black/5 dark:[&_th]:bg-white/5',
+  '[&_td]:!py-1.5 [&_td]:!px-3',
+  '[&>*+*]:!mt-2'
+)

@@ -11,7 +11,9 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { extractTabs, extractSurfaces, type ExtractedTabs, type ExtractedSurface, type MarkdownMode } from './nuon-components'
 import { getMarkdownComponents } from './markdown-renderers'
 import { preprocessContent } from './markdown-preprocessing'
-import { markdownStyles, proseClassName } from './markdown-styles'
+import { markdownStyles, proseClassName, compactProseClassName } from './markdown-styles'
+
+export type MarkdownVariant = 'default' | 'compact'
 
 const REMARK_PLUGINS: PluggableList = [remarkGfm]
 const REHYPE_PLUGINS: PluggableList = [rehypeRaw]
@@ -72,7 +74,7 @@ function SurfacePlaceholder({
   )
 }
 
-export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: string; mode?: MarkdownMode }) => {
+export const Markdown = React.memo(({ content = '', mode = 'app', variant = 'default' }: { content?: string; mode?: MarkdownMode; variant?: MarkdownVariant }) => {
   const { content: processedContent, tabsMap, surfaceMap } = useMemo(() => {
     const { content: afterTabs, tabsMap } = extractTabs(content)
     const { content: afterSurfaces, surfaceMap } = extractSurfaces(afterTabs)
@@ -81,7 +83,7 @@ export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: 
   const processed = preprocessContent(processedContent)
 
   const components = useMemo(() => {
-    const base = getMarkdownComponents(mode)
+    const base = getMarkdownComponents(mode, variant)
     if (tabsMap.size > 0) {
       base['nuon-tabs-rendered'] = ({ node, ...attrs }: any) => (
         <TabsPlaceholder tabsMap={tabsMap} mode={mode} dataId={attrs['data-id']} />
@@ -93,12 +95,12 @@ export const Markdown = React.memo(({ content = '', mode = 'app' }: { content?: 
       )
     }
     return base
-  }, [mode, tabsMap, surfaceMap])
+  }, [mode, variant, tabsMap, surfaceMap])
 
   return (
     <>
       <style>{markdownStyles}</style>
-      <div className={proseClassName}>
+      <div className={variant === 'compact' ? compactProseClassName : proseClassName}>
         <ReactMarkdown
           remarkPlugins={REMARK_PLUGINS}
           rehypePlugins={REHYPE_PLUGINS}
