@@ -328,6 +328,22 @@ receiver.
 - **CRITICAL**: Do not add comments unless the logic is genuinely non-obvious. Never write comments that just describe
   what the code does. Let clear naming and structure document the code.
 
+### Driving the Nuon CLI as an agent
+
+The `nuon` CLI has an agent-facing surface (see `bins/cli/AGENTS.md` "Output format" / "MCP server" / "Read-only
+mode" for details). When running `nuon` commands from a Claude session, prefer:
+
+- **`--output agent`** — stdout is exactly one `{"ok":true,"data":...}` / `{"ok":false,"error":{"code","message"}}`
+  JSON envelope; progress goes to stderr. Error codes: `not_found`, `unauthorized`, `forbidden`, `invalid_request`,
+  `server_error`, `user_error`, `api_error`, `error`. (`--json` is deprecated; use `--output json` for raw JSON.)
+- **`--read-only`** (or `NUON_READ_ONLY=1`) — guardrail that blocks any command mutating remote state (exit 2).
+  Use it by default unless the task explicitly requires writes.
+- **`nuon mcp`** — stdio MCP server with read tools (`whoami`, `list_apps`, `get_app`, `list_installs`,
+  `get_install`, `list_install_components`, `list_components`); `--allow-writes` adds `create_install` /
+  `deploy_component`. Auth comes from `~/.nuon` (run `nuon auth login` first). Tools default to the selected
+  app/install context (what `nuon -h` shows); `whoami` reports it; pass `all=true` to list tools for org-wide.
+- The dev build lives at `~/bin/nuon-dev`; rebuild with `cd bins/cli && go build -o ~/bin/nuon-dev .`
+
 ## User Journey & Onboarding System
 
 The Nuon platform implements a comprehensive guided onboarding system:

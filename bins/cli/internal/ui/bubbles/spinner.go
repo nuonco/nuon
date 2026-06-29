@@ -23,12 +23,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"sync"
 	"time"
 
 	"charm.land/lipgloss/v2"
 	"github.com/cockroachdb/errors"
+	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 )
@@ -79,7 +79,7 @@ func NewSpinnerView(json, interactive bool) *SpinnerView {
 	return &SpinnerView{
 		json:        json,
 		interactive: interactive,
-		out:         os.Stdout,
+		out:         agentmode.HumanWriter(),
 	}
 }
 
