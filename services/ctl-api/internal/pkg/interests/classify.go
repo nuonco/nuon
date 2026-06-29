@@ -24,10 +24,11 @@ const (
 	// has been quiet long enough (5 min) for processhealthcheck to give up on
 	// it; the classifier maps it onto (runners, inactive) so subscribers can
 	// opt into a notification.
-	signalTypeOnInactive    signal.SignalType = "on_inactive"
-	signalTypeStackRun      signal.SignalType = "stack-run"
-	signalTypeRoleChange    signal.SignalType = "role-change"
-	signalTypeInputsUpdated signal.SignalType = "inputs-updated"
+	signalTypeOnInactive      signal.SignalType = "on_inactive"
+	signalTypeStackRun        signal.SignalType = "stack-run"
+	signalTypeRoleChange      signal.SignalType = "role-change"
+	signalTypeInputsUpdated   signal.SignalType = "inputs-updated"
+	signalTypeAppConfigSynced signal.SignalType = "app-config-synced"
 )
 
 // stepTargetType* mirror the WorkflowStepTargetType strings declared in
@@ -59,6 +60,7 @@ const (
 	eventClassDriftDetected
 	eventClassRoleChange
 	eventClassInputsUpdated
+	eventClassConfigSynced
 )
 
 // approvalResponseType is the resolved approved/rejected outcome of an
@@ -251,6 +253,13 @@ func classify(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome,
 		f.EventClass = eventClassInputsUpdated
 		f.Resolved = true
 		return f
+
+	case signalTypeAppConfigSynced:
+		f.Resource = ResourceAppBranches
+		f.Op = "run"
+		f.EventClass = eventClassConfigSynced
+		f.Resolved = true
+		return f
 	}
 
 	return f
@@ -304,6 +313,12 @@ func workflowResolution(wfType string) (ResourceKind, string, bool) {
 	// installs.* (runbook orchestration)
 	case "runbook_run":
 		return ResourceInstalls, "runbook", true
+
+	// app_branches.*
+	case "app_branches_manual_update",
+		"app_branches_config_repo_update",
+		"app_branches_component_repo_update":
+		return ResourceAppBranches, "run", true
 	}
 
 	return "", "", false
@@ -404,6 +419,10 @@ func stepResolutionFromParent(parentWorkflowType string) (ResourceKind, string, 
 		return ResourceInstallConfigurations, "inputs", true
 	case "sync_secrets":
 		return ResourceInstallConfigurations, "secrets", true
+	case "app_branches_manual_update",
+		"app_branches_config_repo_update",
+		"app_branches_component_repo_update":
+		return ResourceAppBranches, "run", true
 	}
 	return "", "", false
 }
@@ -532,6 +551,10 @@ func slugsForFacts(f facts) []string {
 
 	case eventClassInputsUpdated:
 		slugs = append(slugs, SlugEventInputsUpdated)
+		return slugs
+
+	case eventClassConfigSynced:
+		slugs = append(slugs, SlugEventConfigSynced)
 		return slugs
 	}
 

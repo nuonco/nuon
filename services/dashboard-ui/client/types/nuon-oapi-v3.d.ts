@@ -5892,6 +5892,8 @@ export interface components {
       key?: string;
     };
     "diff.DiffKey": {
+      after?: string;
+      before?: string;
       diff?: string;
       op?: components["schemas"]["diff.Op"];
     };

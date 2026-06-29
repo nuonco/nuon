@@ -84,6 +84,8 @@ func Matches(event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome, 
 		return cfg.RoleChanges
 	case eventClassInputsUpdated:
 		return cfg.InputsUpdated
+	case eventClassConfigSynced:
+		return cfg.ConfigSynced
 	case eventClassLifecycle:
 		if len(cfg.Ops) > 0 && !contains(cfg.Ops, f.Op) {
 			return false

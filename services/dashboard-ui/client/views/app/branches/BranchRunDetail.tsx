@@ -1,26 +1,24 @@
 import { useParams, useSearchParams } from 'react-router'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
-import { Toast } from '@/components/surfaces/Toast'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
+import { Expand } from '@/components/common/Expand'
 import { WorkflowStepsPipeline } from '@/components/branches/WorkflowStepsPipeline'
 import { WorkflowStepDetail } from '@/components/branches/WorkflowStepDetail'
+import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
+import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
-import { useToast } from '@/hooks/use-toast'
 import { BranchProvider } from '@/providers/branch-provider'
-import { getBranchWorkflowRun, cancelWorkflow } from '@/lib'
+import { getBranchWorkflowRun } from '@/lib'
 import { useEffect, useState } from 'react'
-import type { TAPIError } from '@/types'
 
 function statusTheme(status?: string) {
   if (status === 'success') return 'success'
@@ -42,33 +40,11 @@ const BranchRunDetailContent = () => {
   const targetStepId = searchParams.get('target')
   const [selectedStepId, setSelectedStepId] = useState<string | null>(targetStepId)
 
-  const { addToast } = useToast()
-  const queryClient = useQueryClient()
-
   const { data: run, isLoading } = useQuery({
     queryKey: ['branch-run', orgId, appId, branchId, runId],
     queryFn: () => getBranchWorkflowRun({ orgId, appId, branchId, runId }),
     enabled: !!orgId && !!appId && !!branchId && !!runId,
     refetchInterval: 5000,
-  })
-
-  const { mutate: cancel, isPending: isCancelling } = useMutation({
-    mutationFn: () => cancelWorkflow({ orgId, workflowId: runId }),
-    onSuccess: () => {
-      addToast(
-        <Toast heading="Workflow cancelled" theme="success">
-          <Text>The workflow run has been cancelled.</Text>
-        </Toast>
-      )
-      queryClient.invalidateQueries({ queryKey: ['branch-run', orgId, appId, branchId, runId] })
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Cancel failed" theme="error">
-          <Text>{err?.error || 'Unable to cancel workflow.'}</Text>
-        </Toast>
-      )
-    },
   })
 
   const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
@@ -82,6 +58,9 @@ const BranchRunDetailContent = () => {
 
   const selectedStep = selectedStepId ? steps.find((s) => s.id === selectedStepId) ?? null : null
 
+  const configStep = steps.find((s) => s.name?.toLowerCase().includes('config') && !s.name?.toLowerCase().includes('diff'))
+  const appConfigId = configStep?.status?.metadata?.app_config_id as string | undefined
+
   if (isLoading || !run) {
     return (
       <PageSection>
@@ -94,7 +73,6 @@ const BranchRunDetailContent = () => {
 
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
-  const isActive = ['pending', 'queued', 'in-progress', 'approval-awaiting'].includes(status)
 
   return (
     <PageSection className="max-w-full space-y-4">
@@ -172,17 +150,7 @@ const BranchRunDetailContent = () => {
 
           <div className="flex items-center gap-2">
             <AdminDashboardLink path={`/workflows/${runId}`} label="admin" />
-            {isActive && (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => cancel()}
-                disabled={isCancelling}
-              >
-                <Icon variant="XCircleIcon" size={15} />
-                {isCancelling ? 'Cancelling...' : 'Cancel run'}
-              </Button>
-            )}
+            <CancelWorkflowButton workflow={run} />
           </div>
         </div>
       </div>
@@ -205,6 +173,20 @@ const BranchRunDetailContent = () => {
           />
         </div>
       </div>
+
+      {/* ── Config changes card ── */}
+      {appConfigId && (
+        <Expand
+          id="config-changes"
+          className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
+          headerClassName="px-5 py-4"
+          heading={<Text variant="h3" weight="strong">Config changes</Text>}
+        >
+          <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800">
+            <AppConfigDiff appConfigId={appConfigId} />
+          </div>
+        </Expand>
+      )}
 
       {/* ── Step detail card ── */}
       {selectedStep && (

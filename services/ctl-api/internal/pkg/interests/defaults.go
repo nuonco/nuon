@@ -47,6 +47,10 @@ func Default() Interests {
 				ApprovalRequests:  true,
 				ApprovalResponses: true,
 			},
+			ResourceAppBranches: {
+				Outcome:      OutcomeCompletion,
+				ConfigSynced: true,
+			},
 		},
 	}
 }

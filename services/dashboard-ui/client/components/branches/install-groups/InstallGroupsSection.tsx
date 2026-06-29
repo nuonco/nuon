@@ -1,7 +1,7 @@
 import { EmptyState } from '@/components/common/EmptyState'
 import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
-import { SimpleInstallStatuses } from '@/components/installs/InstallStatuses'
+import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import type { TAppBranchConfig, TInstall } from '@/types'
 
 interface IInstallGroupsSection {
@@ -79,9 +79,11 @@ export const InstallGroupsSection = ({
                     </div>
                     {install && (
                       <div className="shrink-0">
-                        <SimpleInstallStatuses
+                        <InstallStatuses
                           install={install}
                           isLabelHidden
+                          lazyComponents
+                          tooltipPosition="top"
                         />
                       </div>
                     )}
