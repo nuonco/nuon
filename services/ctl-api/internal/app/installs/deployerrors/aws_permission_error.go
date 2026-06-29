@@ -58,6 +58,16 @@ func (e *AWSPermissionError) Severity() compositeerrors.Severity {
 	return compositeerrors.SeverityError
 }
 
+// Hints tells the orchestrator not to auto-retry: a missing IAM permission
+// won't resolve by retrying, so burning the auto-retry budget only delays
+// surfacing the actionable error. The step is parked for manual retry once the
+// user grants the permission.
+func (e *AWSPermissionError) Hints() compositeerrors.Hints {
+	return compositeerrors.Hints{
+		compositeerrors.HintSkipAutoRetry: "true",
+	}
+}
+
 // Sections returns the structured detail rendered in the dashboard: what AWS
 // said, the principal/resource context, and a copy-pasteable IAM policy
 // statement granting the missing action.
