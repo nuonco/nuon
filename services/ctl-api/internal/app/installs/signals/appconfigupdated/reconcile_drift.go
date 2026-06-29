@@ -13,6 +13,8 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
+const driftJitterWindow = 150 * time.Second
+
 func (s *Signal) reconcileDriftEmitters(
 	ctx workflow.Context,
 	l log.Logger,
@@ -53,6 +55,7 @@ func (s *Signal) reconcileDriftEmitters(
 			Description:     fmt.Sprintf("drift check for install %s, component %s", s.InstallID, ic.ComponentID),
 			Mode:            app.QueueEmitterModeCron,
 			CronSchedule:    ccc.DriftSchedule,
+			JitterWindow:    driftJitterWindow,
 			SignalExpiresIn: 15 * time.Minute,
 			SignalType:      driftcheck.SignalType,
 			SignalTemplate: &driftcheck.Signal{
