@@ -2,11 +2,11 @@ package version
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"os"
 	"runtime"
 	"runtime/debug"
+
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 )
 
 var Version string = "development"
@@ -31,8 +31,8 @@ func (s *Service) Version(ctx context.Context, asJSON bool) error {
 			}
 		}
 
-		enc := json.NewEncoder(os.Stdout)
-		return enc.Encode(out)
+		ui.PrintJSON(out)
+		return nil
 	}
 
 	fmt.Println(Version)
