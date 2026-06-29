@@ -6,6 +6,24 @@ import { Expand } from '@/components/common/Expand'
 import type { TAppInputConfig, TInstall } from '@/types'
 import type { IInputConfigFields } from './types'
 
+const CODE_INPUT_TYPES = {
+  json: {
+    language: 'json',
+    placeholder: 'Enter JSON configuration...',
+    helperText: 'Enter valid JSON configuration',
+  },
+  yaml: {
+    language: 'yaml',
+    placeholder: 'Enter YAML configuration...',
+    helperText: 'Enter valid YAML configuration',
+  },
+  hcl: {
+    language: 'hcl',
+    placeholder: 'Enter HCL (.tfvars) configuration...',
+    helperText: 'Enter valid HCL (.tfvars) configuration',
+  },
+} as const
+
 const FieldWrapper = ({
   children,
   labelText,
@@ -112,6 +130,11 @@ const InputGroupFields = ({
       )
     }
 
+    const codeInputType =
+      input?.type && input.type in CODE_INPUT_TYPES
+        ? CODE_INPUT_TYPES[input.type as keyof typeof CODE_INPUT_TYPES]
+        : undefined
+
     return (
       <FieldWrapper
         key={input?.id}
@@ -141,14 +164,14 @@ const InputGroupFields = ({
         }
         helpText={input?.description}
       >
-        {input?.type === 'json' ? (
+        {codeInputType ? (
           <CodeInput
-            language="json"
+            language={codeInputType.language}
             name={disabled ? undefined : `inputs:${input?.name}`}
             required={disabled ? false : input?.required}
             defaultValue={mergedValues?.[input?.name || ''] ?? input?.default}
-            placeholder="Enter JSON configuration..."
-            helperText="Enter valid JSON configuration"
+            placeholder={codeInputType.placeholder}
+            helperText={codeInputType.helperText}
             minHeight={120}
             disabled={disabled}
           />
