@@ -12,9 +12,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
 type CreateRunnerJobExecutionResultRequest struct {
@@ -154,6 +157,77 @@ func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJ
 	return nil
 }
 
+// parseResultCompositeError parses a failed execution's untruncated error
+// message into a typed CompositeError at write time. This is the single
+// runner-driven chokepoint: every flow (builds, deploys, sandbox runs, action
+// runs, ...) reports failure here, so parsing once covers them all with no
+// per-flow wiring. The result row is strictly 1:1 with the attempt, so the
+// stored error can never go stale across retries.
+//
+// It is best-effort: a success, a missing message, or a parse miss yields nil,
+// leaving the plain-string status description in place. Source is set to the
+// runner job's owner so a future view can join errors back to their subject.
+func parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+	if req.Success {
+		return nil
+	}
+
+	var raw string
+	if msg := req.ErrorMetadata["message"]; msg != nil {
+		raw = *msg
+	}
+	if raw == "" {
+		return nil
+	}
+
+	ce := deployerrors.Parse(raw)
+	if ce == nil {
+		return nil
+	}
+
+	return compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+}
+
+// refreshOwnerCompositeError mirrors a runner job execution's parsed composite
+// error onto its owner aggregate row so the dashboard can render it without a
+// read-time join. Each execution result refreshes the column: a failure sets
+// the parsed error, and a success or parse miss (ce == nil) clears it — which
+// is what keeps fail→retry→success from leaving a stale card on the reused
+// aggregate row. Deploy/sandbox executions are serialized by their workflow, so
+// results arrive in order and the last write wins correctly.
+//
+// Only owner types that carry a composite_error column are updated; others are
+// skipped. Best-effort: a failure logs and is swallowed, never failing the
+// runner's result POST.
+func (s *service) refreshOwnerCompositeError(ctx context.Context, runnerJob *app.RunnerJob, ce *compositeerrors.CompositeErrorData) {
+	if runnerJob.OwnerID == "" {
+		return
+	}
+
+	var res *gorm.DB
+	switch runnerJob.OwnerType {
+	case "install_deploys":
+		res = s.db.WithContext(ctx).
+			Model(&app.InstallDeploy{ID: runnerJob.OwnerID}).
+			Select("composite_error").
+			Updates(app.InstallDeploy{CompositeError: ce})
+	case "install_sandbox_runs":
+		res = s.db.WithContext(ctx).
+			Model(&app.InstallSandboxRun{ID: runnerJob.OwnerID}).
+			Select("composite_error").
+			Updates(app.InstallSandboxRun{CompositeError: ce})
+	default:
+		return
+	}
+
+	if res.Error != nil {
+		s.l.Warn("unable to refresh owner composite error",
+			zap.String("owner_type", runnerJob.OwnerType),
+			zap.String("owner_id", runnerJob.OwnerID),
+			zap.Error(res.Error))
+	}
+}
+
 func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
@@ -178,12 +252,15 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		ContentsDisplayGzip:  contentsDisplayGzip,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+		CompositeError:       parseResultCompositeError(req, runnerJob),
 	}
 
 	res := s.db.WithContext(ctx).Create(&result)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
 	}
+
+	s.refreshOwnerCompositeError(ctx, runnerJob, result.CompositeError)
 
 	return &result, nil
 }
@@ -201,6 +278,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		Contents:             req.Contents,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+		CompositeError:       parseResultCompositeError(req, runnerJob),
 	}
 
 	res := s.db.WithContext(ctx).Create(&result)
@@ -225,6 +303,8 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 			return &result, errors.Wrap(res.Error, "failed to set display content on runner job execution")
 		}
 	}
+
+	s.refreshOwnerCompositeError(ctx, runnerJob, result.CompositeError)
 
 	return &result, nil
 }

@@ -29,6 +29,13 @@ type AppInstallSandboxRun struct {
 	// AppliedAt is set when the apply runner job completes successfully.
 	AppliedAt string `json:"applied_at,omitempty"`
 
+	// CompositeError holds a typed, structured error (e.g. a missing AWS IAM
+	// permission) frozen at write time when a sandbox plan/apply fails. It is
+	// nil for successful or non-enriched failures.
+	CompositeError struct {
+		CompositeerrorsCompositeErrorData
+	} `json:"composite_error,omitempty"`
+
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
 
@@ -99,6 +106,10 @@ func (m *AppInstallSandboxRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateAppSandboxConfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateCompositeError(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -184,6 +195,14 @@ func (m *AppInstallSandboxRun) validateAppSandboxConfig(formats strfmt.Registry)
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppInstallSandboxRun) validateCompositeError(formats strfmt.Registry) error {
+	if swag.IsZero(m.CompositeError) { // not required
+		return nil
 	}
 
 	return nil
@@ -374,6 +393,10 @@ func (m *AppInstallSandboxRun) ContextValidate(ctx context.Context, formats strf
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateCompositeError(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateCreatedBy(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -458,6 +481,11 @@ func (m *AppInstallSandboxRun) contextValidateAppSandboxConfig(ctx context.Conte
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (m *AppInstallSandboxRun) contextValidateCompositeError(ctx context.Context, formats strfmt.Registry) error {
 
 	return nil
 }
