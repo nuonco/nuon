@@ -46,8 +46,12 @@ func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*
 		return nil, fmt.Errorf("unable to forward retry to group: %w", err)
 	}
 
-	// Parked flow: the group isn't live to clone, so clone here and wake the loop.
-	if s.awaitingResume {
+	// Parked flow (or a resident host re-warming before the conductor has
+	// started): the group isn't live to clone, so clone here and wake/seed the
+	// loop. !executeStarted covers the re-warm race where this update lands
+	// before executeFlow() runs; executeFlow's initial run then honors the
+	// seeded resume request.
+	if s.awaitingResume || (s.Resident && !s.executeStarted) {
 		updated, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 		if err != nil {
 			return nil, fmt.Errorf("unable to re-read step %s: %w", req.StepID, err)
