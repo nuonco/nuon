@@ -4096,7 +4096,7 @@ export interface components {
        * on this install (from the synthetic enabled install input, falling back to
        * the component's default_enabled). It is nil for non-toggleable components.
        */
-      enabled?: boolean;
+      enabled?: boolean | null;
       helm_chart?: components["schemas"]["app.HelmChart"];
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -5247,6 +5247,14 @@ export interface components {
       updated_at?: string;
     };
     "app.RunnerJobExecutionResult": {
+      /**
+       * @description CompositeError is the typed, structured error parsed from this execution's
+       * failure output at write time. It is the canonical, execution-scoped store
+       * for runner-driven composite errors: strictly 1:1 with the attempt and
+       * never reused, so it cannot go stale across retries. Aggregate rows derive
+       * their displayed error from the latest relevant result; they do not own it.
+       */
+      composite_error?: Record<string, never>;
       contents?: string;
       contents_display?: string;
       contents_display_gzip?: string;
@@ -5821,11 +5829,33 @@ export interface components {
       name?: string;
     };
     "compositeerrors.CompositeErrorData": {
+      /**
+       * @description Data is the typed, per-error-type payload: WHAT the error is. Closed
+       * schema per Type. Read to render sections and by any future view.
+       */
       data?: number[];
+      /**
+       * @description Hints is the open annotation/directive bag: HOW to handle or present the
+       * error. Canonical keys (Hint*) are honored by specific consumers.
+       */
+      hints?: components["schemas"]["compositeerrors.Hints"];
       message?: string;
       sections?: components["schemas"]["compositeerrors.Section"][];
       severity?: components["schemas"]["compositeerrors.Severity"];
+      /**
+       * @description SourceID / SourceType identify the row this error originated on
+       * (polymorphic, same shape as OwnerID/OwnerType). Set at the record site,
+       * e.g. ("runner_job_execution_results", "<result id>"). Enables a future
+       * JOINable view without a separate error table.
+       */
+      source_id?: string;
+      source_type?: string;
       type?: string;
+      /** @description Version is the payload schema version (SchemaVersion at write time). */
+      version?: number;
+    };
+    "compositeerrors.Hints": {
+      [key: string]: string;
     };
     "compositeerrors.Section": {
       body?: string;
@@ -7628,7 +7658,7 @@ export interface components {
     };
     "service.ToggleInstallComponentRequest": {
       enabled: boolean;
-      role?: string;
+      plan_only?: boolean;
     };
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */
