@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) ToggleComponent(ctx context.Context, installID, componentID string, enableFlag, disableFlag, asJSON bool) error {
+func (s *Service) ToggleComponent(ctx context.Context, installID, componentID, roleName string, enableFlag, disableFlag, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -32,18 +32,13 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 		return ui.PrintError(err)
 	}
 
-	installComponents, _, err := s.api.GetInstallComponents(ctx, installID, &models.GetPaginatedQuery{Limit: 100})
+	installComponent, err := s.api.GetInstallComponent(ctx, installID, componentID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 	currentlyEnabled := true
-	for _, ic := range installComponents {
-		if ic.ComponentID == componentID {
-			if ic.Enabled != nil {
-				currentlyEnabled = *ic.Enabled
-			}
-			break
-		}
+	if installComponent.Enabled != nil {
+		currentlyEnabled = *installComponent.Enabled
 	}
 
 	enabled := enableFlag
@@ -73,6 +68,7 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 
 	resp, err := s.api.ToggleInstallComponent(ctx, installID, componentID, &models.ServiceToggleInstallComponentRequest{
 		Enabled: &enabled,
+		Role:    roleName,
 	})
 	if err != nil {
 		return ui.PrintError(err)
