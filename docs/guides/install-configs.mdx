@@ -37,6 +37,20 @@ tier = "enterprise"
 
 See [Label badges](/guides/using-readmes#label-badge) for how labels render in install READMEs.
 
+## Toggling components
+
+If your app has [toggleable components](/guides/toggleable-components), the install config decides which ones are enabled. Set the state per component in a `[component_toggles]` section, keyed by component name:
+
+```toml install.toml
+name = "customer-acme"
+
+[component_toggles]
+observability = true
+certificate   = false
+```
+
+See the [Toggleable Components guide](/guides/toggleable-components) for how toggles reconcile on sync, dependency validation, and imperative dashboard/CLI toggles.
+
 ## Monitoring in-progress workflows
 
 Once an install kicks off a deploy — or any other workflow — you can monitor progress from the dashboard, via outbound webhooks, or via Slack notifications.

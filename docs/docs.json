@@ -141,6 +141,7 @@
 							"guides/managing-apps",
 							"guides/managing-components",
 							"guides/component-dependencies",
+							"guides/toggleable-components",
 							"guides/configuring-inputs-and-secrets",
 							"guides/configuring-sandboxes",
 							"guides/using-variables",
