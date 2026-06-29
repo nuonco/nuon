@@ -16,7 +16,7 @@ interface IWizardNav {
   steps: IWizardNavStep[]
   currentStepIndex: number
   completedSteps: Set<string>
-  onboardingV2: boolean
+  showHeader?: boolean
   skipHref: string | null
   onGoToStep: (index: number) => void
 }
@@ -26,7 +26,7 @@ export const WizardNav = ({
   steps,
   currentStepIndex,
   completedSteps,
-  onboardingV2,
+  showHeader = false,
   skipHref,
   onGoToStep,
 }: IWizardNav) => {
@@ -37,7 +37,7 @@ export const WizardNav = ({
         isScrolled && 'shadow-sm border-b'
       )}
     >
-      {onboardingV2 ? (
+      {showHeader ? (
         <div className="flex justify-between w-full">
           <Logo />
           <div className="flex items-center gap-4">
