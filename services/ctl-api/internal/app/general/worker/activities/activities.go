@@ -12,6 +12,7 @@ import (
 	"github.com/nuonco/nuon/pkg/temporal/temporalzap"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/autolink"
 	slackclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/slack/client"
 )
@@ -26,6 +27,7 @@ type Activities struct {
 	tClient        temporalclient.Client
 	slackClient    *slackclient.Client
 	autoLinkHelper *autolink.Helper
+	blobSvc        blobstore.Service
 }
 
 type Params struct {
@@ -39,6 +41,7 @@ type Params struct {
 	TemporalClient temporalclient.Client
 	SlackClient    *slackclient.Client
 	AutoLinkHelper *autolink.Helper
+	BlobSvc        blobstore.Service
 }
 
 func New(params Params) (*Activities, error) {
@@ -57,5 +60,6 @@ func New(params Params) (*Activities, error) {
 		tClient:        params.TemporalClient,
 		slackClient:    params.SlackClient,
 		autoLinkHelper: params.AutoLinkHelper,
+		blobSvc:        params.BlobSvc,
 	}, nil
 }
