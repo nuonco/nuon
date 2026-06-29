@@ -2,6 +2,7 @@ import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
 import { Plan } from '@/components/approvals/Plan'
+import { CompositeError } from '@/components/common/CompositeError'
 import { SSELogs, LogsSkeleton } from '@/components/log-stream/SSELogs'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
 import { PageSection } from '@/components/layout/PageSection'
@@ -79,6 +80,10 @@ const SandboxRunDetailContent = () => {
 
       <PageSection className="!pb-12">
         <div className="flex flex-col gap-6">
+          {sandboxRun?.composite_error ? (
+            <CompositeError error={sandboxRun.composite_error} />
+          ) : null}
+
           {pendingApproval && !isAutoApprove ? (
             <div className="flex flex-col gap-4">
               <ApprovalBanner step={step} />
