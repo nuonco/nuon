@@ -18,8 +18,8 @@ import (
 )
 
 type ToggleInstallComponentRequest struct {
-	Enabled *bool  `json:"enabled" validate:"required"`
-	Role    string `json:"role,omitempty"`
+	Enabled  *bool `json:"enabled" validate:"required"`
+	PlanOnly bool  `json:"plan_only"`
 }
 
 func (c *ToggleInstallComponentRequest) Validate(v *validator.Validate) error {
@@ -110,7 +110,7 @@ func (s *service) ToggleInstallComponent(ctx *gin.Context) {
 		workflowType = app.WorkflowTypeComponentDisabled
 	}
 
-	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, req.Role, true, false, workflowType)
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, patch, "", true, req.PlanOnly, workflowType)
 	if err != nil {
 		ctx.Error(err)
 		return

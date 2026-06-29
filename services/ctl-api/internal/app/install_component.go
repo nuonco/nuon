@@ -64,7 +64,7 @@ type InstallComponent struct {
 	// Enabled is the resolved enabled/disabled state for a toggleable component
 	// on this install (from the synthetic enabled install input, falling back to
 	// the component's default_enabled). It is nil for non-toggleable components.
-	Enabled *bool `json:"enabled,omitempty" gorm:"-" temporaljson:"-"`
+	Enabled *bool `json:"enabled,omitempty" gorm:"-" temporaljson:"-" swaggertype:"boolean" extensions:"x-nullable"`
 }
 
 type InstallComponentSummary struct {

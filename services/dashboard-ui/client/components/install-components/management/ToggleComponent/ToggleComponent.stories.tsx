@@ -19,7 +19,6 @@ export const Enable = () => (
       isPending={false}
       onSubmit={() => {}}
       onClose={() => {}}
-      roleSelector={() => null}
     />
   </ModalStory>
 )
@@ -32,7 +31,6 @@ export const Disable = () => (
       isPending={false}
       onSubmit={() => {}}
       onClose={() => {}}
-      roleSelector={() => null}
     />
   </ModalStory>
 )
@@ -45,7 +43,6 @@ export const Pending = () => (
       isPending={true}
       onSubmit={() => {}}
       onClose={() => {}}
-      roleSelector={() => null}
     />
   </ModalStory>
 )
@@ -59,7 +56,6 @@ export const WithError = () => (
       error={{ error: 'Component is not toggleable' }}
       onSubmit={() => {}}
       onClose={() => {}}
-      roleSelector={() => null}
     />
   </ModalStory>
 )

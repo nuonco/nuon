@@ -23,8 +23,8 @@ type ServiceToggleInstallComponentRequest struct {
 	// Required: true
 	Enabled *bool `json:"enabled"`
 
-	// role
-	Role string `json:"role,omitempty"`
+	// plan only
+	PlanOnly bool `json:"plan_only,omitempty"`
 }
 
 // Validate validates this service toggle install component request

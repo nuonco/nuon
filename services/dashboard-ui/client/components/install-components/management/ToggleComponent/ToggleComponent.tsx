@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { Banner } from '@/components/common/Banner'
+import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
@@ -10,12 +11,8 @@ interface IToggleComponentModal extends Omit<IModal, 'onSubmit'> {
   enabling: boolean
   isPending: boolean
   error?: { error?: string } | null
-  onSubmit: (params: { role: string }) => void
+  onSubmit: (params: { planOnly: boolean }) => void
   onClose: () => void
-  roleSelector: (props: {
-    value: string
-    onChange: (value: string) => void
-  }) => ReactNode
 }
 
 export const ToggleComponentModal = ({
@@ -25,9 +22,10 @@ export const ToggleComponentModal = ({
   error,
   onSubmit,
   onClose,
-  roleSelector,
   ...props
 }: IToggleComponentModal) => {
+  const [planOnly, setPlanOnly] = useState(false)
+
   const action = enabling ? 'Enable' : 'Disable'
   const actionLower = enabling ? 'enable' : 'disable'
   const activeAction = enabling ? 'Enabling' : 'Disabling'
@@ -49,16 +47,16 @@ export const ToggleComponentModal = ({
           </span>
         ),
         disabled: isPending,
-        onClick: () => onSubmit({ role: '' }),
+        onClick: () => onSubmit({ planOnly }),
         variant: enabling ? ('primary' as const) : ('danger' as const),
       }}
       onClose={onClose}
       {...props}
     >
       <div className="flex flex-col gap-6">
-        {(error as any)?.error ? (
+        {error?.error ? (
           <Banner theme="error">
-            {(error as any)?.error || `Unable to ${actionLower} component`}
+            {error?.error || `Unable to ${actionLower} component`}
           </Banner>
         ) : null}
 
@@ -75,10 +73,13 @@ export const ToggleComponentModal = ({
             </Text>
           )}
 
-          {roleSelector({
-            value: '',
-            onChange: () => {},
-          })}
+          <CheckboxInput
+            checked={planOnly}
+            onChange={(e) => setPlanOnly(e.target.checked)}
+            labelProps={{
+              labelText: 'Plan only — preview changes without applying them',
+            }}
+          />
         </div>
       </div>
     </Modal>

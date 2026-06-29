@@ -11,7 +11,7 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) ToggleComponent(ctx context.Context, installID, componentID, roleName string, enableFlag, disableFlag, asJSON bool) error {
+func (s *Service) ToggleComponent(ctx context.Context, installID, componentID string, enableFlag, disableFlag, planOnly, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
@@ -67,8 +67,8 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID, r
 	}
 
 	resp, err := s.api.ToggleInstallComponent(ctx, installID, componentID, &models.ServiceToggleInstallComponentRequest{
-		Enabled: &enabled,
-		Role:    roleName,
+		Enabled:  &enabled,
+		PlanOnly: planOnly,
 	})
 	if err != nil {
 		return ui.PrintError(err)

@@ -3,7 +3,7 @@ import type { TWorkflowResponse } from '@/types'
 
 export type TToggleComponentBody = {
   enabled: boolean
-  role?: string
+  plan_only?: boolean
 }
 
 export const toggleComponent = ({
