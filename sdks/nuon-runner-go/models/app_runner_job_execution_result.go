@@ -17,6 +17,13 @@ import (
 // swagger:model app.RunnerJobExecutionResult
 type AppRunnerJobExecutionResult struct {
 
+	// CompositeError is the typed, structured error parsed from this execution's
+	// failure output at write time. It is the canonical, execution-scoped store
+	// for runner-driven composite errors: strictly 1:1 with the attempt and
+	// never reused, so it cannot go stale across retries. Aggregate rows derive
+	// their displayed error from the latest relevant result; they do not own it.
+	CompositeError any `json:"composite_error,omitempty"`
+
 	// contents
 	Contents string `json:"contents,omitempty"`
 

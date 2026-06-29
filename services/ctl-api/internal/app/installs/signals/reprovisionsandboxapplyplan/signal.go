@@ -353,7 +353,8 @@ func (s *Signal) executeApplyPlan(ctx workflow.Context, install *app.Install, in
 		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", install.ID, runnerJob.ID),
 	})
 	if err != nil {
-		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, job.JobErrorMessage(err, "reprovision apply job failed"))
+		msg := job.JobErrorMessage(err, "reprovision apply job failed")
+		s.updateRunStatus(ctx, installRun.ID, app.SandboxRunStatusError, msg)
 		return fmt.Errorf("unable to execute job: %w", err)
 	}
 	if status != app.RunnerJobStatusFinished {
