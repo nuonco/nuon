@@ -132,6 +132,22 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
+	// Re-warm a resident host that already completed successfully. When such a
+	// host idles out, its Handler closes with the QueueSignal marked
+	// StatusSuccess. A later update-with-start (append-step / retry-step) starts
+	// this fresh Handler run but the queue dispatcher never re-drives execute on
+	// a terminal signal, so the conductor loop would never restart. Self-drive
+	// validate→execute once so the parked-loop semantics resume and the
+	// appended/retried work runs. qs is the durable gate: only the terminal-
+	// success resident case reaches here (cold/in-progress dispatch and warm
+	// hosts are never StatusSuccess at boot), giving execute-exactly-once.
+	if r, ok := h.sig.(signal.AutoExecuteOnTerminalStart); ok &&
+		r.AutoExecuteOnTerminalStart() &&
+		qs.Status.Status == app.StatusSuccess &&
+		!h.finished {
+		h.startAutoRewarm(ctx)
+	}
+
 	// execute the handler and handle a restart or stop
 	if err := workflow.Await(ctx, func() bool {
 		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, mgr.Terminated, h.finished)
