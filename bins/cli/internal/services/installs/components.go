@@ -2,6 +2,7 @@ package installs
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/paginate"
@@ -42,15 +43,21 @@ func (s *Service) Components(ctx context.Context, installID string, offset, limi
 		{
 			"ID",
 			"NAME",
+			"ENABLED",
 			"STATUS",
 			"LATEST DEPLOY",
 			"LATEST RELEASE",
 		},
 	}
 	for _, comp := range components {
+		enabled := "-"
+		if comp.Enabled != nil {
+			enabled = strconv.FormatBool(*comp.Enabled)
+		}
 		args := []string{
 			comp.Component.ID,
 			comp.Component.Name,
+			enabled,
 		}
 		if len(comp.InstallDeploys) > 0 {
 			args = append(args, []string{
