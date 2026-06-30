@@ -1,9 +1,11 @@
 import { Badge, type TBadgeTheme } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
 import { LabelBadge } from '@/components/common/LabelBadge'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
 import type { TComponentType } from '@/types'
@@ -25,7 +27,40 @@ export type InstallDiffEntry = {
 export interface IInstallGroupDiff {
   groupName: string
   installs: InstallDiffEntry[]
+  isLoading?: boolean
 }
+
+const SKELETON_ROW_WIDTHS = ['9rem', '7rem', '11rem', '8rem']
+
+const GroupHeader = ({ groupName, children }: { groupName: string; children?: React.ReactNode }) => (
+  <div className="px-4 sm:px-6 py-4 border-b">
+    <div className="flex items-center gap-3">
+      <Icon variant="ListChecksIcon" size="16" />
+      <Text variant="base" weight="strong">{groupName}</Text>
+      {children}
+    </div>
+  </div>
+)
+
+const InstallGroupDiffSkeleton = ({ groupName, rows = 3 }: { groupName: string; rows?: number }) => (
+  <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+    <GroupHeader groupName={groupName}>
+      <Skeleton width="4rem" height="0.875rem" />
+    </GroupHeader>
+    <div className="flex flex-col divide-y">
+      {Array.from({ length: rows }).map((_, idx) => (
+        <div key={idx} className="flex items-center gap-3 px-4 py-3">
+          <Skeleton width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]} height="0.875rem" />
+          <div className="flex items-center gap-2 ml-auto">
+            <Skeleton width="1.5rem" height="0.75rem" />
+            <Skeleton width="1.5rem" height="0.75rem" />
+            <Skeleton width="1.5rem" height="0.75rem" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>
+)
 
 const OP_VERB: Record<string, string> = { add: 'Add', change: 'Update', remove: 'Remove' }
 const OP_THEME: Record<string, TBadgeTheme> = { add: 'success', change: 'warn', remove: 'error' }
@@ -55,14 +90,23 @@ const ChangeSummary = ({ install }: { install: InstallDiffEntry }) => {
   )
 }
 
-export const InstallGroupDiff = ({ groupName, installs }: IInstallGroupDiff) => {
+export const InstallGroupDiff = ({ groupName, installs, isLoading = false }: IInstallGroupDiff) => {
   const focusCtx = useConfigDiffFocus()
+
+  if (isLoading && installs.length === 0) {
+    return <InstallGroupDiffSkeleton groupName={groupName} />
+  }
 
   if (installs.length === 0) {
     return (
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4">
-          <Text variant="subtext" theme="neutral">No install changes to show</Text>
+        <div className="px-4 py-3 text-center">
+          <EmptyState
+            emptyTitle="No install changes"
+            emptyMessage="No installs in this group will be affected by this plan."
+            variant="diagram"
+            size="sm"
+          />
         </div>
       </Card>
     )
@@ -70,15 +114,11 @@ export const InstallGroupDiff = ({ groupName, installs }: IInstallGroupDiff) => 
 
   return (
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-      <div className="px-4 sm:px-6 py-4 border-b">
-        <div className="flex items-center gap-3">
-          <Icon variant="ListChecksIcon" size="16" />
-          <Text variant="base" weight="strong">{groupName}</Text>
-          <Text variant="subtext" theme="neutral">
-            {installs.length} {installs.length === 1 ? 'install' : 'installs'}
-          </Text>
-        </div>
-      </div>
+      <GroupHeader groupName={groupName}>
+        <Text variant="subtext" theme="neutral">
+          {installs.length} {installs.length === 1 ? 'install' : 'installs'}
+        </Text>
+      </GroupHeader>
 
       <div className="flex flex-col divide-y">
         {installs.map((install) => {

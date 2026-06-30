@@ -3,6 +3,7 @@ import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
@@ -665,8 +666,13 @@ export const AppConfigDiff = ({
   if (sections.length === 0) {
     return (
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4">
-          <Text variant="subtext" theme="neutral">No config changes detected</Text>
+        <div className="px-4 py-3 text-center">
+          <EmptyState
+            emptyTitle="No config changes"
+            emptyMessage="This config matches the previous version."
+            variant="diagram"
+            size="sm"
+          />
         </div>
       </Card>
     )

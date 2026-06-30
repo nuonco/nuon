@@ -115,20 +115,11 @@ export const PlanGroupStep = ({
         </Banner>
       )}
 
-      {installs.length > 0 && (
-        <InstallGroupDiff
-          groupName={groupName || 'install group'}
-          installs={transformInstalls(installs)}
-        />
-      )}
-
-      {installs.length === 0 && (
-        <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
-          <Text variant="subtext" theme="neutral">
-            {isInProgress ? 'Computing install diffs...' : 'Waiting to compute plan...'}
-          </Text>
-        </div>
-      )}
+      <InstallGroupDiff
+        groupName={groupName || 'install group'}
+        installs={transformInstalls(installs)}
+        isLoading={isInProgress}
+      />
 
       {showApproveBar && (
         <Banner className="@container" theme="warn">

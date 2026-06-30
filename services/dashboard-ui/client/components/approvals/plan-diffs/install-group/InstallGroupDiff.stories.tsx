@@ -113,3 +113,5 @@ export const NoChanges = () => (
 )
 
 export const Empty = () => <InstallGroupDiff groupName="canary" installs={[]} />
+
+export const Loading = () => <InstallGroupDiff groupName="UAT" installs={[]} isLoading />
