@@ -4091,6 +4091,12 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       drifted_object?: components["schemas"]["app.DriftedObject"];
+      /**
+       * @description Enabled is the resolved enabled/disabled state for a toggleable component
+       * on this install (from the synthetic enabled install input, falling back to
+       * the component's default_enabled). It is nil for non-toggleable components.
+       */
+      enabled?: boolean | null;
       helm_chart?: components["schemas"]["app.HelmChart"];
       id?: string;
       install_deploys?: components["schemas"]["app.InstallDeploy"][];
@@ -7651,9 +7657,8 @@ export interface components {
       warns?: number;
     };
     "service.ToggleInstallComponentRequest": {
-      enabled?: boolean;
+      enabled: boolean;
       plan_only?: boolean;
-      role?: string;
     };
     "service.TriggerAppBranchRunRequest": {
       /** @description optional - use pre-existing app config (skips VCS fetch + config parse) */

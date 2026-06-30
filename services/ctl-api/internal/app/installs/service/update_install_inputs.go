@@ -9,11 +9,13 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/installvalidate"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
@@ -75,39 +77,60 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		return
 	}
 
+	// Default to deploying dependents when the field is omitted, preserving the
+	// historical always-deploy behavior; an explicit false is now respected.
+	deployDependents := req.DeployDependents == nil || *req.DeployDependents
+
+	inputs, err := s.applyInstallInputsUpdate(ctx, install, req.Inputs, req.Role, deployDependents, false, app.WorkflowTypeInputUpdate)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, inputs)
+}
+
+// applyInstallInputsUpdate merges patch over the install's current inputs,
+// persists a new install-inputs revision, and starts (plus enqueues) the
+// input-update workflow that reconciles the change. It is shared by the
+// inputs PATCH endpoint and any flow that drives install inputs (e.g. the
+// component enable/disable toggle, which writes the synthetic enabled input).
+func (s *service) applyInstallInputsUpdate(ctx context.Context, install *app.Install, patch map[string]*string, role string, deployDependents bool, planOnly bool, workflowType app.WorkflowType) (*app.InstallInputs, error) {
 	latestLatestInstallInputs, err := s.getLatestInstallInputs(ctx, install.ID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest install inputs: %w", err))
-		return
+		return nil, fmt.Errorf("unable to get latest install inputs: %w", err)
 	}
 
 	pinnedAppInputConfig, err := s.helpers.GetPinnedAppInputConfig(ctx, install.AppID, install.AppConfigID)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to get latest app input config: %w", err))
-		return
+		return nil, fmt.Errorf("unable to get latest app input config: %w", err)
 	}
 	if pinnedAppInputConfig == nil {
-		ctx.Error(stderr.ErrUser{
+		return nil, stderr.ErrUser{
 			Err:         fmt.Errorf("invalid install inputs provided"),
 			Description: "inputs provided on install, that are not defined on the app",
-		})
-		return
+		}
 	}
 
 	// Reject any install_stack (customer) sourced inputs in the provided subset.
 	// This intentionally operates ONLY on the subset the caller sent — existing
 	// customer-sourced values carried over by the merge are preserved, not re-validated.
-	if err := s.validateVendorSourceInputs(pinnedAppInputConfig, req.Inputs); err != nil {
-		ctx.Error(err)
-		return
+	if err := s.validateVendorSourceInputs(pinnedAppInputConfig, patch); err != nil {
+		return nil, err
 	}
 
 	// Merge the provided subset over the install's current inputs, then validate the
 	// full resulting set so required inputs remain satisfied after a partial update.
-	merged := mergeInstallInputs(latestLatestInstallInputs.Values, req.Inputs, pinnedAppInputConfig)
+	merged := mergeInstallInputs(latestLatestInstallInputs.Values, patch, pinnedAppInputConfig)
 	if err := s.helpers.ValidateInstallInputs(ctx, pinnedAppInputConfig, merged); err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
+	}
+
+	// Reject an inputs update that would leave the install in an inconsistent
+	// component-enablement state (e.g. an enabled component depending on a
+	// disabled one). Validated against the full resulting desired state.
+	if err := s.validateInstallToggles(ctx, install, patch, merged); err != nil {
+		return nil, err
 	}
 
 	inputs, changedInputs, changedInputValues, err := s.newInstallInputs(
@@ -115,56 +138,48 @@ func (s *service) UpdateInstallInputs(ctx *gin.Context) {
 		latestLatestInstallInputs,
 		pinnedAppInputConfig,
 		merged,
-		req,
+		patch,
 	)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
-		return
+		return nil, fmt.Errorf("unable to create install inputs: %w", err)
 	}
-
-	// Default to deploying dependents when the field is omitted, preserving the
-	// historical always-deploy behavior; an explicit false is now respected.
-	deployDependents := req.DeployDependents == nil || *req.DeployDependents
 
 	workflow, err := s.helpers.CreateAndStartInputUpdateWorkflow(
 		ctx,
 		install.ID,
 		*changedInputs,
 		changedInputValues,
-		req.Role,
+		role,
 		deployDependents,
+		planOnly,
+		workflowType,
 	)
 	if err != nil {
-		ctx.Error(fmt.Errorf("unable to create install inputs: %w", err))
-		return
+		return nil, fmt.Errorf("unable to create install inputs: %w", err)
 	}
 
 	// Enqueue queue signals so the input-update workflow runs.
 	signalsQueueID, err := s.getInstallSignalsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 	workflowsQueueID, err := s.getInstallWorkflowsQueueID(ctx, install.ID)
 	if err != nil {
-		ctx.Error(err)
-		return
+		return nil, err
 	}
 	if err := s.enqueueInstallSignal(ctx, signalsQueueID, &updated.Signal{
 		InstallID: install.ID,
 	}, "", ""); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-		return
+		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
 	if err := s.enqueueInstallSignal(ctx, workflowsQueueID, &executeflow.Signal{
 		WorkflowID: workflow.ID,
 	}, workflow.ID, "install_workflows"); err != nil {
-		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
-		return
+		return nil, fmt.Errorf("enqueue signal: %w", err)
 	}
 
 	inputs.WorkflowID = &workflow.ID
-	ctx.JSON(http.StatusOK, inputs)
+	return inputs, nil
 }
 
 func (s *service) getLatestInstallInputs(ctx context.Context, installID string) (*app.InstallInputs, error) {
@@ -199,11 +214,11 @@ func (s *service) newInstallInputs(
 	installInputs *app.InstallInputs,
 	appInputConfig *app.AppInputConfig,
 	merged map[string]*string,
-	req UpdateInstallInputsRequest,
+	patch map[string]*string,
 ) (*app.InstallInputs, *[]string, string, error) {
 	changed, err := helpers.ComputeChangedInputs(
 		installInputs.Values,
-		req.Inputs,
+		patch,
 		appInputConfig.AppInputs,
 	)
 	if err != nil {
@@ -276,6 +291,49 @@ func (s *service) validateVendorSourceInputs(appInputConfig *app.AppInputConfig,
 				Err:         fmt.Errorf("%s has source install_stack, cannot be updated via api", name),
 				Description: name + " has source install_stack and cannot be updated via the api",
 			}
+		}
+	}
+
+	return nil
+}
+
+// validateInstallToggles rejects an inputs update that would leave the install
+// in an inconsistent component-enablement state: an enabled component depending
+// on a disabled one, or a disabled component that still has enabled dependents.
+// It runs only when the patch touches a synthetic enabled input, and validates
+// the full resulting desired state (merged) through the installvalidate
+// framework. With dependent-cascade removed from the disable workflow, this is
+// what stops a user from authoring an inconsistent toggle combination.
+func (s *service) validateInstallToggles(ctx context.Context, install *app.Install, patch, merged map[string]*string) error {
+	touchesToggle := false
+	for name := range patch {
+		if kind, _, ok := config.ParseComponentOverrideInputName(name); ok && kind == config.ComponentOverrideKindEnabled {
+			touchesToggle = true
+			break
+		}
+	}
+	if !touchesToggle {
+		return nil
+	}
+
+	appCfg, err := s.appsHelpers.GetFullAppConfig(ctx, install.AppConfigID, true)
+	if err != nil {
+		return fmt.Errorf("unable to get app config for toggle validation: %w", err)
+	}
+
+	cccByID := make(map[string]*app.ComponentConfigConnection, len(appCfg.ComponentConfigConnections))
+	for i := range appCfg.ComponentConfigConnections {
+		ccc := &appCfg.ComponentConfigConnections[i]
+		cccByID[ccc.ComponentID] = ccc
+	}
+
+	diags := installvalidate.DefaultValidator().Validate(
+		installvalidate.NewContext(cccByID, merged, installvalidate.Operation{Kind: installvalidate.OperationSync}),
+	)
+	if diags.HasErrors() {
+		return stderr.ErrUser{
+			Err:         fmt.Errorf("invalid component toggle configuration"),
+			Description: diags.Errors().Error(),
 		}
 	}
 

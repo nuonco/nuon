@@ -26,6 +26,14 @@ describe('install-utils', () => {
       ).toBe('tf_vars')
     })
 
+    test('returns null for non-structured override kinds like enabled', () => {
+      expect(
+        getComponentOverrideKind(
+          'nuon_component_override_v1_enabled_6170695f67617465776179'
+        )
+      ).toBeNull()
+    })
+
     test('returns null for normal inputs', () => {
       expect(getComponentOverrideKind('domain')).toBeNull()
     })
@@ -46,6 +54,20 @@ describe('install-utils', () => {
       ).toBe('components.certificate.tf_vars')
     })
 
+    test('decodes enabled override input names', () => {
+      expect(
+        getInputDisplayName(
+          'nuon_component_override_v1_enabled_6170695f67617465776179'
+        )
+      ).toBe('components.api_gateway.enabled')
+    })
+
+    test('decodes unrecognized kinds generically rather than showing the raw id', () => {
+      expect(
+        getInputDisplayName('nuon_component_override_v1_unknown_77686f616d69')
+      ).toBe('components.whoami.unknown')
+    })
+
     test('decodes component names containing dashes', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_666f6f2d626172')
@@ -61,9 +83,6 @@ describe('install-utils', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_zz')
       ).toBe('nuon_component_override_v1_helm_values_zz')
-      expect(
-        getInputDisplayName('nuon_component_override_v1_unknown_77686f616d69')
-      ).toBe('nuon_component_override_v1_unknown_77686f616d69')
     })
 
     test('returns invalid-utf8 hex names unchanged', () => {
