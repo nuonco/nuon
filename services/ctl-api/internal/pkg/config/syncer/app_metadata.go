@@ -6,6 +6,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -18,9 +19,11 @@ func (s *syncer) syncApp(ctx context.Context) error {
 	updates := app.App{
 		Description: generics.NewNullString(s.cfg.Description),
 		DisplayName: generics.NewNullString(s.cfg.DisplayName),
+		LabelColors: labels.Labels(s.cfg.LabelColors),
 	}
 
 	res := s.db.WithContext(ctx).
+		Select("description", "display_name", "label_colors").
 		Model(&currentApp).
 		Updates(updates)
 	if res.Error != nil {

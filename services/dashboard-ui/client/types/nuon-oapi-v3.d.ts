@@ -3090,6 +3090,7 @@ export interface components {
       id?: string;
       /** @description fields set via after query */
       input_config?: components["schemas"]["app.AppInputConfig"];
+      label_colors?: Record<string, never>;
       links?: {
         [key: string]: unknown;
       };
@@ -4132,6 +4133,25 @@ export interface components {
     };
     /** @enum {string} */
     "app.InstallActionWorkflowRunStepStatus": "finished" | "pending" | "in-progress" | "timed-out" | "error";
+    "app.InstallAppConfigVersion": {
+      app_branch_run_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      diff?: components["schemas"]["blobstore.Blob"];
+      id?: string;
+      install_group_id?: string;
+      install_id?: string;
+      metadata?: {
+        [key: string]: string;
+      };
+      new_app_config_id?: string;
+      old_app_config_id?: string;
+      org_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
+    };
     /** @enum {string} */
     "app.InstallApprovalOption": "approve-all" | "prompt";
     "app.InstallAuditLog": {
@@ -4181,24 +4201,6 @@ export interface components {
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
-    };
-    "app.InstallConfigUpdate": {
-      app_branch_run_id?: string;
-      created_at?: string;
-      created_by_id?: string;
-      /** @description Diff stores the serialized config diff result. */
-      diff?: components["schemas"]["blobstore.Blob"];
-      id?: string;
-      install_group_id?: string;
-      install_id?: string;
-      new_app_config_id?: string;
-      old_app_config_id?: string;
-      org_id?: string;
-      status?: components["schemas"]["app.CompositeStatus"];
-      updated_at?: string;
-      workflow?: components["schemas"]["app.Workflow"];
-      /** @description WorkflowID links to the install workflow that performs the actual diff and deploy. */
-      workflow_id?: string;
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -7775,6 +7777,9 @@ export interface components {
       config_repo?: string;
       description?: string;
       display_name?: string;
+      label_colors?: {
+        [key: string]: string;
+      };
       name?: string;
       slack_webhook_url?: string;
     };
@@ -10735,7 +10740,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.InstallConfigUpdate"][];
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"][];
         };
       };
       /** @description Bad Request */
@@ -19175,7 +19180,7 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": components["schemas"]["app.InstallConfigUpdate"];
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"];
         };
       };
       /** @description Bad Request */

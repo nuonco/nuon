@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Config Update Flow</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; background: #0a0a0a; color: #e0e0e0; padding: 40px; }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 32px; color: #fff; }
+  .flows { display: flex; gap: 48px; align-items: flex-start; }
+  .flow { flex: 1; min-width: 0; }
+  .flow-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; padding: 8px 12px; border-radius: 6px; text-align: center; }
+  .flow-title.branch { background: #1a1a2e; color: #818cf8; border: 1px solid #2d2d5e; }
+  .flow-title.sync { background: #1a2e1a; color: #6ee7b7; border: 1px solid #2d5e2d; }
+
+  .step { position: relative; margin-bottom: 4px; }
+  .step-box { padding: 10px 14px; border-radius: 6px; font-size: 13px; line-height: 1.4; border: 1px solid #2a2a2a; background: #141414; }
+  .step-box .label { font-weight: 600; color: #fff; font-size: 12px; display: block; margin-bottom: 2px; }
+  .step-box .desc { color: #888; font-size: 11px; }
+  .step-box .flag { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 600; margin-left: 6px; }
+  .step-box .flag.dry { background: #2d2d5e; color: #818cf8; }
+  .step-box .flag.live { background: #2d5e2d; color: #6ee7b7; }
+  .step-box.signal { border-color: #3b3b6b; background: #16162a; }
+  .step-box.activity { border-color: #3b5e3b; background: #162a16; }
+  .step-box.db { border-color: #5e4e2b; background: #2a2216; }
+  .step-box.api { border-color: #4a3b6b; background: #1e162a; }
+  .step-box.shared { border-color: #6b4a3b; background: #2a1e16; }
+  .step-box.new { border: 2px solid #f59e0b; background: #1a1708; }
+  .step-box.new .label::after { content: " (NEW)"; color: #f59e0b; font-size: 10px; }
+
+  .arrow { text-align: center; color: #444; font-size: 16px; line-height: 20px; padding: 2px 0; }
+  .arrow.fan { color: #888; font-size: 11px; }
+
+  .indent { margin-left: 24px; border-left: 2px solid #2a2a2a; padding-left: 16px; }
+  .indent.install { border-color: #3b5e3b; }
+  .indent-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin: 8px 0 4px 0; }
+
+  .legend { margin-top: 40px; display: flex; gap: 20px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #888; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid; }
+
+  .divider { width: 1px; background: #222; align-self: stretch; margin: 0 8px; }
+
+  .shared-section { margin-top: 40px; padding-top: 24px; border-top: 1px solid #222; }
+  .shared-title { font-size: 14px; font-weight: 600; color: #f59e0b; margin-bottom: 16px; }
+  .shared-flow { max-width: 540px; }
+  .mode-split { display: flex; gap: 16px; margin-top: 4px; }
+  .mode-col { flex: 1; }
+  .mode-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 4px; text-align: center; }
+  .skip { color: #555; font-size: 11px; font-style: italic; text-align: center; padding: 6px; }
+</style>
+</head>
+<body>
+
+<h1>Install App Config Update Flow</h1>
+
+<div class="flows">
+
+  <!-- Branch path -->
+  <div class="flow">
+    <div class="flow-title branch">Via App Branch</div>
+
+    <div class="step"><div class="step-box api"><span class="label">nuon apps branches trigger</span><span class="desc">CLI or dashboard triggers a branch run</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step"><div class="step-box signal"><span class="label">app-branch-run signal</span><span class="desc">On app-branch queue. Creates executeflow workflow.</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step"><div class="step-box signal"><span class="label">fetch-commit &rarr; app-config &rarr; builds</span><span class="desc">Fetch VCS commit, parse config, build components</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step"><div class="step-box signal"><span class="label">plan-install-group signal</span><span class="desc">Per install group. Fans out to each install.</span></div></div>
+    <div class="arrow fan">&#8595; per install</div>
+
+    <div class="indent install">
+      <div class="indent-label">Plan phase (per install)</div>
+
+      <div class="step"><div class="step-box shared"><span class="label">update-app-config signal</span><span class="flag dry">dry_run=true</span><span class="desc">Computes diff, creates InstallAppConfigVersion (pending). Returns diff for approval UI.</span></div></div>
+    </div>
+
+    <div class="arrow">&#8595;</div>
+    <div class="step"><div class="step-box"><span class="label">User approves plan</span><span class="desc">Dashboard or CLI approval</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step"><div class="step-box signal"><span class="label">update-install-group signal</span><span class="desc">Per install group. Fans out to each install.</span></div></div>
+    <div class="arrow fan">&#8595; per install</div>
+
+    <div class="indent install">
+      <div class="indent-label">Deploy phase (per install)</div>
+
+      <div class="step"><div class="step-box shared"><span class="label">update-app-config signal</span><span class="flag live">dry_run=false</span><span class="desc">Updates app_config_id, marks version as success, dispatches appconfig-updated.</span></div></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Non-branch path -->
+  <div class="flow">
+    <div class="flow-title sync">Via App Sync (no branch)</div>
+
+    <div class="step"><div class="step-box api"><span class="label">nuon apps sync</span><span class="desc">CLI syncs directory to app config</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step"><div class="step-box api"><span class="label">CreateAppConfig API</span><span class="desc">Creates pending AppConfig, syncs components, marks active</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="step"><div class="step-box signal new"><span class="label">sync-app-config-installs signal</span><span class="desc">On app queue. Looks up all installs, filters out branch-managed.</span></div></div>
+    <div class="arrow fan">&#8595; per install (not branch-managed)</div>
+
+    <div class="indent install">
+      <div class="indent-label">Per install</div>
+
+      <div class="step"><div class="step-box shared"><span class="label">update-app-config signal</span><span class="flag live">dry_run=false</span><span class="desc">Updates app_config_id, creates InstallAppConfigVersion (success), dispatches appconfig-updated.</span></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Shared signal detail -->
+<div class="shared-section">
+  <div class="shared-title">Shared: update-app-config signal (per install, on install queue)</div>
+  <div class="shared-flow">
+    <div class="step"><div class="step-box shared"><span class="label">update-app-config signal</span><span class="desc">Accepts: app_config_id, dry_run, metadata (optional: app_branch_run_id, install_group_id)</span></div></div>
+    <div class="arrow">&#8595;</div>
+    <div class="step"><div class="step-box activity"><span class="label">Compute diff</span><span class="desc">Compare old app config vs new app config (components, sandbox, stack)</span></div></div>
+    <div class="arrow">&#8595;</div>
+
+    <div class="mode-split">
+      <div class="mode-col">
+        <div class="mode-label">dry_run = true</div>
+        <div class="skip">Return diff. No DB writes. Stop here.</div>
+      </div>
+      <div class="mode-col">
+        <div class="mode-label">dry_run = false</div>
+        <div class="step"><div class="step-box db"><span class="label">Update install.app_config_id</span><span class="desc">Set to new config</span></div></div>
+        <div class="arrow">&#8595;</div>
+        <div class="step"><div class="step-box db"><span class="label">Create InstallAppConfigVersion</span><span class="desc">Records transition with diff + metadata</span></div></div>
+        <div class="arrow">&#8595;</div>
+        <div class="step"><div class="step-box signal"><span class="label">Dispatch appconfig-updated</span><span class="desc">Input migration + emitter reconciliation</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shared-title" style="margin-top: 32px;">Shared: appconfig-updated signal (per install, existing)</div>
+  <div class="shared-flow">
+    <div class="step"><div class="step-box signal"><span class="label">appconfig-updated signal</span><span class="desc">Existing signal, adding input migration.</span></div></div>
+    <div class="arrow">&#8595;</div>
+    <div class="step"><div class="step-box activity"><span class="label">MigrateInstallInputsToNewConfig</span><span class="desc">Migrate input values to new config schema</span></div></div>
+    <div class="arrow">&#8595;</div>
+    <div class="step"><div class="step-box activity"><span class="label">Reconcile action cron emitters</span><span class="desc">Create/remove cron emitters for actions</span></div></div>
+    <div class="arrow">&#8595;</div>
+    <div class="step"><div class="step-box activity"><span class="label">Reconcile drift emitters</span><span class="desc">Create/remove per-component drift emitters</span></div></div>
+    <div class="arrow">&#8595;</div>
+    <div class="step"><div class="step-box activity"><span class="label">Reconcile sandbox drift emitter</span><span class="desc">Create/remove sandbox drift emitter</span></div></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-swatch" style="background:#16162a;border-color:#3b3b6b;"></div> Signal</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#162a16;border-color:#3b5e3b;"></div> Activity</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2a2216;border-color:#5e4e2b;"></div> DB write</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1e162a;border-color:#4a3b6b;"></div> API / CLI</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#2a1e16;border-color:#6b4a3b;"></div> Shared (both paths)</div>
+  <div class="legend-item"><div class="legend-swatch" style="background:#1a1708;border-color:#f59e0b;"></div> New</div>
+  <div class="legend-item"><span class="step-box" style="display:inline-block;padding:2px 8px;font-size:10px;"><span class="flag dry" style="margin:0;">dry_run=true</span></span> Plan only</div>
+  <div class="legend-item"><span class="step-box" style="display:inline-block;padding:2px 8px;font-size:10px;"><span class="flag live" style="margin:0;">dry_run=false</span></span> Apply</div>
+</div>
+
+</body>
+</html>

@@ -27,7 +27,7 @@ import (
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				200	{array}		app.InstallConfigUpdate
+// @Success				200	{array}		app.InstallAppConfigVersion
 // @Router					/v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-groups [get]
 func (s *service) GetAppBranchRunInstallGroups(ctx *gin.Context) {
 	org, err := cctx.OrgFromContext(ctx)
@@ -68,12 +68,12 @@ func (s *service) GetAppBranchRunInstallGroups(ctx *gin.Context) {
 		return
 	}
 
-	var updates []app.InstallConfigUpdate
+	var updates []app.InstallAppConfigVersion
 	res = s.db.WithContext(ctx).
 		Preload("Install").
 		Preload("Workflow").
 		Preload("Workflow.Steps").
-		Where(app.InstallConfigUpdate{AppBranchRunID: runID}).
+		Where(app.InstallAppConfigVersion{AppBranchRunID: runID}).
 		Order("created_at ASC").
 		Find(&updates)
 	if res.Error != nil {

@@ -157,7 +157,7 @@ const InstallTemplate = () => {
                   </Text>
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} />
+                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={install?.app?.label_colors?.[key]} />
                     ))}
                 </div>
                 <ID>{install.id}</ID>

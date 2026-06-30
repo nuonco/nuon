@@ -57,7 +57,7 @@ type Client interface {
 	TriggerAppBranchRun(ctx context.Context, appID, appBranchID string, req *models.ServiceTriggerAppBranchRunRequest) (*models.AppAppBranchRun, error)
 	GetAppBranchRuns(ctx context.Context, appID, appBranchID string) ([]*models.AppWorkflow, error)
 	GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppComponentBuild, error)
-	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallConfigUpdate, error)
+	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error)
 
 	// app sandbox config methods
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)

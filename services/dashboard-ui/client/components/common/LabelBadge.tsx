@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'react'
+import type { CSSProperties, HTMLAttributes } from 'react'
 import { Badge, type IBadge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { cn } from '@/utils/classnames'
@@ -14,6 +14,7 @@ export interface ILabelBadge extends HTMLAttributes<HTMLSpanElement> {
   onRemove?: () => void
   removeAriaLabel?: string
   disabled?: boolean
+  customColor?: string
 }
 
 export const LabelBadge = ({
@@ -24,6 +25,7 @@ export const LabelBadge = ({
   theme = 'info',
   size = 'lg',
   variant,
+  customColor,
   className,
   onRemove,
   removeAriaLabel = 'Remove label',
@@ -46,6 +48,14 @@ export const LabelBadge = ({
 
   const iconSize = size === 'lg' ? 13 : size === 'md' ? 12 : 11
 
+  const customStyle: CSSProperties | undefined = customColor
+    ? {
+        backgroundColor: `${customColor}15`,
+        color: customColor,
+        borderColor: `${customColor}40`,
+      }
+    : undefined
+
   return (
     <span className={cn('inline-flex', className)} {...props}>
       <Badge size={size} theme={keyTheme} variant={variant} className="rounded-r-none">
@@ -53,9 +63,10 @@ export const LabelBadge = ({
       </Badge>
       <Badge
         size={size}
-        theme={theme}
+        theme={customStyle ? undefined : theme}
         variant={variant}
-        className={cn('rounded-l-none border-l-0', onRemove && 'pr-1')}
+        className={cn('rounded-l-none border-l-0', customStyle && 'border', onRemove && 'pr-1')}
+        style={customStyle}
       >
         {value}
         {onRemove && (

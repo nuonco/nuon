@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -39,6 +40,7 @@ type TriggerAppBranchRunFromVCSPushRequest struct {
 	PRNumber          *int   `json:"pr_number,omitempty"`
 	HeadSHA           string `json:"head_sha,omitempty"`
 	BaseBranch        string `json:"base_branch,omitempty"`
+	PusherEmail       string `json:"pusher_email,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -62,7 +64,18 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return nil, fmt.Errorf("unable to find app branch config: %w", err)
 	}
 
-	// Create app branch run
+	if req.PusherEmail != "" {
+		var account app.Account
+		err := a.db.WithContext(ctx).
+			Where(app.Account{Email: req.PusherEmail}).
+			Joins("JOIN account_roles ON account_roles.account_id = accounts.id").
+			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.org_id = ?", branch.OrgID).
+			First(&account).Error
+		if err == nil {
+			ctx = cctx.SetAccountIDContext(ctx, account.ID)
+		}
+	}
+
 	run, err := a.helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: appBranchConfigID,

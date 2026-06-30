@@ -6,8 +6,9 @@ import (
 )
 
 type pushEventInfo struct {
-	Repo   string // "owner/repo" - matches ConnectedGithubVCSConfig.Repo
-	Branch string // "main" - matches ConnectedGithubVCSConfig.Branch
+	Repo        string // "owner/repo" - matches ConnectedGithubVCSConfig.Repo
+	Branch      string // "main" - matches ConnectedGithubVCSConfig.Branch
+	PusherEmail string // email of the person who pushed
 }
 
 type pullRequestEventInfo struct {
@@ -42,9 +43,15 @@ func parsePushEvent(payload map[string]any) (*pushEventInfo, error) {
 		return nil, fmt.Errorf("missing or invalid repository.full_name in push payload")
 	}
 
+	var pusherEmail string
+	if pusher, ok := payload["pusher"].(map[string]any); ok {
+		pusherEmail, _ = pusher["email"].(string)
+	}
+
 	return &pushEventInfo{
-		Repo:   fullName,
-		Branch: branch,
+		Repo:        fullName,
+		Branch:      branch,
+		PusherEmail: pusherEmail,
 	}, nil
 }
 

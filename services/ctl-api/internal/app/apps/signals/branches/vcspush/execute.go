@@ -24,6 +24,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		PRNumber:          s.PRNumber,
 		HeadSHA:           s.HeadSHA,
 		BaseBranch:        s.BaseBranch,
+		PusherEmail:       s.PusherEmail,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to trigger app branch run from vcs push: %w", err)

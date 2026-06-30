@@ -29,6 +29,9 @@ type ServiceUpdateAppRequest struct {
 	// display name
 	DisplayName string `json:"display_name,omitempty"`
 
+	// label colors
+	LabelColors map[string]string `json:"label_colors,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

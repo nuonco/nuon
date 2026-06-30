@@ -77,7 +77,7 @@ GetAppBranchRunInstallGroupsOK describes a response with status code 200, with d
 OK
 */
 type GetAppBranchRunInstallGroupsOK struct {
-	Payload []*models.AppInstallConfigUpdate
+	Payload []*models.AppInstallAppConfigVersion
 }
 
 // IsSuccess returns true when this get app branch run install groups o k response has a 2xx status code
@@ -120,7 +120,7 @@ func (o *GetAppBranchRunInstallGroupsOK) String() string {
 	return fmt.Sprintf("[GET /v1/apps/{app_id}/branches/{app_branch_id}/runs/{run_id}/install-groups][%d] getAppBranchRunInstallGroupsOK %s", 200, payload)
 }
 
-func (o *GetAppBranchRunInstallGroupsOK) GetPayload() []*models.AppInstallConfigUpdate {
+func (o *GetAppBranchRunInstallGroupsOK) GetPayload() []*models.AppInstallAppConfigVersion {
 	return o.Payload
 }
 

@@ -15,8 +15,9 @@ func (h *Helpers) CreateAppBranch(
 	name string,
 ) (*app.AppBranch, error) {
 	branch := app.AppBranch{
-		AppID: appID,
-		Name:  name,
+		AppID:     appID,
+		Name:      name,
+		ManagedBy: app.AppBranchManagedByManually,
 	}
 
 	// Create branch first to get ID

@@ -10,7 +10,7 @@ const LIMIT = 20
 export const RunbooksTableContainer = () => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
@@ -28,7 +28,7 @@ export const RunbooksTableContainer = () => {
 
   return (
     <RunbooksTable
-      data={parseRunbooksToTableData(result?.data ?? [], org?.id ?? '', app?.id ?? '')}
+      data={parseRunbooksToTableData(result?.data ?? [], org?.id ?? '', app?.id ?? '', labelColors)}
       isLoading={isLoading}
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,

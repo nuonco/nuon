@@ -90,7 +90,8 @@ export const InstallComponentsTableContainer = ({
         org?.id ?? '',
         install?.id ?? '',
         configConnections,
-        componentToggles
+        componentToggles,
+        install?.app?.label_colors
       )}
       filterActions={
         <div className="flex items-center gap-3">
