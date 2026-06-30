@@ -288,6 +288,7 @@
 				"icon": "clock-rotate-left",
 				"pages": [
 					"updates/updates",
+					"updates/036-toggleable-components",
 					"updates/035-runbooks-and-readmes",
 					"updates/034-aws-terraform-install-stack",
 					"updates/033-Workflow-Policy-and-improved-cloud-support",
