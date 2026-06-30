@@ -1,3 +1,4 @@
+import { cloneElement, isValidElement } from 'react'
 import { Prism } from 'react-syntax-highlighter'
 import {
   oneDark,
@@ -6,6 +7,43 @@ import {
 import createElement from 'react-syntax-highlighter/dist/esm/create-element'
 import { useSystemTheme } from '@/hooks/use-system-theme'
 import { cn } from '@/utils/classnames'
+
+type DiffOp = 'add' | 'remove' | 'change'
+
+const MARKER_TEXT: Record<DiffOp, string> = {
+  add: 'text-green-800 dark:text-green-500',
+  remove: 'text-red-800 dark:text-red-500',
+  change: 'text-orange-800 dark:text-orange-400',
+}
+
+function lineOp(line: string): DiffOp | null {
+  if (line.startsWith('+')) return 'add'
+  if (line.startsWith('-')) return 'remove'
+  if (line.startsWith('~')) return 'change'
+  return null
+}
+
+function colorFirstChar(node: any, colorClass: string, state: { done: boolean }): any {
+  if (state.done) return node
+  if (typeof node === 'string') {
+    if (node.length === 0) return node
+    state.done = true
+    return [
+      <span key="diff-marker" className={cn('font-bold', colorClass)}>
+        {node[0]}
+      </span>,
+      node.slice(1),
+    ]
+  }
+  if (Array.isArray(node)) {
+    return node.map((n) => colorFirstChar(n, colorClass, state))
+  }
+  if (isValidElement(node)) {
+    const el = node as any
+    return cloneElement(el, { ...el.props }, colorFirstChar(el.props.children, colorClass, state))
+  }
+  return node
+}
 
 const DIFF_CLASSES = {
   added:
@@ -32,7 +70,8 @@ function renderChangedLine(line: string) {
 
   return (
     <>
-      {key}{' '}
+      <span className={cn('font-bold', MARKER_TEXT.change)}>{key[0]}</span>
+      {key.slice(1)}{' '}
       <span className="line-through opacity-70 text-red-800 dark:text-red-400">
         {oldVal}
       </span>
@@ -118,9 +157,8 @@ export function PrismCodeBlock({
                   key: `line-${i}`,
                 }) as any
 
-                if (!line.startsWith('~') || !line.includes(' -> ')) {
-                  return defaultEl
-                }
+                const op = lineOp(line)
+                if (!op) return defaultEl
 
                 const children = Array.isArray(defaultEl.props.children)
                   ? defaultEl.props.children
@@ -130,9 +168,14 @@ export function PrismCodeBlock({
                   child?.props?.className?.includes('linenumber')
 
                 const lineNumberChild = children.find(isLineNumber)
-                const newChildren = lineNumberChild
-                  ? [lineNumberChild, renderChangedLine(line)]
-                  : [renderChangedLine(line)]
+                const contentChildren = children.filter((c: any) => !isLineNumber(c))
+
+                const content =
+                  op === 'change' && line.includes(' -> ')
+                    ? renderChangedLine(line)
+                    : colorFirstChar(contentChildren, MARKER_TEXT[op], { done: false })
+
+                const newChildren = lineNumberChild ? [lineNumberChild, content] : [content]
 
                 return {
                   ...defaultEl,
