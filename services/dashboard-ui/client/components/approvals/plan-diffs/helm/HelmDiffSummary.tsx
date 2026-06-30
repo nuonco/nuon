@@ -8,7 +8,7 @@ export const HelmDiffSummary = ({ summary }: { summary: THelmPlanSummary }) => {
         <div className="flex items-center gap-1.5">
           <Text
             variant="base"
-            className="text-green-600 dark:text-green-40"
+            className="text-green-600 dark:text-green-400"
             weight="strong"
           >
             {summary.add}
