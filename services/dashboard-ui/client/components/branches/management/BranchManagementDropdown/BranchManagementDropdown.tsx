@@ -46,6 +46,7 @@ export const BranchManagementDropdown = ({
         </Text>
         {editButton}
         {deploymentPlanButton}
+        {deleteButton}
         <hr />
         <Text variant="label" theme="neutral">
           Controls
@@ -58,8 +59,6 @@ export const BranchManagementDropdown = ({
           Trigger run
           <Icon variant="PlayIcon" />
         </Button>
-        <hr />
-        {deleteButton}
       </Menu>
     </Dropdown>
   )
