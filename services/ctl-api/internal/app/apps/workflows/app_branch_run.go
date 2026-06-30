@@ -144,7 +144,7 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 			InstallGroupID: group.ID,
 			AppBranchID:    appBranchID,
 			RunID:          runID,
-		}, WithExecutionType(app.WorkflowStepExecutionTypeApproval), WithSkippable(true))
+		}, WithSkippable(true))
 		if err != nil {
 			return nil, errors.Wrapf(err, "unable to create deploy step for group %s", group.Name)
 		}
