@@ -59,14 +59,20 @@ func (s *service) getInstallComponent(ctx context.Context, installID, componentI
 		return nil, fmt.Errorf("unable to get install component: %w", res.Error)
 	}
 
-	var driftedObj *app.DriftedObject
+	var driftedObj app.DriftedObject
 	res = s.db.WithContext(ctx).
 		Where("install_component_id = ?", installCmp.ID).
 		First(&driftedObj)
 	if res.Error != nil && res.Error != gorm.ErrRecordNotFound {
 		return nil, fmt.Errorf("unable to get drifted objects: %w", res.Error)
 	}
-	installCmp.DriftedObject = *driftedObj
+	if res.Error == nil {
+		installCmp.DriftedObject = driftedObj
+	}
+
+	if err := s.populateComponentEnabled(ctx, installID, []*app.InstallComponent{&installCmp}); err != nil {
+		return nil, err
+	}
 
 	return &installCmp, nil
 }

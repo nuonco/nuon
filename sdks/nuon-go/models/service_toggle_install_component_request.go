@@ -8,8 +8,10 @@ package models
 import (
 	"context"
 
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
+	"github.com/go-openapi/validate"
 )
 
 // ServiceToggleInstallComponentRequest service toggle install component request
@@ -18,17 +20,33 @@ import (
 type ServiceToggleInstallComponentRequest struct {
 
 	// enabled
-	Enabled bool `json:"enabled,omitempty"`
+	// Required: true
+	Enabled *bool `json:"enabled"`
 
 	// plan only
 	PlanOnly bool `json:"plan_only,omitempty"`
-
-	// role
-	Role string `json:"role,omitempty"`
 }
 
 // Validate validates this service toggle install component request
 func (m *ServiceToggleInstallComponentRequest) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateEnabled(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ServiceToggleInstallComponentRequest) validateEnabled(formats strfmt.Registry) error {
+
+	if err := validate.Required("enabled", "body", m.Enabled); err != nil {
+		return err
+	}
+
 	return nil
 }
 

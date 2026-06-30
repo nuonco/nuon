@@ -266,7 +266,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsToggleCmd.MarkFlagRequired("component-id")
 	componentsToggleCmd.Flags().BoolVar(&enable, "enable", false, "Enable the component")
 	componentsToggleCmd.Flags().BoolVar(&disable, "disable", false, "Disable the component")
-	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Plan without applying")
+	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan the resulting deploy or teardown, do not apply it")
 	componentsCmd.AddCommand(componentsToggleCmd)
 
 	installsCmds.AddCommand(componentsCmd)

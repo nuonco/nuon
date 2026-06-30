@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
@@ -6,7 +5,6 @@ import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import type { IModal } from '@/components/surfaces/Modal'
-import { RoleSelector } from '@/components/roles/RoleSelector'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
@@ -29,18 +27,16 @@ export const ToggleComponentModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
-  const [selectedRole, setSelectedRole] = useState<string>('')
 
   const action = enabling ? 'Enabling' : 'Disabling'
   const pastAction = enabling ? 'enabled' : 'disabled'
 
   const { mutate: execute, isPending, error } = useMutation({
-    mutationFn: (params: { role?: string }) =>
+    mutationFn: (params: { planOnly: boolean }) =>
       toggleComponent({
         body: {
           enabled: enabling,
-          plan_only: false,
-          ...(params.role && { role: params.role }),
+          plan_only: params.planOnly,
         },
         componentId: component.id,
         installId: install.id,
@@ -80,26 +76,12 @@ export const ToggleComponentModalContainer = ({
       enabling={enabling}
       isPending={isPending}
       error={error as any}
-      onSubmit={({ role }) => {
-        execute({ role: role || selectedRole })
+      onSubmit={({ planOnly }) => {
+        execute({ planOnly })
       }}
       onClose={() => {
         removeModal(props.modalId)
       }}
-      roleSelector={({ value, onChange }) => (
-        <RoleSelector
-          installId={install?.id}
-          operationType={enabling ? 'deploy' : 'teardown'}
-          principalType="component"
-          principalId={component.id}
-          value={value || selectedRole}
-          onChange={(v) => {
-            onChange(v)
-            setSelectedRole(v)
-          }}
-          name="role"
-        />
-      )}
       {...props}
     />
   )

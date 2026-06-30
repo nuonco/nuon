@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon/pkg/config/diff"
@@ -270,6 +271,12 @@ func (i *Install) FlattenedInputs() map[string]string {
 		if override.TFVars != "" {
 			flattened[TFVarsOverrideInputName(compName)] = override.TFVars
 		}
+	}
+	// Component enable/disable toggles are likewise carried through a reserved
+	// synthetic enabled input per component, so [component_toggles] flows through
+	// the same install-input update + reconcile path as everything else.
+	for compName, enabled := range i.ComponentToggles {
+		flattened[EnabledOverrideInputName(compName)] = strconv.FormatBool(enabled)
 	}
 	return flattened
 }

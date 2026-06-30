@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -260,4 +262,22 @@ func (c *ComponentConfigConnection) GetDefaultEnabled() bool {
 		return *c.DefaultEnabled
 	}
 	return false
+}
+
+// ComponentEnabledFromInputs resolves whether a toggleable component is enabled
+// from a set of install input values. The synthetic enabled input
+// (config.EnabledOverrideInputName) is the source of truth; when unset it falls
+// back to the component's default_enabled. Non-toggleable components are always
+// enabled.
+func ComponentEnabledFromInputs(enabledInputs map[string]*string, ccc *ComponentConfigConnection) bool {
+	if ccc == nil || !ccc.IsToggleable() {
+		return true
+	}
+	name := config.EnabledOverrideInputName(ccc.Component.Name)
+	if v, ok := enabledInputs[name]; ok && v != nil {
+		if enabled, err := strconv.ParseBool(*v); err == nil {
+			return enabled
+		}
+	}
+	return ccc.GetDefaultEnabled()
 }

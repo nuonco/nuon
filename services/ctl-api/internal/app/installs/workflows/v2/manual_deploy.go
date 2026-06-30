@@ -77,7 +77,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallConfig(install.InstallConfig))
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
 	// first, provision the deploy with before and after triggers
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.ComponentID)

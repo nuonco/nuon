@@ -32,11 +32,13 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 		return ui.PrintError(err)
 	}
 
+	installComponent, err := s.api.GetInstallComponent(ctx, installID, componentID)
+	if err != nil {
+		return ui.PrintError(err)
+	}
 	currentlyEnabled := true
-	if install.InstallConfig != nil && install.InstallConfig.ComponentToggles != nil {
-		if v, ok := install.InstallConfig.ComponentToggles[componentID]; ok {
-			currentlyEnabled = v
-		}
+	if installComponent.Enabled != nil {
+		currentlyEnabled = *installComponent.Enabled
 	}
 
 	enabled := enableFlag
@@ -65,7 +67,7 @@ func (s *Service) ToggleComponent(ctx context.Context, installID, componentID st
 	}
 
 	resp, err := s.api.ToggleInstallComponent(ctx, installID, componentID, &models.ServiceToggleInstallComponentRequest{
-		Enabled:  enabled,
+		Enabled:  &enabled,
 		PlanOnly: planOnly,
 	})
 	if err != nil {
