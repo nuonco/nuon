@@ -90,6 +90,8 @@ type CreateActionWorkflowConfigRequest struct {
 	Role              string `json:"role,omitempty"`
 
 	EnableKubeConfig *bool `json:"enable_kube_config" swaggertype:"boolean" extensions:"x-nullable"`
+
+	KubernetesContext string `json:"kubernetes_context,omitempty"`
 }
 
 type CreateActionWorkflowConfigTriggerRequest struct {
@@ -295,6 +297,7 @@ func (s *service) createActionWorkflowConfig(ctx context.Context, parentApp *app
 		BreakGlassRoleARN:      generics.NewNullString(req.BreakGlassRoleARN),
 		Role:                   req.Role,
 		EnableKubeConfig:       enableKubeConfig,
+		KubernetesContextName:  req.KubernetesContext,
 	}
 
 	res := s.db.WithContext(ctx).

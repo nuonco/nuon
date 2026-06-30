@@ -218,6 +218,7 @@ func (s *syncer) syncAction(ctx context.Context, action *config.ActionConfig) er
 		ComponentDependencyIDs: pq.StringArray(action.Dependencies),
 		References:             pq.StringArray(actionReferences),
 		BreakGlassRoleARN:      generics.NewNullString(action.BreakGlassRole),
+		KubernetesContextName:  action.KubernetesContext,
 		Triggers:               triggers,
 		Steps:                  steps,
 	}

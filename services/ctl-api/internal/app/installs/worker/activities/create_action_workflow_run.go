@@ -93,6 +93,7 @@ func (a *Activities) createActionWorkflowRun(ctx context.Context,
 		TriggeredByType:         triggeredByType,
 		Role:                    role,
 		EnableKubeConfig:        cfg.EnableKubeConfig,
+		KubernetesContextName:   cfg.KubernetesContextName,
 	}
 
 	if installWorkflowID != "" {

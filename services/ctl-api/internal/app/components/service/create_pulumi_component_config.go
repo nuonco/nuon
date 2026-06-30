@@ -33,11 +33,12 @@ type CreatePulumiComponentConfigRequest struct {
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies   []string                      `json:"dependencies"`
-	References     []string                      `json:"references"`
-	Checksum       string                        `json:"checksum"`
-	DriftSchedule  *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
-	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	Dependencies      []string                      `json:"dependencies"`
+	References        []string                      `json:"references"`
+	Checksum          string                        `json:"checksum"`
+	DriftSchedule     *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
+	OperationRoles    map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
 }
 
 var validPulumiRuntimes = []string{"go", "nodejs", "python", "dotnet", "java", "yaml"}
@@ -211,6 +212,7 @@ func (s *service) createPulumiComponentConfig(ctx context.Context, cmpID string,
 		DefaultEnabled:               req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
 		OperationRoles:               operationRoles,
+		KubernetesContextName:        req.KubernetesContext,
 	}
 	if req.DriftSchedule != nil {
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule

@@ -63,6 +63,12 @@ func PreloadAppConfigSandboxConfig(db *gorm.DB) *gorm.DB {
 		Preload("SandboxConfig.ConnectedGithubVCSConfig.VCSConnection")
 }
 
+// kubernetes contexts config
+func PreloadAppConfigKubernetesContextsConfig(db *gorm.DB) *gorm.DB {
+	return db.Preload("KubernetesContextsConfig").
+		Preload("KubernetesContextsConfig.Contexts")
+}
+
 // runner config
 func PreloadAppConfigRunnerConfig(db *gorm.DB) *gorm.DB {
 	return db.Preload("RunnerConfig")

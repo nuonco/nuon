@@ -26,6 +26,7 @@ func (s *syncer) createHelmChartComponentConfig(ctx context.Context, resource, c
 		TakeOwnership:            obj.TakeOwnership,
 		BuildTimeout:             obj.BuildTimeout,
 		DeployTimeout:            obj.DeployTimeout,
+		KubernetesContext:        comp.KubernetesContext,
 	}
 
 	if obj.MaxAutoRetries != nil {

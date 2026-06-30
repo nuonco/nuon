@@ -122,9 +122,9 @@ func (p *Planner) createTerraformDeployPlan(
 		return nil, errors.Wrap(err, "unable to get auth for deploy")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	clusterInfo, err := p.resolveKubernetesContext(ctx, &compBuild.ComponentConfigConnection, appCfg, stack, state, cloudAuth)
 	if err != nil {
-		l.Warn("unable to get cluster information, this usually means this was not a kubernetes application")
+		l.Warn("unable to resolve kubernetes context, this usually means this was not a kubernetes application")
 	}
 
 	// construct plan from rendered values

@@ -158,6 +158,7 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.H
 	// Create component config connection
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig:    &cfg,
+		KubernetesContextName:  comp.KubernetesContext,
 		ComponentID:            componentID,
 		AppConfigID:            appConfigID,
 		ComponentDependencyIDs: pq.StringArray(depIDs),
