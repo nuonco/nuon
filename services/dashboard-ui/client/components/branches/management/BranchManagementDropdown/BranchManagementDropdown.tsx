@@ -10,6 +10,7 @@ export interface IBranchManagementDropdown {
   detailHref: string
   editButton: ReactNode
   deploymentPlanButton: ReactNode
+  deleteButton: ReactNode
   hasConfig: boolean
   isTriggerPending: boolean
   onTriggerRun: () => void
@@ -20,6 +21,7 @@ export const BranchManagementDropdown = ({
   detailHref,
   editButton,
   deploymentPlanButton,
+  deleteButton,
   hasConfig,
   isTriggerPending,
   onTriggerRun,
@@ -56,6 +58,8 @@ export const BranchManagementDropdown = ({
           Trigger run
           <Icon variant="PlayIcon" />
         </Button>
+        <hr />
+        {deleteButton}
       </Menu>
     </Dropdown>
   )
