@@ -6,11 +6,27 @@ boost: 0.3
 
 _June 30, 2026_
 
+<div style={{ display: 'flex', justifyContent: 'center', margin: '24px 0' }}>
+  <img
+    src="/images/changelog/036-header.png"
+    alt="Toggleable components — enable or disable individual components per install"
+    style={{
+      width: '100%',
+      maxWidth: '640px',
+      borderRadius: '12px',
+      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+    }}
+  />
+</div>
+
 ## Toggleable components
 
-Some components are optional: a customer on one tier gets observability, another doesn't; one install needs a certificate, another brings its own. **Toggleable components** let each install decide which components are enabled — without forking your app config.
+Enterprise Software and custom agreements for gating product features are common. 
+Now you can skip deploying unneeded parts of your app to a customer.
 
-Mark a component toggleable in your app config, with an optional `default_enabled` starting state:
+### App Config
+
+Mark a component `toggleable` in your [app config](guides/app-init), with an optional `default_enabled` starting state:
 
 ```toml components/observability.toml
 name            = "observability"
@@ -18,8 +34,14 @@ type            = "helm_chart"
 toggleable      = true
 default_enabled = false
 ```
+### Install Config
 
-A component's enabled state is stored as an [install input](/guides/configuring-inputs-and-secrets), and that input is the source of truth — the install config, the dashboard, and the CLI all write the same value. For config-managed installs, set the state per component in a `[component_toggles]` section:
+You can manage an install's toggled components by `install.toml` config files via CLI and [API](https://api.nuon.co/docs/index.html#/) at `PATCH /v1/installs/{install_id}`, or in the browser via the Dashboard.
+
+A component's enabled state is stored as an [install input](/guides/configuring-inputs-and-secrets). 
+
+For `install.toml` config-managed installs, set the state per component in a `[component_toggles]` section:
+
 
 ```toml install.toml
 name = "customer-acme"
@@ -29,44 +51,6 @@ observability = true
 certificate   = false
 ```
 
-When you run `nuon installs sync`, Nuon reconciles every toggle in a single pass: newly enabled components are deployed and newly disabled ones are torn down, all within one workflow. Enabling or disabling a component also runs its `pre`/`post` [lifecycle actions](/guides/actions) when defined.
-
-<div style={{
-  backgroundImage: 'url(/images/changelog/036-toggles-bg.png)',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  padding: '48px 24px',
-  borderRadius: '12px',
-  display: 'flex',
-  justifyContent: 'center',
-  margin: '24px 0'
-}}>
-  <img
-    src="/images/changelog/036-toggle-components.png"
-    alt="An install's components list in the Nuon dashboard, with toggles to enable or disable individual components"
-    style={{
-      width: '100%',
-      maxWidth: '720px',
-      borderRadius: '8px',
-      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
-    }}
-  />
-</div>
-
-### Inconsistent states are rejected up front
-
-Toggle state has to stay consistent with the [component dependency graph](/guides/component-dependencies). Before applying any change, Nuon validates two rules:
-
-- An enabled component cannot depend on a disabled one.
-- A component cannot be disabled while an enabled component still depends on it.
-
-These run **before** anything is deployed or torn down, so an inconsistent config is rejected rather than cascading into a half-broken install. Both declared `dependencies` and implicit output references (`{{.nuon.components.<name>.outputs...}}`) count as edges. For example, syncing a config that enables `api_gateway` while its `certificate` dependency is disabled fails with:
-
-```
-component "api_gateway" is enabled but its dependency "certificate" is disabled
-  Enable "certificate", or disable "api_gateway", so the install reaches a consistent state.
-```
-
 You can also toggle a single component imperatively from the dashboard or CLI:
 
 ```bash
@@ -74,7 +58,9 @@ nuon installs components toggle --install-id <install-id> --component-id <compon
 nuon installs components toggle --install-id <install-id> --component-id <component> --disable
 ```
 
-See the [Toggleable Components guide](/guides/toggleable-components) for the full reference.
+Newly enabled components are deployed and newly disabled ones are torn down, all within one workflow. Enabling or disabling a component also runs its `pre`/`post` [lifecycle actions](/guides/actions) when defined.
+
+Dependency rules, lifecycle hooks, and per-install behavior are all covered in the [Toggleable Components guide](/guides/toggleable-components) — see it for the full reference.
 
 ## Kubernetes contexts
 
