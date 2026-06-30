@@ -119,6 +119,12 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
 		}
 
+		// app kubernetes contexts management
+		kubernetesContextsConfigs := app.Group("/kubernetes-contexts-configs")
+		{
+			kubernetesContextsConfigs.POST("", s.CreateAppKubernetesContextsConfig)
+		}
+
 		// app stack configs
 		stackConfigs := app.Group("/stack-configs")
 		{

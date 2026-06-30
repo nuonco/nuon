@@ -107,6 +107,18 @@ func (s *syncer) syncPhases() ([][]syncStep, error) {
 		})
 	}
 
+	// kubernetes_contexts must come after the per-component sync: the
+	// endpoint resolves each context's source-component name to an ID, which
+	// only exists once the ensureComponent pass above has run.
+	kubernetesContexts := []syncStep{
+		{
+			Resource: "app-kubernetes-contexts",
+			Method: func(ctx context.Context) error {
+				return s.syncAppKubernetesContexts(ctx, "app-kubernetes-contexts")
+			},
+		},
+	}
+
 	actions := make([]syncStep, 0, len(s.cfg.Actions))
 	for _, action := range s.cfg.Actions {
 		obj := action
@@ -137,6 +149,7 @@ func (s *syncer) syncPhases() ([][]syncStep, error) {
 		topLevel,
 		ensureComponents,
 		syncComponents,
+		kubernetesContexts,
 		actions,
 		runbooks,
 	}, nil

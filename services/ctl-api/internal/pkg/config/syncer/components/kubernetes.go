@@ -107,6 +107,7 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper
 	// Create component config connection
 	componentConfigConnection := app.ComponentConfigConnection{
 		KubernetesManifestComponentConfig: &cfg,
+		KubernetesContextName:             comp.KubernetesContext,
 		ComponentID:                       componentID,
 		AppConfigID:                       appConfigID,
 		ComponentDependencyIDs:            pq.StringArray{},

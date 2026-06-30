@@ -34,6 +34,7 @@ func (h *Helpers) GetFullAppConfig(ctx context.Context, appConfigID string, skip
 			PreloadAppConfigSandboxConfig,
 			PreloadAppConfigInputConfig,
 			PreloadAppConfigStackConfig,
+			PreloadAppConfigKubernetesContextsConfig,
 
 			// components
 			PreloadAppConfigComponentConfigConnections,
