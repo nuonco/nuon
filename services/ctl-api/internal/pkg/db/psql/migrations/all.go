@@ -132,5 +132,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "114-helm-releases-drop-body-column",
 			SQL:  `ALTER TABLE helm_releases DROP COLUMN IF EXISTS body;`,
 		},
+		{
+			Name: "115-vcs-connection-unique-with-deleted-at",
+			Fn:   m.Migration115VcsConnectionUniqueWithDeletedAt,
+		},
 	}
 }
