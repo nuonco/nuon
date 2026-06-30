@@ -64,6 +64,8 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// The alive checker combines both existence and expiry checks in a single
 	// DB query to avoid redundant round-trips.
 	var mgrOpts []workflowmanager.Option
+	// Handler signals have explicit callbacks for completion, so the alive
+	// checker only needs to detect deletion/expiry.
 	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(5*time.Minute))
 
 	// don't continue-as-new mid-phase: it orphans the in-flight update and the
