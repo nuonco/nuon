@@ -11,6 +11,7 @@ import (
 type RunnerPublicSettings struct {
 	BinaryVersion string                  `json:"binary_version"`
 	AWSAuthMethod app.RunnerAWSAuthMethod `json:"aws_auth_method" swaggertype:"string" enums:"iid,sts"`
+	RunnerAPIURL  string                  `json:"runner_api_url"`
 }
 
 // @ID						GetRunnerPublicSettings
@@ -41,6 +42,7 @@ func (s *service) GetRunnerPublicSettings(ctx *gin.Context) {
 	settings := RunnerPublicSettings{
 		BinaryVersion: runner.RunnerGroup.Settings.BinaryVersion,
 		AWSAuthMethod: runner.RunnerGroup.Settings.AWSAuthMethod,
+		RunnerAPIURL:  runner.RunnerGroup.Settings.RunnerAPIURL,
 	}
 
 	ctx.JSON(http.StatusOK, settings)

@@ -29,6 +29,8 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		HelmDriver:    app.AppRunnerConfigHelmDriverType(cfg.Runner.HelmDriver),
 		EnvVars:       pgtype.Hstore(envVars),
 		InitScriptURL: cfg.Runner.InitScriptURL,
+		InstanceType:  cfg.Runner.InstanceType,
+		RunnerAPIURL:  cfg.Runner.RunnerAPIURL,
 		Type:          app.AppRunnerType(cfg.Runner.RunnerType),
 	}
 

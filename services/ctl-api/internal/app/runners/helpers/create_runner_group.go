@@ -21,6 +21,15 @@ const (
 	defaultRunnerGroupSettingsRefreshTimeout time.Duration = time.Minute * 5
 )
 
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
+}
+
 func (h *Helpers) runnerImageURLForPlatform(platform app.CloudPlatform) string {
 	switch platform {
 	case app.CloudPlatformGCP:
@@ -74,7 +83,7 @@ func (h *Helpers) CreateInstallRunnerGroup(ctx context.Context, install *app.Ins
 			SandboxMode:       sandboxMode,
 			ContainerImageURL: h.runnerImageURLForPlatform(install.AppRunnerConfig.CloudPlatform),
 			ContainerImageTag: h.cfg.RunnerContainerImageTag,
-			RunnerAPIURL:      h.cfg.RunnerAPIURL,
+			RunnerAPIURL:      firstNonEmpty(install.AppRunnerConfig.RunnerAPIURL, h.cfg.RunnerAPIURL),
 			HeartBeatTimeout:  defaultRunnerGroupHeartBeatTimeout,
 			EnableLogging:     true,
 			LoggingLevel:      slog.LevelInfo.String(),

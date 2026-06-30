@@ -20,6 +20,7 @@ type CreateAppRunnerConfigRequest struct {
 	HelmDriver    app.AppRunnerConfigHelmDriverType `json:"helm_driver"`
 	InitScriptURL string                            `json:"init_script_url"`
 	InstanceType  string                            `json:"instance_type"`
+	RunnerAPIURL  string                            `json:"runner_api_url"`
 
 	AppConfigID string `json:"app_config_id"`
 }
@@ -79,6 +80,7 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		EnvVars:       pgtype.Hstore(req.EnvVars),
 		InitScriptURL: req.InitScriptURL,
 		InstanceType:  req.InstanceType,
+		RunnerAPIURL:  req.RunnerAPIURL,
 		Type:          req.Type,
 	}
 	res := s.db.WithContext(ctx).
