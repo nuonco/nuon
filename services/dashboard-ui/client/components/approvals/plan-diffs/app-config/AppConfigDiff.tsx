@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
@@ -8,6 +8,8 @@ import { Icon, type TIconVariant } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
 import { diffLines } from '@/utils/code-utils'
+import { cn } from '@/utils/classnames'
+import type { TConfigDiffFocus } from '../config-diff-focus'
 
 const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
   components: { displayName: 'Components', icon: 'CubeIcon', grouped: true },
@@ -173,6 +175,16 @@ function isFileNode(n: TDiffNode): boolean {
   )
 }
 
+const GENERIC_FILE_KEYS = new Set(['inline_contents', 'contents', 'content', 'file'])
+
+// Inline-content file nodes carry a generic/empty key (e.g. "inline_contents"),
+// so fall back to the parent node's key (e.g. "step.coder-health") for a label.
+function fileLabel(nodeKey: string, parentKey: string): string {
+  if (nodeKey && !GENERIC_FILE_KEYS.has(nodeKey)) return nodeKey
+  const fromParent = parentKey.replace(/^(step|component|action|app_config)\./, '')
+  return fromParent || 'Inline contents'
+}
+
 function collectEntries(node: TDiffNode): {
   fields: DiffFieldEntry[]
   files: DiffFileEntry[]
@@ -180,11 +192,11 @@ function collectEntries(node: TDiffNode): {
   const fields: DiffFieldEntry[] = []
   const files: DiffFileEntry[] = []
 
-  const walk = (n: TDiffNode) => {
+  const walk = (n: TDiffNode, parentKey: string) => {
     if (n.diff && n.diff.op !== 'noop' && n.diff.op !== '') {
       if (isFileNode(n)) {
         files.push({
-          name: n.key,
+          name: fileLabel(n.key, parentKey),
           op: n.diff.op as 'add' | 'remove' | 'change',
           before: n.diff.before,
           after: n.diff.after,
@@ -193,10 +205,10 @@ function collectEntries(node: TDiffNode): {
         fields.push({ key: n.key, op: n.diff.op, diff: n.diff.diff })
       }
     }
-    if (n.children) n.children.forEach(walk)
+    if (n.children) n.children.forEach((c) => walk(c, n.key))
   }
 
-  if (node.children) node.children.forEach(walk)
+  if (node.children) node.children.forEach((c) => walk(c, node.key))
   return { fields, files }
 }
 
@@ -395,38 +407,77 @@ const ComponentIcon = ({ type }: { type?: string }) => {
   return <Icon variant={config.icon} size="14" className={config.brandClass} />
 }
 
-const EntityRow = ({ entity, sectionKey, idx }: { entity: DiffEntityEntry; sectionKey: string; idx: number }) => {
+const EntityRow = ({
+  entity,
+  sectionKey,
+  idx,
+  focus,
+}: {
+  entity: DiffEntityEntry
+  sectionKey: string
+  idx: number
+  focus?: TConfigDiffFocus | null
+}) => {
   const bgColor = getOpBgColor(entity.op)
   const borderColor = getOpBorderColor(entity.op)
   const isComponent = sectionKey === 'components'
+  const hasDetail = entity.fields.length > 0 || (entity.files?.length ?? 0) > 0
+  const entityId = `${sectionKey}-${entity.name}-${idx}`
+  const isFocused = !!focus && focus.sectionKey === sectionKey && focus.entityName === entity.name
+
+  const [forcedOpen, setForcedOpen] = useState(false)
+  const [highlighted, setHighlighted] = useState(false)
+
+  useEffect(() => {
+    if (!isFocused) return
+    setForcedOpen(true)
+    setHighlighted(true)
+    const raf = requestAnimationFrame(() => {
+      document.getElementById(entityId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+    const timer = setTimeout(() => setHighlighted(false), 1600)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
+  }, [focus?.nonce])
+
+  const highlightClass = highlighted ? 'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60' : ''
+
+  const heading = (
+    <div className="text-left w-full">
+      <div className="flex items-start justify-between w-full">
+        <div className="flex items-center gap-2 max-w-[500px]">
+          {isComponent && <ComponentIcon type={entity.componentType} />}
+          <Text nowrap className="block truncate" weight="strong">
+            {entity.name}
+          </Text>
+          {isComponent && entity.componentType && (
+            <Text variant="subtext" theme="neutral">
+              {entity.componentType.replace(/_/g, ' ')}
+            </Text>
+          )}
+        </div>
+        <div className="flex items-center pr-4 self-center">
+          <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
+            {entity.op}
+          </Badge>
+        </div>
+      </div>
+    </div>
+  )
+
+  if (!hasDetail) {
+    return <div id={entityId} className={cn(`border-l-4 ${borderColor} px-4 py-3 ${bgColor}`, highlightClass)}>{heading}</div>
+  }
 
   return (
     <Expand
-      id={`${sectionKey}-${entity.name}-${idx}`}
-      className={`border-l-4 ${borderColor}`}
+      id={entityId}
+      isOpen={forcedOpen}
+      className={cn(`border-l-4 ${borderColor}`, highlightClass)}
       headerClassName={`w-full px-4 py-3 gap-3 text-left focus:outline-none ${bgColor}`}
-      heading={
-        <div className="text-left w-full">
-          <div className="flex items-start justify-between w-full">
-            <div className="flex items-center gap-2 max-w-[500px]">
-              {isComponent && <ComponentIcon type={entity.componentType} />}
-              <Text nowrap className="block truncate" weight="strong">
-                {entity.name}
-              </Text>
-              {isComponent && entity.componentType && (
-                <Text variant="subtext" theme="neutral">
-                  {entity.componentType.replace(/_/g, ' ')}
-                </Text>
-              )}
-            </div>
-            <div className="flex items-center pr-4 self-center">
-              <Badge theme={OP_BADGE_THEME[entity.op] || 'neutral'} size="sm">
-                {entity.op}
-              </Badge>
-            </div>
-          </div>
-        </div>
-      }
+      heading={heading}
     >
       {entity.fields.length > 0 && <FieldsDiff fields={entity.fields} />}
       {(entity.files ?? []).map((file, i) => (
@@ -481,12 +532,44 @@ const SectionCounts = ({ section }: { section: DiffSectionData }) => {
   )
 }
 
-const SectionGroup = ({ section }: { section: DiffSectionData }) => {
-  const [open, setOpen] = useState(true)
+const SectionGroup = ({
+  section,
+  defaultOpen = true,
+  focus,
+}: {
+  section: DiffSectionData
+  defaultOpen?: boolean
+  focus?: TConfigDiffFocus | null
+}) => {
+  const [open, setOpen] = useState(defaultOpen)
+  const [highlighted, setHighlighted] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
   const sectionIcon = SECTION_CONFIG[section.sectionKey]?.icon
 
+  useEffect(() => {
+    if (!focus || focus.sectionKey !== section.sectionKey) return
+    setOpen(true)
+    // When a specific entity is targeted, the EntityRow handles scroll + highlight.
+    if (focus.entityName) return
+    setHighlighted(true)
+    const raf = requestAnimationFrame(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+    const timer = setTimeout(() => setHighlighted(false), 1600)
+    return () => {
+      cancelAnimationFrame(raf)
+      clearTimeout(timer)
+    }
+  }, [focus?.nonce])
+
   return (
-    <div className="border-t first:border-t-0">
+    <div
+      ref={ref}
+      className={cn(
+        'border-t first:border-t-0 transition-shadow',
+        highlighted && 'ring-2 ring-inset ring-primary-400/70 dark:ring-primary-500/60'
+      )}
+    >
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -517,7 +600,7 @@ const SectionGroup = ({ section }: { section: DiffSectionData }) => {
             </div>
           ) : section.grouped ? (
             section.entities.map((entity, idx) => (
-              <EntityRow key={`${entity.name}-${idx}`} entity={entity} sectionKey={section.sectionKey} idx={idx} />
+              <EntityRow key={`${entity.name}-${idx}`} entity={entity} sectionKey={section.sectionKey} idx={idx} focus={focus} />
             ))
           ) : (
             <>
@@ -539,12 +622,16 @@ export interface IAppConfigDiff {
   sections: DiffSectionData[]
   summary: { added: number; removed: number; changed: number } | null
   isLoading?: boolean
+  defaultSectionsOpen?: boolean
+  focus?: TConfigDiffFocus | null
 }
 
 export const AppConfigDiff = ({
   sections,
   summary,
   isLoading = false,
+  defaultSectionsOpen = true,
+  focus,
 }: IAppConfigDiff) => {
   if (isLoading) {
     return (
@@ -572,7 +659,12 @@ export const AppConfigDiff = ({
 
       <div className="flex flex-col">
         {sections.map((section) => (
-          <SectionGroup key={section.name} section={section} />
+          <SectionGroup
+            key={section.name}
+            section={section}
+            defaultOpen={defaultSectionsOpen}
+            focus={focus}
+          />
         ))}
       </div>
     </Card>
