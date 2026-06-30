@@ -2,9 +2,8 @@ export default {
   title: 'Branches/WorkflowStepDetail/PlanGroupStep',
 }
 
+import { Button } from '@/components/common/Button'
 import { PlanGroupStep } from './PlanGroupStep'
-
-const noop = () => {}
 
 const installs = [
   {
@@ -27,6 +26,13 @@ const installs = [
   },
 ]
 
+const actions = (
+  <>
+    <Button variant="danger">Skip</Button>
+    <Button variant="primary">Approve</Button>
+  </>
+)
+
 export const AwaitingApproval = () => (
   <PlanGroupStep
     installs={installs}
@@ -34,9 +40,8 @@ export const AwaitingApproval = () => (
     orgId="org-1"
     hasResponse={false}
     showApproveBar
-    isResponding={false}
     isInProgress={false}
-    onRespond={noop}
+    actions={actions}
   />
 )
 
@@ -48,9 +53,7 @@ export const Approved = () => (
     hasResponse
     responseType="approve"
     showApproveBar={false}
-    isResponding={false}
     isInProgress={false}
-    onRespond={noop}
   />
 )
 
@@ -61,8 +64,6 @@ export const Computing = () => (
     orgId="org-1"
     hasResponse={false}
     showApproveBar={false}
-    isResponding={false}
     isInProgress
-    onRespond={noop}
   />
 )
