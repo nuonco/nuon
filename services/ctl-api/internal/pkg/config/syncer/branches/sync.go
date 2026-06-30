@@ -10,10 +10,11 @@ import (
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
-func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *config.AppConfig, appID string) error {
+func Sync(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, cfg *config.AppConfig, appID string) error {
 	branches := getAllBranches(cfg)
 	if len(branches) == 0 {
 		return nil
@@ -33,7 +34,7 @@ func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *
 	}
 
 	for _, branchCfg := range branches {
-		if err := syncSingleBranch(ctx, db, vcsHelper, branchCfg, existingByName, appID); err != nil {
+		if err := syncSingleBranch(ctx, db, appsHelper, branchCfg, existingByName, appID); err != nil {
 			return err
 		}
 	}
@@ -41,22 +42,20 @@ func Sync(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, cfg *
 	return nil
 }
 
-func syncSingleBranch(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string) error {
+func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.Helpers, branchCfg *config.AppBranchConfig, existingByName map[string]*app.AppBranch, appID string) error {
 	existing, found := existingByName[branchCfg.Name]
 
 	var branchID string
 	if !found {
-		branch := app.AppBranch{
-			AppID: appID,
-			Name:  branchCfg.Name,
-		}
-		if err := db.WithContext(ctx).Create(&branch).Error; err != nil {
+		branch, err := appsHelper.CreateAppBranch(ctx, appID, branchCfg.Name)
+		if err != nil {
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to create app branch %q", branchCfg.Name),
 				Err:         err,
 			}
 		}
 		branchID = branch.ID
+		existingByName[branch.Name] = branch
 	} else {
 		branchID = existing.ID
 	}
@@ -91,12 +90,11 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.He
 		}
 	}
 
-	branchConfig := app.AppBranchConfig{
-		AppBranchID: branchID,
-	}
+	vcsHelper := appsHelper.VCSHelpers()
 
+	var connectedGithubVCSConfig *app.ConnectedGithubVCSConfig
 	if branchCfg.ConnectedRepo != nil {
-		githubVCSConfig, err := vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
+		cfg, err := vcsHelper.BuildConnectedGithubVCSConfig(ctx, &vcshelpers.ConnectedGithubVCSConfigRequest{
 			Repo:      branchCfg.ConnectedRepo.Repo,
 			Branch:    branchCfg.ConnectedRepo.Branch,
 			Directory: branchCfg.ConnectedRepo.Directory,
@@ -107,17 +105,42 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.He
 				Err:         err,
 			}
 		}
-		branchConfig.ConnectedGithubVCSConfig = githubVCSConfig
+		connectedGithubVCSConfig = cfg
 	}
 
+	var publicGitVCSConfig *app.PublicGitVCSConfig
 	if branchCfg.PublicRepo != nil {
-		branchConfig.PublicGitVCSConfig = &app.PublicGitVCSConfig{
+		cfg, err := vcsHelper.BuildPublicGitVCSConfig(ctx, &vcshelpers.PublicGitVCSConfigRequest{
 			Repo:      branchCfg.PublicRepo.Repo,
 			Branch:    branchCfg.PublicRepo.Branch,
 			Directory: branchCfg.PublicRepo.Directory,
+		})
+		if err != nil {
+			return sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to build public VCS config for branch %q", branchCfg.Name),
+				Err:         err,
+			}
+		}
+		publicGitVCSConfig = cfg
+	}
+
+	installGroups, err := buildInstallGroups(branchCfg, nameToID)
+	if err != nil {
+		return err
+	}
+
+	if _, err := appsHelper.CreateAppBranchConfig(ctx, branchID, connectedGithubVCSConfig, publicGitVCSConfig, installGroups); err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
+			Err:         err,
 		}
 	}
 
+	return nil
+}
+
+func buildInstallGroups(branchCfg *config.AppBranchConfig, nameToID map[string]string) ([]app.AppBranchInstallGroup, error) {
+	var installGroups []app.AppBranchInstallGroup
 	for i, group := range branchCfg.InstallGroups {
 		order := group.Order
 		if order == 0 {
@@ -133,7 +156,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.He
 			for _, name := range group.InstallNames {
 				id, ok := nameToID[name]
 				if !ok {
-					return sync.SyncErr{
+					return nil, sync.SyncErr{
 						Resource:    "app-branches",
 						Description: fmt.Sprintf("install group %q: unknown install name: %s", group.Name, name),
 					}
@@ -158,17 +181,9 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.He
 			}
 		}
 
-		branchConfig.InstallGroups = append(branchConfig.InstallGroups, ig)
+		installGroups = append(installGroups, ig)
 	}
-
-	if err := db.WithContext(ctx).Create(&branchConfig).Error; err != nil {
-		return sync.SyncInternalErr{
-			Description: fmt.Sprintf("unable to create config for branch %q", branchCfg.Name),
-			Err:         err,
-		}
-	}
-
-	return nil
+	return installGroups, nil
 }
 
 func resolveInstallNames(ctx context.Context, db *gorm.DB, appID string) (map[string]string, error) {
