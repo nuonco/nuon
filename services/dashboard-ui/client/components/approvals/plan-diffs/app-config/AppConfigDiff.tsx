@@ -3,8 +3,10 @@ import { Badge } from '@/components/common/Badge'
 import type { TBadgeTheme } from '@/components/common/Badge'
 import { Card } from '@/components/common/Card'
 import { CodeBlock } from '@/components/common/CodeBlock'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Icon, type TIconVariant } from '@/components/common/Icon'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
 import { diffLines } from '@/utils/code-utils'
@@ -618,6 +620,30 @@ const SectionGroup = ({
   )
 }
 
+const SKELETON_ROW_WIDTHS = ['7rem', '5.5rem', '9rem', '6.5rem', '8rem']
+
+const AppConfigDiffSkeleton = ({ rows = 4 }: { rows?: number }) => (
+  <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0 overflow-hidden">
+    <div className="flex flex-col">
+      {Array.from({ length: rows }).map((_, idx) => (
+        <div key={idx} className="border-t first:border-t-0">
+          <div className="w-full flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
+            <div className="flex items-center gap-2">
+              <Skeleton width="16px" height="16px" />
+              <Skeleton width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]} height="0.875rem" />
+            </div>
+            <div className="flex items-center gap-2.5">
+              <Skeleton width="1.5rem" height="0.75rem" />
+              <Skeleton width="1.5rem" height="0.75rem" />
+              <Skeleton width="16px" height="16px" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>
+)
+
 export interface IAppConfigDiff {
   sections: DiffSectionData[]
   summary: { added: number; removed: number; changed: number } | null
@@ -634,20 +660,19 @@ export const AppConfigDiff = ({
   focus,
 }: IAppConfigDiff) => {
   if (isLoading) {
-    return (
-      <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4">
-          <Text variant="subtext" theme="neutral">Loading config diff...</Text>
-        </div>
-      </Card>
-    )
+    return <AppConfigDiffSkeleton />
   }
 
   if (sections.length === 0) {
     return (
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4">
-          <Text variant="subtext" theme="neutral">No config changes detected</Text>
+        <div className="px-4 py-3 text-center">
+          <EmptyState
+            emptyTitle="No config changes"
+            emptyMessage="This config matches the previous version."
+            variant="diagram"
+            size="sm"
+          />
         </div>
       </Card>
     )
