@@ -19,6 +19,18 @@ export const CompositeError = ({ error }: ICompositeError) => {
   const theme = SEVERITY_THEME[error?.severity] ?? 'error'
   const sections = Array.isArray(error?.sections) ? error.sections : []
 
+  const hasContent =
+    Boolean(error?.message?.trim()) ||
+    Boolean(error?.type?.trim()) ||
+    sections.some(
+      (section) =>
+        Boolean(section?.heading?.trim()) || Boolean(section?.body?.trim()),
+    )
+
+  if (!hasContent) {
+    return null
+  }
+
   return (
     <Banner theme={theme}>
       <div className="flex w-full min-w-0 flex-col gap-2">
