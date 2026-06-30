@@ -1,11 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Text } from '@/components/common/Text'
-import { Toast } from '@/components/surfaces/Toast'
+import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { useToast } from '@/hooks/use-toast'
-import { approveWorkflowStep } from '@/lib'
-import type { TInstallWorkflowStep, TAPIError } from '@/types'
+import type { TInstallWorkflowStep } from '@/types'
 import { PlanGroupStep } from './PlanGroupStep'
+import { GroupApprovalActions } from './GroupApprovalActions'
 
 interface IPlanGroupStepContainer {
   step: TInstallWorkflowStep
@@ -15,8 +12,6 @@ interface IPlanGroupStepContainer {
 export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
-  const { addToast } = useToast()
-  const queryClient = useQueryClient()
 
   const approvalId = step.approval?.id
   const hasApproval = step.execution_type === 'approval' && !!approvalId
@@ -35,34 +30,9 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
     enabled: !!orgId && !!step.id && !!step.install_workflow_id && !!approvalId,
   })
 
-  const { mutate: respond, isPending: isResponding } = useMutation({
-    mutationFn: (responseType: 'approve' | 'deny' | 'deny-skip-current') =>
-      approveWorkflowStep({
-        orgId,
-        workflowId: step.install_workflow_id,
-        workflowStepId: step.id,
-        approvalId: approvalId!,
-        body: { response_type: responseType, note: '' },
-      }),
-    onSuccess: () => {
-      addToast(
-        <Toast heading="Plan approved" theme="success">
-          <Text>Approved install group plan.</Text>
-        </Toast>
-      )
-      queryClient.invalidateQueries({ queryKey: ['branch-run'] })
-    },
-    onError: (err: TAPIError) => {
-      addToast(
-        <Toast heading="Approval failed" theme="error">
-          <Text>{err?.error || 'Unable to respond to approval.'}</Text>
-        </Toast>
-      )
-    },
-  })
-
   const installs = (plan?.installs || metadata.installs || []) as any[]
   const groupName = plan?.install_group || metadata.install_group_name || step.name?.replace(/^plan install group:\s*/i, '')
+  const showApproveBar = hasApproval && isAwaiting && !hasResponse
 
   return (
     <PlanGroupStep
@@ -71,10 +41,21 @@ export const PlanGroupStepContainer = ({ step, metadata }: IPlanGroupStepContain
       orgId={orgId}
       hasResponse={hasResponse}
       responseType={step.approval?.response?.response_type}
-      showApproveBar={hasApproval && isAwaiting && !hasResponse}
-      isResponding={isResponding}
+      showApproveBar={showApproveBar}
       isInProgress={step.status?.status === 'in-progress'}
-      onRespond={respond}
+      actions={
+        showApproveBar ? (
+          <GroupApprovalActions
+            target={{
+              orgId,
+              workflowId: step.install_workflow_id,
+              stepId: step.id,
+              approvalId: approvalId!,
+              groupName: groupName || 'install group',
+            }}
+          />
+        ) : undefined
+      }
     />
   )
 }

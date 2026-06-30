@@ -1,11 +1,8 @@
-import { Badge } from '@/components/common/Badge'
-import { Button } from '@/components/common/Button'
-import { Icon } from '@/components/common/Icon'
+import type { ReactNode } from 'react'
+import { Banner } from '@/components/common/Banner'
 import { Text } from '@/components/common/Text'
 import { InstallGroupDiff } from '@/components/approvals/plan-diffs/install-group/InstallGroupDiff'
 import type { InstallDiffEntry } from '@/components/approvals/plan-diffs/install-group/InstallGroupDiff'
-
-type ApprovalResponse = 'approve' | 'deny' | 'deny-skip-current'
 
 interface IPlanGroupStep {
   installs: any[]
@@ -14,9 +11,8 @@ interface IPlanGroupStep {
   hasResponse: boolean
   responseType?: string
   showApproveBar: boolean
-  isResponding: boolean
   isInProgress: boolean
-  onRespond: (response: ApprovalResponse) => void
+  actions?: ReactNode
 }
 
 function transformInstalls(installs: any[]): InstallDiffEntry[] {
@@ -84,19 +80,17 @@ export const PlanGroupStep = ({
   hasResponse,
   responseType,
   showApproveBar,
-  isResponding,
   isInProgress,
-  onRespond,
+  actions,
 }: IPlanGroupStep) => {
   return (
     <div className="space-y-3">
       {hasResponse && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-[10px] border border-green-300 dark:border-green-700/40 bg-green-50 dark:bg-green-950/30">
-          <Icon variant="CheckCircleIcon" size={18} className="text-green-600 dark:text-green-400 shrink-0" />
-          <span className="text-[13px] text-green-700 dark:text-green-300">
+        <Banner theme="success">
+          <Text weight="strong">
             Plan {responseType === 'approve' ? 'approved' : responseType || 'responded'}
-          </span>
-        </div>
+          </Text>
+        </Banner>
       )}
 
       {installs.length > 0 && (
@@ -115,30 +109,17 @@ export const PlanGroupStep = ({
       )}
 
       {showApproveBar && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-[10px] border border-yellow-300 dark:border-yellow-700/40 bg-yellow-50 dark:bg-yellow-950/30">
-          <Icon variant="WarningCircleIcon" size={18} className="text-yellow-600 dark:text-yellow-400 shrink-0" />
-          <span className="text-[13px] text-yellow-700 dark:text-yellow-300 flex-1">
-            Review the changes above and approve to proceed with deployment.
-          </span>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={() => onRespond('deny-skip-current')}
-              disabled={isResponding}
-            >
-              Skip
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onRespond('approve')}
-              disabled={isResponding}
-            >
-              {isResponding ? 'Approving...' : 'Approve'}
-            </Button>
+        <Banner className="@container" theme="warn">
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col">
+              <Text weight="strong">Install group plan requires review</Text>
+              <Text variant="subtext" theme="neutral">
+                Review the changes above, then approve to deploy or skip this install group.
+              </Text>
+            </div>
+            {actions && <div className="flex self-end gap-2">{actions}</div>}
           </div>
-        </div>
+        </Banner>
       )}
     </div>
   )
