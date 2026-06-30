@@ -34,5 +34,7 @@ Example Claude Code config (.mcp.json):
 	}
 	mcpCmd.Flags().BoolVar(&allowWrites, "allow-writes", false, "expose mutating tools (create_install, deploy_component)")
 
+	mcpCmd.AddCommand(c.mcpSetupCmd())
+
 	return mcpCmd
 }

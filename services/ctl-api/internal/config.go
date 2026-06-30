@@ -22,6 +22,7 @@ func init() {
 	config.RegisterDefault("auth_http_port", "8084")
 	config.RegisterDefault("admin_dashboard_http_port", "8087")
 	config.RegisterDefault("slack_http_port", "8089")
+	config.RegisterDefault("mcp_http_port", "8088")
 	// Slack secrets: dev-only insecure defaults so the slack-libs FX module
 	// (statejwt.New) and signing.Middleware construction don't fail boot
 	// when no SLACK_* env is set. Prod overrides via env. Same pattern as
@@ -180,6 +181,7 @@ type Config struct {
 	AdminDashboardHTTPPort string `config:"admin_dashboard_http_port" validate:"required"`
 	AdminDashboardDistDir  string `config:"admin_dashboard_dist_dir"`
 	SlackHTTPPort          string `config:"slack_http_port" validate:"required"`
+	MCPHTTPPort            string `config:"mcp_http_port"`
 
 	WorkerHealthcheckPort    string `config:"worker_healthcheck_port"`
 	WorkerHealthcheckEnabled bool   `config:"worker_healthcheck_enabled"`
