@@ -1,6 +1,7 @@
 import { useParams, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { ID } from '@/components/common/ID'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -17,8 +18,9 @@ import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
+import { isActiveStepStatus } from '@/components/branches/shared/step-status'
 import { getBranchWorkflowRun } from '@/lib'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 function statusTheme(status?: string) {
   if (status === 'success') return 'success'
@@ -39,6 +41,8 @@ const BranchRunDetailContent = () => {
   const [searchParams] = useSearchParams()
   const targetStepId = searchParams.get('target')
   const [selectedStepId, setSelectedStepId] = useState<string | null>(targetStepId)
+  const stepDetailRef = useRef<HTMLDivElement>(null)
+  const pendingScrollRef = useRef(false)
 
   const { data: run, isLoading } = useQuery({
     queryKey: ['branch-run', orgId, appId, branchId, runId],
@@ -48,13 +52,30 @@ const BranchRunDetailContent = () => {
   })
 
   const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
+  const activeStep = steps.find((step) => isActiveStepStatus(step.status?.status))
 
   useEffect(() => {
     if (steps.length > 0 && !selectedStepId) {
-      const inProgressStep = steps.find((step) => step.status?.status === 'in-progress')
-      setSelectedStepId((inProgressStep || steps[0])?.id ?? null)
+      setSelectedStepId((activeStep || steps[0])?.id ?? null)
     }
-  }, [steps, selectedStepId])
+  }, [steps, selectedStepId, activeStep])
+
+  useEffect(() => {
+    if (pendingScrollRef.current && stepDetailRef.current) {
+      stepDetailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      pendingScrollRef.current = false
+    }
+  }, [selectedStepId])
+
+  const handleJumpToActive = () => {
+    if (!activeStep) return
+    if (selectedStepId === activeStep.id) {
+      stepDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    pendingScrollRef.current = true
+    setSelectedStepId(activeStep.id ?? null)
+  }
 
   const selectedStep = selectedStepId ? steps.find((s) => s.id === selectedStepId) ?? null : null
 
@@ -161,9 +182,11 @@ const BranchRunDetailContent = () => {
           <Text variant="h3" weight="strong">
             Workflow progress
           </Text>
-          <Text variant="subtext" theme="neutral" className="cursor-pointer hover:underline">
-            Jump to a step
-          </Text>
+          {activeStep && (
+            <Button variant="secondary" onClick={handleJumpToActive}>
+              Jump to active step
+            </Button>
+          )}
         </div>
         <div className="px-4 pb-4">
           <WorkflowStepsPipeline
@@ -191,7 +214,7 @@ const BranchRunDetailContent = () => {
       {/* ── Step detail card ── */}
       {selectedStep && (
         <>
-          <div className="flex items-baseline gap-3 mt-2">
+          <div ref={stepDetailRef} className="flex items-baseline gap-3 mt-2 scroll-mt-4">
             <Text variant="h3" weight="strong">Step details</Text>
             <Text variant="subtext" theme="neutral">{selectedStep.name}</Text>
           </div>

@@ -1,5 +1,8 @@
+import { stepStatusCategory } from '../../shared/step-status'
+
 export const DetailStatusIcon = ({ status }: { status?: string }) => {
-  if (status === 'success' || status === 'succeeded') {
+  const category = stepStatusCategory(status)
+  if (category === 'success') {
     return (
       <div className="w-[26px] h-[26px] rounded-full bg-green-500 flex items-center justify-center shrink-0">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -8,7 +11,7 @@ export const DetailStatusIcon = ({ status }: { status?: string }) => {
       </div>
     )
   }
-  if (status === 'error') {
+  if (category === 'error') {
     return (
       <div className="w-[26px] h-[26px] rounded-full bg-red-500 flex items-center justify-center shrink-0">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -17,12 +20,22 @@ export const DetailStatusIcon = ({ status }: { status?: string }) => {
       </div>
     )
   }
-  if (status === 'in-progress') {
+  if (category === 'active') {
     return (
       <div className="w-[26px] h-[26px] rounded-full bg-blue-500 flex items-center justify-center shrink-0">
         <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
           <path d="M8 2 A6 6 0 0 1 14 8" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </div>
+    )
+  }
+  if (category === 'awaiting') {
+    return (
+      <div className="w-[26px] h-[26px] rounded-full bg-amber-500 flex items-center justify-center shrink-0">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="7" cy="7" r="5.25" stroke="white" strokeWidth="1.5" />
+          <path d="M7 4.25V7L8.75 8.25" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
     )
