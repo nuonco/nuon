@@ -57,6 +57,11 @@ type InstallActionWorkflowRun struct {
 
 	EnableKubeConfig sql.NullBool `json:"enable_kube_config" gorm:"default:true" temporaljson:"enable_kube_config"`
 
+	// KubernetesContextName is snapshotted from the action's
+	// ActionWorkflowConfig at run-creation time so plan resolution can target
+	// the correct cluster. Empty means fall back to the sandbox default.
+	KubernetesContextName string `json:"kubernetes_context_name,omitzero" gorm:"default null" temporaljson:"kubernetes_context_name,omitzero,omitempty"`
+
 	Status            InstallActionWorkflowRunStatus `json:"status,omitzero" gorm:"notnull" swaggertype:"string" temporaljson:"status,omitzero,omitempty"`
 	StatusDescription string                         `json:"status_description,omitzero" gorm:"notnull" temporaljson:"status_description,omitzero,omitempty"`
 	StatusV2          CompositeStatus                `json:"status_v2,omitzero" gorm:"type:jsonb" temporaljson:"status_v2,omitzero,omitempty"`

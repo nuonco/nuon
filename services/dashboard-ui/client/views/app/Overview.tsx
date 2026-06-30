@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { AppInputs } from '@/components/apps/config/AppInputs'
+import { AppKubernetesContexts } from '@/components/apps/config/AppKubernetesContexts'
 import { AppRunner } from '@/components/apps/config/AppRunner'
 import { AppSandbox } from '@/components/apps/config/AppSandbox'
 import { AppStack } from '@/components/apps/config/AppStack'
@@ -90,6 +91,20 @@ export const Overview = () => {
           />
         </Card>
       )}
+
+      {!isLoading && appConfig?.kubernetes_contexts?.contexts?.length ? (
+        <Card className="h-fit flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <Text weight="strong">Kubernetes contexts</Text>
+            <Text variant="subtext" theme="neutral">
+              Named bindings to peer components that emit cluster connection
+              details. Components opt in via the top-level kubernetes_context
+              field.
+            </Text>
+          </div>
+          <AppKubernetesContexts appConfig={appConfig} />
+        </Card>
+      ) : null}
 
       <div className="@container">
         <div className="grid grid-cols-1 @lg:grid-cols-5 gap-6">

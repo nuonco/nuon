@@ -59,6 +59,12 @@ type ActionWorkflowConfig struct {
 	Role              string              `json:"role,omitzero" gorm:"default:null" temporaljson:"role,omitzero,omitempty"`
 
 	EnableKubeConfig sql.NullBool `json:"enable_kube_config" gorm:"default:true" temporaljson:"enable_kube_config"`
+
+	// KubernetesContextName is the name of an AppKubernetesContextConfig on
+	// the same AppConfig. Empty means fall back to the implicit sandbox
+	// default. Stored as a name (not an FK) so it remains stable across
+	// AppConfig versions.
+	KubernetesContextName string `json:"kubernetes_context_name,omitzero" gorm:"default null" temporaljson:"kubernetes_context_name,omitzero,omitempty"`
 }
 
 func (a *ActionWorkflowConfig) Indexes(db *gorm.DB) []migrations.Index {

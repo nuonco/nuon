@@ -56,6 +56,11 @@ type AppInstallActionWorkflowRun struct {
 	// install workflow id
 	InstallWorkflowID string `json:"install_workflow_id,omitempty"`
 
+	// KubernetesContextName is snapshotted from the action's
+	// ActionWorkflowConfig at run-creation time so plan resolution can target
+	// the correct cluster. Empty means fall back to the sandbox default.
+	KubernetesContextName string `json:"kubernetes_context_name,omitempty"`
+
 	// log stream
 	LogStream *AppLogStream `json:"log_stream,omitempty"`
 

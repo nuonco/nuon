@@ -97,6 +97,7 @@ func SyncPulumiComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers
 
 	ccc := app.ComponentConfigConnection{
 		PulumiComponentConfig: &pulumiCfg,
+		KubernetesContextName: comp.KubernetesContext,
 		ComponentID:           componentID,
 		AppConfigID:           appConfigID,
 		References:            references,
