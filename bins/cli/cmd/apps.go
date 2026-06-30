@@ -400,6 +400,23 @@ func (c *cli) branchesCmd() *cobra.Command {
 	triggerCmd.Flags().BoolVar(&force, "force", false, "Force rebuild all components")
 	branchesCmd.AddCommand(triggerCmd)
 
+	var confirmDelete bool
+	deleteCmd := &cobra.Command{
+		Use:   "delete",
+		Short: "Delete an app branch",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			svc := apps.New(c.v, c.apiClient, c.cfg)
+			return svc.DeleteBranch(cmd.Context(), appID, branchID, PrintJSON)
+		}),
+	}
+	deleteCmd.Flags().StringVarP(&appID, "app-id", "a", "", "The ID or name of an app")
+	deleteCmd.Flags().StringVarP(&branchID, "branch-id", "b", "", "The ID or name of the branch")
+	deleteCmd.Flags().BoolVar(&confirmDelete, "confirm", false, "Confirm deletion")
+	deleteCmd.MarkFlagRequired("app-id")
+	deleteCmd.MarkFlagRequired("branch-id")
+	deleteCmd.MarkFlagRequired("confirm")
+	branchesCmd.AddCommand(deleteCmd)
+
 	runsCmd := &cobra.Command{
 		Use:         "runs",
 		Short:       "List branch runs and monitor a selected workflow",

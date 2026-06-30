@@ -151,6 +151,30 @@ func (s *Service) ListBranchRuns(ctx context.Context, appID, branchID string, as
 	return nil
 }
 
+func (s *Service) DeleteBranch(ctx context.Context, appID, branchID string, asJSON bool) error {
+	appID, err := s.resolveAppID(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	branchID, err = s.resolveAppBranchID(ctx, appID, branchID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.api.DeleteAppBranch(ctx, appID, branchID); err != nil {
+		return err
+	}
+
+	if asJSON {
+		ui.PrintJSON(map[string]string{"deleted": branchID})
+		return nil
+	}
+
+	fmt.Printf("Deleted branch %s\n", branchID)
+	return nil
+}
+
 func (s *Service) selectBranchID(ctx context.Context, appID, branchID string) (string, error) {
 	if branchID != "" {
 		return s.resolveAppBranchID(ctx, appID, branchID)

@@ -75,8 +75,9 @@ func (s *Service) ensureNoActiveComponents(ctx context.Context, appID string) er
 
 	if len(appCfg.ComponentIds) > 0 {
 		newCfg, err := s.api.CreateAppConfig(ctx, appID, &models.ServiceCreateAppConfigRequest{
-			Readme:     appCfg.Readme,
-			CliVersion: appCfg.CliVersion,
+			Readme:           appCfg.Readme,
+			CliVersion:       appCfg.CliVersion,
+			SkipNotification: true,
 		})
 		if err != nil {
 			return err

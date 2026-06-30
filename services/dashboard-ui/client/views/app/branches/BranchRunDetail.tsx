@@ -1,15 +1,14 @@
 import { useParams, useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
-import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { ID } from '@/components/common/ID'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
-import { Expand } from '@/components/common/Expand'
 import { WorkflowStepsPipeline } from '@/components/branches/WorkflowStepsPipeline'
 import { WorkflowStepDetail } from '@/components/branches/WorkflowStepDetail'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
@@ -19,15 +18,9 @@ import { useApp } from '@/hooks/use-app'
 import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
 import { isActiveStepStatus } from '@/components/branches/shared/step-status'
+import { ConfigDiffFocusContext, type TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-diff-focus'
 import { getBranchWorkflowRun } from '@/lib'
-import { useEffect, useRef, useState } from 'react'
-
-function statusTheme(status?: string) {
-  if (status === 'success') return 'success'
-  if (status === 'error') return 'error'
-  if (status === 'in-progress') return 'info'
-  return 'neutral'
-}
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const BranchRunDetailContent = () => {
   const { org } = useOrg()
@@ -43,6 +36,10 @@ const BranchRunDetailContent = () => {
   const [selectedStepId, setSelectedStepId] = useState<string | null>(targetStepId)
   const stepDetailRef = useRef<HTMLDivElement>(null)
   const pendingScrollRef = useRef(false)
+  const [configFocus, setConfigFocus] = useState<TConfigDiffFocus | null>(null)
+  const requestConfigFocus = useCallback((sectionKey: string, entityName?: string) => {
+    setConfigFocus((prev) => ({ sectionKey, entityName, nonce: (prev?.nonce ?? 0) + 1 }))
+  }, [])
 
   const { data: run, isLoading } = useQuery({
     queryKey: ['branch-run', orgId, appId, branchId, runId],
@@ -96,6 +93,7 @@ const BranchRunDetailContent = () => {
   const statusDescription = run.status?.status_human_description || ''
 
   return (
+    <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
     <PageSection className="max-w-full space-y-4">
       <PageTitle title={`Run | ${app?.name}`} />
       <Breadcrumbs
@@ -133,15 +131,7 @@ const BranchRunDetailContent = () => {
           </div>
 
           <div className="flex items-center gap-2 mt-0.5">
-            <Badge theme={statusTheme(status)} size="sm">
-              {status === 'in-progress' && (
-                <svg className="animate-spin w-3 h-3 shrink-0" viewBox="0 0 12 12" fill="none">
-                  <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" />
-                  <path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              )}
-              {status}
-            </Badge>
+            <Status status={status} variant="badge" />
             {statusDescription && (
               <Text variant="subtext" theme="neutral">{statusDescription}</Text>
             )}
@@ -198,18 +188,7 @@ const BranchRunDetailContent = () => {
       </div>
 
       {/* ── Config changes card ── */}
-      {appConfigId && (
-        <Expand
-          id="config-changes"
-          className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
-          headerClassName="px-5 py-4"
-          heading={<Text variant="h3" weight="strong">Config changes</Text>}
-        >
-          <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800">
-            <AppConfigDiff appConfigId={appConfigId} />
-          </div>
-        </Expand>
-      )}
+      {appConfigId && <AppConfigDiff appConfigId={appConfigId} focus={configFocus} />}
 
       {/* ── Step detail card ── */}
       {selectedStep && (
@@ -225,6 +204,7 @@ const BranchRunDetailContent = () => {
         </>
       )}
     </PageSection>
+    </ConfigDiffFocusContext.Provider>
   )
 }
 

@@ -22,6 +22,13 @@ const DeploymentPlanButton = () => (
   </Button>
 )
 
+const DeleteButton = () => (
+  <Button isMenuButton variant="danger" onClick={noop}>
+    Delete branch
+    <Icon variant="TrashIcon" size={16} />
+  </Button>
+)
+
 const Wrap = ({ children }: { children: React.ReactNode }) => (
   <div className="flex justify-end p-8">{children}</div>
 )
@@ -35,6 +42,7 @@ export const Default = () => (
       deploymentPlanButton={<DeploymentPlanButton />}
       hasConfig
       isTriggerPending={false}
+      deleteButton={<DeleteButton />}
       onTriggerRun={noop}
     />
   </Wrap>
@@ -49,6 +57,7 @@ export const NoConfig = () => (
       deploymentPlanButton={<DeploymentPlanButton />}
       hasConfig={false}
       isTriggerPending={false}
+      deleteButton={<DeleteButton />}
       onTriggerRun={noop}
     />
   </Wrap>
@@ -63,6 +72,7 @@ export const TriggerPending = () => (
       deploymentPlanButton={<DeploymentPlanButton />}
       hasConfig
       isTriggerPending
+      deleteButton={<DeleteButton />}
       onTriggerRun={noop}
     />
   </Wrap>

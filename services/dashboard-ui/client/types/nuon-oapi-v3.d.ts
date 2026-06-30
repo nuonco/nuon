@@ -2997,6 +2997,13 @@ export interface components {
       created_by_id?: string;
       enable_kube_config?: components["schemas"]["sql.NullBool"];
       id?: string;
+      /**
+       * @description KubernetesContextName is the name of an AppKubernetesContextConfig on
+       * the same AppConfig. Empty means fall back to the implicit sandbox
+       * default. Stored as a name (not an FK) so it remains stable across
+       * AppConfig versions.
+       */
+      kubernetes_context_name?: string;
       references?: string[];
       refs?: components["schemas"]["refs.Ref"][];
       role?: string;
@@ -4077,6 +4084,12 @@ export interface components {
       install_action_workflow_id?: string;
       install_id?: string;
       install_workflow_id?: string;
+      /**
+       * @description KubernetesContextName is snapshotted from the action's
+       * ActionWorkflowConfig at run-creation time so plan resolution can target
+       * the correct cluster. Empty means fall back to the sandbox default.
+       */
+      kubernetes_context_name?: string;
       log_stream?: components["schemas"]["app.LogStream"];
       outputs?: {
         [key: string]: unknown;
@@ -6843,6 +6856,7 @@ export interface components {
       break_glass_role_arn?: string;
       dependencies?: string[];
       enable_kube_config?: boolean | null;
+      kubernetes_context?: string;
       references?: string[];
       role?: string;
       steps: components["schemas"]["service.CreateActionWorkflowConfigStepRequest"][];

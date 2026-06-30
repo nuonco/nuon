@@ -33,7 +33,7 @@ function transformInstalls(installs: any[]): InstallDiffEntry[] {
         name: c.component_name || c.component_id,
         op: 'change' as const,
         componentType: c.component_type,
-        fields: [{ key: 'config', op: 'change', diff: 'configuration changed' }],
+        fields: [],
       })),
       ...removed.map((c: any) => ({
         name: c.component_name || c.component_id,
@@ -43,26 +43,48 @@ function transformInstalls(installs: any[]): InstallDiffEntry[] {
       })),
     ]
 
-    const sections = componentEntities.length > 0
-      ? [{
-          name: 'Components',
-          sectionKey: 'components',
-          grouped: true,
-          additions: added.length,
-          removals: removed.length,
-          changed: changed.length,
-          entities: componentEntities,
-          fields: [],
-        }]
-      : []
+    const sandboxChanged = diff?.sandbox_changed || inst.sandbox_changed
+    const stackChanged = diff?.stack_changed || inst.stack_changed
+
+    const infraEntities = [
+      ...(sandboxChanged ? [{ name: 'Sandbox', op: 'change' as const, fields: [] }] : []),
+      ...(stackChanged ? [{ name: 'Stack', op: 'change' as const, fields: [] }] : []),
+    ]
+
+    const sections = [
+      ...(componentEntities.length > 0
+        ? [{
+            name: 'Components',
+            sectionKey: 'components',
+            grouped: true,
+            additions: added.length,
+            removals: removed.length,
+            changed: changed.length,
+            entities: componentEntities,
+            fields: [],
+          }]
+        : []),
+      ...(infraEntities.length > 0
+        ? [{
+            name: 'Infrastructure',
+            sectionKey: 'infrastructure',
+            grouped: true,
+            additions: 0,
+            removals: 0,
+            changed: infraEntities.length,
+            entities: infraEntities,
+            fields: [],
+          }]
+        : []),
+    ]
 
     return {
       installId: inst.install_id || inst.install_name,
       installName: inst.install_name || inst.install_id,
       installLabels: inst.install_labels,
       status: inst.status,
-      sandboxChanged: diff?.sandbox_changed || inst.sandbox_changed,
-      stackChanged: diff?.stack_changed || inst.stack_changed,
+      sandboxChanged,
+      stackChanged,
       summary: {
         added: added.length,
         removed: removed.length,
@@ -93,20 +115,11 @@ export const PlanGroupStep = ({
         </Banner>
       )}
 
-      {installs.length > 0 && (
-        <InstallGroupDiff
-          groupName={groupName || 'install group'}
-          installs={transformInstalls(installs)}
-        />
-      )}
-
-      {installs.length === 0 && (
-        <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
-          <Text variant="subtext" theme="neutral">
-            {isInProgress ? 'Computing install diffs...' : 'Waiting to compute plan...'}
-          </Text>
-        </div>
-      )}
+      <InstallGroupDiff
+        groupName={groupName || 'install group'}
+        installs={transformInstalls(installs)}
+        isLoading={isInProgress}
+      />
 
       {showApproveBar && (
         <Banner className="@container" theme="warn">

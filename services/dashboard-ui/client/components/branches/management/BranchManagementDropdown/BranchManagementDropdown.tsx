@@ -10,6 +10,7 @@ export interface IBranchManagementDropdown {
   detailHref: string
   editButton: ReactNode
   deploymentPlanButton: ReactNode
+  deleteButton: ReactNode
   hasConfig: boolean
   isTriggerPending: boolean
   onTriggerRun: () => void
@@ -20,6 +21,7 @@ export const BranchManagementDropdown = ({
   detailHref,
   editButton,
   deploymentPlanButton,
+  deleteButton,
   hasConfig,
   isTriggerPending,
   onTriggerRun,
@@ -44,6 +46,7 @@ export const BranchManagementDropdown = ({
         </Text>
         {editButton}
         {deploymentPlanButton}
+        {deleteButton}
         <hr />
         <Text variant="label" theme="neutral">
           Controls

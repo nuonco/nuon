@@ -1,9 +1,16 @@
-import { Badge } from '@/components/common/Badge'
+import { Badge, type TBadgeTheme } from '@/components/common/Badge'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { Icon } from '@/components/common/Icon'
+import { LabelBadge } from '@/components/common/LabelBadge'
+import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
-import { AppConfigDiff } from '../app-config/AppConfigDiff'
+import { ComponentType } from '@/components/components/ComponentType'
+import type { TComponentType } from '@/types'
+import { ChangeCountSummary } from '../ChangeCountSummary'
+import { useConfigDiffFocus } from '../config-diff-focus'
 import type { DiffSectionData } from '../app-config/AppConfigDiff'
 
 export type InstallDiffEntry = {
@@ -20,27 +27,86 @@ export type InstallDiffEntry = {
 export interface IInstallGroupDiff {
   groupName: string
   installs: InstallDiffEntry[]
+  isLoading?: boolean
 }
 
-const InstallStatusDot = ({ status }: { status?: string }) => {
-  if (status === 'success' || status === 'deployed') {
-    return <div className="w-[10px] h-[10px] rounded-full bg-green-500 shrink-0" />
-  }
-  if (status === 'in-progress') {
-    return <div className="w-[10px] h-[10px] rounded-full bg-blue-500 shrink-0 animate-pulse" />
-  }
-  if (status === 'error') {
-    return <div className="w-[10px] h-[10px] rounded-full bg-red-500 shrink-0" />
-  }
-  return <div className="w-[10px] h-[10px] rounded-full bg-cool-grey-300 dark:bg-dark-grey-500 shrink-0" />
+const SKELETON_ROW_WIDTHS = ['9rem', '7rem', '11rem', '8rem']
+
+const GroupHeader = ({ groupName, children }: { groupName: string; children?: React.ReactNode }) => (
+  <div className="px-4 sm:px-6 py-4 border-b">
+    <div className="flex items-center gap-3">
+      <Icon variant="ListChecksIcon" size="16" />
+      <Text variant="base" weight="strong">{groupName}</Text>
+      {children}
+    </div>
+  </div>
+)
+
+const InstallGroupDiffSkeleton = ({ groupName, rows = 3 }: { groupName: string; rows?: number }) => (
+  <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
+    <GroupHeader groupName={groupName}>
+      <Skeleton width="4rem" height="0.875rem" />
+    </GroupHeader>
+    <div className="flex flex-col divide-y">
+      {Array.from({ length: rows }).map((_, idx) => (
+        <div key={idx} className="flex items-center gap-3 px-4 py-3">
+          <Skeleton width={SKELETON_ROW_WIDTHS[idx % SKELETON_ROW_WIDTHS.length]} height="0.875rem" />
+          <div className="flex items-center gap-2 ml-auto">
+            <Skeleton width="1.5rem" height="0.75rem" />
+            <Skeleton width="1.5rem" height="0.75rem" />
+            <Skeleton width="1.5rem" height="0.75rem" />
+          </div>
+        </div>
+      ))}
+    </div>
+  </Card>
+)
+
+const OP_VERB: Record<string, string> = { add: 'Add', change: 'Update', remove: 'Remove' }
+const OP_THEME: Record<string, TBadgeTheme> = { add: 'success', change: 'warn', remove: 'error' }
+
+type ImpactItem = { name: string; op: string; componentType?: string; isComponent: boolean }
+
+const flattenImpact = (sections: DiffSectionData[]): ImpactItem[] =>
+  sections.flatMap((section) =>
+    section.entities.map((entity) => ({
+      name: entity.name,
+      op: entity.op,
+      componentType: entity.componentType,
+      isComponent: section.sectionKey === 'components',
+    }))
+  )
+
+const ChangeSummary = ({ install }: { install: InstallDiffEntry }) => {
+  const { added, changed, removed } = install.summary
+  const updated = changed + (install.sandboxChanged ? 1 : 0) + (install.stackChanged ? 1 : 0)
+  return (
+    <ChangeCountSummary
+      added={added}
+      updated={updated}
+      removed={removed}
+      className="ml-auto shrink-0"
+    />
+  )
 }
 
-export const InstallGroupDiff = ({ groupName, installs }: IInstallGroupDiff) => {
+export const InstallGroupDiff = ({ groupName, installs, isLoading = false }: IInstallGroupDiff) => {
+  const focusCtx = useConfigDiffFocus()
+
+  if (isLoading && installs.length === 0) {
+    return <InstallGroupDiffSkeleton groupName={groupName} />
+  }
+
   if (installs.length === 0) {
     return (
       <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-        <div className="px-4 sm:px-6 py-4">
-          <Text variant="subtext" theme="neutral">No install changes to show</Text>
+        <div className="px-4 py-3 text-center">
+          <EmptyState
+            emptyTitle="No install changes"
+            emptyMessage="No installs in this group will be affected by this plan."
+            variant="diagram"
+            size="sm"
+          />
         </div>
       </Card>
     )
@@ -48,54 +114,33 @@ export const InstallGroupDiff = ({ groupName, installs }: IInstallGroupDiff) => 
 
   return (
     <Card className="bg-cool-grey-50 dark:bg-dark-grey-900 !p-0 !gap-0">
-      <div className="px-4 sm:px-6 py-4 border-b">
-        <div className="flex items-center gap-3">
-          <Icon variant="ListChecksIcon" size="16" />
-          <Text variant="base" weight="strong">{groupName}</Text>
-          <Text variant="subtext" theme="neutral">
-            {installs.length} {installs.length === 1 ? 'install' : 'installs'}
-          </Text>
-        </div>
-      </div>
+      <GroupHeader groupName={groupName}>
+        <Text variant="subtext" theme="neutral">
+          {installs.length} {installs.length === 1 ? 'install' : 'installs'}
+        </Text>
+      </GroupHeader>
 
       <div className="flex flex-col divide-y">
         {installs.map((install) => {
           const totalChanges = install.summary.added + install.summary.removed + install.summary.changed
-          const hasChanges = totalChanges > 0 || install.sandboxChanged || install.stackChanged
+          const hasChanges = totalChanges > 0 || !!install.sandboxChanged || !!install.stackChanged
           const labelEntries = install.installLabels ? Object.entries(install.installLabels) : []
 
           const heading = (
             <div className="flex items-center gap-3 w-full">
-              <InstallStatusDot status={install.status} />
               <Text weight="strong">{install.installName || install.installId}</Text>
               {labelEntries.map(([k, v]) => (
-                <span key={k} className="inline-flex items-center px-1.5 py-0.5 rounded border border-cool-grey-200 dark:border-dark-grey-600 bg-cool-grey-50 dark:bg-dark-grey-800 font-mono text-[10.5px] text-cool-grey-500 dark:text-cool-grey-400 shrink-0">
-                  {k}={v}
-                </span>
+                <LabelBadge key={k} labelKey={k} labelValue={v} size="sm" variant="code" className="shrink-0" />
               ))}
-              <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                {install.summary.added > 0 && (
-                  <span className="text-[12px] font-semibold text-green-600 dark:text-green-400">+{install.summary.added}</span>
-                )}
-                {install.summary.changed > 0 && (
-                  <span className="text-[12px] font-semibold text-yellow-600 dark:text-yellow-400">~{install.summary.changed}</span>
-                )}
-                {install.summary.removed > 0 && (
-                  <span className="text-[12px] font-semibold text-red-600 dark:text-red-400">-{install.summary.removed}</span>
-                )}
-                {install.sandboxChanged && <Badge theme="warn" size="sm">sandbox</Badge>}
-                {install.stackChanged && <Badge theme="warn" size="sm">stack</Badge>}
-                {!hasChanges && (
-                  <span className="text-[12px] text-cool-grey-400 dark:text-cool-grey-500">no changes</span>
-                )}
-              </div>
+              <ChangeSummary install={install} />
             </div>
           )
 
           if (!hasChanges || install.sections.length === 0) {
             return (
-              <div key={install.installId} className="px-4 py-3">
+              <div key={install.installId} className="flex items-center gap-2 px-4 py-3">
                 {heading}
+                <Icon variant="CaretDownIcon" className="invisible shrink-0" aria-hidden />
               </div>
             )
           }
@@ -105,14 +150,73 @@ export const InstallGroupDiff = ({ groupName, installs }: IInstallGroupDiff) => 
               key={install.installId}
               id={`install-group-diff-${install.installId}`}
               heading={heading}
-              isIconBeforeHeading
               headerClassName="px-4 py-3"
             >
-              <div className="px-4 pb-4">
-                <AppConfigDiff
-                  sections={install.sections}
-                  summary={install.summary}
-                />
+              <div className="px-4 py-4 flex flex-col gap-3 border-t border-cool-grey-100 dark:border-dark-grey-800 bg-black/[0.015] dark:bg-white/[0.0075]">
+                <Text variant="subtext" theme="neutral">
+                  The following will be redeployed to {install.installName || install.installId}:
+                </Text>
+                <div className="flex flex-col divide-y divide-cool-grey-100 dark:divide-dark-grey-800">
+                  {flattenImpact(install.sections).map((item, idx) => {
+                    const sectionKey = item.isComponent
+                      ? 'components'
+                      : item.name === 'Stack'
+                        ? 'stack'
+                        : 'sandbox'
+
+                    return (
+                      <div
+                        key={`${item.name}-${idx}`}
+                        className="group flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {item.isComponent && item.componentType ? (
+                            <ComponentType
+                              type={item.componentType as TComponentType}
+                              colorVariant="color"
+                              displayVariant="icon-only"
+                              iconSize="16"
+                            />
+                          ) : (
+                            <Icon
+                              variant={item.name === 'Stack' ? 'StackIcon' : 'ShippingContainerIcon'}
+                              size="16"
+                              theme={OP_THEME[item.op] ?? 'neutral'}
+                            />
+                          )}
+                          <Text weight="strong" nowrap className="truncate">
+                            {item.name}
+                          </Text>
+                          {item.isComponent && item.componentType && (
+                            <Text variant="subtext" theme="neutral">
+                              {item.componentType.replace(/_/g, ' ')}
+                            </Text>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {focusCtx && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="!text-primary-600 dark:!text-primary-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                              onClick={() =>
+                                focusCtx.requestFocus(
+                                  sectionKey,
+                                  item.isComponent ? `component.${item.name}` : undefined
+                                )
+                              }
+                            >
+                              View details <Icon variant="CaretRightIcon" />
+                            </Button>
+                          )}
+                          <Badge theme={OP_THEME[item.op] ?? 'neutral'} size="sm">
+                            {OP_VERB[item.op] ?? item.op}
+                          </Badge>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </Expand>
           )

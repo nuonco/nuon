@@ -1,12 +1,13 @@
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import type { TInstallWorkflowStep } from '@/types'
 import { DetailStatusIcon } from './shared/icons'
-import { statusTheme, formatDuration } from './shared/format'
+import { formatDuration } from './shared/format'
 import { CommitStep } from './steps/CommitStep'
 import { ConfigStep } from './steps/ConfigStep'
 import { BuildStep } from './steps/BuildStep'
@@ -58,15 +59,7 @@ export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDet
             Group {step.group_idx}
           </span>
         )}
-        <Badge theme={statusTheme(step.status?.status)} size="sm" className="shrink-0">
-          {isInProgress && (
-            <svg className="animate-spin w-3 h-3 shrink-0" viewBox="0 0 12 12" fill="none">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeOpacity="0.3" strokeWidth="1.5" />
-              <path d="M6 1.5 A4.5 4.5 0 0 1 10.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-          )}
-          {step.status?.status || 'pending'}
-        </Badge>
+        <Status status={step.status?.status || 'pending'} variant="badge" className="shrink-0" />
         <div className="flex-1" />
         {duration && (
           <div className="flex items-center gap-1.5 text-cool-grey-400 dark:text-cool-grey-500 shrink-0">
