@@ -21,6 +21,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/sandboxbuild"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
 	// general signals

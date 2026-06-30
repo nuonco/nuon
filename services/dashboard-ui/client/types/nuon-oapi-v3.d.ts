@@ -656,6 +656,13 @@ export interface paths {
      */
     post: operations["CreateAppKubernetesContextsConfig"];
   };
+  "/v1/apps/{app_id}/labels": {
+    /**
+     * get all labels used across an app
+     * @description Returns all distinct label keys with values, usage counts, and assigned colors across components, actions, runbooks, and installs for an app.
+     */
+    get: operations["GetAppLabels"];
+  };
   "/v1/apps/{app_id}/latest-break-glass-config": {
     /**
      * get latest app break glass config
@@ -3148,6 +3155,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      managed_by?: string;
       name?: string;
       org_id?: string;
       queue?: components["schemas"]["app.Queue"];
@@ -6730,6 +6738,22 @@ export interface components {
        */
       component: string;
       name: string;
+    };
+    "service.AppLabelKeySummary": {
+      color?: string;
+      default_color?: string;
+      entity_types?: string[];
+      is_override?: boolean;
+      key?: string;
+      usage_count?: number;
+      values?: string[];
+    };
+    "service.AppLabelsResponse": {
+      default_colors?: string[];
+      label_colors?: {
+        [key: string]: string;
+      };
+      labels?: components["schemas"]["service.AppLabelKeySummary"][];
     };
     "service.AppPolicyConfig": {
       components?: string[];
@@ -13482,6 +13506,56 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppKubernetesContextsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all labels used across an app
+   * @description Returns all distinct label keys with values, usage counts, and assigned colors across components, actions, runbooks, and installs for an app.
+   */
+  GetAppLabels: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppLabelsResponse"];
         };
       };
       /** @description Bad Request */

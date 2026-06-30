@@ -17,6 +17,7 @@ type AppLabelKey struct {
 	EntityTypes pq.StringArray `json:"entity_types" gorm:"->;-:migration;type:text[]"`
 	UsageCount  int            `json:"usage_count" gorm:"->;-:migration"`
 	FirstUsedAt time.Time      `json:"first_used_at" gorm:"->;-:migration"`
+	ColorIndex  int            `json:"color_index" gorm:"->;-:migration"`
 	AppID       string         `json:"app_id" gorm:"->;-:migration"`
 	OrgID       string         `json:"org_id" gorm:"->;-:migration"`
 }
@@ -41,6 +42,14 @@ func (a *AppLabelKey) Views(db *gorm.DB) []migrations.View {
 
 func (a *AppLabelKey) Indexes(db *gorm.DB) []migrations.Index {
 	return nil
+}
+
+func (a *AppLabelKey) GetTableOptions() (string, bool) {
+	return "", false
+}
+
+func (a *AppLabelKey) MigrateDB(db *gorm.DB) *gorm.DB {
+	return db
 }
 
 func (a *AppLabelKey) BeforeCreate(tx *gorm.DB) error {

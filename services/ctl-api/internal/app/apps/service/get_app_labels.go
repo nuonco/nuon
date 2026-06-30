@@ -86,8 +86,8 @@ func (s *service) GetAppLabels(ctx *gin.Context) {
 	}
 
 	labels := make([]AppLabelKeySummary, 0, len(rows))
-	for i, row := range rows {
-		defaultColor := StandardLabelColors[i%len(StandardLabelColors)]
+	for _, row := range rows {
+		defaultColor := StandardLabelColors[row.ColorIndex%len(StandardLabelColors)]
 
 		lk := AppLabelKeySummary{
 			Key:          row.Key,
