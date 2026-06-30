@@ -192,6 +192,9 @@ func AllModels() []any {
 		// drifts
 		&app.DriftedObject{},
 
+		// app label keys (query-only view)
+		&app.AppLabelKey{},
+
 		// waitlist
 		&app.Waitlist{},
 		// NOTE(jm): this is a special table used in both ch and postgres

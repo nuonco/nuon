@@ -12,11 +12,14 @@ const defaultColors = [
   '#22c55e', '#a855f7', '#eab308', '#06b6d4', '#f43f5e', '#818cf8',
 ]
 
+const availableKeys = ['env', 'region', 'team', 'tier', 'production', 'beta', 'test']
+
 export const Empty = () => (
   <ModalStory>
     <EditLabelColorsModal
       labelColors={{}}
       defaultColors={defaultColors}
+      availableKeys={availableKeys}
       isPending={false}
       error={null}
       onSubmit={() => {}}
@@ -33,6 +36,7 @@ export const WithColors = () => (
         team: '#9333ea',
       }}
       defaultColors={defaultColors}
+      availableKeys={availableKeys}
       isPending={false}
       error={null}
       onSubmit={() => {}}
@@ -40,12 +44,13 @@ export const WithColors = () => (
   </ModalStory>
 )
 
-export const Saving = () => (
+export const NoAvailableKeys = () => (
   <ModalStory>
     <EditLabelColorsModal
       labelColors={{ env: '#16a34a' }}
       defaultColors={defaultColors}
-      isPending={true}
+      availableKeys={[]}
+      isPending={false}
       error={null}
       onSubmit={() => {}}
     />

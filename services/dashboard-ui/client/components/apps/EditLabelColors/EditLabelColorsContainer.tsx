@@ -45,10 +45,13 @@ export const EditLabelColorsContainer = (props: IModal) => {
     initialColors[k] = v
   }
 
+  const allLabelKeys = (labelsData?.labels ?? []).map((lk) => lk.key)
+
   return (
     <EditLabelColorsModal
       labelColors={initialColors}
       defaultColors={labelsData?.default_colors ?? []}
+      availableKeys={allLabelKeys}
       isPending={isPending}
       error={(error as TAPIError) ?? null}
       onSubmit={(labelColors) => mutate(labelColors)}

@@ -9,6 +9,7 @@ import { Modal, type IModal } from '@/components/surfaces/Modal'
 interface IEditLabelColorsModal extends Omit<IModal, 'onSubmit'> {
   labelColors: Record<string, string>
   defaultColors?: string[]
+  availableKeys?: string[]
   isPending: boolean
   error: any
   onSubmit: (labelColors: Record<string, string>) => void
@@ -24,6 +25,7 @@ const SWATCH_COLORS = [
 export const EditLabelColorsModal = ({
   labelColors: initialLabelColors,
   defaultColors,
+  availableKeys = [],
   isPending,
   error,
   onSubmit,
@@ -141,13 +143,27 @@ export const EditLabelColorsModal = ({
               <div className="grid grid-cols-[1fr_auto_auto] gap-2 items-end">
                 <label className="flex flex-col gap-1">
                   <Text variant="label">Label key</Text>
-                  <Input
-                    name={`lc:${idx}:key`}
-                    type="text"
-                    placeholder="e.g. env"
-                    required
-                    defaultValue={initialValues[`lc:${idx}:key`] || ''}
-                  />
+                  {availableKeys.length > 0 ? (
+                    <select
+                      name={`lc:${idx}:key`}
+                      required
+                      defaultValue={initialValues[`lc:${idx}:key`] || ''}
+                      className="h-9 rounded border border-cool-grey-300 dark:border-dark-grey-500 bg-white dark:bg-dark-grey-800 px-2 text-sm"
+                    >
+                      <option value="">Select a label key</option>
+                      {availableKeys.map((k) => (
+                        <option key={k} value={k}>{k}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      name={`lc:${idx}:key`}
+                      type="text"
+                      placeholder="e.g. env"
+                      required
+                      defaultValue={initialValues[`lc:${idx}:key`] || ''}
+                    />
+                  )}
                 </label>
                 <label className="flex flex-col gap-1">
                   <Text variant="label">Color</Text>

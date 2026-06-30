@@ -3,6 +3,7 @@ import { api } from '@/lib/api'
 export type TAppLabelKey = {
   key: string
   color: string
+  default_color: string
   is_override: boolean
   values: string[]
   entity_types: string[]
