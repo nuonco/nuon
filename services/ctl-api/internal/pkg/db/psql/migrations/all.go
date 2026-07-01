@@ -140,5 +140,9 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "116-install-app-config-version-metadata-backfill",
 			Fn:   m.Migration116InstallAppConfigVersionMetadataBackfill,
 		},
+		{
+			Name: "117-app-branch-unique-with-deleted-at",
+			Fn:   m.Migration117AppBranchUniqueWithDeletedAt,
+		},
 	}
 }

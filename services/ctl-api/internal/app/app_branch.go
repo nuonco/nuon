@@ -24,7 +24,7 @@ type AppBranch struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"uniqueIndex:idx_app_branch_name_per_app" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`

@@ -45,8 +45,8 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 	}
 
 	update := app.InstallAppConfigVersion{
-		AppBranchRunID: input.AppBranchRunID,
-		InstallGroupID: input.InstallGroupID,
+		AppBranchRunID: &input.AppBranchRunID,
+		InstallGroupID: &input.InstallGroupID,
 		InstallID:      input.InstallID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,

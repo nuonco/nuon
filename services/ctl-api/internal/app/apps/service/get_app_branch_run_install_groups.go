@@ -73,7 +73,7 @@ func (s *service) GetAppBranchRunInstallGroups(ctx *gin.Context) {
 		Preload("Install").
 		Preload("Workflow").
 		Preload("Workflow.Steps").
-		Where(app.InstallAppConfigVersion{AppBranchRunID: runID}).
+		Where(app.InstallAppConfigVersion{AppBranchRunID: &runID}).
 		Order("created_at ASC").
 		Find(&updates)
 	if res.Error != nil {

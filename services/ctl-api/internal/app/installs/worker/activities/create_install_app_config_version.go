@@ -28,10 +28,14 @@ func (a *Activities) CreateInstallAppConfigVersion(ctx context.Context, input *C
 		InstallID:      input.InstallID,
 		OldAppConfigID: input.OldAppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
-		AppBranchRunID: input.AppBranchRunID,
-		InstallGroupID: input.InstallGroupID,
 		Metadata:       input.Metadata,
 		Status:         app.NewCompositeStatus(ctx, app.StatusSuccess),
+	}
+	if input.AppBranchRunID != "" {
+		version.AppBranchRunID = &input.AppBranchRunID
+	}
+	if input.InstallGroupID != "" {
+		version.InstallGroupID = &input.InstallGroupID
 	}
 	if err := a.db.WithContext(ctx).Create(&version).Error; err != nil {
 		return nil, fmt.Errorf("unable to create install app config version: %w", err)
