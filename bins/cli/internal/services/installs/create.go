@@ -111,7 +111,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region string, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
 	req := &models.ServiceCreateInstallRequest{
 		Name:   &name,
-		Inputs: inputs,
+		Inputs: s.inputsWithDefaults(ctx, appID, inputs),
 		Labels: labelsMap,
 	}
 
@@ -134,4 +134,25 @@ func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, re
 	}
 
 	return req, nil
+}
+
+// inputsWithDefaults merges app input defaults with any explicitly provided values.
+// Explicit values win; defaults fill in anything not provided.
+func (s *Service) inputsWithDefaults(ctx context.Context, appID string, provided map[string]string) map[string]string {
+	inputCfg, err := s.api.GetAppInputLatestConfig(ctx, appID)
+	if err != nil || inputCfg == nil {
+		return provided
+	}
+
+	merged := make(map[string]string)
+	for _, input := range inputCfg.Inputs {
+		if input == nil || input.Name == "" || input.Default == "" {
+			continue
+		}
+		merged[input.Name] = input.Default
+	}
+	for k, v := range provided {
+		merged[k] = v
+	}
+	return merged
 }
