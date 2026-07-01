@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	defaultBlobBackfillRatePerSecond = 100
+	defaultBlobBackfillRatePerSecond = 500
 	blobBackfillContentType          = "application/octet-stream"
 )
 
