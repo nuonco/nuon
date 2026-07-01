@@ -13,7 +13,7 @@ type ArchiveStateRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) ArchiveState(ctx context.Context, req *ArchiveStateRequest) error {
-	retainCount := 2 // Number of states to retain
+	retainCount := 50 // Number of states to retain
 
 	err := a.db.WithContext(ctx).
 		Where("install_id = ? AND archived = false AND id NOT IN (?)",
