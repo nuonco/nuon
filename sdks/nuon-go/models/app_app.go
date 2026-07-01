@@ -50,13 +50,13 @@ type AppApp struct {
 	// id
 	ID string `json:"id,omitempty"`
 
-	// label colors
-	LabelColors map[string]string `json:"label_colors,omitempty"`
-
 	// fields set via after query
 	InputConfig struct {
 		AppAppInputConfig
 	} `json:"input_config,omitempty"`
+
+	// label colors
+	LabelColors any `json:"label_colors,omitempty"`
 
 	// links
 	Links map[string]any `json:"links,omitempty"`
