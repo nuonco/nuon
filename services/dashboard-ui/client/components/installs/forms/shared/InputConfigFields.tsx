@@ -3,8 +3,10 @@ import { Input } from '@/components/common/form/Input'
 import { CodeInput } from '@/components/common/form/CodeInput'
 import { Text } from '@/components/common/Text'
 import { Expand } from '@/components/common/Expand'
+import { COMPONENT_OVERRIDE_INPUT_GROUP } from '@/utils/install-utils'
 import type { TAppInputConfig, TInstall } from '@/types'
 import type { IInputConfigFields } from './types'
+import { ComponentOverridesSection } from './ComponentOverridesSection'
 
 const CODE_INPUT_TYPES = {
   json: {
@@ -283,16 +285,26 @@ export const InputConfigFields = ({
 
   return (
     <>
-      {/* Render vendor input groups normally */}
-      {vendorGroups.map((group) => (
-        <InputGroupFields
-          key={`vendor-${group.id}`}
-          groupInputs={group}
-          install={install}
-          disabled={false}
-          draftValues={draftValues}
-        />
-      ))}
+      {/* Render vendor input groups normally, except the reserved
+          component-overrides group which renders as per-component cards. */}
+      {vendorGroups.map((group) =>
+        group.name === COMPONENT_OVERRIDE_INPUT_GROUP ? (
+          <ComponentOverridesSection
+            key={`vendor-${group.id}`}
+            group={group}
+            install={install}
+            draftValues={draftValues}
+          />
+        ) : (
+          <InputGroupFields
+            key={`vendor-${group.id}`}
+            groupInputs={group}
+            install={install}
+            disabled={false}
+            draftValues={draftValues}
+          />
+        )
+      )}
 
       {/* Render customer input groups with header */}
       {customerGroups.length > 0 && (
