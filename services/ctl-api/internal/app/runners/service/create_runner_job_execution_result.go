@@ -16,7 +16,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws" // register AWS provider-layer parsers
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws"     // register AWS provider-layer parsers
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic" // register the generic fallback parser
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
@@ -173,24 +174,77 @@ func parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runne
 		return nil
 	}
 
-	var raw string
-	if msg := req.ErrorMetadata["message"]; msg != nil {
-		raw = *msg
-	}
+	raw := rawErrorText(req.ErrorMetadata)
 	if raw == "" {
 		return nil
 	}
 
 	ce := errparse.Parse(&errparse.ParseContext{
-		Raw:   raw,
-		Owner: errparse.Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
-		Meta:  flattenErrorMetadata(req.ErrorMetadata),
+		Raw:       raw,
+		Tool:      runnerJobTool(runnerJob),
+		Operation: string(runnerJob.Operation),
+		Group:     string(runnerJob.Group),
+		Owner:     errparse.Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
+		Meta:      flattenErrorMetadata(req.ErrorMetadata),
 	})
 	if ce == nil {
 		return nil
 	}
 
 	return compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+}
+
+const (
+	// errMetaKeyOutput is the captured error output (rich, multi-line: the tool's
+	// diagnostics). The runner populates it so parsers see the real cause rather
+	// than a thin wrapper. Preferred over errMetaKeyMessage when present.
+	errMetaKeyOutput = "error_output"
+	// errMetaKeyMessage is the wrapped Go error string (often just "exit status 1"
+	// for tools whose detail goes to the log stream). The fallback input.
+	errMetaKeyMessage = "message"
+)
+
+// rawErrorText picks the richest error text the runner sent: the captured
+// output when present, else the wrapped message.
+func rawErrorText(meta map[string]*string) string {
+	for _, k := range []string{errMetaKeyOutput, errMetaKeyMessage} {
+		if v := meta[k]; v != nil && *v != "" {
+			return *v
+		}
+	}
+	return ""
+}
+
+// runnerJobTool maps a runner job's type to the execution tool errparse uses as
+// a facet, so tool-layer parsers are only considered for the matching tool.
+// Provider-layer parsers are tool-agnostic and are unaffected by ToolUnknown.
+func runnerJobTool(runnerJob *app.RunnerJob) errparse.Tool {
+	switch runnerJob.Type {
+	case app.RunnerJobTypeTerraformDeploy,
+		app.RunnerJobTypeTerraformModuleBuild,
+		app.RunnerJobTypeSandboxTerraform,
+		app.RunnerJobTypeSandboxTerraformPlan,
+		app.RunnerJobTypeRunnerTerraform:
+		return errparse.ToolTerraform
+	case app.RunnerJobTypeHelmChartDeploy,
+		app.RunnerJobTypeHelmChartBuild,
+		app.RunnerJobTypeRunnerHelm:
+		return errparse.ToolHelm
+	case app.RunnerJobTypePulumiDeploy,
+		app.RunnerJobTypePulumiBuild,
+		app.RunnerJobTypeSandboxPulumi:
+		return errparse.ToolPulumi
+	case app.RunnerJobTypeDockerBuild:
+		return errparse.ToolDocker
+	case app.RunnerJobTypeKubrenetesManifestDeploy,
+		app.RunnerJobTypeKubernetesManifestBuild:
+		return errparse.ToolKubernetes
+	case app.RunnerJobTypeContainerImageBuild,
+		app.RunnerJobTypeOCISync:
+		return errparse.ToolOCI
+	default:
+		return errparse.ToolUnknown
+	}
 }
 
 // flattenErrorMetadata converts the runner-sent hstore metadata into the plain

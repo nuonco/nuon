@@ -152,12 +152,17 @@ var awsPermissionPatterns = []*regexp.Regexp{
 	),
 }
 
-// permissionParser recognises AWS IAM permission failures in a terraform job's
+// permissionParser recognises AWS IAM permission failures in a runner job's
 // raw output.
 type permissionParser struct{}
 
-func (permissionParser) Layer() errparse.Layer  { return errparse.LayerProvider }
-func (permissionParser) Tools() []errparse.Tool { return []errparse.Tool{errparse.ToolTerraform} }
+func (permissionParser) Layer() errparse.Layer { return errparse.LayerProvider }
+
+// Tools is nil (tool-agnostic): an AWS IAM denial is a provider-level failure
+// that surfaces across tools — terraform and pulumi provisioning, an ECR push
+// from a docker/oci build, etc. — so it must not be bucketed to a single tool.
+// The AWS signals plus the provider check in Applicable are the real gates.
+func (permissionParser) Tools() []errparse.Tool { return nil }
 func (permissionParser) Signals() []string {
 	return []string{
 		"AccessDenied",
@@ -192,7 +197,7 @@ func (permissionParser) Parse(ctx *errparse.ParseContext) compositeerrors.Compos
 
 		return &AWSPermissionError{
 			Action:       action,
-			Resource:     trimTrailingPunct(fields["resource"]),
+			Resource:     cleanResource(fields["resource"]),
 			Principal:    fields["principal"],
 			AWSErrorCode: fields["code"],
 			RawMessage:   extractRelevantLine(raw, match[0]),
@@ -216,6 +221,16 @@ func groupMap(re *regexp.Regexp, match []string) map[string]string {
 		}
 	}
 	return out
+}
+
+// cleanResource normalises a captured resource ARN. AWS quotes the ARN in some
+// messages ("... on resource: \"arn:aws:s3:::bucket\" with an explicit deny
+// ...") and glues sentence punctuation to it in others; both would otherwise
+// leak into the "Context" section and the copy-pasteable IAM policy statement.
+func cleanResource(s string) string {
+	s = trimTrailingPunct(s)
+	s = strings.Trim(s, `"'`)
+	return trimTrailingPunct(s)
 }
 
 // trimTrailingPunct strips trailing punctuation that often glues to ARNs when

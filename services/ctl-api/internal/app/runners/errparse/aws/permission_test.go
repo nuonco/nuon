@@ -109,6 +109,45 @@ func TestParse_UnauthorizedOperation(t *testing.T) {
 	}
 }
 
+// TestParse_S3AccessDenied_PermissionsBoundary uses the real error_output the
+// runner captured from a broken-provision deploy: plain log-capture lines (no
+// terraform box-drawing), a quoted resource ARN, and the "explicit deny in a
+// permissions boundary" phrasing. It guards the quote-stripping in
+// cleanResource — a quoted ARN would otherwise produce a malformed IAM policy
+// statement in the "How to fix" section.
+func TestParse_S3AccessDenied_PermissionsBoundary(t *testing.T) {
+	ce := parse(readFixture(t, "s3_access_denied_permissions_boundary.txt"))
+	if ce == nil {
+		t.Fatal("expected a composite error, got nil")
+	}
+	e := ce.(*AWSPermissionError)
+	if e.Action != "s3:CreateBucket" {
+		t.Errorf("action = %q, want s3:CreateBucket", e.Action)
+	}
+	if e.AWSErrorCode != "AccessDenied" {
+		t.Errorf("code = %q, want AccessDenied", e.AWSErrorCode)
+	}
+	if e.Resource != "arn:aws:s3:::inlgckaypxrqqlbs1t7axp26p8-nuon-clickhouse" {
+		t.Errorf("resource = %q, want unquoted ARN", e.Resource)
+	}
+	if strings.ContainsAny(e.Resource, `"'`) {
+		t.Errorf("resource %q still carries quotes", e.Resource)
+	}
+	// The generated policy statement must embed the clean ARN, not a quoted one.
+	fix := ""
+	for _, s := range e.Sections() {
+		if s.Heading == "How to fix" {
+			fix = s.Body
+		}
+	}
+	if !strings.Contains(fix, `"arn:aws:s3:::inlgckaypxrqqlbs1t7axp26p8-nuon-clickhouse"`) {
+		t.Errorf("How to fix section missing clean resource ARN: %q", fix)
+	}
+	if strings.Contains(fix, `\"arn:aws:s3`) {
+		t.Errorf("How to fix section has a doubly-quoted resource: %q", fix)
+	}
+}
+
 func TestParse_NoMatch(t *testing.T) {
 	cases := []string{
 		"",
