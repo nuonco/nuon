@@ -38,7 +38,7 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		},
 		{
 			Key:   "nuon_runner_api_url",
-			Value: inp.Settings.RunnerAPIURL,
+			Value: a.runnerAPIURL(inp),
 		},
 	}
 
@@ -47,7 +47,7 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		"RunnerEgressGroupId": cloudformation.Ref("RunnerSecurityGroup"),
 		"InstallId":           inp.Install.ID,
 		"RunnerId":            inp.Runner.ID,
-		"RunnerApiUrl":        inp.Settings.RunnerAPIURL,
+		"RunnerApiUrl":        a.runnerAPIURL(inp),
 		"InstanceType":        cloudformation.Ref("RunnerInstanceType"),
 		"RootVolumeSize":      cloudformation.Ref("RunnerRootVolumeSize"),
 		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
@@ -74,6 +74,13 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		}),
 		Tags: t.apply(stackTags, "runner"),
 	}, nil
+}
+
+func (a *Templates) runnerAPIURL(inp *stacks.TemplateInput) string {
+	if inp.Settings != nil && inp.Settings.RunnerAPIURL != "" {
+		return inp.Settings.RunnerAPIURL
+	}
+	return a.cfg.RunnerAPIURL
 }
 
 // getRunnerParameters returns the user-overridable top-level parameters for
