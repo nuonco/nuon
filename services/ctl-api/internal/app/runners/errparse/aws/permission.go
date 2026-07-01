@@ -1,19 +1,21 @@
-// Package deployerrors holds the typed CompositeError implementations produced
-// by component deploy (plan + apply) flows. It lives next to the installs
-// domain that consumes it rather than in a central error catalog: each domain
-// owns the custom errors it knows how to produce and parse.
-package deployerrors
+// Package aws holds the AWS provider-layer CompositeError parsers: cloud error
+// codes surfaced from a runner job's raw output. They register at
+// errparse.LayerProvider so a specific AWS cause (e.g. a missing IAM
+// permission) wins over the tool-level fallback.
+package aws
 
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
 // AWSPermissionErrorType is the discriminator for AWS IAM permission failures
-// surfaced from a terraform plan/apply during a component deploy.
+// surfaced from a terraform plan/apply.
 const AWSPermissionErrorType compositeerrors.Type = "terraform.aws_permission"
 
 // defaultIAMPolicyVersion is the IAM policy language version embedded in the
@@ -22,8 +24,7 @@ const defaultIAMPolicyVersion string = "2012-10-17"
 
 // AWSPermissionError is the typed payload for an AWS API call that failed with
 // AccessDenied / UnauthorizedOperation because the deploy's IAM principal is
-// missing a permission. It implements compositeerrors.CompositeError so it can
-// be returned like any error and frozen onto the owning deploy row.
+// missing a permission.
 type AWSPermissionError struct {
 	// Action is the IAM action the caller lacked, e.g. "ec2:CreateVpc",
 	// "s3:CreateBucket".
@@ -129,4 +130,117 @@ func (e *AWSPermissionError) policyStatementJSON() string {
 	}
 	b, _ := json.MarshalIndent(stmt, "", "  ")
 	return string(b)
+}
+
+// awsPermissionPatterns are attempted in order. Each must define a named
+// "action" group, and may define "principal" / "resource" / "code" groups.
+var awsPermissionPatterns = []*regexp.Regexp{
+	// Classic AccessDenied with principal + action + resource, e.g.
+	// "AccessDenied: User: arn:aws:iam::123:role/nuon-runner is not authorized
+	//  to perform: s3:CreateBucket on resource: arn:aws:s3:::acme-prod-assets"
+	regexp.MustCompile(
+		`(?P<code>AccessDenied(?:Exception)?|AuthorizationError):\s*(?:User|Principal):\s*(?P<principal>arn:[^\s]+)\s+is not authorized to perform:\s*(?P<action>[a-zA-Z0-9-]+:[a-zA-Z0-9*]+)(?:\s+on\s+resource:\s*(?P<resource>\S+))?`,
+	),
+	// Same shape without an explicit error-code prefix (some SDK clients).
+	regexp.MustCompile(
+		`(?:User|Principal):\s*(?P<principal>arn:[^\s]+)\s+is not authorized to perform:\s*(?P<action>[a-zA-Z0-9-]+:[a-zA-Z0-9*]+)(?:\s+on\s+resource:\s*(?P<resource>\S+))?`,
+	),
+	// EC2-style UnauthorizedOperation, where the action lives in a separate
+	// sentence: "UnauthorizedOperation: ... Operation: ec2:CreateVpc"
+	regexp.MustCompile(
+		`(?P<code>UnauthorizedOperation):[^\n]*?(?:Operation|operation):\s*(?P<action>[a-zA-Z0-9-]+:[a-zA-Z0-9*]+)`,
+	),
+}
+
+// permissionParser recognises AWS IAM permission failures in a terraform job's
+// raw output.
+type permissionParser struct{}
+
+func (permissionParser) Layer() errparse.Layer  { return errparse.LayerProvider }
+func (permissionParser) Tools() []errparse.Tool { return []errparse.Tool{errparse.ToolTerraform} }
+func (permissionParser) Signals() []string {
+	return []string{
+		"AccessDenied",
+		"UnauthorizedOperation",
+		"not authorized to perform",
+		"AuthorizationError",
+	}
+}
+
+// Applicable gates on the cloud provider, failing open on unknown.
+func (permissionParser) Applicable(ctx *errparse.ParseContext) bool {
+	switch ctx.Provider() {
+	case errparse.ProviderAWS, errparse.ProviderUnknown:
+		return true
+	default:
+		return false
+	}
+}
+
+func (permissionParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeError {
+	raw := ctx.Raw
+	for _, re := range awsPermissionPatterns {
+		match := re.FindStringSubmatch(raw)
+		if match == nil {
+			continue
+		}
+		fields := groupMap(re, match)
+		action := fields["action"]
+		if action == "" {
+			continue
+		}
+
+		return &AWSPermissionError{
+			Action:       action,
+			Resource:     trimTrailingPunct(fields["resource"]),
+			Principal:    fields["principal"],
+			AWSErrorCode: fields["code"],
+			RawMessage:   extractRelevantLine(raw, match[0]),
+		}
+	}
+	return nil
+}
+
+func init() {
+	errparse.Register(permissionParser{})
+}
+
+func groupMap(re *regexp.Regexp, match []string) map[string]string {
+	out := map[string]string{}
+	for i, name := range re.SubexpNames() {
+		if name == "" {
+			continue
+		}
+		if i < len(match) {
+			out[name] = match[i]
+		}
+	}
+	return out
+}
+
+// trimTrailingPunct strips trailing punctuation that often glues to ARNs when
+// AWS embeds them in sentences.
+func trimTrailingPunct(s string) string {
+	return strings.TrimRight(s, ".,;:")
+}
+
+// extractRelevantLine returns the line containing the match, trimmed of the
+// terraform "│ " box-drawing prefix when present.
+func extractRelevantLine(raw, matchStr string) string {
+	needle := firstNChars(matchStr, 50)
+	for _, line := range strings.Split(raw, "\n") {
+		if strings.Contains(line, needle) {
+			t := strings.TrimSpace(line)
+			t = strings.TrimPrefix(t, "│")
+			return strings.TrimSpace(t)
+		}
+	}
+	return strings.TrimSpace(matchStr)
+}
+
+func firstNChars(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n]
 }

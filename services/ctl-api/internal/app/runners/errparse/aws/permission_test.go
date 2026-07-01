@@ -1,10 +1,13 @@
-package deployerrors
+package aws
 
 import (
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
 func readFixture(t *testing.T, name string) string {
@@ -16,8 +19,14 @@ func readFixture(t *testing.T, name string) string {
 	return string(b)
 }
 
+// parse runs the permission parser directly against raw text, the way the
+// registry would once its signal gate passes.
+func parse(raw string) compositeerrors.CompositeError {
+	return permissionParser{}.Parse(&errparse.ParseContext{Raw: raw})
+}
+
 func TestParse_AccessDenied(t *testing.T) {
-	ce := Parse(readFixture(t, "terraform_apply_access_denied.txt"))
+	ce := parse(readFixture(t, "terraform_apply_access_denied.txt"))
 	if ce == nil {
 		t.Fatal("expected a composite error, got nil")
 	}
@@ -47,7 +56,7 @@ func TestParse_AccessDenied(t *testing.T) {
 }
 
 func TestParse_AccessDeniedException_PassRole(t *testing.T) {
-	ce := Parse(readFixture(t, "iam_passrole_access_denied_exception.txt"))
+	ce := parse(readFixture(t, "iam_passrole_access_denied_exception.txt"))
 	if ce == nil {
 		t.Fatal("expected a composite error, got nil")
 	}
@@ -70,7 +79,7 @@ func TestParse_NoErrorCodePrefix(t *testing.T) {
 	// Some SDK clients emit the "is not authorized to perform" sentence with no
 	// AccessDenied/Exception code prefix.
 	raw := "User: arn:aws:sts::123:assumed-role/foo/bar is not authorized to perform: iam:PassRole on resource: arn:aws:iam::123:role/baz"
-	ce := Parse(raw)
+	ce := parse(raw)
 	if ce == nil {
 		t.Fatal("expected a composite error, got nil")
 	}
@@ -87,7 +96,7 @@ func TestParse_NoErrorCodePrefix(t *testing.T) {
 }
 
 func TestParse_UnauthorizedOperation(t *testing.T) {
-	ce := Parse(readFixture(t, "ec2_unauthorized_operation.txt"))
+	ce := parse(readFixture(t, "ec2_unauthorized_operation.txt"))
 	if ce == nil {
 		t.Fatal("expected a composite error, got nil")
 	}
@@ -97,6 +106,30 @@ func TestParse_UnauthorizedOperation(t *testing.T) {
 	}
 	if e.AWSErrorCode != "UnauthorizedOperation" {
 		t.Errorf("code = %q, want UnauthorizedOperation", e.AWSErrorCode)
+	}
+}
+
+func TestParse_NoMatch(t *testing.T) {
+	cases := []string{
+		"",
+		"Error: creating EC2 VPC: InvalidParameterValue: bad CIDR",
+		"plan job failed",
+	}
+	for _, in := range cases {
+		if ce := parse(in); ce != nil {
+			t.Errorf("parse(%q) = %v, want nil", in, ce)
+		}
+	}
+}
+
+func TestParse_HintsSkipAutoRetry(t *testing.T) {
+	ce := parse(readFixture(t, "terraform_apply_access_denied.txt"))
+	hp, ok := ce.(compositeerrors.HintsProvider)
+	if !ok {
+		t.Fatal("expected AWSPermissionError to provide hints")
+	}
+	if !hp.Hints().SkipAutoRetry() {
+		t.Error("expected skip_auto_retry hint on a missing-permission error")
 	}
 }
 
@@ -120,7 +153,6 @@ func TestSections_FullyPopulated(t *testing.T) {
 		}
 	}
 
-	// The "How to fix" section must embed a valid IAM policy granting the action.
 	fix := headings["How to fix"]
 	if !strings.Contains(fix, "s3:CreateBucket") || !strings.Contains(fix, "arn:aws:s3:::acme-prod-assets") {
 		t.Errorf("How to fix section missing action/resource: %q", fix)
@@ -131,7 +163,7 @@ func TestSections_FullyPopulated(t *testing.T) {
 }
 
 func TestSections_MinimalOmitsOptionalSections(t *testing.T) {
-	e := &AWSPermissionError{} // no action/resource/principal/raw
+	e := &AWSPermissionError{}
 
 	headings := map[string]bool{}
 	for _, s := range e.Sections() {
@@ -142,15 +174,21 @@ func TestSections_MinimalOmitsOptionalSections(t *testing.T) {
 	}
 }
 
-func TestParse_NoMatch(t *testing.T) {
-	cases := []string{
-		"",
-		"Error: creating EC2 VPC: InvalidParameterValue: bad CIDR",
-		"plan job failed",
+// TestRegistry_GatesAndDispatches exercises the registry path end to end: the
+// signal gate must let a matching AWS error through and reject unrelated text,
+// and an unknown tool/provider must fail open so the parser still runs.
+func TestRegistry_GatesAndDispatches(t *testing.T) {
+	raw := readFixture(t, "terraform_apply_access_denied.txt")
+
+	ce := errparse.Parse(&errparse.ParseContext{Raw: raw})
+	if ce == nil {
+		t.Fatal("expected registry to dispatch to the AWS permission parser")
 	}
-	for _, in := range cases {
-		if ce := Parse(in); ce != nil {
-			t.Errorf("Parse(%q) = %v, want nil", in, ce)
-		}
+	if _, ok := ce.(*AWSPermissionError); !ok {
+		t.Fatalf("expected *AWSPermissionError, got %T", ce)
+	}
+
+	if got := errparse.Parse(&errparse.ParseContext{Raw: "plan job failed"}); got != nil {
+		t.Errorf("expected nil for unrelated text, got %v", got)
 	}
 }

@@ -15,7 +15,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/deployerrors"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws" // register AWS provider-layer parsers
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
@@ -180,12 +181,31 @@ func parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runne
 		return nil
 	}
 
-	ce := deployerrors.Parse(raw)
+	ce := errparse.Parse(&errparse.ParseContext{
+		Raw:   raw,
+		Owner: errparse.Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
+		Meta:  flattenErrorMetadata(req.ErrorMetadata),
+	})
 	if ce == nil {
 		return nil
 	}
 
 	return compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+}
+
+// flattenErrorMetadata converts the runner-sent hstore metadata into the plain
+// string map errparse parsers read, dropping nil values.
+func flattenErrorMetadata(meta map[string]*string) map[string]string {
+	if len(meta) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(meta))
+	for k, v := range meta {
+		if v != nil {
+			out[k] = *v
+		}
+	}
+	return out
 }
 
 // refreshOwnerCompositeError mirrors a runner job execution's parsed composite

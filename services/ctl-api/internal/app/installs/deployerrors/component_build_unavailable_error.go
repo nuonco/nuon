@@ -1,3 +1,8 @@
+// Package deployerrors holds the typed CompositeError implementations produced
+// by the installs deploy orchestration itself (as opposed to a runner job's
+// tool output, which is parsed under runners/errparse). It lives next to the
+// installs domain that consumes it: each domain owns the custom errors it
+// knows how to produce.
 package deployerrors
 
 import (
