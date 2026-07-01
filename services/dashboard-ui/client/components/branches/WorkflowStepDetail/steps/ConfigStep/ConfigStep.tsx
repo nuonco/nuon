@@ -16,7 +16,7 @@ interface IConfigStep {
 export const ConfigStep = ({ appConfigId, status, sections, summary, diffResolved, metadata }: IConfigStep) => {
   if (!appConfigId) {
     return (
-      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
+      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
         <Text variant="subtext" theme="neutral">
           {status === 'in-progress' ? 'Cloning repository and parsing configuration...' : 'Waiting to fetch app configuration...'}
         </Text>
@@ -30,7 +30,7 @@ export const ConfigStep = ({ appConfigId, status, sections, summary, diffResolve
 
   if (sections.length === 0) {
     return (
-      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border border-cool-grey-200 dark:border-dark-grey-700">
+      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
         <Text variant="subtext" theme="neutral">
           {metadata.component_count !== undefined
             ? `Synced ${metadata.component_count} components${metadata.action_count ? `, ${metadata.action_count} actions` : ''}`
