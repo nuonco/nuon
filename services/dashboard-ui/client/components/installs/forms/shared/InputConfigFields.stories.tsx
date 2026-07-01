@@ -155,10 +155,22 @@ const mockInputConfig: TAppInputConfig = {
     },
     {
       id: 'group-overrides',
+      name: 'nuon_component_overrides',
       display_name: 'Component overrides',
       description: 'Per-component install-level Helm values and Terraform vars',
       index: 3,
       app_inputs: [
+        {
+          id: 'input-enabled-whoami',
+          name: 'nuon_component_override_v1_enabled_77686f616d69',
+          display_name: 'whoami enabled',
+          description: 'Whether whoami is deployed on this install',
+          type: 'bool',
+          required: false,
+          default: 'true',
+          index: 0,
+          source: 'vendor',
+        },
         {
           id: 'input-helm-whoami',
           name: 'nuon_component_override_v1_helm_values_77686f616d69',
