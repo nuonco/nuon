@@ -9,7 +9,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowstepapprovalrequest"
-	installactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -59,14 +58,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		entries[i].Status = "computing"
 		s.updatePlanMetadata(ctx, groupName, entries)
 
-		install, err := installactivities.AwaitGetByInstallID(ctx, installID)
+		install, err := activities.AwaitGetInstallByInstallID(ctx, installID)
 		if err != nil {
 			entries[i].Status = "error"
 			s.updatePlanMetadata(ctx, groupName, entries)
 			return fmt.Errorf("install %s: unable to get install: %w", installID, err)
 		}
 
-		diffResult, err := installactivities.AwaitComputeInstallConfigDiff(ctx, &installactivities.ComputeInstallConfigDiffInput{
+		diffResult, err := activities.AwaitComputeInstallConfigDiff(ctx, &activities.ComputeInstallConfigDiffInput{
 			OldAppConfigID: install.AppConfigID,
 			NewAppConfigID: run.AppConfigID,
 		})

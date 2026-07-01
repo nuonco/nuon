@@ -44,7 +44,8 @@ func (s *syncer) syncSingleBranch(ctx context.Context, resource string, branchCf
 	var branchID string
 	if !found {
 		branch, err := s.apiClient.CreateAppBranch(ctx, s.appID, &models.ServiceCreateAppBranchRequest{
-			Name: generics.ToPtr(branchCfg.Name),
+			Name:      generics.ToPtr(branchCfg.Name),
+			ManagedBy: "config",
 		})
 		if err != nil {
 			return sync.SyncAPIErr{

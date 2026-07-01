@@ -48,7 +48,7 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 
 	var branchID string
 	if !found {
-		branch, err := appsHelper.CreateAppBranch(ctx, appID, branchCfg.Name)
+		branch, err := appsHelper.CreateAppBranch(ctx, appID, branchCfg.Name, app.AppBranchManagedByConfig)
 		if err != nil {
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				return sync.SyncErr{
