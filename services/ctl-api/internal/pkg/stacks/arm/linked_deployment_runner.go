@@ -29,7 +29,7 @@ func (t *Templates) getRunnerLinkedDeployment(inp *stacks.TemplateInput) (map[st
 		"nuonAppID":           inp.Install.AppID,
 		"location":            "[parameters('location')]",
 		"runnerId":            inp.Runner.ID,
-		"runnerApiUrl":        t.cfg.RunnerAPIURL,
+		"runnerApiUrl":        t.runnerAPIURL(inp),
 		"runnerInitScriptUrl": inp.RunnerInitScriptURL,
 		"runnerSubnetId":      "[reference('vnetDeployment').outputs.runnerSubnetId.value]",
 		"customData":          t.buildRunnerCustomData(inp),
@@ -328,5 +328,5 @@ EOF
 # Reload systemd and start the mng service
 systemctl daemon-reload
 systemctl enable --now nuon-runner-mng
-`, inp.Runner.ID, t.cfg.RunnerAPIURL, inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, inp.Install.AzureAccount.Location)
+`, inp.Runner.ID, t.runnerAPIURL(inp), inp.Settings.ContainerImageURL, inp.Settings.ContainerImageTag, inp.Install.AzureAccount.Location)
 }
