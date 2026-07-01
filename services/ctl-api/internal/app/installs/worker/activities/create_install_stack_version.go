@@ -18,6 +18,16 @@ type CreateInstallStackVersionRequest struct {
 	Region         string `json:"region"`
 	StackName      string `json:"stack_name"`
 	Platform       string `json:"platform"`
+	PublicAPIURL   string `json:"public_api_url"`
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // @temporal-gen-v2 activity
@@ -33,7 +43,7 @@ func (a *Activities) CreateInstallStackVersion(ctx context.Context, req *CreateI
 		PhoneHomeID:    phoneHomeID,
 		PhoneHomeURL: fmt.Sprintf(
 			"%s/v1/installs/%s/phone-home/%s",
-			a.cfg.PublicAPIURL,
+			firstNonEmpty(req.PublicAPIURL, a.cfg.PublicAPIURL),
 			req.InstallID,
 			phoneHomeID,
 		),
