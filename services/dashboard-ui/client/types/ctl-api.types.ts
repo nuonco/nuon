@@ -13,6 +13,7 @@ export type TVCSBranch = { name: string }
 export type TApp = components['schemas']['app.App']
 export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
+export type TAppInput = components['schemas']['app.AppInput']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
 export type TAppKubernetesContextsConfig =

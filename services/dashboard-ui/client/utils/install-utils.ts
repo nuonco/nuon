@@ -9,6 +9,10 @@
 // and the component name is hex-encoded to keep the key safe and reversible.
 const COMPONENT_OVERRIDE_INPUT_PREFIX = 'nuon_component_override_v1_'
 
+// Reserved input group that holds all synthetic per-component override inputs.
+// Must match the Go constant config.ComponentOverrideInputGroup.
+export const COMPONENT_OVERRIDE_INPUT_GROUP = 'nuon_component_overrides'
+
 // Override kinds whose value is structured config (rendered in a syntax-
 // highlighted code block). Other kinds (e.g. "enabled") render as plain text.
 // This is the only place that needs updating when a new *code* override kind is
@@ -74,6 +78,61 @@ export function getInputDisplayName(name: string): string {
   const parsed = parseComponentOverrideInput(name)
   if (!parsed) return name
   return `components.${parsed.component}.${parsed.kind}`
+}
+
+export type TComponentType = 'terraform_module' | 'helm_chart'
+
+// A single toggleable/configurable component reconstructed from the flat
+// synthetic override inputs the API exposes. `enabledInput` drives the on/off
+// toggle (present iff the component is toggleable); `configInput` drives the
+// tf_vars/helm_values editor (present iff the component takes structured config).
+export type TComponentOverrideCard<I> = {
+  component: string
+  componentType?: TComponentType
+  enabledInput: I | null
+  configInput: I | null
+  configKind: TComponentOverrideKind | null
+  index: number
+}
+
+// groupComponentOverrideInputs regroups the flat per-component override inputs
+// (which the API/config expose as separate inputs) into one entry per
+// component, keyed off the component name encoded in each input's reserved name.
+// Non-override inputs are ignored. The result is ordered by each component's
+// earliest input index so display order stays stable across syncs.
+export function groupComponentOverrideInputs<
+  I extends { name?: string; index?: number },
+>(inputs: I[]): TComponentOverrideCard<I>[] {
+  const byComponent = new Map<string, TComponentOverrideCard<I>>()
+
+  for (const input of inputs) {
+    const parsed = input.name ? parseComponentOverrideInput(input.name) : null
+    if (!parsed) continue
+
+    let card = byComponent.get(parsed.component)
+    if (!card) {
+      card = {
+        component: parsed.component,
+        enabledInput: null,
+        configInput: null,
+        configKind: null,
+        index: input.index ?? 0,
+      }
+      byComponent.set(parsed.component, card)
+    }
+    card.index = Math.min(card.index, input.index ?? 0)
+
+    if (parsed.kind === 'enabled') {
+      card.enabledInput = input
+    } else if (parsed.kind === 'tf_vars' || parsed.kind === 'helm_values') {
+      card.configInput = input
+      card.configKind = parsed.kind
+      card.componentType =
+        parsed.kind === 'tf_vars' ? 'terraform_module' : 'helm_chart'
+    }
+  }
+
+  return [...byComponent.values()].sort((a, b) => a.index - b.index)
 }
 
 type TTitleMap = Record<string, string>
