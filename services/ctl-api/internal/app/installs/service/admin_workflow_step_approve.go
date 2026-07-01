@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -73,6 +74,10 @@ func (s *service) AdminInstallWorkflowStepApprove(ctx *gin.Context) {
 		ctx.Error(err)
 		return
 	}
+
+	s.logFlowAPIAction(ctx, "step.approved_by_admin",
+		zap.String("step_id", req.StepID),
+	)
 
 	ctx.JSON(http.StatusOK, approvalResponse)
 }

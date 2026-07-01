@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -72,6 +73,12 @@ func (s *service) ReprovisionInstall(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("enqueue signal: %w", err))
 		return
 	}
+
+	s.logFlowAPIAction(ctx, "workflow.reprovision_requested",
+		zap.String("workflow_id", workflow.ID),
+		zap.String("install_id", install.ID),
+		zap.Bool("plan_only", req.PlanOnly),
+	)
 
 	ctx.JSON(http.StatusCreated, app.WorkflowResponse{WorkflowID: workflow.ID})
 }

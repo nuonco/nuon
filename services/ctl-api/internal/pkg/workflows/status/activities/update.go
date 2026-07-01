@@ -47,16 +47,20 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStatus(ctx context.Context, r
 		ID: req.ID,
 	}
 
+	var loaded app.Workflow
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.Workflow
-		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return obj.Status, nil
+		return loaded.Status, nil
 	}
 
-	return a.updateStatus(ctx, &obj, req.Status, getter)
+	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
+		return err
+	}
+	a.logWorkflowError(ctx, loaded, req.Status)
+	return nil
 }
 
 // TODO(sdboyer) remove after workflow refactor
@@ -66,16 +70,20 @@ func (a *Activities) PkgStatusUpdateInstallWorkflowStepStatus(ctx context.Contex
 		ID: req.ID,
 	}
 
+	var loaded app.WorkflowStep
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.WorkflowStep
-		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return obj.Status, nil
+		return loaded.Status, nil
 	}
 
-	return a.updateStatus(ctx, &obj, req.Status, getter)
+	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
+		return err
+	}
+	a.logStepError(ctx, loaded, req.Status)
+	return nil
 }
 
 // @temporal-gen-v2 activity
@@ -178,13 +186,13 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 		ID: req.ID,
 	}
 
+	var loaded app.Workflow
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.Workflow
-		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return obj.Status, nil
+		return loaded.Status, nil
 	}
 
 	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
@@ -194,6 +202,8 @@ func (a *Activities) PkgStatusUpdateFlowStatus(ctx context.Context, req UpdateSt
 	if a.notifier != nil {
 		a.notifier.FlowStatusUpdated(ctx, req)
 	}
+
+	a.logWorkflowError(ctx, loaded, req.Status)
 	return nil
 }
 
@@ -203,16 +213,20 @@ func (a *Activities) PkgStatusUpdateFlowStepStatus(ctx context.Context, req Upda
 		ID: req.ID,
 	}
 
+	var loaded app.WorkflowStep
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.WorkflowStep
-		if err := a.getStatus(ctx, &obj, req.ID); err != nil {
+		if err := a.getStatus(ctx, &loaded, req.ID); err != nil {
 			return app.CompositeStatus{}, err
 		}
 
-		return obj.Status, nil
+		return loaded.Status, nil
 	}
 
-	return a.updateStatus(ctx, &obj, req.Status, getter)
+	if err := a.updateStatus(ctx, &obj, req.Status, getter); err != nil {
+		return err
+	}
+	a.logStepError(ctx, loaded, req.Status)
+	return nil
 }
 
 // @temporal-gen-v2 activity
@@ -521,17 +535,22 @@ type UpdateRunnerJobStatusV2Request struct {
 func (a *Activities) UpdateRunnerJobStatusV2(ctx context.Context, req UpdateRunnerJobStatusV2Request) error {
 	obj := app.RunnerJob{ID: req.RunnerJobID}
 
+	var loaded app.RunnerJob
 	getter := func(ctx context.Context) (app.CompositeStatus, error) {
-		var obj app.RunnerJob
-		if err := a.getStatus(ctx, &obj, req.RunnerJobID); err != nil {
+		if err := a.getStatus(ctx, &loaded, req.RunnerJobID); err != nil {
 			return app.CompositeStatus{}, err
 		}
-		return obj.StatusV2, nil
+		return loaded.StatusV2, nil
 	}
 
 	status := app.NewCompositeStatus(ctx, app.Status(req.Status))
 	status.StatusHumanDescription = req.StatusDescription
-	return a.updateStatusV2(ctx, &obj, status, getter)
+	if err := a.updateStatusV2(ctx, &obj, status, getter); err != nil {
+		return err
+	}
+
+	a.logRunnerJob(ctx, loaded, req.Status, req.StatusDescription)
+	return nil
 }
 
 type UpdateRunnerJobExecutionStatusV2Request struct {

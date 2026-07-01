@@ -43,13 +43,22 @@ type Signal struct {
 }
 
 var (
-	_ qsignal.Signal                   = (*Signal)(nil)
-	_ qsignal.SignalWithUpdateHandlers = (*Signal)(nil)
-	_ qsignal.SignalWithFetchSteps     = (*Signal)(nil)
+	_ qsignal.Signal                     = (*Signal)(nil)
+	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
+	_ qsignal.SignalWithFetchSteps       = (*Signal)(nil)
+	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
 )
 
 func (s *Signal) SetWorkflowID(id string) {
 	s.WorkflowID = id
+}
+
+func (s *Signal) LifecycleContext() qsignal.SignalLifecycleContext {
+	return qsignal.SignalLifecycleContext{
+		Operation:  "generate-workflow-steps",
+		WorkflowID: s.WorkflowID,
+		OwnerType:  s.OwnerType,
+	}
 }
 
 func (s *Signal) Type() qsignal.SignalType {

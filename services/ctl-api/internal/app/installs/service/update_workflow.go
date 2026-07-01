@@ -133,6 +133,10 @@ func (s *service) updateWorkflow(ctx *gin.Context, installWorkflowID string, req
 
 		// Approve any steps currently stuck in awaiting-approval status.
 		s.approveStuckSteps(ctx, installWorkflowID)
+
+		s.logFlowAPIAction(ctx, "workflow.approve_all_requested",
+			zap.String("workflow_id", installWorkflowID),
+		)
 	}
 
 	return &currentWorkflow, nil

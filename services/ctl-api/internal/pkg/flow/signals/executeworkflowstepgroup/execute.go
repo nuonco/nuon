@@ -166,6 +166,7 @@ func (s *Signal) executeParallel(ctx workflow.Context, l *zap.Logger) error {
 func (s *Signal) dispatchStep(ctx workflow.Context, step *app.WorkflowStep, cb callback.Ref) (string, error) {
 	sig := &executeworkflowstep.Signal{
 		StepID:          step.ID,
+		StepName:        step.Name,
 		WorkflowID:      s.WorkflowID,
 		WorkflowType:    s.WorkflowType,
 		OwnerID:         s.OwnerID,

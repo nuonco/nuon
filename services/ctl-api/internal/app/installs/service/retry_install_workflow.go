@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
@@ -132,6 +133,13 @@ func (s *service) RetryWorkflow(ctx *gin.Context) {
 			return
 		}
 	}
+
+	s.logFlowAPIAction(ctx, "workflow.retry_requested",
+		zap.String("workflow_id", workflow.ID),
+		zap.String("step_id", req.StepID),
+		zap.String("install_id", workflow.OwnerID),
+		zap.String("operation", string(req.Operation)),
+	)
 
 	ctx.JSON(201, RetryWorkflowResponse{
 		WorkflowID: workflow.ID,

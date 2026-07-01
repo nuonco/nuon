@@ -37,6 +37,7 @@ func stepSignal(step *app.WorkflowStep) signal.Signal {
 // noop plan detection.
 type Signal struct {
 	StepID     string `json:"step_id"`
+	StepName   string `json:"step_name,omitempty"`
 	WorkflowID string `json:"workflow_id"`
 
 	// WorkflowType identifies the kind of workflow that owns this step. Set at
@@ -130,6 +131,7 @@ func (s *Signal) LifecycleContext() signal.SignalLifecycleContext {
 		OrgID:        s.OrgID,
 		OrgName:      s.OrgName,
 		StepID:       s.StepID,
+		StepName:     s.StepName,
 		WorkflowID:   s.WorkflowID,
 		WorkflowType: s.WorkflowType,
 		OwnerID:      s.OwnerID,

@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/generateworkflowsteps"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	signaldb "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal/db"
 )
@@ -99,6 +101,14 @@ func (s *Helpers) createWorkflow(ctx context.Context,
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to create install workflow")
 	}
+
+	cctx.GetLogger(ctx, s.l).Info("flow telemetry",
+		zap.String("flow_event", "workflow.created"),
+		zap.String("install_id", installID),
+		zap.String("workflow_id", installWorkflow.ID),
+		zap.String("workflow_type", string(workflowType)),
+		zap.Bool("plan_only", planOnly),
+	)
 
 	return &installWorkflow, nil
 }

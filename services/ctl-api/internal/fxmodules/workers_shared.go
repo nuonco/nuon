@@ -62,6 +62,7 @@ var WorkerInterceptorsModule = fx.Module("worker-interceptors",
 var SharedWorkflowsModule = fx.Module("shared-workflows",
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewWebhookSignalLifecycleHook)),
 	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewSlackSignalLifecycleHook)),
+	fx.Provide(signal.AsSignalLifecycleHook(signalhooks.NewTelemetrySignalLifecycleHook)),
 	fx.Provide(signal.NewSignalLifecycleActivities),
 
 	fx.Provide(jobactivities.New),

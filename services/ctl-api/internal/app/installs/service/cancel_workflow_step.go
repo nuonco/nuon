@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
@@ -88,6 +89,12 @@ func (s *service) CancelWorkflowStep(ctx *gin.Context) {
 		ctx.Error(fmt.Errorf("cancel step: %w", err))
 		return
 	}
+
+	s.logFlowAPIAction(ctx, "step.cancel_requested",
+		zap.String("workflow_id", workflow.ID),
+		zap.String("step_id", step.ID),
+		zap.String("install_id", workflow.OwnerID),
+	)
 
 	ctx.JSON(http.StatusAccepted, CancelWorkflowStepResponse{
 		WorkflowID: workflow.ID,

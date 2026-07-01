@@ -29,6 +29,14 @@ func (a *Activities) CreateDeployJob(ctx context.Context, req *CreateDeployJobRe
 	ctx = cctx.SetAccountIDContext(ctx, deploy.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, deploy.OrgID)
 
+	// RunnerJob.BeforeCreate reads these from ctx into job metadata for telemetry.
+	if deploy.InstallWorkflowID != nil && *deploy.InstallWorkflowID != "" {
+		ctx = cctx.SetFlowWorkflowIDContext(ctx, *deploy.InstallWorkflowID)
+	}
+	if deploy.InstallComponent.InstallID != "" {
+		ctx = cctx.SetFlowInstallIDContext(ctx, deploy.InstallComponent.InstallID)
+	}
+
 	job, err := a.runnersHelpers.CreateDeployJob(ctx,
 		req.RunnerID,
 		req.Type,

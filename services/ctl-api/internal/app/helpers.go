@@ -26,6 +26,21 @@ func orgIDFromContext(ctx context.Context) string {
 	return keys.OrgIDFromContext(ctx)
 }
 
+func flowWorkflowIDFromContext(ctx context.Context) string {
+	s, _ := ctx.Value(keys.FlowWorkflowIDCtxKey).(string)
+	return s
+}
+
+func flowStepIDFromContext(ctx context.Context) string {
+	s, _ := ctx.Value(keys.FlowStepIDCtxKey).(string)
+	return s
+}
+
+func flowInstallIDFromContext(ctx context.Context) string {
+	s, _ := ctx.Value(keys.FlowInstallIDCtxKey).(string)
+	return s
+}
+
 func logstreamIDFromContext(ctx context.Context) string {
 	val := ctx.Value(keys.LogStreamCtxKey)
 	valObj, ok := val.(*LogStream)
