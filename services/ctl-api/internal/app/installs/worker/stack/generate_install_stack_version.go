@@ -127,6 +127,7 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		StackName:      cfg.StackConfig.Name,
 		Region:         region,
 		Platform:       string(cfg.RunnerConfig.Type),
+		PublicAPIURL:   cfg.RunnerConfig.PublicAPIURL,
 	})
 	if err != nil {
 		return errors.Wrap(err, "unable to create cloudformation stack version")
