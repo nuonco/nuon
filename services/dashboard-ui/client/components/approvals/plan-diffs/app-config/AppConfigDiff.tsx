@@ -11,6 +11,7 @@ import { Text } from '@/components/common/Text'
 import type { TDiffNode } from '@/lib/ctl-api/apps/get-app-config-diff'
 import { diffLines } from '@/utils/code-utils'
 import { cn } from '@/utils/classnames'
+import { scrollElementIntoView } from '@/utils/scroll'
 import type { TConfigDiffFocus } from '../config-diff-focus'
 
 const SECTION_CONFIG: Record<string, { displayName: string; icon: TIconVariant; grouped: boolean }> = {
@@ -435,7 +436,7 @@ const EntityRow = ({
     setForcedOpen(true)
     setHighlighted(true)
     const raf = requestAnimationFrame(() => {
-      document.getElementById(entityId)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      scrollElementIntoView(document.getElementById(entityId), { block: 'nearest' })
     })
     const timer = setTimeout(() => setHighlighted(false), 1600)
     return () => {
@@ -555,7 +556,7 @@ const SectionGroup = ({
     if (focus.entityName) return
     setHighlighted(true)
     const raf = requestAnimationFrame(() => {
-      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      scrollElementIntoView(ref.current, { block: 'nearest' })
     })
     const timer = setTimeout(() => setHighlighted(false), 1600)
     return () => {
