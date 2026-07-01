@@ -7,6 +7,7 @@ import type { TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-
 import { useOrg } from '@/hooks/use-org'
 import { useApp } from '@/hooks/use-app'
 import { cn } from '@/utils/classnames'
+import { scrollElementIntoView } from '@/utils/scroll'
 import { getAppConfigs, getAppConfigDiff } from '@/lib'
 import { AppConfigDiff, extractSections, computeSummary } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 
@@ -50,7 +51,7 @@ export const AppConfigDiffContainer = ({ appConfigId, className, focus }: IAppCo
     if (!focus) return
     setCardOpen(true)
     const timer = setTimeout(() => {
-      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      scrollElementIntoView(cardRef.current, { block: 'start' })
     }, 60)
     return () => clearTimeout(timer)
   }, [focus?.nonce])
