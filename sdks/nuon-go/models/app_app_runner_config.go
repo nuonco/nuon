@@ -55,6 +55,9 @@ type AppAppRunnerConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }
