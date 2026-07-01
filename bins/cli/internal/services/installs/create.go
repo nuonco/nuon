@@ -123,9 +123,9 @@ func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, re
 
 	switch runnerCfg.CloudPlatform {
 	case models.AppCloudPlatformGcp:
-		req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{Region: region}
+		req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{}
 	case models.AppCloudPlatformAzure:
-		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{Location: region}
+		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{}
 	default:
 		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{Region: region}
 	}
