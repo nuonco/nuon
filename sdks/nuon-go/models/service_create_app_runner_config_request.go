@@ -35,6 +35,9 @@ type ServiceCreateAppRunnerConfigRequest struct {
 	// instance type
 	InstanceType string `json:"instance_type,omitempty"`
 
+	// runner api url
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
 	// type
 	// Required: true
 	Type *AppAppRunnerType `json:"type"`
