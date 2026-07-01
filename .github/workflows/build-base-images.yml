@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl

@@ -37,7 +37,7 @@ jobs:
       auto_deploy: ${{ steps.auto_deploy.outputs.label_check == 'success' }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           sparse-checkout: ci-triggers.yml
           sparse-checkout-cone-mode: false
@@ -81,7 +81,7 @@ jobs:
     steps:
       - uses: FranzDiebold/github-env-vars-action@v2
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Setup nuonctl
         uses: ./actions/setup-nuonctl
       - name: Setup BuildKit
