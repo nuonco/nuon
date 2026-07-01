@@ -6945,6 +6945,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
     };
     "service.CreateAppBranchRequest": {
+      managed_by?: string;
       name: string;
     };
     "service.CreateAppBreakGlassConfigRequest": {

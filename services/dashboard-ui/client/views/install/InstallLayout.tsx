@@ -125,6 +125,15 @@ const InstallTemplate = () => {
       iconVariant: 'SneakerMoveIcon' as const,
       text: 'Install runner',
     },
+    ...(org?.features?.['enable-versions-ui']
+      ? [
+          {
+            path: `/versions`,
+            iconVariant: 'ClockCounterClockwiseIcon' as const,
+            text: 'Versions',
+          },
+        ]
+      : []),
   ]
   const isChildRoute = !!useMatch('/:orgId/installs/:installId/:section/:rest/*')
 
