@@ -43,56 +43,33 @@ func (w *Workflows) Metrics(ctx workflow.Context) error {
 
 	w.mw.Gauge(ctx, "deadman.snitch", 1.0, metrics.ToTags(map[string]string{"snitchfor": "general-eloop-metrics"})...)
 
-	methods := map[string]func(workflow.Context) error{
-		"psql_tables": func(ctx workflow.Context) error {
-			return w.writePSQLTableMetrics(ctx)
-		},
-		"clickhouse_tables": func(ctx workflow.Context) error {
-			return w.writeCHTableMetrics(ctx)
-		},
-		"clickhouse_pending_inserts": func(ctx workflow.Context) error {
-			return w.writeCHPendingInserts(ctx)
-		},
-		"clickhouse_parts_per_partitions": func(ctx workflow.Context) error {
-			return w.writeCHPartsPerPartition(ctx)
-		},
-		"clickhouse_parts_rows_stats": func(ctx workflow.Context) error {
-			return w.writeCHPartRowStats(ctx)
-		},
-		"clickhouse_parts_active_stats": func(ctx workflow.Context) error {
-			return w.writeCHPartStats(ctx)
-		},
+	// NOTE: this MUST be an ordered slice, not a map. Ranging a map schedules
+	// activities in a non-deterministic order, which breaks Temporal replay.
+	steps := []struct {
+		name string
+		fn   func(workflow.Context) error
+	}{
+		{"psql_tables", w.writePSQLTableMetrics},
+		{"clickhouse_tables", w.writeCHTableMetrics},
+		{"clickhouse_pending_inserts", w.writeCHPendingInserts},
+		{"clickhouse_parts_per_partitions", w.writeCHPartsPerPartition},
+		{"clickhouse_parts_rows_stats", w.writeCHPartRowStats},
+		{"clickhouse_parts_active_stats", w.writeCHPartStats},
 		// TODO: temporarily disabled — GetNamespaceMetrics is timing out
-		// "temporal_orgs": func(ctx workflow.Context) error {
-		// 	return w.temporalNamespaceMetrics(ctx, "orgs")
-		// },
-		// "temporal_apps": func(ctx workflow.Context) error {
-		// 	return w.temporalNamespaceMetrics(ctx, "apps")
-		// },
-		// "temporal_components": func(ctx workflow.Context) error {
-		// 	return w.temporalNamespaceMetrics(ctx, "components")
-		// },
-		// "temporal_installs": func(ctx workflow.Context) error {
-		// 	return w.temporalNamespaceMetrics(ctx, "installs")
-		// },
-		// "temporal_releases": func(ctx workflow.Context) error {
-		// 	return w.temporalNamespaceMetrics(ctx, "releases")
-		// },
-		// "temporal_runners": func(ctx workflow.Context) error {
-		// 	return w.temporalNamespaceMetrics(ctx, "runners")
-		// },
-		"queue_signal_enqueue": func(ctx workflow.Context) error {
-			return w.writeQueueSignalEnqueueMetrics(ctx)
-		},
-		"queue_signal_not_enqueued": func(ctx workflow.Context) error {
-			return w.writeQueueSignalNotEnqueuedMetrics(ctx)
-		},
+		// {"temporal_orgs", func(ctx workflow.Context) error { return w.temporalNamespaceMetrics(ctx, "orgs") }},
+		// {"temporal_apps", func(ctx workflow.Context) error { return w.temporalNamespaceMetrics(ctx, "apps") }},
+		// {"temporal_components", func(ctx workflow.Context) error { return w.temporalNamespaceMetrics(ctx, "components") }},
+		// {"temporal_installs", func(ctx workflow.Context) error { return w.temporalNamespaceMetrics(ctx, "installs") }},
+		// {"temporal_releases", func(ctx workflow.Context) error { return w.temporalNamespaceMetrics(ctx, "releases") }},
+		// {"temporal_runners", func(ctx workflow.Context) error { return w.temporalNamespaceMetrics(ctx, "runners") }},
+		{"queue_signal_enqueue", w.writeQueueSignalEnqueueMetrics},
+		{"queue_signal_not_enqueued", w.writeQueueSignalNotEnqueuedMetrics},
 	}
 
-	for name, method := range methods {
-		if err := method(ctx); err != nil {
-			l.Error("error executing metrics step", zap.String("name", name))
-			return errors.Wrap(err, "unable to execute step "+name)
+	for _, step := range steps {
+		if err := step.fn(ctx); err != nil {
+			l.Error("error executing metrics step", zap.String("name", step.name))
+			return errors.Wrap(err, "unable to execute step "+step.name)
 		}
 	}
 
