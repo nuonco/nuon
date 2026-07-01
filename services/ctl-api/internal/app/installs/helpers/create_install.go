@@ -114,25 +114,36 @@ func (s *Helpers) CreateInstall(ctx context.Context, appID string, req *CreateIn
 		install.Labels = labels.Labels(req.Labels)
 	}
 
-	if req.AWSAccount == nil && req.AzureAccount == nil && req.GCPAccount == nil {
-		switch parentApp.AppRunnerConfigs[0].Type {
-		case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
+	runnerType := parentApp.AppRunnerConfigs[0].Type
+	switch runnerType {
+	case app.AppRunnerTypeGCP, app.AppRunnerTypeGCPGKE:
+		if req.GCPAccount == nil {
 			req.GCPAccount = &struct {
 				ProjectID string `json:"project_id"`
 				Region    string `json:"region"`
 			}{}
-		case app.AppRunnerTypeAzure, app.AppRunnerTypeAzureAKS, app.AppRunnerTypeAzureACS:
+		}
+		req.AWSAccount = nil
+		req.AzureAccount = nil
+	case app.AppRunnerTypeAzure, app.AppRunnerTypeAzureAKS, app.AppRunnerTypeAzureACS:
+		if req.AzureAccount == nil {
 			req.AzureAccount = &struct {
 				Location string `json:"location"`
 			}{}
-		case app.AppRunnerTypeAWS, app.AppRunnerTypeAWSEKS, app.AppRunnerTypeAWSECS:
+		}
+		req.AWSAccount = nil
+		req.GCPAccount = nil
+	case app.AppRunnerTypeAWS, app.AppRunnerTypeAWSEKS, app.AppRunnerTypeAWSECS:
+		if req.AWSAccount == nil {
 			return nil, stderr.ErrUser{
 				Err:         fmt.Errorf("aws_account.region is required for AWS installs"),
 				Description: "aws_account.region is required for AWS installs",
 			}
-		default:
+		}
+	default:
+		if req.AWSAccount == nil && req.AzureAccount == nil && req.GCPAccount == nil {
 			return nil, stderr.ErrUser{
-				Err:         fmt.Errorf("unable to determine cloud platform from runner type %q", parentApp.AppRunnerConfigs[0].Type),
+				Err:         fmt.Errorf("unable to determine cloud platform from runner type %q", runnerType),
 				Description: "unable to determine cloud platform from app runner config",
 			}
 		}
