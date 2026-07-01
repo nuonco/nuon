@@ -1,6 +1,9 @@
-import { useParams, useSearchParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
+import { Badge } from '@/components/common/Badge'
+import { BackLink } from '@/components/common/BackLink'
 import { Button } from '@/components/common/Button'
+import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
@@ -20,7 +23,17 @@ import { BranchProvider } from '@/providers/branch-provider'
 import { isActiveStepStatus } from '@/components/branches/shared/step-status'
 import { ConfigDiffFocusContext, type TConfigDiffFocus } from '@/components/approvals/plan-diffs/config-diff-focus'
 import { getBranchWorkflowRun } from '@/lib'
+import { toSentenceCase } from '@/utils/string-utils'
+import { scrollElementIntoView } from '@/utils/scroll'
+import { useSearchParamState } from '@/hooks/use-search-param-state'
 import { useCallback, useEffect, useRef, useState } from 'react'
+
+const WORKFLOW_TYPE_LABELS: Record<string, string> = {
+  app_branches_manual_update: 'Manual update',
+  app_branches_config_repo_update: 'Config update',
+  app_branches_component_repo_update: 'Component update',
+  app_branch_config_update: 'Config update',
+}
 
 const BranchRunDetailContent = () => {
   const { org } = useOrg()
@@ -31,9 +44,7 @@ const BranchRunDetailContent = () => {
   const appId = params.appId as string
   const branchId = params.branchId as string
   const runId = params.runId as string
-  const [searchParams] = useSearchParams()
-  const targetStepId = searchParams.get('target')
-  const [selectedStepId, setSelectedStepId] = useState<string | null>(targetStepId)
+  const [urlStepId, setUrlStepId] = useSearchParamState('step')
   const stepDetailRef = useRef<HTMLDivElement>(null)
   const pendingScrollRef = useRef(false)
   const [configFocus, setConfigFocus] = useState<TConfigDiffFocus | null>(null)
@@ -51,15 +62,13 @@ const BranchRunDetailContent = () => {
   const steps = (run?.steps || []).filter((s) => s.owner_type !== 'components')
   const activeStep = steps.find((step) => isActiveStepStatus(step.status?.status))
 
-  useEffect(() => {
-    if (steps.length > 0 && !selectedStepId) {
-      setSelectedStepId((activeStep || steps[0])?.id ?? null)
-    }
-  }, [steps, selectedStepId, activeStep])
+  const urlStep = urlStepId ? steps.find((s) => s.id === urlStepId) ?? null : null
+  const selectedStep = urlStep ?? activeStep ?? steps[0] ?? null
+  const selectedStepId = selectedStep?.id ?? null
 
   useEffect(() => {
-    if (pendingScrollRef.current && stepDetailRef.current) {
-      stepDetailRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (pendingScrollRef.current) {
+      scrollElementIntoView(stepDetailRef.current, { block: 'start' })
       pendingScrollRef.current = false
     }
   }, [selectedStepId])
@@ -67,14 +76,12 @@ const BranchRunDetailContent = () => {
   const handleJumpToActive = () => {
     if (!activeStep) return
     if (selectedStepId === activeStep.id) {
-      stepDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      scrollElementIntoView(stepDetailRef.current, { block: 'start' })
       return
     }
     pendingScrollRef.current = true
-    setSelectedStepId(activeStep.id ?? null)
+    setUrlStepId(activeStep.id ?? null)
   }
-
-  const selectedStep = selectedStepId ? steps.find((s) => s.id === selectedStepId) ?? null : null
 
   const configStep = steps.find((s) => s.name?.toLowerCase().includes('config') && !s.name?.toLowerCase().includes('diff'))
   const appConfigId = configStep?.status?.metadata?.app_config_id as string | undefined
@@ -92,10 +99,15 @@ const BranchRunDetailContent = () => {
   const status = run.status?.status || 'unknown'
   const statusDescription = run.status?.status_human_description || ''
 
+  const branchRun = run.app_branch_runs?.at(0)
+  const commitMessage = branchRun?.vcs_connection_commit?.message?.split('\n')[0]?.trim()
+  const typeLabel = run.type ? WORKFLOW_TYPE_LABELS[run.type] : undefined
+  const runTitle = toSentenceCase(commitMessage || typeLabel || run.name || 'Workflow run')
+
   return (
     <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
-    <PageSection className="max-w-full space-y-4">
-      <PageTitle title={`Run | ${app?.name}`} />
+    <PageSection className="max-w-full">
+      <PageTitle title={`${runTitle} | ${app?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org?.id}`, text: org?.name },
@@ -107,28 +119,22 @@ const BranchRunDetailContent = () => {
         ]}
       />
 
-      {/* ── Page header ── */}
+      <BackLink />
+
       <div className="flex items-start justify-between gap-4">
-        {/* Left: title + run id + status */}
-        <div className="flex flex-col gap-1.5 min-w-0">
+        <HeadingGroup className="gap-1.5 min-w-0">
           <div className="flex items-center gap-2.5">
-            <h1 className="text-[22px] font-semibold text-cool-grey-900 dark:text-white leading-tight">
-              Workflow run
-            </h1>
+            <Text as="h1" variant="h2" weight="strong" className="leading-tight min-w-0 truncate" title={runTitle}>
+              {runTitle}
+            </Text>
             {branch?.name && (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-cool-grey-300 dark:border-dark-grey-600 bg-cool-grey-50 dark:bg-dark-grey-800 font-mono text-[12px] text-cool-grey-600 dark:text-cool-grey-300 shrink-0">
-                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" className="text-cool-grey-400 dark:text-cool-grey-500">
-                  <path d="M5 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" fill="currentColor" fillOpacity=".6" />
-                  <path d="M5 7v2M5 9a4 4 0 0 0 4 4h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
+              <Badge size="sm" variant="code" className="shrink-0">
                 {branch.name}
-              </span>
+              </Badge>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <ID className="text-[12px] font-mono text-cool-grey-400 dark:text-cool-grey-500">{runId}</ID>
-          </div>
+          <ID className="text-[12px] font-mono text-cool-grey-400 dark:text-cool-grey-500">{runId}</ID>
 
           <div className="flex items-center gap-2 mt-0.5">
             <Status status={status} variant="badge" />
@@ -136,9 +142,8 @@ const BranchRunDetailContent = () => {
               <Text variant="subtext" theme="neutral">{statusDescription}</Text>
             )}
           </div>
-        </div>
+        </HeadingGroup>
 
-        {/* Right: timestamps + actions */}
         <div className="flex flex-col items-end gap-2 shrink-0">
           <div className="flex flex-col items-end gap-0.5">
             <div className="flex items-center gap-1.5">
@@ -166,9 +171,8 @@ const BranchRunDetailContent = () => {
         </div>
       </div>
 
-      {/* ── Workflow progress card ── */}
-      <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-cool-grey-100 dark:border-dark-grey-800">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
           <Text variant="h3" weight="strong">
             Workflow progress
           </Text>
@@ -178,30 +182,27 @@ const BranchRunDetailContent = () => {
             </Button>
           )}
         </div>
-        <div className="px-4 pb-4">
-          <WorkflowStepsPipeline
-            steps={steps}
-            selectedStepId={selectedStep?.id}
-            onSelectStep={(step) => setSelectedStepId(step?.id ?? null)}
-          />
-        </div>
+        <WorkflowStepsPipeline
+          steps={steps}
+          selectedStepId={selectedStep?.id}
+          onSelectStep={(step) => setUrlStepId(step?.id ?? null)}
+        />
       </div>
 
-      {/* ── Config changes card ── */}
       {appConfigId && <AppConfigDiff appConfigId={appConfigId} focus={configFocus} />}
 
-      {/* ── Step detail card ── */}
       {selectedStep && (
-        <>
-          <div ref={stepDetailRef} className="flex items-baseline gap-3 mt-2 scroll-mt-4">
+        <div className="flex flex-col gap-2">
+          <div ref={stepDetailRef} className="flex items-baseline gap-3 scroll-mt-4">
             <Text variant="h3" weight="strong">Step details</Text>
             <Text variant="subtext" theme="neutral">{selectedStep.name}</Text>
           </div>
           <WorkflowStepDetail
             step={selectedStep}
-            onClose={() => setSelectedStepId(null)}
+            appBranchRunId={branchRun?.id}
+            onClose={() => setUrlStepId(null)}
           />
-        </>
+        </div>
       )}
     </PageSection>
     </ConfigDiffFocusContext.Provider>
