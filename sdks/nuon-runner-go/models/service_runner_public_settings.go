@@ -26,6 +26,9 @@ type ServiceRunnerPublicSettings struct {
 
 	// binary version
 	BinaryVersion string `json:"binary_version,omitempty"`
+
+	// runner api url
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
 }
 
 // Validate validates this service runner public settings
