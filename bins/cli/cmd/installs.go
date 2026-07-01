@@ -115,6 +115,9 @@ provided labels must match (AND semantics):
 		Short: "Create an install",
 		Long: `Create a new install of your app.
 
+--region is required for AWS apps. For GCP and Azure apps the region is
+determined automatically from the stack output after provisioning.
+
 Use --label (repeatable, format key=value) to attach labels at creation time:
 
   nuon installs create -a my-app -n my-install -r us-west-2 \
@@ -131,10 +134,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	if !c.cfg.Preview {
 		createCmd.MarkFlagRequired("name")
 	}
-	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
-	if !c.cfg.Preview {
-		createCmd.MarkFlagRequired("region")
-	}
+	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in (required for AWS installs)")
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")

@@ -127,6 +127,9 @@ func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, re
 	case models.AppCloudPlatformAzure:
 		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{}
 	default:
+		if region == "" {
+			return nil, fmt.Errorf("--region is required for AWS installs")
+		}
 		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{Region: region}
 	}
 
