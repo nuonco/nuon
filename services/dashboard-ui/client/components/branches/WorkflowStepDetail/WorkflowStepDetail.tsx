@@ -1,6 +1,7 @@
 import { Badge } from '@/components/common/Badge'
 import { Icon } from '@/components/common/Icon'
 import { ID } from '@/components/common/ID'
+import { LabeledValue } from '@/components/common/LabeledValue'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
@@ -16,10 +17,11 @@ import { DeployGroupStep } from './steps/DeployGroupStep'
 
 interface IWorkflowStepDetail {
   step: TInstallWorkflowStep
+  appBranchRunId?: string
   onClose: () => void
 }
 
-export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDetail) => {
+export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: IWorkflowStepDetail) => {
   const metadata = step.status?.metadata || {}
 
   const isCommitStep = step.name?.toLowerCase().includes('commit')
@@ -33,7 +35,7 @@ export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDet
 
   const cardBorderClass = isInProgress
     ? 'border-blue-400/40 dark:border-blue-500/40'
-    : 'border-cool-grey-200 dark:border-dark-grey-700'
+    : ''
   const cardShadow = isInProgress
     ? '0 0 0 3px rgba(63,116,224,0.08), 0 0 16px rgba(63,116,224,0.10)'
     : undefined
@@ -46,60 +48,56 @@ export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDet
       style={cardShadow ? { boxShadow: cardShadow } : undefined}
     >
       {/* ── Header row ── */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-cool-grey-100 dark:border-dark-grey-800">
+      <div className="flex items-center gap-3 px-5 py-4 border-b">
         <DetailStatusIcon status={step.status?.status} />
-        <span className="font-mono text-[12px] text-cool-grey-400 dark:text-cool-grey-500 shrink-0">
+        <Text variant="subtext" family="mono" theme="neutral" className="shrink-0">
           {stepIndexStr}
-        </span>
-        <h2 className="text-[18px] font-semibold text-cool-grey-900 dark:text-white leading-tight flex-none">
+        </Text>
+        <Text as="h2" variant="h3" weight="strong" className="leading-tight flex-none">
           {step.name || 'Step details'}
-        </h2>
+        </Text>
         {step.group_idx !== undefined && (
-          <span className="text-[10.5px] uppercase tracking-[0.07em] font-semibold px-2 py-0.5 rounded-full border border-cool-grey-300 dark:border-dark-grey-600 text-cool-grey-500 dark:text-cool-grey-400 bg-cool-grey-50 dark:bg-dark-grey-800 shrink-0">
-            Group {step.group_idx}
-          </span>
+          <Badge size="sm" variant="code" className="shrink-0">
+            GROUP {step.group_idx}
+          </Badge>
         )}
         <Status status={step.status?.status || 'pending'} variant="badge" className="shrink-0" />
         <div className="flex-1" />
         {duration && (
           <div className="flex items-center gap-1.5 text-cool-grey-400 dark:text-cool-grey-500 shrink-0">
             <Icon variant="ClockIcon" size={13} />
-            <span className="font-mono text-[12px]">{duration}</span>
+            <Text variant="subtext" family="mono" theme="neutral">{duration}</Text>
           </div>
         )}
       </div>
 
       {/* ── Sub-bar: metadata row ── */}
-      <div className="flex items-start gap-6 px-5 py-3 bg-cool-grey-50 dark:bg-dark-grey-800 border-b border-cool-grey-100 dark:border-dark-grey-800 flex-wrap">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10.5px] uppercase tracking-[0.06em] font-semibold text-cool-grey-400 dark:text-cool-grey-500">Step ID</span>
+      <div className="flex items-start gap-6 px-5 py-3 bg-cool-grey-50 dark:bg-dark-grey-800 border-b flex-wrap">
+        <LabeledValue label="Step ID">
           <ID className="text-[12px]">{step.id}</ID>
-        </div>
+        </LabeledValue>
         {step.started_at && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10.5px] uppercase tracking-[0.06em] font-semibold text-cool-grey-400 dark:text-cool-grey-500">Started</span>
+          <LabeledValue label="Started">
             <Time time={step.started_at} format="relative" variant="subtext" />
-          </div>
+          </LabeledValue>
         )}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10.5px] uppercase tracking-[0.06em] font-semibold text-cool-grey-400 dark:text-cool-grey-500">Execution</span>
-          <span className="text-[12px] text-cool-grey-700 dark:text-cool-grey-200">{step.execution_type || 'system'}</span>
-        </div>
+        <LabeledValue label="Execution">
+          <Text variant="subtext">{step.execution_type || 'system'}</Text>
+        </LabeledValue>
         {step.retryable !== undefined && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10.5px] uppercase tracking-[0.06em] font-semibold text-cool-grey-400 dark:text-cool-grey-500">Retryable</span>
+          <LabeledValue label="Retryable">
             <Badge theme={step.retryable ? 'success' : 'neutral'} size="sm">
               {step.retryable ? 'Yes' : 'No'}
             </Badge>
-          </div>
+          </LabeledValue>
         )}
       </div>
 
       {/* ── Content area ── */}
-      <div className="p-5 space-y-4">
+      <div className="p-5 flex flex-col gap-4">
         {isCommitStep && <CommitStep metadata={metadata} />}
         {isConfigStep && <ConfigStep metadata={metadata} status={step.status?.status} />}
-        {isBuildStep && <BuildStep metadata={metadata} status={step.status?.status} />}
+        {isBuildStep && <BuildStep metadata={metadata} status={step.status?.status} appBranchRunId={appBranchRunId} />}
         {isPlanGroupStep && <PlanGroupStep step={step} metadata={metadata} />}
         {isDeployGroupStep && <DeployGroupStep step={step} metadata={metadata} />}
 
@@ -112,7 +110,7 @@ export const WorkflowStepDetail = ({ step, onClose: _onClose }: IWorkflowStepDet
 
         {/* Footer */}
         {step.install_workflow_id && (
-          <div className="flex items-center gap-4 pt-3 border-t border-cool-grey-200 dark:border-dark-grey-700">
+          <div className="flex items-center gap-4 pt-3 border-t">
             <AdminDashboardLink path={`/workflows/${step.install_workflow_id}`} label="admin panel" />
           </div>
         )}
