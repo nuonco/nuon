@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type ArchiveStateRequest struct {
@@ -12,12 +13,13 @@ type ArchiveStateRequest struct {
 
 // @temporal-gen-v2 activity
 func (a *Activities) ArchiveState(ctx context.Context, req *ArchiveStateRequest) error {
-	retainCount := 50 // Number of states to retain
+	retainCount := 2 // Number of states to retain
 
 	err := a.db.WithContext(ctx).
-		Where("install_id = ? AND id NOT IN (?)",
+		Where("install_id = ? AND archived = false AND id NOT IN (?)",
 			req.InstallID,
 			a.db.Model(&app.InstallState{}).
+				Scopes(scopes.WithDisableViews).
 				Select("id").
 				Where("install_id = ?", req.InstallID).
 				Order("created_at DESC").
