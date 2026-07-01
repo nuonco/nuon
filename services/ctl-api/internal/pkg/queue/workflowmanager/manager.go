@@ -206,10 +206,17 @@ func (m *Manager) run(ctx workflow.Context) {
 				if l != nil {
 					l.Info("continue-as-new needed but deferred until in-flight phase completes")
 				}
-			} else {
-				m.Restarted = true
-				return
+				if err := workflow.Await(ctx, func() bool {
+					return !m.restartDeferred() || m.Stopped || m.Terminated
+				}); err != nil {
+					return
+				}
+				if m.Stopped || m.Terminated {
+					return
+				}
 			}
+			m.Restarted = true
+			return
 		}
 
 		// Check 2: alive check.
