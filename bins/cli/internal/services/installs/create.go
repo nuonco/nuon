@@ -53,15 +53,13 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
 	}
 
+	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, inputsMap, labelsMap)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+
 	if asJSON {
-		install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
-			Name: &name,
-			AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
-				Region: region,
-			},
-			Inputs: inputsMap,
-			Labels: labelsMap,
-		})
+		install, err := s.api.CreateInstall(ctx, appID, req)
 		if err != nil {
 			return ui.PrintJSONError(err)
 		}
@@ -92,14 +90,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 
 	}
 
-	install, err := s.api.CreateInstall(ctx, appID, &models.ServiceCreateInstallRequest{
-		Name: &name,
-		AwsAccount: &models.ServiceCreateInstallRequestAwsAccount{
-			Region: region,
-		},
-		Inputs: inputsMap,
-		Labels: labelsMap,
-	})
+	install, err := s.api.CreateInstall(ctx, appID, req)
 	if err != nil {
 		return ui.PrintError(fmt.Errorf("error creating install: %w", err))
 	}
@@ -115,4 +106,29 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 	browser.OpenURL(url)
 
 	return nil
+}
+
+func (s *Service) buildCreateInstallRequest(ctx context.Context, appID, name, region string, inputs, labelsMap map[string]string) (*models.ServiceCreateInstallRequest, error) {
+	req := &models.ServiceCreateInstallRequest{
+		Name:   &name,
+		Inputs: inputs,
+		Labels: labelsMap,
+	}
+
+	runnerCfg, err := s.api.GetAppRunnerLatestConfig(ctx, appID)
+	if err != nil || runnerCfg == nil {
+		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{Region: region}
+		return req, nil
+	}
+
+	switch runnerCfg.CloudPlatform {
+	case models.AppCloudPlatformGcp:
+		req.GcpAccount = &models.ServiceCreateInstallRequestGcpAccount{Region: region}
+	case models.AppCloudPlatformAzure:
+		req.AzureAccount = &models.ServiceCreateInstallRequestAzureAccount{Location: region}
+	default:
+		req.AwsAccount = &models.ServiceCreateInstallRequestAwsAccount{Region: region}
+	}
+
+	return req, nil
 }
