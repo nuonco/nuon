@@ -15,6 +15,7 @@ func (s *syncer) syncAppRunner(ctx context.Context, resource string) error {
 		InitScriptURL: s.cfg.Runner.InitScriptURL,
 		InstanceType:  s.cfg.Runner.InstanceType,
 		RunnerAPIURL:  s.cfg.Runner.RunnerAPIURL,
+		PublicAPIURL:  s.cfg.Runner.PublicAPIURL,
 		Type:          models.NewAppAppRunnerType(models.AppAppRunnerType(s.cfg.Runner.RunnerType)),
 	})
 	if err != nil {

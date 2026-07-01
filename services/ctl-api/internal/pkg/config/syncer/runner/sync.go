@@ -31,6 +31,7 @@ func Sync(ctx context.Context, db *gorm.DB, cfg *config.AppConfig, appID, appCon
 		InitScriptURL: cfg.Runner.InitScriptURL,
 		InstanceType:  cfg.Runner.InstanceType,
 		RunnerAPIURL:  cfg.Runner.RunnerAPIURL,
+		PublicAPIURL:  cfg.Runner.PublicAPIURL,
 		Type:          app.AppRunnerType(cfg.Runner.RunnerType),
 	}
 

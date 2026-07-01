@@ -21,6 +21,7 @@ type CreateAppRunnerConfigRequest struct {
 	InitScriptURL string                            `json:"init_script_url"`
 	InstanceType  string                            `json:"instance_type"`
 	RunnerAPIURL  string                            `json:"runner_api_url"`
+	PublicAPIURL  string                            `json:"public_api_url"`
 
 	AppConfigID string `json:"app_config_id"`
 }
@@ -81,6 +82,7 @@ func (s *service) createAppRunnerConfig(ctx context.Context, appID string, req *
 		InitScriptURL: req.InitScriptURL,
 		InstanceType:  req.InstanceType,
 		RunnerAPIURL:  req.RunnerAPIURL,
+		PublicAPIURL:  req.PublicAPIURL,
 		Type:          req.Type,
 	}
 	res := s.db.WithContext(ctx).

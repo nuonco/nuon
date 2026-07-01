@@ -87,6 +87,9 @@ type AppRunnerConfig struct {
 
 	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
 	RunnerAPIURL string `json:"runner_api_url,omitzero" gorm:"default null" temporaljson:"runner_api_url,omitzero,omitempty"`
+
+	// PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks.
+	PublicAPIURL string `json:"public_api_url,omitzero" gorm:"default null" temporaljson:"public_api_url,omitzero,omitempty"`
 }
 
 func (a *AppRunnerConfig) Indexes(db *gorm.DB) []migrations.Index {

@@ -28,6 +28,13 @@ func NewTemplates(params Params) *Templates {
 	}
 }
 
+func (t *Templates) runnerAPIURL(inp *stacks.TemplateInput) string {
+	if inp.Settings != nil && inp.Settings.RunnerAPIURL != "" {
+		return inp.Settings.RunnerAPIURL
+	}
+	return t.cfg.RunnerAPIURL
+}
+
 func (t *Templates) Template(inp *stacks.TemplateInput) ([]byte, string, error) {
 	tmpl, err := t.getAzureTemplate(inp)
 	if err != nil {
