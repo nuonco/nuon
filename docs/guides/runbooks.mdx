@@ -122,8 +122,8 @@ An action step uses **either** `action_name` (to run a previously defined action
 Trigger and watch runs from the **Runbooks** tab in the [dashboard](https://app.nuon.co/), or from the CLI:
 
 ```sh
-# View and run runbooks for an install
-nuon runbooks --install-id <install-id>
+# list the runbooks available on an install
+nuon runbooks list --install-id <install-id>
 ```
 
 Each run is recorded in the install's workflow history, so you can review the steps, logs, and outcome of any past runbook execution.
