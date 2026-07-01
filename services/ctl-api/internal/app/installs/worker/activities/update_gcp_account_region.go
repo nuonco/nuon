@@ -3,8 +3,6 @@ package activities
 import (
 	"context"
 
-	"gorm.io/gorm"
-
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 )
@@ -32,7 +30,14 @@ func (a *Activities) UpdateGCPAccountRegion(ctx context.Context, req *UpdateGCPA
 		return generics.TemporalGormError(res.Error)
 	}
 	if res.RowsAffected < 1 {
-		return generics.TemporalGormError(gorm.ErrRecordNotFound)
+		account := app.GCPAccount{
+			InstallID: req.InstallID,
+			Region:    req.Region,
+			ProjectID: req.ProjectID,
+		}
+		if err := a.db.WithContext(ctx).Create(&account).Error; err != nil {
+			return generics.TemporalGormError(err)
+		}
 	}
 
 	return nil
