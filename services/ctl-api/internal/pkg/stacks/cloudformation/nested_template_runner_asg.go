@@ -38,7 +38,7 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		},
 		{
 			Key:   "nuon_runner_api_url",
-			Value: a.cfg.RunnerAPIURL,
+			Value: inp.Settings.RunnerAPIURL,
 		},
 	}
 
@@ -47,7 +47,7 @@ func (a *Templates) getRunnerASGNestedStack(inp *stacks.TemplateInput, t tagBuil
 		"RunnerEgressGroupId": cloudformation.Ref("RunnerSecurityGroup"),
 		"InstallId":           inp.Install.ID,
 		"RunnerId":            inp.Runner.ID,
-		"RunnerApiUrl":        a.cfg.RunnerAPIURL,
+		"RunnerApiUrl":        inp.Settings.RunnerAPIURL,
 		"InstanceType":        cloudformation.Ref("RunnerInstanceType"),
 		"RootVolumeSize":      cloudformation.Ref("RunnerRootVolumeSize"),
 		"RunnerInitScriptUrl": inp.RunnerInitScriptURL, // NOTE(fd): this is user- (provided/configurable)
