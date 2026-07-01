@@ -2,31 +2,69 @@ export default {
   title: 'Branches/WorkflowStepDetail/BuildStep',
 }
 
-import { BuildStep } from './BuildStep'
+import type { ReactNode } from 'react'
+import { BuildRow } from './BuildStep'
 
-export const Default = () => (
-  <BuildStep
-    status="success"
-    metadata={{
-      builds: [
-        { component_id: 'c1', component_name: 'api', status: 'success', cache_status: 'cache hit', duration: 2.4, image_digest: 'sha256:9f8e7d6c5b4a3210' },
-        { component_id: 'c2', component_name: 'web', status: 'success', cache_status: 'no cache', duration: 41.7, image_digest: 'sha256:1122334455667788' },
-        { component_id: 'c3', component_name: 'migrations', status: 'skipped', cache_status: 'cache hit', duration: 0.1 },
-      ],
-    }}
-  />
+const RowList = ({ children }: { children: ReactNode }) => (
+  <div className="border rounded-[10px] divide-y overflow-hidden">
+    {children}
+  </div>
 )
 
-export const Building = () => (
-  <BuildStep
-    status="in-progress"
-    metadata={{
-      builds: [
-        { component_id: 'c1', component_name: 'api', status: 'success', duration: 2.4 },
-        { component_id: 'c2', component_name: 'web', status: 'in-progress' },
-      ],
-    }}
-  />
+export const Rows = () => (
+  <RowList>
+    <BuildRow
+      rowId="c1"
+      type="terraform_module"
+      build={{ component_id: 'c1', component_name: 'rds_subnet', status: 'success', cache_status: 'partial cache' }}
+    />
+    <BuildRow
+      rowId="c2"
+      type="helm_chart"
+      build={{ component_id: 'c2', component_name: 'coder', status: 'success', cache_status: 'cache hit' }}
+    />
+    <BuildRow
+      rowId="c3"
+      type="docker_build"
+      build={{ component_id: 'c3', component_name: 'api', status: 'in-progress', cache_status: 'no cache' }}
+    />
+    <BuildRow
+      rowId="c4"
+      type="kubernetes_manifest"
+      build={{ component_id: 'c4', component_name: 'migrations', status: 'error', cache_status: 'no cache' }}
+    />
+    <BuildRow
+      rowId="sandbox"
+      build={{ component_id: 'sandbox', component_type: 'sandbox', component_name: 'Sandbox', status: 'success', cache_status: 'no cache' }}
+    />
+  </RowList>
 )
 
-export const Empty = () => <BuildStep status="in-progress" metadata={{}} />
+export const Deployed = () => (
+  <RowList>
+    <BuildRow
+      rowId="c1"
+      type="terraform_module"
+      build={{ component_id: 'c1', component_name: 'rds_subnet', status: 'success', cache_status: 'partial cache' }}
+    />
+  </RowList>
+)
+
+export const InProgress = () => (
+  <RowList>
+    <BuildRow
+      rowId="c1"
+      type="docker_build"
+      build={{ component_id: 'c1', component_name: 'api', status: 'in-progress', cache_status: 'no cache' }}
+    />
+  </RowList>
+)
+
+export const NoType = () => (
+  <RowList>
+    <BuildRow
+      rowId="c1"
+      build={{ component_id: 'c1', component_name: 'unknown-component', status: 'success' }}
+    />
+  </RowList>
+)
