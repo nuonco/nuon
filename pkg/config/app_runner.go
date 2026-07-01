@@ -56,7 +56,10 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("t3a.medium").
 		Example("t3.large").
 		Field("runner_api_url").Short("custom runner API endpoint").
-		Long("Overrides the Nuon runner API URL for all installs created from this app config. Use this to white-label the runner API behind your own domain, which proxies requests to the Nuon runner API.").
+		Long("Overrides the base URL the runner uses to communicate with the Nuon runner API. Set this to your proxy domain to white-label runner traffic.").
+		Example("https://runner-api.example.com").
+		Field("public_api_url").Short("custom public API endpoint").
+		Long("Overrides the base URL used for install stack phone-home callbacks. Set this to the same proxy domain as runner_api_url so phone-home calls also route through your domain.").
 		Example("https://runner-api.example.com").
 		Field("env_var").Short("deprecated: use env_vars map instead").
 		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")
