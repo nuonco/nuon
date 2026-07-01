@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router'
+import { scrollElementIntoView } from '@/utils/scroll'
 
 export function useHashScroll() {
   const location = useLocation()
@@ -8,10 +9,7 @@ export function useHashScroll() {
     if (location.hash) {
       setTimeout(() => {
         const id = location.hash.replace('#', '')
-        const element = document.getElementById(id)
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
+        scrollElementIntoView(document.getElementById(id), { block: 'start' })
       }, 0)
     }
   }, [location])

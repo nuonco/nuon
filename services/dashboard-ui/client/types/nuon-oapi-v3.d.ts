@@ -3444,6 +3444,8 @@ export interface components {
       /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
       instance_type?: string;
       org_id?: string;
+      /** @description RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config. */
+      runner_api_url?: string;
       updated_at?: string;
     };
     /** @enum {string} */
@@ -6932,6 +6934,11 @@ export interface components {
       plan_only?: boolean;
       /** @description not required Readme */
       readme?: string;
+      /**
+       * @description SkipNotification suppresses the app-config-synced signal emission.
+       * Used when creating a config as part of app deletion cleanup.
+       */
+      skip_notification?: boolean;
     };
     "service.CreateAppInputConfigRequest": {
       app_config_id?: string;
@@ -6976,6 +6983,7 @@ export interface components {
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
       init_script_url?: string;
       instance_type?: string;
+      runner_api_url?: string;
       type: components["schemas"]["app.AppRunnerType"];
     };
     "service.CreateAppSandboxConfigRequest": {
