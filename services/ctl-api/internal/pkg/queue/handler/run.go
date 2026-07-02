@@ -22,7 +22,13 @@ import (
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
-const handlerTerminateThreshold = 20000
+const (
+	handlerCANHistoryMax = 10000
+	// overhead keeps terminateThreshold above historyMax so CAN always fires before the hard kill (matches queue.canDefaultTerminateOverhead).
+	handlerCANTerminateOverhead = 5000
+
+	handlerTerminateThreshold = handlerCANHistoryMax + handlerCANTerminateOverhead
+)
 
 func (h *handler) run(ctx workflow.Context) (bool, error) {
 	l, err := log.WorkflowLogger(ctx)
@@ -74,6 +80,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return h.validating || h.executing
 	}))
 
+	mgrOpts = append(mgrOpts, workflowmanager.WithHistoryMax(handlerCANHistoryMax))
 	mgrOpts = append(mgrOpts, workflowmanager.WithTerminateThreshold(handlerTerminateThreshold))
 	mgrOpts = append(mgrOpts, workflowmanager.WithOnTerminated(func(gCtx workflow.Context, historyLen int) {
 		desc := fmt.Sprintf("handler terminated: workflow history (%d) exceeded safety threshold (%d)", historyLen, handlerTerminateThreshold)
