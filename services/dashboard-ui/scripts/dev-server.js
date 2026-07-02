@@ -5,7 +5,7 @@ const BFF_PORT = Number(process.env.HTTP_PORT || 4000);
 const DEV_PORT = BFF_PORT + 1;
 const BFF_ORIGIN = `http://localhost:${BFF_PORT}`;
 
-const RELOAD_SCRIPT = `<script>(function(){var es,last=Date.now();function connect(){es=new EventSource("/__dev/reload");es.onmessage=function(e){last=Date.now();if(e.data==="reload")location.reload()};es.onerror=function(){try{es.close()}catch(_){}setTimeout(connect,1000)}}connect();setInterval(function(){if(Date.now()-last>50000){try{es.close()}catch(_){}connect()}},10000)})();</script>`;
+const RELOAD_SCRIPT = `<script>(function(){var es,timer,delay=1000,last=Date.now();function schedule(){clearTimeout(timer);timer=setTimeout(connect,delay);delay=Math.min(delay*2,30000)}function connect(){es=new EventSource("/__dev/reload");es.onopen=function(){delay=1000;last=Date.now()};es.onmessage=function(e){last=Date.now();if(e.data==="reload")location.reload()};es.onerror=function(){try{es.close()}catch(_){}schedule()}}connect();setInterval(function(){if(es&&es.readyState===1&&Date.now()-last>50000){try{es.close()}catch(_){}connect()}},10000)})();</script>`;
 
 const clients = new Set();
 
