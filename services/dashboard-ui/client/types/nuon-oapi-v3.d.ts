@@ -3444,6 +3444,8 @@ export interface components {
       /** @description InstanceType is the cloud machine/instance type for the install runner host, mapped per cloud platform. */
       instance_type?: string;
       org_id?: string;
+      /** @description PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks. */
+      public_api_url?: string;
       /** @description RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config. */
       runner_api_url?: string;
       updated_at?: string;
@@ -6983,6 +6985,7 @@ export interface components {
       helm_driver?: components["schemas"]["app.AppRunnerConfigHelmDriverType"];
       init_script_url?: string;
       instance_type?: string;
+      public_api_url?: string;
       runner_api_url?: string;
       type: components["schemas"]["app.AppRunnerType"];
     };
