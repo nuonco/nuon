@@ -1436,6 +1436,20 @@ export interface paths {
      */
     post: operations["CreateInstallAppConfigUpdate"];
   };
+  "/v1/installs/{install_id}/app-config-versions": {
+    /**
+     * get app config versions for an install
+     * @description Returns the app config version history for an install, ordered by most recent first.
+     */
+    get: operations["GetInstallAppConfigVersions"];
+  };
+  "/v1/installs/{install_id}/app-config-versions/{version_id}/diff": {
+    /**
+     * get the diff for an install app config version
+     * @description Returns the component diff for a specific app config version transition.
+     */
+    get: operations["GetInstallAppConfigVersionDiff"];
+  };
   "/v1/installs/{install_id}/app-permissions-config": {
     /** get app permissions config for an install with provisioning status */
     get: operations["GetInstallAppPermissionsConfig"];
@@ -3218,6 +3232,7 @@ export interface components {
       force?: boolean;
       head_sha?: string;
       id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       log_stream?: components["schemas"]["app.LogStream"];
       /** @description LogStreamID is the log stream created during this run for event tracking */
       log_stream_id?: string;
@@ -3785,6 +3800,13 @@ export interface components {
       updated_at?: string;
       version?: number;
     };
+    "app.ComponentDiffEntry": {
+      component_id?: string;
+      component_name?: string;
+      component_type?: string;
+      new_checksum?: string;
+      old_checksum?: string;
+    };
     "app.ComponentRelease": {
       build_id?: string;
       created_at?: string;
@@ -4209,6 +4231,18 @@ export interface components {
       updated_at?: string;
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
+    };
+    "app.InstallConfigDiff": {
+      added?: components["schemas"]["app.ComponentDiffEntry"][];
+      changed?: components["schemas"]["app.ComponentDiffEntry"][];
+      removed?: components["schemas"]["app.ComponentDiffEntry"][];
+      sandbox_changed?: boolean;
+      sandbox_new_id?: string;
+      sandbox_old_id?: string;
+      stack_changed?: boolean;
+      stack_new_id?: string;
+      stack_old_id?: string;
+      unchanged?: components["schemas"]["app.ComponentDiffEntry"][];
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -19256,6 +19290,108 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.InstallAppConfigVersion"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app config versions for an install
+   * @description Returns the app config version history for an install, ordered by most recent first.
+   */
+  GetInstallAppConfigVersions: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the diff for an install app config version
+   * @description Returns the component diff for a specific app config version transition.
+   */
+  GetInstallAppConfigVersionDiff: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description app config version ID */
+        version_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfigDiff"];
         };
       };
       /** @description Bad Request */

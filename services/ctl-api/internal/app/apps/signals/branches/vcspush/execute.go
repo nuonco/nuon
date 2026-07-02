@@ -17,14 +17,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	)
 
 	resp, err := activities.AwaitTriggerAppBranchRunFromVCSPush(ctx, activities.TriggerAppBranchRunFromVCSPushRequest{
-		AppBranchID:       s.AppBranchID,
-		AppBranchConfigID: s.AppBranchConfigID,
-		PlanOnly:          s.PlanOnly,
-		EventType:         s.EventType,
-		PRNumber:          s.PRNumber,
-		HeadSHA:           s.HeadSHA,
-		BaseBranch:        s.BaseBranch,
-		PusherEmail:       s.PusherEmail,
+		AppBranchID:         s.AppBranchID,
+		AppBranchConfigID:   s.AppBranchConfigID,
+		PlanOnly:            s.PlanOnly,
+		EventType:           s.EventType,
+		PRNumber:            s.PRNumber,
+		HeadSHA:             s.HeadSHA,
+		BaseBranch:          s.BaseBranch,
+		PusherEmails:        s.PusherEmails,
+		SenderLogin:         s.SenderLogin,
+		FallbackCreatedByID: s.FallbackCreatedByID,
 	})
 	if err != nil {
 		return fmt.Errorf("unable to trigger app branch run from vcs push: %w", err)

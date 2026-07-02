@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -17,6 +18,7 @@ type CreateAppBranchRunRequest struct {
 	PRNumber          *int
 	HeadSHA           string
 	BaseBranch        string
+	Labels            labels.Labels
 }
 
 func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRunRequest) (*app.AppBranchRun, error) {
@@ -46,7 +48,8 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		BaseBranch:        req.BaseBranch,
 		PreviousRunID:     previousRunID,
 		Status:            "pending",
-		WorkflowID:        nil, // Set later after workflow creation
+		WorkflowID:        nil,
+		Labeled:           labels.Labeled{Labels: req.Labels},
 	}
 
 	res := h.db.WithContext(ctx).Create(run)

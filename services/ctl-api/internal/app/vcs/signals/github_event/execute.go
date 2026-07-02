@@ -54,7 +54,7 @@ func (s *Signal) handlePushEvent(ctx workflow.Context, l *zap.Logger, connEvent 
 	l.Info(fmt.Sprintf("processing push event for repo=%s branch=%s vcs_connection=%s",
 		pushInfo.Repo, pushInfo.Branch, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, "", "", pushInfo.PusherEmail)
+	return s.fanOutToAppBranches(ctx, l, connEvent, pushInfo.Repo, pushInfo.Branch, false, "push", nil, "", "", pushInfo.PusherEmails, pushInfo.SenderLogin)
 }
 
 func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, event *app.GithubEvent, payload map[string]any) error {
@@ -72,10 +72,10 @@ func (s *Signal) handlePullRequestEvent(ctx workflow.Context, l *zap.Logger, con
 	l.Info(fmt.Sprintf("processing pull_request event for repo=%s base=%s pr=%d head=%s vcs_connection=%s",
 		prInfo.Repo, prInfo.BaseBranch, prInfo.PRNumber, prInfo.HeadSHA, connEvent.VCSConnectionID))
 
-	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, "")
+	return s.fanOutToAppBranches(ctx, l, connEvent, prInfo.Repo, prInfo.BaseBranch, true, "pull_request", &prInfo.PRNumber, prInfo.HeadSHA, prInfo.BaseBranch, nil, "")
 }
 
-func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch, pusherEmail string) error {
+func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEvent *app.VCSConnectionEvent, repo, branch string, planOnly bool, eventType string, prNumber *int, headSHA, baseBranch string, pusherEmails []string, senderLogin string) error {
 	matches, err := activities.AwaitFindMatchingAppBranches(ctx, activities.FindMatchingAppBranchesRequest{
 		OrgID:  connEvent.OrgID,
 		Repo:   repo,
@@ -97,14 +97,16 @@ func (s *Signal) fanOutToAppBranches(ctx workflow.Context, l *zap.Logger, connEv
 			OwnerID:   match.AppBranchID,
 			OwnerType: "app_branches",
 			Signal: &vcspush.Signal{
-				AppBranchID:       match.AppBranchID,
-				AppBranchConfigID: match.AppBranchConfigID,
-				PlanOnly:          planOnly,
-				EventType:         eventType,
-				PRNumber:          prNumber,
-				HeadSHA:           headSHA,
-				BaseBranch:        baseBranch,
-				PusherEmail:       pusherEmail,
+				AppBranchID:         match.AppBranchID,
+				AppBranchConfigID:   match.AppBranchConfigID,
+				PlanOnly:            planOnly,
+				EventType:           eventType,
+				PRNumber:            prNumber,
+				HeadSHA:             headSHA,
+				BaseBranch:          baseBranch,
+				PusherEmails:        pusherEmails,
+				SenderLogin:         senderLogin,
+				FallbackCreatedByID: connEvent.CreatedByID,
 			},
 		})
 		if err != nil {
