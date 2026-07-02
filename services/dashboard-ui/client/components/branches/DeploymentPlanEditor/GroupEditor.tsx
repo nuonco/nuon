@@ -1,16 +1,22 @@
 import { useMemo, useState } from 'react'
-import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
+import { Card } from '@/components/common/Card'
 import { Dropdown } from '@/components/common/Dropdown'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { ToggleButton } from '@/components/common/ToggleButton'
 import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import type { TInstall } from '@/types'
 import { cn } from '@/utils/classnames'
+import { matchesSelector } from '@/components/match/matches'
+import { parseLabelsQuery } from '@/components/match/parse'
 import { AddInstallPicker } from './AddInstallPicker'
-import type { IInstallGroup, ILabelSelector } from './types'
+import { InstallRow } from './InstallRow'
+import type { IInstallGroup, ILabelSelector, InstallSelectionMode } from './types'
 
 interface IGroupEditor {
   group: IInstallGroup
@@ -20,6 +26,7 @@ interface IGroupEditor {
   availableInstalls: TInstall[]
   disabled?: boolean
   nameError?: string
+  contentError?: string
   onUpdate: (updates: Partial<IInstallGroup>) => void
   onAddInstalls: (installIds: string[]) => void
   onRemoveInstall: (installId: string) => void
@@ -36,6 +43,7 @@ export const GroupEditor = ({
   availableInstalls,
   disabled,
   nameError,
+  contentError,
   onUpdate,
   onAddInstalls,
   onRemoveInstall,
@@ -49,9 +57,8 @@ export const GroupEditor = ({
   }, [group.install_ids, availableInstalls])
 
   return (
-    <div className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-lg bg-white dark:bg-dark-grey-800">
-      {/* Header row: group name + menu */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-cool-grey-200 dark:border-dark-grey-700">
+    <Card className="!p-0 !gap-0 overflow-hidden bg-white dark:bg-dark-grey-800">
+      <div className="flex items-center gap-2 px-4 py-3 border-b">
         <div className="flex-1 min-w-0">
           <Input
             id={`group-name-${group.id}`}
@@ -81,20 +88,12 @@ export const GroupEditor = ({
               Move up
               <Icon variant="ArrowUpIcon" />
             </Button>
-            <Button
-              isMenuButton
-              onClick={onMoveDown}
-              disabled={index === totalGroups - 1}
-            >
+            <Button isMenuButton onClick={onMoveDown} disabled={index === totalGroups - 1}>
               Move down
               <Icon variant="ArrowDownIcon" />
             </Button>
             <hr />
-            <Button
-              isMenuButton
-              className="!text-red-800 dark:!text-red-500"
-              onClick={onDelete}
-            >
+            <Button isMenuButton className="!text-red-800 dark:!text-red-500" onClick={onDelete}>
               Delete group
               <Icon variant="TrashIcon" />
             </Button>
@@ -102,49 +101,26 @@ export const GroupEditor = ({
         </Dropdown>
       </div>
 
-      {/* Settings row */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b border-cool-grey-200 dark:border-dark-grey-700">
-        <div className="flex items-center gap-1 rounded-md bg-cool-grey-100 dark:bg-dark-grey-700 p-0.5">
-          <button
-            type="button"
-            className={cn(
-              'text-xs font-medium px-2 py-1 rounded transition-colors',
-              group.selection_mode === 'manual'
-                ? 'bg-white dark:bg-dark-grey-600 shadow-sm'
-                : 'text-cool-grey-600 dark:text-dark-grey-400 hover:text-cool-grey-900'
-            )}
-            onClick={() => onUpdate({ selection_mode: 'manual' })}
-            disabled={disabled}
-          >
-            Manual
-          </button>
-          <button
-            type="button"
-            className={cn(
-              'text-xs font-medium px-2 py-1 rounded transition-colors',
-              group.selection_mode === 'labels'
-                ? 'bg-white dark:bg-dark-grey-600 shadow-sm'
-                : 'text-cool-grey-600 dark:text-dark-grey-400 hover:text-cool-grey-900'
-            )}
-            onClick={() => onUpdate({ selection_mode: 'labels' })}
-            disabled={disabled}
-          >
-            By labels
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 border-b">
+        <ToggleButton<InstallSelectionMode>
+          options={[
+            { value: 'manual', label: 'Manual' },
+            { value: 'labels', label: 'By labels' },
+          ]}
+          value={group.selection_mode}
+          onChange={(mode) => onUpdate({ selection_mode: mode })}
+          size="sm"
+          className={cn(disabled && 'pointer-events-none opacity-50')}
+        />
 
         <div className="flex items-center gap-2">
-          <Text variant="subtext" theme="neutral">
-            Max parallel
-          </Text>
+          <Text variant="subtext" theme="neutral">Max parallel</Text>
           <Input
             id={`group-max-parallel-${group.id}`}
             type="number"
             min={1}
             value={group.max_parallel ?? 1}
-            onChange={(e) =>
-              onUpdate({ max_parallel: parseInt(e.target.value) || 1 })
-            }
+            onChange={(e) => onUpdate({ max_parallel: parseInt(e.target.value) || 1 })}
             disabled={disabled}
             size="sm"
             className="!w-16"
@@ -154,16 +130,13 @@ export const GroupEditor = ({
         <CheckboxInput
           id={`group-preview-${group.id}`}
           checked={group.use_for_previews ?? false}
-          onChange={(e) =>
-            onUpdate({ use_for_previews: e.target.checked })
-          }
+          onChange={(e) => onUpdate({ use_for_previews: e.target.checked })}
           disabled={disabled}
           labelProps={{ labelText: 'Use for previews' }}
         />
       </div>
 
-      {/* Installs / labels content */}
-      <div className="flex flex-col gap-2 p-4">
+      <div className="flex flex-col gap-3 p-4">
         {group.selection_mode === 'labels' ? (
           <LabelSelectorEditor
             groupId={group.id}
@@ -177,32 +150,21 @@ export const GroupEditor = ({
             {installs.length > 0 ? (
               <div className="flex flex-col gap-1.5">
                 {installs.map((install) => (
-                  <div
+                  <InstallRow
                     key={install.id}
-                    className="flex items-center justify-between gap-2 px-2 py-2 rounded-md bg-cool-grey-50 dark:bg-dark-grey-900"
-                  >
-                    <Text variant="body" className="truncate">
-                      {install.name || install.id}
-                    </Text>
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onClick={() => onRemoveInstall(install.id)}
-                      disabled={disabled}
-                      title={`Remove ${install.name || install.id}`}
-                      className="!p-1 shrink-0"
-                    >
-                      <Icon variant="XIcon" size={14} />
-                    </Button>
-                  </div>
+                    install={install}
+                    onRemove={() => onRemoveInstall(install.id)}
+                    disabled={disabled}
+                  />
                 ))}
               </div>
             ) : (
-              <div className="px-3 py-3 rounded-md border border-dashed border-cool-grey-300 dark:border-dark-grey-600 text-center">
-                <Text variant="subtext" theme="neutral">
-                  Use Add install to assign installs to this group
-                </Text>
-              </div>
+              <EmptyState
+                variant="table"
+                size="sm"
+                emptyTitle="No installs"
+                emptyMessage="Use Add install to assign installs to this group."
+              />
             )}
 
             <AddInstallPicker
@@ -213,8 +175,12 @@ export const GroupEditor = ({
             />
           </>
         )}
+
+        {contentError && (
+          <Text variant="subtext" theme="error">{contentError}</Text>
+        )}
       </div>
-    </div>
+    </Card>
   )
 }
 
@@ -231,11 +197,11 @@ const LabelSelectorEditor = ({
   disabled?: boolean
   onUpdate: (ls: ILabelSelector) => void
 }) => {
-  const [newKey, setNewKey] = useState('')
-  const [newValue, setNewValue] = useState('')
+  const [draft, setDraft] = useState('')
 
   const labels = labelSelector?.match_labels ?? {}
   const entries = Object.entries(labels)
+  const hasSelector = entries.length > 0
 
   const suggestedLabels = useMemo(() => {
     const seen = new Set<string>()
@@ -252,13 +218,16 @@ const LabelSelectorEditor = ({
     return result
   }, [availableInstalls])
 
-  const addLabel = () => {
-    const key = newKey.trim()
-    const value = newValue.trim()
-    if (!key) return
-    onUpdate({ match_labels: { ...labels, [key]: value } })
-    setNewKey('')
-    setNewValue('')
+  const matchedInstalls = useMemo(
+    () => (hasSelector ? availableInstalls.filter((i) => matchesSelector(i.labels, labelSelector)) : []),
+    [hasSelector, availableInstalls, labelSelector]
+  )
+
+  const commitDraft = () => {
+    const parsed = parseLabelsQuery(draft)
+    setDraft('')
+    if (Object.keys(parsed).length === 0) return
+    onUpdate({ match_labels: { ...labels, ...parsed } })
   }
 
   const toggleSuggestion = (key: string, value: string) => {
@@ -280,34 +249,46 @@ const LabelSelectorEditor = ({
   return (
     <div className="flex flex-col gap-3">
       <Text variant="subtext" theme="neutral">
-        Installs matching all labels will be included at deploy time.
+        Installs matching all labels are included at deploy time.
       </Text>
 
-      {entries.length > 0 && (
+      {hasSelector && (
         <div className="flex flex-wrap gap-1.5">
           {entries.map(([key, value]) => (
-            <Badge key={key} variant="code" size="md">
-              <span className="inline-flex items-center gap-1">
-                {key}={value}
-                <button
-                  type="button"
-                  onClick={() => removeLabel(key)}
-                  disabled={disabled}
-                  className="ml-0.5 hover:text-red-600"
-                >
-                  <Icon variant="XIcon" size={12} />
-                </button>
-              </span>
-            </Badge>
+            <LabelBadge
+              key={key}
+              labelKey={key}
+              labelValue={value}
+              size="sm"
+              variant="code"
+              disabled={disabled}
+              onRemove={() => removeLabel(key)}
+              removeAriaLabel={`Remove ${key}=${value}`}
+            />
           ))}
         </div>
       )}
 
+      <Input
+        id={`label-input-${groupId}`}
+        type="text"
+        size="sm"
+        placeholder="env=prod — press Enter to add"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            commitDraft()
+          }
+        }}
+        onBlur={commitDraft}
+        disabled={disabled}
+      />
+
       {suggestedLabels.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <Text variant="subtext" theme="neutral">
-            Labels from your installs
-          </Text>
+          <Text variant="subtext" theme="neutral">Labels from your installs</Text>
           <div className="flex flex-wrap gap-1.5">
             {suggestedLabels.map(({ key, value }) => {
               const isActive = labels[key] === value
@@ -317,15 +298,16 @@ const LabelSelectorEditor = ({
                   type="button"
                   onClick={() => toggleSuggestion(key, value)}
                   disabled={disabled}
-                  className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono border transition-colors',
-                    isActive
-                      ? 'bg-primary-100 border-primary-400 text-primary-800 dark:bg-primary-900/30 dark:border-primary-500 dark:text-primary-200'
-                      : 'bg-cool-grey-100 border-cool-grey-300 text-cool-grey-700 hover:border-cool-grey-400 dark:bg-dark-grey-600 dark:border-dark-grey-400 dark:text-cool-grey-200 dark:hover:border-cool-grey-300'
-                  )}
+                  className="disabled:opacity-50"
                 >
-                  {isActive && <Icon variant="CheckIcon" size={11} />}
-                  {key}={value}
+                  <LabelBadge
+                    labelKey={key}
+                    labelValue={value}
+                    size="sm"
+                    variant="code"
+                    keyTheme={isActive ? 'brand' : 'neutral'}
+                    theme={isActive ? 'brand' : 'default'}
+                  />
                 </button>
               )
             })}
@@ -333,46 +315,26 @@ const LabelSelectorEditor = ({
         </div>
       )}
 
-      <div className="flex items-end gap-2">
-        <div className="flex-1">
-          <Input
-            id={`label-key-${groupId}`}
-            type="text"
-            size="sm"
-            placeholder="Key"
-            value={newKey}
-            onChange={(e) => setNewKey(e.target.value)}
-            disabled={disabled}
-          />
-        </div>
-        <div className="flex-1">
-          <Input
-            id={`label-value-${groupId}`}
-            type="text"
-            size="sm"
-            placeholder="Value"
-            value={newValue}
-            onChange={(e) => setNewValue(e.target.value)}
-            disabled={disabled}
-          />
-        </div>
-        <Button
-          variant="secondary"
+      {hasSelector ? (
+        matchedInstalls.length > 0 ? (
+          <div className="flex flex-col gap-1.5">
+            <Text variant="subtext" theme="neutral">
+              {matchedInstalls.length} {matchedInstalls.length === 1 ? 'install matches' : 'installs match'}
+            </Text>
+            {matchedInstalls.map((install) => (
+              <InstallRow key={install.id} install={install} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState variant="search" size="sm" emptyTitle="No matches" emptyMessage="No installs match this selector." />
+        )
+      ) : (
+        <EmptyState
+          variant="search"
           size="sm"
-          onClick={addLabel}
-          disabled={disabled || !newKey.trim()}
-        >
-          <Icon variant="PlusIcon" size={14} />
-          Add
-        </Button>
-      </div>
-
-      {entries.length === 0 && suggestedLabels.length === 0 && (
-        <div className="px-3 py-3 rounded-md border border-dashed border-cool-grey-300 dark:border-dark-grey-600 text-center">
-          <Text variant="subtext" theme="neutral">
-            Add label selectors to match installs dynamically
-          </Text>
-        </div>
+          emptyTitle="No labels yet"
+          emptyMessage="Add a label above or pick one from your installs."
+        />
       )}
     </div>
   )

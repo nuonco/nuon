@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
+import { EmptyState } from '@/components/common/EmptyState'
 import { Icon } from '@/components/common/Icon'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import type { TInstall } from '@/types'
+import { matchesSelector } from '@/components/match/matches'
 import { GroupEditor } from './GroupEditor'
+import { InstallRow } from './InstallRow'
 import { newGroup } from './lib'
 import type { IInstallGroup } from './types'
 
@@ -34,21 +37,39 @@ export const DeploymentPlanEditor = ({
   const assignedInstallIds = useMemo(() => {
     const assigned = new Set<string>()
     groups.forEach((g) => {
-      if (!g.use_for_previews) {
+      if (g.use_for_previews) return
+      if (g.selection_mode === 'labels') {
+        const matchLabels = g.label_selector?.match_labels
+        if (matchLabels && Object.keys(matchLabels).length > 0) {
+          availableInstalls.forEach((i) => {
+            if (matchesSelector(i.labels, g.label_selector)) assigned.add(i.id)
+          })
+        }
+      } else {
         g.install_ids.forEach((id) => assigned.add(id))
       }
     })
     return assigned
-  }, [groups])
+  }, [groups, availableInstalls])
 
   const unassignedInstalls = useMemo(
     () => availableInstalls.filter((i) => !assignedInstallIds.has(i.id)),
     [availableInstalls, assignedInstallIds]
   )
 
-  const hasEmptyNames = groups.some((g) => !g.name.trim())
-  const canSave =
-    !isSaving && !loadingInstalls && groups.length > 0 && !hasEmptyNames
+  const groupContentError = (g: IInstallGroup): string | undefined => {
+    if (g.selection_mode === 'labels') {
+      if (!g.label_selector?.match_labels || Object.keys(g.label_selector.match_labels).length === 0) {
+        return 'Add at least one label to match installs.'
+      }
+    } else if (g.install_ids.length === 0) {
+      return 'Add at least one install.'
+    }
+    return undefined
+  }
+
+  const hasErrors = groups.some((g) => !g.name.trim() || !!groupContentError(g))
+  const canSave = !isSaving && !loadingInstalls && groups.length > 0 && !hasErrors
   const isDisabled = isSaving || loadingInstalls
 
   const updateGroup = (id: string, updates: Partial<IInstallGroup>) => {
@@ -105,7 +126,7 @@ export const DeploymentPlanEditor = ({
   }
 
   const handleSave = () => {
-    if (hasEmptyNames || groups.length === 0) {
+    if (hasErrors || groups.length === 0) {
       setShowValidation(true)
       return
     }
@@ -142,27 +163,24 @@ export const DeploymentPlanEditor = ({
       ) : (
         <div className="flex flex-col gap-4">
           {groups.length === 0 ? (
-            <div className="flex items-center justify-between gap-4 px-4 py-4 border border-dashed border-cool-grey-300 dark:border-dark-grey-600 rounded-md">
-              <Text variant="subtext" theme="neutral">
-                No deployment groups yet. Add a group, then assign installs to it.
-              </Text>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={addGroup}
-                disabled={isDisabled}
-                className="shrink-0"
-              >
-                <Icon variant="PlusIcon" size={16} />
-                Add first group
-              </Button>
-            </div>
+            <EmptyState
+              variant="table"
+              emptyTitle="No deployment groups"
+              emptyMessage="Add a group, then assign installs to it."
+              action={
+                <Button variant="primary" onClick={addGroup} disabled={isDisabled}>
+                  <Icon variant="PlusIcon" size={16} />
+                  Add group
+                </Button>
+              }
+            />
           ) : (
             groups.map((group, index) => {
               const nameError =
                 showValidation && !group.name.trim()
                   ? 'Group name is required'
                   : undefined
+              const contentError = showValidation ? groupContentError(group) : undefined
 
               return (
                 <GroupEditor
@@ -174,6 +192,7 @@ export const DeploymentPlanEditor = ({
                   unassignedInstalls={unassignedInstalls}
                   disabled={isDisabled}
                   nameError={nameError}
+                  contentError={contentError}
                   onUpdate={(updates) => updateGroup(group.id, updates)}
                   onAddInstalls={(installIds) =>
                     addInstallsToGroup(group.id, installIds)
@@ -200,7 +219,7 @@ export const DeploymentPlanEditor = ({
           </Button>
 
           {unassignedInstalls.length > 0 && (
-            <div className="border-t border-cool-grey-200 dark:border-dark-grey-700 pt-4">
+            <div className="border-t pt-4">
               <div className="flex items-baseline gap-2 mb-2">
                 <Text variant="base" weight="strong">Unassigned</Text>
                 <Text variant="subtext" theme="neutral">
@@ -209,14 +228,7 @@ export const DeploymentPlanEditor = ({
               </div>
               <div className="flex flex-col gap-1.5">
                 {unassignedInstalls.map((install) => (
-                  <div
-                    key={install.id}
-                    className="flex items-center gap-1.5 px-2 py-2 rounded-md bg-cool-grey-50 dark:bg-dark-grey-900"
-                  >
-                    <Text variant="body" className="truncate">
-                      {install.name || install.id}
-                    </Text>
-                  </div>
+                  <InstallRow key={install.id} install={install} />
                 ))}
               </div>
             </div>

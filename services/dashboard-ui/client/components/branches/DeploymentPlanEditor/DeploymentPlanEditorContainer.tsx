@@ -63,14 +63,20 @@ export const DeploymentPlanEditorContainer = ({
 
   const { mutate: save, isPending: isSaving } = useMutation({
     mutationFn: async (groups: IInstallGroup[]) => {
-      const installGroupsForApi = groups.map((group, index) => ({
-        name: group.name,
-        install_ids: group.selection_mode === 'manual' ? (group.install_ids || []) : [],
-        label_selector: group.selection_mode === 'labels' ? group.label_selector : undefined,
-        order: index,
-        max_parallel: group.max_parallel || 1,
-        use_for_previews: group.use_for_previews || false,
-      }))
+      const installGroupsForApi = groups.map((group, index) => {
+        const matchLabels = group.label_selector?.match_labels
+        const useLabels =
+          group.selection_mode === 'labels' && !!matchLabels && Object.keys(matchLabels).length > 0
+
+        return {
+          name: group.name,
+          install_ids: useLabels ? [] : group.install_ids || [],
+          label_selector: useLabels ? group.label_selector : undefined,
+          order: index,
+          max_parallel: group.max_parallel || 1,
+          use_for_previews: group.use_for_previews || false,
+        }
+      })
 
       const request: TCreateBranchConfigRequest = {
         install_groups: installGroupsForApi,
