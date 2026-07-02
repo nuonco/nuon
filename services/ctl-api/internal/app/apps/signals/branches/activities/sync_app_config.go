@@ -73,7 +73,7 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	}
 
 	// Run the DB syncer
-	s := syncer.NewDBSyncer(a.db, a.helpers, a.componentHelpers, a.actionsHelpers, a.runbooksHelpers, a.vcsHelpers, req.AppID, &cfg, req.AppConfigID)
+	s := syncer.NewDBSyncer(a.db, a.helpers, a.componentHelpers, a.actionsHelpers, a.runbooksHelpers, a.vcsHelpers, a.tfClient, req.AppID, &cfg, req.AppConfigID)
 	if err := s.Sync(ctx); err != nil {
 		// Mark config as error
 		humanErr := signal.HumanError(err)

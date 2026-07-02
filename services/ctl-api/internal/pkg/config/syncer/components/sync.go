@@ -14,6 +14,7 @@ import (
 	createdsignal "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 // EnsureComponent creates a component if it doesn't exist, using the shared helpers
@@ -72,7 +73,7 @@ func EnsureComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers
 }
 
 // SyncComponent updates a component and creates its configuration based on type.
-func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, vcsHelper *vcshelpers.Helpers, comp *config.Component, appID, appConfigID string, state *sync.State) error {
+func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.Helpers, vcsHelper *vcshelpers.Helpers, tfClient terraform.Client, comp *config.Component, appID, appConfigID string, state *sync.State) error {
 	apiComp, err := getComponent(ctx, db, comp.Name, appID)
 	if err != nil {
 		return sync.SyncInternalErr{
@@ -115,7 +116,7 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 			return err
 		}
 	case "terraform_module":
-		configID, checksum, err = SyncTerraformModuleComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncTerraformModuleComponent(ctx, db, vcsHelper, helpers, tfClient, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
