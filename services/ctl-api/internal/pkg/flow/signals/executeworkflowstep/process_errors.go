@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+	activities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 // handleStepError marks the step as errored and checks for auto-retry.
@@ -21,6 +22,26 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 	ar, isAutoRetry := sig.(signal.SignalWithAutoRetry)
 	if !isAutoRetry || !ar.AutoRetry() {
 		return s.markStepFailed(ctx, step, stepErr, nil)
+	}
+
+	// Consult the composite-error hint recorded for this step's target. The
+	// runner-result chokepoint parses a failed execution into a typed composite
+	// error and mirrors its hints onto the target row before this step wakes.
+	// A skip_auto_retry hint (e.g. a missing IAM permission that won't resolve
+	// by retrying) forces the await-retry branch so we park for manual retry
+	// instead of burning auto-retries. Only deploy/sandbox targets carry a
+	// composite_error column, so we skip the lookup for every other target.
+	skipAutoRetry := false
+	if targetHasCompositeError(step.StepTargetType) {
+		if hintsResp, herr := activities.AwaitGetStepErrorHints(ctx, activities.GetStepErrorHintsRequest{
+			StepID: step.ID,
+		}); herr != nil {
+			l.Warn("unable to get step error hints",
+				zap.String("step_id", step.ID),
+				zap.Error(herr))
+		} else if hintsResp != nil {
+			skipAutoRetry = hintsResp.Hints.SkipAutoRetry()
+		}
 	}
 
 	// Determine max retries from the signal, falling back to default.
@@ -83,10 +104,13 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		})
 	}
 
-	// Check auto-retry budget — user can still manually retry up to maxRetries.
-	if nextRetryIndex > maxAutoRetries {
-		l.Warn("auto retries exhausted",
+	// Park for manual retry when auto-retries are exhausted OR the composite
+	// error hinted that auto-retry won't help. The user can still manually
+	// retry up to maxRetries.
+	if skipAutoRetry || nextRetryIndex > maxAutoRetries {
+		l.Warn("parking step for manual retry",
 			zap.String("step_id", step.ID),
+			zap.Bool("skip_auto_retry", skipAutoRetry),
 			zap.Int("max_auto_retries", maxAutoRetries),
 			zap.Int("max_retries", maxRetries),
 			zap.Int("retry_index", retryIndex))
@@ -97,7 +121,8 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 			l.Info("step is skippable, continuing workflow after exhausted retries",
 				zap.String("step_id", step.ID))
 			_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
-				"auto_retries_exhausted": true,
+				"auto_retries_exhausted": nextRetryIndex > maxAutoRetries,
+				"skip_auto_retry":        skipAutoRetry,
 				"max_auto_retries":       maxAutoRetries,
 				"max_retries":            maxRetries,
 				"retry_index":            retryIndex,
@@ -112,7 +137,8 @@ func (s *Signal) handleStepError(ctx workflow.Context, l *zap.Logger, step *app.
 		// Mark step as errored and write the await-retry directive.
 		// Execute() blocks here until the user retries or cancels.
 		_ = s.markStepFailed(ctx, step, stepErr, map[string]any{
-			"auto_retries_exhausted": true,
+			"auto_retries_exhausted": nextRetryIndex > maxAutoRetries,
+			"skip_auto_retry":        skipAutoRetry,
 			"max_auto_retries":       maxAutoRetries,
 			"max_retries":            maxRetries,
 			"retry_index":            retryIndex,
@@ -206,4 +232,21 @@ func (s *Signal) markStepFailed(ctx workflow.Context, step *app.WorkflowStep, st
 		return errors.Wrap(err, "unable to mark step as error")
 	}
 	return stepErr
+}
+
+// targetHasCompositeError reports whether a step's target type carries a
+// composite_error column that the runner-result chokepoint mirrors hints onto.
+// Only these targets are worth a GetStepErrorHints lookup.
+//
+// NOTE: Expand this as more target types gain composite_error columns.
+func targetHasCompositeError(targetType string) bool {
+	switch app.WorkflowStepTargetType(targetType) {
+	case app.WorkflowStepTargetTypeInstallDeploy,
+		app.WorkflowStepTargetTypeInstallDeploys,
+		app.WorkflowStepTargetTypeInstallSandboxRun,
+		app.WorkflowStepTargetTypeInstallSandboxRuns:
+		return true
+	default:
+		return false
+	}
 }
