@@ -552,6 +552,10 @@ type ClientService interface {
 
 	GetInstallActionsLatestRuns(params *GetInstallActionsLatestRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionsLatestRunsOK, error)
 
+	GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error)
+
+	GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error)
+
 	GetInstallAppPermissionsConfig(params *GetInstallAppPermissionsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppPermissionsConfigOK, error)
 
 	GetInstallAuditLogs(params *GetInstallAuditLogsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAuditLogsOK, error)
@@ -11096,6 +11100,98 @@ func (a *Client) GetInstallActionsLatestRuns(params *GetInstallActionsLatestRuns
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallActionsLatestRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallAppConfigVersionDiff gets the diff for an install app config version
+
+Returns the component diff for a specific app config version transition.
+*/
+func (a *Client) GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallAppConfigVersionDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallAppConfigVersionDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/app-config-versions/{version_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallAppConfigVersionDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallAppConfigVersionDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallAppConfigVersionDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallAppConfigVersions gets app config versions for an install
+
+Returns the app config version history for an install, ordered by most recent first.
+*/
+func (a *Client) GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallAppConfigVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallAppConfigVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/app-config-versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallAppConfigVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallAppConfigVersionsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallAppConfigVersions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
