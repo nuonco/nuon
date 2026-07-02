@@ -13,7 +13,6 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
@@ -167,14 +166,6 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		h.setFinished(app.StatusError, "handler terminated due to excessive workflow history")
 		h.sendCompletionCallbacks(ctx)
 		return true, nil
-	}
-
-	if !workflow.AllHandlersFinished(ctx) {
-		if _, err := workflow.AwaitWithTimeout(ctx, callback.QuickTimeout, func() bool {
-			return workflow.AllHandlersFinished(ctx)
-		}); err != nil {
-			return false, err
-		}
 	}
 
 	if mgr.Restarted {
