@@ -3,37 +3,83 @@ export default {
 }
 
 import { DeployGroupStep } from './DeployGroupStep'
+import { InstallDeployRow, type IInstallDeployRow } from './InstallDeployRow'
 
-const step = (status: string): any => ({
-  id: 'step-deploy',
-  name: 'deploy install group: production',
-  status: { status, status_human_description: 'Applying terraform' },
+const mkInstall = (over: Record<string, any> = {}): any => ({
+  id: 'ins_acme',
+  name: 'acme-prod',
+  cloud_platform: 'aws',
+  install_number: 12,
+  aws_account: { region: 'us-east-1' },
+  ...over,
 })
 
-export const InProgress = () => (
+const azureInstall = mkInstall({
+  id: 'ins_globex',
+  name: 'globex-staging',
+  cloud_platform: 'azure',
+  aws_account: undefined,
+  azure_account: { location: 'eastus' },
+})
+
+const gcpInstall = mkInstall({
+  id: 'ins_initech',
+  name: 'initech-prod',
+  cloud_platform: 'gcp',
+  aws_account: undefined,
+  gcp_account: { region: 'us-central1' },
+})
+
+const wfHref = '/org_1/installs/ins_acme/workflows/wf_1'
+const installHref = '/org_1/installs/ins_acme'
+
+// ── Single row permutations ──
+
+export const RowDeployed = () => (
+  <InstallDeployRow installId="ins_acme" install={mkInstall()} deployStatus="success" workflowHref={wfHref} installHref={installHref} />
+)
+
+export const RowInProgress = () => (
+  <InstallDeployRow installId="ins_globex" install={azureInstall} deployStatus="in-progress" workflowHref={wfHref} installHref={installHref} />
+)
+
+export const RowError = () => (
+  <InstallDeployRow installId="ins_initech" install={gcpInstall} deployStatus="error" workflowHref={wfHref} installHref={installHref} />
+)
+
+export const RowPending = () => (
+  <InstallDeployRow installId="ins_acme" install={mkInstall({ cloud_platform: undefined, aws_account: undefined })} deployStatus="pending" installHref={installHref} />
+)
+
+export const RowUnresolved = () => (
+  <InstallDeployRow installId="inlyompj5ren1oqpnvsc3xcksn" deployStatus="in-progress" workflowHref={wfHref} installHref={installHref} />
+)
+
+// ── Full group permutations ──
+
+const rows: IInstallDeployRow[] = [
+  { installId: 'ins_acme', install: mkInstall(), deployStatus: 'success', workflowHref: wfHref, installHref },
+  { installId: 'ins_globex', install: azureInstall, deployStatus: 'in-progress', workflowHref: wfHref, installHref },
+  { installId: 'ins_initech', install: gcpInstall, deployStatus: 'error', workflowHref: wfHref, installHref },
+]
+
+export const GroupMixed = () => (
+  <DeployGroupStep groupName="UAT" totalInstalls={3} deployedCount={1} rows={rows} />
+)
+
+export const GroupAllDeployed = () => (
   <DeployGroupStep
-    step={step('in-progress')}
-    metadata={{
-      current_activity: 'Applying terraform to us-east-1',
-      installs: [
-        { install_id: 'i1', install_name: 'acme-prod', status: 'success', region: 'us-east-1', version: 'v1.4.2', duration: '3m 12s' },
-        { install_id: 'i2', install_name: 'globex-prod', status: 'in-progress', region: 'us-west-2', progress: 55, activity: 'Waiting for pods' },
-        { install_id: 'i3', install_name: 'initech-prod', status: 'pending', region: 'eu-west-1' },
-      ],
-    }}
+    groupName="production"
+    totalInstalls={2}
+    deployedCount={2}
+    rows={rows.slice(0, 2).map((r) => ({ ...r, deployStatus: 'success' }))}
   />
 )
 
-export const AllDeployed = () => (
-  <DeployGroupStep
-    step={step('success')}
-    metadata={{
-      installs: [
-        { install_id: 'i1', install_name: 'acme-prod', status: 'deployed', region: 'us-east-1', version: 'v1.4.2', duration: '3m 12s' },
-        { install_id: 'i2', install_name: 'globex-prod', status: 'deployed', region: 'us-west-2', version: 'v1.4.2', duration: '2m 48s' },
-      ],
-    }}
-  />
+export const GroupSingleInstall = () => (
+  <DeployGroupStep groupName="UAT" totalInstalls={1} deployedCount={1} rows={[rows[0]]} />
 )
 
-export const Empty = () => <DeployGroupStep step={step('in-progress')} metadata={{}} />
+export const GroupDeploying = () => (
+  <DeployGroupStep groupName="UAT" totalInstalls={0} deployedCount={0} rows={[]} emptyMessage="Deploying to install group…" />
+)
