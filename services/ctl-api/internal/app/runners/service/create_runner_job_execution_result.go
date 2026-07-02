@@ -159,17 +159,53 @@ func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJ
 	return nil
 }
 
-// parseResultCompositeError parses a failed execution's untruncated error
-// message into a typed CompositeError at write time. This is the single
-// runner-driven chokepoint: every flow (builds, deploys, sandbox runs, action
-// runs, ...) reports failure here, so parsing once covers them all with no
-// per-flow wiring. The result row is strictly 1:1 with the attempt, so the
-// stored error can never go stale across retries.
+// metricCompositeErrorParse counts every failed-result parse attempt, tagged
+// with the execution tool, job group, and matched composite-error type (or
+// "miss"/"generic"). A high rate of matched_type:generic for a given tool is
+// the data-driven backlog signal for which specific parser to write next.
+const metricCompositeErrorParse = "runner.composite_error_parse"
+
+// parseResultCompositeError parses a failed result into a typed CompositeError
+// and records the parse-outcome metric. It delegates the pure parsing to
+// parseCompositeError and emits exactly one metric per failed result so parse
+// coverage is observable without any per-parser wiring.
+func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+	ce := parseCompositeError(req, runnerJob)
+	if !req.Success {
+		// Default empty facets to "unknown" so Datadog never sees a bare
+		// "tool:" tag; matched_type stays "miss" for a nil/typeless parse.
+		tool := string(runnerJobTool(runnerJob))
+		if tool == "" {
+			tool = "unknown"
+		}
+		group := string(runnerJob.Group)
+		if group == "" {
+			group = "unknown"
+		}
+		matched := "miss"
+		if ce != nil && ce.Type != "" {
+			matched = string(ce.Type)
+		}
+		s.mw.Incr(metricCompositeErrorParse, []string{
+			"tool:" + tool,
+			"group:" + group,
+			"matched_type:" + matched,
+		})
+	}
+	return ce
+}
+
+// parseCompositeError parses a failed execution's untruncated error message
+// into a typed CompositeError at write time. This is the single runner-driven
+// chokepoint: every flow (builds, deploys, sandbox runs, action runs, ...)
+// reports failure here, so parsing once covers them all with no per-flow
+// wiring. The result row is strictly 1:1 with the attempt, so the stored error
+// can never go stale across retries.
 //
 // It is best-effort: a success, a missing message, or a parse miss yields nil,
 // leaving the plain-string status description in place. Source is set to the
 // runner job's owner so a future view can join errors back to their subject.
-func parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+func parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
 	if req.Success {
 		return nil
 	}
@@ -326,7 +362,7 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		ContentsDisplayGzip:  contentsDisplayGzip,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
-		CompositeError:       parseResultCompositeError(req, runnerJob),
+		CompositeError:       s.parseResultCompositeError(req, runnerJob),
 	}
 
 	res := s.db.WithContext(ctx).Create(&result)
@@ -352,7 +388,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		Contents:             req.Contents,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
-		CompositeError:       parseResultCompositeError(req, runnerJob),
+		CompositeError:       s.parseResultCompositeError(req, runnerJob),
 	}
 
 	res := s.db.WithContext(ctx).Create(&result)
