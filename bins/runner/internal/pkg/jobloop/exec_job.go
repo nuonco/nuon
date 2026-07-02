@@ -11,10 +11,12 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sandboxhandler"
 	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	"github.com/nuonco/nuon/bins/runner/internal/pkg/errcapture"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
@@ -105,6 +107,17 @@ func (j *jobLoop) executeJob(ctx context.Context, job *models.AppRunnerJob) erro
 	// otel_log_records with an empty span_id and the dashboard's span→logs
 	// cross-link finds no matches when the user clicks the job span.
 	l = l.With(pkgctx.ContextField(ctx))
+
+	// Tee an error-capture core into the job logger so every error-level record
+	// (including terraform's structured @level:"error" diagnostics) is buffered
+	// for this execution. The API client decorator attaches the buffer to a
+	// failed result so ctl-api parses the real cause, not the thin wrapper.
+	capture := errcapture.New()
+	l = l.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
+		return zapcore.NewTee(c, capture.Core())
+	}))
+	ctx = errcapture.NewContext(ctx, capture)
+
 	ctx = pkgctx.SetLogger(ctx, l)
 	var jobErr error
 	defer func() {

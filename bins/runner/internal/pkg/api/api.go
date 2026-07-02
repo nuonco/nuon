@@ -57,5 +57,6 @@ func New(params Params) (nuonrunner.Client, error) {
 		return nil, fmt.Errorf("unable to initialize runner: %w", err)
 	}
 
-	return api, nil
+	// Decorate so failed results carry the execution's captured error output.
+	return &resultCaptureClient{Client: api}, nil
 }
