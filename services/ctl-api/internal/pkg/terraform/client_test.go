@@ -18,60 +18,61 @@ func newTestTerraformClient(url string) *TerraformClient {
 	}
 }
 
-func TestGetLatestVersion_Success(t *testing.T) {
+func TestGetLatestVersion_ReturnsPinned(t *testing.T) {
+	// GetLatestVersion is temporarily hard-coded to avoid the GitHub API's
+	// 403 rate-limiting; it must not make any HTTP call.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(GitHubRelease{TagName: "v1.9.0"})
+		t.Fatal("GetLatestVersion should not make an HTTP call while pinned")
 	}))
 	defer server.Close()
 
 	version, err := newTestTerraformClient(server.URL).GetLatestVersion()
 	require.NoError(t, err)
+	assert.Equal(t, PinnedLatestVersion, version)
+}
+
+// The tests below cover FetchVersion, which is dormant while GetLatestVersion
+// is pinned but retained so the GitHub-API path is ready to be restored.
+
+func TestFetchVersion_Success(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(GitHubRelease{TagName: "v1.9.0"})
+	}))
+	defer server.Close()
+
+	version, err := newTestTerraformClient(server.URL).FetchVersion()
+	require.NoError(t, err)
 	assert.Equal(t, "1.9.0", version)
 }
 
-func TestGetLatestVersion_StripsvPrefix(t *testing.T) {
+func TestFetchVersion_StripsvPrefix(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(GitHubRelease{TagName: "v2.0.0"})
 	}))
 	defer server.Close()
 
-	version, err := newTestTerraformClient(server.URL).GetLatestVersion()
+	version, err := newTestTerraformClient(server.URL).FetchVersion()
 	require.NoError(t, err)
 	assert.Equal(t, "2.0.0", version)
 }
 
-func TestGetLatestVersion_CachesResult(t *testing.T) {
-	calls := 0
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		calls++
-		json.NewEncoder(w).Encode(GitHubRelease{TagName: "v1.9.0"})
-	}))
-	defer server.Close()
-
-	client := newTestTerraformClient(server.URL)
-	client.GetLatestVersion()
-	client.GetLatestVersion()
-
-	assert.Equal(t, 1, calls, "expected 1 HTTP call due to caching")
-}
-
-func TestGetLatestVersion_NonOKStatus(t *testing.T) {
+func TestFetchVersion_NonOKStatus(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer server.Close()
 
-	_, err := newTestTerraformClient(server.URL).GetLatestVersion()
+	_, err := newTestTerraformClient(server.URL).FetchVersion()
 	require.Error(t, err)
 }
 
-func TestGetLatestVersion_InvalidJSON(t *testing.T) {
+func TestFetchVersion_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not json"))
 	}))
 	defer server.Close()
 
-	_, err := newTestTerraformClient(server.URL).GetLatestVersion()
+	_, err := newTestTerraformClient(server.URL).FetchVersion()
 	require.Error(t, err)
 }
 

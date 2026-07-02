@@ -30,18 +30,12 @@ func New() Client {
 	return &client
 }
 
+// PinnedLatestVersion is a temporary hard-coded stand-in for the latest Terraform release.
+const PinnedLatestVersion = "1.15.7"
+
 func (client *TerraformClient) GetLatestVersion() (string, error) {
-	if version, ok := client.cache.Get("version"); ok {
-		return version, nil
-	}
-
-	version, err := client.FetchVersion()
-	if err != nil {
-		return "", err
-	}
-
-	client.cache.Set("version", version)
-	return version, nil
+	// Temporarily bypass the GitHub API call to avoid 403s
+	return PinnedLatestVersion, nil
 }
 
 type GitHubRelease struct {
