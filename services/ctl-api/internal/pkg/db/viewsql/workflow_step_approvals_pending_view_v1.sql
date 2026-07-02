@@ -8,6 +8,7 @@ JOIN install_workflow_steps s
   AND s.deleted_at = 0
 JOIN install_workflows w
   ON w.id = s.install_workflow_id
+  AND w.org_id = a.org_id
   AND w.deleted_at = 0
   AND w.finished_at IS NULL
   AND (w.status->>'status') NOT IN ('cancelled', 'error')
