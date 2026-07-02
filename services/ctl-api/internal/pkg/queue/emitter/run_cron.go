@@ -76,8 +76,9 @@ func (e *emitterWorkflow) ensureCronTickerRunning(ctx workflow.Context, l *zap.L
 	})
 
 	req := CronTickerWorkflowRequest{
-		QueueID:   emitter.QueueID,
-		EmitterID: e.emitterID,
+		QueueID:      emitter.QueueID,
+		EmitterID:    e.emitterID,
+		JitterWindow: emitter.JitterWindow,
 	}
 
 	workflow.ExecuteChildWorkflow(childCtx, "CronTicker", req)
