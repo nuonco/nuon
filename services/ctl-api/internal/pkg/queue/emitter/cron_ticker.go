@@ -26,8 +26,9 @@ func jitterOffset(emitterID string, window time.Duration) time.Duration {
 }
 
 type CronTickerWorkflowRequest struct {
-	QueueID   string `validate:"required"`
-	EmitterID string `validate:"required"`
+	QueueID      string `validate:"required"`
+	EmitterID    string `validate:"required"`
+	JitterWindow time.Duration
 }
 
 // @temporal-gen-v2 workflow
@@ -43,6 +44,14 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		zap.String("emitter-id", req.EmitterID),
 		zap.String("queue-id", req.QueueID),
 	)
+
+	// Jitter before touching any activities so scheduling load spreads across
+	// the window instead of bursting for every emitter on the same cron tick.
+	if offset := jitterOffset(req.EmitterID, req.JitterWindow); offset > 0 {
+		if err := workflow.Sleep(ctx, offset); err != nil {
+			return err
+		}
+	}
 
 	// Fetch emitter to check status and get signal template
 	emitter, err := activities.AwaitGetEmitter(ctx, &activities.GetEmitterRequest{
@@ -76,12 +85,6 @@ func (w *Workflows) CronTicker(ctx workflow.Context, req CronTickerWorkflowReque
 		l.Info("emitter signals disabled globally, skipping emit",
 			zap.String("queue-id", req.QueueID))
 		return nil
-	}
-
-	if offset := jitterOffset(emitter.ID, emitter.JitterWindow); offset > 0 {
-		if err := workflow.Sleep(ctx, offset); err != nil {
-			return err
-		}
 	}
 
 	// Emit the signal
