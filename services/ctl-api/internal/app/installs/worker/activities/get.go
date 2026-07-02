@@ -13,7 +13,6 @@ import (
 // @temporal-gen-v2 activity
 // @as-wrapper
 // @by-field installID
-// @replica-read
 func (a *Activities) get(ctx context.Context, installID string) (*app.Install, error) {
 	return a.getInstall(ctx, installID)
 }

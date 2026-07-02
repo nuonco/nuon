@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 type UnenqueuedByType struct {
@@ -29,8 +31,12 @@ func (a *Activities) GetQueueSignalEnqueueMetrics(ctx context.Context, req GetQu
 func (a *Activities) getQueueSignalEnqueueMetrics(ctx context.Context, db *gorm.DB) (*QueueSignalEnqueueMetrics, error) {
 	var m QueueSignalEnqueueMetrics
 
-	// Count total queue signals in non-terminal queued state
+	// Count total queue signals in non-terminal queued state. Force this read
+	// onto the replica pool: it's a background metrics cron, so replica lag is
+	// irrelevant, and ForceReplica bypasses the table ACL (raw SQL has no
+	// resolvable table for the allow-list to match).
 	if res := db.WithContext(ctx).
+		Scopes(scopes.ForceReplica).
 		Raw(`SELECT count(*) FROM queue_signals WHERE deleted_at = 0`).
 		Scan(&m.TotalQueued); res.Error != nil {
 		return nil, fmt.Errorf("unable to count total queue signals: %w", res.Error)
