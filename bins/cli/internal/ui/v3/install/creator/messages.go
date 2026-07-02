@@ -8,9 +8,10 @@ import (
 )
 
 type configFetchedMsg struct {
-	inputConfig *models.AppAppInputConfig
-	app         *models.AppApp
-	err         error
+	inputConfig   *models.AppAppInputConfig
+	app           *models.AppApp
+	cloudPlatform models.AppCloudPlatform
+	err           error
 }
 
 type installCreatedMsg struct {

@@ -41,14 +41,17 @@ type model struct {
 	api nuon.Client
 
 	// top level information
-	appID string
+	appID        string
+	name         string
+	presetRegion string
 
 	width  int
 	height int
 
 	// data
-	inputConfig *models.AppAppInputConfig
-	app         *models.AppApp
+	inputConfig   *models.AppAppInputConfig
+	app           *models.AppApp
+	cloudPlatform models.AppCloudPlatform
 
 	// form state
 	inputs        []textinput.Model
@@ -80,6 +83,8 @@ func initialModel(
 	cfg *config.Config,
 	api nuon.Client,
 	appID string,
+	name string,
+	region string,
 ) model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
@@ -89,16 +94,18 @@ func initialModel(
 	vp.YPosition = 0
 
 	m := model{
-		ctx:      ctx,
-		cfg:      cfg,
-		api:      api,
-		appID:    appID,
-		viewport: vp,
-		spinner:  s,
-		help:     help.New(),
-		status:   common.StatusBarRequest{Message: "Loading app configuration..."},
-		loading:  true,
-		keys:     keys,
+		ctx:          ctx,
+		cfg:          cfg,
+		api:          api,
+		appID:        appID,
+		name:         name,
+		presetRegion: region,
+		viewport:     vp,
+		spinner:      s,
+		help:         help.New(),
+		status:       common.StatusBarRequest{Message: "Loading app configuration..."},
+		loading:      true,
+		keys:         keys,
 	}
 
 	return m
@@ -130,6 +137,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			m.inputConfig = msg.inputConfig
 			m.app = msg.app
+			m.cloudPlatform = msg.cloudPlatform
 			m.createFormInputs()
 			m.setLogMessage("Fill in the form and press Enter to create install", "info")
 		}
@@ -208,7 +216,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 
 		default:
-			if m.focusIndex == 1 {
+			if m.needsRegion() && m.focusIndex == 1 {
 				// Region field
 				if msg.String() == "left" || msg.String() == "h" {
 					m.regionIndex--
@@ -257,12 +265,14 @@ func InstallCreatorApp(
 	cfg *config.Config,
 	api nuon.Client,
 	appID string,
+	name string,
+	region string,
 ) (string, error) {
 	if !cfg.Interactive {
 		return "", errors.New("interactive terminal required for install creation; use nuon installs create --name <name> --region <region> flags")
 	}
 
-	m := initialModel(ctx, cfg, api, appID)
+	m := initialModel(ctx, cfg, api, appID, name, region)
 	p := tea.NewProgram(m)
 
 	finalModel, err := p.Run()
