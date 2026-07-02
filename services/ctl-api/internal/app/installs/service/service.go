@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/replica"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -83,7 +82,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// individual installs
 	installs := ge.Group("/v1/installs/:install_id")
 	{
-		installs.GET("", replica.OptIn(), s.GetInstall)
+		installs.GET("", s.GetInstall)
 		installs.PATCH("", s.UpdateInstall)
 		installs.DELETE("", s.DeleteInstall)
 		installs.POST("/labels", s.AddInstallLabels)
