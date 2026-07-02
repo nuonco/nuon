@@ -14,6 +14,9 @@ import (
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
 )
 
+// spread each install's action-cron emitter across this window (deterministic per-emitter offset) so schedules like */10 don't fire every install's actions on the same tick
+const actionCronJitterWindow = 150 * time.Second
+
 func (s *Signal) reconcileActionCronEmitters(
 	ctx workflow.Context,
 	l log.Logger,
@@ -56,6 +59,7 @@ func (s *Signal) reconcileActionCronEmitters(
 			Description:     fmt.Sprintf("action cron for install %s, action workflow %s", s.InstallID, iaw.ActionWorkflowID),
 			Mode:            app.QueueEmitterModeCron,
 			CronSchedule:    awc.CronTrigger.CronSchedule,
+			JitterWindow:    actionCronJitterWindow,
 			SignalExpiresIn: 15 * time.Minute,
 			SignalType:      executeactionworkflow.SignalType,
 			SignalTemplate: &executeactionworkflow.Signal{
