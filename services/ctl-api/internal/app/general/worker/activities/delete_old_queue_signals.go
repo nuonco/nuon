@@ -31,7 +31,7 @@ func (a *Activities) DeleteOldQueueSignals(ctx context.Context, req DeleteOldQue
 		return &DeleteOldQueueSignalsResponse{}, nil
 	}
 	if req.BatchSize <= 0 {
-		req.BatchSize = 50000
+		req.BatchSize = 5000
 	}
 
 	cutoff := time.Now().Add(-oldQueueSignalRetention)
