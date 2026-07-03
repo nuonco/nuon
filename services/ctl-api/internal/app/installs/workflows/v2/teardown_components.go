@@ -63,6 +63,20 @@ func teardownComponents(ctx workflow.Context, dg *genCtx, install *app.Install) 
 		steps = append(steps, step)
 	}
 
+	tdSteps, err := teardownComponentsSteps(ctx, dg, install)
+	if err != nil {
+		return nil, err
+	}
+	return append(steps, tdSteps...), nil
+}
+
+// teardownComponentsSteps generates the pre/post lifecycle actions and per-component
+// teardown steps for every component on the install, in reverse dependency order. It
+// does not generate install state — callers that need it (e.g. the standalone teardown
+// workflow) emit it before invoking this.
+func teardownComponentsSteps(ctx workflow.Context, dg *genCtx, install *app.Install) ([]*app.WorkflowStep, error) {
+	steps := make([]*app.WorkflowStep, 0)
+
 	lifecycleSteps, err := getLifecycleActionsSteps(ctx, dg, app.ActionWorkflowTriggerTypePreTeardownAllComponents)
 	if err != nil {
 		return nil, err

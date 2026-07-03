@@ -15,11 +15,12 @@ import (
 type RunbookStepType string
 
 const (
-	RunbookStepTypeComponentDeploy    RunbookStepType = "component_deploy"
-	RunbookStepTypeComponentTearDown  RunbookStepType = "component_tear_down"
-	RunbookStepTypeAction             RunbookStepType = "action"
-	RunbookStepTypeSandboxReprovision RunbookStepType = "sandbox_reprovision"
-	RunbookStepTypeSandboxDeprovision RunbookStepType = "sandbox_deprovision"
+	RunbookStepTypeComponentDeploy       RunbookStepType = "component_deploy"
+	RunbookStepTypeComponentTearDown     RunbookStepType = "component_tear_down"
+	RunbookStepTypeTearDownComponentsAll RunbookStepType = "tear_down_components_all"
+	RunbookStepTypeAction                RunbookStepType = "action"
+	RunbookStepTypeSandboxReprovision    RunbookStepType = "sandbox_reprovision"
+	RunbookStepTypeSandboxDeprovision    RunbookStepType = "sandbox_deprovision"
 
 	// RunbookStepTypeDeployLegacy is the prior name for component_deploy. Accepted
 	// as input and canonicalized to component_deploy at parse/ingress time.
@@ -94,9 +95,10 @@ func (r RunbookStepConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("deploy-database").
 		Example("run-migrations").
 		Field("type").Short("type of step").Required().
-		Long("One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down' (tear down a component), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
+		Long("One of: 'component_deploy' (deploy a component; 'deploy' is accepted as a legacy alias), 'component_tear_down' (tear down a component), 'tear_down_components_all' (tear down all components on the install, in reverse dependency order), 'action' (run an action), 'sandbox_reprovision', or 'sandbox_deprovision' (run the corresponding sandbox lifecycle plan + apply)").
 		Example("component_deploy").
 		Example("component_tear_down").
+		Example("tear_down_components_all").
 		Example("action").
 		Example("sandbox_reprovision").
 		Field("component_name").Short("component to deploy or tear down (for component steps)").

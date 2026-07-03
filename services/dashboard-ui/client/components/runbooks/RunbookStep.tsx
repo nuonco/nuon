@@ -26,7 +26,8 @@ export const RunbookStep = ({ index, step, actionBasePath }: IRunbookStep) => {
             variant={
               step.type === 'component_deploy' || step.type === 'deploy'
                 ? 'RocketIcon'
-                : step.type === 'component_tear_down'
+                : step.type === 'component_tear_down' ||
+                    step.type === 'tear_down_components_all'
                   ? 'TrashIcon'
                 : step.type === 'sandbox_reprovision' ||
                     step.type === 'sandbox_deprovision'

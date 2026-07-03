@@ -122,6 +122,13 @@ func RunRunbook(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsResu
 			}
 			steps = append(steps, tdSteps...)
 
+		case app.RunbookStepTypeTearDownComponentsAll:
+			tdAllSteps, err := runbookTearDownAllComponentsSteps(ctx, installID, sg, flw, install)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unable to generate tear-down-all step %s", stepCfg.Name)
+			}
+			steps = append(steps, tdAllSteps...)
+
 		case app.RunbookStepTypeAction:
 			actionStep, err := runbookActionStep(ctx, installID, &stepCfg, flw, sg)
 			if err != nil {
@@ -304,6 +311,21 @@ func runbookTearDownSteps(ctx workflow.Context, installID string, stepCfg *app.R
 	}
 
 	return result, nil
+}
+
+func runbookTearDownAllComponentsSteps(ctx workflow.Context, installID string, sg *stepGroup, flw *app.Workflow, install *app.Install) ([]*app.WorkflowStep, error) {
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get app config")
+	}
+
+	awData, err := activities.AwaitGetActionWorkflows(ctx, &activities.GetActionWorkflows{InstallID: installID})
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get action workflows")
+	}
+
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
+	return teardownComponentsSteps(ctx, dg, install)
 }
 
 func runbookTearDownSingleComponent(ctx workflow.Context, installID, componentID, stepName string, sg *stepGroup, flw *app.Workflow) ([]*app.WorkflowStep, error) {

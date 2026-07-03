@@ -110,6 +110,7 @@ func (s *service) CreateRunbookConfig(ctx *gin.Context) {
 		switch stepType {
 		case app.RunbookStepTypeComponentDeploy,
 			app.RunbookStepTypeComponentTearDown,
+			app.RunbookStepTypeTearDownComponentsAll,
 			app.RunbookStepTypeAction,
 			app.RunbookStepTypeSandboxReprovision,
 			app.RunbookStepTypeSandboxDeprovision:
