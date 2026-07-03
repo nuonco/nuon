@@ -70,8 +70,9 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// DB query to avoid redundant round-trips.
 	var mgrOpts []workflowmanager.Option
 	// Handler signals have explicit callbacks for completion, so the alive
-	// checker only needs to detect deletion/expiry.
-	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(5*time.Minute))
+	// checker only needs to detect deletion/expiry. A longer interval reduces
+	// local activity overhead for long-running signals.
+	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(1*time.Hour))
 
 	// don't continue-as-new mid-phase: it orphans the in-flight update and the
 	// successor run fails the signal while the work is still alive.
