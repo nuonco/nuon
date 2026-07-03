@@ -48,9 +48,13 @@ type GCPTemplateInput struct {
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
-	t, err := template.New("gcp-stack").Parse(tmpl)
+	inputsT, err := template.New("gcp-stack-inputs").Parse(inputsTmpl)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "unable to parse gcp template")
+		return nil, "", errors.Wrap(err, "unable to parse gcp inputs template")
+	}
+	secretsT, err := template.New("gcp-stack-secrets").Parse(secretsTmpl)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to parse gcp secrets template")
 	}
 
 	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPermissions(inputs.AppCfg)
@@ -98,15 +102,21 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		Secrets:                   secrets,
 	}
 
-	var buf bytes.Buffer
-	err = t.Execute(&buf, gcpInputs)
-	if err != nil {
-		return nil, "", errors.Wrap(err, "unable to execute gcp template")
+	var inputsBuf bytes.Buffer
+	if err = inputsT.Execute(&inputsBuf, gcpInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp inputs template")
+	}
+	var secretsBuf bytes.Buffer
+	if err = secretsT.Execute(&secretsBuf, gcpInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp secrets template")
 	}
 
 	// Wrap tfvars in a JSON envelope so it can be stored in the jsonb column.
 	// The raw tfvars text is HCL, not valid JSON.
-	envelope := map[string]string{"tfvars": buf.String()}
+	envelope := map[string]string{
+		"inputs_tfvars":  inputsBuf.String(),
+		"secrets_tfvars": secretsBuf.String(),
+	}
 	res, err := json.Marshal(envelope)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to marshal gcp tfvars envelope")

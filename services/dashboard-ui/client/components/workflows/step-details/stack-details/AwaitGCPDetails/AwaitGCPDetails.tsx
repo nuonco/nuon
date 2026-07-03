@@ -1,14 +1,21 @@
 import { useMemo } from 'react'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Text } from '@/components/common/Text'
+import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
-function parseTfvars(contents: unknown): string {
-  if (!contents) return ''
+interface TfvarsEnvelope {
+  inputs: string
+  secrets: string
+}
+
+function parseTfvars(contents: unknown): TfvarsEnvelope {
+  if (!contents) return { inputs: '', secrets: '' }
 
   let raw = contents
   if (typeof raw === 'string') {
@@ -18,16 +25,20 @@ function parseTfvars(contents: unknown): string {
       try {
         raw = JSON.parse(atob(raw as string))
       } catch {
-        return ''
+        return { inputs: '', secrets: '' }
       }
     }
   }
 
-  if (typeof raw === 'object' && raw !== null && 'tfvars' in raw) {
-    return String((raw as Record<string, unknown>).tfvars ?? '')
+  if (typeof raw === 'object' && raw !== null) {
+    const rec = raw as Record<string, unknown>
+    return {
+      inputs: String(rec.inputs_tfvars ?? ''),
+      secrets: String(rec.secrets_tfvars ?? ''),
+    }
   }
 
-  return ''
+  return { inputs: '', secrets: '' }
 }
 
 interface IAwaitGCPDetails extends IStackDetails {
@@ -36,7 +47,7 @@ interface IAwaitGCPDetails extends IStackDetails {
 
 export const AwaitGCPDetails = ({ stack, installId }: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
-  const tfvarsContent = useMemo(
+  const tfvars = useMemo(
     () => parseTfvars(version?.contents),
     [version?.contents]
   )
@@ -51,7 +62,7 @@ cd install-stacks/gcp`
   }
 }`
 
-  const applyCmd = `terraform init && terraform apply -var-file=install.tfvars`
+  const applyCmd = `terraform init && terraform apply`
 
   return (
     <>
@@ -98,11 +109,42 @@ cd install-stacks/gcp`
         <Card>
           <span className="flex justify-between items-center">
             <Text>
-              Save this as <code>install.tfvars</code>
+              Save this as <code>inputs.auto.tfvars</code>
             </Text>
-            <ClickToCopyButton textToCopy={tfvarsContent} />
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={tfvars.inputs} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(tfvars.inputs, 'inputs.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
           </span>
-          <Code variant="preformated">{tfvarsContent}</Code>
+          <Code variant="preformated">{tfvars.inputs}</Code>
+        </Card>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>secrets.auto.tfvars</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={tfvars.secrets} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(tfvars.secrets, 'secrets.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{tfvars.secrets}</Code>
         </Card>
       </div>
 

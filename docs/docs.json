@@ -289,6 +289,7 @@
 				"icon": "clock-rotate-left",
 				"pages": [
 					"updates/updates",
+					"updates/037-split-install-stack-tfvars",
 					"updates/036-toggleable-components",
 					"updates/035-runbooks-and-readmes",
 					"updates/034-aws-terraform-install-stack",

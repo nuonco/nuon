@@ -7,7 +7,12 @@ import { AwaitGCPDetails, AwaitGCPDetailsSkeleton } from './AwaitGCPDetails'
 const mockStack = {
   versions: [
     {
-      contents: JSON.stringify({ tfvars: 'install_id = "install-1"' }),
+      contents: JSON.stringify({
+        inputs_tfvars:
+          'nuon_install_id = "install-1"\ninstall_inputs = {\n  "cluster_name" = ""\n}\n',
+        secrets_tfvars:
+          'auto_generate_secrets = ["db_password", ]\nsecrets = {\n  "stripe_key" = {\n    description = "Your Stripe API key"\n    required    = true\n    value       = ""\n  }\n}\n',
+      }),
     },
   ],
 } as any

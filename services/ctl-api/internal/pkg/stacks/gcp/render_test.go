@@ -96,13 +96,25 @@ func testInputWithCustomRoles() *stacks.TemplateInput {
 	return inp
 }
 
-// extractTfvars parses the JSON envelope and returns the tfvars string.
+// extractTfvars parses the JSON envelope and returns the inputs tfvars string
+// (standard vars, permissions, roles, install_inputs).
 func extractTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
 	require.NoError(t, json.Unmarshal(out, &envelope))
-	tfvars, ok := envelope["tfvars"]
-	require.True(t, ok, "envelope must contain 'tfvars' key")
+	tfvars, ok := envelope["inputs_tfvars"]
+	require.True(t, ok, "envelope must contain 'inputs_tfvars' key")
+	return tfvars
+}
+
+// extractSecretsTfvars parses the JSON envelope and returns the secrets tfvars
+// string (auto_generate_secrets, secrets).
+func extractSecretsTfvars(t *testing.T, out []byte) string {
+	t.Helper()
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	tfvars, ok := envelope["secrets_tfvars"]
+	require.True(t, ok, "envelope must contain 'secrets_tfvars' key")
 	return tfvars
 }
 
@@ -317,7 +329,7 @@ func TestRenderSecrets(t *testing.T) {
 		out, _, err := Render(inp)
 		require.NoError(t, err)
 
-		tfvars := extractTfvars(t, out)
+		tfvars := extractSecretsTfvars(t, out)
 
 		// auto-gen should be in the list
 		assert.Contains(t, tfvars, `auto_generate_secrets = ["db_password", ]`)
@@ -338,7 +350,7 @@ func TestRenderSecrets(t *testing.T) {
 		out, _, err := Render(testInput())
 		require.NoError(t, err)
 
-		tfvars := extractTfvars(t, out)
+		tfvars := extractSecretsTfvars(t, out)
 
 		assert.Contains(t, tfvars, "auto_generate_secrets = []")
 		assert.Contains(t, tfvars, "secrets = {\n}")
