@@ -739,8 +739,26 @@ func (s *Signal) parkResident(ctx workflow.Context) (bool, error) {
 			return false, err
 		}
 		if !woke {
-			// Idle out: return cleanly so the queue signal completes and history
-			// stays finite; the host re-warms lazily on the next dispatch.
+			// The idle timer fired. Before closing, make sure no append-step or
+			// retry-step update handler is still running and that no step became
+			// pending. Those handlers persist their step rows before they set
+			// their wake flags, so closing on the timer alone could drop a step
+			// that is still being written. If an update is in flight or a step
+			// is pending, loop back to re-scan and run it.
+			if s.updatesInFlight > 0 {
+				continue
+			}
+			if pos, ok := s.firstPendingGroupPosition(ctx); ok {
+				s.resumeStartIdx = pos
+				return true, nil
+			}
+			// firstPendingGroupPosition yields on activities; re-check the wake
+			// flags in case an update handler started during that window.
+			if s.updatesInFlight > 0 || s.resumeRequested || s.appendRequested {
+				continue
+			}
+			// Nothing pending: return cleanly so the queue signal completes and
+			// history stays bounded. The host re-warms on the next dispatch.
 			return false, nil
 		}
 		// Woke — loop back to re-scan for a pending group.
