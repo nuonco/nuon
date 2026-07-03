@@ -50,6 +50,35 @@ func (s *FileCacheSuite) TestPutAndGet() {
 	assert.Equal(s.T(), data, got)
 }
 
+func (s *FileCacheSuite) TestHas() {
+	err := s.cache.Put("key1", []byte("data"))
+	require.NoError(s.T(), err)
+
+	assert.True(s.T(), s.cache.Has("key1"))
+	assert.False(s.T(), s.cache.Has("nonexistent"))
+}
+
+func (s *FileCacheSuite) TestHasPromotesLRU() {
+	for i := 0; i < 5; i++ {
+		err := s.cache.Put(fmt.Sprintf("key%d", i), []byte("x"))
+		require.NoError(s.T(), err)
+	}
+
+	// Promote key0 via Has, then trigger eviction with a new entry.
+	assert.True(s.T(), s.cache.Has("key0"))
+	err := s.cache.Put("key5", []byte("x"))
+	require.NoError(s.T(), err)
+
+	// key1 (now oldest) is evicted; key0 survives because Has promoted it.
+	assert.False(s.T(), s.cache.Has("key1"))
+	assert.True(s.T(), s.cache.Has("key0"))
+}
+
+func (s *FileCacheSuite) TestHasNilSafety() {
+	var nilCache *FileCache
+	assert.False(s.T(), nilCache.Has("key1"))
+}
+
 func (s *FileCacheSuite) TestGetMiss() {
 	got, ok := s.cache.Get("nonexistent")
 	assert.False(s.T(), ok)
