@@ -6,8 +6,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
-	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 )
 
 const SignalType signal.SignalType = "sync-app-config-installs"
@@ -18,7 +18,7 @@ type Signal struct {
 }
 
 var (
-	_ signal.Signal                    = (*Signal)(nil)
+	_ signal.Signal                     = (*Signal)(nil)
 	_ signal.SignalWithLifecycleContext = (*Signal)(nil)
 )
 
