@@ -7,7 +7,7 @@ import type { TAPIError } from '@/types/dashboard.types'
 import { EditLabelColorsModal } from './EditLabelColors'
 import type { IModal } from '@/components/surfaces/Modal'
 
-export const EditLabelColorsContainer = (props: IModal) => {
+export const EditLabelColorsContainer = ({ onSubmit: _, ...props }: IModal) => {
   const { org } = useOrg()
   const { app } = useApp()
   const { removeModal } = useSurfaces()
