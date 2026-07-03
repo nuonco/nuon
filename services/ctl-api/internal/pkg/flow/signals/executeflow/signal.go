@@ -61,6 +61,14 @@ type Signal struct {
 	// parked resident workflow and run a freshly-added step.
 	appendRequested bool
 
+	// updatesInFlight counts append-step and retry-step update handlers that
+	// are currently executing. Those handlers persist their step rows before
+	// they set appendRequested/resumeRequested, so a resident host that idles
+	// out on its timer alone could close while a step is still being written
+	// and orphan it until the next dispatch re-warms the host. parkResident
+	// will not idle out while this counter is non-zero.
+	updatesInFlight int
+
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
 

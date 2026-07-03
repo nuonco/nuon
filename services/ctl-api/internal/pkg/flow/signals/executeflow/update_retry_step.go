@@ -29,6 +29,9 @@ type RetryStepResponse struct {
 //
 // Flow: API → flow (here) → group → step → directive → group clones
 func (s *Signal) retryStepHandler(ctx workflow.Context, req RetryStepRequest) (*RetryStepResponse, error) {
+	s.updatesInFlight++
+	defer func() { s.updatesInFlight-- }()
+
 	step, err := workflowactivities.AwaitPkgWorkflowsFlowGetFlowsStepByFlowStepID(ctx, req.StepID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to get step %s: %w", req.StepID, err)
