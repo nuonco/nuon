@@ -1,6 +1,7 @@
 package gcp
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 	"testing"
@@ -355,6 +356,62 @@ func TestRenderSecrets(t *testing.T) {
 		assert.Contains(t, tfvars, "auto_generate_secrets = []")
 		assert.Contains(t, tfvars, "secrets = {\n}")
 	})
+}
+
+func extractEnvelopeKey(t *testing.T, out []byte, key string) string {
+	t.Helper()
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	val, ok := envelope[key]
+	require.True(t, ok, "envelope must contain %q key", key)
+	return val
+}
+
+func TestRenderSpaceliftArtifacts(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+		Secrets: []app.AppSecretConfig{
+			{Name: "stripe_key", Description: "Your Stripe API key", Required: true},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	inputsTfvars := extractTfvars(t, out)
+	secretsTfvars := extractSecretsTfvars(t, out)
+
+	adminTF := extractEnvelopeKey(t, out, "spacelift_admin_tf")
+	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
+
+	require.NotEmpty(t, adminTF)
+	require.NotEmpty(t, blueprint)
+
+	for _, artifact := range []string{adminTF, blueprint} {
+		assert.Contains(t, artifact, inp.Install.ID)
+		assert.Contains(t, artifact, "install-stacks")
+	}
+
+	assert.Contains(t, adminTF, "spacelift_stack")
+	assert.Contains(t, adminTF, `project_root      = "gcp"`)
+	assert.Contains(t, adminTF, `relative_path = "source/gcp/inputs.auto.tfvars"`)
+	assert.Contains(t, adminTF, `relative_path = "source/gcp/secrets.auto.tfvars"`)
+	assert.Contains(t, adminTF, `write_only    = false`, "inputs mounted file should be plain")
+	assert.Contains(t, adminTF, `write_only    = true`, "secrets mounted file should be secret")
+
+	assert.Contains(t, blueprint, "project_root: gcp")
+	assert.Contains(t, blueprint, "vendor:")
+
+	inputsB64 := base64.StdEncoding.EncodeToString([]byte(inputsTfvars))
+	secretsB64 := base64.StdEncoding.EncodeToString([]byte(secretsTfvars))
+	assert.Contains(t, adminTF, inputsB64, "admin tf should mount the rendered inputs tfvars")
+	assert.Contains(t, adminTF, secretsB64, "admin tf should mount the rendered secrets tfvars")
+	assert.Contains(t, blueprint, inputsB64, "blueprint should mount the rendered inputs tfvars")
+	assert.Contains(t, blueprint, secretsB64, "blueprint should mount the rendered secrets tfvars")
+
+	decoded, err := base64.StdEncoding.DecodeString(inputsB64)
+	require.NoError(t, err)
+	assert.Equal(t, inputsTfvars, string(decoded))
 }
 
 func TestRenderPredefinedRoleValues(t *testing.T) {

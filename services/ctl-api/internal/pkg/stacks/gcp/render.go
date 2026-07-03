@@ -111,11 +111,22 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", errors.Wrap(err, "unable to execute gcp secrets template")
 	}
 
+	adminTF, err := renderSpaceliftAdminTF(inputsBuf.String(), secretsBuf.String(), inputs.Install.ID)
+	if err != nil {
+		return nil, "", err
+	}
+	blueprintYAML, err := renderSpaceliftBlueprint(inputsBuf.String(), secretsBuf.String(), inputs.Install.ID)
+	if err != nil {
+		return nil, "", err
+	}
+
 	// Wrap tfvars in a JSON envelope so it can be stored in the jsonb column.
 	// The raw tfvars text is HCL, not valid JSON.
 	envelope := map[string]string{
-		"inputs_tfvars":  inputsBuf.String(),
-		"secrets_tfvars": secretsBuf.String(),
+		"inputs_tfvars":            inputsBuf.String(),
+		"secrets_tfvars":           secretsBuf.String(),
+		"spacelift_admin_tf":       adminTF,
+		"spacelift_blueprint_yaml": blueprintYAML,
 	}
 	res, err := json.Marshal(envelope)
 	if err != nil {
