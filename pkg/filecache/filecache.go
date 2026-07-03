@@ -155,6 +155,26 @@ func (c *FileCache) Get(id string) ([]byte, bool) {
 	return data, true
 }
 
+// Has reports whether an entry is currently tracked and promotes it to most
+// recently used. It does not read the file from disk, so it is cheaper than Get
+// when only presence matters. A tracked entry implies the data was previously
+// written to durable storage, so callers can safely skip re-uploading.
+// Nil-safe: calling Has on a nil *FileCache returns false.
+func (c *FileCache) Has(id string) bool {
+	if c == nil {
+		return false
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	entry, ok := c.entries[id]
+	if ok {
+		c.order.MoveToFront(entry.element)
+	}
+	return ok
+}
+
 // Len returns the number of entries currently in the cache.
 // Nil-safe: calling Len on a nil *FileCache returns 0.
 func (c *FileCache) Len() int {
