@@ -19,10 +19,17 @@ const (
 	// A cold resident host registers its append-step update handler only after
 	// the queue Handler workflow boots and runs RegisterUpdateHandlers. An
 	// append issued in that window is rejected with an untyped "unknown update"
-	// error; retry briefly until the handler is live. Subsequent appends to a
-	// warm host land on the first attempt.
-	appendStepMaxAttempts = 15
-	appendStepRetryDelay  = 200 * time.Millisecond
+	// error; retry until the handler is live. Subsequent appends to a warm host
+	// land on the first attempt.
+	//
+	// Retries use exponential backoff from appendStepInitialDelay, doubling each
+	// attempt up to appendStepMaxDelay. This stays responsive for the common
+	// warm/quick-boot case while spreading out the tail for a slow cold boot
+	// (workflow closed -> fresh Handler boot -> RegisterUpdateHandlers). The
+	// attempt count is sized so the cumulative wait is ~30s.
+	appendStepMaxAttempts  = 15
+	appendStepInitialDelay = 50 * time.Millisecond
+	appendStepMaxDelay     = 5 * time.Second
 )
 
 // AppendStepRequest is the input for appending a step to a resident workflow.
@@ -65,6 +72,7 @@ func (c *Client) AppendStep(ctx context.Context, req *AppendStepRequest) (*Appen
 	}
 
 	var lastErr error
+	delay := appendStepInitialDelay
 	for attempt := 1; attempt <= appendStepMaxAttempts; attempt++ {
 		resp, err := c.appendStepOnce(ctx, qs, req)
 		if err == nil {
@@ -79,16 +87,28 @@ func (c *Client) AppendStep(ctx context.Context, req *AppendStepRequest) (*Appen
 			break
 		}
 
-		timer := time.NewTimer(appendStepRetryDelay)
+		timer := time.NewTimer(delay)
 		select {
 		case <-ctx.Done():
 			timer.Stop()
 			return nil, fmt.Errorf("append-step retry interrupted: %w", ctx.Err())
 		case <-timer.C:
 		}
+
+		delay = nextAppendStepDelay(delay)
 	}
 
 	return nil, fmt.Errorf("append-step handler not registered after %d attempts: %w", appendStepMaxAttempts, lastErr)
+}
+
+// nextAppendStepDelay doubles the current cold-host retry delay, capping it at
+// appendStepMaxDelay so the backoff tail stays bounded.
+func nextAppendStepDelay(delay time.Duration) time.Duration {
+	delay *= 2
+	if delay > appendStepMaxDelay {
+		return appendStepMaxDelay
+	}
+	return delay
 }
 
 // appendStepOnce issues a single update-with-start. The start operation uses
