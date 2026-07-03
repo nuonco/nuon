@@ -48,7 +48,6 @@ func (a *Activities) logRunnerJob(ctx context.Context, job app.RunnerJob, status
 		zap.String("flow_event", "runner_job."+string(status)),
 		zap.String("runner_job_id", job.ID),
 		zap.String("workflow_id", job.FlowWorkflowID()),
-		zap.String("step_id", job.FlowStepID()),
 		zap.String("install_id", job.FlowInstallID()),
 		zap.String("owner_id", job.OwnerID),
 		zap.String("owner_type", job.OwnerType),

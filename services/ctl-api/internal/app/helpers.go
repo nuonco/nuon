@@ -31,11 +31,6 @@ func flowWorkflowIDFromContext(ctx context.Context) string {
 	return s
 }
 
-func flowStepIDFromContext(ctx context.Context) string {
-	s, _ := ctx.Value(keys.FlowStepIDCtxKey).(string)
-	return s
-}
-
 func flowInstallIDFromContext(ctx context.Context) string {
 	s, _ := ctx.Value(keys.FlowInstallIDCtxKey).(string)
 	return s

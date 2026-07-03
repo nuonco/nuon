@@ -29,7 +29,6 @@ const (
 	PatcherCtxKey         string = "patcher"
 	TraceIDCtxKey         string = "trace_id"
 	FlowWorkflowIDCtxKey  string = "flow_workflow_id"
-	FlowStepIDCtxKey      string = "flow_step_id"
 	FlowInstallIDCtxKey   string = "flow_install_id"
 )
 

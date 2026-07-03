@@ -10,7 +10,6 @@ import (
 	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/queuecctx"
@@ -220,28 +219,6 @@ func (h *handler) runSignalExecute(ctx workflow.Context) (retErr error) {
 	sig, err := h.checkSandboxMode(ctx)
 	if err != nil {
 		return errors.Wrap(err, "unable to check sandbox mode")
-	}
-
-	// Seed the flow identity onto the exec context per signal: the queue-signal
-	// handler starts fresh, so runner jobs created during execution can only
-	// inherit workflow/install ids for telemetry if re-seeded here.
-	if lc, ok := sig.(signal.SignalWithLifecycleContext); ok {
-		lcx := lc.LifecycleContext()
-		if lcx.WorkflowID != "" {
-			ctx = cctx.SetFlowWorkflowIDWorkflowContext(ctx, lcx.WorkflowID)
-		}
-		if lcx.StepID != "" {
-			ctx = cctx.SetFlowStepIDWorkflowContext(ctx, lcx.StepID)
-		}
-		installID := ""
-		if lcx.InstallID != nil {
-			installID = *lcx.InstallID
-		} else if lcx.OwnerType == "installs" {
-			installID = lcx.OwnerID
-		}
-		if installID != "" {
-			ctx = cctx.SetFlowInstallIDWorkflowContext(ctx, installID)
-		}
 	}
 
 	return sig.Execute(ctx)

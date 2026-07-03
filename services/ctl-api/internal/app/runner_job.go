@@ -403,7 +403,6 @@ func (r *RunnerJob) stampFlowMetadata(ctx context.Context) {
 		r.Metadata[k] = &val
 	}
 	set("flow_workflow_id", flowWorkflowIDFromContext(ctx))
-	set("flow_step_id", flowStepIDFromContext(ctx))
 	set("flow_install_id", flowInstallIDFromContext(ctx))
 }
 
@@ -418,7 +417,6 @@ func (r *RunnerJob) metaValue(k string) string {
 }
 
 func (r *RunnerJob) FlowWorkflowID() string { return r.metaValue("flow_workflow_id") }
-func (r *RunnerJob) FlowStepID() string     { return r.metaValue("flow_step_id") }
 func (r *RunnerJob) FlowInstallID() string  { return r.metaValue("flow_install_id") }
 
 func (r *RunnerJob) AfterQuery(tx *gorm.DB) error {
