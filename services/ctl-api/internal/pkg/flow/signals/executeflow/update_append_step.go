@@ -50,6 +50,9 @@ type AppendStepResponse struct {
 // group position runs only the appended step; isWorkflowComplete() then sees all
 // steps terminal again and the loop re-parks.
 func (s *Signal) appendStepHandler(ctx workflow.Context, req AppendStepRequest) (*AppendStepResponse, error) {
+	s.updatesInFlight++
+	defer func() { s.updatesInFlight-- }()
+
 	if !s.Resident {
 		return nil, fmt.Errorf("append-step is only valid on a resident workflow")
 	}
