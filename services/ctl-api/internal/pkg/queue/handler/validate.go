@@ -23,9 +23,14 @@ type ValidateResponse struct{}
 func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *ValidateResponse, retErr error) {
 	l, _ := log.WorkflowLogger(ctx)
 	h.validating = true
-	defer func() {
-		h.validating = false
 
+	// Apply the terminal status only after the completion callback has been
+	// sent. Setting h.finished earlier lets run() complete the workflow and
+	// abandon the in-flight callback activity, which drops the callback the
+	// dispatcher is waiting on and wedges the queue.
+	var finStatus app.Status
+	var finDesc string
+	defer func() {
 		status := "success"
 		desc := ""
 		if retErr != nil {
@@ -33,17 +38,21 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 			desc = retErr.Error()
 		}
 		callback.Send(ctx, l, cb, callback.Result{Status: status, StatusDescription: desc})
+		if finStatus != "" {
+			h.setFinished(finStatus, finDesc)
+		}
+		h.validating = false
 	}()
 
 	if err := workflow.Await(ctx, func() bool {
 		return h.ready
 	}); err != nil {
-		h.setFinished(app.StatusError, err.Error())
+		finStatus, finDesc = app.StatusError, err.Error()
 		return nil, errors.Wrap(err, "unable to await for ready")
 	}
 
 	if h.sig == nil {
-		h.setFinished(app.StatusError, "signal was empty can not proceed")
+		finStatus, finDesc = app.StatusError, "signal was empty can not proceed"
 		return nil, errors.New("signal was empty can not proceed")
 	}
 
@@ -72,7 +81,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		h.setFinished(app.StatusError, blockedErr.Error())
+		finStatus, finDesc = app.StatusError, blockedErr.Error()
 		return nil, blockedErr
 	}
 
@@ -95,7 +104,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 					"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
-			h.setFinished(app.StatusError, panicErr.Error())
+			finStatus, finDesc = app.StatusError, panicErr.Error()
 			return nil, panicErr
 		}
 
@@ -109,7 +118,7 @@ func (h *handler) validateHandler(ctx workflow.Context, cb callback.Ref) (resp *
 				"validate_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		h.setFinished(app.StatusError, humanDesc)
+		finStatus, finDesc = app.StatusError, humanDesc
 		return nil, temporal.NewNonRetryableApplicationError(
 			"signal failure",
 			humanDesc,
