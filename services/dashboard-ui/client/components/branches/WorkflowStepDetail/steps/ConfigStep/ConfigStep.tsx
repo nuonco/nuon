@@ -7,14 +7,25 @@ type DiffSummary = { added?: number; removed?: number; changed?: number }
 interface IConfigStep {
   appConfigId?: string
   status?: string
+  statusDescription?: string
   sections: DiffSectionData[]
   summary: DiffSummary | null
   diffResolved: boolean
   metadata: Record<string, any>
 }
 
-export const ConfigStep = ({ appConfigId, status, sections, summary, diffResolved, metadata }: IConfigStep) => {
+export const ConfigStep = ({ appConfigId, status, statusDescription, sections, summary, diffResolved, metadata }: IConfigStep) => {
   if (!appConfigId) {
+    if (status === 'error') {
+      return (
+        <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800/50">
+          <Text variant="subtext" theme="error">
+            {statusDescription || 'Configuration sync failed'}
+          </Text>
+        </div>
+      )
+    }
+
     return (
       <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
         <Text variant="subtext" theme="neutral">

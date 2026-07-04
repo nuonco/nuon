@@ -18,7 +18,7 @@ export const ActionsTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
@@ -48,7 +48,7 @@ export const ActionsTableContainer = ({
 
   return (
     <ActionsTable
-      data={parseActionsToTableData(result?.data ?? [], org.id, app.id)}
+      data={parseActionsToTableData(result?.data ?? [], org.id, app.id, labelColors)}
       isLoading={isLoading}
       filterActions={
         <div className="flex items-center gap-4 flex-wrap">

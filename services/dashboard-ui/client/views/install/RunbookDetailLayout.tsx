@@ -130,7 +130,7 @@ export const RunbookDetailLayout = () => {
                     {Object.keys(runbook.labels)
                       .sort()
                       .map((k) => (
-                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" />
+                        <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={install?.app?.label_colors?.[k]} />
                       ))}
                   </span>
                 ) : null}

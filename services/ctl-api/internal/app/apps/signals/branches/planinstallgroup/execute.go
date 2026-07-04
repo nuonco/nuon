@@ -13,14 +13,13 @@ import (
 )
 
 type installPlanEntry struct {
-	InstallID             string                 `json:"install_id"`
-	InstallName           string                 `json:"install_name,omitempty"`
-	InstallLabels         map[string]string      `json:"install_labels,omitempty"`
-	Status                string                 `json:"status"`
-	InstallConfigUpdateID string                 `json:"install_config_update_id,omitempty"`
-	Diff                  *app.InstallConfigDiff `json:"diff,omitempty"`
-	OldAppConfigID        string                 `json:"old_app_config_id,omitempty"`
-	NewAppConfigID        string                 `json:"new_app_config_id,omitempty"`
+	InstallID      string                 `json:"install_id"`
+	InstallName    string                 `json:"install_name,omitempty"`
+	InstallLabels  map[string]string      `json:"install_labels,omitempty"`
+	Status         string                 `json:"status"`
+	Diff           *app.InstallConfigDiff `json:"diff,omitempty"`
+	OldAppConfigID string                 `json:"old_app_config_id,omitempty"`
+	NewAppConfigID string                 `json:"new_app_config_id,omitempty"`
 }
 
 type installGroupPlan struct {
@@ -59,24 +58,28 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		entries[i].Status = "computing"
 		s.updatePlanMetadata(ctx, groupName, entries)
 
-		result, err := activities.AwaitCreateInstallConfigUpdate(ctx, &activities.CreateInstallConfigUpdateInput{
-			InstallID:      installID,
+		install, err := activities.AwaitGetInstallByInstallID(ctx, installID)
+		if err != nil {
+			entries[i].Status = "error"
+			s.updatePlanMetadata(ctx, groupName, entries)
+			return fmt.Errorf("install %s: unable to get install: %w", installID, err)
+		}
+
+		diffResult, err := activities.AwaitComputeInstallConfigDiff(ctx, &activities.ComputeInstallConfigDiffInput{
+			OldAppConfigID: install.AppConfigID,
 			NewAppConfigID: run.AppConfigID,
-			AppBranchRunID: s.RunID,
-			InstallGroupID: s.InstallGroupID,
 		})
 		if err != nil {
 			entries[i].Status = "error"
 			s.updatePlanMetadata(ctx, groupName, entries)
-			return fmt.Errorf("install %s: unable to create config update: %w", installID, err)
+			return fmt.Errorf("install %s: unable to compute config diff: %w", installID, err)
 		}
 
-		entries[i].InstallConfigUpdateID = result.InstallConfigUpdateID
-		entries[i].Diff = result.Diff
-		entries[i].InstallName = result.InstallName
-		entries[i].InstallLabels = result.InstallLabels
-		entries[i].OldAppConfigID = result.OldAppConfigID
-		entries[i].NewAppConfigID = result.NewAppConfigID
+		entries[i].Diff = diffResult.Diff
+		entries[i].InstallName = install.Name
+		entries[i].InstallLabels = install.Labels
+		entries[i].OldAppConfigID = install.AppConfigID
+		entries[i].NewAppConfigID = run.AppConfigID
 
 		entries[i].Status = "success"
 		s.updatePlanMetadata(ctx, groupName, entries)
@@ -171,9 +174,6 @@ func (s *Signal) updatePlanMetadata(ctx workflow.Context, groupName string, entr
 		}
 		if e.InstallName != "" {
 			entry["install_name"] = e.InstallName
-		}
-		if e.InstallConfigUpdateID != "" {
-			entry["install_config_update_id"] = e.InstallConfigUpdateID
 		}
 		if e.Diff != nil {
 			entry["added"] = len(e.Diff.Added)

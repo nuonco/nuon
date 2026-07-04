@@ -907,6 +907,60 @@ func plainAppConfigSyncedHeadline(e Event) string {
 	return text
 }
 
+func BuildUpdateAppConfigMessage(e Event) Message {
+	blocks := []slack.Block{headerBlock(updateAppConfigHeaderText(e))}
+	if fields := updateAppConfigFields(e); len(fields) > 0 {
+		blocks = append(blocks, slack.NewDividerBlock(), fieldsSection(fields))
+	}
+	if actions, ok := actionsBlock(updateAppConfigLinks(e)); ok {
+		blocks = append(blocks, actions)
+	}
+	return Message{Text: plainUpdateAppConfigHeadline(e), Blocks: blocks}
+}
+
+func updateAppConfigHeaderText(e Event) string {
+	text := "🔄 Install config updated"
+	if name := metadataString(e, "install_name"); name != "" {
+		text = text + " · " + name
+	}
+	return text
+}
+
+func updateAppConfigFields(e Event) []kv {
+	var fields []kv
+	if name := metadataString(e, "install_name"); name != "" {
+		fields = append(fields, kv{"Install", slackEscape(name)})
+	}
+	if source := metadataString(e, "source"); source != "" {
+		fields = append(fields, kv{"Source", slackEscape(source)})
+	}
+	if name := orgName(e); name != "" {
+		fields = append(fields, kv{"Org", slackEscape(name)})
+	}
+	return fields
+}
+
+func updateAppConfigLinks(e Event) []LinkChip {
+	if e.Links == nil {
+		return nil
+	}
+	if l := firstNonEmptyLink(e.Links,
+		func(l *ContextLinks) string { return l.Install },
+		func(l *ContextLinks) string { return l.Org },
+	); l != "" {
+		return []LinkChip{{Label: "Open in Nuon", URL: l}}
+	}
+	return nil
+}
+
+func plainUpdateAppConfigHeadline(e Event) string {
+	text := "🔄 Install config updated"
+	if name := metadataString(e, "install_name"); name != "" {
+		text = text + " — " + name
+	}
+	return text
+}
+
 func metadataString(e Event, key string) string {
 	if e.Metadata == nil {
 		return ""

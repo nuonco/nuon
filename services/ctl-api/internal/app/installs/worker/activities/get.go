@@ -14,10 +14,6 @@ import (
 // @as-wrapper
 // @by-field installID
 func (a *Activities) get(ctx context.Context, installID string) (*app.Install, error) {
-	return a.getInstall(ctx, installID)
-}
-
-func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		Preload("CreatedBy").
@@ -63,4 +59,8 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 	}
 
 	return &install, nil
+}
+
+func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+	return a.get(ctx, installID)
 }

@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AppInstallConfigUpdate app install config update
+// AppInstallAppConfigVersion app install app config version
 //
-// swagger:model app.InstallConfigUpdate
-type AppInstallConfigUpdate struct {
+// swagger:model app.InstallAppConfigVersion
+type AppInstallAppConfigVersion struct {
 
 	// app branch run id
 	AppBranchRunID string `json:"app_branch_run_id,omitempty"`
@@ -28,10 +28,8 @@ type AppInstallConfigUpdate struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
-	// Diff stores the serialized config diff result.
-	Diff struct {
-		BlobstoreBlob
-	} `json:"diff,omitempty"`
+	// diff
+	Diff BlobstoreBlob `json:"diff,omitempty"`
 
 	// id
 	ID string `json:"id,omitempty"`
@@ -41,6 +39,9 @@ type AppInstallConfigUpdate struct {
 
 	// install id
 	InstallID string `json:"install_id,omitempty"`
+
+	// metadata
+	Metadata map[string]string `json:"metadata,omitempty"`
 
 	// new app config id
 	NewAppConfigID string `json:"new_app_config_id,omitempty"`
@@ -60,17 +61,13 @@ type AppInstallConfigUpdate struct {
 	// workflow
 	Workflow *AppWorkflow `json:"workflow,omitempty"`
 
-	// WorkflowID links to the install workflow that performs the actual diff and deploy.
+	// workflow id
 	WorkflowID string `json:"workflow_id,omitempty"`
 }
 
-// Validate validates this app install config update
-func (m *AppInstallConfigUpdate) Validate(formats strfmt.Registry) error {
+// Validate validates this app install app config version
+func (m *AppInstallAppConfigVersion) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateDiff(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
@@ -86,15 +83,7 @@ func (m *AppInstallConfigUpdate) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppInstallConfigUpdate) validateDiff(formats strfmt.Registry) error {
-	if swag.IsZero(m.Diff) { // not required
-		return nil
-	}
-
-	return nil
-}
-
-func (m *AppInstallConfigUpdate) validateStatus(formats strfmt.Registry) error {
+func (m *AppInstallAppConfigVersion) validateStatus(formats strfmt.Registry) error {
 	if swag.IsZero(m.Status) { // not required
 		return nil
 	}
@@ -117,7 +106,7 @@ func (m *AppInstallConfigUpdate) validateStatus(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AppInstallConfigUpdate) validateWorkflow(formats strfmt.Registry) error {
+func (m *AppInstallAppConfigVersion) validateWorkflow(formats strfmt.Registry) error {
 	if swag.IsZero(m.Workflow) { // not required
 		return nil
 	}
@@ -140,8 +129,8 @@ func (m *AppInstallConfigUpdate) validateWorkflow(formats strfmt.Registry) error
 	return nil
 }
 
-// ContextValidate validate this app install config update based on the context it is used
-func (m *AppInstallConfigUpdate) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validate this app install app config version based on the context it is used
+func (m *AppInstallAppConfigVersion) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.contextValidateStatus(ctx, formats); err != nil {
@@ -158,7 +147,7 @@ func (m *AppInstallConfigUpdate) ContextValidate(ctx context.Context, formats st
 	return nil
 }
 
-func (m *AppInstallConfigUpdate) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppInstallAppConfigVersion) contextValidateStatus(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Status != nil {
 
@@ -183,7 +172,7 @@ func (m *AppInstallConfigUpdate) contextValidateStatus(ctx context.Context, form
 	return nil
 }
 
-func (m *AppInstallConfigUpdate) contextValidateWorkflow(ctx context.Context, formats strfmt.Registry) error {
+func (m *AppInstallAppConfigVersion) contextValidateWorkflow(ctx context.Context, formats strfmt.Registry) error {
 
 	if m.Workflow != nil {
 
@@ -209,7 +198,7 @@ func (m *AppInstallConfigUpdate) contextValidateWorkflow(ctx context.Context, fo
 }
 
 // MarshalBinary interface implementation
-func (m *AppInstallConfigUpdate) MarshalBinary() ([]byte, error) {
+func (m *AppInstallAppConfigVersion) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -217,8 +206,8 @@ func (m *AppInstallConfigUpdate) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *AppInstallConfigUpdate) UnmarshalBinary(b []byte) error {
-	var res AppInstallConfigUpdate
+func (m *AppInstallAppConfigVersion) UnmarshalBinary(b []byte) error {
+	var res AppInstallAppConfigVersion
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

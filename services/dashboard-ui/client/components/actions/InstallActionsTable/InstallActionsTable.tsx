@@ -28,7 +28,8 @@ export type InstallActionRow = {
 export function parseInstallActionsLatestRunsToTableData(
   actionsWithRuns: TInstallAction[],
   orgId: string,
-  installId: string
+  installId: string,
+  labelColors?: Record<string, string>
 ): InstallActionRow[] {
   return actionsWithRuns.map((actionWithRuns) => {
     const basePath = `/${orgId}/installs/${installId}`
@@ -87,7 +88,7 @@ export function parseInstallActionsLatestRunsToTableData(
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" />
+                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
               ))}
           </span>
         )

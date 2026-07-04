@@ -20,6 +20,7 @@ const PolicyAnalytics = lazy(() =>
   import('./PolicyAnalytics').then((m) => ({ default: m.PolicyAnalytics }))
 )
 import { Installs } from './Installs'
+import { Labels } from './Labels'
 import { Readme } from './Readme'
 import { Sandbox } from './Sandbox'
 import { SandboxBuildDetail } from './SandboxBuildDetail'
@@ -102,6 +103,7 @@ export const appRoutes: RouteObject[] = [
         element: <SandboxBuildDetail />,
       },
       { path: ':orgId/apps/:appId/installs', element: <Installs /> },
+      { path: ':orgId/apps/:appId/labels', element: <Labels /> },
       { path: ':orgId/apps/:appId/readme', element: <Readme /> },
     ],
   },

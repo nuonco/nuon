@@ -29,7 +29,8 @@ export type TInstallRunbookRow = {
 export function parseInstallRunbooksToTableData(
   runbooks: TInstallRunbook[],
   orgId: string,
-  installId: string
+  installId: string,
+  labelColors?: Record<string, string>
 ): TInstallRunbookRow[] {
   return runbooks.map((ir) => {
     const basePath = `/${orgId}/installs/${installId}`
@@ -52,7 +53,7 @@ export function parseInstallRunbooksToTableData(
             {Object.keys(runbook.labels)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" />
+                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
               ))}
           </span>
         ) : (

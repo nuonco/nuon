@@ -80,7 +80,8 @@ const (
 	// the install's runner via a long-lived, warm per-notebook Temporal
 	// workflow. Gates all `/v1/installs/:id/notebooks` endpoints and the
 	// dashboard notebooks UI.
-	OrgFeatureNotebooks OrgFeature = "notebooks"
+	OrgFeatureNotebooks  OrgFeature = "notebooks"
+	OrgFeatureVersionsUI OrgFeature = "enable-versions-ui"
 )
 
 type Org struct {
@@ -252,6 +253,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureLogTailLongPoll,
 		OrgFeatureRunnerJobLongPoll,
 		OrgFeatureNotebooks,
+		OrgFeatureVersionsUI,
 	}
 }
 
@@ -286,6 +288,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureLogTailLongPoll:         "Enable the long-poll log-tail endpoint (`/v1/log-streams/:id/logs/tail`) — the dashboard BFF probes it for near-real-time log streaming and falls back to legacy 1s polling when off",
 		OrgFeatureRunnerJobLongPoll:       "Switch the runner from a 5s idle-poll loop to a long-poll endpoint (`/v1/runners/:id/jobs/tail`) so job pickup is sub-second. Surfaced via runner settings; runners pick it up on the next process restart.",
 		OrgFeatureNotebooks:               "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
+		OrgFeatureVersionsUI:              "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
 	}
 }
 

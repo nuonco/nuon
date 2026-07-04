@@ -16,6 +16,8 @@ type MetadataConfig struct {
 	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
 	// Readme for the app
 	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty"`
+	// Color codes for label keys, keyed by label key name
+	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
 }
 
 func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
@@ -36,5 +38,8 @@ func (m MetadataConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Example("https://hooks.slack.com/services/YOUR/WEBHOOK/URL").
 		Field("readme").Short("README content").
 		Long("Markdown content displayed as README documentation for the application").
-		Example("./README.md")
+		Example("./README.md").
+		Field("label_colors").Short("label key color codes").
+		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
+		Example(`{"env": "#FF5733", "region": "#33FF57"}`)
 }

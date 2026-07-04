@@ -22,7 +22,8 @@ export type TActionRow = {
 export function parseActionsToTableData(
   actions: TAction[],
   orgId: string,
-  appId: string
+  appId: string,
+  labelColors?: Record<string, string>
 ): TActionRow[] {
   return actions.map((action) => {
     const basePath = `/${orgId}/apps/${appId}`
@@ -54,7 +55,7 @@ export function parseActionsToTableData(
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" />
+                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
               ))}
           </span>
         )

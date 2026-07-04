@@ -56,7 +56,7 @@ func AllModels() []any {
 		&app.AppBranchInstallGroup{},
 		&app.AppBranchRun{},
 		&app.InstallGroupRun{},
-		&app.InstallConfigUpdate{},
+		&app.InstallAppConfigVersion{},
 		&app.AppSandboxConfig{},
 		&app.AppSandboxBuild{},
 		&app.AppRunnerConfig{},
@@ -191,6 +191,9 @@ func AllModels() []any {
 
 		// drifts
 		&app.DriftedObject{},
+
+		// app label keys (query-only view)
+		&app.AppLabelKey{},
 
 		// waitlist
 		&app.Waitlist{},

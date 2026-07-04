@@ -73,7 +73,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("app branch has no VCS config")
 	}
 
-	cloneResult, err := activities.AwaitCloneRepo(ctx, activities.CloneRepoRequest{
+	cloneResult, err := activities.LocalAwaitCloneRepo(ctx, activities.CloneRepoRequest{
 		RunID:       s.RunID,
 		VcsConfigID: vcsConfigID,
 		CommitSHA:   commitSHA,
@@ -90,7 +90,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		"commit_sha", commitSHA,
 		"source_dir", sourceDir)
 
-	intermediateConfig, err := activities.AwaitFetchIntermediateConfig(ctx, activities.FetchIntermediateConfigRequest{
+	intermediateConfig, err := activities.LocalAwaitFetchIntermediateConfig(ctx, activities.FetchIntermediateConfigRequest{
 		SourceDir: sourceDir,
 	})
 	if err != nil {

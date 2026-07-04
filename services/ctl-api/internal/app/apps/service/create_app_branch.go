@@ -13,7 +13,8 @@ import (
 )
 
 type CreateAppBranchRequest struct {
-	Name string `json:"name" validate:"required,min=1"`
+	Name      string `json:"name" validate:"required,min=1"`
+	ManagedBy string `json:"managed_by,omitempty"`
 }
 
 func (c *CreateAppBranchRequest) Validate(v *validator.Validate) error {
@@ -60,8 +61,12 @@ func (s *service) CreateAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	// Create app branch (VCS config is set via AppBranchConfig, not at branch creation time)
-	branch, err := s.helpers.CreateAppBranch(ctx, appID, req.Name)
+	var managedByOpts []app.AppBranchManagedBy
+	if req.ManagedBy == string(app.AppBranchManagedByConfig) {
+		managedByOpts = append(managedByOpts, app.AppBranchManagedByConfig)
+	}
+
+	branch, err := s.helpers.CreateAppBranch(ctx, appID, req.Name, managedByOpts...)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch: %w", err))
 		return

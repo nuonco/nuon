@@ -28,6 +28,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/sandbox"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/secrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/stack"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 // syncer implements sync.Syncer using direct database access.
@@ -41,6 +42,7 @@ type syncer struct {
 	actionsHelpers   *actionshelpers.Helpers
 	runbooksHelpers  *runbookshelpers.Helpers
 	vcsHelpers       *vcshelpers.Helpers
+	tfClient         terraform.Client
 
 	appID       string
 	appConfigID string
@@ -62,7 +64,7 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, vcsHelpers *vcshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
+func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, vcsHelpers *vcshelpers.Helpers, tfClient terraform.Client, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
 	return &syncer{
 		db:               db,
 		cfg:              cfg,
@@ -71,6 +73,7 @@ func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers
 		actionsHelpers:   actionsHelpers,
 		runbooksHelpers:  runbooksHelpers,
 		vcsHelpers:       vcsHelpers,
+		tfClient:         tfClient,
 		appID:            appID,
 		appConfigID:      appConfigID,
 	}
@@ -248,7 +251,7 @@ func (s *syncer) syncSteps() []syncStep {
 		steps = append(steps, syncStep{
 			Resource: fmt.Sprintf("component-sync-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return components.SyncComponent(ctx, s.db, s.componentHelpers, s.vcsHelpers, c, s.appID, s.appConfigID, s.state)
+				return components.SyncComponent(ctx, s.db, s.componentHelpers, s.vcsHelpers, s.tfClient, c, s.appID, s.appConfigID, s.state)
 			},
 		})
 	}

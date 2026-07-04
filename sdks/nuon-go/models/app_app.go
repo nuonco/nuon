@@ -55,6 +55,9 @@ type AppApp struct {
 		AppAppInputConfig
 	} `json:"input_config,omitempty"`
 
+	// label colors
+	LabelColors any `json:"label_colors,omitempty"`
+
 	// links
 	Links map[string]any `json:"links,omitempty"`
 

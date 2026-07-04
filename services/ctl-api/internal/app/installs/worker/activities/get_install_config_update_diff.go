@@ -8,15 +8,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
-type GetInstallConfigUpdateDiffInput struct {
-	InstallConfigUpdateID string `json:"install_config_update_id" validate:"required"`
+type GetInstallAppConfigVersionDiffInput struct {
+	InstallAppConfigVersionID string `json:"install_config_update_id" validate:"required"`
 }
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-func (a *Activities) GetInstallConfigUpdateDiff(ctx context.Context, input *GetInstallConfigUpdateDiffInput) (*app.InstallConfigDiff, error) {
-	var update app.InstallConfigUpdate
-	if err := a.db.WithContext(ctx).First(&update, "id = ?", input.InstallConfigUpdateID).Error; err != nil {
+func (a *Activities) GetInstallAppConfigVersionDiff(ctx context.Context, input *GetInstallAppConfigVersionDiffInput) (*app.InstallConfigDiff, error) {
+	var update app.InstallAppConfigVersion
+	if err := a.db.WithContext(ctx).First(&update, "id = ?", input.InstallAppConfigVersionID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install config update: %w", err)
 	}
 

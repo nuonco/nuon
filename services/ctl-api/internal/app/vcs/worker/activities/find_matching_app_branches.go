@@ -30,6 +30,7 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 		Table("connected_github_vcs_configs").
 		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = connected_github_vcs_configs.component_config_id AND connected_github_vcs_configs.component_config_type = ?", appBranchConfigTable).
+		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("connected_github_vcs_configs.org_id = ?", req.OrgID).
 		Where("connected_github_vcs_configs.repo = ?", req.Repo).
 		Where("connected_github_vcs_configs.branch = ?", req.Branch).
@@ -49,6 +50,7 @@ func (a *Activities) FindMatchingAppBranches(ctx context.Context, req FindMatchi
 		Table("public_git_vcs_configs").
 		Select("app_branch_configs.app_branch_id, app_branch_configs.id as app_branch_config_id").
 		Joins("JOIN app_branch_configs ON app_branch_configs.id = public_git_vcs_configs.component_config_id AND public_git_vcs_configs.component_config_type = ?", appBranchConfigTable).
+		Joins("JOIN app_branches ON app_branches.id = app_branch_configs.app_branch_id AND app_branches.deleted_at = 0").
 		Where("app_branch_configs.org_id = ?", req.OrgID).
 		Where("(public_git_vcs_configs.repo = ? OR public_git_vcs_configs.repo = ?)", req.Repo, "https://github.com/"+req.Repo+".git").
 		Where("public_git_vcs_configs.branch = ?", req.Branch).
