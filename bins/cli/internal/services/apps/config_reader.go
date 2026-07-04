@@ -135,6 +135,7 @@ func ConvertToConfigStructure(appConfig *config.AppConfig, targetPath string) (*
 			Description:     appConfig.Description,
 			SlackWebhookURL: appConfig.SlackWebhookURL,
 			Readme:          appConfig.Readme,
+			LabelColors:     appConfig.LabelColors,
 		}
 		if err := structure.UpdateMetadata(metadataConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update metadata")

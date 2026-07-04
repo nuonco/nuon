@@ -10,18 +10,20 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
 
 type UpdateAppRequest struct {
-	Name            string  `json:"name"`
-	Description     string  `json:"description"`
-	DisplayName     string  `json:"display_name"`
-	SlackWebhookURL *string `json:"slack_webhook_url"`
-	ConfigRepo      *string `json:"config_repo"`
-	ConfigDirectory *string `json:"config_directory"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description"`
+	DisplayName     string            `json:"display_name"`
+	SlackWebhookURL *string           `json:"slack_webhook_url"`
+	ConfigRepo      *string           `json:"config_repo"`
+	ConfigDirectory *string           `json:"config_directory"`
+	LabelColors     map[string]string `json:"label_colors,omitempty"`
 }
 
 func (c *UpdateAppRequest) Validate(v *validator.Validate) error {
@@ -108,6 +110,18 @@ func (s *service) updateApp(ctx context.Context, appID string, req *UpdateAppReq
 			})
 		if res.Error != nil {
 			return nil, fmt.Errorf("unable to sync app notifications config: %w", res.Error)
+		}
+	}
+
+	if req.LabelColors != nil {
+		res = s.db.WithContext(ctx).
+			Select("label_colors").
+			Model(&currentApp).
+			Updates(app.App{
+				LabelColors: labels.Labels(req.LabelColors),
+			})
+		if res.Error != nil {
+			return nil, fmt.Errorf("unable to update app label colors: %w", res.Error)
 		}
 	}
 

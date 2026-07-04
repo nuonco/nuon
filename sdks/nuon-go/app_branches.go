@@ -153,7 +153,7 @@ func (c *client) GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, 
 	return resp.Payload, nil
 }
 
-func (c *client) GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallConfigUpdate, error) {
+func (c *client) GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error) {
 	resp, err := c.genClient.Operations.GetAppBranchRunInstallGroups(&operations.GetAppBranchRunInstallGroupsParams{
 		Context:     ctx,
 		AppID:       appID,

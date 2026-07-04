@@ -112,6 +112,8 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			sandboxConfigs.POST("", s.CreateAppSandboxConfigV2)
 		}
 
+		app.GET("/labels", s.GetAppLabels)
+
 		// app secrets configs management
 		secretsConfigs := app.Group("/secrets-configs")
 		{

@@ -8,6 +8,7 @@ import { Policies } from './Policies'
 import { Runner } from './Runner'
 import { Sandbox } from './Sandbox'
 import { Stacks } from './Stacks'
+import { Versions } from './Versions'
 import { Workflows } from './Workflows'
 import { Readme } from './Readme'
 import { InstallComponentDetail } from './ComponentDetail'
@@ -92,6 +93,7 @@ export const installRoutes: RouteObject[] = [
         element: <WorkflowDetail />,
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
+      { path: ':orgId/installs/:installId/versions', element: <Versions /> },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {

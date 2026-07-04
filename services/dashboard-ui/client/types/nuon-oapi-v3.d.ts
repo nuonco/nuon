@@ -656,6 +656,13 @@ export interface paths {
      */
     post: operations["CreateAppKubernetesContextsConfig"];
   };
+  "/v1/apps/{app_id}/labels": {
+    /**
+     * get all labels used across an app
+     * @description Returns all distinct label keys with values, usage counts, and assigned colors across components, actions, runbooks, and installs for an app.
+     */
+    get: operations["GetAppLabels"];
+  };
   "/v1/apps/{app_id}/latest-break-glass-config": {
     /**
      * get latest app break glass config
@@ -1428,6 +1435,20 @@ export interface paths {
      * @description Creates a workflow to diff and deploy a new app config to an install.
      */
     post: operations["CreateInstallAppConfigUpdate"];
+  };
+  "/v1/installs/{install_id}/app-config-versions": {
+    /**
+     * get app config versions for an install
+     * @description Returns the app config version history for an install, ordered by most recent first.
+     */
+    get: operations["GetInstallAppConfigVersions"];
+  };
+  "/v1/installs/{install_id}/app-config-versions/{version_id}/diff": {
+    /**
+     * get the diff for an install app config version
+     * @description Returns the component diff for a specific app config version transition.
+     */
+    get: operations["GetInstallAppConfigVersionDiff"];
   };
   "/v1/installs/{install_id}/app-permissions-config": {
     /** get app permissions config for an install with provisioning status */
@@ -3090,6 +3111,7 @@ export interface components {
       id?: string;
       /** @description fields set via after query */
       input_config?: components["schemas"]["app.AppInputConfig"];
+      label_colors?: Record<string, never>;
       links?: {
         [key: string]: unknown;
       };
@@ -3147,6 +3169,7 @@ export interface components {
       created_at?: string;
       created_by_id?: string;
       id?: string;
+      managed_by?: string;
       name?: string;
       org_id?: string;
       queue?: components["schemas"]["app.Queue"];
@@ -3209,6 +3232,7 @@ export interface components {
       force?: boolean;
       head_sha?: string;
       id?: string;
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       log_stream?: components["schemas"]["app.LogStream"];
       /** @description LogStreamID is the log stream created during this run for event tracking */
       log_stream_id?: string;
@@ -3776,6 +3800,13 @@ export interface components {
       updated_at?: string;
       version?: number;
     };
+    "app.ComponentDiffEntry": {
+      component_id?: string;
+      component_name?: string;
+      component_type?: string;
+      new_checksum?: string;
+      old_checksum?: string;
+    };
     "app.ComponentRelease": {
       build_id?: string;
       created_at?: string;
@@ -4132,6 +4163,25 @@ export interface components {
     };
     /** @enum {string} */
     "app.InstallActionWorkflowRunStepStatus": "finished" | "pending" | "in-progress" | "timed-out" | "error";
+    "app.InstallAppConfigVersion": {
+      app_branch_run_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      diff?: components["schemas"]["blobstore.Blob"];
+      id?: string;
+      install_group_id?: string;
+      install_id?: string;
+      metadata?: {
+        [key: string]: string;
+      };
+      new_app_config_id?: string;
+      old_app_config_id?: string;
+      org_id?: string;
+      status?: components["schemas"]["app.CompositeStatus"];
+      updated_at?: string;
+      workflow?: components["schemas"]["app.Workflow"];
+      workflow_id?: string;
+    };
     /** @enum {string} */
     "app.InstallApprovalOption": "approve-all" | "prompt";
     "app.InstallAuditLog": {
@@ -4182,23 +4232,17 @@ export interface components {
       /** @description Per-install stack template overrides (nil = use app config default) */
       vpc_nested_template_url?: string;
     };
-    "app.InstallConfigUpdate": {
-      app_branch_run_id?: string;
-      created_at?: string;
-      created_by_id?: string;
-      /** @description Diff stores the serialized config diff result. */
-      diff?: components["schemas"]["blobstore.Blob"];
-      id?: string;
-      install_group_id?: string;
-      install_id?: string;
-      new_app_config_id?: string;
-      old_app_config_id?: string;
-      org_id?: string;
-      status?: components["schemas"]["app.CompositeStatus"];
-      updated_at?: string;
-      workflow?: components["schemas"]["app.Workflow"];
-      /** @description WorkflowID links to the install workflow that performs the actual diff and deploy. */
-      workflow_id?: string;
+    "app.InstallConfigDiff": {
+      added?: components["schemas"]["app.ComponentDiffEntry"][];
+      changed?: components["schemas"]["app.ComponentDiffEntry"][];
+      removed?: components["schemas"]["app.ComponentDiffEntry"][];
+      sandbox_changed?: boolean;
+      sandbox_new_id?: string;
+      sandbox_old_id?: string;
+      stack_changed?: boolean;
+      stack_new_id?: string;
+      stack_old_id?: string;
+      unchanged?: components["schemas"]["app.ComponentDiffEntry"][];
     };
     "app.InstallDeploy": {
       action_workflow_runs?: components["schemas"]["app.InstallActionWorkflowRun"][];
@@ -6729,6 +6773,22 @@ export interface components {
       component: string;
       name: string;
     };
+    "service.AppLabelKeySummary": {
+      color?: string;
+      default_color?: string;
+      entity_types?: string[];
+      is_override?: boolean;
+      key?: string;
+      usage_count?: number;
+      values?: string[];
+    };
+    "service.AppLabelsResponse": {
+      default_colors?: string[];
+      label_colors?: {
+        [key: string]: string;
+      };
+      labels?: components["schemas"]["service.AppLabelKeySummary"][];
+    };
     "service.AppPolicyConfig": {
       components?: string[];
       contents: string;
@@ -6919,6 +6979,7 @@ export interface components {
       public_git_vcs_config?: components["schemas"]["helpers.PublicGitVCSConfigRequest"];
     };
     "service.CreateAppBranchRequest": {
+      managed_by?: string;
       name: string;
     };
     "service.CreateAppBreakGlassConfigRequest": {
@@ -7775,6 +7836,9 @@ export interface components {
       config_repo?: string;
       description?: string;
       display_name?: string;
+      label_colors?: {
+        [key: string]: string;
+      };
       name?: string;
       slack_webhook_url?: string;
     };
@@ -10735,7 +10799,7 @@ export interface operations {
       /** @description OK */
       200: {
         content: {
-          "application/json": components["schemas"]["app.InstallConfigUpdate"][];
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"][];
         };
       };
       /** @description Bad Request */
@@ -13477,6 +13541,56 @@ export interface operations {
       201: {
         content: {
           "application/json": components["schemas"]["app.AppKubernetesContextsConfig"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get all labels used across an app
+   * @description Returns all distinct label keys with values, usage counts, and assigned colors across components, actions, runbooks, and installs for an app.
+   */
+  GetAppLabels: {
+    parameters: {
+      path: {
+        /** @description app ID */
+        app_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["service.AppLabelsResponse"];
         };
       };
       /** @description Bad Request */
@@ -19175,7 +19289,109 @@ export interface operations {
       /** @description Created */
       201: {
         content: {
-          "application/json": components["schemas"]["app.InstallConfigUpdate"];
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get app config versions for an install
+   * @description Returns the app config version history for an install, ordered by most recent first.
+   */
+  GetInstallAppConfigVersions: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallAppConfigVersion"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * get the diff for an install app config version
+   * @description Returns the component diff for a specific app config version transition.
+   */
+  GetInstallAppConfigVersionDiff: {
+    parameters: {
+      path: {
+        /** @description install ID */
+        install_id: string;
+        /** @description app config version ID */
+        version_id: string;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.InstallConfigDiff"];
         };
       };
       /** @description Bad Request */
