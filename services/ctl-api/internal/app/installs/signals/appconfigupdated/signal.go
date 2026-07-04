@@ -27,7 +27,8 @@ const (
 )
 
 type Signal struct {
-	InstallID string `json:"install_id"`
+	InstallID      string `json:"install_id"`
+	OldAppConfigID string `json:"old_app_config_id,omitempty"`
 }
 
 var _ signal.Signal = (*Signal)(nil)
@@ -63,6 +64,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	install, err := activities.AwaitGetByInstallID(ctx, s.InstallID)
 	if err != nil {
 		return fmt.Errorf("unable to get install: %w", err)
+	}
+
+	if s.OldAppConfigID != "" && s.OldAppConfigID != install.AppConfigID {
+		if err := activities.AwaitMigrateInstallInputs(ctx, &activities.MigrateInstallInputsInput{
+			InstallID:      s.InstallID,
+			OldAppConfigID: s.OldAppConfigID,
+			NewAppConfigID: install.AppConfigID,
+		}); err != nil {
+			l.Warn("unable to migrate install inputs",
+				zap.String("install_id", s.InstallID),
+				zap.Error(err))
+		}
 	}
 
 	signalsQueue, err := activities.AwaitGetInstallSignalsQueueByInstallID(ctx, s.InstallID)

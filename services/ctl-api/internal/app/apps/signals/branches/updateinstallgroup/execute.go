@@ -8,7 +8,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
+	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
 
@@ -93,6 +95,8 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		},
 	})
 
+	s.recordAppConfigVersions(ctx, enqueued, installEntries, run)
+
 	return awaitErr
 }
 
@@ -148,7 +152,7 @@ func (s *Signal) enqueueInstallUpdates(
 	for _, installID := range installIDs {
 		cb := callback.New(ctx, installID)
 
-		result, err := activities.AwaitCreateInstallConfigUpdateWorkflow(ctx, &activities.CreateInstallConfigUpdateWorkflowInput{
+		result, err := activities.AwaitCreateInstallAppConfigVersionWorkflow(ctx, &activities.CreateInstallAppConfigVersionWorkflowInput{
 			InstallID:      installID,
 			NewAppConfigID: run.AppConfigID,
 			AppBranchRunID: s.RunID,
@@ -163,7 +167,7 @@ func (s *Signal) enqueueInstallUpdates(
 		logger.Info("enqueued install config update",
 			"install_id", installID,
 			"workflow_id", result.WorkflowID,
-			"install_config_update_id", result.InstallConfigUpdateID,
+			"install_config_update_id", result.InstallAppConfigVersionID,
 		)
 
 		s.childWorkflowIDs = append(s.childWorkflowIDs, result.WorkflowID)
@@ -252,6 +256,39 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Signal) recordAppConfigVersions(
+	ctx workflow.Context,
+	enqueued []enqueuedInstall,
+	installEntries []app.InstallGroupRunInstall,
+	run *app.AppBranchRun,
+) {
+	logger := workflow.GetLogger(ctx)
+
+	for i, e := range enqueued {
+		if installEntries[i].Status != "success" {
+			continue
+		}
+
+		if _, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
+			OwnerID:   e.installID,
+			OwnerType: "installs",
+			QueueName: "install-signals",
+			Signal: &updateappconfig.Signal{
+				InstallID:      e.installID,
+				NewAppConfigID: run.AppConfigID,
+				AppBranchRunID: s.RunID,
+				InstallGroupID: s.InstallGroupID,
+				Metadata:       map[string]string{"source": "app-branch"},
+			},
+		}); err != nil {
+			logger.Warn("unable to enqueue update-app-config signal",
+				"install_id", e.installID,
+				"error", err,
+			)
+		}
+	}
 }
 
 func (s *Signal) updateInstallMetadata(ctx workflow.Context, enqueued []enqueuedInstall, results map[string]string) {

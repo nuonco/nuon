@@ -43,6 +43,7 @@ const (
 	cloudEventTypeRoleChange           = "com.nuon.stack.role_change.v1"
 	cloudEventTypeInputsUpdated        = "com.nuon.stack.inputs_updated.v1"
 	cloudEventTypeAppConfigSynced      = "com.nuon.app.config_synced.v1"
+	cloudEventTypeUpdateAppConfig      = "com.nuon.install.app_config_updated.v1"
 
 	kindWorkflow             = "workflow"
 	kindWorkflowStep         = "workflow_step"
@@ -51,6 +52,7 @@ const (
 	kindRoleChange           = "role_change"
 	kindInputsUpdated        = "inputs_updated"
 	kindAppConfigSynced      = "app_config_synced"
+	kindUpdateAppConfig      = "app_config_updated"
 )
 
 // Status values surfaced to webhook consumers in the *.lifecycle events.
@@ -101,6 +103,7 @@ const (
 	signalTypeRoleChange      signal.SignalType = "role-change"
 	signalTypeInputsUpdated   signal.SignalType = "inputs-updated"
 	signalTypeAppConfigSynced signal.SignalType = "app-config-synced"
+	signalTypeUpdateAppConfig signal.SignalType = "update-app-config"
 )
 
 // approvalPlanExcerptMaxBytes caps the size of the plan excerpt embedded in
@@ -239,7 +242,8 @@ func (h *WebhookSignalLifecycleHook) Supports(event signal.SignalPhaseEvent) boo
 		signalTypeStackRun,
 		signalTypeRoleChange,
 		signalTypeInputsUpdated,
-		signalTypeAppConfigSynced:
+		signalTypeAppConfigSynced,
+		signalTypeUpdateAppConfig:
 		return true
 	default:
 		return false
@@ -276,7 +280,7 @@ func isApprovalSignalType(t signal.SignalType) bool {
 
 func isNotificationOnlySignalType(t signal.SignalType) bool {
 	switch t {
-	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced:
+	case signalTypeDriftDetected, signalTypeStackRun, signalTypeRoleChange, signalTypeInputsUpdated, signalTypeAppConfigSynced, signalTypeUpdateAppConfig:
 		return true
 	}
 	return false
@@ -494,6 +498,8 @@ func (h *WebhookSignalLifecycleHook) publish(ctx context.Context, event signal.S
 		ceType = cloudEventTypeInputsUpdated
 	case kindAppConfigSynced:
 		ceType = cloudEventTypeAppConfigSynced
+	case kindUpdateAppConfig:
+		ceType = cloudEventTypeUpdateAppConfig
 	}
 
 	subject := buildSubject(event, data)
@@ -595,6 +601,8 @@ func (h *WebhookSignalLifecycleHook) buildEventData(ctx context.Context, event s
 		return h.buildStackEventData(ctx, event, outcome)
 	case signalTypeAppConfigSynced:
 		return h.buildAppConfigSyncedEventData(ctx, event, outcome)
+	case signalTypeUpdateAppConfig:
+		return h.buildUpdateAppConfigEventData(ctx, event, outcome)
 	}
 
 	if event.WorkflowID == "" {
@@ -712,6 +720,26 @@ func (h *WebhookSignalLifecycleHook) buildAppConfigSyncedEventData(_ context.Con
 	transition := mapTransition(event, outcome)
 	data := lifecycleEventData{
 		Kind:       kindAppConfigSynced,
+		Transition: transition,
+		OrgID:      event.OrgID,
+		OrgName:    event.OrgName,
+		Workflow: workflowRef{
+			OwnerID:   event.OwnerID,
+			OwnerType: event.OwnerType,
+			OwnerName: event.OwnerName,
+		},
+		Metadata: event.Metadata,
+	}
+	if outcome != nil {
+		data.Outcome = h.buildOutcome(event, outcome)
+	}
+	return data, true
+}
+
+func (h *WebhookSignalLifecycleHook) buildUpdateAppConfigEventData(_ context.Context, event signal.SignalPhaseEvent, outcome *signal.SignalPhaseOutcome) (lifecycleEventData, bool) {
+	transition := mapTransition(event, outcome)
+	data := lifecycleEventData{
+		Kind:       kindUpdateAppConfig,
 		Transition: transition,
 		OrgID:      event.OrgID,
 		OrgName:    event.OrgName,

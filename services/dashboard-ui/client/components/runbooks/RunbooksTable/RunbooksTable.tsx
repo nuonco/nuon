@@ -22,7 +22,8 @@ export type TRunbookRow = {
 export function parseRunbooksToTableData(
   runbooks: TRunbook[],
   orgId: string,
-  appId: string
+  appId: string,
+  labelColors?: Record<string, string>
 ): TRunbookRow[] {
   return runbooks.map((runbook) => {
     const basePath = `/${orgId}/apps/${appId}`
@@ -42,7 +43,7 @@ export function parseRunbooksToTableData(
             {Object.keys(runbook.labels)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" />
+                <LabelBadge key={k} labelKey={k} labelValue={runbook.labels[k]} size="sm" customColor={labelColors?.[k]} />
               ))}
           </span>
         ) : (

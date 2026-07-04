@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { BackLink } from '@/components/common/BackLink'
 import { Badge } from '@/components/common/Badge'
+import { LabelBadge } from '@/components/common/LabelBadge'
 import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
@@ -93,9 +94,20 @@ const BranchDetailContent = () => {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <HeadingGroup className="gap-1.5">
           <BackLink className="mb-4" />
-          <Text variant="h3" weight="stronger" level={1}>
-            {branch.name}
-          </Text>
+          <span className="flex items-center gap-3">
+            <Text variant="h3" weight="stronger" level={1}>
+              {branch.name}
+            </Text>
+            {branch?.managed_by && (
+              <LabelBadge
+                labelKey="managed by"
+                labelValue={branch.managed_by}
+                size="sm"
+                variant="code"
+                theme={branch.managed_by === 'config' ? 'brand' : 'default'}
+              />
+            )}
+          </span>
           <Text variant="subtext" theme="info">
             Last updated{' '}
             <Time

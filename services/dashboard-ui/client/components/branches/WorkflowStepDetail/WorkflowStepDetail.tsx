@@ -96,7 +96,7 @@ export const WorkflowStepDetail = ({ step, appBranchRunId, onClose: _onClose }: 
       {/* ── Content area ── */}
       <div className="p-5 flex flex-col gap-4">
         {isCommitStep && <CommitStep metadata={metadata} />}
-        {isConfigStep && <ConfigStep metadata={metadata} status={step.status?.status} />}
+        {isConfigStep && <ConfigStep metadata={metadata} status={step.status?.status} statusDescription={step.status?.status_human_description} />}
         {isBuildStep && <BuildStep metadata={metadata} status={step.status?.status} appBranchRunId={appBranchRunId} />}
         {isPlanGroupStep && <PlanGroupStep step={step} metadata={metadata} />}
         {isDeployGroupStep && <DeployGroupStep step={step} metadata={metadata} />}

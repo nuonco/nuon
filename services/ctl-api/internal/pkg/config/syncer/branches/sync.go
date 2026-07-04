@@ -2,6 +2,7 @@ package branches
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -47,8 +48,14 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 
 	var branchID string
 	if !found {
-		branch, err := appsHelper.CreateAppBranch(ctx, appID, branchCfg.Name)
+		branch, err := appsHelper.CreateAppBranch(ctx, appID, branchCfg.Name, app.AppBranchManagedByConfig)
 		if err != nil {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
+				return sync.SyncErr{
+					Resource:    "app-branches",
+					Description: fmt.Sprintf("app branch %q already exists (possibly soft-deleted)", branchCfg.Name),
+				}
+			}
 			return sync.SyncInternalErr{
 				Description: fmt.Sprintf("unable to create app branch %q", branchCfg.Name),
 				Err:         err,
@@ -58,6 +65,15 @@ func syncSingleBranch(ctx context.Context, db *gorm.DB, appsHelper *appshelpers.
 		existingByName[branch.Name] = branch
 	} else {
 		branchID = existing.ID
+	}
+
+	if err := db.WithContext(ctx).
+		Model(&app.AppBranch{ID: branchID}).
+		Update("managed_by", app.AppBranchManagedByConfig).Error; err != nil {
+		return sync.SyncInternalErr{
+			Description: fmt.Sprintf("unable to update managed_by for app branch %q", branchCfg.Name),
+			Err:         err,
+		}
 	}
 
 	if branchCfg.ConnectedRepo == nil && branchCfg.PublicRepo == nil {

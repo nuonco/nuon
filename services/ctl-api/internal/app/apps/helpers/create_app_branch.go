@@ -13,10 +13,17 @@ func (h *Helpers) CreateAppBranch(
 	ctx context.Context,
 	appID string,
 	name string,
+	opts ...app.AppBranchManagedBy,
 ) (*app.AppBranch, error) {
+	managedBy := app.AppBranchManagedByManually
+	if len(opts) > 0 {
+		managedBy = opts[0]
+	}
+
 	branch := app.AppBranch{
-		AppID: appID,
-		Name:  name,
+		AppID:     appID,
+		Name:      name,
+		ManagedBy: managedBy,
 	}
 
 	// Create branch first to get ID

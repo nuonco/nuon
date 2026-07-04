@@ -248,6 +248,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		cfg.DisplayName = c.Metadata.DisplayName
 		cfg.SlackWebhookURL = c.Metadata.SlackWebhookURL
 		cfg.Readme = c.Metadata.Readme
+		cfg.LabelColors = c.Metadata.LabelColors
 	}
 
 	return cfg, nil

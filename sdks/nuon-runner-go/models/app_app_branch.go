@@ -35,6 +35,9 @@ type AppAppBranch struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// managed by
+	ManagedBy string `json:"managed_by,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 

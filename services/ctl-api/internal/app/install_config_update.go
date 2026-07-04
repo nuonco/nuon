@@ -12,9 +12,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// InstallConfigUpdate tracks a per-install config transition during an app branch run.
-// It links an AppBranchRun to the install workflow that diffs and deploys changes.
-type InstallConfigUpdate struct {
+type InstallAppConfigVersion struct {
 	ID          string                `gorm:"primarykey;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
@@ -25,10 +23,10 @@ type InstallConfigUpdate struct {
 	OrgID string `json:"org_id,omitzero" gorm:"notnull;default null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	AppBranchRunID string       `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
+	AppBranchRunID *string      `json:"app_branch_run_id,omitempty" temporaljson:"app_branch_run_id,omitzero,omitempty"`
 	AppBranchRun   AppBranchRun `faker:"-" json:"-" temporaljson:"app_branch_run,omitzero,omitempty"`
 
-	InstallGroupID string                `json:"install_group_id,omitempty" temporaljson:"install_group_id,omitzero,omitempty"`
+	InstallGroupID *string               `json:"install_group_id,omitempty" temporaljson:"install_group_id,omitzero,omitempty"`
 	InstallGroup   AppBranchInstallGroup `faker:"-" json:"-" temporaljson:"install_group,omitzero,omitempty"`
 
 	InstallID string  `json:"install_id,omitzero" gorm:"not null" temporaljson:"install_id,omitzero,omitempty"`
@@ -40,32 +38,32 @@ type InstallConfigUpdate struct {
 	NewAppConfigID string    `json:"new_app_config_id,omitzero" gorm:"not null" temporaljson:"new_app_config_id,omitzero,omitempty"`
 	NewAppConfig   AppConfig `faker:"-" json:"-" temporaljson:"new_app_config,omitzero,omitempty"`
 
-	// WorkflowID links to the install workflow that performs the actual diff and deploy.
 	WorkflowID *string   `json:"workflow_id,omitempty" temporaljson:"workflow_id,omitzero,omitempty"`
 	Workflow   *Workflow `json:"workflow,omitempty" temporaljson:"workflow,omitzero,omitempty"`
 
-	// Diff stores the serialized config diff result.
 	Diff *blobstore.Blob `json:"diff,omitempty" temporaljson:"diff,omitzero,omitempty"`
+
+	Metadata map[string]string `json:"metadata,omitempty" gorm:"type:jsonb;default:null;serializer:json" temporaljson:"metadata,omitzero,omitempty"`
 
 	Status CompositeStatus `json:"status,omitzero" gorm:"type:jsonb" temporaljson:"status,omitzero,omitempty"`
 }
 
-func (i *InstallConfigUpdate) Indexes(db *gorm.DB) []migrations.Index {
+func (i *InstallAppConfigVersion) Indexes(db *gorm.DB) []migrations.Index {
 	return []migrations.Index{
 		{
-			Name: indexes.Name(db, &InstallConfigUpdate{}, "org_id"),
+			Name: indexes.Name(db, &InstallAppConfigVersion{}, "org_id"),
 			Columns: []string{
 				"org_id",
 			},
 		},
 		{
-			Name: indexes.Name(db, &InstallConfigUpdate{}, "app_branch_run_id"),
+			Name: indexes.Name(db, &InstallAppConfigVersion{}, "app_branch_run_id"),
 			Columns: []string{
 				"app_branch_run_id",
 			},
 		},
 		{
-			Name: indexes.Name(db, &InstallConfigUpdate{}, "install_id"),
+			Name: indexes.Name(db, &InstallAppConfigVersion{}, "install_id"),
 			Columns: []string{
 				"install_id",
 			},
@@ -73,9 +71,9 @@ func (i *InstallConfigUpdate) Indexes(db *gorm.DB) []migrations.Index {
 	}
 }
 
-func (i *InstallConfigUpdate) BeforeCreate(tx *gorm.DB) error {
+func (i *InstallAppConfigVersion) BeforeCreate(tx *gorm.DB) error {
 	if i.ID == "" {
-		i.ID = domains.NewInstallConfigUpdateID()
+		i.ID = domains.NewInstallAppConfigVersionID()
 	}
 
 	if i.CreatedByID == "" {

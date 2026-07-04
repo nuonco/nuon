@@ -31,8 +31,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	var diff *app.InstallConfigDiff
 	if installConfigUpdateID != "" {
-		diff, err = activities.AwaitGetInstallConfigUpdateDiff(ctx, &activities.GetInstallConfigUpdateDiffInput{
-			InstallConfigUpdateID: installConfigUpdateID,
+		diff, err = activities.AwaitGetInstallAppConfigVersionDiff(ctx, &activities.GetInstallAppConfigVersionDiffInput{
+			InstallAppConfigVersionID: installConfigUpdateID,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get pre-computed config diff")

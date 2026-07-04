@@ -21,6 +21,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/provision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/reprovision"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/sandboxbuild"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/updatesandbox"
 
 	// general signals
@@ -77,6 +78,7 @@ import (
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/rolechange"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/stackrun"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/syncsecrets"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateappconfig"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updated"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/updateinstallstackoutputs"
 	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/signals/workflowapproveall"

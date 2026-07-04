@@ -19,7 +19,7 @@ export const ComponentsTableContainer = ({
 } = {}) => {
   const [searchParams] = useSearchParams()
   const { org } = useOrg()
-  const { app } = useApp()
+  const { app, labelColors } = useApp()
   const offset = Number(searchParams.get('offset') ?? 0)
 
   const { data: result, isLoading } = useQuery({
@@ -48,7 +48,7 @@ export const ComponentsTableContainer = ({
 
   return (
     <ComponentsTable
-      data={parseComponentToTableData(result?.data ?? [], org.id, app.id)}
+      data={parseComponentToTableData(result?.data ?? [], org.id, app.id, labelColors)}
       isLoading={isLoading}
       filterActions={
         <div className="flex items-center gap-3">
