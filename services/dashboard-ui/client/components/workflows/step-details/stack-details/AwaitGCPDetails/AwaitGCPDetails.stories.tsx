@@ -111,6 +111,17 @@ const mockStep = {
 
 export const Default = () => (
   <div className="max-w-2xl p-4">
+    <AwaitGCPDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      spaceliftEnabled
+    />
+  </div>
+)
+
+export const SpaceliftDisabled = () => (
+  <div className="max-w-2xl p-4">
     <AwaitGCPDetails stack={mockStack} step={mockStep} installId="install-1" />
   </div>
 )

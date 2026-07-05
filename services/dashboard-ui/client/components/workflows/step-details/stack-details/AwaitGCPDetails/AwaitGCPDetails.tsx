@@ -55,17 +55,23 @@ function parseEnvelope(contents: unknown): StackEnvelope {
 
 interface IAwaitGCPDetails extends IStackDetails {
   installId?: string
+  spaceliftEnabled?: boolean
 }
 
-export const AwaitGCPDetails = ({ stack, installId }: IAwaitGCPDetails) => {
+export const AwaitGCPDetails = ({
+  stack,
+  installId,
+  spaceliftEnabled,
+}: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
   const envelope = useMemo(
     () => parseEnvelope(version?.contents),
     [version?.contents]
   )
   const hasSpacelift =
-    envelope.spaceliftAdminTf.length > 0 ||
-    envelope.spaceliftBlueprintYaml.length > 0
+    !!spaceliftEnabled &&
+    (envelope.spaceliftAdminTf.length > 0 ||
+      envelope.spaceliftBlueprintYaml.length > 0)
 
   return (
     <div className="flex flex-col gap-4">

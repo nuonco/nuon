@@ -23,9 +23,15 @@ import type { IStackDetails } from '../types'
 
 interface IAwaitStackDetails extends IStackDetails {
   runnerType?: string
+  spaceliftEnabled?: boolean
 }
 
-export const AwaitStackDetails = ({ stack, runnerType, ...props }: IAwaitStackDetails) => {
+export const AwaitStackDetails = ({
+  stack,
+  runnerType,
+  spaceliftEnabled,
+  ...props
+}: IAwaitStackDetails) => {
   const outputValues = useMemo(
     () => objectToKeyValueArray(stack?.install_stack_outputs?.data_contents),
     [stack?.install_stack_outputs]
@@ -67,7 +73,11 @@ export const AwaitStackDetails = ({ stack, runnerType, ...props }: IAwaitStackDe
       {runnerType?.startsWith('aws') ? (
         <AwaitAWSDetails stack={stack} {...props} />
       ) : runnerType === 'gcp' ? (
-        <AwaitGCPDetails stack={stack} {...props} />
+        <AwaitGCPDetails
+          stack={stack}
+          spaceliftEnabled={spaceliftEnabled}
+          {...props}
+        />
       ) : (
         <AwaitAzureDetails stack={stack} {...props} />
       )}
