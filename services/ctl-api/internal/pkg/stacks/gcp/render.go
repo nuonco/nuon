@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"text/template"
 
 	"github.com/pkg/errors"
@@ -26,11 +27,30 @@ type GCPSecretTemplateInput struct {
 	Description string
 	Required    bool
 	Default     string
+	// Value is what the secret's `value` renders to in tfvars. For the normal
+	// tfvars it's the secret's Default; for the Spacelift blueprint it's a
+	// `${{ inputs.secret_<name> }}` CEL reference.
+	Value string
+}
+
+// GCPInstallInputTemplateInput holds a customer install input for the template.
+// Value is empty in the normal tfvars and a `${{ inputs.input_<name> }}` CEL
+// reference in the Spacelift blueprint.
+type GCPInstallInputTemplateInput struct {
+	Name  string
+	Value string
 }
 
 // GCPTemplateInput extends TemplateInput with pre-marshaled GCP IAM permission lists.
 type GCPTemplateInput struct {
 	*stacks.TemplateInput
+
+	// GCPProjectID / GCPRegion render as literals in the normal tfvars and as
+	// `${{ inputs.gcp_project_id }}` / `${{ inputs.gcp_region }}` CEL references
+	// in the Spacelift blueprint. Empty omits the line.
+	GCPProjectID string
+	GCPRegion    string
+
 	ProvisionPermissions   string
 	MaintenancePermissions string
 	DeprovisionPermissions string
@@ -41,27 +61,31 @@ type GCPTemplateInput struct {
 
 	BreakGlassRoles []GCPRoleTemplateInput
 	CustomRoles     []GCPRoleTemplateInput
-	InstallInputs   []string
+	InstallInputs   []GCPInstallInputTemplateInput
 
 	AutoGenerateSecrets []string
 	Secrets             []GCPSecretTemplateInput
 }
 
 func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
-	t, err := template.New("gcp-stack").Parse(tmpl)
+	inputsT, err := template.New("gcp-stack-inputs").Parse(inputsTmpl)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "unable to parse gcp template")
+		return nil, "", errors.Wrap(err, "unable to parse gcp inputs template")
+	}
+	secretsT, err := template.New("gcp-stack-secrets").Parse(secretsTmpl)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to parse gcp secrets template")
 	}
 
 	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPermissions(inputs.AppCfg)
 	breakGlassRoles := extractGCPRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
 	customRoles := extractGCPRolesFromList(inputs.AppCfg.PermissionsConfig.CustomRoles)
 
-	var installInputs []string
+	var installInputs []GCPInstallInputTemplateInput
 	if inputs.AppCfg != nil {
 		for _, input := range inputs.AppCfg.InputConfig.AppInputs {
 			if input.Source == app.AppInputSourceCustomer {
-				installInputs = append(installInputs, input.Name)
+				installInputs = append(installInputs, GCPInstallInputTemplateInput{Name: input.Name})
 			}
 		}
 	}
@@ -78,13 +102,22 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 					Description: s.Description,
 					Required:    s.Required,
 					Default:     s.Default,
+					Value:       s.Default,
 				})
 			}
 		}
 	}
 
+	var gcpProjectID, gcpRegion string
+	if inputs.Install.GCPAccount != nil {
+		gcpProjectID = inputs.Install.GCPAccount.ProjectID
+		gcpRegion = inputs.Install.GCPAccount.Region
+	}
+
 	gcpInputs := &GCPTemplateInput{
 		TemplateInput:             inputs,
+		GCPProjectID:              gcpProjectID,
+		GCPRegion:                 gcpRegion,
 		ProvisionPermissions:      prov,
 		MaintenancePermissions:    maint,
 		DeprovisionPermissions:    deprov,
@@ -98,15 +131,68 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		Secrets:                   secrets,
 	}
 
-	var buf bytes.Buffer
-	err = t.Execute(&buf, gcpInputs)
+	var inputsBuf bytes.Buffer
+	if err = inputsT.Execute(&inputsBuf, gcpInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp inputs template")
+	}
+	var secretsBuf bytes.Buffer
+	if err = secretsT.Execute(&secretsBuf, gcpInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp secrets template")
+	}
+
+	adminTF, err := renderSpaceliftAdminTF(inputs.Install.ID)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "unable to execute gcp template")
+		return nil, "", err
+	}
+
+	// The blueprint surfaces customer install inputs and secrets as blueprint
+	// inputs, so render a variant of the tfvars where those values are
+	// `${{ inputs.<id> }}` CEL references instead of literals.
+	blueprintTfvarsInput := *gcpInputs
+	blueprintTfvarsInput.GCPProjectID = "${{ inputs.gcp_project_id }}"
+	blueprintTfvarsInput.GCPRegion = "${{ inputs.gcp_region }}"
+	blueprintTfvarsInput.InstallInputs = make([]GCPInstallInputTemplateInput, len(installInputs))
+	for i, in := range installInputs {
+		blueprintTfvarsInput.InstallInputs[i] = GCPInstallInputTemplateInput{
+			Name:  in.Name,
+			Value: fmt.Sprintf("${{ inputs.%s }}", blueprintInstallInputID(in.Name)),
+		}
+	}
+	blueprintTfvarsInput.Secrets = make([]GCPSecretTemplateInput, len(secrets))
+	for i, s := range secrets {
+		blueprintTfvarsInput.Secrets[i] = s
+		blueprintTfvarsInput.Secrets[i].Value = fmt.Sprintf("${{ inputs.%s }}", blueprintSecretID(s.Name))
+	}
+
+	var blueprintInputsBuf, blueprintSecretsBuf bytes.Buffer
+	if err = inputsT.Execute(&blueprintInputsBuf, &blueprintTfvarsInput); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp blueprint inputs template")
+	}
+	if err = secretsT.Execute(&blueprintSecretsBuf, &blueprintTfvarsInput); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp blueprint secrets template")
+	}
+
+	blueprintYAML, err := renderSpaceliftBlueprint(spaceliftBlueprintData{
+		InstallID:     inputs.Install.ID,
+		InputsTfvars:  blueprintInputsBuf.String(),
+		SecretsTfvars: blueprintSecretsBuf.String(),
+		GCPProjectID:  gcpProjectID,
+		GCPRegion:     gcpRegion,
+		InstallInputs: installInputs,
+		Secrets:       secrets,
+	})
+	if err != nil {
+		return nil, "", err
 	}
 
 	// Wrap tfvars in a JSON envelope so it can be stored in the jsonb column.
 	// The raw tfvars text is HCL, not valid JSON.
-	envelope := map[string]string{"tfvars": buf.String()}
+	envelope := map[string]string{
+		"inputs_tfvars":            inputsBuf.String(),
+		"secrets_tfvars":           secretsBuf.String(),
+		"spacelift_admin_tf":       adminTF,
+		"spacelift_blueprint_yaml": blueprintYAML,
+	}
 	res, err := json.Marshal(envelope)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to marshal gcp tfvars envelope")

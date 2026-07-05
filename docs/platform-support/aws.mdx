@@ -59,7 +59,7 @@ helm_driver = "configmap"
 When you create a new install, Nuon generates the install stack your customer uses to provision the runner and base infrastructure in their AWS account. Two stack formats are produced for every AWS install, and your customer can use whichever fits their tooling:
 
 - **CloudFormation** — a generated Cloudformation template, installable via a Quick-Create URL or the AWS CLI.
-- **Terraform** — a generated `install.tfvars` for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) Terraform module, applied with the standard `terraform` CLI.
+- **Terraform** — generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) Terraform module, applied with the standard `terraform` CLI.
 
 Both formats describe the same set of resources (IAM operation roles, secrets, and trust to the Nuon control plane), so installs end up in the same state regardless of which one your customer runs.
 
@@ -84,9 +84,9 @@ Either:
 
 From the Terraform tab in the dashboard:
 
-1. Download the generated `install.tfvars`.
+1. Download the generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files.
 2. Create a `backend.tf` to store Terraform state (an S3 snippet is provided in the dashboard).
-3. Run `terraform init && terraform apply -var-file=install.tfvars` against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module.
+3. Run `terraform init && terraform apply` against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module. Both `.auto.tfvars` files are loaded automatically.
 
 Custom resources from CloudFormation nested stacks are not translated automatically. If you extend the install stack with custom Cloudformation resources, fork [`install-stacks`](https://github.com/nuonco/install-stacks) and make the equivalent Terraform changes there.
 
@@ -96,5 +96,5 @@ If you make changes to the install stack, the install must be reprovisioned.
 
 1. From the install's Overview page, click "Reprovision install" in the "Manage" drop-down. This triggers a reprovision workflow.
 1. A new CloudFormation template and Terraform tfvars are generated.
-1. Send the updated Quick-Create URL / CLI command, or the new `install.tfvars`, to your customer.
-1. Customers using Terraform re-run `terraform apply -var-file=install.tfvars` against the same backend.
+1. Send the updated Quick-Create URL / CLI command, or the new `inputs.auto.tfvars` and `secrets.auto.tfvars` files, to your customer.
+1. Customers using Terraform re-run `terraform apply` against the same backend.

@@ -8,6 +8,7 @@ import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
+import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
 interface IAwaitAWSDetails extends IStackDetails {
@@ -17,10 +18,15 @@ interface IAwaitAWSDetails extends IStackDetails {
 }
 
 // The tfvars envelope ctl-api stores in `terraform_contents` is a JSON
-// document of shape `{"tfvars": "<hcl body>"}`. Mirrors the GCP parser at
-// AwaitGCPDetails.tsx.
-function parseTfvars(contents: unknown): string {
-  if (!contents) return ''
+// document of shape `{"inputs_tfvars": "<hcl>", "secrets_tfvars": "<hcl>"}`.
+// Mirrors the GCP parser at AwaitGCPDetails.tsx.
+interface TfvarsEnvelope {
+  inputs: string
+  secrets: string
+}
+
+function parseTfvars(contents: unknown): TfvarsEnvelope {
+  if (!contents) return { inputs: '', secrets: '' }
 
   let raw: unknown = contents
   if (typeof raw === 'string') {
@@ -30,16 +36,20 @@ function parseTfvars(contents: unknown): string {
       try {
         raw = JSON.parse(atob(raw as string))
       } catch {
-        return ''
+        return { inputs: '', secrets: '' }
       }
     }
   }
 
-  if (typeof raw === 'object' && raw !== null && 'tfvars' in raw) {
-    return String((raw as Record<string, unknown>).tfvars ?? '')
+  if (typeof raw === 'object' && raw !== null) {
+    const rec = raw as Record<string, unknown>
+    return {
+      inputs: String(rec.inputs_tfvars ?? ''),
+      secrets: String(rec.secrets_tfvars ?? ''),
+    }
   }
 
-  return ''
+  return { inputs: '', secrets: '' }
 }
 
 export const AwaitAWSDetails = ({
@@ -58,11 +68,11 @@ export const AwaitAWSDetails = ({
       })
     | undefined
 
-  const tfvarsContent = useMemo(
+  const tfvars = useMemo(
     () => parseTfvars(versionExt?.terraform_contents),
     [versionExt?.terraform_contents]
   )
-  const hasTerraform = tfvarsContent.length > 0
+  const hasTerraform = tfvars.inputs.length > 0 || tfvars.secrets.length > 0
 
   return (
     <div className="flex flex-col gap-4">
@@ -83,7 +93,8 @@ export const AwaitAWSDetails = ({
             ),
             terraform: (
               <TerraformTab
-                tfvarsContent={tfvarsContent}
+                inputsTfvars={tfvars.inputs}
+                secretsTfvars={tfvars.secrets}
                 installId={installId}
               />
             ),
@@ -251,11 +262,16 @@ const CloudFormationTab = ({
 }
 
 interface ITerraformTab {
-  tfvarsContent: string
+  inputsTfvars: string
+  secretsTfvars: string
   installId?: string
 }
 
-const TerraformTab = ({ tfvarsContent, installId }: ITerraformTab) => {
+const TerraformTab = ({
+  inputsTfvars,
+  secretsTfvars,
+  installId,
+}: ITerraformTab) => {
   const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/aws`
 
@@ -267,7 +283,7 @@ cd install-stacks/aws`
   }
 }`
 
-  const applyCmd = `terraform init && terraform apply -var-file=install.tfvars`
+  const applyCmd = `terraform init && terraform apply`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -312,11 +328,42 @@ cd install-stacks/aws`
         <Card>
           <span className="flex justify-between items-center">
             <Text>
-              Save this as <code>install.tfvars</code>
+              Save this as <code>inputs.auto.tfvars</code>
             </Text>
-            <ClickToCopyButton textToCopy={tfvarsContent} />
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={inputsTfvars} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(inputsTfvars, 'inputs.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
           </span>
-          <Code variant="preformated">{tfvarsContent}</Code>
+          <Code variant="preformated">{inputsTfvars}</Code>
+        </Card>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>secrets.auto.tfvars</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={secretsTfvars} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(secretsTfvars, 'secrets.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{secretsTfvars}</Code>
         </Card>
       </div>
 
