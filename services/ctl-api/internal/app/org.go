@@ -82,6 +82,11 @@ const (
 	// dashboard notebooks UI.
 	OrgFeatureNotebooks  OrgFeature = "notebooks"
 	OrgFeatureVersionsUI OrgFeature = "enable-versions-ui"
+	// OrgFeatureSpaceliftInstallStacks surfaces the Spacelift options
+	// (blueprint and administrative stack) on the install stack "await"
+	// step in the dashboard, letting customers provision the Terraform
+	// install stack through Spacelift instead of running Terraform locally.
+	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
 )
 
 type Org struct {
@@ -203,6 +208,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeaturePulumiSandbox:           false,
 		OrgFeaturePulumiUpdatePlans:       false,
 		OrgFeatureNotebooks:               false,
+		OrgFeatureSpaceliftInstallStacks:  false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -254,6 +260,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureRunnerJobLongPoll,
 		OrgFeatureNotebooks,
 		OrgFeatureVersionsUI,
+		OrgFeatureSpaceliftInstallStacks,
 	}
 }
 
@@ -289,6 +296,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureRunnerJobLongPoll:       "Switch the runner from a 5s idle-poll loop to a long-poll endpoint (`/v1/runners/:id/jobs/tail`) so job pickup is sub-second. Surfaced via runner settings; runners pick it up on the next process restart.",
 		OrgFeatureNotebooks:               "Enable install-scoped Notebooks — a Jupyter-style surface where each cell runs a command on the install's runner via a long-lived, warm per-notebook Temporal workflow, skipping the cold install-workflow step tree for near-real-time adhoc execution.",
 		OrgFeatureVersionsUI:              "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
+		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 	}
 }
 

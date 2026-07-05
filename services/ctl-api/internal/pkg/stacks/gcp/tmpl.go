@@ -1,15 +1,13 @@
 package gcp
 
-const tmpl = `nuon_install_id          = "{{.Install.ID}}"
+const inputsTmpl = `nuon_install_id          = "{{.Install.ID}}"
 nuon_org_id              = "{{.Runner.OrgID}}"
 nuon_app_id              = "{{.Install.AppID}}"
-{{- if .Install.GCPAccount}}
-{{- if .Install.GCPAccount.ProjectID}}
-gcp_project_id           = "{{.Install.GCPAccount.ProjectID}}"
+{{- if .GCPProjectID}}
+gcp_project_id           = "{{.GCPProjectID}}"
 {{- end}}
-{{- if .Install.GCPAccount.Region}}
-gcp_region               = "{{.Install.GCPAccount.Region}}"
-{{- end}}
+{{- if .GCPRegion}}
+gcp_region               = "{{.GCPRegion}}"
 {{- end}}
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
 {{- if .APIToken}}
@@ -47,16 +45,18 @@ custom_roles = {
 }
 install_inputs = {
 {{- range .InstallInputs}}
-  "{{.}}" = ""
+  "{{.Name}}" = "{{.Value}}"
 {{- end}}
 }
-auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
+`
+
+const secretsTmpl = `auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
 secrets = {
 {{- range .Secrets}}
   "{{.Name}}" = {
     description = "{{.Description}}"
     required    = {{.Required}}
-    value       = "{{.Default}}"
+    value       = "{{.Value}}"
   }
 {{- end}}
 }

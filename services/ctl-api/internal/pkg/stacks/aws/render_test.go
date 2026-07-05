@@ -38,12 +38,22 @@ func testInput() *stacks.TemplateInput {
 	}
 }
 
-// extractTfvars unwraps the JSON envelope into the raw HCL tfvars string.
+// extractTfvars unwraps the JSON envelope into the raw HCL inputs tfvars string
+// (standard vars, permissions, roles, install_inputs).
 func extractTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
 	require.NoError(t, json.Unmarshal(out, &envelope))
-	return envelope["tfvars"]
+	return envelope["inputs_tfvars"]
+}
+
+// extractSecretsTfvars unwraps the JSON envelope into the raw HCL secrets tfvars
+// string (auto_generate_secrets, secrets).
+func extractSecretsTfvars(t *testing.T, out []byte) string {
+	t.Helper()
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	return envelope["secrets_tfvars"]
 }
 
 // findVarValue finds the right-hand side of `<key> = ...` in the HCL tfvars.
@@ -81,8 +91,33 @@ func TestRenderValidJSON(t *testing.T) {
 
 	var parsed map[string]any
 	require.NoError(t, json.Unmarshal(out, &parsed), "rendered envelope must be valid JSON")
-	_, ok := parsed["tfvars"].(string)
-	assert.True(t, ok, "envelope must contain a tfvars string")
+	_, ok := parsed["inputs_tfvars"].(string)
+	assert.True(t, ok, "envelope must contain an inputs_tfvars string")
+	_, ok = parsed["secrets_tfvars"].(string)
+	assert.True(t, ok, "envelope must contain a secrets_tfvars string")
+}
+
+func TestRenderSecretsSplitFromInputs(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.SecretsConfig.Secrets = []app.AppSecretConfig{
+		{Name: "db_password", AutoGenerate: true},
+		{Name: "api_key", Description: "external api key", Required: true, Default: "abc"},
+	}
+
+	out, _, err := Render(inp, "")
+	require.NoError(t, err)
+
+	inputs := extractTfvars(t, out)
+	secrets := extractSecretsTfvars(t, out)
+
+	assert.Contains(t, inputs, "install_inputs")
+	assert.NotContains(t, inputs, "secrets =")
+	assert.NotContains(t, inputs, "auto_generate_secrets")
+
+	assert.Contains(t, secrets, `auto_generate_secrets = ["db_password", ]`)
+	assert.Contains(t, secrets, `"api_key"`)
+	assert.Contains(t, secrets, "external api key")
+	assert.NotContains(t, secrets, "install_inputs")
 }
 
 func TestRenderStandardVars(t *testing.T) {

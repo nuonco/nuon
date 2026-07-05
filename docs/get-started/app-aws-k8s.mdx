@@ -347,8 +347,8 @@ allowing the customer to enter their own values.
 
 After entering the inputs, click the Create Install button at the bottom of the
 page to start the Workflow. The provision workflow generates two install stack
-formats — a CloudFormation Quick-Create / CLI snippet, and a Terraform
-`install.tfvars` for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks)
+formats — a CloudFormation Quick-Create / CLI snippet, and Terraform
+`inputs.auto.tfvars` and `secrets.auto.tfvars` files for the [`install-stacks/aws`](https://github.com/nuonco/install-stacks)
 module — so the customer can apply whichever fits their tooling.
 
 ![Create Install](/images/get-started/create-your-first-app/tutorial-4.jpeg)
@@ -377,12 +377,12 @@ Stack**.
 
 #### Option B: Terraform
 
-Download the generated `install.tfvars` from the dashboard, set up a `backend.tf`
-(snippet provided in the dashboard), and run:
+Download the generated `inputs.auto.tfvars` and `secrets.auto.tfvars` files from the
+dashboard, set up a `backend.tf` (snippet provided in the dashboard), and run:
 
 ```sh
 terraform init
-terraform apply -var-file=install.tfvars
+terraform apply
 ```
 
 against the [`install-stacks/aws`](https://github.com/nuonco/install-stacks) module.
