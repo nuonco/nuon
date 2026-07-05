@@ -369,6 +369,11 @@ func extractEnvelopeKey(t *testing.T, out []byte, key string) string {
 
 func TestRenderSpaceliftArtifacts(t *testing.T) {
 	inp := testInput()
+	inp.AppCfg.InputConfig = app.AppInputConfig{
+		AppInputs: []app.AppInput{
+			{Name: "cluster_name", Source: app.AppInputSourceCustomer},
+		},
+	}
 	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
 		Secrets: []app.AppSecretConfig{
 			{Name: "stripe_key", Description: "Your Stripe API key", Required: true},
@@ -377,9 +382,6 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 
 	out, _, err := Render(inp)
 	require.NoError(t, err)
-
-	inputsTfvars := extractTfvars(t, out)
-	secretsTfvars := extractSecretsTfvars(t, out)
 
 	adminTF := extractEnvelopeKey(t, out, "spacelift_admin_tf")
 	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
@@ -392,26 +394,47 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 		assert.Contains(t, artifact, "install-stacks")
 	}
 
+	// The admin stack reads the tfvars from sibling files so the customer can
+	// edit inputs and replace secrets before applying.
 	assert.Contains(t, adminTF, "spacelift_stack")
-	assert.Contains(t, adminTF, `project_root      = "gcp"`)
+	assert.Contains(t, adminTF, `project_root`)
+	assert.Contains(t, adminTF, `"gcp"`)
+	assert.Contains(t, adminTF, "raw_git {")
+	assert.Contains(t, adminTF, `url       = "https://github.com/nuonco/install-stacks.git"`)
 	assert.Contains(t, adminTF, `relative_path = "source/gcp/inputs.auto.tfvars"`)
 	assert.Contains(t, adminTF, `relative_path = "source/gcp/secrets.auto.tfvars"`)
 	assert.Contains(t, adminTF, `write_only    = false`, "inputs mounted file should be plain")
 	assert.Contains(t, adminTF, `write_only    = true`, "secrets mounted file should be secret")
+	assert.Contains(t, adminTF, `filebase64("${path.module}/inputs.auto.tfvars")`)
+	assert.Contains(t, adminTF, `filebase64("${path.module}/secrets.auto.tfvars")`)
 
 	assert.Contains(t, blueprint, "project_root: gcp")
+	assert.Contains(t, blueprint, "provider: RAW_GIT")
+	assert.Contains(t, blueprint, "repository_url: https://github.com/nuonco/install-stacks.git")
 	assert.Contains(t, blueprint, "vendor:")
+	assert.NotContains(t, blueprint, "trigger_run", "blueprint must not auto-trigger: GCP creds aren't attachable via blueprint, so the first run would fail auth")
 
-	inputsB64 := base64.StdEncoding.EncodeToString([]byte(inputsTfvars))
-	secretsB64 := base64.StdEncoding.EncodeToString([]byte(secretsTfvars))
-	assert.Contains(t, adminTF, inputsB64, "admin tf should mount the rendered inputs tfvars")
-	assert.Contains(t, adminTF, secretsB64, "admin tf should mount the rendered secrets tfvars")
-	assert.Contains(t, blueprint, inputsB64, "blueprint should mount the rendered inputs tfvars")
-	assert.Contains(t, blueprint, secretsB64, "blueprint should mount the rendered secrets tfvars")
+	// GCP project/region, customer install inputs, and secrets are exposed as
+	// blueprint inputs and interpolated into the (plaintext) mounted tfvars via CEL.
+	assert.Contains(t, blueprint, "inputs:")
+	assert.Contains(t, blueprint, "id: gcp_project_id")
+	assert.Contains(t, blueprint, `default: "my-gcp-project"`)
+	assert.Contains(t, blueprint, "id: gcp_region")
+	assert.Contains(t, blueprint, `default: "us-central1"`)
+	assert.Contains(t, blueprint, "id: input_cluster_name")
+	assert.Contains(t, blueprint, "type: short_text")
+	assert.Contains(t, blueprint, "id: secret_stripe_key")
+	assert.Contains(t, blueprint, "type: secret")
+	assert.Contains(t, blueprint, "description: Your Stripe API key")
 
-	decoded, err := base64.StdEncoding.DecodeString(inputsB64)
-	require.NoError(t, err)
-	assert.Equal(t, inputsTfvars, string(decoded))
+	assert.Contains(t, blueprint, `gcp_project_id           = "${{ inputs.gcp_project_id }}"`)
+	assert.Contains(t, blueprint, `gcp_region               = "${{ inputs.gcp_region }}"`)
+	assert.Contains(t, blueprint, `"cluster_name" = "${{ inputs.input_cluster_name }}"`)
+	assert.Contains(t, blueprint, `value       = "${{ inputs.secret_stripe_key }}"`)
+
+	// Content is plaintext (not base64) so CEL interpolation works.
+	assert.Contains(t, blueprint, "nuon_install_id")
+	assert.NotContains(t, blueprint, base64.StdEncoding.EncodeToString([]byte("nuon_install_id")))
 }
 
 func TestRenderPredefinedRoleValues(t *testing.T) {

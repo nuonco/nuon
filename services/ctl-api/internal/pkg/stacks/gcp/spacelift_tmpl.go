@@ -2,9 +2,10 @@ package gcp
 
 // spaceliftAdminTfTmpl renders an administrative-stack Terraform config that uses
 // the spacelift-io/spacelift provider to create a stack running the public
-// install-stacks//gcp module. The generated inputs/secrets tfvars are mounted
-// into the stack workspace as base64-encoded files so no values need to live in
-// VCS. The secrets file is write-only so its contents aren't exposed after apply.
+// install-stacks//gcp module. The inputs/secrets tfvars are read from sibling
+// files (delivered alongside this config) rather than embedded, so the customer
+// can edit inputs.auto.tfvars and replace secrets.auto.tfvars before applying.
+// The secrets file is write-only so its contents aren't exposed after apply.
 const spaceliftAdminTfTmpl = `terraform {
   required_providers {
     spacelift = {
@@ -21,36 +22,58 @@ resource "spacelift_stack" "nuon" {
   project_root      = "gcp"
   terraform_version = "{{.TerraformVersion}}"
   autodeploy        = true
+
+  raw_git {
+    namespace = "nuonco"
+    url       = "https://github.com/nuonco/install-stacks.git"
+  }
 }
 
 resource "spacelift_mounted_file" "inputs" {
   stack_id      = spacelift_stack.nuon.id
   relative_path = "source/gcp/inputs.auto.tfvars"
   write_only    = false
-  content       = "{{.InputsB64}}"
+  content       = filebase64("${path.module}/inputs.auto.tfvars")
 }
 
 resource "spacelift_mounted_file" "secrets" {
   stack_id      = spacelift_stack.nuon.id
   relative_path = "source/gcp/secrets.auto.tfvars"
   write_only    = true
-  content       = "{{.SecretsB64}}"
+  content       = filebase64("${path.module}/secrets.auto.tfvars")
 }
 `
 
 // spaceliftBlueprintTmpl renders a Spacelift blueprint that provisions a stack
-// running the public install-stacks//gcp module, mounting the generated
-// inputs/secrets tfvars as base64-encoded files.
-const spaceliftBlueprintTmpl = `inputs: []
+// running the public install-stacks//gcp module. Customer install inputs and
+// secrets are exposed as blueprint inputs and interpolated into the mounted
+// tfvars via CEL (`${{ inputs.<id> }}`); the mounted-file content is plaintext,
+// which is what blueprints expect (unlike the provider's spacelift_mounted_file).
+const spaceliftBlueprintTmpl = `{{- if .Inputs}}
+inputs:
+{{- range .Inputs}}
+  - id: {{.ID}}
+    name: {{.Name}}
+    type: {{.Type}}
+{{- if .Description}}
+    description: {{.Description}}
+{{- end}}
+{{- if .Default}}
+    default: "{{.Default}}"
+{{- end}}
+{{- end}}
+{{- else}}
+inputs: []
+{{- end}}
 stack:
   name: nuon-{{.InstallID}}
   description: Nuon runner install stack for {{.InstallID}}
   space: root
   vcs:
     branch: main
-    repository: install-stacks
+    provider: RAW_GIT
+    repository_url: https://github.com/nuonco/install-stacks.git
     project_root: gcp
-    provider: GITHUB
   vendor:
     terraform:
       manage_state: true
@@ -58,9 +81,11 @@ stack:
   environment:
     mounted_files:
       - path: source/gcp/inputs.auto.tfvars
-        write_only: false
-        content: {{.InputsB64}}
+        secret: false
+        content: |
+{{.InputsTfvars}}
       - path: source/gcp/secrets.auto.tfvars
-        write_only: true
-        content: {{.SecretsB64}}
+        secret: true
+        content: |
+{{.SecretsTfvars}}
 `
