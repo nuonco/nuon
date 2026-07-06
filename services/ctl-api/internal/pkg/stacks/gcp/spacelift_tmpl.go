@@ -35,11 +35,7 @@ resource "spacelift_stack" "nuon" {
   }
 }
 
-# Attaches Spacelift's native GCP Workload Identity Federation integration to
-# this stack, so runs get a GOOGLE_OAUTH_ACCESS_TOKEN automatically instead of
-# requiring a manual Settings -> Integrations attachment in the dashboard.
-# You still need to grant service_account_email (see output after apply) an
-# IAM role on your target GCP project.
+# Attaches Spacelift's native GCP integration; grant the printed service account an IAM role on your GCP project.
 resource "spacelift_gcp_service_account" "nuon" {
   stack_id     = spacelift_stack.nuon.id
   token_scopes = ["https://www.googleapis.com/auth/cloud-platform"]

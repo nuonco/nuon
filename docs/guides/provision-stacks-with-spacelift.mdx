@@ -72,9 +72,9 @@ values before applying.
   <Step title="Save these files together">
     Click **Download all** on the dashboard to get `spacelift.tf`, `inputs.auto.tfvars`, and `secrets.auto.tfvars` as
     a single zip, and unpack all three into one directory (or download them individually and put them in one
-    directory yourself). Edit `inputs.auto.tfvars` as needed — any field left blank is marked with a `# required`
-    comment so you can find it — and replace `secrets.auto.tfvars` with your real secret values. Keep them somewhere
-    private — the secrets file is plaintext at rest.
+    directory yourself). Edit `inputs.auto.tfvars` as needed (any field left blank is marked with a `# required`
+    comment so you can find it), and replace `secrets.auto.tfvars` with your real secret values. Keep them somewhere
+    private, the secrets file is plaintext at rest.
   </Step>
   <Step title="Authenticate the provider to Spacelift">
     The [`spacelift-io/spacelift`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs) provider
@@ -93,7 +93,7 @@ values before applying.
     ```
   </Step>
   <Step title="Apply with Terraform">
-    `spacelift.tf` declares a required `space_id` variable — the Spacelift space to create the stack in. Find a
+    `spacelift.tf` declares a required `space_id` variable, the Spacelift space to create the stack in. Find a
     space's ID in the Spacelift dashboard under **Spaces**, then run:
 
     ```bash
@@ -109,7 +109,7 @@ values before applying.
     so there's no manual **Settings → Integrations** step.
   </Step>
   <Step title="Grant the service account access, then run the install stack">
-    `terraform apply` prints a `gcp_service_account_email` output — grant that service account an IAM role (e.g.
+    `terraform apply` prints a `gcp_service_account_email` output. Grant that service account an IAM role (e.g.
     `roles/owner`, or a narrower set matching the permissions your install needs) on your target GCP project. A newly
     created stack doesn't run on its own, so trigger its first run — it's set to auto-deploy, so it plans and applies
     your runner without further approval.
