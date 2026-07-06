@@ -1,3 +1,5 @@
+import { Banner } from '@/components/common/Banner'
+import { Text } from '@/components/common/Text'
 import { Select, type SelectOption } from '@/components/common/form/Select'
 
 const ROLE_TYPE_CONFIG = {
@@ -22,6 +24,7 @@ interface IRoleSelector {
   onChange?: (value: string) => void
   name?: string
   disabled?: boolean
+  hideWhenEmpty?: boolean
 }
 
 export const RoleSelector = ({
@@ -32,9 +35,19 @@ export const RoleSelector = ({
   onChange,
   name,
   disabled,
+  hideWhenEmpty,
 }: IRoleSelector) => {
   if (!isLoading && !isError && roles.length === 0) {
-    return null
+    if (hideWhenEmpty) {
+      return null
+    }
+    return (
+      <Banner theme="warn">
+        <Text variant="body">
+          No execution roles are available for this operation. Add or enable a role in your install stack to continue.
+        </Text>
+      </Banner>
+    )
   }
 
   const defaultRole = roles.find((r) => r.default)

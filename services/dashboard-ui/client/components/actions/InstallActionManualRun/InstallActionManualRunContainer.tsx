@@ -34,6 +34,7 @@ export const InstallActionManualRunModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const [selectedRole, setSelectedRole] = useState<string>('')
+  const [rolesUnavailable, setRolesUnavailable] = useState(false)
 
   const { isPending: isLoading, mutate } = useMutation({
     mutationFn: (body: Parameters<typeof runAction>[0]['body'] & { role?: string }) =>
@@ -95,6 +96,7 @@ export const InstallActionManualRunModalContainer = ({
       action={action}
       actionConfigId={actionConfigId}
       isLoading={isLoading}
+      rolesUnavailable={rolesUnavailable}
       onSubmit={handleSubmit}
       roleSelector={
         <RoleSelector
@@ -105,6 +107,7 @@ export const InstallActionManualRunModalContainer = ({
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
+          onAvailabilityChange={(available) => setRolesUnavailable(!available)}
         />
       }
       {...props}
