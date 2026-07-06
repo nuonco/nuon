@@ -8,8 +8,7 @@ keywords: ["terraform", "install-stacks", "install stack", "terraform apply", "i
 
 The Terraform install stack provisions the runner in your customer's cloud account. When an install uses a Terraform
 stack, the **await install stack** step in the dashboard generates two tfvars files — `inputs.auto.tfvars` and
-`secrets.auto.tfvars` — and this guide walks through applying them with the Terraform CLI. This works for every
-Terraform install stack — AWS and GCP.
+`secrets.auto.tfvars` — and this guide walks through applying them with the Terraform CLI.
 
 The stack is the public [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module, with a directory
 per cloud (`aws/`, `gcp/`).
@@ -18,9 +17,7 @@ per cloud (`aws/`, `gcp/`).
 
 - **Install Terraform** — install [Terraform](https://developer.hashicorp.com/terraform/install). The required version
   is shown on the await install stack step in the dashboard.
-- **Authenticate to your cloud** — configure credentials for the target cloud so Terraform can provision resources —
-  for example the AWS CLI / a configured profile or `gcloud` application-default credentials. The identity must have
-  permission to create the stack's resources in the target account.
+- **Authenticate to your cloud** — configure credentials for the target cloud so Terraform can provision resources
 
 ## Provision the stack
 
@@ -46,7 +43,7 @@ per cloud (`aws/`, `gcp/`).
     }
     ```
 
-    Use the equivalent backend for your cloud (`s3` for AWS). See the
+    Use the equivalent backend for your cloud. See the
     [Terraform backend docs](https://developer.hashicorp.com/terraform/language/settings/backends/configuration).
   </Step>
   <Step title="Save the install configuration">
