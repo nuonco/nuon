@@ -72,6 +72,7 @@ export const ReprovisionModalContainer = ({ ...props }: IReprovision & Omit<IMod
           value={selectedRole}
           onChange={setSelectedRole}
           name="role"
+          hideWhenEmpty
         />
       }
       {...props}
