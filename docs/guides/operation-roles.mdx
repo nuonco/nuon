@@ -98,17 +98,12 @@ Use the same `[[operation_roles]]` array on any component config file.
 
 ```toml components/my_lambda.toml
 [[operation_roles]]
-operation = "provision"
+operation = "deploy"
 role      = "{{.nuon.install.id}}-deploy-role"
 
 [[operation_roles]]
-operation = "reprovision"
+operation = "teardown"
 role      = "{{.nuon.install.id}}-update-role"
-
-[[operation_roles]]
-operation = "deprovision"
-role      = "{{.nuon.install.id}}-teardown-role"
-```
 
 Valid operations for components: `deploy` and `teardown`.
 
@@ -129,8 +124,6 @@ type = "manual"
 name    = "run-migration"
 command = "./migrate.sh"
 ```
-
-Valid operation for actions: `trigger`.
 
 ## Configuring Matrix Rules (`operation_roles.toml`)
 
