@@ -310,6 +310,13 @@ func (i *Workflow) Indexes(db *gorm.DB) []migrations.Index {
 				"created_at DESC",
 			},
 		},
+		{
+			Name: "idx_install_workflows_active_prompt",
+			Columns: []string{
+				"org_id",
+			},
+			Option: "WHERE finished_at IS NULL AND deleted_at = 0 AND approval_option = 'prompt'",
+		},
 	}
 }
 
