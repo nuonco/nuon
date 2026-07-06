@@ -1,6 +1,7 @@
 import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 import { InstallDeployRow, type IInstallDeployRow } from './InstallDeployRow'
+import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 export interface IDeployGroupStep {
   groupName: string
@@ -44,9 +45,7 @@ export const DeployGroupStep = ({
           ))}
         </div>
       ) : emptyMessage ? (
-        <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
-          <Text variant="subtext" theme="neutral">{emptyMessage}</Text>
-        </div>
+        <StepStatePlaceholder variant="loading">{emptyMessage}</StepStatePlaceholder>
       ) : null}
     </div>
   )

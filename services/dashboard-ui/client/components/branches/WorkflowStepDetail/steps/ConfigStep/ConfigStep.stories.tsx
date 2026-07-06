@@ -97,3 +97,14 @@ export const WaitingForConfig = () => (
     metadata={{}}
   />
 )
+
+export const PendingConfig = () => (
+  <ConfigStep
+    appConfigId={undefined}
+    status="pending"
+    sections={[]}
+    summary={null}
+    diffResolved={false}
+    metadata={{}}
+  />
+)
