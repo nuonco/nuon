@@ -13,14 +13,26 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { forgetComponent } from '@/lib'
 import { trackEvent } from '@/lib/segment-analytics'
 import type { TComponent } from '@/types'
+import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
 import { ForgetComponentModal } from './Forget'
 
-interface IForgetComponentModalContainer extends IModal {
+interface IForgetComponentGates {
+  isTornDown?: boolean
+  isInConfig?: boolean
+  isConfigLoading?: boolean
+}
+
+interface IForgetComponentModalContainer
+  extends IModal,
+    IForgetComponentGates {
   component: TComponent
 }
 
 export const ForgetComponentModalContainer = ({
   component,
+  isTornDown,
+  isInConfig,
+  isConfigLoading,
   ...props
 }: IForgetComponentModalContainer) => {
   const navigate = useNavigate()
@@ -82,29 +94,45 @@ export const ForgetComponentModalContainer = ({
       isLoading={isLoading}
       error={error}
       onConfirm={() => execute()}
+      isTornDown={isTornDown}
+      isInConfig={isInConfig}
+      isConfigLoading={isConfigLoading}
+      teardownAction={
+        <TeardownComponentButton component={component} variant="secondary" />
+      }
       {...props}
     />
   )
 }
 
-interface IForgetComponentButton extends IButtonAsButton {
+interface IForgetComponentButton extends IButtonAsButton, IForgetComponentGates {
   component: TComponent
 }
 
 export const ForgetComponentButton = ({
   component,
+  isTornDown,
+  isInConfig,
+  isConfigLoading,
   ...props
 }: IForgetComponentButton) => {
   const { addModal } = useSurfaces()
-  const modal = <ForgetComponentModalContainer component={component} />
+  const modal = (
+    <ForgetComponentModalContainer
+      component={component}
+      isTornDown={isTornDown}
+      isInConfig={isInConfig}
+      isConfigLoading={isConfigLoading}
+    />
+  )
 
   return (
     <Button
       onClick={() => {
         addModal(modal)
       }}
-      variant="ghost"
       {...props}
+      variant="danger"
       className="!text-red-800 dark:!text-red-500"
     >
       {props?.isMenuButton ? null : <Icon variant="TrashIcon" />}
