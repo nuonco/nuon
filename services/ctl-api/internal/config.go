@@ -79,6 +79,7 @@ func init() {
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
 	config.RegisterDefault("gcp_stack_template_bucket", "nuon-install-templates-gcp")
+	config.RegisterDefault("blob_storage_provider", "s3")
 	config.RegisterDefault("gcp_stack_template_base_url", "https://storage.googleapis.com/nuon-install-templates-gcp")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
@@ -427,9 +428,12 @@ type Config struct {
 	// their first org. Empty disables the integration (e.g. BYOC/self-hosted).
 	SFTrialEndpoint string `config:"sf_trial_access_endpoint"`
 
-	// Blob storage configuration
-	BlobStorageBucket string `config:"blob_storage_bucket" validate:"required"`
-	BlobStorageRegion string `config:"blob_storage_region" validate:"required"`
+	// Blob storage configuration. Provider selects the backend: "s3" (default,
+	// AWS-hosted installs) or "gcs" (self-hosted control-plane installs on GCP,
+	// where BlobStorageBucket is a native GCS bucket rather than S3).
+	BlobStorageBucket   string `config:"blob_storage_bucket" validate:"required"`
+	BlobStorageRegion   string `config:"blob_storage_region" validate:"required"`
+	BlobStorageProvider string `config:"blob_storage_provider" validate:"required,oneof=s3 gcs"`
 
 	// Enqueuer worker pool size — how many signals can be enqueued in parallel.
 	EnqueuerMaxWorkers int `config:"enqueuer_max_workers"`
