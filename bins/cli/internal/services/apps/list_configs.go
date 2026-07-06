@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuonco/nuon/bins/cli/internal/lookup"
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
@@ -43,6 +44,11 @@ func (s *Service) ListConfigs(ctx context.Context, appID string, offset, limit i
 }
 
 func (s *Service) listConfigs(ctx context.Context, appID string, offset, limit int) ([]*models.AppAppConfig, bool, error) {
+	appID, err := lookup.AppID(ctx, s.api, appID)
+	if err != nil {
+		return nil, false, err
+	}
+
 	cfgs, hasMore, err := s.api.GetAppConfigs(ctx, appID, &models.GetPaginatedQuery{
 		Offset: offset,
 		Limit:  limit,
