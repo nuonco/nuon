@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -138,22 +139,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install action workflow")
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, installActionWorkflow.InstallID)
+	slimInstall, err := activities.AwaitGetSlimInstallByInstallID(ctx, installActionWorkflow.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	found, err := activities.AwaitActionWorkflowInAppConfig(ctx, activities.ActionWorkflowInAppConfigRequest{
+		AppConfigID:      slimInstall.AppConfigID,
+		ActionWorkflowID: installActionWorkflow.ActionWorkflowID,
+	})
 	if err != nil {
-		return errors.Wrap(err, "unable to get app config")
-	}
-
-	found := false
-	for _, workflowCfg := range appCfg.ActionWorkflowConfigs {
-		if workflowCfg.ActionWorkflowID == installActionWorkflow.ActionWorkflowID {
-			found = true
-			break
-		}
+		return errors.Wrap(err, "unable to check action workflow in app config")
 	}
 
 	if !found {
@@ -193,7 +189,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.executeActionWorkflowRun(ctx, install, actionWorkflowRun.ID); err != nil {
+	if err := s.executeActionWorkflowRun(ctx, slimInstall.ID, slimInstall.Metadata, actionWorkflowRun.ID); err != nil {
 		return errors.Wrap(err, "unable to execute action workflow run")
 	}
 
@@ -233,11 +229,10 @@ func (s *Signal) executeAdhocRun(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install for adhoc run")
 	}
 
-	return s.executeActionWorkflowRun(ctx, install, run.ID)
+	return s.executeActionWorkflowRun(ctx, install.ID, install.Metadata, run.ID)
 }
 
-func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Install, actionWorkflowRunID string) error {
-	installID := install.ID
+func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, installID string, metadata pgtype.Hstore, actionWorkflowRunID string) error {
 	l := workflow.GetLogger(ctx)
 
 	run, err := activities.AwaitGetInstallActionWorkflowRunByRunID(ctx, actionWorkflowRunID)
@@ -357,7 +352,7 @@ func (s *Signal) executeActionWorkflowRun(ctx workflow.Context, install *app.Ins
 			return errors.Wrap(err, "unable to check state-gen-v2 feature")
 		}
 		if err := stategen.HintOrGenerate(ctx, stategen.Request{
-			StateGenV2:      statemanager.UseStateGenV2(orgEnabled, install.Metadata),
+			StateGenV2:      statemanager.UseStateGenV2(orgEnabled, metadata),
 			InstallID:       installID,
 			Targets:         statemanager.TargetsForHint(statemanager.HintActionRan, s.InstallActionWorkflowID),
 			ForceAll:        true,
