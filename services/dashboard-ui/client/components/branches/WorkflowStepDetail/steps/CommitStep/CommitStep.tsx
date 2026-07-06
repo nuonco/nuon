@@ -5,6 +5,7 @@ import { Link } from '@/components/common/Link'
 import { Text } from '@/components/common/Text'
 import { buildCommitUrl } from '@/utils/vcs-urls'
 import { getInitials } from '../../shared/format'
+import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 interface ICommitStep {
   metadata: Record<string, any>
@@ -27,11 +28,7 @@ export const CommitStep = ({ metadata }: ICommitStep) => {
   const changedFiles = (metadata.changed_files as any[]) || []
 
   if (!commitSha) {
-    return (
-      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
-        <Text variant="subtext" theme="neutral">Fetching commit from VCS...</Text>
-      </div>
-    )
+    return <StepStatePlaceholder>Fetching commit from VCS</StepStatePlaceholder>
   }
 
   const messageLines = commitMessage?.split('\n') || []

@@ -1,6 +1,7 @@
 import { Text } from '@/components/common/Text'
 import { AppConfigDiff } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
 import type { DiffSectionData } from '@/components/approvals/plan-diffs/app-config/AppConfigDiff'
+import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 
 type DiffSummary = { added?: number; removed?: number; changed?: number }
 
@@ -26,12 +27,14 @@ export const ConfigStep = ({ appConfigId, status, statusDescription, sections, s
       )
     }
 
-    return (
-      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
-        <Text variant="subtext" theme="neutral">
-          {status === 'in-progress' ? 'Cloning repository and parsing configuration...' : 'Waiting to fetch app configuration...'}
-        </Text>
-      </div>
+    return status === 'in-progress' ? (
+      <StepStatePlaceholder variant="loading">
+        Cloning repository and parsing configuration
+      </StepStatePlaceholder>
+    ) : (
+      <StepStatePlaceholder variant="pending">
+        Waiting to fetch app configuration
+      </StepStatePlaceholder>
     )
   }
 
