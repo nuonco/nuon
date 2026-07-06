@@ -10,6 +10,7 @@ import type { TComponent } from '@/types'
 interface ITeardownComponentModal extends Omit<IModal, 'onSubmit'> {
   component: TComponent
   isPending: boolean
+  rolesUnavailable?: boolean
   error?: { error?: string } | null
   onSubmit: (params: { role: string }) => void
   onClose: () => void
@@ -22,6 +23,7 @@ interface ITeardownComponentModal extends Omit<IModal, 'onSubmit'> {
 export const TeardownComponentModal = ({
   component,
   isPending,
+  rolesUnavailable,
   error,
   onSubmit,
   onClose,
@@ -32,7 +34,7 @@ export const TeardownComponentModal = ({
   const [selectedRole, setSelectedRole] = useState<string>('')
 
   const isConfirmValid = confirmName === component.name
-  const canTeardown = isConfirmValid && !isPending
+  const canTeardown = isConfirmValid && !isPending && !rolesUnavailable
 
   const handleClose = () => {
     setConfirmName('')

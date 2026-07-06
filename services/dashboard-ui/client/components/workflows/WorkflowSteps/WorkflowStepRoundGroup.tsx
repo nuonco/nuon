@@ -41,7 +41,6 @@ export const WorkflowStepRoundGroup = ({
       id={`step-round-group-${current.steps[0]?.id}`}
       interactiveHeading
       toggleLabel="Show previous attempts"
-      className="border rounded-md"
       headerClassName="px-4 py-2"
       toggleContent={
         <Text variant="subtext" theme="neutral" nowrap>
