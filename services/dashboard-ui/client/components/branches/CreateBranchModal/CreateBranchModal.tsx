@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Input } from '@/components/common/form/Input'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
 import { BranchVcsConfigFields } from '@/components/branches/BranchVcsConfigFields'
 import type {
+  TAPIError,
   TCreateAppBranchRequest,
   TVCSConnectionRepo,
   TVCSBranch,
@@ -26,6 +27,7 @@ interface ICreateBranchModal extends Omit<IModal, 'onSubmit'> {
   selectedBranch: string
   onBranchChange: (branch: string) => void
   isSubmitting: boolean
+  submitError?: TAPIError | Error | null
   onSubmit: (
     body: TCreateAppBranchRequest & {
       vcs_connection_id?: string
@@ -61,6 +63,7 @@ export const CreateBranchModal = ({
   selectedBranch,
   onBranchChange,
   isSubmitting,
+  submitError,
   onSubmit,
   onCancel,
   ...props
@@ -69,25 +72,35 @@ export const CreateBranchModal = ({
   const [useVcs, setUseVcs] = useState(true)
   const [directory, setDirectory] = useState('.')
   const [pathFilter, setPathFilter] = useState('')
-  const [validationError, setValidationError] = useState<string | null>(null)
 
-  const handleSubmit = () => {
-    setValidationError(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const bannerRef = useRef<HTMLDivElement>(null)
 
-    if (!name.trim()) {
-      setValidationError('Branch name is required')
-      return
+  const submitErrorMessage = submitError
+    ? ('error' in submitError && submitError.error) ||
+      ('description' in submitError && submitError.description) ||
+      ('message' in submitError && submitError.message) ||
+      'Unable to create branch.'
+    : undefined
+
+  useEffect(() => {
+    if (submitErrorMessage && bannerRef.current) {
+      bannerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
+  }, [submitErrorMessage])
 
-    if (useVcs) {
-      if (!selectedRepo) {
-        setValidationError('Repository is required when using VCS')
-        return
-      }
-      if (!selectedBranch) {
-        setValidationError('Git branch is required when using VCS')
-        return
-      }
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    const form = e.currentTarget
+    const firstInvalid = form.querySelector<HTMLElement>(
+      ':invalid:not(fieldset):not(form)'
+    )
+    if (firstInvalid) {
+      firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      firstInvalid.focus()
+      form.reportValidity()
+      return
     }
 
     const body: TCreateAppBranchRequest & {
@@ -138,15 +151,8 @@ export const CreateBranchModal = ({
       size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? 'Creating...' : 'Create branch',
-        disabled:
-          isSubmitting ||
-          (useVcs &&
-            (loadingRepos ||
-              loadingBranches ||
-              vcsConnections.length === 0 ||
-              !selectedRepo ||
-              !selectedBranch)),
-        onClick: handleSubmit,
+        disabled: isSubmitting || (useVcs && vcsConnections.length === 0),
+        onClick: () => formRef.current?.requestSubmit(),
         variant: 'primary',
       }}
       secondaryActionTrigger={{
@@ -156,11 +162,21 @@ export const CreateBranchModal = ({
       }}
       {...props}
     >
-      <div className="flex flex-col gap-4">
-        {validationError && <Banner theme="error">{validationError}</Banner>}
+      <form
+        ref={formRef}
+        noValidate
+        onSubmit={handleFormSubmit}
+        className="flex flex-col gap-4"
+      >
+        {submitErrorMessage && (
+          <div ref={bannerRef}>
+            <Banner theme="error">{submitErrorMessage}</Banner>
+          </div>
+        )}
 
         <Input
           id="branch-name"
+          name="name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -173,12 +189,7 @@ export const CreateBranchModal = ({
         <CheckboxInput
           id="use-vcs"
           checked={useVcs}
-          onChange={(e) => {
-            setUseVcs(e.target.checked)
-            if (!e.target.checked && validationError?.includes('VCS')) {
-              setValidationError(null)
-            }
-          }}
+          onChange={(e) => setUseVcs(e.target.checked)}
           disabled={isSubmitting}
           labelProps={{ labelText: 'Connect to git repository' }}
         />
@@ -205,7 +216,7 @@ export const CreateBranchModal = ({
             isSubmitting={isSubmitting}
           />
         )}
-      </div>
+      </form>
     </Modal>
   )
 }
