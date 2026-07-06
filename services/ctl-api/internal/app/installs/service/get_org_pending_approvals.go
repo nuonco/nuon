@@ -44,15 +44,32 @@ func (s *service) GetOrgPendingApprovals(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, approvals)
 }
 
+// Do not use a view here: the pushed-down org_id makes the planner scan the
+// org's full approval history (~2s cold). ANY(ARRAY(...)) fences the active-step
+// set so it materializes first and approvals are probed by step id, which keeps
+// the plan fast regardless of the planner's choice.
 func (s *service) getOrgPendingApprovals(ctx *gin.Context, orgID string) ([]app.WorkflowStepApproval, error) {
-	viewName := "install_workflow_step_approvals_pending_v1"
 	var approvals []app.WorkflowStepApproval
 	res := s.db.WithContext(ctx).
 		Omit("contents").
-		Scopes(scopes.WithOverrideTable(viewName), scopes.WithOffsetPagination).
-		Joins("LEFT JOIN installs ON installs.id = "+viewName+".owner_id AND "+viewName+".owner_type = 'installs'").
-		Where("("+viewName+".owner_type != 'installs' OR installs.deleted_at = 0)").
-		Where(viewName+".org_id = ?", orgID).
+		Scopes(scopes.WithOffsetPagination).
+		Joins("LEFT JOIN installs ON installs.id = install_workflow_step_approvals.owner_id AND install_workflow_step_approvals.owner_type = 'installs'").
+		Where("install_workflow_step_approvals.owner_type != 'installs' OR installs.deleted_at = 0").
+		Where("install_workflow_step_approvals.deleted_at = 0").
+		Where(`install_workflow_step_approvals.install_workflow_step_id = ANY(ARRAY(
+			SELECT s.id
+			FROM install_workflow_steps s
+			JOIN install_workflows w ON w.id = s.install_workflow_id
+			JOIN installs iw ON iw.id = w.owner_id AND iw.deleted_at = 0
+			WHERE w.org_id = ?
+			  AND w.finished_at IS NULL
+			  AND w.deleted_at = 0
+			  AND w.approval_option = 'prompt'
+			  AND (w.status->>'status') NOT IN ('cancelled', 'error')
+			  AND s.deleted_at = 0
+			  AND (s.status->>'status') NOT IN ('auto-skipped', 'cancelled', 'error')
+		))`, orgID).
+		Where("NOT EXISTS (SELECT 1 FROM install_workflow_step_approval_responses r WHERE r.install_workflow_step_approval_id = install_workflow_step_approvals.id AND r.deleted_at = 0)").
 		Preload("InstallWorkflowStep").
 		Preload("Response").
 		Find(&approvals)
