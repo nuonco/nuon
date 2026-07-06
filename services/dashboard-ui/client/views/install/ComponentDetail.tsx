@@ -186,6 +186,7 @@ export const InstallComponentDetail = () => {
                 currentBuildId={latestDeploy?.build_id}
                 currentDeployStatus={isDisabled ? 'disabled' : latestDeploy?.status_v2?.status}
                 installComponent={installComponent}
+                isConfigLoading={isLoadingConfig}
               />
             </div>
           )}
