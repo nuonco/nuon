@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
@@ -29,6 +30,7 @@ export const TeardownComponentModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const [rolesUnavailable, setRolesUnavailable] = useState(false)
 
   const { mutate: execute, isPending, error } = useMutation({
     mutationFn: (params: { body: Parameters<typeof teardownComponent>[0]['body'] }) =>
@@ -88,6 +90,7 @@ export const TeardownComponentModalContainer = ({
     <TeardownComponentModal
       component={component}
       isPending={isPending}
+      rolesUnavailable={rolesUnavailable}
       error={error as any}
       onSubmit={({ role }) => {
         execute({
@@ -110,6 +113,7 @@ export const TeardownComponentModalContainer = ({
           value={value}
           onChange={onChange}
           name="role"
+          onAvailabilityChange={(available) => setRolesUnavailable(!available)}
         />
       )}
       {...props}
