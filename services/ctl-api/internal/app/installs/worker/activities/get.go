@@ -82,6 +82,8 @@ type SlimInstallResponse struct {
 // @as-wrapper
 // @by-field installID
 func (a *Activities) getSlimInstall(ctx context.Context, installID string) (*SlimInstallResponse, error) {
+	// full install object is quite costly from query and from logistics in temporal pov, this trim down version only
+	// returns the metadat which is needed in application flow rather than entire app config
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		First(&install, "id = ?", installID)
