@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -84,6 +85,8 @@ type AppBranchRun struct {
 
 	// QueueSignal is the signal that was enqueued to trigger this run
 	QueueSignal *QueueSignal `json:"queue_signal,omitempty" gorm:"polymorphic:Owner;" temporaljson:"queue_signal,omitzero,omitempty"`
+
+	labels.Labeled
 }
 
 func (a *AppBranchRun) Indexes(db *gorm.DB) []migrations.Index {

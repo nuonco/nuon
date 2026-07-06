@@ -46,7 +46,7 @@ export const DeployGroupStepContainer = ({ step, metadata }: IDeployGroupStepCon
         : undefined,
   }))
 
-  const emptyMessage = step.status?.status === 'in-progress' ? 'Deploying to install group…' : undefined
+  const emptyMessage = step.status?.status === 'in-progress' ? 'Deploying to install group' : undefined
 
   return (
     <DeployGroupStep

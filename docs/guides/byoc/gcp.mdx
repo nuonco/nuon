@@ -101,9 +101,9 @@ bring your own at any time.
 ## Provision the Install Stack
 
 BYOC Nuon on GCP is provisioned with terraform using the the
-[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module. Nuon will share an `install.tfvars` file
-with the values specific to your install which you will augment with configuration and input values you control. Once
-the vars file is populated and the module is in your CI pipeline, you will apply the
+[`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module. Nuon will share `inputs.auto.tfvars` and
+`secrets.auto.tfvars` files with the values specific to your install which you will augment with configuration and input
+values you control. Once the vars files are populated and the module is in your CI pipeline, you will apply the
 [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module to provision the following resources for BYOC
 Nuon:
 
@@ -138,7 +138,11 @@ terraform {
 
 ### 3. Populate and save the install configuration
 
-Save the install config Nuon shared with you as `install.tfvars`. The values fall into two categories.
+Save the install config Nuon shared with you as two files: `inputs.auto.tfvars` and `secrets.auto.tfvars`. Both use
+the `.auto.tfvars` suffix so Terraform loads them automatically at apply time. All variables below live in
+`inputs.auto.tfvars` **except** `secrets` and `auto_generate_secrets`, which go in `secrets.auto.tfvars`.
+
+The values fall into two categories.
 
 **Provided by Nuon** — these come from your install record and Nuon will share them with you:
 
@@ -229,11 +233,12 @@ base64 -i your-github-app-key.pem
 
 ### 4. Apply the install stack
 
-After the `install.tfvars` file is populated, you can apply the stack.
+After the `inputs.auto.tfvars` and `secrets.auto.tfvars` files are populated, you can apply the stack. Both files are
+loaded automatically, so no `-var-file` flag is needed.
 
 ```bash
 terraform init
-terraform apply -var-file=install.tfvars
+terraform apply
 ```
 
 All of the core-infra will be created with your `gcloud` permissions. After this, the Nuon Runner will be deployed in

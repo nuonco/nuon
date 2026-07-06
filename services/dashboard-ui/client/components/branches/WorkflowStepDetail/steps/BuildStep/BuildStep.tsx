@@ -12,6 +12,7 @@ import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { ComponentType } from '@/components/components/ComponentType'
+import { StepStatePlaceholder } from '../../shared/StepStatePlaceholder'
 import { useApp } from '@/hooks/use-app'
 import { useOrg } from '@/hooks/use-org'
 import { getComponentBuilds, getComponents, getSandboxBuilds } from '@/lib'
@@ -192,12 +193,12 @@ export const BuildStep = ({ metadata, status, appBranchRunId }: IBuildStep) => {
   }, [componentsResult])
 
   if (builds.length === 0) {
-    return (
-      <div className="p-4 bg-cool-grey-50 dark:bg-dark-grey-800 rounded-lg border">
-        <Text variant="subtext" theme="neutral">
-          {status === 'in-progress' ? 'Starting component builds...' : 'Waiting to start builds...'}
-        </Text>
-      </div>
+    return status === 'in-progress' ? (
+      <StepStatePlaceholder variant="loading">Starting component builds</StepStatePlaceholder>
+    ) : (
+      <StepStatePlaceholder variant="pending">
+        Waiting to start component builds
+      </StepStatePlaceholder>
     )
   }
 

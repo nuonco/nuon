@@ -31,7 +31,7 @@ type CreateInstallAppConfigUpdateRequest struct {
 // @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
-// @Success				201	{object}	app.InstallConfigUpdate
+// @Success				201	{object}	app.InstallAppConfigVersion
 // @Router					/v1/installs/{install_id}/app-config-updates [post]
 func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
@@ -76,8 +76,8 @@ func (s *service) CreateInstallAppConfigUpdate(ctx *gin.Context) {
 		return
 	}
 
-	// Create the InstallConfigUpdate tracking record
-	update := app.InstallConfigUpdate{
+	// Create the InstallAppConfigVersion tracking record
+	update := app.InstallAppConfigVersion{
 		InstallID:      installID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: req.AppConfigID,

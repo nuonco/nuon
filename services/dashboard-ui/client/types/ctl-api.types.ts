@@ -497,6 +497,10 @@ export type TInstallStackOutputs =
   components['schemas']['app.InstallStackOutputs']
 export type TAppStackConfig = components['schemas']['app.AppStackConfig']
 
+// install app config versions
+export type TInstallAppConfigVersion =
+  components['schemas']['app.InstallAppConfigVersion']
+
 // api version
 export type TAPIVersion = {
   ui: { version: string; git_ref: string }

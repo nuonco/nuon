@@ -40,7 +40,8 @@ export const InstallRunbooksTableContainer = ({
       data={parseInstallRunbooksToTableData(
         result?.data ?? [],
         org?.id ?? '',
-        install?.id ?? ''
+        install?.id ?? '',
+        install?.app?.label_colors
       )}
       isLoading={isLoading}
       pagination={{

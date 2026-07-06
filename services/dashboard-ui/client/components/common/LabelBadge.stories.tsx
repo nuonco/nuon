@@ -57,3 +57,20 @@ export const CodeVariant = () => (
     <LabelBadge label="sha:a1b2c3d" variant="code" />
   </div>
 )
+
+export const CustomColors = () => (
+  <div className="flex flex-wrap gap-2">
+    <LabelBadge label="env:production" customColor="#16a34a" />
+    <LabelBadge label="region:us-east-1" customColor="#2563eb" />
+    <LabelBadge label="team:platform" customColor="#9333ea" />
+    <LabelBadge label="tier:critical" customColor="#dc2626" />
+  </div>
+)
+
+export const MixedCustomAndDefault = () => (
+  <div className="flex flex-wrap gap-2">
+    <LabelBadge label="env:production" customColor="#16a34a" variant="code" size="sm" />
+    <LabelBadge label="region:us-east-1" variant="code" size="sm" />
+    <LabelBadge label="team:platform" customColor="#9333ea" variant="code" size="sm" />
+  </div>
+)

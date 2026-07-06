@@ -1,8 +1,8 @@
-import { createContext, useEffect, type ReactNode } from 'react'
+import { createContext, useEffect, useMemo, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
 import { useToast } from '@/hooks/use-toast'
-import { getApp } from '@/lib'
+import { getApp, getAppLabels } from '@/lib'
 import { Text } from '@/components/common/Text'
 import { Toast } from '@/components/surfaces/Toast'
 import { ProviderError } from '@/components/layout/ProviderError'
@@ -11,6 +11,7 @@ import type { TAPIError, TApp } from '@/types'
 
 type AppContextValue = {
   app: TApp
+  labelColors: Record<string, string>
   refresh: () => void
 }
 
@@ -36,6 +37,20 @@ export function AppProvider({
     enabled: !!org.id && !!appId,
   })
 
+  const { data: labelsData } = useQuery({
+    queryKey: ['app-labels', org.id!, appId],
+    queryFn: () => getAppLabels({ orgId: org.id!, appId }),
+    enabled: !!org.id && !!appId,
+  })
+
+  const labelColors = useMemo(() => {
+    const colors: Record<string, string> = {}
+    for (const lk of labelsData?.labels ?? []) {
+      colors[lk.key] = lk.color
+    }
+    return colors
+  }, [labelsData])
+
   useEffect(() => {
     if (error && app) {
       addToast(
@@ -51,7 +66,7 @@ export function AppProvider({
   if (isLoading || !app) return <ProviderLoading />
 
   return (
-    <AppContext.Provider value={{ app, refresh: refetch }}>
+    <AppContext.Provider value={{ app, labelColors, refresh: refetch }}>
       {children}
     </AppContext.Provider>
   )

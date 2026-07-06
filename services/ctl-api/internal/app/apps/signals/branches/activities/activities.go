@@ -19,6 +19,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 type Params struct {
@@ -40,6 +41,7 @@ type Params struct {
 	InstallHelpers   *installhelpers.Helpers
 	QueueClient      *queueclient.Client
 	FlowsClient      *flowclient.Client
+	TfClient         terraform.Client
 }
 
 type Activities struct {
@@ -59,6 +61,7 @@ type Activities struct {
 	installHelpers   *installhelpers.Helpers
 	queueClient      *queueclient.Client
 	flowsClient      *flowclient.Client
+	tfClient         terraform.Client
 }
 
 func New(params Params) (*Activities, error) {
@@ -79,5 +82,6 @@ func New(params Params) (*Activities, error) {
 		installHelpers:   params.InstallHelpers,
 		queueClient:      params.QueueClient,
 		flowsClient:      params.FlowsClient,
+		tfClient:         params.TfClient,
 	}, nil
 }

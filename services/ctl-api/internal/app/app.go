@@ -7,6 +7,7 @@ import (
 	"gorm.io/plugin/soft_delete"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
@@ -34,6 +35,7 @@ type App struct {
 	Name        string              `json:"name,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"name,omitzero,omitempty"`
 	Description generics.NullString `json:"description,omitzero" swaggertype:"string" temporaljson:"description,omitzero,omitempty"`
 	DisplayName generics.NullString `json:"display_name,omitzero" swaggertype:"string" temporaljson:"display_name,omitzero,omitempty"`
+	LabelColors labels.Labels       `json:"label_colors,omitzero" gorm:"type:jsonb" temporaljson:"label_colors,omitzero,omitempty" swaggertype:"object"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"index:idx_app_name,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   *Org   `faker:"-" json:"-" temporaljson:"org,omitzero,omitempty"`

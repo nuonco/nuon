@@ -42,7 +42,8 @@ export function parseInstallComponentSummaryToTableData(
   orgId: string,
   installId: string,
   configConnections?: TComponentConfig[],
-  componentToggles?: { [key: string]: boolean }
+  componentToggles?: { [key: string]: boolean },
+  labelColors?: Record<string, string>
 ): InstallComponentRow[] {
   return components.map((component) => {
     const depIndex = deps?.findIndex((dep) => dep?.id === component?.id)
@@ -127,7 +128,7 @@ export function parseInstallComponentSummaryToTableData(
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" />
+                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
               ))}
           </span>
         )

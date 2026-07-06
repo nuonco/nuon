@@ -2,7 +2,9 @@ package activities
 
 import (
 	"context"
+	"database/sql"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -14,10 +16,6 @@ import (
 // @as-wrapper
 // @by-field installID
 func (a *Activities) get(ctx context.Context, installID string) (*app.Install, error) {
-	return a.getInstall(ctx, installID)
-}
-
-func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	install := app.Install{}
 	res := a.db.WithContext(ctx).
 		Preload("CreatedBy").
@@ -63,4 +61,42 @@ func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Ins
 	}
 
 	return &install, nil
+}
+
+func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
+	return a.get(ctx, installID)
+}
+
+// SlimInstallResponse is a trimmed projection of app.Install for hot paths that
+// only need core columns, avoiding confusion with a fully-preloaded install.
+type SlimInstallResponse struct {
+	ID          string
+	OrgID       string
+	AppID       string
+	AppConfigID string
+	SandboxMode sql.NullBool
+	Metadata    pgtype.Hstore
+}
+
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @by-field installID
+func (a *Activities) getSlimInstall(ctx context.Context, installID string) (*SlimInstallResponse, error) {
+	// full install object is quite costly from query and from logistics in temporal pov, this trim down version only
+	// returns the metadat which is needed in application flow rather than entire app config
+	install := app.Install{}
+	res := a.db.WithContext(ctx).
+		First(&install, "id = ?", installID)
+	if res.Error != nil {
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get install: %w")
+	}
+
+	return &SlimInstallResponse{
+		ID:          install.ID,
+		OrgID:       install.OrgID,
+		AppID:       install.AppID,
+		AppConfigID: install.AppConfigID,
+		SandboxMode: install.SandboxMode,
+		Metadata:    install.Metadata,
+	}, nil
 }

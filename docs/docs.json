@@ -167,7 +167,10 @@
 							"guides/install-configs",
 							"guides/component-overrides",
 							"guides/runner-kill-switch",
-							"guides/custom-domains"
+							"guides/custom-domains",
+							"guides/provision-stacks-with-cloudformation",
+							"guides/provision-stacks-with-terraform",
+							"guides/provision-stacks-with-spacelift"
 						]
 					},
 					{
@@ -289,6 +292,7 @@
 				"icon": "clock-rotate-left",
 				"pages": [
 					"updates/updates",
+					"updates/037-split-install-stack-tfvars",
 					"updates/036-toggleable-components",
 					"updates/035-runbooks-and-readmes",
 					"updates/034-aws-terraform-install-stack",

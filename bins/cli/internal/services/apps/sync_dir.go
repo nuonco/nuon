@@ -150,12 +150,6 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		return nil
 	}
 
-	if err := s.api.UpdateAppConfigInstalls(ctx, appID, syncer.GetAppConfigID(), &models.ServiceUpdateAppConfigInstallsRequest{
-		UpdateAll: true,
-	}); err != nil {
-		return err
-	}
-
 	ui.PrintSuccess("successfully synced " + dir)
 	s.notifyOrphanedComponents(syncer.OrphanedComponents())
 	s.notifyOrphanedActions(syncer.OrphanedActions())

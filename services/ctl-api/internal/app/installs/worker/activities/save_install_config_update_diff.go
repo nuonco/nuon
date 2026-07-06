@@ -12,14 +12,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
-type SaveInstallConfigUpdateDiffInput struct {
-	InstallConfigUpdateID string `json:"install_config_update_id" validate:"required"`
-	DiffJSON              string `json:"diff_json" validate:"required"`
+type SaveInstallAppConfigVersionDiffInput struct {
+	InstallAppConfigVersionID string `json:"install_config_update_id" validate:"required"`
+	DiffJSON                  string `json:"diff_json" validate:"required"`
 }
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-func (a *Activities) SaveInstallConfigUpdateDiff(ctx context.Context, input *SaveInstallConfigUpdateDiffInput) error {
+func (a *Activities) SaveInstallAppConfigVersionDiff(ctx context.Context, input *SaveInstallAppConfigVersionDiffInput) error {
 	if err := a.v.Struct(input); err != nil {
 		return fmt.Errorf("invalid input: %w", err)
 	}
@@ -49,13 +49,13 @@ func (a *Activities) SaveInstallConfigUpdateDiff(ctx context.Context, input *Sav
 		return fmt.Errorf("unable to marshal blob metadata: %w", err)
 	}
 
-	// Update the InstallConfigUpdate record with the diff metadata
+	// Update the InstallAppConfigVersion record with the diff metadata
 	res := a.db.WithContext(ctx).
-		Model(&app.InstallConfigUpdate{}).
-		Where(app.InstallConfigUpdate{ID: input.InstallConfigUpdateID}).
+		Model(&app.InstallAppConfigVersion{}).
+		Where(app.InstallAppConfigVersion{ID: input.InstallAppConfigVersionID}).
 		Update("diff", string(metadataJSON))
 	if res.Error != nil {
-		return fmt.Errorf("unable to save diff on install config update %s: %w", input.InstallConfigUpdateID, res.Error)
+		return fmt.Errorf("unable to save diff on install config update %s: %w", input.InstallAppConfigVersionID, res.Error)
 	}
 
 	return nil

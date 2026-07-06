@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/hooks/use-auth'
@@ -35,6 +36,7 @@ export const DeployComponentModalContainer = ({
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const [rolesUnavailable, setRolesUnavailable] = useState(false)
 
   const { mutate: execute, isPending, error } = useMutation({
     mutationFn: (params: { body: Parameters<typeof deployComponent>[0]['body'] }) =>
@@ -96,6 +98,7 @@ export const DeployComponentModalContainer = ({
       currentDeployStatus={currentDeployStatus}
       installId={install.id}
       isPending={isPending}
+      rolesUnavailable={rolesUnavailable}
       error={error as any}
       onSubmit={({ buildId, deployDependents, deployDependencies, role }) => {
         execute({
@@ -129,6 +132,7 @@ export const DeployComponentModalContainer = ({
           value={value}
           onChange={onChange}
           name="role"
+          onAvailabilityChange={(available) => setRolesUnavailable(!available)}
         />
       )}
       {...props}

@@ -77,7 +77,7 @@ CreateInstallAppConfigUpdateCreated describes a response with status code 201, w
 Created
 */
 type CreateInstallAppConfigUpdateCreated struct {
-	Payload *models.AppInstallConfigUpdate
+	Payload *models.AppInstallAppConfigVersion
 }
 
 // IsSuccess returns true when this create install app config update created response has a 2xx status code
@@ -120,13 +120,13 @@ func (o *CreateInstallAppConfigUpdateCreated) String() string {
 	return fmt.Sprintf("[POST /v1/installs/{install_id}/app-config-updates][%d] createInstallAppConfigUpdateCreated %s", 201, payload)
 }
 
-func (o *CreateInstallAppConfigUpdateCreated) GetPayload() *models.AppInstallConfigUpdate {
+func (o *CreateInstallAppConfigUpdateCreated) GetPayload() *models.AppInstallAppConfigVersion {
 	return o.Payload
 }
 
 func (o *CreateInstallAppConfigUpdateCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.AppInstallConfigUpdate)
+	o.Payload = new(models.AppInstallAppConfigVersion)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && !stderrors.Is(err, io.EOF) {

@@ -28,6 +28,7 @@ export const DeployAllComponentsModalContainer = ({
   const { addToast } = useToast()
   const queryClient = useQueryClient()
   const [isKickedOff, setIsKickedOff] = useState(false)
+  const [rolesUnavailable, setRolesUnavailable] = useState(false)
 
   const { mutate: execute, isPending, error } = useMutation({
     mutationFn: (params: { body: Parameters<typeof deployComponents>[0]['body'] }) =>
@@ -85,6 +86,7 @@ export const DeployAllComponentsModalContainer = ({
       installName={install.name}
       isPending={isPending}
       isKickedOff={isKickedOff}
+      rolesUnavailable={rolesUnavailable}
       error={error as any}
       onSubmit={({ role }) =>
         execute({ body: { plan_only: false, ...(role && { role }) } })
@@ -96,6 +98,7 @@ export const DeployAllComponentsModalContainer = ({
           value={value}
           onChange={onChange}
           name="role"
+          onAvailabilityChange={(available) => setRolesUnavailable(!available)}
         />
       )}
       {...props}

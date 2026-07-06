@@ -2,7 +2,9 @@ package blob
 
 import (
 	"context"
-	"fmt"
+	"crypto/sha256"
+	"encoding/hex"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,7 +12,6 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 )
 
@@ -45,8 +46,9 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 
 	startTime := time.Now()
 	status := "success"
+	cache := "no"
 	defer func() {
-		tags := []string{"format:blob", "status:" + status, "cache:no"}
+		tags := []string{"format:blob", "status:" + status, "cache:" + cache}
 		d.mw.Incr("temporal.dataconverter.encode", tags)
 		d.mw.Timing("temporal.dataconverter.encode.latency", time.Since(startTime), tags)
 		if status == "success" {
@@ -54,38 +56,46 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 		}
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), d.cfg.TemporalBlobS3Timeout)
-	defer cancel()
-
-	// Generate blob ID and S3 key
-	blobID := domains.NewTemporalBlob()
+	// Content-addressed key: identical payloads map to the same blob, so repeated
+	// encodes of the same data (fanned out across activities, or replayed across
+	// cron ticks) dedupe to a single S3 object and a single cache entry.
+	sum := sha256.Sum256(payload.Data)
+	hexSum := hex.EncodeToString(sum[:])
+	blobID := blobIDPrefix + hexSum
+	checksum := "sha256:" + hexSum
 	s3Key := d.cfg.TemporalBlobS3Prefix + blobID
 
-	// Upload to S3
-	reader := strings.NewReader(string(payload.Data))
-	checksum, err := d.blobSvc.UploadStream(ctx, s3Key, reader)
-	if err != nil {
-		status = "error"
-		d.l.Error("error uploading blob to S3", zap.Error(err), zap.String("s3_key", s3Key))
-		// Graceful degradation: return original payload
-		return payload, nil
-	}
+	// A tracked cache entry means this content is already durable in S3 (we either
+	// uploaded it here or fetched it from S3 during a prior decode), so we can skip
+	// the upload and DB write.
+	if d.cache.Has(blobID) {
+		cache = "yes"
+	} else {
+		ctx, cancel := context.WithTimeout(context.Background(), d.cfg.TemporalBlobS3Timeout)
+		defer cancel()
 
-	// Write pointer row to DB
-	dbRecord := app.TemporalBlob{
-		S3Key:    s3Key,
-		Checksum: checksum,
-		Size:     int64(len(payload.Data)),
-	}
-	if res := d.db.WithContext(ctx).Create(&dbRecord); res.Error != nil {
-		d.l.Error("error writing blob record", zap.Error(res.Error), zap.String("s3_key", s3Key))
-		// S3 upload succeeded but DB write failed; payload is in S3 and can be recovered
-		// Still return the encoded payload since the s3_key is in metadata
-	}
+		reader := strings.NewReader(string(payload.Data))
+		if _, err := d.blobSvc.UploadStream(ctx, s3Key, reader); err != nil {
+			status = "error"
+			d.l.Error("error uploading blob to S3", zap.Error(err), zap.String("s3_key", s3Key))
+			// Graceful degradation: return original payload
+			return payload, nil
+		}
 
-	// Write to local file cache
-	if err := d.cache.Put(blobID, payload.Data); err != nil {
-		d.l.Warn("error writing to blob cache", zap.Error(err), zap.String("blob_id", blobID))
+		dbRecord := app.TemporalBlob{
+			S3Key:    s3Key,
+			Checksum: checksum,
+			Size:     int64(len(payload.Data)),
+		}
+		if res := d.db.WithContext(ctx).Create(&dbRecord); res.Error != nil {
+			d.l.Error("error writing blob record", zap.Error(res.Error), zap.String("s3_key", s3Key))
+			// S3 upload succeeded but DB write failed; payload is in S3 and can be recovered
+			// Still return the encoded payload since the s3_key is in metadata
+		}
+
+		if err := d.cache.Put(blobID, payload.Data); err != nil {
+			d.l.Warn("error writing to blob cache", zap.Error(err), zap.String("blob_id", blobID))
+		}
 	}
 
 	// Build encoded payload
@@ -96,7 +106,7 @@ func (d *dataConverter) encodePayload(payload *commonpb.Payload) (*commonpb.Payl
 			"nuon/blob/blob_id":        []byte(blobID),
 			"nuon/blob/s3_key":         []byte(s3Key),
 			"nuon/blob/checksum":       []byte(checksum),
-			"nuon/blob/size":           []byte(fmt.Sprintf("%d", len(payload.Data))),
+			"nuon/blob/size":           []byte(strconv.Itoa(len(payload.Data))),
 		},
 		Data: []byte(blobID),
 	}

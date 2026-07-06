@@ -6,9 +6,12 @@ import (
 	"strconv"
 
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
@@ -32,13 +35,17 @@ type TriggerAppBranchRunFromVCSPushResponse struct {
 }
 
 type TriggerAppBranchRunFromVCSPushRequest struct {
-	AppBranchID       string `json:"app_branch_id"`
-	AppBranchConfigID string `json:"app_branch_config_id"`
-	PlanOnly          bool   `json:"plan_only,omitempty"`
-	EventType         string `json:"event_type,omitempty"`
-	PRNumber          *int   `json:"pr_number,omitempty"`
-	HeadSHA           string `json:"head_sha,omitempty"`
-	BaseBranch        string `json:"base_branch,omitempty"`
+	AppBranchID       string   `json:"app_branch_id"`
+	AppBranchConfigID string   `json:"app_branch_config_id"`
+	PlanOnly          bool     `json:"plan_only,omitempty"`
+	EventType         string   `json:"event_type,omitempty"`
+	PRNumber          *int     `json:"pr_number,omitempty"`
+	HeadSHA           string   `json:"head_sha,omitempty"`
+	BaseBranch        string   `json:"base_branch,omitempty"`
+	PusherEmails      []string `json:"pusher_emails,omitempty"`
+
+	SenderLogin         string `json:"sender_login,omitempty"`
+	FallbackCreatedByID string `json:"fallback_created_by_id,omitempty"`
 }
 
 // @temporal-gen-v2 activity
@@ -46,7 +53,7 @@ type TriggerAppBranchRunFromVCSPushRequest struct {
 func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req TriggerAppBranchRunFromVCSPushRequest) (*TriggerAppBranchRunFromVCSPushResponse, error) {
 	appBranchID := req.AppBranchID
 	appBranchConfigID := req.AppBranchConfigID
-	// Load branch with queue
+
 	var branch app.AppBranch
 	if err := a.db.WithContext(ctx).Preload("Queue").First(&branch, "id = ?", appBranchID).Error; err != nil {
 		return nil, fmt.Errorf("unable to find app branch: %w", err)
@@ -56,13 +63,31 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return nil, fmt.Errorf("app branch %s has no queue", appBranchID)
 	}
 
-	// Load config to get config number
 	var config app.AppBranchConfig
 	if err := a.db.WithContext(ctx).First(&config, "id = ?", appBranchConfigID).Error; err != nil {
 		return nil, fmt.Errorf("unable to find app branch config: %w", err)
 	}
 
-	// Create app branch run
+	ctx = a.resolvePusherAccount(ctx, branch.OrgID, req.PusherEmails, req.FallbackCreatedByID)
+
+	// Build labels for the run
+	runLabels := labels.Labels{}
+	if len(req.PusherEmails) > 0 {
+		runLabels["pusher_email"] = req.PusherEmails[0]
+	}
+	if req.SenderLogin != "" {
+		runLabels["sender"] = req.SenderLogin
+	}
+	if req.HeadSHA != "" {
+		runLabels["commit"] = req.HeadSHA
+	}
+	if req.PRNumber != nil {
+		runLabels["pr"] = strconv.Itoa(*req.PRNumber)
+	}
+	if req.EventType != "" {
+		runLabels["event_type"] = req.EventType
+	}
+
 	run, err := a.helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: appBranchConfigID,
@@ -72,12 +97,12 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		PRNumber:          req.PRNumber,
 		HeadSHA:           req.HeadSHA,
 		BaseBranch:        req.BaseBranch,
+		Labels:            runLabels,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create app branch run: %w", err)
 	}
 
-	// Create workflow
 	metadata := map[string]string{
 		"run_id":        run.ID,
 		"app_id":        branch.AppID,
@@ -108,13 +133,11 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		return nil, fmt.Errorf("unable to create workflow: %w", err)
 	}
 
-	// Update run with workflow ID
 	run.WorkflowID = &wf.ID
 	if err := a.db.WithContext(ctx).Save(run).Error; err != nil {
 		return nil, fmt.Errorf("unable to update run with workflow id: %w", err)
 	}
 
-	// Enqueue run signal on the branch queue
 	enqueueResp, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
 		QueueID:   branch.Queue.ID,
 		OwnerID:   run.ID,
@@ -132,4 +155,31 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		WorkflowID:    wf.ID,
 		QueueSignalID: enqueueResp.ID,
 	}, nil
+}
+
+func (a *Activities) resolvePusherAccount(ctx context.Context, orgID string, emails []string, fallbackCreatedByID string) context.Context {
+	for _, email := range emails {
+		if email == "" {
+			continue
+		}
+		var account app.Account
+		err := a.db.WithContext(ctx).
+			Where("LOWER(accounts.email) = LOWER(?)", email).
+			Joins("JOIN account_roles ON account_roles.account_id = accounts.id").
+			Joins("JOIN roles ON roles.id = account_roles.role_id AND roles.org_id = ?", orgID).
+			First(&account).Error
+		if err == nil {
+			a.l.Info("resolved pusher account",
+				zap.String("matched_email", email),
+				zap.String("account_id", account.ID),
+			)
+			return cctx.SetAccountIDContext(ctx, account.ID)
+		}
+	}
+
+	if fallbackCreatedByID != "" {
+		return cctx.SetAccountIDContext(ctx, fallbackCreatedByID)
+	}
+
+	return ctx
 }

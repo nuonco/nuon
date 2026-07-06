@@ -3,12 +3,21 @@ export default {
 }
 
 import type { ReactNode } from 'react'
-import { BuildRow } from './BuildStep'
+import { BuildRow, BuildStep } from './BuildStep'
+import { AppContext } from '@/providers/app-provider'
 
 const RowList = ({ children }: { children: ReactNode }) => (
   <div className="border rounded-[10px] divide-y overflow-hidden">
     {children}
   </div>
+)
+
+const mockApp = { id: 'app-1', name: 'demo-app' } as any
+
+const WithApp = ({ children }: { children: ReactNode }) => (
+  <AppContext.Provider value={{ app: mockApp, labelColors: {}, refresh: () => {} }}>
+    {children}
+  </AppContext.Provider>
 )
 
 export const Rows = () => (
@@ -67,4 +76,16 @@ export const NoType = () => (
       build={{ component_id: 'c1', component_name: 'unknown-component', status: 'success' }}
     />
   </RowList>
+)
+
+export const StartingBuilds = () => (
+  <WithApp>
+    <BuildStep metadata={{ builds: [] }} status="in-progress" />
+  </WithApp>
+)
+
+export const WaitingToStartBuilds = () => (
+  <WithApp>
+    <BuildStep metadata={{ builds: [] }} status="pending" />
+  </WithApp>
 )

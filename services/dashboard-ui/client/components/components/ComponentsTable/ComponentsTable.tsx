@@ -28,7 +28,8 @@ export type TComponentRow = {
 export function parseComponentToTableData(
   components: TComponent[],
   orgId: string,
-  appId: string
+  appId: string,
+  labelColors?: Record<string, string>
 ): TComponentRow[] {
   return components.map((component) => {
     return {
@@ -89,7 +90,7 @@ export function parseComponentToTableData(
             {Object.keys(lbls)
               .sort()
               .map((k) => (
-                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" />
+                <LabelBadge key={k} labelKey={k} labelValue={lbls[k]} size="sm" customColor={labelColors?.[k]} />
               ))}
           </span>
         )

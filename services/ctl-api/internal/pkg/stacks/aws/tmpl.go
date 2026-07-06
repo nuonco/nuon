@@ -1,6 +1,6 @@
 package aws
 
-const tmpl = `nuon_install_id          = "{{.Install.ID}}"
+const inputsTmpl = `nuon_install_id          = "{{.Install.ID}}"
 nuon_org_id              = "{{.Runner.OrgID}}"
 nuon_app_id              = "{{.Install.AppID}}"
 {{- if .Install.AWSAccount}}
@@ -46,7 +46,9 @@ install_inputs = {
   "{{.}}" = ""
 {{- end}}
 }
-auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
+`
+
+const secretsTmpl = `auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
 secrets = {
 {{- range .Secrets}}
   "{{.Name}}" = {

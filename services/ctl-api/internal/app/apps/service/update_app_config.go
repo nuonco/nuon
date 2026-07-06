@@ -93,8 +93,13 @@ func (s *service) UpdateAppConfigV2(ctx *gin.Context) {
 			}
 		}
 
-		// Trigger app branch run if config was synced targeting a branch
-		s.triggerAppBranchRunForConfig(ctx, cfg)
+		// Trigger app branch run if config was synced targeting a branch,
+		// otherwise sync non-branch-managed installs to the new config.
+		if cfg.AppBranchID.Valid && cfg.AppBranchID.String != "" {
+			s.triggerAppBranchRunForConfig(ctx, cfg)
+		} else {
+			s.emitSyncAppConfigInstallsSignal(ctx, cfg.AppID, cfg.ID)
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)
@@ -149,8 +154,11 @@ func (s *service) UpdateAppConfig(ctx *gin.Context) {
 			}
 		}
 
-		// Trigger app branch run if config was synced targeting a branch
-		s.triggerAppBranchRunForConfig(ctx, cfg)
+		if cfg.AppBranchID.Valid && cfg.AppBranchID.String != "" {
+			s.triggerAppBranchRunForConfig(ctx, cfg)
+		} else {
+			s.emitSyncAppConfigInstallsSignal(ctx, cfg.AppID, cfg.ID)
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)

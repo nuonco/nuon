@@ -8,9 +8,10 @@ import { extractSections, computeSummary } from './lib'
 interface IConfigStepContainer {
   metadata: Record<string, any>
   status?: string
+  statusDescription?: string
 }
 
-export const ConfigStepContainer = ({ metadata, status }: IConfigStepContainer) => {
+export const ConfigStepContainer = ({ metadata, status, statusDescription }: IConfigStepContainer) => {
   const { org } = useOrg()
   const { app } = useApp()
   const appConfigId = metadata.app_config_id as string | undefined
@@ -44,6 +45,7 @@ export const ConfigStepContainer = ({ metadata, status }: IConfigStepContainer) 
     <ConfigStep
       appConfigId={appConfigId}
       status={status}
+      statusDescription={statusDescription}
       sections={sections}
       summary={summary}
       diffResolved={diffError || !!diffData}

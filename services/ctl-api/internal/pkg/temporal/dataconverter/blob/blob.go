@@ -13,6 +13,10 @@ import (
 
 const encoding = "nuon/blob"
 
+// blobIDPrefix namespaces content-addressed blob IDs (prefix + hex sha256 of the
+// payload data).
+const blobIDPrefix = "tpb"
+
 var _ converter.PayloadCodec = (*dataConverter)(nil)
 
 type dataConverter struct {
