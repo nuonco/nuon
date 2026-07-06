@@ -37,7 +37,7 @@ export const CreateBranchModalContainer = ({
     enabled: !!vcsConnectionId,
   })
 
-  const { mutate, isPending: isLoading } = useMutation({
+  const { mutate, isPending: isLoading, error: submitError } = useMutation({
     mutationFn: async (
       body: TCreateAppBranchRequest & {
         vcs_connection_id?: string
@@ -117,6 +117,7 @@ export const CreateBranchModalContainer = ({
       selectedBranch={vcsBrowser.selectedBranch}
       onBranchChange={vcsBrowser.setSelectedBranch}
       isSubmitting={isLoading}
+      submitError={submitError}
       onSubmit={(body) => mutate(body)}
       onCancel={() => removeModal(props.modalId)}
       {...props}
