@@ -56,6 +56,10 @@ type service struct {
 
 // NewService creates a new blob storage service
 func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
+	if cfg.BlobStorageProvider == "gcs" {
+		return newGCSService(context.Background(), cfg, mw)
+	}
+
 	v := validator.New()
 
 	// Create uploader
