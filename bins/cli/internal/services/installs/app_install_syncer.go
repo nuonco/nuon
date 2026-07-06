@@ -75,10 +75,14 @@ func (s *appInstallSyncer) syncNewInstall(ctx context.Context, installCfg *confi
 		return nil, fmt.Errorf("error getting latest input config for app %s: %w", s.appID, err)
 	}
 
-	// Use defaults for any missing inputs.
+	// Use defaults for any missing inputs. Customer-owned inputs are excluded: they
+	// are set by the customer during onboarding, not by the vendor's install config.
 	{
 		inputDefaults := make(map[string]string)
 		for _, ic := range appInputCfg.Inputs {
+			if ic.Source == string(models.AppAppInputSourceCustomer) {
+				continue
+			}
 			if !ic.Required && !ic.Sensitive && ic.Default != "" {
 				inputDefaults[ic.Name] = ic.Default
 			}
