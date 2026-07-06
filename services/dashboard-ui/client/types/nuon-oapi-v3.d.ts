@@ -5932,7 +5932,7 @@ export interface components {
        * @description Data is the typed, per-error-type payload: WHAT the error is. Closed
        * schema per Type. Read to render sections and by any future view.
        */
-      data?: number[];
+      data?: Record<string, never>;
       /**
        * @description Hints is the open annotation/directive bag: HOW to handle or present the
        * error. Canonical keys (Hint*) are honored by specific consumers.
