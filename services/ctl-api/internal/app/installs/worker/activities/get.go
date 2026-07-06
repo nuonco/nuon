@@ -64,3 +64,17 @@ func (a *Activities) get(ctx context.Context, installID string) (*app.Install, e
 func (a *Activities) getInstall(ctx context.Context, installID string) (*app.Install, error) {
 	return a.get(ctx, installID)
 }
+
+// @temporal-gen-v2 activity
+// @as-wrapper
+// @by-field installID
+func (a *Activities) getSlimInstall(ctx context.Context, installID string) (*app.Install, error) {
+	install := app.Install{}
+	res := a.db.WithContext(ctx).
+		First(&install, "id = ?", installID)
+	if res.Error != nil {
+		return nil, dbgenerics.TemporalGormError(res.Error, "unable to get install: %w")
+	}
+
+	return &install, nil
+}

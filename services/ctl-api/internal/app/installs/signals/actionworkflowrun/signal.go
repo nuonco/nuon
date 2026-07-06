@@ -138,22 +138,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return errors.Wrap(err, "unable to get install action workflow")
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, installActionWorkflow.InstallID)
+	slimInstall, err := activities.AwaitGetSlimInstallByInstallID(ctx, installActionWorkflow.InstallID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get install")
 	}
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	found, err := activities.AwaitActionWorkflowInAppConfig(ctx, activities.ActionWorkflowInAppConfigRequest{
+		AppConfigID:      slimInstall.AppConfigID,
+		ActionWorkflowID: installActionWorkflow.ActionWorkflowID,
+	})
 	if err != nil {
-		return errors.Wrap(err, "unable to get app config")
-	}
-
-	found := false
-	for _, workflowCfg := range appCfg.ActionWorkflowConfigs {
-		if workflowCfg.ActionWorkflowID == installActionWorkflow.ActionWorkflowID {
-			found = true
-			break
-		}
+		return errors.Wrap(err, "unable to check action workflow in app config")
 	}
 
 	if !found {
@@ -193,7 +188,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	if err := s.executeActionWorkflowRun(ctx, install, actionWorkflowRun.ID); err != nil {
+	if err := s.executeActionWorkflowRun(ctx, slimInstall, actionWorkflowRun.ID); err != nil {
 		return errors.Wrap(err, "unable to execute action workflow run")
 	}
 

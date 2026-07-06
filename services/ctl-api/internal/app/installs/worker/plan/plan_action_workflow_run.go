@@ -32,12 +32,12 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, nil, errors.Wrap(err, "unable to get run")
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, run.InstallID)
+	slimInstall, err := activities.AwaitGetSlimInstallByInstallID(ctx, run.InstallID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get install")
 	}
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, slimInstall.AppConfigID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}
@@ -132,7 +132,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
-	if install.SandboxMode.Bool {
+	if slimInstall.SandboxMode.Bool {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
 
 		plan.SandboxMode = &plantypes.SandboxMode{
