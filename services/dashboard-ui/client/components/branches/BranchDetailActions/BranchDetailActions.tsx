@@ -6,7 +6,7 @@ import { Menu } from '@/components/common/Menu'
 
 interface IBranchDetailActions {
   editButton: ReactNode
-  manageInstallsButton: ReactNode
+  deploymentPlanButton: ReactNode
   deleteButton: ReactNode
   hasConfig: boolean
   isTriggerPending: boolean
@@ -16,7 +16,7 @@ interface IBranchDetailActions {
 
 export const BranchDetailActions = ({
   editButton,
-  manageInstallsButton,
+  deploymentPlanButton,
   deleteButton,
   hasConfig,
   isTriggerPending,
@@ -25,8 +25,24 @@ export const BranchDetailActions = ({
 }: IBranchDetailActions) => {
   return (
     <div className="flex items-center gap-3">
-      {editButton}
-      {manageInstallsButton}
+      <Dropdown
+        id="branch-manage"
+        variant="secondary"
+        alignment="right"
+        buttonText={
+          <>
+            <Icon variant="SlidersHorizontalIcon" size={16} />
+            Manage
+          </>
+        }
+      >
+        <Menu className="min-w-56">
+          {deploymentPlanButton}
+          {editButton}
+          <hr />
+          <span className="contents">{deleteButton}</span>
+        </Menu>
+      </Dropdown>
 
       <div className="flex items-center">
         <Button
@@ -36,8 +52,8 @@ export const BranchDetailActions = ({
           className="!rounded-r-none"
           title={
             !hasConfig
-              ? 'Create a configuration first to trigger a run'
-              : 'Trigger a new run with the current configuration'
+              ? 'Create a deployment plan first to trigger a run'
+              : 'Trigger a new run with the current deployment plan'
           }
         >
           <Icon variant="PlayIcon" size={16} />
@@ -58,7 +74,6 @@ export const BranchDetailActions = ({
               Preview run (plan only)
               <Icon variant="EyeIcon" size={16} />
             </Button>
-            <span>{deleteButton}</span>
           </Menu>
         </Dropdown>
       </div>
