@@ -33,6 +33,10 @@ export const RoleSelector = ({
   name,
   disabled,
 }: IRoleSelector) => {
+  if (!isLoading && !isError && roles.length === 0) {
+    return null
+  }
+
   const defaultRole = roles.find((r) => r.default)
 
   const roleOption = (role: TAvailableRole, value: string): SelectOption => ({
@@ -53,16 +57,14 @@ export const RoleSelector = ({
     ? 'Loading available roles…'
     : isError
       ? 'Failed to load available roles'
-      : roles.length === 0
-        ? 'No roles available from install stack outputs'
-        : 'If unset, the default role is used.'
+      : 'If unset, the default role is used.'
 
   return (
     <Select
       name={name}
       value={value ?? ''}
       onChange={(e) => onChange?.(e.target.value)}
-      disabled={disabled || isLoading || isError || roles.length === 0}
+      disabled={disabled || isLoading || isError}
       options={options}
       placeholder={defaultRole ? defaultRole.name : 'Use default role'}
       labelProps={{ labelText: 'Execution role (optional)' }}
