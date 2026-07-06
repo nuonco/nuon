@@ -15,8 +15,20 @@ const spaceliftAdminTfTmpl = `terraform {
 }
 
 variable "space_id" {
-  description = "ID of the Spacelift space to create this stack in. Find it in the Spacelift dashboard under Spaces (the URL slug, e.g. \"legacy\" or a generated ID), or query the spacelift_spaces data source."
+  description = "ID of the Spacelift space to create this stack in. Find it under Spaces in the Spacelift dashboard."
   type        = string
+  default     = ""
+
+  validation {
+    condition     = var.space_id != ""
+    error_message = "Set space_id to the ID of the Spacelift space this stack should live in."
+  }
+}
+
+variable "attach_gcp_service_account" {
+  description = "Attach Spacelift's native GCP integration (a dedicated per-stack service account). Set to false if you already manage your own GCP integration for this stack."
+  type        = bool
+  default     = true
 }
 
 resource "spacelift_stack" "nuon" {
@@ -35,8 +47,8 @@ resource "spacelift_stack" "nuon" {
   }
 }
 
-# Attaches Spacelift's native GCP integration; grant the printed service account an IAM role on your GCP project.
 resource "spacelift_gcp_service_account" "nuon" {
+  count        = var.attach_gcp_service_account ? 1 : 0
   stack_id     = spacelift_stack.nuon.id
   token_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
 }
@@ -57,7 +69,7 @@ resource "spacelift_mounted_file" "secrets" {
 
 output "gcp_service_account_email" {
   description = "Grant this service account an IAM role on your target GCP project before triggering the stack's first run."
-  value       = spacelift_gcp_service_account.nuon.service_account_email
+  value       = var.attach_gcp_service_account ? spacelift_gcp_service_account.nuon[0].service_account_email : null
 }
 `
 

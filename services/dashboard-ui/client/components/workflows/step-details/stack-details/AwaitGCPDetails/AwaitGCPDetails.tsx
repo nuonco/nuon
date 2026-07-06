@@ -335,6 +335,15 @@ const TerraformSubTab = ({
             Download all (.zip)
           </Button>
         </span>
+        <Text variant="subtext" theme="neutral">
+          Unpack all three into one directory, then edit before applying: set{' '}
+          <code>space_id</code> in <code>spacelift.tf</code> to the Spacelift
+          space this stack should live in (already have your own GCP
+          integration for this stack? set <code>attach_gcp_service_account</code>{' '}
+          to <code>false</code> instead), fill in <code>inputs.auto.tfvars</code>,
+          and replace the placeholders in <code>secrets.auto.tfvars</code> with
+          your real secrets.
+        </Text>
         <Card>
           <span className="flex justify-between items-center">
             <Text>

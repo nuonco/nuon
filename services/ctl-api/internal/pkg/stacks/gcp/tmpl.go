@@ -3,8 +3,12 @@ package gcp
 const inputsTmpl = `nuon_install_id          = "{{.Install.ID}}"
 nuon_org_id              = "{{.Runner.OrgID}}"
 nuon_app_id              = "{{.Install.AppID}}"
-gcp_project_id           = "{{.GCPProjectID}}"{{if not .GCPProjectID}} # required: set your target GCP project ID{{end}}
-gcp_region               = "{{.GCPRegion}}"{{if not .GCPRegion}} # required: set your target GCP region{{end}}
+{{- if .GCPProjectID}}
+gcp_project_id           = "{{.GCPProjectID}}"
+{{- end}}
+{{- if .GCPRegion}}
+gcp_region               = "{{.GCPRegion}}"
+{{- end}}
 runner_api_url           = "{{.Settings.RunnerAPIURL}}"
 {{- if .APIToken}}
 runner_api_token         = "{{.APIToken}}"
