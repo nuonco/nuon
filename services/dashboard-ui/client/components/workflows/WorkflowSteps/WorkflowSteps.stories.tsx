@@ -776,4 +776,61 @@ export const MixedSteps = () =>
 
 export const Loading = () => <WorkflowStepsSkeleton />
 
+export const GeneratingMoreSteps = () => (
+  <WorkflowContext.Provider value={mockWorkflowContext}>
+    <WorkflowSteps
+      workflowSteps={[
+        {
+          ...base,
+          id: 'step-gen-state',
+          name: 'generate install state',
+          finished: true,
+          execution_time: 6000000000,
+          status: { status: 'success', history: [] },
+        } as TWorkflowStep,
+        {
+          ...base,
+          id: 'step-gen-runner-sa',
+          name: 'provision runner service account',
+          finished: true,
+          execution_time: 7000000000,
+          status: { status: 'success', history: [] },
+        } as TWorkflowStep,
+        {
+          ...base,
+          id: 'step-gen-stack',
+          name: 'generate install stack',
+          finished: true,
+          execution_time: 6000000000,
+          status: { status: 'success', history: [] },
+        } as TWorkflowStep,
+        {
+          ...base,
+          id: 'step-gen-await-stack',
+          name: 'await install stack',
+          finished: true,
+          execution_time: 15000000000,
+          status: { status: 'success', history: [] },
+        } as TWorkflowStep,
+        {
+          ...base,
+          id: 'step-gen-runner-healthy',
+          name: 'runner healthy',
+          finished: true,
+          execution_time: 2000000000,
+          status: { status: 'success', history: [] },
+        } as TWorkflowStep,
+        {
+          ...base,
+          id: 'step-gen-sandbox-plan',
+          name: 'provision sandbox plan',
+          status: { status: 'in-progress', history: [] },
+        } as TWorkflowStep,
+      ]}
+      eagerStepsLoaded
+      allStepsLoaded={false}
+    />
+  </WorkflowContext.Provider>
+)
+
 export const Empty = () => wrap([])
