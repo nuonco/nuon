@@ -89,7 +89,7 @@ export const WorkflowSteps = ({
 
       const step = kindSteps[0]
       return (
-        <div key={step.id} className="flex border px-4 py-2 rounded-md">
+        <div key={step.id} className="flex px-4 py-2">
           <WorkflowStepRow
             step={step}
             approvalPrompt={approvalPrompt}
@@ -108,44 +108,48 @@ export const WorkflowSteps = ({
         value={searchName}
         onChange={setSearchName}
       />
-      <div className="flex flex-col gap-4">
-        {filteredSteps.length ? (
-          [...groupsByGroupIdx.values()].flatMap((group) => renderGroup(group))
-        ) : (
-          <EmptyState
-            variant="table"
-            emptyMessage={
-              workflowSteps.length
-                ? 'No workflow steps match your search. Try adjusting your search criteria.'
-                : 'Steps will appear here once the workflow has been generated.'
-            }
-            emptyTitle={workflowSteps.length ? 'No steps found' : 'Workflow steps not available'}
-          />
-        )}
+      {filteredSteps.length ? (
+        <div className="flex flex-col border rounded-md divide-y overflow-hidden">
+          {[...groupsByGroupIdx.values()].flatMap((group) => renderGroup(group))}
 
-        {eagerStepsLoaded && !allStepsLoaded ? (
-          <div className="flex flex-col gap-4">
-            {Array.from({ length: 2 }).map((_, idx) => (
-              <Skeleton key={idx} height="44px" width="100%" className="rounded-md" />
-            ))}
-            <div className="flex items-center justify-center gap-2 py-1">
-              <Loading />
-              <Text variant="body" theme="neutral">
-                More steps generating…
+          {eagerStepsLoaded && !allStepsLoaded ? (
+            <div className="flex items-center gap-4 px-4 py-2">
+              <span className="flex items-center justify-center w-6 h-6 shrink-0">
+                <Loading className="h-5 w-5 text-cool-grey-500 dark:text-white/50" />
+              </span>
+              <Text variant="base" theme="neutral">
+                Generating more steps…
               </Text>
             </div>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : (
+        <EmptyState
+          variant="table"
+          emptyMessage={
+            workflowSteps.length
+              ? 'No workflow steps match your search. Try adjusting your search criteria.'
+              : 'Steps will appear here once the workflow has been generated.'
+          }
+          emptyTitle={workflowSteps.length ? 'No steps found' : 'Workflow steps not available'}
+        />
+      )}
     </div>
   )
 }
 
+const SKELETON_TITLE_WIDTHS = ['12rem', '16rem', '10rem', '14rem', '11rem']
+
 export const WorkflowStepsSkeleton = () => {
   return (
-    <div className="flex flex-col gap-4">
-      {Array.from({ length: 8 }).map((_, idx) => (
-        <Skeleton key={idx} height="44px" width="100%" />
+    <div className="flex flex-col border rounded-md divide-y overflow-hidden">
+      {SKELETON_TITLE_WIDTHS.map((width, idx) => (
+        <div key={idx} className="flex items-center gap-4 px-4 py-2">
+          <span className="flex items-center justify-center w-6 h-6 shrink-0">
+            <Loading className="h-5 w-5 text-cool-grey-500 dark:text-white/50" />
+          </span>
+          <Skeleton height="1rem" width={width} />
+        </div>
       ))}
     </div>
   )
