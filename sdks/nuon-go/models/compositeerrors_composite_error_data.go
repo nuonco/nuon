@@ -22,7 +22,7 @@ type CompositeerrorsCompositeErrorData struct {
 
 	// Data is the typed, per-error-type payload: WHAT the error is. Closed
 	// schema per Type. Read to render sections and by any future view.
-	Data []int64 `json:"data"`
+	Data any `json:"data,omitempty"`
 
 	// Hints is the open annotation/directive bag: HOW to handle or present the
 	// error. Canonical keys (Hint*) are honored by specific consumers.

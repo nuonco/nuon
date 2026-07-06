@@ -29,7 +29,7 @@ type CompositeErrorData struct {
 
 	// Data is the typed, per-error-type payload: WHAT the error is. Closed
 	// schema per Type. Read to render sections and by any future view.
-	Data json.RawMessage `json:"data"`
+	Data json.RawMessage `json:"data" swaggertype:"object"`
 
 	// SourceID / SourceType identify the row this error originated on
 	// (polymorphic, same shape as OwnerID/OwnerType). Set at the record site,
