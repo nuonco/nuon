@@ -253,17 +253,33 @@ const SpaceliftTab = ({
   return (
     <div className="flex flex-col gap-4 pt-4">
       <Text variant="subtext" theme="neutral">
-        Run the install stack in Spacelift instead of applying Terraform
-        yourself. Both options run the same install-stacks module and mount your
-        generated tfvars — pick whichever fits how you manage Spacelift.
+        Manage the install stack in Spacelift, using either a{' '}
+        <Link
+          href="https://docs.spacelift.io/concepts/blueprint/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Blueprint
+        </Link>{' '}
+        or{' '}
+        <Link
+          href="https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Terraform
+        </Link>{' '}
+        . If the customer is managing Spacelift through the Web UI, use the
+        Blueprint. If the customer is managing Spacelift using Terraform, use
+        the Terraform config.
       </Text>
 
       <Tabs
         initActiveTab="blueprint"
         tabs={{
           blueprint: <BlueprintSubTab blueprintYaml={blueprintYaml} />,
-          'administrative stack': (
-            <AdminStackSubTab
+          terraform: (
+            <TerraformSubTab
               adminTf={adminTf}
               inputsTfvars={inputsTfvars}
               secretsTfvars={secretsTfvars}
@@ -275,36 +291,22 @@ const SpaceliftTab = ({
   )
 }
 
-interface IAdminStackSubTab {
+interface ITerraformSubTab {
   adminTf: string
   inputsTfvars: string
   secretsTfvars: string
 }
 
-const AdminStackSubTab = ({
+const TerraformSubTab = ({
   adminTf,
   inputsTfvars,
   secretsTfvars,
-}: IAdminStackSubTab) => {
+}: ITerraformSubTab) => {
   return (
     <div className="flex flex-col gap-4 pt-4">
-      <Text variant="subtext" theme="neutral">
-        The stack that runs this <code>spacelift.tf</code> is the administrative
-        (parent) stack — its run uses the Spacelift Terraform provider to create
-        the install stack and mount your tfvars.
-      </Text>
-
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          1. Save these files together in a repo
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Commit all three to one directory of a Git repo connected to
-          Spacelift. The <code>spacelift.tf</code> reads the tfvars from its
-          sibling files, so you can edit <code>inputs.auto.tfvars</code> and
-          replace <code>secrets.auto.tfvars</code> with your real secret values
-          before applying. Use a private repo — the secrets file is plaintext at
-          rest here.
+          1. Add these files to your Spacelift terraform project
         </Text>
         <Card>
           <span className="flex justify-between items-center">
@@ -365,75 +367,6 @@ const AdminStackSubTab = ({
           <Code variant="preformated">{secretsTfvars}</Code>
         </Card>
       </div>
-
-      <Divider />
-
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          2. Create the parent stack
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          In Spacelift, create a Terraform stack pointed at your repo. Set the{' '}
-          <strong>project root</strong> to the directory holding the three
-          files, pick your branch, and choose a Terraform version at or above
-          the one pinned in <code>spacelift.tf</code>. See{' '}
-          <Link
-            href="https://docs.spacelift.io/concepts/stack/creating-a-stack"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Creating a stack
-          </Link>
-          .
-        </Text>
-      </div>
-
-      <Divider />
-
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          3. Grant it permission to manage Spacelift
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          The provider authenticates automatically — Spacelift injects{' '}
-          <code>SPACELIFT_API_TOKEN</code> into runs of stacks that have a role
-          attached. Open the stack&apos;s <strong>Settings → Roles</strong>,
-          click <strong>Manage roles</strong>, and add the{' '}
-          <strong>Space Admin</strong> role for its space. This replaces the
-          deprecated Administrative flag. See{' '}
-          <Link
-            href="https://docs.spacelift.io/concepts/authorization/assigning-roles-stacks"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Assigning roles to stacks
-          </Link>{' '}
-          and the{' '}
-          <Link
-            href="https://docs.spacelift.io/vendors/terraform/terraform-provider"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Terraform provider
-          </Link>{' '}
-          docs.
-        </Text>
-      </div>
-
-      <Divider />
-
-      <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          4. Run it
-        </Text>
-        <Text variant="subtext" theme="neutral">
-          Trigger a run on the parent stack. On apply it creates the install
-          stack and mounts your tfvars. A newly created stack doesn&apos;t run
-          on its own, so trigger the install stack&apos;s first run — it&apos;s
-          set to auto-deploy, so it plans and applies your runner without
-          further approval.
-        </Text>
-      </div>
     </div>
   )
 }
@@ -445,28 +378,13 @@ interface IBlueprintSubTab {
 const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
   return (
     <div className="flex flex-col gap-4 pt-4">
-      <Text variant="subtext" theme="neutral">
-        A blueprint is a template Spacelift uses to create a stack. This one
-        embeds your tfvars, so publishing it and creating a stack provisions the
-        install with no extra configuration. See{' '}
-        <Link
-          href="https://docs.spacelift.io/concepts/blueprint/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Blueprints
-        </Link>
-        .
-      </Text>
-
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           1. Create the blueprint
         </Text>
         <Text variant="subtext" theme="neutral">
           In Spacelift, go to <strong>Blueprints → Create blueprint</strong> and
-          paste this YAML as the template body. It starts as a draft you can
-          edit freely.
+          paste this YAML as the template body.
         </Text>
         <Card>
           <span className="flex justify-between items-center">
@@ -496,10 +414,8 @@ const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
         </Text>
         <Text variant="subtext" theme="neutral">
           Click <strong>Publish</strong> to move the blueprint from draft to
-          published. The template clones the public{' '}
-          <code>install-stacks</code> repository over raw Git, so no VCS
-          integration setup is required. Publishing is one-way — to change a
-          published blueprint you clone it, edit, and publish again.
+          published. Publishing is one-way — to change a published blueprint you
+          clone it, edit, and publish again.
         </Text>
       </div>
 
@@ -511,8 +427,8 @@ const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
         </Text>
         <Text variant="subtext" theme="neutral">
           On the published blueprint, click <strong>Create stack</strong> and
-          fill in the GCP project, region, and any install inputs and secrets.
-          This creates the stack but doesn&apos;t run it yet.
+          fill in the inputs and secrets. This creates the stack but
+          doesn&apos;t run it.
         </Text>
       </div>
 
@@ -520,22 +436,29 @@ const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
 
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
-          4. Attach GCP credentials, then trigger the run
+          4. Configure credentials
         </Text>
         <Text variant="subtext" theme="neutral">
-          Open the new stack&apos;s{' '}
-          <strong>Settings → Integrations</strong> and attach your{' '}
+          If you haven't already, configure the{' '}
           <Link
-            href="https://docs.spacelift.io/integrations/cloud-providers/gcp"
+            href="https://docs.spacelift.io/integrations/cloud-providers"
             target="_blank"
             rel="noopener noreferrer"
           >
-            GCP integration
+            Spacelift Integration
           </Link>{' '}
-          (its service account must already have IAM access on the target
-          project). Then trigger the stack&apos;s first run — it provisions the
-          runner. The run isn&apos;t triggered automatically because GCP
-          credentials can&apos;t be attached from the blueprint itself.
+          for the cloud you want to deploy to.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          4. Run the stack
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Click <strong>Trigger</strong> on the stack page to run the stack.
         </Text>
       </div>
     </div>

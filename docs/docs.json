@@ -202,6 +202,7 @@
 							"guides/programmable-readmes",
 							"guides/custom-nested-stacks",
 							"guides/customizing-terraform-stack-templates",
+							"guides/provisioning-install-stacks-with-spacelift",
 							"guides/cli-extensions",
 							"guides/external-image-policies",
 							"guides/terraform-cli"
