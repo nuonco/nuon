@@ -179,9 +179,10 @@ func (c *cli) appsCmd() *cobra.Command {
 			}
 
 			opts := apps.SyncOptions{
-				AppFlag: syncAppID,
-				Force:   syncForce,
-				Create:  syncCreate,
+				AppFlag:   syncAppID,
+				Force:     syncForce,
+				Create:    syncCreate,
+				PrintJSON: PrintJSON,
 			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if syncCreate {
