@@ -40,6 +40,7 @@
     "@uiw/react-codemirror": "4.25.9",
     "@xyflow/react": "12.8.2",
     "cronstrue": "2.59.0",
+    "fflate": "0.8.3",
     "html-to-image": "1.11.13",
     "js-confetti": "0.13.1",
     "luxon": "3.7.1",
