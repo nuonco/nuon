@@ -403,6 +403,64 @@ const TerraformSubTab = ({
           <Code variant="preformated">{secretsTfvars}</Code>
         </Card>
       </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          2. Authenticate the provider to Spacelift
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Create a{' '}
+          <Link
+            href="https://docs.spacelift.io/integrations/api#spacelift-api-key"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Spacelift API key
+          </Link>{' '}
+          and export it as <code>SPACELIFT_API_KEY_ENDPOINT</code>,{' '}
+          <code>SPACELIFT_API_KEY_ID</code>, and{' '}
+          <code>SPACELIFT_API_KEY_SECRET</code> before applying.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          3. Apply with Terraform
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Run in the directory with all three files</Text>
+            <ClickToCopyButton textToCopy="terraform init && terraform apply" />
+          </span>
+          <Code variant="preformated">terraform init && terraform apply</Code>
+        </Card>
+        <Text variant="subtext" theme="neutral">
+          This creates the install stack, mounts your tfvars, and (unless you
+          set <code>attach_gcp_service_account</code> to <code>false</code>)
+          attaches Spacelift&apos;s native GCP integration, no manual{' '}
+          <strong>Settings → Integrations</strong> step needed.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          4. Grant access, then run the install stack
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          If you attached the GCP integration (the default), grant the
+          printed <code>gcp_service_account_email</code> output an IAM role on
+          your target GCP project. If you attached your own integration
+          instead, confirm its identity already has that access. Then trigger
+          the stack&apos;s first run, it&apos;s set to auto-deploy, so it
+          plans and applies your runner without further approval.
+        </Text>
+      </div>
     </div>
   )
 }
