@@ -81,5 +81,5 @@ export const GroupSingleInstall = () => (
 )
 
 export const GroupDeploying = () => (
-  <DeployGroupStep groupName="UAT" totalInstalls={0} deployedCount={0} rows={[]} emptyMessage="Deploying to install group…" />
+  <DeployGroupStep groupName="UAT" totalInstalls={0} deployedCount={0} rows={[]} emptyMessage="Deploying to install group" />
 )
