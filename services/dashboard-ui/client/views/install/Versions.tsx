@@ -4,8 +4,15 @@ import { Card } from '@/components/common/Card'
 import { EmptyState } from '@/components/common/EmptyState'
 import { Expand } from '@/components/common/Expand'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
+import { Icon, type TIconVariant } from '@/components/common/Icon'
+import { ID } from '@/components/common/ID'
+import { LabeledValue } from '@/components/common/LabeledValue'
+import { Skeleton } from '@/components/common/Skeleton'
+import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
+import { ChangeCountSummary } from '@/components/approvals/plan-diffs/ChangeCountSummary'
+import { ComponentType } from '@/components/components/ComponentType'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -16,8 +23,7 @@ import {
   getInstallAppConfigVersionDiff,
 } from '@/lib'
 import type { TInstallConfigDiff } from '@/lib/ctl-api/installs/get-install-app-config-version-diff'
-import { getStatusTheme } from '@/utils/status-utils'
-import type { TInstallAppConfigVersion } from '@/types'
+import type { TComponentType, TInstallAppConfigVersion } from '@/types'
 
 export const Versions = () => {
   const { org } = useOrg()
@@ -83,13 +89,101 @@ export const Versions = () => {
   )
 }
 
+const OP_THEME = { add: 'success', change: 'warn', remove: 'error' } as const
+const OP_LABEL = { add: 'added', change: 'changed', remove: 'removed' } as const
+
+type TChangeOp = keyof typeof OP_THEME
+
+interface IChangeRow {
+  key: string
+  name: string
+  type?: string
+  icon?: TIconVariant
+  op: TChangeOp
+}
+
+const collectChanges = (diff: TInstallConfigDiff): IChangeRow[] => {
+  const rows: IChangeRow[] = [
+    ...(diff.added ?? []).map((e) => ({
+      key: e.component_id,
+      name: e.component_name || e.component_id,
+      type: e.component_type,
+      op: 'add' as const,
+    })),
+    ...(diff.changed ?? []).map((e) => ({
+      key: e.component_id,
+      name: e.component_name || e.component_id,
+      type: e.component_type,
+      op: 'change' as const,
+    })),
+    ...(diff.removed ?? []).map((e) => ({
+      key: e.component_id,
+      name: e.component_name || e.component_id,
+      type: e.component_type,
+      op: 'remove' as const,
+    })),
+  ]
+
+  if (diff.sandbox_changed)
+    rows.push({ key: 'sandbox', name: 'Sandbox config', icon: 'ShippingContainerIcon', op: 'change' })
+  if (diff.stack_changed)
+    rows.push({ key: 'stack', name: 'Stack config', icon: 'StackIcon', op: 'change' })
+
+  return rows
+}
+
+const ChangedComponents = ({ rows }: { rows: IChangeRow[] }) => {
+  if (rows.length === 0) {
+    return (
+      <Text variant="subtext" theme="neutral">
+        No changes detected
+      </Text>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Text variant="label" theme="neutral">
+        Changed components ({rows.length})
+      </Text>
+      <div className="flex flex-col border rounded-md divide-y overflow-hidden">
+        {rows.map((row) => (
+          <div key={row.key} className="flex items-center gap-3 px-4 py-2.5">
+            {row.type ? (
+              <ComponentType
+                type={row.type as TComponentType}
+                displayVariant="icon-only"
+                colorVariant="color"
+                iconSize="16"
+              />
+            ) : row.icon ? (
+              <Icon
+                variant={row.icon}
+                size={16}
+                className="text-cool-grey-500 dark:text-cool-grey-400 shrink-0"
+              />
+            ) : null}
+            <Text variant="subtext" weight="strong">
+              {row.name}
+            </Text>
+            {row.type ? (
+              <Text variant="subtext" theme="neutral">
+                {row.type.replace(/_/g, ' ')}
+              </Text>
+            ) : null}
+            <Badge size="sm" theme={OP_THEME[row.op]} className="ml-auto">
+              {OP_LABEL[row.op]}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
   const { org } = useOrg()
   const { install } = useInstall()
-
-  const statusTheme = version.status?.status
-    ? getStatusTheme(version.status.status)
-    : 'neutral'
 
   const source = version.app_branch_run_id ? 'branch run' : 'sync'
 
@@ -110,11 +204,15 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
     retry: 1,
   })
 
-  const diffSummary = diff
+  const changes = diff ? collectChanges(diff) : []
+  const summary = diff
     ? {
         added: diff.added?.length ?? 0,
+        changed:
+          (diff.changed?.length ?? 0) +
+          (diff.sandbox_changed ? 1 : 0) +
+          (diff.stack_changed ? 1 : 0),
         removed: diff.removed?.length ?? 0,
-        changed: diff.changed?.length ?? 0,
       }
     : null
 
@@ -124,72 +222,50 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
       className="border border-cool-grey-200 dark:border-dark-grey-700 rounded-xl bg-white dark:bg-dark-grey-900 shadow-sm overflow-hidden"
       headerClassName="px-5 py-4"
       heading={
-        <div className="flex items-center justify-between gap-4 w-full">
-          <div className="flex items-center gap-3">
-            <Badge
-              size="sm"
-              theme={
-                statusTheme as
-                  | 'success'
-                  | 'error'
-                  | 'info'
-                  | 'neutral'
-                  | 'warn'
-              }
-            >
-              {version.status?.status ?? 'unknown'}
-            </Badge>
-            <Badge size="sm" theme="neutral">
-              {source}
-            </Badge>
-            {version.created_at && (
-              <Time
-                variant="subtext"
-                time={version.created_at}
-                format="relative"
-              />
-            )}
-          </div>
-          {diffSummary && (
-            <div className="flex items-center gap-2">
-              {diffSummary.added > 0 && (
-                <Badge size="sm" theme="success">
-                  +{diffSummary.added}
-                </Badge>
-              )}
-              {diffSummary.changed > 0 && (
-                <Badge size="sm" theme="info">
-                  ~{diffSummary.changed}
-                </Badge>
-              )}
-              {diffSummary.removed > 0 && (
-                <Badge size="sm" theme="error">
-                  -{diffSummary.removed}
-                </Badge>
-              )}
-            </div>
+        <div className="flex items-center gap-3 w-full">
+          <Status status={version.status?.status || 'unknown'} variant="badge" />
+          <Badge size="sm" theme="neutral">
+            {source}
+          </Badge>
+          {version.created_at && (
+            <Time
+              variant="subtext"
+              theme="neutral"
+              time={version.created_at}
+              format="relative"
+            />
+          )}
+          {summary && (
+            <ChangeCountSummary
+              added={summary.added}
+              updated={summary.changed}
+              removed={summary.removed}
+              className="ml-auto"
+            />
           )}
         </div>
       }
     >
       <div className="p-5 border-t border-cool-grey-100 dark:border-dark-grey-800">
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div>
-            <Text variant="subtext" theme="neutral">
-              Old config
-            </Text>
-            <Text variant="subtext" family="mono">
-              {version.old_app_config_id || 'none'}
-            </Text>
-          </div>
-          <div>
-            <Text variant="subtext" theme="neutral">
-              New config
-            </Text>
-            <Text variant="subtext" family="mono">
-              {version.new_app_config_id || 'none'}
-            </Text>
-          </div>
+          <LabeledValue label="Old config">
+            {version.old_app_config_id ? (
+              <ID>{version.old_app_config_id}</ID>
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                none
+              </Text>
+            )}
+          </LabeledValue>
+          <LabeledValue label="New config">
+            {version.new_app_config_id ? (
+              <ID>{version.new_app_config_id}</ID>
+            ) : (
+              <Text variant="subtext" theme="neutral">
+                none
+              </Text>
+            )}
+          </LabeledValue>
         </div>
 
         {version.metadata &&
@@ -203,17 +279,13 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
             </div>
           )}
 
-        {isDiffLoading && (
+        {isDiffLoading && !diff ? (
+          <Skeleton lines={3} height="1rem" />
+        ) : diff ? (
+          <ChangedComponents rows={changes} />
+        ) : (
           <Text variant="subtext" theme="neutral">
-            Loading diff...
-          </Text>
-        )}
-
-        {diff && <DiffDetail diff={diff} />}
-
-        {!isDiffLoading && !diff && (
-          <Text variant="subtext" theme="neutral">
-            No diff available
+            No changes available
           </Text>
         )}
       </div>
@@ -221,82 +293,3 @@ const VersionCard = ({ version }: { version: TInstallAppConfigVersion }) => {
   )
 }
 
-const DiffDetail = ({ diff }: { diff: TInstallConfigDiff }) => {
-  const hasComponents =
-    (diff.added?.length ?? 0) +
-      (diff.removed?.length ?? 0) +
-      (diff.changed?.length ?? 0) >
-    0
-
-  if (!hasComponents && !diff.sandbox_changed && !diff.stack_changed) {
-    return (
-      <Text variant="subtext" theme="neutral">
-        No changes detected
-      </Text>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {diff.added?.map((entry) => (
-        <DiffRow
-          key={entry.component_id}
-          op="added"
-          entry={entry}
-        />
-      ))}
-      {diff.changed?.map((entry) => (
-        <DiffRow
-          key={entry.component_id}
-          op="changed"
-          entry={entry}
-        />
-      ))}
-      {diff.removed?.map((entry) => (
-        <DiffRow
-          key={entry.component_id}
-          op="removed"
-          entry={entry}
-        />
-      ))}
-
-      {diff.sandbox_changed && (
-        <div className="flex items-center gap-2">
-          <Badge size="sm" theme="info">changed</Badge>
-          <Text variant="subtext">Sandbox config</Text>
-        </div>
-      )}
-
-      {diff.stack_changed && (
-        <div className="flex items-center gap-2">
-          <Badge size="sm" theme="info">changed</Badge>
-          <Text variant="subtext">Stack config</Text>
-        </div>
-      )}
-    </div>
-  )
-}
-
-const DiffRow = ({
-  op,
-  entry,
-}: {
-  op: 'added' | 'changed' | 'removed'
-  entry: { component_id: string; component_name?: string; component_type?: string }
-}) => {
-  const theme = op === 'added' ? 'success' : op === 'removed' ? 'error' : 'info'
-
-  return (
-    <div className="flex items-center gap-2">
-      <Badge size="sm" theme={theme}>
-        {op}
-      </Badge>
-      <Text variant="subtext">{entry.component_name || entry.component_id}</Text>
-      {entry.component_type && (
-        <Text variant="subtext" theme="neutral">
-          {entry.component_type}
-        </Text>
-      )}
-    </div>
-  )
-}
