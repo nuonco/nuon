@@ -88,3 +88,16 @@ export const Submitting = () => (
     />
   </ModalStory>
 )
+
+export const SubmitError = () => (
+  <ModalStory>
+    <CreateBranchModal
+      vcsConnections={[]}
+      isSubmitting={false}
+      submitError={{ error: 'A branch with this name already exists.' } as any}
+      onSubmit={noop}
+      onCancel={noop}
+      {...defaultVcsProps}
+    />
+  </ModalStory>
+)
