@@ -9,8 +9,8 @@ keywords: ["spacelift", "install-stacks", "terraform", "blueprint", "install sta
 <Note>Spacelift support for install stacks is gated behind a feature flag. [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.</Note>
 
 The Terraform install stack provisions the runner in your customer's cloud account. It can be provisioned with the
-Terraform CLI, but customers can also manage it as a [Spacelift](https://spacelift.io/) stack. This works with any
-Terraform install stack — AWS and GCP.
+Terraform CLI, but customers can also manage it as a [Spacelift](https://spacelift.io/) stack. Spacelift provisioning
+currently generates configs for **GCP** install stacks; AWS support is planned.
 
 There are two ways to install a Spacelift stack. Which one your customer uses depends on whether they want to use the
 Spacelift web UI or the
@@ -70,33 +70,48 @@ values before applying.
 
 <Steps>
   <Step title="Save these files together">
-    Download `spacelift.tf`, `inputs.auto.tfvars`, and `secrets.auto.tfvars` from the dashboard and put all three in
-    one directory. Edit `inputs.auto.tfvars` as needed and replace `secrets.auto.tfvars` with your real secret values.
-    Keep them somewhere private — the secrets file is plaintext at rest.
+    Click **Download all** on the dashboard to get `spacelift.tf`, `inputs.auto.tfvars`, and `secrets.auto.tfvars` as
+    a single zip, and unpack all three into one directory (or download them individually and put them in one
+    directory yourself). Edit `inputs.auto.tfvars` as needed — any field left blank is marked with a `# required`
+    comment so you can find it — and replace `secrets.auto.tfvars` with your real secret values. Keep them somewhere
+    private — the secrets file is plaintext at rest.
   </Step>
   <Step title="Authenticate the provider to Spacelift">
     The [`spacelift-io/spacelift`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs) provider
     needs Spacelift API credentials. Create an
-    [API key](https://docs.spacelift.io/integrations/api#api-key-management) and export it as
+    [API key](https://docs.spacelift.io/integrations/api#spacelift-api-key) and export it as
     `SPACELIFT_API_KEY_ENDPOINT`, `SPACELIFT_API_KEY_ID`, and `SPACELIFT_API_KEY_SECRET` before applying. See the
     [provider authentication](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs#authentication)
     docs.
-  </Step>
-  <Step title="Apply with Terraform">
-    Run:
+
+    If you'd rather not export these into your shell (e.g. you have a different Spacelift account's credentials
+    already exported), prefix the commands in the next step instead:
 
     ```bash
-    terraform init && terraform apply
+    SPACELIFT_API_KEY_ENDPOINT=... SPACELIFT_API_KEY_ID=... SPACELIFT_API_KEY_SECRET=... \
+      terraform init && terraform apply
+    ```
+  </Step>
+  <Step title="Apply with Terraform">
+    `spacelift.tf` declares a required `space_id` variable — the Spacelift space to create the stack in. Find a
+    space's ID in the Spacelift dashboard under **Spaces**, then run:
+
+    ```bash
+    terraform init
+    terraform apply -var="space_id=<your-space-id>"
     ```
 
     This creates the install stack and mounts your tfvars via
     [`spacelift_stack`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/stack) and
     [`spacelift_mounted_file`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/mounted_file).
+    It also attaches Spacelift's native GCP cloud integration to the stack via
+    [`spacelift_gcp_service_account`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/gcp_service_account),
+    so there's no manual **Settings → Integrations** step.
   </Step>
-  <Step title="Attach cloud credentials, then run the install stack">
-    Open the created install stack's **Settings → Integrations** and attach your
-    [cloud integration](https://docs.spacelift.io/integrations/cloud-providers). A newly created stack doesn't run on
-    its own, so trigger its first run — it's set to auto-deploy, so it plans and applies your runner without further
-    approval.
+  <Step title="Grant the service account access, then run the install stack">
+    `terraform apply` prints a `gcp_service_account_email` output — grant that service account an IAM role (e.g.
+    `roles/owner`, or a narrower set matching the permissions your install needs) on your target GCP project. A newly
+    created stack doesn't run on its own, so trigger its first run — it's set to auto-deploy, so it plans and applies
+    your runner without further approval.
   </Step>
 </Steps>

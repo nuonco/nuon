@@ -14,9 +14,15 @@ const spaceliftAdminTfTmpl = `terraform {
   }
 }
 
+variable "space_id" {
+  description = "ID of the Spacelift space to create this stack in. Find it in the Spacelift dashboard under Spaces (the URL slug, e.g. \"legacy\" or a generated ID), or query the spacelift_spaces data source."
+  type        = string
+}
+
 resource "spacelift_stack" "nuon" {
   name              = "nuon-{{.InstallID}}"
   description       = "Nuon runner install stack for {{.InstallID}}"
+  space_id          = var.space_id
   repository        = "install-stacks"
   branch            = "main"
   project_root      = "gcp"
@@ -27,6 +33,16 @@ resource "spacelift_stack" "nuon" {
     namespace = "nuonco"
     url       = "https://github.com/nuonco/install-stacks.git"
   }
+}
+
+# Attaches Spacelift's native GCP Workload Identity Federation integration to
+# this stack, so runs get a GOOGLE_OAUTH_ACCESS_TOKEN automatically instead of
+# requiring a manual Settings -> Integrations attachment in the dashboard.
+# You still need to grant service_account_email (see output after apply) an
+# IAM role on your target GCP project.
+resource "spacelift_gcp_service_account" "nuon" {
+  stack_id     = spacelift_stack.nuon.id
+  token_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
 }
 
 resource "spacelift_mounted_file" "inputs" {
@@ -41,6 +57,11 @@ resource "spacelift_mounted_file" "secrets" {
   relative_path = "source/gcp/secrets.auto.tfvars"
   write_only    = true
   content       = filebase64("${path.module}/secrets.auto.tfvars")
+}
+
+output "gcp_service_account_email" {
+  description = "Grant this service account an IAM role on your target GCP project before triggering the stack's first run."
+  value       = spacelift_gcp_service_account.nuon.service_account_email
 }
 `
 

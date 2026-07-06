@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { strToU8, zipSync } from 'fflate'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -96,6 +97,7 @@ export const AwaitGCPDetails = ({
                 blueprintYaml={envelope.spaceliftBlueprintYaml}
                 inputsTfvars={envelope.inputs}
                 secretsTfvars={envelope.secrets}
+                installId={installId}
               />
             ),
           }}
@@ -242,6 +244,7 @@ interface ISpaceliftTab {
   blueprintYaml: string
   inputsTfvars: string
   secretsTfvars: string
+  installId?: string
 }
 
 const SpaceliftTab = ({
@@ -249,6 +252,7 @@ const SpaceliftTab = ({
   blueprintYaml,
   inputsTfvars,
   secretsTfvars,
+  installId,
 }: ISpaceliftTab) => {
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -283,6 +287,7 @@ const SpaceliftTab = ({
               adminTf={adminTf}
               inputsTfvars={inputsTfvars}
               secretsTfvars={secretsTfvars}
+              installId={installId}
             />
           ),
         }}
@@ -295,19 +300,41 @@ interface ITerraformSubTab {
   adminTf: string
   inputsTfvars: string
   secretsTfvars: string
+  installId?: string
 }
 
 const TerraformSubTab = ({
   adminTf,
   inputsTfvars,
   secretsTfvars,
+  installId,
 }: ITerraformSubTab) => {
   return (
     <div className="flex flex-col gap-4 pt-4">
       <div className="flex flex-col gap-4">
-        <Text variant="base" weight="strong">
-          1. Add these files to your Spacelift terraform project
-        </Text>
+        <span className="flex justify-between items-center">
+          <Text variant="base" weight="strong">
+            1. Add these files to your Spacelift terraform project
+          </Text>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              const zipped = zipSync({
+                'spacelift.tf': strToU8(adminTf),
+                'inputs.auto.tfvars': strToU8(inputsTfvars),
+                'secrets.auto.tfvars': strToU8(secretsTfvars),
+              })
+              createFileDownload(
+                new Blob([zipped], { type: 'application/zip' }),
+                `nuon-spacelift-${installId ?? 'stack'}.zip`,
+                'application/zip'
+              )
+            }}
+          >
+            Download all (.zip)
+          </Button>
+        </span>
         <Card>
           <span className="flex justify-between items-center">
             <Text>

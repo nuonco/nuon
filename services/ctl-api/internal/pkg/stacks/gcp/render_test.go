@@ -167,8 +167,8 @@ func TestRenderGCPAccountInjection(t *testing.T) {
 		require.NoError(t, err)
 
 		tfvars := extractTfvars(t, out)
-		assert.NotContains(t, tfvars, "gcp_project_id")
-		assert.NotContains(t, tfvars, "gcp_region")
+		assert.Contains(t, tfvars, `gcp_project_id           = "" # required: set your target GCP project ID`)
+		assert.Contains(t, tfvars, `gcp_region               = "" # required: set your target GCP region`)
 	})
 
 	t.Run("with nil GCPAccount", func(t *testing.T) {
@@ -178,8 +178,8 @@ func TestRenderGCPAccountInjection(t *testing.T) {
 		require.NoError(t, err)
 
 		tfvars := extractTfvars(t, out)
-		assert.NotContains(t, tfvars, "gcp_project_id")
-		assert.NotContains(t, tfvars, "gcp_region")
+		assert.Contains(t, tfvars, `gcp_project_id           = "" # required: set your target GCP project ID`)
+		assert.Contains(t, tfvars, `gcp_region               = "" # required: set your target GCP region`)
 	})
 }
 
@@ -407,6 +407,9 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 	assert.Contains(t, adminTF, `write_only    = true`, "secrets mounted file should be secret")
 	assert.Contains(t, adminTF, `filebase64("${path.module}/inputs.auto.tfvars")`)
 	assert.Contains(t, adminTF, `filebase64("${path.module}/secrets.auto.tfvars")`)
+	assert.Contains(t, adminTF, `variable "space_id"`, "admin stack should require an explicit space_id")
+	assert.Contains(t, adminTF, `space_id          = var.space_id`)
+	assert.Contains(t, adminTF, `resource "spacelift_gcp_service_account" "nuon"`, "admin stack should auto-attach the GCP cloud integration")
 
 	assert.Contains(t, blueprint, "project_root: gcp")
 	assert.Contains(t, blueprint, "provider: RAW_GIT")
