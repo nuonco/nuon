@@ -104,10 +104,16 @@ export const BranchDetailActionsContainer = ({
   return (
     <BranchDetailActions
       editButton={
-        <EditBranchButton branch={branch} currentConfig={currentConfig} onSuccess={refresh} />
+        <EditBranchButton
+          isMenuButton
+          branch={branch}
+          currentConfig={currentConfig}
+          onSuccess={refresh}
+        />
       }
-      manageInstallsButton={
+      deploymentPlanButton={
         <EditDeploymentPlanButton
+          isMenuButton
           branch={branch}
           currentConfig={currentConfig}
           onSuccess={refresh}
