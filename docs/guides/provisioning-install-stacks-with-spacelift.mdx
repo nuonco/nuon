@@ -1,0 +1,113 @@
+---
+title: "Provisioning Install Stacks with Spacelift"
+description: "Provision the Nuon Terraform install stack through Spacelift instead of running Terraform locally — via a blueprint or the Spacelift Terraform provider."
+icon: "layer-group"
+boost: 10
+keywords: ["spacelift", "install-stacks", "terraform", "blueprint", "install stack", "aws", "gcp", "azure", "raw git", "spacelift blueprint", "spacelift terraform provider"]
+---
+
+<Note>Spacelift support for install stacks is gated behind a feature flag. [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.</Note>
+
+The Terraform install stack provisions the runner in your customer's cloud account. It can be provisioned with the
+Terraform CLI, but customers can also manage it as a [Spacelift](https://spacelift.io/) stack. This works for every
+Terraform install stack — AWS, GCP, and Azure.
+
+There are two ways to install a Spacelift stack. Which one your customer uses depends on whether they want to use the
+Spacelift web UI or the
+[Spacelift Terraform provider](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs).
+
+- **Blueprint** — publish a Spacelift blueprint and use the web UI to create the stack.
+- **Terraform** — apply a generated `spacelift.tf` that uses the Terraform provider to create the stack.
+
+Both paths run the same [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module over
+**raw Git**, so no Spacelift VCS integration or GitHub App install is required.
+
+## Prerequisites
+
+<Steps>
+  <Step title="Enable the feature flag">
+    Spacelift support is gated behind a feature flag. [Reach out to Nuon](https://nuon.co/demo-request) to enable it —
+    the **Spacelift** tab then appears on the await install stack step.
+  </Step>
+  <Step title="Create a Spacelift account">
+    You need a [Spacelift](https://spacelift.io/) account with permission to create blueprints and stacks.
+  </Step>
+  <Step title="Configure a cloud integration">
+    Set up Spacelift's [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) for your target
+    cloud — [AWS](https://docs.spacelift.io/integrations/cloud-providers/aws),
+    [GCP](https://docs.spacelift.io/integrations/cloud-providers/gcp), or
+    [Azure](https://docs.spacelift.io/integrations/cloud-providers/azure). Its identity must have access to provision
+    resources in the target account.
+  </Step>
+</Steps>
+
+## Blueprint path
+
+<Steps>
+  <Step title="Create the blueprint">
+    In Spacelift, go to **Blueprints → Create blueprint** and paste the generated YAML from the dashboard as the
+    template body. It starts as a draft you can edit freely. See
+    [Blueprints](https://docs.spacelift.io/concepts/blueprint/).
+  </Step>
+  <Step title="Publish it">
+    Click **Publish** to move the blueprint from draft to published. The template clones the public `install-stacks`
+    repository over raw Git, so no VCS integration setup is required. Publishing is one-way — to change a published
+    blueprint, clone it, edit, and publish again.
+  </Step>
+  <Step title="Create a stack and fill in the inputs">
+    On the published blueprint, click **Create stack** and fill in the cloud settings (such as the account, project, or
+    region for your target cloud) and any install inputs and secrets. These are declared as blueprint
+    [inputs](https://docs.spacelift.io/concepts/blueprint#inputs); secrets use the `secret` input type. This creates
+    the stack but doesn't run it yet.
+  </Step>
+  <Step title="Attach cloud credentials, then trigger the run">
+    Open the new stack's **Settings → Integrations** and attach your
+    [cloud integration](https://docs.spacelift.io/integrations/cloud-providers). Then trigger the stack's first run — it
+    provisions the runner. The run isn't triggered automatically because cloud credentials can't be attached from the
+    blueprint itself.
+  </Step>
+</Steps>
+
+## Terraform path
+
+This path applies a generated `spacelift.tf` alongside its `inputs.auto.tfvars` and `secrets.auto.tfvars` sibling
+files. The config reads the tfvars via `filebase64`, so you can edit the inputs and replace the secrets with real
+values before applying.
+
+<Steps>
+  <Step title="Save these files together">
+    Download `spacelift.tf`, `inputs.auto.tfvars`, and `secrets.auto.tfvars` from the dashboard and put all three in
+    one directory. Edit `inputs.auto.tfvars` as needed and replace `secrets.auto.tfvars` with your real secret values.
+    Keep them somewhere private — the secrets file is plaintext at rest.
+  </Step>
+  <Step title="Authenticate the provider to Spacelift">
+    The [`spacelift-io/spacelift`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs) provider
+    needs Spacelift API credentials. Create an
+    [API key](https://docs.spacelift.io/integrations/api#api-key-management) and export it as
+    `SPACELIFT_API_KEY_ENDPOINT`, `SPACELIFT_API_KEY_ID`, and `SPACELIFT_API_KEY_SECRET` before applying. See the
+    [provider authentication](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs#authentication)
+    docs.
+  </Step>
+  <Step title="Apply with Terraform">
+    Run:
+
+    ```bash
+    terraform init && terraform apply
+    ```
+
+    This creates the install stack and mounts your tfvars via
+    [`spacelift_stack`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/stack) and
+    [`spacelift_mounted_file`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/mounted_file).
+  </Step>
+  <Step title="Attach cloud credentials, then run the install stack">
+    Open the created install stack's **Settings → Integrations** and attach your
+    [cloud integration](https://docs.spacelift.io/integrations/cloud-providers). A newly created stack doesn't run on
+    its own, so trigger its first run — it's set to auto-deploy, so it plans and applies your runner without further
+    approval.
+  </Step>
+</Steps>
+
+## See also
+
+- [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates) — fork the `install-stacks`
+  repo to customize the stack.
