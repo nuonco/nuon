@@ -28,6 +28,7 @@ func (c *cli) syncCmd() *cobra.Command {
 				Branch:    branch,
 				AppBranch: appBranch,
 				Preview:   preview,
+				PrintJSON: PrintJSON,
 			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if create {

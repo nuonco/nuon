@@ -46,6 +46,17 @@ type SyncOptions struct {
 	AppBranch bool
 	// Preview creates a plan-only run (no apply). Only used with Branch or AppBranch.
 	Preview bool
+	// PrintJSON emits a machine-readable result on success (--output json/agent).
+	PrintJSON bool
+}
+
+// syncResult is the machine-readable summary emitted via ui.PrintJSON when
+// SyncOptions.PrintJSON is set, so --output agent gets a success envelope.
+type syncResult struct {
+	AppID    string `json:"app_id"`
+	Dir      string `json:"dir"`
+	BranchID string `json:"branch_id,omitempty"`
+	RunID    string `json:"run_id,omitempty"`
 }
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
@@ -147,6 +158,9 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 			return ui.PrintError(triggerErr)
 		}
 		ui.PrintSuccess(fmt.Sprintf("triggered app branch run %s", run.ID))
+		if opts.PrintJSON {
+			ui.PrintJSON(syncResult{AppID: appID, Dir: dir, BranchID: branchID, RunID: run.ID})
+		}
 		return nil
 	}
 
@@ -156,6 +170,9 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	cmpsScheduled := syncer.GetComponentsScheduled()
 	if len(cmpsScheduled) == 0 {
+		if opts.PrintJSON {
+			ui.PrintJSON(syncResult{AppID: appID, Dir: dir})
+		}
 		return nil
 	}
 
@@ -163,6 +180,9 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		return errors.Wrap(err, "unable to poll builds")
 	}
 
+	if opts.PrintJSON {
+		ui.PrintJSON(syncResult{AppID: appID, Dir: dir})
+	}
 	return nil
 }
 
