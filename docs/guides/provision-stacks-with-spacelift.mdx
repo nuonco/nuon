@@ -1,16 +1,16 @@
 ---
-title: "Provisioning Install Stacks with Spacelift"
+title: "Provision Stacks with Spacelift"
 description: "Provision the Nuon Terraform install stack through Spacelift instead of running Terraform locally — via a blueprint or the Spacelift Terraform provider."
 icon: "layer-group"
 boost: 10
-keywords: ["spacelift", "install-stacks", "terraform", "blueprint", "install stack", "aws", "gcp", "azure", "raw git", "spacelift blueprint", "spacelift terraform provider"]
+keywords: ["spacelift", "install-stacks", "terraform", "blueprint", "install stack", "aws", "gcp", "raw git", "spacelift blueprint", "spacelift terraform provider"]
 ---
 
 <Note>Spacelift support for install stacks is gated behind a feature flag. [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.</Note>
 
 The Terraform install stack provisions the runner in your customer's cloud account. It can be provisioned with the
-Terraform CLI, but customers can also manage it as a [Spacelift](https://spacelift.io/) stack. This works for every
-Terraform install stack — AWS, GCP, and Azure.
+Terraform CLI, but customers can also manage it as a [Spacelift](https://spacelift.io/) stack. This works with any
+Terraform install stack — AWS and GCP.
 
 There are two ways to install a Spacelift stack. Which one your customer uses depends on whether they want to use the
 Spacelift web UI or the
@@ -24,24 +24,18 @@ Both paths run the same [`nuonco/install-stacks`](https://github.com/nuonco/inst
 
 ## Prerequisites
 
-<Steps>
-  <Step title="Enable the feature flag">
-    Spacelift support is gated behind a feature flag. [Reach out to Nuon](https://nuon.co/demo-request) to enable it —
-    the **Spacelift** tab then appears on the await install stack step.
-  </Step>
-  <Step title="Create a Spacelift account">
-    You need a [Spacelift](https://spacelift.io/) account with permission to create blueprints and stacks.
-  </Step>
-  <Step title="Configure a cloud integration">
-    Set up Spacelift's [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) for your target
-    cloud — [AWS](https://docs.spacelift.io/integrations/cloud-providers/aws),
-    [GCP](https://docs.spacelift.io/integrations/cloud-providers/gcp), or
-    [Azure](https://docs.spacelift.io/integrations/cloud-providers/azure). Its identity must have access to provision
-    resources in the target account.
-  </Step>
-</Steps>
+- **Enable the feature flag** — Spacelift support is gated behind a feature flag.
+  [Reach out to Nuon](https://nuon.co/demo-request) to enable it — the **Spacelift** tab then appears on the await
+  install stack step.
+- **Create a Spacelift account** — you need a [Spacelift](https://spacelift.io/) account with permission to create
+  blueprints and stacks.
+- **Configure a cloud integration** — set up Spacelift's
+  [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) for your target cloud —
+  [AWS](https://docs.spacelift.io/integrations/cloud-providers/aws) or
+  [GCP](https://docs.spacelift.io/integrations/cloud-providers/gcp). Its identity must have access to provision
+  resources in the target account.
 
-## Blueprint path
+## Use a blueprint
 
 <Steps>
   <Step title="Create the blueprint">
@@ -68,7 +62,7 @@ Both paths run the same [`nuonco/install-stacks`](https://github.com/nuonco/inst
   </Step>
 </Steps>
 
-## Terraform path
+## Use terraform
 
 This path applies a generated `spacelift.tf` alongside its `inputs.auto.tfvars` and `secrets.auto.tfvars` sibling
 files. The config reads the tfvars via `filebase64`, so you can edit the inputs and replace the secrets with real
@@ -106,8 +100,3 @@ values before applying.
     approval.
   </Step>
 </Steps>
-
-## See also
-
-- [Customizing Terraform Stack Templates](/guides/customizing-terraform-stack-templates) — fork the `install-stacks`
-  repo to customize the stack.
