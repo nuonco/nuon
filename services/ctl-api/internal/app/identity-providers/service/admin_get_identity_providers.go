@@ -26,6 +26,7 @@ type AdminIdentityProviderSummary struct {
 // @Security				AdminEmail
 // @Accept					json
 // @Produce				json
+// @Failure				403	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{array}	AdminIdentityProviderSummary
 // @Router					/v1/auth/identity-providers [GET]
