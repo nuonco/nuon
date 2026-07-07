@@ -699,6 +699,133 @@ export const Tables = () => (
   </div>
 )
 
+const CLUSTER_TABLE = `| Name | Status | Region | Provider |
+| ---- | ------ | ------ | -------- |
+| prod-us-east | Active | us-east-1 | AWS |
+| prod-eu-west | Active | eu-west-1 | AWS |
+| staging-us-west | Updating | us-west-2 | AWS |
+| dev-central | Inactive | us-central1 | GCP |
+| qa-eu-north | Active | eu-north-1 | Azure |
+| sandbox-ap | Inactive | ap-southeast-1 | AWS |`
+
+export const SearchableTables = () => (
+  <div className="space-y-8">
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">Searchable tables</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Markdown pipe tables render through the common Table component (sortable
+        headers, shared styling). Add a{' '}
+        <code>{'<nuon-table-search>'}</code> marker directly before a table to get
+        a client-side filter box.
+      </p>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Plain table (no marker) — sortable</h4>
+      <p className="text-xs text-gray-500">
+        Requirement 1: every markdown table now uses the common Table. Click a
+        header to sort.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown content={CLUSTER_TABLE} />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Filter a single column</h4>
+      <p className="text-xs text-gray-500">
+        <code>{'<nuon-table-search column="name">'}</code> — try typing “prod”.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-table-search column="name"></nuon-table-search>
+
+${CLUSTER_TABLE}`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Filter across multiple columns</h4>
+      <p className="text-xs text-gray-500">
+        <code>{'column="region,provider"'}</code> — try “aws” or “eu”.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-table-search column="region,provider"></nuon-table-search>
+
+${CLUSTER_TABLE}`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Filter across all columns</h4>
+      <p className="text-xs text-gray-500">
+        Omit <code>column</code> to search every cell — try “active” or “gcp”.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-table-search></nuon-table-search>
+
+${CLUSTER_TABLE}`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Formatted cells survive filtering</h4>
+      <p className="text-xs text-gray-500">
+        Links, <strong>bold</strong>, and inline <code>code</code> render inside
+        cells and still match on their text. Try “billing”.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-table-search column="policy"></nuon-table-search>
+
+| Policy | Type | Enforcement | Docs |
+| ------ | ---- | ----------- | ---- |
+| Public EKS Endpoint | \`sandbox\` | **warn** | [runbook](https://docs.nuon.co/eks) |
+| S3 Bucket Creation | \`terraform_module\` | **deny** | [runbook](https://docs.nuon.co/s3) |
+| Billing Mode Change | \`terraform_module\` | **deny** | [runbook](https://docs.nuon.co/billing) |
+| Restricted Namespaces | \`helm_chart\` | **deny** | [runbook](https://docs.nuon.co/ns) |`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">No-match state</h4>
+      <p className="text-xs text-gray-500">
+        Custom placeholder via <code>placeholder="…"</code>. Type something that
+        matches nothing (e.g. “zzz”) to see the empty state.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-table-search column="name" placeholder="Search clusters by name…"></nuon-table-search>
+
+${CLUSTER_TABLE}`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">Aligned columns</h4>
+      <p className="text-xs text-gray-500">
+        Column alignment from the delimiter row is preserved.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`| Left | Center | Right |
+| :--- | :----: | ----: |
+| alpha | mid | 100 |
+| beta | center | 2,500 |
+| gamma | value | 42 |`}
+        />
+      </div>
+    </div>
+  </div>
+)
+
 export const CollapsibleContent = () => (
   <div className="space-y-6">
     <div className="space-y-3">
