@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
 )
@@ -20,7 +21,7 @@ import (
 //
 // Mirrors creation logic from
 // services/ctl-api/internal/app/components/service/create_external_image_config.go.
-func SyncExternalImageComponent(ctx context.Context, db *gorm.DB, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncExternalImageComponent(ctx context.Context, db *gorm.DB, compHelpers *componenthelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	if err := validateExternalImageComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
@@ -49,6 +50,18 @@ func SyncExternalImageComponent(ctx context.Context, db *gorm.DB, comp *config.C
 		references = append(references, ref.String())
 	}
 
+	// Resolve component dependencies
+	depIDs := []string{}
+	if len(comp.Dependencies) > 0 {
+		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
+	}
+
 	cfg := app.ExternalImageComponentConfig{
 		ImageURL:            src.imageURL,
 		Tag:                 src.tag,
@@ -62,7 +75,7 @@ func SyncExternalImageComponent(ctx context.Context, db *gorm.DB, comp *config.C
 		ExternalImageComponentConfig: &cfg,
 		ComponentID:                  componentID,
 		AppConfigID:                  appConfigID,
-		ComponentDependencyIDs:       pq.StringArray{},
+		ComponentDependencyIDs:       pq.StringArray(depIDs),
 		References:                   pq.StringArray(references),
 		Checksum:                     comp.Checksum,
 		BuildTimeout:                 comp.ExternalImage.BuildTimeout,

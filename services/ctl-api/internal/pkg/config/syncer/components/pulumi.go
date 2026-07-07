@@ -12,10 +12,11 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
-func SyncPulumiComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncPulumiComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, compHelpers *componenthelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	if comp.Pulumi == nil {
 		return "", "", sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
@@ -95,17 +96,30 @@ func SyncPulumiComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers
 		references = append(references, ref.String())
 	}
 
+	// Resolve component dependencies
+	depIDs := []string{}
+	if len(comp.Dependencies) > 0 {
+		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
+	}
+
 	ccc := app.ComponentConfigConnection{
-		PulumiComponentConfig: &pulumiCfg,
-		KubernetesContextName: comp.KubernetesContext,
-		ComponentID:           componentID,
-		AppConfigID:           appConfigID,
-		References:            references,
-		BuildTimeout:          obj.BuildTimeout,
-		DeployTimeout:         obj.DeployTimeout,
-		MaxAutoRetries:        obj.MaxAutoRetries,
-		SkipNoops:             obj.SkipNoops,
-		OperationRoles:        operationRoles,
+		PulumiComponentConfig:  &pulumiCfg,
+		KubernetesContextName:  comp.KubernetesContext,
+		ComponentID:            componentID,
+		AppConfigID:            appConfigID,
+		ComponentDependencyIDs: pq.StringArray(depIDs),
+		References:             references,
+		BuildTimeout:           obj.BuildTimeout,
+		DeployTimeout:          obj.DeployTimeout,
+		MaxAutoRetries:         obj.MaxAutoRetries,
+		SkipNoops:              obj.SkipNoops,
+		OperationRoles:         operationRoles,
 	}
 
 	if obj.AutoApproveOnPoliciesPassing != nil {
