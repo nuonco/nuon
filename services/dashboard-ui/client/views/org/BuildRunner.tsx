@@ -24,9 +24,11 @@ import { SurfacesProvider } from '@/providers/surfaces-provider'
 import type { TRunnerSettings } from '@/types'
 
 const RunnerHeading = ({
+  controlPlaneBuilds,
   runnerId,
   settings,
 }: {
+  controlPlaneBuilds: boolean
   runnerId?: string
   settings?: TRunnerSettings
 }) => (
@@ -35,30 +37,31 @@ const RunnerHeading = ({
       <HeadingGroup>
         <div className="flex items-center gap-3">
           <Text variant="h3" weight="strong" level={1}>
-            Build runner
+            Builds
           </Text>
-          {runnerId ? <ID>{runnerId}</ID> : null}
+          {!controlPlaneBuilds && runnerId ? <ID>{runnerId}</ID> : null}
         </div>
-        {runnerId && (
+        {!controlPlaneBuilds && runnerId && (
           <AdminDashboardLink
             path={`/queues?owner_id=${runnerId}`}
             label="View queues in admin panel"
           />
         )}
       </HeadingGroup>
-      {settings && <ManagementDropdownContainer settings={settings} />}
+      {!controlPlaneBuilds && settings && <ManagementDropdownContainer settings={settings} />}
     </div>
   </PageHeader>
 )
 
 export const BuildRunner = () => {
   const { org } = useOrg()
+  const controlPlaneBuilds = Boolean(org?.features?.['control-plane-builds'])
   const runnerId = org?.runner_group?.runners?.[0]?.id
 
   const { data: settings } = useQuery({
     queryKey: ['runner-settings', org?.id, runnerId],
     queryFn: () => getRunnerSettings({ orgId: org.id, runnerId }),
-    enabled: !!org?.id && !!runnerId,
+    enabled: !controlPlaneBuilds && !!org?.id && !!runnerId,
   })
 
   const { data: processResult, isLoading: processesLoading } = useQuery({
@@ -71,18 +74,18 @@ export const BuildRunner = () => {
         limit: 2,
       }),
     refetchInterval: 10000,
-    enabled: !!org?.id && !!runnerId,
+    enabled: !controlPlaneBuilds && !!org?.id && !!runnerId,
   })
 
   const processes = processResult?.data ?? []
 
   const breadcrumbs = (
     <>
-      <PageTitle title={`Build runner | ${org?.name}`} />
+      <PageTitle title={`Builds | ${org?.name}`} />
       <Breadcrumbs
         breadcrumbs={[
           { path: `/${org.id}`, text: org?.name },
-          { path: `/${org.id}/runner`, text: 'Build runner' },
+          { path: `/${org.id}/runner`, text: 'Builds' },
         ]}
       />
     </>
@@ -92,12 +95,12 @@ export const BuildRunner = () => {
     return (
       <PageLayout>
         {breadcrumbs}
-        <RunnerHeading />
+        <RunnerHeading controlPlaneBuilds={controlPlaneBuilds} />
         <PageContent>
           <Card>
             <EmptyState
-              emptyTitle="No build runner"
-              emptyMessage="No build runner is configured for this organization."
+              emptyTitle="No builds available"
+              emptyMessage="No build executor is configured for this organization."
               variant="table"
             />
           </Card>
@@ -111,56 +114,63 @@ export const BuildRunner = () => {
       <SurfacesProvider>
         <PageLayout className="pb-6">
           {breadcrumbs}
-          <RunnerHeading runnerId={runnerId} settings={settings} />
+          <RunnerHeading
+            controlPlaneBuilds={controlPlaneBuilds}
+            runnerId={runnerId}
+            settings={settings}
+          />
 
           <PageContent>
-            <PageSection>
-              <Text variant="base" weight="strong">
-                Processes
-              </Text>
+            {!controlPlaneBuilds ? (
+              <PageSection>
+                <Text variant="base" weight="strong">
+                  Processes
+                </Text>
 
-              {processesLoading ? (
-                <div className="@container">
-                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
-                    <ProcessCardSkeleton />
-                    <ProcessCardSkeleton />
+                {processesLoading ? (
+                  <div className="@container">
+                    <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
+                      <ProcessCardSkeleton />
+                      <ProcessCardSkeleton />
+                    </div>
                   </div>
-                </div>
-              ) : processes.length === 0 ? (
-                <Card>
-                  <EmptyState
-                    emptyTitle="No active processes"
-                    emptyMessage="No runner processes are currently active or offline."
-                    variant="table"
+                ) : processes.length === 0 ? (
+                  <Card>
+                    <EmptyState
+                      emptyTitle="No active processes"
+                      emptyMessage="No runner processes are currently active or offline."
+                      variant="table"
+                    />
+                  </Card>
+                ) : processes.length === 1 ? (
+                  <ProcessCard
+                    process={processes[0]}
+                    settings={settings}
+                    shouldPoll
                   />
-                </Card>
-              ) : processes.length === 1 ? (
-                <ProcessCard
-                  process={processes[0]}
-                  settings={settings}
-                  shouldPoll
-                />
-              ) : (
-                <div className="@container">
-                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
-                    {processes.map((process) => (
-                      <ProcessCard
-                        key={process.id}
-                        process={process}
-                        settings={settings}
-                        shouldPoll
-                      />
-                    ))}
+                ) : (
+                  <div className="@container">
+                    <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
+                      {processes.map((process) => (
+                        <ProcessCard
+                          key={process.id}
+                          process={process}
+                          settings={settings}
+                          shouldPoll
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </PageSection>
+                )}
+              </PageSection>
+            ) : null}
 
             <PageSection>
               <Text variant="base" weight="strong">
                 Recent jobs
               </Text>
               <RunnerRecentActivity
+                executor={controlPlaneBuilds ? 'control-plane' : undefined}
                 shouldPoll
                 jobDetailBasePath={`/${org?.id}/runner`}
               />

@@ -14,8 +14,8 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/pkg/generics"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
 const (

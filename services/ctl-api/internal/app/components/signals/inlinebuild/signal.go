@@ -11,13 +11,16 @@ import (
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	created "github.com/nuonco/nuon/services/ctl-api/internal/app/components/signals/created"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/notifications"
+	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 )
@@ -128,6 +131,22 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return err
 	}
 
+	// A component is activated asynchronously by its `created` signal. During a
+	// sync burst the build can be enqueued before that signal commits the active
+	// status, so wait for the activation signal to finish before checking status
+	// rather than racing it and hard-failing.
+	if err := queueclient.EnsureQueueSignal(ctx, comp.ID, "components", created.SignalType); err != nil {
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "component activation not ready")
+		return notify(fmt.Errorf("component activation not ready: %w", err))
+	}
+
+	// Re-fetch to observe the status committed by the activation signal.
+	comp, err = activities.AwaitGetComponentByComponentID(ctx, s.ComponentID)
+	if err != nil {
+		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component")
+		return notify(fmt.Errorf("unable to get component: %w", err))
+	}
+
 	if comp.Status != app.ComponentStatusActive {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "component is not active")
 		return notify(fmt.Errorf("component is not active"))
@@ -147,7 +166,6 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 		return err
 	}
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
-		RunnerID:    fullComp.Org.RunnerGroup.Runners[0].ID,
 		BuildID:     buildID,
 		Op:          app.RunnerJobOperationTypeBuild,
 		Type:        fullComp.Type.BuildJobType(),
@@ -162,6 +180,17 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return notify(fmt.Errorf("unable to create job: %w", err))
+	}
+	if runnerJob.RunnerID == "" {
+		if runnerJob.Executor != app.RunnerJobExecutorControlPlane {
+			s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
+			_ = activities.AwaitUpdateJobStatus(ctx, &activities.UpdateJobStatusRequest{
+				JobID:             runnerJob.ID,
+				Status:            app.RunnerJobStatusFailed,
+				StatusDescription: "no runners available in runner group",
+			})
+			return notify(fmt.Errorf("no runners available in runner group for org %s", fullComp.Org.ID))
+		}
 	}
 
 	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
@@ -212,12 +241,18 @@ func (s *Signal) execBuild(ctx workflow.Context, buildID string) error {
 
 	// Execute the build job.
 	s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID: fullComp.Org.RunnerGroup.Runners[0].ID,
-		JobID:    runnerJob.ID,
-	}, &workflow.ChildWorkflowOptions{
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
-	})
+	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
+		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
+		})
+	} else {
+		_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+			RunnerID: runnerJob.RunnerID,
+			JobID:    runnerJob.ID,
+		}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", fullComp.ID, runnerJob.ID),
+		})
+	}
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, fmt.Sprintf("build failed: %s", signal.HumanError(err)))
 		return notify(fmt.Errorf("build job failed: %w", err))

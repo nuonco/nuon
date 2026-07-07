@@ -12,9 +12,9 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 

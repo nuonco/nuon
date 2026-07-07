@@ -4,9 +4,9 @@ import (
 	"time"
 
 	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	pulumiworkspace "github.com/nuonco/nuon/pkg/pulumi/workspace"
+	"github.com/nuonco/nuon/pkg/runner/workspace"
 )
 
 type handlerState struct {

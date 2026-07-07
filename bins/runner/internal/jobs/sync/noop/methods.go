@@ -5,7 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
 func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	validatorPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/validator"
 )
@@ -129,29 +130,28 @@ func (s *service) CreateAppDockerBuildComponentConfig(ctx *gin.Context) {
 func (s *service) CreateDockerBuildComponentConfig(ctx *gin.Context) {
 	cmpID := ctx.Param("component_id")
 
+	controlPlaneBuildsEnabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureControlPlaneBuilds)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to check control-plane builds feature flag: %w", err))
+		return
+	}
+	if controlPlaneBuildsEnabled {
+		ctx.Error(componenthelpers.DockerBuildUnsupportedByFeature(app.OrgFeatureControlPlaneBuilds))
+		return
+	}
+
 	// docker_build runs kaniko in-process inside the build runner pod,
 	// which mutates the runner container's rootfs (removes /usr/bin/git
 	// and other tooling). The terraform-provider-mirror feature relies
 	// on `terraform get` finding git on PATH at build time, so the two
-	// features are mutually incompatible inside the same pod. Refuse to
-	// create new docker_build configs for orgs that have the mirror
-	// flag enabled. Existing configs are left in the DB; their builds
-	// will fail at planning time via createDockerBuildPlan.
+	// features are mutually incompatible inside the same pod.
 	mirrorEnabled, err := s.featuresClient.FeatureEnabled(ctx, app.OrgFeatureTerraformProviderMirror)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to check terraform provider mirror feature flag: %w", err))
 		return
 	}
 	if mirrorEnabled {
-		ctx.Error(stderr.ErrUser{
-			Err: fmt.Errorf("docker_build components are not supported when the %q feature is enabled", app.OrgFeatureTerraformProviderMirror),
-			Description: fmt.Sprintf(
-				"This organization has the %q feature enabled, which is incompatible with docker_build components. "+
-					"Use a container_image component to reference a pre-built image, or contact support to disable the feature.",
-				app.OrgFeatureTerraformProviderMirror,
-			),
-			Code: "docker_build_incompatible_with_provider_mirror",
-		})
+		ctx.Error(componenthelpers.DockerBuildUnsupportedByFeature(app.OrgFeatureTerraformProviderMirror))
 		return
 	}
 

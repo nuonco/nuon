@@ -20,9 +20,9 @@ import (
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/pkg/kube/config"
 	pulumiworkspace "github.com/nuonco/nuon/pkg/pulumi/workspace"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
 const updatePlanFilename = ".pulumi-update-plan.json"

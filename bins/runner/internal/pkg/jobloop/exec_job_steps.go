@@ -5,7 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 )
 
 func (j *jobLoop) getJobSteps(ctx context.Context, handler jobs.JobHandler) ([]*executeJobStep, error) {
