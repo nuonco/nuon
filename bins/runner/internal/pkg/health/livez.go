@@ -16,13 +16,13 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 )
 
 type Params struct {
 	fx.In
 
-	Cfg *internal.Config
+	Cfg *runnerconfig.Config
 	L   *zap.Logger `name:"system"`
 	LC  fx.Lifecycle
 }

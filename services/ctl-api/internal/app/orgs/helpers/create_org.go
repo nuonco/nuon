@@ -84,7 +84,13 @@ func (h *Helpers) CreateOrg(ctx context.Context, acct *app.Account, params *Crea
 		return nil, fmt.Errorf("unable to add user to org: %w", err)
 	}
 
-	if _, err := h.runnersHelpers.CreateOrgRunnerGroup(ctx, &org); err != nil {
+	// Orgs that build on the control plane skip the org runner group entirely;
+	// installs still use their own install runner groups. Provision, deprovision,
+	// and delete signals all guard on an empty runner group, so this is safe.
+	if enabled, ok := org.Features[string(app.OrgFeatureOrgRunner)]; ok && !enabled {
+		h.logger.Info("org-runner feature disabled; skipping org runner group creation",
+			zap.String("org_id", org.ID))
+	} else if _, err := h.runnersHelpers.CreateOrgRunnerGroup(ctx, &org); err != nil {
 		return nil, fmt.Errorf("unable to create org runner group: %w", err)
 	}
 

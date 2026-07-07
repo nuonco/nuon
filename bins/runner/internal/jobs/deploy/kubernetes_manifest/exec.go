@@ -14,10 +14,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/diff"
 	"github.com/nuonco/nuon/pkg/plans"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/op"
 	plantypes "github.com/nuonco/nuon/pkg/types/approvals"
 )
 

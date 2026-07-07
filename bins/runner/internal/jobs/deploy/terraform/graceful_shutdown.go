@@ -3,7 +3,7 @@ package terraform
 import (
 	"context"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	"github.com/nuonco/nuon/pkg/runner/log"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 )

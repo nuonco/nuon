@@ -26,12 +26,14 @@ interface IRunnerRecentActivityContainer
   extends Omit<ITimeline<TRunnerJob>, 'events' | 'renderEvent' | 'pagination'> {
   shouldPoll?: boolean
   pollInterval?: number
+  executor?: 'org-runner' | 'control-plane'
   jobDetailBasePath?: string
 }
 
 export const RunnerRecentActivityContainer = ({
   shouldPoll = false,
   pollInterval = 20000,
+  executor,
   jobDetailBasePath,
   ...props
 }: IRunnerRecentActivityContainer) => {
@@ -41,9 +43,10 @@ export const RunnerRecentActivityContainer = ({
   const offset = Number(searchParams.get(RECENT_ACTIVITY_SEARCH_PARAM) ?? 0)
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['runner-jobs', org?.id, runner?.id, offset, RECENT_ACTIVITY_GROUPS],
+    queryKey: ['runner-jobs', org?.id, runner?.id, offset, RECENT_ACTIVITY_GROUPS, executor],
     queryFn: () =>
       getRunnerJobs({
+        executor,
         orgId: org.id,
         runnerId: runner.id,
         groups: RECENT_ACTIVITY_GROUPS,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
@@ -111,6 +112,9 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 	s.orgID = orgID
+	if err := s.validateFeatureCompatibility(ctx); err != nil {
+		return err
+	}
 
 	// Initialize state
 	s.state = &sync.State{
@@ -140,6 +144,25 @@ func (s *syncer) Sync(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
+	var org app.Org
+	res := s.db.WithContext(ctx).
+		Select("id", "features").
+		Where(&app.Org{ID: s.orgID}).
+		First(&org)
+	if res.Error != nil {
+		return sync.SyncInternalErr{
+			Description: "unable to check org feature compatibility",
+			Err:         res.Error,
+		}
+	}
+	if !org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
+		return nil
+	}
+
+	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
 }
 
 type syncStep struct {

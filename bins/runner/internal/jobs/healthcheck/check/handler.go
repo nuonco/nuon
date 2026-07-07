@@ -9,10 +9,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 )
 
 // handler is the handler implementation
@@ -20,7 +20,7 @@ type handler struct {
 	v           *validator.Validate
 	apiClient   nuonrunner.Client
 	errRecorder *errs.Recorder
-	cfg         *internal.Config
+	cfg         *runnerconfig.Config
 	jobLoops    []jobloop.JobLoop
 
 	// created on initialization of the plugin struct
@@ -34,7 +34,7 @@ type HandlerParams struct {
 
 	V           *validator.Validate
 	APIClient   nuonrunner.Client
-	Config      *internal.Config
+	Config      *runnerconfig.Config
 	ErrRecorder *errs.Recorder
 	JobLoops    []jobloop.JobLoop `group:"job_loops"`
 }

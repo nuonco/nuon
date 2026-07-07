@@ -13,6 +13,7 @@ import (
 // This job is used during external image builds to fetch metadata for policy evaluation.
 func (h *Helpers) CreateFetchImageMetadataJob(ctx context.Context,
 	runnerID string,
+	executor app.RunnerJobExecutor,
 	ownerType string,
 	ownerID string,
 	logStreamID string,
@@ -20,6 +21,7 @@ func (h *Helpers) CreateFetchImageMetadataJob(ctx context.Context,
 ) (*app.RunnerJob, error) {
 	job := &app.RunnerJob{
 		RunnerID:          runnerID,
+		Executor:          executor,
 		OwnerType:         ownerType,
 		OwnerID:           ownerID,
 		QueueTimeout:      DefaultQueueTimeout,
@@ -35,7 +37,11 @@ func (h *Helpers) CreateFetchImageMetadataJob(ctx context.Context,
 		Metadata:          generics.ToHstore(metadata),
 	}
 
-	if res := h.db.WithContext(ctx).Create(&job); res.Error != nil {
+	db := h.db.WithContext(ctx)
+	if executor == app.RunnerJobExecutorControlPlane {
+		db = db.Omit("RunnerID")
+	}
+	if res := db.Create(&job); res.Error != nil {
 		return nil, fmt.Errorf("unable to create job: %w", res.Error)
 	}
 

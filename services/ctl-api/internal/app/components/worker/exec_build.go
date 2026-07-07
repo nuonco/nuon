@@ -14,6 +14,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -26,12 +27,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		return fmt.Errorf("unable to get component: %w", err)
 	}
 
-	if len(comp.Org.RunnerGroup.Runners) == 0 {
-		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
-		return fmt.Errorf("no runners available in runner group for org %s", comp.Org.ID)
-	}
-	runnerID := comp.Org.RunnerGroup.Runners[0].ID
-
 	logStreamID, err := cctx.GetLogStreamIDWorkflow(ctx)
 	if err != nil {
 		return err
@@ -39,7 +34,6 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	// Create the runner job early so it appears in the dashboard even if policy evaluation fails
 	runnerJob, err := activities.AwaitCreateBuildJob(ctx, &activities.CreateBuildJobRequest{
-		RunnerID:    runnerID,
 		BuildID:     buildID,
 		Op:          app.RunnerJobOperationTypeBuild,
 		Type:        comp.Type.BuildJobType(),
@@ -55,9 +49,16 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to create job")
 		return fmt.Errorf("unable to create job: %w", err)
 	}
+	if runnerJob.RunnerID == "" {
+		if runnerJob.Executor != app.RunnerJobExecutorControlPlane {
+			w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "no runners available in runner group")
+			w.updateJobStatusForPolicyFailure(ctx, runnerJob.ID, "no runners available in runner group")
+			return fmt.Errorf("no runners available in runner group for org %s", comp.Org.ID)
+		}
+	}
 
 	if comp.Type == app.ComponentTypeExternalImage {
-		if err := w.evaluateExternalImagePolicy(ctx, buildID, runnerJob.ID, runnerID, comp.Name); err != nil {
+		if err := w.evaluateExternalImagePolicy(ctx, buildID, runnerJob.ID, runnerJob.RunnerID, comp.Name); err != nil {
 			return err
 		}
 	}
@@ -111,11 +112,17 @@ func (w *Workflows) execBuild(ctx workflow.Context, compID, buildID string, curr
 
 	// wait for the job
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusBuilding, "building")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   runnerID,
-		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", comp.ID, runnerJob.ID),
-	})
+	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
+		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", comp.ID, runnerJob.ID),
+		})
+	} else {
+		_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+			RunnerID:   runnerJob.RunnerID,
+			JobID:      runnerJob.ID,
+			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", comp.ID, runnerJob.ID),
+		})
+	}
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "build did not complete successfully")
 		return fmt.Errorf("build job failed: %w", err)

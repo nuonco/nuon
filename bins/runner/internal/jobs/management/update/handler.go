@@ -9,10 +9,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 type handler struct {
@@ -21,7 +21,7 @@ type handler struct {
 	settings    *settings.Settings
 	shutdowner  fx.Shutdowner
 	errRecorder *errs.Recorder
-	cfg         *internal.Config
+	cfg         *runnerconfig.Config
 	state       *handlerState
 }
 
@@ -35,7 +35,7 @@ type HandlerParams struct {
 	Settings    *settings.Settings
 	Shutdowner  fx.Shutdowner
 	ErrRecorder *errs.Recorder
-	Config      *internal.Config
+	Config      *runnerconfig.Config
 }
 
 func New(params HandlerParams) *handler {
