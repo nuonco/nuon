@@ -137,6 +137,7 @@ export const WorkflowTimeline = ({
                   className="gap-1"
                   variant="subtext"
                   theme="neutral"
+                  title="Created"
                 >
                   <Icon variant="CalendarBlankIcon" />{' '}
                   <Time time={workflow?.created_at} variant="subtext" />
@@ -146,10 +147,15 @@ export const WorkflowTimeline = ({
                   className="gap-1"
                   variant="subtext"
                   theme="neutral"
+                  title={workflow?.finished ? 'Finished' : 'Last updated'}
                 >
                   <Icon variant="ClockClockwiseIcon" />{' '}
                   <Time
-                    time={workflow?.updated_at}
+                    time={
+                      workflow?.finished && workflow?.finished_at
+                        ? workflow.finished_at
+                        : workflow?.updated_at
+                    }
                     variant="subtext"
                     format="relative"
                   />
@@ -160,6 +166,7 @@ export const WorkflowTimeline = ({
                     className="gap-1"
                     variant="subtext"
                     theme="neutral"
+                    title="Duration"
                   >
                     <Icon variant="TimerIcon" />{' '}
                     <Duration
