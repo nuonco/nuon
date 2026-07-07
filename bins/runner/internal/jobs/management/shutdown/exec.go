@@ -3,7 +3,7 @@ package shutdown
 import (
 	"context"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
 

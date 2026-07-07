@@ -5,7 +5,7 @@ import (
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry"
+	"github.com/nuonco/nuon/pkg/runner/registry"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

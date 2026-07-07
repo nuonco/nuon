@@ -8,10 +8,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
-	"github.com/nuonco/nuon/bins/runner/internal/version"
 	"github.com/nuonco/nuon/pkg/metrics"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/settings"
+	"github.com/nuonco/nuon/pkg/runner/version"
 )
 
 type Params struct {
@@ -20,7 +20,7 @@ type Params struct {
 	Logger   *zap.Logger `name:"system"`
 	Settings *settings.Settings
 	V        *validator.Validate
-	Cfg      *internal.Config
+	Cfg      *runnerconfig.Config
 }
 
 func New(params Params) (metrics.Writer, error) {

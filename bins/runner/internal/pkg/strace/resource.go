@@ -4,8 +4,8 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 // getResource builds the OTEL Resource shared by every span emitted from this

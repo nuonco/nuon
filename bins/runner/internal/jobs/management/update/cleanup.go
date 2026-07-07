@@ -7,7 +7,7 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
 func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {

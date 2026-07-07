@@ -1,7 +1,7 @@
 package docker
 
 import (
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/workspace"
+	"github.com/nuonco/nuon/pkg/runner/workspace"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/pkg/plugins/configs"

@@ -4,10 +4,10 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/build"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/operations"
 	"github.com/nuonco/nuon/bins/runner/internal/jobs/sync"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
 

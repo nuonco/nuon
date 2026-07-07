@@ -31,7 +31,7 @@ export const SETTINGS_LINKS: TNavLink[] = [
   {
     iconVariant: 'HammerIcon',
     path: `/runner`,
-    text: 'Build runner',
+    text: 'Builds',
     shortcut: 'g r',
   },
   {

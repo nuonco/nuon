@@ -10,16 +10,16 @@ import (
 
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/pkg/metrics"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 type Params struct {
 	fx.In
 
 	APIClient nuonrunner.Client
-	Cfg       *internal.Config
+	Cfg       *runnerconfig.Config
 	L         *zap.Logger `name:"system"`
 	LC        fx.Lifecycle
 	Settings  *settings.Settings

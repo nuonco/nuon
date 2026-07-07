@@ -59,6 +59,16 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get org: %w", err)
 	}
 
+	// Orgs that build on the control plane do not need an org runner (installs
+	// use their own install runner groups), so skip runner IAM + provisioning
+	// and activate immediately when the org-runner feature is explicitly off.
+	if enabled, ok := org.Features[string(app.OrgFeatureOrgRunner)]; ok && !enabled {
+		l.Info("org-runner feature disabled; skipping org runner provisioning",
+			zap.String("org_id", s.OrgID))
+		s.updateStatus(ctx, app.OrgStatusActive, "organization resources are provisioned")
+		return nil
+	}
+
 	// Provision IAM roles for the org
 	if org.OrgType == app.OrgTypeDefault {
 		orgIAMReq := &orgiam.ProvisionIAMRequest{

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"

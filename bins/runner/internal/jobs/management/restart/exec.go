@@ -7,8 +7,8 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
 func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecution *models.AppRunnerJobExecution) error {
