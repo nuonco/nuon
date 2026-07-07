@@ -49,9 +49,19 @@ func (a *Activities) GetComponentOCIRegistryRepository(ctx context.Context, req 
 		}
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
-		cfg.ECRAuth = &credentials.Config{
-			Region:     compApp.Repository.Region,
-			UseDefault: true,
+		if comp.Org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
+			cfg.ECRAuth = &credentials.Config{
+				Region: compApp.Repository.Region,
+				AssumeRole: &credentials.AssumeRoleConfig{
+					RoleARN:     a.cfg.ManagementIAMRoleARN,
+					SessionName: "component-build",
+				},
+			}
+		} else {
+			cfg.ECRAuth = &credentials.Config{
+				Region:     compApp.Repository.Region,
+				UseDefault: true,
+			}
 		}
 	}
 
