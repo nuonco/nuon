@@ -112,10 +112,21 @@ func (c *cli) extListCmd() *cobra.Command {
 
 func (c *cli) extInstallCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:         "install <repo>",
-		Short:       "Install an extension",
-		Long:        "Install an extension from a GitHub repository. Accepts full repo (org/nuon-ext-name) or shorthand (name).",
-		Args:        cobra.ExactArgs(1),
+		Use:   "install <repo-or-path>",
+		Short: "Install an extension",
+		Long: `Install an extension from a GitHub repository, a local directory, or a local binary.
+
+  GitHub:         nuon ext install api
+                  nuon ext install nuonco/nuon-ext-api
+                  nuon ext install nuonco/nuon-ext-api@v0.19.798
+
+  Local directory: nuon ext install ./nuon-ext-my-tool
+                   (must contain nuon-ext.toml; creates symlink)
+
+  Local binary:   nuon ext install ~/bin/nuon-ext-linter
+                  nuon ext install /usr/local/bin/nuon-ext-linter
+                  (binary name must use nuon-ext-<name> convention; copies binary)`,
+		Args: cobra.ExactArgs(1),
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())

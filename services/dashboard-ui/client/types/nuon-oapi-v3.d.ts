@@ -6995,9 +6995,13 @@ export interface components {
        */
       app_branch_id?: string;
       cli_version?: string;
+      /**
+       * @description IntermediateConfigJSON is the serialized intermediate config (parsed nuon.toml).
+       * When provided, stored on the AppConfig for diffing in PR previews.
+       */
+      intermediate_config_json?: string;
       /** @description PlanOnly creates a preview run (plan without apply). Only used with AppBranchID. */
       plan_only?: boolean;
-      /** @description not required Readme */
       readme?: string;
       /**
        * @description SkipNotification suppresses the app-config-synced signal emission.

@@ -62,6 +62,12 @@ GetRunnerJobsParams contains all the parameters to send to the API endpoint
 */
 type GetRunnerJobsParams struct {
 
+	/* Executor.
+
+	   job executor
+	*/
+	Executor *string
+
 	/* Group.
 
 	   job group
@@ -182,6 +188,17 @@ func (o *GetRunnerJobsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithExecutor adds the executor to the get runner jobs params
+func (o *GetRunnerJobsParams) WithExecutor(executor *string) *GetRunnerJobsParams {
+	o.SetExecutor(executor)
+	return o
+}
+
+// SetExecutor adds the executor to the get runner jobs params
+func (o *GetRunnerJobsParams) SetExecutor(executor *string) {
+	o.Executor = executor
+}
+
 // WithGroup adds the group to the get runner jobs params
 func (o *GetRunnerJobsParams) WithGroup(group *string) *GetRunnerJobsParams {
 	o.SetGroup(group)
@@ -277,6 +294,23 @@ func (o *GetRunnerJobsParams) WriteToRequest(r runtime.ClientRequest, reg strfmt
 		return err
 	}
 	var res []error
+
+	if o.Executor != nil {
+
+		// query param executor
+		var qrExecutor string
+
+		if o.Executor != nil {
+			qrExecutor = *o.Executor
+		}
+		qExecutor := qrExecutor
+		if qExecutor != "" {
+
+			if err := r.SetQueryParam("executor", qExecutor); err != nil {
+				return err
+			}
+		}
+	}
 
 	if o.Group != nil {
 

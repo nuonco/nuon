@@ -25,12 +25,13 @@ type ServiceCreateAppConfigRequest struct {
 	CliVersion string `json:"cli_version,omitempty"`
 
 	// IntermediateConfigJSON is the serialized intermediate config (parsed nuon.toml).
+	// When provided, stored on the AppConfig for diffing in PR previews.
 	IntermediateConfigJSON string `json:"intermediate_config_json,omitempty"`
 
 	// PlanOnly creates a preview run (plan without apply). Only used with AppBranchID.
 	PlanOnly bool `json:"plan_only,omitempty"`
 
-	// not required Readme
+	// readme
 	Readme string `json:"readme,omitempty"`
 
 	// SkipNotification suppresses the app-config-synced signal emission.

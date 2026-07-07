@@ -3,6 +3,7 @@ package refs
 import (
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/mitchellh/reflectwalk"
@@ -67,7 +68,17 @@ func Parse(obj any) ([]Ref, error) {
 		return nil, errors.Wrap(err, "unable to walk type for all inputs")
 	}
 
-	return uniqueifyRefs(walker.refs), nil
+	result := uniqueifyRefs(walker.refs)
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].Type != result[j].Type {
+			return result[i].Type < result[j].Type
+		}
+		if result[i].Name != result[j].Name {
+			return result[i].Name < result[j].Name
+		}
+		return result[i].Input < result[j].Input
+	})
+	return result, nil
 }
 
 // NOTE(jm): this was the fastest way to build out a list of all references, however long term we would like to switch
