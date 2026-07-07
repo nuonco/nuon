@@ -77,7 +77,7 @@ export const SandboxEnvironmentVariablesModal = ({
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
           <Icon variant="ListIcon" size="20" />
-          Environment Variables
+          Environment variables
         </Text>
       }
       size="lg"
@@ -111,7 +111,7 @@ export const SandboxVariablesFilesModal = ({
       heading={
         <Text variant="h3" weight="strong" flex className="gap-2">
           <Icon variant="FileCodeIcon" size="20" />
-          Terraform Variables Files
+          Terraform variables files
         </Text>
       }
       size="lg"

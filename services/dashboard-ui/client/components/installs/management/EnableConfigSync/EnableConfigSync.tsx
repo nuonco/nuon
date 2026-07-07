@@ -101,7 +101,7 @@ export const EnableConfigSyncModal = ({
       heading={
         <Text flex className="gap-4" variant="h3" weight="strong">
           <Icon variant="FileCloudIcon" size="24" />
-          Enable config sync?
+          Enable config sync
         </Text>
       }
       primaryActionTrigger={{
