@@ -3,6 +3,7 @@ import React, {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -56,6 +57,11 @@ export const Dropdown = ({
 }: IDropdown) => {
   const [isOpen, setIsOpen] = useState(initIsOpen)
   const [styles, setStyles] = useState<React.CSSProperties>({})
+  const [placement, setPlacement] = useState<{
+    position: NonNullable<IDropdown['position']>
+    alignment: NonNullable<IDropdown['alignment']>
+  }>({ position, alignment })
+  const [contentEl, setContentEl] = useState<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const childPortals = useRef<Set<HTMLElement>>(new Set())
@@ -80,6 +86,7 @@ export const Dropdown = ({
     (el: HTMLDivElement | null) => {
       const prev = contentRef.current
       contentRef.current = el
+      setContentEl(el)
 
       if (parentNesting) {
         if (prev) parentNesting.unregisterChild(prev)
@@ -106,49 +113,112 @@ export const Dropdown = ({
     if (!triggerRef.current) return
 
     const trigger = triggerRef.current.getBoundingClientRect()
+    const content = contentRef.current
+    const contentWidth = content?.offsetWidth ?? 0
+    const contentHeight = content?.offsetHeight ?? 0
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const gap = 8
+    const margin = 8
+
+    let effPosition = position
+    let effAlignment = alignment
+
+    if (position === 'below' || position === 'above') {
+      const spaceBelow = vh - trigger.bottom
+      const spaceAbove = trigger.top
+      const needed = contentHeight + gap
+      if (position === 'below' && needed > spaceBelow && spaceAbove > spaceBelow) {
+        effPosition = 'above'
+      } else if (
+        position === 'above' &&
+        needed > spaceAbove &&
+        spaceBelow > spaceAbove
+      ) {
+        effPosition = 'below'
+      }
+    }
+
+    if (position === 'beside') {
+      const spaceRight = vw - trigger.right
+      const spaceLeft = trigger.left
+      const needed = contentWidth + gap
+      if (alignment === 'right' && needed > spaceRight && spaceLeft > spaceRight) {
+        effAlignment = 'left'
+      } else if (
+        alignment === 'left' &&
+        needed > spaceLeft &&
+        spaceRight > spaceLeft
+      ) {
+        effAlignment = 'right'
+      }
+    } else if (contentWidth) {
+      if (
+        alignment === 'left' &&
+        trigger.left + contentWidth > vw - margin &&
+        trigger.right - contentWidth >= margin
+      ) {
+        effAlignment = 'right'
+      } else if (
+        alignment === 'right' &&
+        trigger.right - contentWidth < margin &&
+        trigger.left + contentWidth <= vw - margin
+      ) {
+        effAlignment = 'left'
+      }
+    }
+
     const newStyles: React.CSSProperties = {
       position: 'fixed',
       zIndex: 60,
     }
 
-    if (position === 'below') {
-      newStyles.top = trigger.bottom + 8
-      if (alignment === 'left') newStyles.left = trigger.left
-      if (alignment === 'right') newStyles.right = window.innerWidth - trigger.right
-    }
-
-    if (position === 'above') {
-      newStyles.bottom = window.innerHeight - trigger.top + 8
-      if (alignment === 'left') newStyles.left = trigger.left
-      if (alignment === 'right') newStyles.right = window.innerWidth - trigger.right
-    }
-
-    if (position === 'beside') {
-      newStyles.top = trigger.top
-      if (alignment === 'left') newStyles.right = window.innerWidth - trigger.left + 8
-      if (alignment === 'right') newStyles.left = trigger.right + 8
-    }
-
-    if (position === 'overlay') {
+    if (effPosition === 'below') {
+      newStyles.top = trigger.bottom + gap
+      if (effAlignment === 'left') newStyles.left = trigger.left
+      if (effAlignment === 'right') newStyles.right = vw - trigger.right
+    } else if (effPosition === 'above') {
+      newStyles.bottom = vh - trigger.top + gap
+      if (effAlignment === 'left') newStyles.left = trigger.left
+      if (effAlignment === 'right') newStyles.right = vw - trigger.right
+    } else if (effPosition === 'beside') {
+      if (effAlignment === 'left') newStyles.right = vw - trigger.left + gap
+      if (effAlignment === 'right') newStyles.left = trigger.right + gap
+      newStyles.top =
+        contentHeight && trigger.top + contentHeight > vh - margin
+          ? Math.max(margin, vh - contentHeight - margin)
+          : trigger.top
+    } else if (effPosition === 'overlay') {
       newStyles.top = trigger.top
       newStyles.left = trigger.left
     }
 
     setStyles(newStyles)
+    setPlacement((prev) =>
+      prev.position === effPosition && prev.alignment === effAlignment
+        ? prev
+        : { position: effPosition, alignment: effAlignment }
+    )
   }, [position, alignment])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) return
 
     calculatePosition()
 
+    const resizeObserver = contentEl
+      ? new ResizeObserver(() => calculatePosition())
+      : null
+    if (contentEl && resizeObserver) resizeObserver.observe(contentEl)
+
     window.addEventListener('resize', calculatePosition)
     window.addEventListener('scroll', calculatePosition, true)
     return () => {
+      resizeObserver?.disconnect()
       window.removeEventListener('resize', calculatePosition)
       window.removeEventListener('scroll', calculatePosition, true)
     }
-  }, [isOpen, calculatePosition])
+  }, [isOpen, contentEl, calculatePosition])
 
   useEffect(() => {
     if (!isOpen) return
@@ -196,8 +266,8 @@ export const Dropdown = ({
         'bg-white',
         'dark:bg-dark-grey-900',
         'w-fit',
-        alignment,
-        position,
+        placement.alignment,
+        placement.position,
         dropdownClassName
       )}
       aria-labelledby={`dropdown-button-${id}`}
