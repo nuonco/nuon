@@ -2,11 +2,20 @@ package gcp
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/pkg/errors"
 )
+
+// blueprintFuncs are template helpers for rendering Spacelift blueprint YAML.
+// yamlStr emits a double-quoted YAML scalar so free-text values (input names,
+// descriptions) that contain YAML-significant characters such as ": " don't get
+// misparsed as nested mappings.
+var blueprintFuncs = template.FuncMap{
+	"yamlStr": strconv.Quote,
+}
 
 // defaultSpaceliftTerraformVersion is the Terraform version pinned on generated
 // Spacelift stacks/blueprints. Satisfies the install-stacks//gcp module's
@@ -74,9 +83,10 @@ func renderSpaceliftBlueprint(data spaceliftBlueprintData) (string, error) {
 	}
 	for _, in := range data.InstallInputs {
 		inputs = append(inputs, blueprintInput{
-			ID:   blueprintInstallInputID(in.Name),
-			Name: in.Name,
-			Type: "short_text",
+			ID:      blueprintInstallInputID(in.Name),
+			Name:    in.Name,
+			Type:    "short_text",
+			Default: in.Default,
 		})
 	}
 	for _, s := range data.Secrets {
@@ -85,10 +95,11 @@ func renderSpaceliftBlueprint(data spaceliftBlueprintData) (string, error) {
 			Name:        s.Name,
 			Type:        "secret",
 			Description: s.Description,
+			Default:     s.Default,
 		})
 	}
 
-	t, err := template.New("gcp-spacelift-blueprint").Parse(spaceliftBlueprintTmpl)
+	t, err := template.New("gcp-spacelift-blueprint").Funcs(blueprintFuncs).Parse(spaceliftBlueprintTmpl)
 	if err != nil {
 		return "", errors.Wrap(err, "unable to parse gcp spacelift blueprint template")
 	}

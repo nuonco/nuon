@@ -82,13 +82,13 @@ const spaceliftBlueprintTmpl = `{{- if .Inputs}}
 inputs:
 {{- range .Inputs}}
   - id: {{.ID}}
-    name: {{.Name}}
+    name: {{yamlStr .Name}}
     type: {{.Type}}
 {{- if .Description}}
-    description: {{.Description}}
+    description: {{yamlStr .Description}}
 {{- end}}
 {{- if .Default}}
-    default: "{{.Default}}"
+    default: {{yamlStr .Default}}
 {{- end}}
 {{- end}}
 {{- else}}
