@@ -14,11 +14,6 @@ import (
 // TERRAFORM_FOSS workflow tool exposes.
 const defaultSpaceliftTerraformVersion = "1.5.7"
 
-// defaultInstallStacksRef pins generated Spacelift stacks/blueprints to a
-// release tag of install-stacks rather than main, so customer stacks aren't
-// affected by unreleased changes.
-const defaultInstallStacksRef = "v0.1.0"
-
 // blueprintInstallInputID / blueprintSecretID map a Nuon install-input or
 // secret name to the blueprint input id it's exposed as. The prefixes keep the
 // two namespaces from colliding when an input and a secret share a name.
@@ -28,7 +23,6 @@ func blueprintSecretID(name string) string       { return "secret_" + name }
 type spaceliftAdminTemplateInput struct {
 	InstallID        string
 	TerraformVersion string
-	InstallStacksRef string
 }
 
 func renderSpaceliftAdminTF(installID string) (string, error) {
@@ -40,7 +34,6 @@ func renderSpaceliftAdminTF(installID string) (string, error) {
 	if err := t.Execute(&buf, spaceliftAdminTemplateInput{
 		InstallID:        installID,
 		TerraformVersion: defaultSpaceliftTerraformVersion,
-		InstallStacksRef: defaultInstallStacksRef,
 	}); err != nil {
 		return "", errors.Wrap(err, "unable to execute gcp spacelift admin template")
 	}
@@ -69,7 +62,6 @@ type blueprintInput struct {
 type spaceliftBlueprintTemplateInput struct {
 	InstallID        string
 	TerraformVersion string
-	InstallStacksRef string
 	Inputs           []blueprintInput
 	InputsTfvars     string
 	SecretsTfvars    string
@@ -104,7 +96,6 @@ func renderSpaceliftBlueprint(data spaceliftBlueprintData) (string, error) {
 	if err := t.Execute(&buf, spaceliftBlueprintTemplateInput{
 		InstallID:        data.InstallID,
 		TerraformVersion: defaultSpaceliftTerraformVersion,
-		InstallStacksRef: defaultInstallStacksRef,
 		Inputs:           inputs,
 		InputsTfvars:     indentLines(data.InputsTfvars, 10),
 		SecretsTfvars:    indentLines(data.SecretsTfvars, 10),
