@@ -5285,7 +5285,6 @@ export interface components {
       /** @description execution timeout is how long a job can be marked as "exeucuting" before being requeued */
       execution_timeout?: number;
       executions?: components["schemas"]["app.RunnerJobExecution"][];
-      executor?: string;
       final_runner_job_execution_id?: string;
       finished_at?: string;
       group?: components["schemas"]["app.RunnerJobGroup"];
@@ -26341,8 +26340,6 @@ export interface operations {
         status?: string;
         /** @description job statuses */
         statuses?: string;
-        /** @description job executor */
-        executor?: string;
         /** @description offset of jobs to return */
         offset?: number;
         /** @description limit of jobs to return */
