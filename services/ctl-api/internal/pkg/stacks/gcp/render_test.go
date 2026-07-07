@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -430,7 +431,7 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 	assert.Contains(t, blueprint, "type: short_text")
 	assert.Contains(t, blueprint, "id: secret_stripe_key")
 	assert.Contains(t, blueprint, "type: secret")
-	assert.Contains(t, blueprint, "description: Your Stripe API key")
+	assert.Contains(t, blueprint, `description: "Your Stripe API key"`)
 
 	assert.Contains(t, blueprint, `gcp_project_id           = "${{ inputs.gcp_project_id }}"`)
 	assert.Contains(t, blueprint, `gcp_region               = "${{ inputs.gcp_region }}"`)
@@ -440,6 +441,66 @@ func TestRenderSpaceliftArtifacts(t *testing.T) {
 	// Content is plaintext (not base64) so CEL interpolation works.
 	assert.Contains(t, blueprint, "nuon_install_id")
 	assert.NotContains(t, blueprint, base64.StdEncoding.EncodeToString([]byte("nuon_install_id")))
+}
+
+func TestRenderSpaceliftDefaults(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.InputConfig = app.AppInputConfig{
+		AppInputs: []app.AppInput{
+			{Name: "cluster_name", Source: app.AppInputSourceCustomer, Default: "my-default-cluster"},
+		},
+	}
+	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+		Secrets: []app.AppSecretConfig{
+			{Name: "stripe_key", Description: "Your Stripe API key", Required: true, Default: "sk_default"},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	inputsTfvars := extractEnvelopeKey(t, out, "inputs_tfvars")
+	secretsTfvars := extractEnvelopeKey(t, out, "secrets_tfvars")
+	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
+
+	// The normal (admin-TF sibling) tfvars pre-fill install-input and secret
+	// defaults as literals.
+	assert.Contains(t, inputsTfvars, `"cluster_name" = "my-default-cluster"`)
+	assert.Contains(t, secretsTfvars, `value       = "sk_default"`)
+
+	// The blueprint surfaces those same defaults as the blueprint input `default`,
+	// so the Spacelift UI is pre-populated.
+	assert.Contains(t, blueprint, `default: "my-default-cluster"`)
+	assert.Contains(t, blueprint, `default: "sk_default"`)
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(blueprint), &parsed))
+}
+
+func TestRenderSpaceliftBlueprintYAMLValid(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.InputConfig = app.AppInputConfig{
+		AppInputs: []app.AppInput{
+			{Name: "cluster_name", Source: app.AppInputSourceCustomer},
+		},
+	}
+	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+		Secrets: []app.AppSecretConfig{
+			// Description contains ": " which, if interpolated unquoted, makes YAML
+			// read it as a nested mapping ("mapping values are not allowed in this
+			// context"). This mirrors the byoc slack secret descriptions.
+			{Name: "slack_signing_secret", Description: "Signing Secret. Managed out-of-band: the central AWS Secrets Manager entry is the source of truth.", Required: false},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(blueprint), &parsed),
+		"rendered blueprint must be valid YAML even when input descriptions contain ': '")
 }
 
 func TestRenderPredefinedRoleValues(t *testing.T) {
