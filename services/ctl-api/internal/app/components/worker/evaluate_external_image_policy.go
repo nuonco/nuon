@@ -71,8 +71,9 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	// Save the job plan
 	if err := activities.AwaitSaveFetchImageMetadataPlan(ctx, &activities.SaveFetchImageMetadataPlanRequest{
-		JobID:   metadataJob.ID,
-		BuildID: buildID,
+		JobID:               metadataJob.ID,
+		BuildID:             buildID,
+		IsControlPlaneBuild: metadataJob.Executor == app.RunnerJobExecutorControlPlane,
 	}); err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to save metadata job plan", err))
 		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to save metadata job plan")
