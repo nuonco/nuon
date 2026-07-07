@@ -534,6 +534,10 @@ func tomlTypeOf(value any) string {
 		return "boolean"
 	case map[string]any:
 		return "object"
+	case []any, []string:
+		// go-toml/v2 decodes arrays into []any; we only ever expect
+		// arrays of strings, so treat any slice as "array".
+		return "array"
 	default:
 		return "unknown"
 	}
