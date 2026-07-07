@@ -2,6 +2,8 @@ package activities
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -100,14 +102,18 @@ func (a *Activities) ComputeInstallConfigDiff(ctx context.Context, input *Comput
 			}
 
 			if oldAppCfg.SandboxConfig.ID != newAppCfg.SandboxConfig.ID {
-				diff.SandboxChanged = true
-				diff.SandboxOldID = oldAppCfg.SandboxConfig.ID
-				diff.SandboxNewID = newAppCfg.SandboxConfig.ID
+				if !sandboxConfigEqual(oldAppCfg.SandboxConfig, newAppCfg.SandboxConfig) {
+					diff.SandboxChanged = true
+					diff.SandboxOldID = oldAppCfg.SandboxConfig.ID
+					diff.SandboxNewID = newAppCfg.SandboxConfig.ID
+				}
 			}
 			if oldAppCfg.StackConfig.ID != newAppCfg.StackConfig.ID {
-				diff.StackChanged = true
-				diff.StackOldID = oldAppCfg.StackConfig.ID
-				diff.StackNewID = newAppCfg.StackConfig.ID
+				if !stackConfigEqual(oldAppCfg.StackConfig, newAppCfg.StackConfig) {
+					diff.StackChanged = true
+					diff.StackOldID = oldAppCfg.StackConfig.ID
+					diff.StackNewID = newAppCfg.StackConfig.ID
+				}
 			}
 		}
 	}
@@ -132,4 +138,47 @@ func (a *Activities) ComputeInstallConfigDiff(ctx context.Context, input *Comput
 	}
 
 	return &ComputeInstallConfigDiffOutput{Diff: diff}, nil
+}
+
+func sandboxConfigEqual(a, b app.AppSandboxConfig) bool {
+	type content struct {
+		Variables      any    `json:"variables"`
+		EnvVars        any    `json:"env_vars"`
+		VariablesFiles any    `json:"variables_files"`
+		Type           string `json:"type"`
+		TerraformVer   string `json:"terraform_version"`
+		DriftSchedule  string `json:"drift_schedule"`
+		Runtime        string `json:"runtime"`
+		PulumiVersion  string `json:"pulumi_version"`
+		PulumiConfig   any    `json:"pulumi_config"`
+	}
+	ac := content{a.Variables, a.EnvVars, a.VariablesFiles, a.Type, a.TerraformVersion, a.DriftSchedule, a.Runtime, a.PulumiVersion, a.PulumiConfig}
+	bc := content{b.Variables, b.EnvVars, b.VariablesFiles, b.Type, b.TerraformVersion, b.DriftSchedule, b.Runtime, b.PulumiVersion, b.PulumiConfig}
+	return contentHashEqual(ac, bc)
+}
+
+func stackConfigEqual(a, b app.AppStackConfig) bool {
+	type content struct {
+		Type                    string `json:"type"`
+		Name                    string `json:"name"`
+		Description             string `json:"description"`
+		RunnerNestedTemplateURL string `json:"runner_nested_template_url"`
+		VPCNestedTemplateURL    string `json:"vpc_nested_template_url"`
+		CustomNestedStacks      any    `json:"custom_nested_stacks"`
+	}
+	ac := content{string(a.Type), a.Name, a.Description, a.RunnerNestedTemplateURL, a.VPCNestedTemplateURL, a.CustomNestedStacks}
+	bc := content{string(b.Type), b.Name, b.Description, b.RunnerNestedTemplateURL, b.VPCNestedTemplateURL, b.CustomNestedStacks}
+	return contentHashEqual(ac, bc)
+}
+
+func contentHashEqual(a, b any) bool {
+	aJSON, err := json.Marshal(a)
+	if err != nil {
+		return false
+	}
+	bJSON, err := json.Marshal(b)
+	if err != nil {
+		return false
+	}
+	return sha256.Sum256(aJSON) == sha256.Sum256(bJSON)
 }

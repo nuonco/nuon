@@ -49,11 +49,15 @@ Detection order in `detectExtType`:
 
 ### Entry point: `Manager.Install(repo string)`
 
-`Install` routes to one of three paths based on the input:
+`Install` routes to one of four paths based on the input:
 
 ```
 input starts with . / ~ ?
-  → InstallLocal (symlink)
+  → InstallLocal
+    → is a file (not directory)?
+      → installLocalBinary (copy binary)
+    → is a directory?
+      → existing directory-based InstallLocal (symlink)
 
 input has @ref suffix?
   → try getReleaseByTag(repo, ref)
@@ -120,7 +124,15 @@ This means `nuon ext install api@v0.19.798` downloads the compiled binary from t
 
 ### Local Install (`InstallLocal`)
 
-Local install creates a **symlink** from `~/.config/nuon/extensions/nuon-ext-<name>` → the source directory. This means:
+Local install supports two modes: **directory** (symlink) and **binary** (copy).
+
+#### Directory mode (symlink)
+
+```bash
+nuon ext install ./nuon-ext-my-tool
+```
+
+Creates a **symlink** from `~/.config/nuon/extensions/nuon-ext-<name>` → the source directory. This means:
 
 - Rebuilding the binary in the source dir takes effect immediately.
 - Editing scripts takes effect immediately.
@@ -132,6 +144,23 @@ Requirements:
 - The directory must be named `nuon-ext-<name>` (matching the manifest's `extension.name`).
 - The directory must contain a `nuon-ext.toml`.
 - For binary extensions, the compiled binary must already exist in the directory.
+
+#### Binary mode (copy)
+
+```bash
+nuon ext install ~/bin/nuon-ext-linter
+nuon ext install /usr/local/bin/nuon-ext-linter
+```
+
+Copies a single binary file into the extensions directory. This is useful for pre-built binaries that don't
+live inside a project directory.
+
+- The binary name must follow the `nuon-ext-<name>` convention.
+- The binary must be executable.
+- If a `nuon-ext.toml` exists in the same directory as the binary, its metadata (description, auth requirements) is used.
+- Otherwise, sensible defaults are applied (no auth required).
+- `nuon ext remove <name>` removes the copied binary.
+- To update after rebuilding, remove and re-install: `nuon ext remove <name> && nuon ext install /path/to/binary`.
 
 ## Upgrade Flow
 
@@ -196,7 +225,10 @@ browse.
 │   ├── nuon-ext.toml
 │   ├── manifest.json
 │   └── src/
-├── nuon-ext-my-tool -> /home/user/...     # local dev (symlink)
+├── nuon-ext-my-tool -> /home/user/...     # local dev directory (symlink)
+├── nuon-ext-linter/                       # local binary (copied)
+│   ├── nuon-ext-linter                    # copied binary
+│   └── manifest.json                      # install metadata
 ```
 
 `manifest.json` is the source of truth for the extension manager. It contains:
@@ -252,21 +284,37 @@ NUON_DEBUG=true ./nuon-dev ext upgrade api
 
 ### Building an extension locally
 
-```bash
-# Clone or create the extension repo
-cd ~/nuon/nuon-ext-my-tool
+**Option A: Directory symlink (rebuilds take effect immediately)**
 
-# Build the binary (for compiled extensions)
+```bash
+cd ~/nuon/nuon-ext-my-tool
 go build -o nuon-ext-my-tool .
 
 # Install from local directory (creates symlink)
 nuon ext install ./nuon-ext-my-tool
 
-# The symlink means rebuilds take effect immediately
+# Rebuilds take effect immediately — no reinstall needed
 go build -o nuon-ext-my-tool .
-nuon my-tool --help   # picks up the new binary
+nuon my-tool --help
+```
 
-# When done developing, remove and install from GitHub
+**Option B: Binary install (standalone binary, anywhere on disk)**
+
+```bash
+# Build and install from a binary path
+cd ~/nuon/nuon-ext-linter
+go build -o ~/bin/nuon-ext-linter .
+nuon ext install ~/bin/nuon-ext-linter
+
+# To update after rebuilding:
+nuon ext remove linter
+go build -o ~/bin/nuon-ext-linter .
+nuon ext install ~/bin/nuon-ext-linter
+```
+
+**When done developing, remove and install from GitHub:**
+
+```bash
 nuon ext remove my-tool
 nuon ext install myorg/nuon-ext-my-tool
 ```

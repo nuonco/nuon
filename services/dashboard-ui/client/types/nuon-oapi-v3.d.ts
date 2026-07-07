@@ -3226,22 +3226,19 @@ export interface components {
       created_by_id?: string;
       /** @description ErrorMessage stores any error that occurred during execution */
       error_message?: string;
-      /** @description EventType indicates what triggered this run (push, pull_request, manual). */
+      /** @description EventType indicates what triggered this run. Kept for backward compat; new code uses RunType. */
       event_type?: string;
-      /** @description Force indicates if this run was forced (bypassing change detection) */
       force?: boolean;
+      github_comment_id?: number;
       head_sha?: string;
       id?: string;
       labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       log_stream?: components["schemas"]["app.LogStream"];
       /** @description LogStreamID is the log stream created during this run for event tracking */
       log_stream_id?: string;
-      /**
-       * @description PlanOnly indicates this is a preview run (e.g., PR preview) that should
-       * only plan changes without applying them.
-       */
+      no_config_changes?: boolean;
+      /** @description PlanOnly indicates this is a preview run. Kept for backward compat; new code uses RunType. */
       plan_only?: boolean;
-      /** @description PR metadata — populated when EventType is "pull_request" */
       pr_number?: number;
       previous_run?: components["schemas"]["app.AppBranchRun"];
       /**
@@ -3251,6 +3248,7 @@ export interface components {
       previous_run_id?: string;
       /** @description QueueSignal is the signal that was enqueued to trigger this run */
       queue_signal?: components["schemas"]["app.QueueSignal"];
+      run_type?: components["schemas"]["app.AppBranchRunType"];
       /** @description StartedAt tracks when execution actually began */
       started_at?: string;
       /**
@@ -3263,6 +3261,8 @@ export interface components {
       workflow?: components["schemas"]["app.Workflow"];
       workflow_id?: string;
     };
+    /** @enum {string} */
+    "app.AppBranchRunType": "manual-run" | "git-run" | "git-preview-run";
     "app.AppBreakGlassConfig": {
       app_config_id?: string;
       app_id?: string;
@@ -3290,6 +3290,7 @@ export interface components {
       input?: components["schemas"]["app.AppInputConfig"];
       intermediate_config?: components["schemas"]["blobstore.Blob"];
       kubernetes_contexts?: components["schemas"]["app.AppKubernetesContextsConfig"];
+      labels?: components["schemas"]["github_com_nuonco_nuon_pkg_labels.Labels"];
       operation_role_config?: components["schemas"]["app.AppOperationRoleConfig"];
       org_id?: string;
       permissions?: components["schemas"]["app.AppPermissionsConfig"];
@@ -6994,9 +6995,13 @@ export interface components {
        */
       app_branch_id?: string;
       cli_version?: string;
+      /**
+       * @description IntermediateConfigJSON is the serialized intermediate config (parsed nuon.toml).
+       * When provided, stored on the AppConfig for diffing in PR previews.
+       */
+      intermediate_config_json?: string;
       /** @description PlanOnly creates a preview run (plan without apply). Only used with AppBranchID. */
       plan_only?: boolean;
-      /** @description not required Readme */
       readme?: string;
       /**
        * @description SkipNotification suppresses the app-config-synced signal emission.

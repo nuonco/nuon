@@ -54,6 +54,7 @@ func (h *Helpers) CreateAppBranch(
 		{"app-branch-workflow-step-groups", 2},
 		{"app-branch-workflow-steps", 5},
 		{"app-branch-generate-steps", 2},
+		{AppBranchSandboxBuildsQueueName, 2},
 	}
 	for _, nq := range namedQueues {
 		if _, err := h.queueClient.Create(ctx, &queueclient.CreateQueueRequest{

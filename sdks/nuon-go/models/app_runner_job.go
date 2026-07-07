@@ -41,6 +41,9 @@ type AppRunnerJob struct {
 	// executions
 	Executions []*AppRunnerJobExecution `json:"executions"`
 
+	// executor
+	Executor string `json:"executor,omitempty"`
+
 	// final runner job execution id
 	FinalRunnerJobExecutionID string `json:"final_runner_job_execution_id,omitempty"`
 

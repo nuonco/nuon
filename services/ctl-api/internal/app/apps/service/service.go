@@ -15,6 +15,7 @@ import (
 	installshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
@@ -35,6 +36,7 @@ type Params struct {
 	QueueClient     *queueclient.Client
 	EndpointAudit   *api.EndpointAudit
 	TemporalClient  temporalclient.Client
+	BlobService     blobstore.Service
 }
 
 type service struct {
@@ -51,6 +53,7 @@ type service struct {
 	featuresClient  *features.Features
 	temporalClient  temporalclient.Client
 	queueClient     *queueclient.Client
+	blobSvc         blobstore.Service
 }
 
 var _ api.Service = (*service)(nil)
@@ -283,6 +286,7 @@ func New(params Params) *service {
 		featuresClient:  params.FeaturesClient,
 		temporalClient:  params.TemporalClient,
 		queueClient:     params.QueueClient,
+		blobSvc:         params.BlobService,
 	}
 }
 
