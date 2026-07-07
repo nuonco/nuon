@@ -16,10 +16,10 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/op"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -34,7 +34,7 @@ const (
 type Handler struct {
 	sandboxCfg *Config
 	apiClient  nuonrunner.Client
-	cfg        *internal.Config
+	cfg        *runnerconfig.Config
 	shutdowner fx.Shutdowner
 
 	job       *models.AppRunnerJob
@@ -44,7 +44,7 @@ type Handler struct {
 func New(
 	sandboxCfg *Config,
 	apiClient nuonrunner.Client,
-	cfg *internal.Config,
+	cfg *runnerconfig.Config,
 	shutdowner fx.Shutdowner,
 	job *models.AppRunnerJob,
 	execution *models.AppRunnerJobExecution,

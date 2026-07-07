@@ -103,6 +103,7 @@ require (
 	github.com/mholt/archiver/v4 v4.0.0-alpha.8
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
+	github.com/modelcontextprotocol/go-sdk v1.6.1
 	github.com/nuonco/gin-swagger v1.6.2
 	github.com/nuonco/nuon/sdks/nuon-runner-go v0.0.0-00010101000000-000000000000
 	github.com/nuonco/nuon/sdks/stack v0.0.0-00010101000000-000000000000
@@ -129,6 +130,7 @@ require (
 	github.com/tliron/commonlog v0.2.21
 	github.com/tliron/glsp v0.2.2
 	github.com/uber-go/tally/v4 v4.1.1
+	github.com/zclconf/go-cty v1.18.1
 	go.mozilla.org/pkcs7 v0.9.0
 	go.opentelemetry.io/collector/cmd/builder v0.150.0
 	go.opentelemetry.io/collector/component v1.37.0
@@ -150,7 +152,6 @@ require (
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.1
 	golang.design/x/clipboard v0.7.1
-	golang.org/x/net v0.52.0
 	golang.org/x/oauth2 v0.35.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.80.0
@@ -242,6 +243,7 @@ require (
 	github.com/golang/glog v1.2.1 // indirect
 	github.com/gonvenience/idem v0.0.2 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
+	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-opentracing v0.0.0-20180507213350-8e809c8a8645 // indirect
 	github.com/ianlancetaylor/demangle v0.0.0-20240805132620-81f5be970eca // indirect
@@ -286,6 +288,7 @@ require (
 	github.com/sahilm/fuzzy v0.1.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1 // indirect
 	github.com/sasha-s/go-deadlock v0.3.6 // indirect
+	github.com/segmentio/encoding v0.5.4 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.5 // indirect
 	github.com/sourcegraph/jsonrpc2 v0.2.0 // indirect
@@ -301,8 +304,8 @@ require (
 	github.com/valyala/fastjson v1.6.4 // indirect
 	github.com/vektah/gqlparser/v2 v2.5.31 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
-	github.com/zclconf/go-cty v1.18.1 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/collector/client v1.37.0 // indirect
 	go.opentelemetry.io/collector/config/configmiddleware v0.131.0 // indirect
@@ -324,6 +327,7 @@ require (
 	golang.org/x/exp/shiny v0.0.0-20250606033433-dcc06ee1d476 // indirect
 	golang.org/x/image v0.28.0 // indirect
 	golang.org/x/mobile v0.0.0-20250606033058-a2a15c67f36f // indirect
+	golang.org/x/net v0.52.0 // indirect
 	google.golang.org/genproto v0.0.0-20250303144028-a0af3efb3deb // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
@@ -390,7 +394,7 @@ require (
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/go-openapi/validate v0.25.2 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/gonvenience/bunt v1.4.2 // indirect
 	github.com/gonvenience/neat v1.3.16 // indirect
 	github.com/gonvenience/term v1.0.4 // indirect
@@ -476,7 +480,7 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutlog v0.13.0
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.37.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.37.0 // indirect
-	go.opentelemetry.io/otel/log v0.19.0 // indirect
+	go.opentelemetry.io/otel/log v0.19.0
 	go.opentelemetry.io/otel/metric v1.43.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.43.0 // indirect
 	go4.org v0.0.0-20200411211856-f5505b9728dd // indirect
@@ -667,7 +671,7 @@ require (
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/term v0.41.0
 	golang.org/x/text v0.35.0
-	golang.org/x/time v0.14.0 // indirect
+	golang.org/x/time v0.14.0
 	golang.org/x/tools v0.43.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20260401024825-9d38bb4040a9 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

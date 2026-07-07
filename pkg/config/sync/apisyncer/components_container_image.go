@@ -19,6 +19,13 @@ func (s *syncer) createContainerImageComponentConfig(ctx context.Context, resour
 		DeployTimeout: containerImage.DeployTimeout,
 	}
 
+	if comp.Toggleable != nil {
+		configRequest.Toggleable = *comp.Toggleable
+	}
+	if comp.DefaultEnabled != nil {
+		configRequest.DefaultEnabled = *comp.DefaultEnabled
+	}
+
 	for _, ref := range comp.References {
 		configRequest.References = append(configRequest.References, ref.String())
 	}

@@ -39,6 +39,9 @@ type ServiceCreatePulumiComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -51,6 +54,9 @@ type ServiceCreatePulumiComponentConfigRequest struct {
 	// env vars
 	// Required: true
 	EnvVars map[string]string `json:"env_vars"`
+
+	// kubernetes context
+	KubernetesContext string `json:"kubernetes_context,omitempty"`
 
 	// max auto retries
 	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
@@ -70,6 +76,9 @@ type ServiceCreatePulumiComponentConfigRequest struct {
 
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// version
 	Version string `json:"version,omitempty"`

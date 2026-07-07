@@ -86,7 +86,7 @@ export const MatchPicker = ({
   const [appId, setAppId] = useState<string | undefined>(undefined)
 
   const { org } = useOrg()
-  const needsApp = kind === 'components' || kind === 'actions'
+  const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
 
   // Apps list for the app picker. Loaded lazily — only when the user
   // navigates into the components/actions branch.

@@ -19,6 +19,9 @@ import (
 // swagger:model service.CreateAppBranchRequest
 type ServiceCreateAppBranchRequest struct {
 
+	// managed by
+	ManagedBy string `json:"managed_by,omitempty"`
+
 	// name
 	// Required: true
 	// Min Length: 1

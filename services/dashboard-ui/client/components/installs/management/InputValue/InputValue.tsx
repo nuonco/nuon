@@ -40,7 +40,7 @@ export const InputValue = ({ name, value }: IInputValue) => {
   if (kind) {
     return (
       <CodeBlock
-        className="!text-xs w-full"
+        className="!text-xs w-full !max-h-64 border border-black/10 dark:border-white/10"
         language={KIND_LANGUAGE[kind]}
         showCopy
       >

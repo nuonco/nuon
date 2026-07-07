@@ -42,8 +42,21 @@ type SyncOptions struct {
 	Create bool
 	// Branch optionally targets a specific app branch for this sync.
 	Branch string
-	// Preview creates a plan-only run (no apply). Only used with Branch.
+	// AppBranch triggers interactive branch selection when true.
+	AppBranch bool
+	// Preview creates a plan-only run (no apply). Only used with Branch or AppBranch.
 	Preview bool
+	// PrintJSON emits a machine-readable result on success (--output json/agent).
+	PrintJSON bool
+}
+
+// syncResult is the machine-readable summary emitted via ui.PrintJSON when
+// SyncOptions.PrintJSON is set, so --output agent gets a success envelope.
+type syncResult struct {
+	AppID    string `json:"app_id"`
+	Dir      string `json:"dir"`
+	BranchID string `json:"branch_id,omitempty"`
+	RunID    string `json:"run_id,omitempty"`
 }
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
@@ -109,14 +122,23 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		}
 	}
 
+	var branchID string
 	var syncerOpts []apisyncer.SyncerOption
 	if opts.Branch != "" {
-		branchID, branchErr := s.resolveAppBranchID(ctx, appID, opts.Branch)
+		var branchErr error
+		branchID, branchErr = s.resolveAppBranchID(ctx, appID, opts.Branch)
 		if branchErr != nil {
 			return ui.PrintError(branchErr)
 		}
 		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(branchID, opts.Preview))
 		ui.PrintLn(fmt.Sprintf("targeting app branch %q", opts.Branch))
+	} else if opts.AppBranch {
+		var branchErr error
+		branchID, branchErr = s.selectAppBranch(ctx, appID)
+		if branchErr != nil {
+			return ui.PrintError(branchErr)
+		}
+		syncerOpts = append(syncerOpts, apisyncer.WithAppBranch(branchID, opts.Preview))
 	}
 
 	syncer := apisyncer.New(s.api, appID, version, cfg, syncerOpts...)
@@ -125,10 +147,21 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		return ui.PrintError(err)
 	}
 
-	if err := s.api.UpdateAppConfigInstalls(ctx, appID, syncer.GetAppConfigID(), &models.ServiceUpdateAppConfigInstallsRequest{
-		UpdateAll: true,
-	}); err != nil {
-		return err
+	// When targeting a branch, trigger a branch run with the synced app config
+	if branchID != "" {
+		appConfigID := syncer.GetAppConfigID()
+		run, triggerErr := s.api.TriggerAppBranchRun(ctx, appID, branchID, &models.ServiceTriggerAppBranchRunRequest{
+			AppConfigID: appConfigID,
+			PlanOnly:    opts.Preview,
+		})
+		if triggerErr != nil {
+			return ui.PrintError(triggerErr)
+		}
+		ui.PrintSuccess(fmt.Sprintf("triggered app branch run %s", run.ID))
+		if opts.PrintJSON {
+			ui.PrintJSON(syncResult{AppID: appID, Dir: dir, BranchID: branchID, RunID: run.ID})
+		}
+		return nil
 	}
 
 	ui.PrintSuccess("successfully synced " + dir)
@@ -137,6 +170,9 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 
 	cmpsScheduled := syncer.GetComponentsScheduled()
 	if len(cmpsScheduled) == 0 {
+		if opts.PrintJSON {
+			ui.PrintJSON(syncResult{AppID: appID, Dir: dir})
+		}
 		return nil
 	}
 
@@ -144,6 +180,9 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 		return errors.Wrap(err, "unable to poll builds")
 	}
 
+	if opts.PrintJSON {
+		ui.PrintJSON(syncResult{AppID: appID, Dir: dir})
+	}
 	return nil
 }
 
@@ -279,6 +318,29 @@ func (s *Service) resolveAppBranchID(ctx context.Context, appID, branchNameOrID 
 	}
 
 	return "", fmt.Errorf("app branch %q not found", branchNameOrID)
+}
+
+func (s *Service) selectAppBranch(ctx context.Context, appID string) (string, error) {
+	branches, err := s.api.GetAppBranches(ctx, appID)
+	if err != nil {
+		return "", fmt.Errorf("unable to list app branches: %w", err)
+	}
+
+	if len(branches) == 0 {
+		return "", fmt.Errorf("no app branches found for this app")
+	}
+
+	opts := make([]bubbles.BranchOption, 0, len(branches))
+	for _, b := range branches {
+		opts = append(opts, bubbles.BranchOption{ID: b.ID, Name: b.Name})
+	}
+
+	selected, err := bubbles.SelectBranch(opts, s.cfg.Interactive)
+	if err != nil {
+		return "", err
+	}
+
+	return selected, nil
 }
 
 func (s *Service) notifyOrphanedActions(actions map[string]string) {

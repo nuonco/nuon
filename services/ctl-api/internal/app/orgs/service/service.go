@@ -125,6 +125,7 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 		// org features (all orgs)
 		orgs.GET("/admin-features", s.AdminGetOrgFeatures)
 		orgs.PATCH("/admin-features", s.AdminUpdateOrgsFeatures)
+		orgs.PATCH("/admin-toggle-feature", s.AdminToggleOrgsFeature)
 
 		// org-specific admin routes
 		org := orgs.Group("/:org_id")

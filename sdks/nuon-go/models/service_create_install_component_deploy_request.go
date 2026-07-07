@@ -20,6 +20,9 @@ type ServiceCreateInstallComponentDeployRequest struct {
 	// build id
 	BuildID string `json:"build_id,omitempty"`
 
+	// deploy dependencies
+	DeployDependencies bool `json:"deploy_dependencies,omitempty"`
+
 	// deploy dependents
 	DeployDependents bool `json:"deploy_dependents,omitempty"`
 

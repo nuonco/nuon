@@ -9,23 +9,31 @@ import { BranchDetailActions } from './BranchDetailActions'
 const noop = () => {}
 
 const MockEditButton = () => (
-  <Button variant="secondary">
-    <Icon variant="PencilSimpleLineIcon" size={16} />
+  <Button isMenuButton>
     Edit branch
+    <Icon variant="PencilSimpleLineIcon" size={16} />
   </Button>
 )
 
-const MockManageButton = () => (
-  <Button variant="secondary">
+const MockDeploymentPlanButton = () => (
+  <Button isMenuButton>
+    Deployment plan
     <Icon variant="SlidersHorizontalIcon" size={16} />
-    Manage installs
+  </Button>
+)
+
+const MockDeleteButton = () => (
+  <Button isMenuButton variant="danger">
+    Delete branch
+    <Icon variant="TrashIcon" size={16} />
   </Button>
 )
 
 export const Default = () => (
   <BranchDetailActions
     editButton={<MockEditButton />}
-    manageInstallsButton={<MockManageButton />}
+    deploymentPlanButton={<MockDeploymentPlanButton />}
+    deleteButton={<MockDeleteButton />}
     hasConfig={true}
     isTriggerPending={false}
     onTriggerRun={noop}
@@ -36,7 +44,8 @@ export const Default = () => (
 export const NoConfig = () => (
   <BranchDetailActions
     editButton={<MockEditButton />}
-    manageInstallsButton={<MockManageButton />}
+    deploymentPlanButton={<MockDeploymentPlanButton />}
+    deleteButton={<MockDeleteButton />}
     hasConfig={false}
     isTriggerPending={false}
     onTriggerRun={noop}
@@ -47,7 +56,8 @@ export const NoConfig = () => (
 export const TriggerPending = () => (
   <BranchDetailActions
     editButton={<MockEditButton />}
-    manageInstallsButton={<MockManageButton />}
+    deploymentPlanButton={<MockDeploymentPlanButton />}
+    deleteButton={<MockDeleteButton />}
     hasConfig={true}
     isTriggerPending={true}
     onTriggerRun={noop}

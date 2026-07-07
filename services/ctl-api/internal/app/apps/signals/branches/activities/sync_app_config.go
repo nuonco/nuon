@@ -3,14 +3,17 @@ package activities
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/lib/pq"
 	"github.com/nuonco/nuon/pkg/config"
+	configsync "github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 )
 
@@ -70,7 +73,7 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 	}
 
 	// Run the DB syncer
-	s := syncer.NewDBSyncer(a.db, a.componentHelpers, a.actionsHelpers, a.runbooksHelpers, a.vcsHelpers, req.AppID, &cfg, req.AppConfigID)
+	s := syncer.NewDBSyncer(a.db, a.helpers, a.componentHelpers, a.actionsHelpers, a.runbooksHelpers, a.vcsHelpers, a.tfClient, req.AppID, &cfg, req.AppConfigID)
 	if err := s.Sync(ctx); err != nil {
 		// Mark config as error
 		humanErr := signal.HumanError(err)
@@ -84,6 +87,14 @@ func (a *Activities) syncAppConfig(ctx context.Context, req *SyncAppConfigInput)
 		a.db.WithContext(ctx).Model(&appConfig).Updates(map[string]any{
 			"status_v2": errorStatus,
 		})
+		var syncErr configsync.SyncErr
+		if errors.As(err, &syncErr) {
+			return nil, temporal.NewNonRetryableApplicationError(
+				fmt.Sprintf("unable to sync config: %s", err.Error()),
+				"SYNC_VALIDATION_ERROR",
+				err,
+			)
+		}
 		return nil, fmt.Errorf("unable to sync config: %w", err)
 	}
 

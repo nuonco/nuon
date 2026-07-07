@@ -18,14 +18,21 @@ func (s *syncer) createKubernetesManifestComponentConfig(
 		Dependencies: comp.Dependencies,
 		Checksum:     comp.Checksum,
 
-		Namespace:     comp.KubernetesManifest.Namespace,
-		Manifest:      comp.KubernetesManifest.Manifest,
-		BuildTimeout:  comp.KubernetesManifest.BuildTimeout,
-		DeployTimeout: comp.KubernetesManifest.DeployTimeout,
+		Namespace:         comp.KubernetesManifest.Namespace,
+		Manifest:          comp.KubernetesManifest.Manifest,
+		BuildTimeout:      comp.KubernetesManifest.BuildTimeout,
+		DeployTimeout:     comp.KubernetesManifest.DeployTimeout,
+		KubernetesContext: comp.KubernetesContext,
 	}
 
 	if comp.KubernetesManifest.MaxAutoRetries != nil {
 		configRequest.MaxAutoRetries = int64(*comp.KubernetesManifest.MaxAutoRetries)
+	}
+	if comp.Toggleable != nil {
+		configRequest.Toggleable = *comp.Toggleable
+	}
+	if comp.DefaultEnabled != nil {
+		configRequest.DefaultEnabled = *comp.DefaultEnabled
 	}
 	if comp.KubernetesManifest.Kustomize != nil {
 		configRequest.Kustomize.Path = comp.KubernetesManifest.Kustomize.Path

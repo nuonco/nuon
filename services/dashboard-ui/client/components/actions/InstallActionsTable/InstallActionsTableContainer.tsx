@@ -58,7 +58,8 @@ export const InstallActionsTableContainer = ({
       data={parseInstallActionsLatestRunsToTableData(
         actions,
         org?.id ?? '',
-        install?.id ?? ''
+        install?.id ?? '',
+        install?.app?.label_colors
       )}
       filterActions={
         <div className="flex items-center gap-4 flex-wrap">

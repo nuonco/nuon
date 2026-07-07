@@ -11,34 +11,35 @@ import (
 
 func (c *cli) installsCmd() *cobra.Command {
 	var (
-		id               string
-		workflowID       string
-		actionWorkflowID string
-		stepID           string
-		note             string
-		name             string
-		region           string
-		appID            string
-		deployID         string
-		runID            string
-		installCompID    string
-		componentID      string
-		roleName         string
-		inputs           []string
-		labelArgs        []string
-		noSelect         bool
-		deployDeps       bool
-		deployDependents bool
-		offset           int
-		limit            int
-		planOnly         bool
-		fileOrDir        string
-		confirm          bool
-		wait             bool
-		enable           bool
-		disable          bool
-		dryRun           bool
-		skipConfirm      bool
+		id                 string
+		workflowID         string
+		actionWorkflowID   string
+		stepID             string
+		note               string
+		name               string
+		region             string
+		appID              string
+		deployID           string
+		runID              string
+		installCompID      string
+		componentID        string
+		roleName           string
+		inputs             []string
+		labelArgs          []string
+		noSelect           bool
+		deployDeps         bool
+		deployDependents   bool
+		deployDependencies bool
+		offset             int
+		limit              int
+		planOnly           bool
+		fileOrDir          string
+		confirm            bool
+		wait               bool
+		enable             bool
+		disable            bool
+		dryRun             bool
+		skipConfirm        bool
 	)
 
 	installsCmds := &cobra.Command{
@@ -114,6 +115,9 @@ provided labels must match (AND semantics):
 		Short: "Create an install",
 		Long: `Create a new install of your app.
 
+--region is required for AWS apps. For GCP and Azure apps the region is
+determined automatically from the stack output after provisioning.
+
 Use --label (repeatable, format key=value) to attach labels at creation time:
 
   nuon installs create -a my-app -n my-install -r us-west-2 \
@@ -130,10 +134,7 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	if !c.cfg.Preview {
 		createCmd.MarkFlagRequired("name")
 	}
-	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in")
-	if !c.cfg.Preview {
-		createCmd.MarkFlagRequired("region")
-	}
+	createCmd.Flags().StringVarP(&region, "region", "r", "", "The region to provision this install in (required for AWS installs)")
 	createCmd.Flags().StringSliceVar(&inputs, "inputs", []string{}, "The app input values for the install")
 	createCmd.Flags().StringSliceVar(&labelArgs, "label", []string{}, "Labels to set on the install (repeatable, format: key=value). Example: --label env=prod --label team=platform")
 	createCmd.Flags().BoolVar(&noSelect, "no-select", false, "Do not automatically set the created install as the current install")
@@ -247,6 +248,27 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 	componentsOutputsCmd.MarkFlagRequired("install-id")
 	componentsCmd.AddCommand(componentsOutputsCmd)
 
+	componentsToggleCmd := &cobra.Command{
+		Use:   "toggle",
+		Short: "Toggle a component on an install",
+		Long:  "Enable or disable a toggleable component on an install. If neither --enable nor --disable is passed, an interactive prompt will ask. The resulting workflow is shown in the TUI unless -j is passed.",
+		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
+			if enable && disable {
+				return fmt.Errorf("only one of --enable or --disable can be set")
+			}
+			svc := installs.New(c.apiClient, c.cfg)
+			return svc.ToggleComponent(cmd.Context(), id, componentID, enable, disable, planOnly, PrintJSON)
+		}),
+	}
+	componentsToggleCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install")
+	componentsToggleCmd.MarkFlagRequired("install-id")
+	componentsToggleCmd.Flags().StringVarP(&componentID, "component-id", "c", "", "The component ID or name to toggle")
+	componentsToggleCmd.MarkFlagRequired("component-id")
+	componentsToggleCmd.Flags().BoolVar(&enable, "enable", false, "Enable the component")
+	componentsToggleCmd.Flags().BoolVar(&disable, "disable", false, "Disable the component")
+	componentsToggleCmd.Flags().BoolVar(&planOnly, "plan-only", false, "Only plan the resulting deploy or teardown, do not apply it")
+	componentsCmd.AddCommand(componentsToggleCmd)
+
 	installsCmds.AddCommand(componentsCmd)
 
 	getDeployCmd := &cobra.Command{
@@ -269,14 +291,15 @@ Use --label (repeatable, format key=value) to attach labels at creation time:
 		Long:  "Create an install deploy by install ID and build ID",
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := installs.New(c.apiClient, c.cfg)
-			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, PrintJSON)
+			return svc.CreateDeploy(cmd.Context(), id, deployID, deployDeps, deployDependencies, PrintJSON)
 		}),
 	}
 	createDeployCmd.Flags().StringVarP(&id, "install-id", "i", "", "The ID or name of the install you want to view")
 	createDeployCmd.MarkFlagRequired("install-id")
 	createDeployCmd.Flags().StringVarP(&deployID, "build-id", "b", "", "The build ID for the deploy you want to create")
 	createDeployCmd.MarkFlagRequired("build-id")
-	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Deploy dependents")
+	createDeployCmd.Flags().BoolVar((&deployDeps), "dependents", false, "Trigger a deploy for any component that depends on this component")
+	createDeployCmd.Flags().BoolVar((&deployDependencies), "dependency-images", false, "Sync any images that this component depends on")
 	installsCmds.AddCommand(createDeployCmd)
 
 	deployLogsCmd := &cobra.Command{

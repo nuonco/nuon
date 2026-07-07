@@ -124,6 +124,8 @@ func (h *Helpers) UpdateInstallInputsFromStackOutputs(
 			changed.ChangedValuesJSON,
 			"",
 			true,
+			false,
+			app.WorkflowTypeInputUpdate,
 		)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to update inputs from install stack output")

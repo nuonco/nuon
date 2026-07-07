@@ -21,6 +21,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -209,7 +210,7 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseEncoding() {
 		CreatedByID: s.testAcc.ID,
 		OrgID:       s.testOrg.ID,
 		Type:        "helm.sh/release.v1",
-		Body:        "",
+		Body:        &blobstore.Blob{},
 		Name:        "test-release",
 		Namespace:   namespace,
 		Version:     1,
@@ -307,7 +308,7 @@ func (s *UpdateHelmReleaseTestSuite) TestUpdateHelmReleaseSuccessPath() {
 		CreatedByID: s.testAcc.ID,
 		OrgID:       s.testOrg.ID,
 		Type:        "helm.sh/release.v1",
-		Body:        "",
+		Body:        &blobstore.Blob{},
 		Name:        "test-release",
 		Namespace:   namespace,
 		Version:     1,

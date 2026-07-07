@@ -20,7 +20,7 @@ export const RetryStepModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="stronger">
-          Retry step?
+          Retry step
         </Text>
       }
       primaryActionTrigger={{

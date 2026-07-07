@@ -112,11 +112,19 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			sandboxConfigs.POST("", s.CreateAppSandboxConfigV2)
 		}
 
+		app.GET("/labels", s.GetAppLabels)
+
 		// app secrets configs management
 		secretsConfigs := app.Group("/secrets-configs")
 		{
 			secretsConfigs.POST("", s.CreateAppSecretsConfig)
 			secretsConfigs.GET("/:config_id", s.GetAppSecretsConfig)
+		}
+
+		// app kubernetes contexts management
+		kubernetesContextsConfigs := app.Group("/kubernetes-contexts-configs")
+		{
+			kubernetesContextsConfigs.POST("", s.CreateAppKubernetesContextsConfig)
 		}
 
 		// app stack configs
@@ -194,6 +202,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			branches.GET("", s.GetAppBranches)
 			branches.GET("/:app_branch_id", s.GetAppBranch)
 			branches.PATCH("/:app_branch_id", s.UpdateAppBranch)
+			branches.DELETE("/:app_branch_id", s.DeleteAppBranch)
 			branches.GET("/:app_branch_id/configs", s.GetAppBranchAppConfigs)
 			branches.POST("/:app_branch_id/configs", s.CreateAppBranchConfig)
 			branches.GET("/:app_branch_id/latest-config", s.GetAppBranchLatestConfig)

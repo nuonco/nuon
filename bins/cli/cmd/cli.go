@@ -2,13 +2,18 @@ package cmd
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/nuonco/nuon/sdks/nuon-go"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/bins/cli/internal/config"
+	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/pkg/analytics"
 )
 
@@ -42,9 +47,56 @@ func (c *cli) persistentPreRunE(cmd *cobra.Command, args []string) error {
 	return err
 }
 
+// resolveOutput determines the output format from flags and env, then enables
+// json/agent modes accordingly. Precedence: --output, --json, NUON_OUTPUT,
+// NUON_AGENT, default (table).
+func (c *cli) resolveOutput(cmd *cobra.Command) error {
+	out := "table"
+	switch {
+	case cmd.Flags().Changed("output"):
+		out = Output
+	case cmd.Flags().Changed("json"):
+		out = "json"
+	case os.Getenv("NUON_OUTPUT") != "":
+		out = os.Getenv("NUON_OUTPUT")
+	case agentmode.FromEnv():
+		out = "agent"
+	}
+
+	out = strings.ToLower(strings.TrimSpace(out))
+	switch out {
+	case OutputTable:
+	case OutputJSON:
+		PrintJSON = true
+	case OutputAgent:
+		PrintJSON = true
+		agentmode.SetEnabled(true)
+	default:
+		return &ui.CLIUserError{Msg: fmt.Sprintf("invalid --output %q: must be one of table, json, agent", out)}
+	}
+
+	if !supportsOutput(cmd, out) {
+		return &ui.CLIUserError{Msg: fmt.Sprintf("`%s` does not support --output %s (supported: %s)", cmd.CommandPath(), out, strings.Join(supportedOutputs(cmd), ", "))}
+	}
+
+	Output = out
+	return nil
+}
+
 func (c *cli) doPersistentPreRunE(cmd *cobra.Command, args []string) error {
+	if err := c.resolveOutput(cmd); err != nil {
+		return err
+	}
+
+	if err := guardReadOnly(cmd); err != nil {
+		return err
+	}
+
 	if err := c.initConfig(); err != nil {
 		return errors.Wrap(err, "unable to initialize config")
+	}
+	if agentmode.Enabled() {
+		c.cfg.Interactive = false
 	}
 
 	if err := c.initAPIClient(); err != nil {

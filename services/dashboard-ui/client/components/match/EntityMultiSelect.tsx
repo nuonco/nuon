@@ -5,7 +5,7 @@ import { Icon } from '@/components/common/Icon'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Text } from '@/components/common/Text'
 import { useOrg } from '@/hooks/use-org'
-import { getActions, getComponents, getInstalls } from '@/lib'
+import { getActions, getAppBranches, getComponents, getInstalls } from '@/lib'
 import { cn } from '@/utils/classnames'
 import { TARGET_KIND_LABELS_PLURAL, type TargetKind } from './types'
 
@@ -52,7 +52,7 @@ export const EntityMultiSelect = ({
     {}
   )
 
-  const needsApp = kind === 'components' || kind === 'actions'
+  const needsApp = kind === 'components' || kind === 'actions' || kind === 'app_branches'
   const fetchEnabled = !needsApp || !!appId
 
   // Search results for the current `search` query.
@@ -265,6 +265,14 @@ const fetchEntities = async ({
       return (res.data ?? []).map((a) => ({
         id: a.id ?? '',
         name: a.name ?? '',
+      }))
+    }
+    case 'app_branches': {
+      if (!appId) return []
+      const res = await getAppBranches({ orgId, appId, limit: PAGE_LIMIT })
+      return (res.data ?? []).map((b) => ({
+        id: b.id ?? '',
+        name: b.name ?? '',
       }))
     }
   }

@@ -11,6 +11,7 @@ import (
 	handleractivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	jobactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
 	flowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
@@ -26,6 +27,7 @@ type Params struct {
 	FlowActivities *flowactivities.Activities
 	// shared statuses tooling
 	StatusActivities *statusactivities.Activities
+	ControlPlaneActs *controlplanejob.Activities
 
 	// queues / signals
 	QueueActs                 *queueactivities.Activities
@@ -41,6 +43,7 @@ type Activities struct {
 	JobActivities             *jobactivities.Activities
 	FlowActivities            *flowactivities.Activities
 	StatusActivities          *statusactivities.Activities
+	ControlPlaneActivities    *controlplanejob.Activities
 	Activities                *activities.Activities
 	QueueActivities           *queueactivities.Activities
 	Enqueuer                  *enqueuer.Activities
@@ -57,6 +60,7 @@ func (a *Activities) AllActivities() []any {
 		a.FlowActivities,
 		a.Activities,
 		a.StatusActivities,
+		a.ControlPlaneActivities,
 		a.QueueActivities,
 		a.Enqueuer,
 		a.EmitterActivities,
@@ -73,6 +77,7 @@ func NewActivities(params Params) *Activities {
 		JobActivities:             params.JobActivities,
 		FlowActivities:            params.FlowActivities,
 		StatusActivities:          params.StatusActivities,
+		ControlPlaneActivities:    params.ControlPlaneActs,
 		QueueActivities:           params.QueueActs,
 		Enqueuer:                  enqueuer.NewActivities(params.Enqueuer),
 		EmitterActivities:         params.EmitterActs,

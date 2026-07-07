@@ -1,13 +1,11 @@
-import { useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { Banner } from '@/components/common/Banner'
 import { Input } from '@/components/common/form/Input'
-import { Label } from '@/components/common/form/Label'
-import { Select } from '@/components/common/form/Select'
 import { CheckboxInput } from '@/components/common/form/CheckboxInput'
-import { Skeleton } from '@/components/common/Skeleton'
-import { Text } from '@/components/common/Text'
 import { Modal, type IModal } from '@/components/surfaces/Modal'
+import { BranchVcsConfigFields } from '@/components/branches/BranchVcsConfigFields'
 import type {
+  TAPIError,
   TCreateAppBranchRequest,
   TVCSConnectionRepo,
   TVCSBranch,
@@ -29,6 +27,7 @@ interface ICreateBranchModal extends Omit<IModal, 'onSubmit'> {
   selectedBranch: string
   onBranchChange: (branch: string) => void
   isSubmitting: boolean
+  submitError?: TAPIError | Error | null
   onSubmit: (
     body: TCreateAppBranchRequest & {
       vcs_connection_id?: string
@@ -64,6 +63,7 @@ export const CreateBranchModal = ({
   selectedBranch,
   onBranchChange,
   isSubmitting,
+  submitError,
   onSubmit,
   onCancel,
   ...props
@@ -72,25 +72,35 @@ export const CreateBranchModal = ({
   const [useVcs, setUseVcs] = useState(true)
   const [directory, setDirectory] = useState('.')
   const [pathFilter, setPathFilter] = useState('')
-  const [validationError, setValidationError] = useState<string | null>(null)
 
-  const handleSubmit = () => {
-    setValidationError(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const bannerRef = useRef<HTMLDivElement>(null)
 
-    if (!name.trim()) {
-      setValidationError('Branch name is required')
-      return
+  const submitErrorMessage = submitError
+    ? ('error' in submitError && submitError.error) ||
+      ('description' in submitError && submitError.description) ||
+      ('message' in submitError && submitError.message) ||
+      'Unable to create branch.'
+    : undefined
+
+  useEffect(() => {
+    if (submitErrorMessage && bannerRef.current) {
+      bannerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
+  }, [submitErrorMessage])
 
-    if (useVcs) {
-      if (!selectedRepo) {
-        setValidationError('Repository is required when using VCS')
-        return
-      }
-      if (!selectedBranch) {
-        setValidationError('Git branch is required when using VCS')
-        return
-      }
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    const form = e.currentTarget
+    const firstInvalid = form.querySelector<HTMLElement>(
+      ':invalid:not(fieldset):not(form)'
+    )
+    if (firstInvalid) {
+      firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      firstInvalid.focus()
+      form.reportValidity()
+      return
     }
 
     const body: TCreateAppBranchRequest & {
@@ -138,17 +148,11 @@ export const CreateBranchModal = ({
   return (
     <Modal
       heading="Create app branch"
+      size="lg"
       primaryActionTrigger={{
         children: isSubmitting ? 'Creating...' : 'Create branch',
-        disabled:
-          isSubmitting ||
-          (useVcs &&
-            (loadingRepos ||
-              loadingBranches ||
-              vcsConnections.length === 0 ||
-              !selectedRepo ||
-              !selectedBranch)),
-        onClick: handleSubmit,
+        disabled: isSubmitting || (useVcs && vcsConnections.length === 0),
+        onClick: () => formRef.current?.requestSubmit(),
         variant: 'primary',
       }}
       secondaryActionTrigger={{
@@ -158,11 +162,21 @@ export const CreateBranchModal = ({
       }}
       {...props}
     >
-      <div className="flex flex-col gap-4">
-        {validationError && <Banner theme="error">{validationError}</Banner>}
+      <form
+        ref={formRef}
+        noValidate
+        onSubmit={handleFormSubmit}
+        className="flex flex-col gap-4"
+      >
+        {submitErrorMessage && (
+          <div ref={bannerRef}>
+            <Banner theme="error">{submitErrorMessage}</Banner>
+          </div>
+        )}
 
         <Input
           id="branch-name"
+          name="name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -175,177 +189,34 @@ export const CreateBranchModal = ({
         <CheckboxInput
           id="use-vcs"
           checked={useVcs}
-          onChange={(e) => {
-            setUseVcs(e.target.checked)
-            if (!e.target.checked && validationError?.includes('VCS')) {
-              setValidationError(null)
-            }
-          }}
+          onChange={(e) => setUseVcs(e.target.checked)}
           disabled={isSubmitting}
           labelProps={{ labelText: 'Connect to git repository' }}
         />
 
         {useVcs && (
-          <>
-            {vcsConnections.length === 0 ? (
-              <Banner theme="warn">
-                No VCS connections found. Connect your GitHub account
-                first.
-              </Banner>
-            ) : (
-              <>
-                {vcsConnections.length > 1 && (
-                  <Select
-                    id="vcs-connection"
-                    value={selectedVcsConnectionId}
-                    onChange={(e) => onVcsConnectionChange(e.target.value)}
-                    disabled={isSubmitting || loadingRepos}
-                    options={vcsConnections.map((conn) => ({
-                      value: conn.id,
-                      label:
-                        conn.github_account_name ||
-                        conn.github_install_id ||
-                        conn.id,
-                    }))}
-                    labelProps={{ labelText: 'VCS connection' }}
-                  />
-                )}
-
-                {reposError && <Banner theme="error">{reposError}</Banner>}
-
-                {loadingRepos ? (
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="repo">
-                      <Text variant="body" className="font-medium">
-                        Repository
-                      </Text>
-                    </Label>
-                    <Skeleton height="36px" />
-                  </div>
-                ) : reposError ? (
-                  <Banner theme="error">Failed to load repositories</Banner>
-                ) : repos.length === 0 ? (
-                  <Banner theme="warn">
-                    No connected repositories found. Update your GitHub
-                    connection to grant access to repositories.
-                  </Banner>
-                ) : (
-                  <Select
-                    id="repo"
-                    value={selectedRepo?.full_name || ''}
-                    onChange={(e) => {
-                      const repo = repos.find(
-                        (r) => r.full_name === e.target.value
-                      )
-                      onRepoChange(repo || null)
-                    }}
-                    required={useVcs}
-                    disabled={
-                      isSubmitting || loadingRepos || loadingBranches || !useVcs
-                    }
-                    options={repos.map((repo) => ({
-                      value: repo.full_name,
-                      label: repo.full_name,
-                      badge: repo.private
-                        ? { label: 'private', theme: 'default' }
-                        : undefined,
-                    }))}
-                    labelProps={{ labelText: 'Repository' }}
-                    searchable
-                  />
-                )}
-
-                {!loadingRepos && branchesError && (
-                  <Banner theme="error">{branchesError}</Banner>
-                )}
-
-                {!loadingRepos &&
-                  (loadingBranches ? (
-                    <div className="flex flex-col gap-1">
-                      <Label htmlFor="git-branch">
-                        <Text variant="body" className="font-medium">
-                          Git branch
-                        </Text>
-                      </Label>
-                      <Skeleton height="36px" />
-                    </div>
-                  ) : branchesError ? (
-                    <Input
-                      id="git-branch"
-                      type="text"
-                      value={selectedBranch}
-                      onChange={(e) => onBranchChange(e.target.value)}
-                      placeholder="main"
-                      required={useVcs}
-                      disabled={isSubmitting || !useVcs}
-                      labelProps={{ labelText: 'Git branch' }}
-                    />
-                  ) : branches.length === 0 && selectedRepo ? (
-                    <Input
-                      id="git-branch"
-                      type="text"
-                      value={selectedBranch}
-                      onChange={(e) => onBranchChange(e.target.value)}
-                      placeholder="main"
-                      required={useVcs}
-                      disabled={isSubmitting || !useVcs}
-                      labelProps={{ labelText: 'Git branch' }}
-                      helperText="No branches found. Enter branch name manually."
-                    />
-                  ) : branches.length > 0 ? (
-                    <Select
-                      id="git-branch"
-                      value={selectedBranch}
-                      onChange={(e) => onBranchChange(e.target.value)}
-                      required={useVcs}
-                      disabled={isSubmitting || loadingBranches || !useVcs}
-                      options={branches.map((b) => ({
-                        value: b.name,
-                        label: b.name,
-                      }))}
-                      labelProps={{ labelText: 'Git branch' }}
-                      searchable
-                    />
-                  ) : (
-                    <Input
-                      id="git-branch"
-                      type="text"
-                      value={selectedBranch}
-                      onChange={(e) => onBranchChange(e.target.value)}
-                      placeholder="main"
-                      required={useVcs}
-                      disabled={isSubmitting || !useVcs}
-                      labelProps={{ labelText: 'Git branch' }}
-                    />
-                  ))}
-
-                <Input
-                  id="directory"
-                  type="text"
-                  value={directory}
-                  onChange={(e) => setDirectory(e.target.value)}
-                  placeholder="."
-                  required
-                  disabled={isSubmitting}
-                  labelProps={{ labelText: 'Directory' }}
-                  helperText='Path to your application config (use "." for root)'
-                />
-
-                <Input
-                  id="path-filter"
-                  type="text"
-                  value={pathFilter}
-                  onChange={(e) => setPathFilter(e.target.value)}
-                  placeholder="^(src/|config/).*"
-                  disabled={isSubmitting}
-                  labelProps={{ labelText: 'Path filter (optional)' }}
-                  helperText="Regex pattern to filter which file changes trigger workflow runs"
-                />
-              </>
-            )}
-          </>
+          <BranchVcsConfigFields
+            vcsConnections={vcsConnections}
+            repos={repos}
+            branches={branches}
+            loadingRepos={loadingRepos}
+            loadingBranches={loadingBranches}
+            reposError={reposError}
+            branchesError={branchesError}
+            selectedVcsConnectionId={selectedVcsConnectionId}
+            onVcsConnectionChange={onVcsConnectionChange}
+            selectedRepo={selectedRepo}
+            onRepoChange={onRepoChange}
+            selectedBranch={selectedBranch}
+            onBranchChange={onBranchChange}
+            directory={directory}
+            onDirectoryChange={setDirectory}
+            pathFilter={pathFilter}
+            onPathFilterChange={setPathFilter}
+            isSubmitting={isSubmitting}
+          />
         )}
-      </div>
+      </form>
     </Modal>
   )
 }

@@ -1,0 +1,101 @@
+---
+title: "Component Overrides"
+description: "Override Helm values and Terraform variables on a per-install basis, without changing your app config."
+icon: "sliders"
+keywords: ["component overrides", "install overrides", "per-install overrides", "helm_values override", "tf_vars override", "override helm values", "override terraform variables", "install-level values", "customize install", "components block", "install config components"]
+---
+
+Component overrides let you customize a single install's [Helm](/guides/helm-chart-components) values or
+[Terraform](/guides/terraform-components) variables without touching your app config. They're defined per-install, so one
+customer can get a different chart configuration or a different set of Terraform variables while every other install
+keeps the app defaults.
+
+Use them for one-off customizations that don't belong in your app config, such as bumping a replica count for a customer
+under load, pinning a region for a specific install, or applying a temporary support tweak, where authoring a new input
+or editing the shared component would be overkill.
+
+<Note>
+Overrides are configured on the **install**, not the component. The component's app config stays the source of truth for
+every other install.
+</Note>
+
+## Configuring overrides
+
+Overrides live in the install config under a `[components.<name>]` block, keyed by the component's name. Each component
+supports exactly one override field, matching its type:
+
+| Component type   | Field         | Format               | Behavior                                                                 |
+| ---------------- | ------------- | -------------------- | ------------------------------------------------------------------------ |
+| Helm chart       | `helm_values` | YAML                 | Deep-merges over the component's app-config values; wins on overlapping keys. |
+| Terraform module | `tf_vars`     | `.tfvars` (HCL/JSON) | Appended as the final, highest-precedence `-var-file`.                    |
+
+### Helm values
+
+`helm_values` is a raw YAML string that deep-merges over the Helm component's app-config values. Overlapping keys win,
+and keys you don't mention are left untouched.
+
+```toml install.toml
+name = "customer-acme"
+
+[components.clickhouse]
+helm_values = """
+replicas: 3
+resources:
+  limits:
+    memory: 4Gi
+"""
+```
+
+### Terraform variables
+
+`tf_vars` is a raw `.tfvars` string (HCL or JSON) appended as the final `-var-file` at deploy time, so it wins over the
+component's `vars` map and any `var_files`. The variables must already be declared in the module.
+
+```toml install.toml
+name = "customer-acme"
+
+[components.vpc]
+tf_vars = """
+cidr = "10.0.0.0/16"
+"""
+```
+
+You can set overrides for multiple components in the same install config:
+
+```toml install.toml
+name = "customer-acme"
+
+[components.vpc]
+tf_vars = """
+cidr = "10.0.0.0/16"
+"""
+
+[components.clickhouse]
+helm_values = """
+replicas: 3
+"""
+```
+
+
+## Precedence
+
+Overrides are the highest-precedence layer. For Helm, they deep-merge on top of the app-config values and win on any
+key they set. For Terraform, they're applied as the last `-var-file`, so they win over the module's `vars` and
+`var_files`.
+
+## Applying overrides
+
+Overrides are applied by syncing the install config with the CLI:
+
+```bash
+nuon installs sync --file install.toml --app-id <your-app-id> --yes
+```
+
+The CLI validates override syntax locally before making any API calls: `helm_values` must be valid YAML and `tf_vars`
+must be valid HCL. Because an override changes a component's deploy config, syncing it triggers a redeploy of the
+affected component.
+
+## Clearing an override
+
+To revert a component to its app-config values, remove its `[components.<name>]` block (or the individual field) from the
+install config and sync again. The next sync clears the override and redeploys the component with the app defaults.

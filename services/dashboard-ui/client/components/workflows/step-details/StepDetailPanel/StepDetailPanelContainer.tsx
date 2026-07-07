@@ -12,6 +12,7 @@ import { getWorkflowStep } from '@/lib'
 import type { TWorkflowStep } from '@/types'
 import { ActionRunStepDetails } from '../action-run-details/ActionRunStepDetails'
 import { DeployStepDetails } from '../deploy-details/DeployStepDetails'
+import { InstallGroupStepDetails } from '../install-group-details'
 import { SandboxRunStepDetails } from '../sandbox-run-details/SandboxRunStepDetails'
 import { StackStepDetails } from '../stack-details/StackStepDetails'
 import { RunnerStepDetails } from '../RunnerStepDetails'
@@ -25,7 +26,8 @@ export function getStepPanelSize(step: TWorkflowStep): TPanelSize {
     step?.step_target_type === 'install_deploys' ||
     step?.step_target_type === 'install_sandbox_runs' ||
     step?.step_target_type === 'install_action_workflow_runs' ||
-    step?.step_target_type === 'install_workflow_steps'
+    step?.step_target_type === 'install_workflow_steps' ||
+    step?.step_target_type === 'app_branches'
   ) {
     return '3/4'
   }
@@ -39,6 +41,7 @@ export function getStepPanelDetails(step: TWorkflowStep): ReactNode {
   if (step.step_target_type === 'install_stack_versions') return <StackStepDetails />
   if (step.step_target_type === 'runners') return <RunnerStepDetails />
   if (step.step_target_type === 'install_workflow_steps') return <SyncSecretsStepDetails />
+  if (step.step_target_type === 'app_branches') return <InstallGroupStepDetails />
   // step_target_type only lands once the runner picks up the step;
   // hold the panel body with a placeholder until then. The container
   // fast-polls in this window so the gap is ~1-2s.

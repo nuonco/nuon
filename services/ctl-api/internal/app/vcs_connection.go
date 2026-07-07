@@ -17,7 +17,7 @@ type VCSConnection struct {
 	CreatedBy   Account               `json:"-" temporaljson:"created_by,omitzero,omitempty"`
 	CreatedAt   time.Time             `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt   time.Time             `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
-	DeletedAt   soft_delete.DeletedAt `gorm:"index" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
+	DeletedAt   soft_delete.DeletedAt `gorm:"index;index:idx_github_install_id,unique" json:"-" temporaljson:"deleted_at,omitzero,omitempty"`
 
 	OrgID string `json:"org_id,omitzero" swaggerignore:"true" gorm:"index:idx_github_install_id,unique" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `swaggerignore:"true" json:"-" temporaljson:"org,omitzero,omitempty"`

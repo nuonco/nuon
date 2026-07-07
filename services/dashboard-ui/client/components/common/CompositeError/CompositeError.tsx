@@ -19,13 +19,25 @@ export const CompositeError = ({ error }: ICompositeError) => {
   const theme = SEVERITY_THEME[error?.severity] ?? 'error'
   const sections = Array.isArray(error?.sections) ? error.sections : []
 
+  const hasContent =
+    Boolean(error?.message?.trim()) ||
+    Boolean(error?.type?.trim()) ||
+    sections.some(
+      (section) =>
+        Boolean(section?.heading?.trim()) || Boolean(section?.body?.trim()),
+    )
+
+  if (!hasContent) {
+    return null
+  }
+
   return (
     <Banner theme={theme}>
-      <div className="flex w-full min-w-0 flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Text weight="strong">{error?.message}</Text>
+      <div className="flex w-full min-w-0 flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <Text variant="base" weight="strong">{error?.message}</Text>
           {error?.type ? (
-            <Badge variant="code" size="sm" theme={theme}>
+            <Badge variant="code" size="sm" theme="neutral">
               {error.type}
             </Badge>
           ) : null}
@@ -34,11 +46,9 @@ export const CompositeError = ({ error }: ICompositeError) => {
         {sections.map((section, i) => (
           <div key={i} className="flex min-w-0 flex-col gap-1">
             {section?.heading ? (
-              <Text variant="subtext" weight="strong">
-                {section.heading}
-              </Text>
+              <Text weight="strong">{section.heading}</Text>
             ) : null}
-            <Markdown content={section?.body} />
+            <Markdown content={section?.body} variant="compact" />
           </div>
         ))}
       </div>

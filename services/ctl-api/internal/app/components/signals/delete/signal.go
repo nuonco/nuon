@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -12,21 +13,25 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/poll"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
-)
-
-const (
-	defaultPollTimeout time.Duration = time.Second * 10
 )
 
 type Signal struct {
 	ComponentID string `json:"component_id" validate:"required"`
+
+	v *validator.Validate
 }
 
 var _ signal.Signal = (*Signal)(nil)
+var _ signal.SignalWithParams = (*Signal)(nil)
 
 func (s *Signal) Type() signal.SignalType {
 	return SignalType
+}
+
+func (s *Signal) WithParams(p *signal.Params) {
+	s.v = p.V
 }
 
 func (s *Signal) Validate(ctx workflow.Context) error {
@@ -42,7 +47,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return err
 	}
 
-	// update status
 	s.updateStatus(ctx, s.ComponentID, app.ComponentStatusDeprovisioning, "deleting component")
 	if err := activities.AwaitDelete(ctx, activities.DeleteRequest{
 		ComponentID: s.ComponentID,
@@ -54,48 +58,43 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	return nil
 }
 
-// pollComponentBeingUnused polls until the component is no longer used by any installs or app configs
 func (s *Signal) pollComponentBeingUnused(ctx workflow.Context, compID string) error {
 	deadline := workflow.Now(ctx).Add(time.Minute * 60)
 
-	inFlight := true
-	for inFlight {
-		appCfg, err := activities.AwaitGetComponentAppConfigByComponentID(ctx, compID)
-		if err != nil {
-			s.updateStatus(ctx, compID, app.ComponentStatusError, "delete: unable to get component app config")
-			return fmt.Errorf("unable to get component app config: %w", err)
-		}
+	return poll.Poll(ctx, s.v, poll.PollOpts{
+		MaxTS:           deadline,
+		InitialInterval: 10 * time.Second,
+		MaxInterval:     5 * time.Minute,
+		BackoffFactor:   2,
+		Fn: func(ctx workflow.Context) error {
+			appCfg, err := activities.AwaitGetComponentAppConfigByComponentID(ctx, compID)
+			if err != nil {
+				s.updateStatus(ctx, compID, app.ComponentStatusError, "delete: unable to get component app config")
+				return errors.Wrap(poll.NonRetryableError, "unable to get component app config")
+			}
 
-		inFlight = false
-		if slices.Contains(appCfg.ComponentIDs, compID) {
-			inFlight = true
-		}
+			if slices.Contains(appCfg.ComponentIDs, compID) {
+				return errors.New("component still in latest app config")
+			}
 
-		depsInstalls, err := activities.AwaitGetComponentInstalls(ctx, activities.GetComponentInstallsRequest{
-			ComponentID: compID,
-			AppID:       appCfg.AppID,
-		})
-		if err != nil {
-			s.updateStatus(ctx, compID, app.ComponentStatusError, "delete: unable to get component dependent installs")
-			return fmt.Errorf("unable to get component dependent installs: %w", err)
-		}
+			depsInstalls, err := activities.AwaitGetComponentInstalls(ctx, activities.GetComponentInstallsRequest{
+				ComponentID: compID,
+				AppID:       appCfg.AppID,
+			})
+			if err != nil {
+				s.updateStatus(ctx, compID, app.ComponentStatusError, "delete: unable to get component dependent installs")
+				return errors.Wrap(poll.NonRetryableError, "unable to get component dependent installs")
+			}
 
-		if len(depsInstalls) > 0 {
-			inFlight = true
-		}
+			if len(depsInstalls) > 0 {
+				return errors.New("component still used by installs")
+			}
 
-		if workflow.Now(ctx).After(deadline) {
-			s.updateStatus(ctx, compID, app.ComponentStatusError, "delete: timed out waiting for dependent installs to remove the component")
-			return fmt.Errorf("timeout waiting for dependent installs to remove the component")
-		}
-
-		workflow.Sleep(ctx, defaultPollTimeout)
-	}
-
-	return nil
+			return nil
+		},
+	})
 }
 
-// updateStatus is a helper method to update component status
 func (s *Signal) updateStatus(ctx workflow.Context, compID string, status app.ComponentStatus, statusDescription string) {
 	l := workflow.GetLogger(ctx)
 	err := activities.AwaitUpdateStatus(ctx, activities.UpdateStatusRequest{

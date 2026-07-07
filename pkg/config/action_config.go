@@ -24,6 +24,11 @@ type ActionConfig struct {
 	Role           string     `mapstructure:"role,omitempty" toml:"role,omitempty"`
 
 	EnableKubeConfig *bool `mapstructure:"enable_kube_config,omitempty" toml:"enable_kube_config,omitempty"`
+
+	// KubernetesContext is the name of a kubernetes_context this action
+	// targets. Empty means fall back to the implicit sandbox default (when
+	// the sandbox emits cluster outputs). See pkg/config/kubernetes_context.go.
+	KubernetesContext string `mapstructure:"kubernetes_context,omitempty" toml:"kubernetes_context,omitempty" nuonhash:"omitempty"`
 }
 
 type ActionTriggerConfig struct {
@@ -75,7 +80,11 @@ func (a ActionConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Field("enable_kube_config").Short("whether to fetch and inject kubeconfig for this action").
 		Long("When set to false, the action runner will not fetch the install's kubeconfig or set the KUBECONFIG env var. Defaults to true. Set to false for actions that do not need Kubernetes access to avoid the overhead of fetching cluster credentials").
 		Example("true").
-		Example("false")
+		Example("false").
+		Field("kubernetes_context").Short("kubernetes context this action targets").
+		Long("Name of a top-level kubernetes_context binding to target when this action runs. When set, the action's runner receives the cluster connection details from that context's source component. Empty falls back to the implicit sandbox default. Only takes effect when enable_kube_config is true").
+		Example("compute").
+		Example("data-cluster")
 }
 
 func (a ActionTriggerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {

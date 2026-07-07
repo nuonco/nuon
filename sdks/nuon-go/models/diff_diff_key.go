@@ -19,6 +19,12 @@ import (
 // swagger:model diff.DiffKey
 type DiffDiffKey struct {
 
+	// after
+	After string `json:"after,omitempty"`
+
+	// before
+	Before string `json:"before,omitempty"`
+
 	// diff
 	Diff string `json:"diff,omitempty"`
 

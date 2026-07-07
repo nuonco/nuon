@@ -1,9 +1,9 @@
 package management
 
 import (
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/monitor"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
 	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/management/noop"

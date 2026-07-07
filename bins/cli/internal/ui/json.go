@@ -10,6 +10,10 @@ import (
 )
 
 func PrintJSON(data interface{}) {
+	if agentEnabled() {
+		emitAgentSuccess(data)
+		return
+	}
 	j, _ := json.Marshal(data)
 	fmt.Println(string(j))
 }
@@ -19,6 +23,10 @@ type jsonError struct {
 }
 
 func PrintJSONError(err error) error {
+	if agentEnabled() {
+		return emitAgentError(err)
+	}
+
 	// Construct a stack trace if this error doesn't already have one
 	if !errs.HasNuonStackTrace(err) {
 		err = withstack.WithStackDepth(err, 1)

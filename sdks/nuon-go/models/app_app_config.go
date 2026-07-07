@@ -65,6 +65,9 @@ type AppAppConfig struct {
 	// intermediate config
 	IntermediateConfig BlobstoreBlob `json:"intermediate_config,omitempty"`
 
+	// kubernetes contexts
+	KubernetesContexts *AppAppKubernetesContextsConfig `json:"kubernetes_contexts,omitempty"`
+
 	// operation role config
 	OperationRoleConfig *AppAppOperationRoleConfig `json:"operation_role_config,omitempty"`
 
@@ -135,6 +138,10 @@ func (m *AppAppConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateInput(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubernetesContexts(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -304,6 +311,29 @@ func (m *AppAppConfig) validateInput(formats strfmt.Registry) error {
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("input")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) validateKubernetesContexts(formats strfmt.Registry) error {
+	if swag.IsZero(m.KubernetesContexts) { // not required
+		return nil
+	}
+
+	if m.KubernetesContexts != nil {
+		if err := m.KubernetesContexts.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("kubernetes_contexts")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("kubernetes_contexts")
 			}
 
 			return err
@@ -565,6 +595,10 @@ func (m *AppAppConfig) ContextValidate(ctx context.Context, formats strfmt.Regis
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateKubernetesContexts(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOperationRoleConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -735,6 +769,31 @@ func (m *AppAppConfig) contextValidateInput(ctx context.Context, formats strfmt.
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("input")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) contextValidateKubernetesContexts(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.KubernetesContexts != nil {
+
+		if swag.IsZero(m.KubernetesContexts) { // not required
+			return nil
+		}
+
+		if err := m.KubernetesContexts.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("kubernetes_contexts")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("kubernetes_contexts")
 			}
 
 			return err

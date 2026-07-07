@@ -1,6 +1,7 @@
 import { Outlet, useParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { ApprovalBanner } from '@/components/approvals/ApprovalBanner'
+import { CompositeError } from '@/components/common/CompositeError'
 import { SandboxHeader } from '@/components/sandbox/SandboxHeader'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
@@ -80,6 +81,10 @@ const SandboxRunLayoutInner = () => {
       />
 
       <SandboxHeader workflow={workflow} stepId={step?.id} flush />
+
+      {sandboxRun?.composite_error ? (
+        <CompositeError error={sandboxRun.composite_error} />
+      ) : null}
 
       {pendingApproval && !isAutoApprove ? (
         <ApprovalBanner step={step} />

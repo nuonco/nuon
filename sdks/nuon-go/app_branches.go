@@ -2,6 +2,9 @@ package nuon
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/nuonco/nuon/sdks/nuon-go/client/operations"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
@@ -43,6 +46,29 @@ func (c *client) CreateAppBranch(ctx context.Context, appID string, req *models.
 	}
 
 	return resp.Payload, nil
+}
+
+func (c *client) DeleteAppBranch(ctx context.Context, appID, appBranchID string) error {
+	reqURL := fmt.Sprintf("%s/v1/apps/%s/branches/%s", c.APIURL, appID, appBranchID)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, reqURL, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	httpClient := &http.Client{Transport: c.appTransport}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
 }
 
 func (c *client) UpdateAppBranch(ctx context.Context, appID, appBranchID string, req *models.ServiceUpdateAppBranchRequest) (*models.AppAppBranch, error) {
@@ -127,7 +153,7 @@ func (c *client) GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, 
 	return resp.Payload, nil
 }
 
-func (c *client) GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallConfigUpdate, error) {
+func (c *client) GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error) {
 	resp, err := c.genClient.Operations.GetAppBranchRunInstallGroups(&operations.GetAppBranchRunInstallGroupsParams{
 		Context:     ctx,
 		AppID:       appID,

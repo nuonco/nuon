@@ -2,9 +2,12 @@ package activities
 
 import (
 	"context"
+	stderrors "errors"
 
 	"github.com/pkg/errors"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/temporal"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +27,7 @@ type SendSignalRequest struct {
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 30s
+// @max-retries 10
 func (a *Activities) SendSignal(ctx context.Context, req SendSignalRequest) error {
 	l := activity.GetLogger(ctx)
 
@@ -36,12 +40,20 @@ func (a *Activities) SendSignal(ctx context.Context, req SendSignalRequest) erro
 		req.Payload,
 	)
 	if err != nil {
-		// Best-effort: the target workflow may have already terminated.
-		// Log and return the error so callers can decide how to handle it.
 		l.Warn("failed to send completion signal",
 			zap.String("target_workflow", req.Callback.WorkflowID),
 			zap.String("signal_name", req.Callback.SignalName),
 			zap.Error(err))
+
+		var notFoundErr *serviceerror.NotFound
+		if stderrors.As(err, &notFoundErr) {
+			return temporal.NewNonRetryableApplicationError(
+				"target workflow not found",
+				"WORKFLOW_NOT_FOUND",
+				err,
+			)
+		}
+
 		return errors.Wrap(err, "unable to send signal")
 	}
 

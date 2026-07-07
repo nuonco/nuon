@@ -46,11 +46,8 @@ func (a *Activities) ApprovePlan(ctx context.Context, req *ApprovePlanRequest) (
 	var qs app.QueueSignal
 	res := a.db.WithContext(ctx).
 		Where(app.QueueSignal{
-			OwnerID:   req.InstallWorkflowID,
-			OwnerType: "install_workflows",
-			// "execute-workflow" is executeflow.SignalType; duplicated as a literal
-			// to avoid the import cycle described on approveStepArgs.
-			Type: signal.SignalType("execute-workflow"),
+			OwnerID: req.InstallWorkflowID,
+			Type:    signal.SignalType("execute-workflow"),
 		}).
 		Order("created_at DESC").
 		First(&qs)

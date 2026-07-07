@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -92,8 +93,12 @@ func (s *service) RunnerAuthGCP(ctx *gin.Context) {
 
 	reqCtx := ctx.Request.Context()
 
-	// Step 1: Verify identity token (JWT) — proves project, SA, instance ID
-	payload, err := idtoken.Validate(reqCtx, req.IdentityToken, s.cfg.RunnerAPIURL)
+	// Step 1: Verify identity token (JWT) — proves project, SA, instance ID.
+	// Resolve the expected audience: if the token carries a custom (white-label)
+	// audience that is registered as a runner group URL, use that; otherwise
+	// fall back to the global runner API URL.
+	audience := s.resolveGCPTokenAudience(reqCtx, req.IdentityToken)
+	payload, err := idtoken.Validate(reqCtx, req.IdentityToken, audience)
 	if err != nil {
 		s.l.Warn("runner auth gcp: identity token validation failed", zap.Error(err))
 		ctx.Error(stderr.ErrAuthentication{
@@ -368,6 +373,38 @@ func extractRunnerIDFromMetadata(instance *gcpInstanceResponse) string {
 		}
 	}
 	return ""
+}
+
+// resolveGCPTokenAudience extracts the audience from the (unverified) JWT payload
+// and checks if it is a registered custom runner URL. If so, that URL is returned
+// as the expected audience so white-labeled deployments can authenticate without
+// exposing Nuon's URL. Falls back to cfg.RunnerAPIURL for standard deployments.
+func (s *service) resolveGCPTokenAudience(ctx context.Context, token string) string {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return s.cfg.RunnerAPIURL
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return s.cfg.RunnerAPIURL
+	}
+	var claims struct {
+		Audience string `json:"aud"`
+	}
+	if err := json.Unmarshal(payload, &claims); err != nil || claims.Audience == "" {
+		return s.cfg.RunnerAPIURL
+	}
+	if claims.Audience == s.cfg.RunnerAPIURL {
+		return s.cfg.RunnerAPIURL
+	}
+	var count int64
+	s.db.WithContext(ctx).Model(&app.RunnerGroupSettings{}).
+		Where("runner_api_url = ?", claims.Audience).
+		Count(&count)
+	if count > 0 {
+		return claims.Audience
+	}
+	return s.cfg.RunnerAPIURL
 }
 
 func (s *service) validateRunnerGCPIdentity(ctx context.Context, install *app.Install, claims *gcpClaims) error {

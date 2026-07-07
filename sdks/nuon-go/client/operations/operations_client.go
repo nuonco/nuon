@@ -194,6 +194,8 @@ type ClientService interface {
 
 	CreateAppJobComponentConfig(params *CreateAppJobComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppJobComponentConfigCreated, error)
 
+	CreateAppKubernetesContextsConfig(params *CreateAppKubernetesContextsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesContextsConfigCreated, error)
+
 	CreateAppKubernetesManifestComponentConfig(params *CreateAppKubernetesManifestComponentConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesManifestComponentConfigCreated, error)
 
 	CreateAppOperationRoleConfig(params *CreateAppOperationRoleConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppOperationRoleConfigCreated, error)
@@ -303,6 +305,8 @@ type ClientService interface {
 	DeleteActionWorkflow(params *DeleteActionWorkflowParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteActionWorkflowOK, error)
 
 	DeleteApp(params *DeleteAppParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppOK, error)
+
+	DeleteAppBranch(params *DeleteAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppBranchOK, error)
 
 	DeleteAppComponent(params *DeleteAppComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppComponentOK, error)
 
@@ -434,6 +438,8 @@ type ClientService interface {
 
 	GetAppInstalls(params *GetAppInstallsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppInstallsOK, error)
 
+	GetAppLabels(params *GetAppLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppLabelsOK, error)
+
 	GetAppLatestConfig(params *GetAppLatestConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppLatestConfigOK, error)
 
 	GetAppOperationRoleConfigs(params *GetAppOperationRoleConfigsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppOperationRoleConfigsOK, error)
@@ -545,6 +551,10 @@ type ClientService interface {
 	GetInstallActions(params *GetInstallActionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionsOK, error)
 
 	GetInstallActionsLatestRuns(params *GetInstallActionsLatestRunsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallActionsLatestRunsOK, error)
+
+	GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error)
+
+	GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error)
 
 	GetInstallAppPermissionsConfig(params *GetInstallAppPermissionsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppPermissionsConfigOK, error)
 
@@ -855,6 +865,8 @@ type ClientService interface {
 	TeardownInstallComponent(params *TeardownInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentCreated, error)
 
 	TeardownInstallComponents(params *TeardownInstallComponentsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TeardownInstallComponentsCreated, error)
+
+	ToggleInstallComponent(params *ToggleInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ToggleInstallComponentCreated, error)
 
 	TriggerAppBranchRun(params *TriggerAppBranchRunParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*TriggerAppBranchRunCreated, error)
 
@@ -2782,6 +2794,52 @@ func (a *Client) CreateAppJobComponentConfig(params *CreateAppJobComponentConfig
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for CreateAppJobComponentConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+CreateAppKubernetesContextsConfig creates a kubernetes contexts config
+
+Create the named kubernetes_context bindings for an app config version. Each context names a peer terraform_module or pulumi component that emits cluster connection details as outputs.
+*/
+func (a *Client) CreateAppKubernetesContextsConfig(params *CreateAppKubernetesContextsConfigParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*CreateAppKubernetesContextsConfigCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewCreateAppKubernetesContextsConfigParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "CreateAppKubernetesContextsConfig",
+		Method:             "POST",
+		PathPattern:        "/v1/apps/{app_id}/kubernetes-contexts-configs",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAppKubernetesContextsConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*CreateAppKubernetesContextsConfigCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for CreateAppKubernetesContextsConfig: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -5289,6 +5347,52 @@ func (a *Client) DeleteApp(params *DeleteAppParams, authInfo runtime.ClientAuthI
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for DeleteApp: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteAppBranch deletes an app branch
+
+Deletes an app branch and all associated configs, runs, and install group runs.
+*/
+func (a *Client) DeleteAppBranch(params *DeleteAppBranchParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*DeleteAppBranchOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewDeleteAppBranchParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteAppBranch",
+		Method:             "DELETE",
+		PathPattern:        "/v1/apps/{app_id}/branches/{app_branch_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteAppBranchReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*DeleteAppBranchOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteAppBranch: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -8336,6 +8440,52 @@ func (a *Client) GetAppInstalls(params *GetAppInstallsParams, authInfo runtime.C
 }
 
 /*
+GetAppLabels gets all labels used across an app
+
+Returns all distinct label keys with values, usage counts, and assigned colors across components, actions, runbooks, and installs for an app.
+*/
+func (a *Client) GetAppLabels(params *GetAppLabelsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetAppLabelsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetAppLabelsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetAppLabels",
+		Method:             "GET",
+		PathPattern:        "/v1/apps/{app_id}/labels",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAppLabelsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetAppLabelsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetAppLabels: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
 GetAppLatestConfig gets latest app config
 
 Returns the most recent config for the provided app.
@@ -10950,6 +11100,98 @@ func (a *Client) GetInstallActionsLatestRuns(params *GetInstallActionsLatestRuns
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetInstallActionsLatestRuns: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallAppConfigVersionDiff gets the diff for an install app config version
+
+Returns the component diff for a specific app config version transition.
+*/
+func (a *Client) GetInstallAppConfigVersionDiff(params *GetInstallAppConfigVersionDiffParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionDiffOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallAppConfigVersionDiffParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallAppConfigVersionDiff",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/app-config-versions/{version_id}/diff",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallAppConfigVersionDiffReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallAppConfigVersionDiffOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallAppConfigVersionDiff: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetInstallAppConfigVersions gets app config versions for an install
+
+Returns the app config version history for an install, ordered by most recent first.
+*/
+func (a *Client) GetInstallAppConfigVersions(params *GetInstallAppConfigVersionsParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*GetInstallAppConfigVersionsOK, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewGetInstallAppConfigVersionsParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetInstallAppConfigVersions",
+		Method:             "GET",
+		PathPattern:        "/v1/installs/{install_id}/app-config-versions",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetInstallAppConfigVersionsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*GetInstallAppConfigVersionsOK)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetInstallAppConfigVersions: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -18046,6 +18288,52 @@ func (a *Client) TeardownInstallComponents(params *TeardownInstallComponentsPara
 	//
 	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for TeardownInstallComponents: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+ToggleInstallComponent toggles an install component on or off
+
+Enable or disable a toggleable component on an install. Enabling triggers a deploy workflow, disabling triggers a teardown workflow.
+*/
+func (a *Client) ToggleInstallComponent(params *ToggleInstallComponentParams, authInfo runtime.ClientAuthInfoWriter, opts ...ClientOption) (*ToggleInstallComponentCreated, error) {
+	// NOTE: parameters are not validated before sending
+	if params == nil {
+		params = NewToggleInstallComponentParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "ToggleInstallComponent",
+		Method:             "POST",
+		PathPattern:        "/v1/installs/{install_id}/components/{component_id}/toggle",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ToggleInstallComponentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+
+	// only one success response has to be checked
+	success, ok := result.(*ToggleInstallComponentCreated)
+	if ok {
+		return success, nil
+	}
+
+	// unexpected success response.
+
+	// no default response is defined.
+	//
+	// safeguard: normally, in the absence of a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for ToggleInstallComponent: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

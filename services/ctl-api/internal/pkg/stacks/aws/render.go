@@ -69,9 +69,13 @@ type AWSTemplateInput struct {
 // not translated. Vendors who extend their CFN stack with custom resources are
 // expected to fork install-stacks and make equivalent Terraform changes there.
 func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, string, error) {
-	t, err := template.New("aws-stack").Parse(tmpl)
+	inputsT, err := template.New("aws-stack-inputs").Parse(inputsTmpl)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "unable to parse aws template")
+		return nil, "", errors.Wrap(err, "unable to parse aws inputs template")
+	}
+	secretsT, err := template.New("aws-stack-secrets").Parse(secretsTmpl)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to parse aws secrets template")
 	}
 
 	prov, maint, deprov, provMPAs, maintMPAs, deprovMPAs := extractAWSStandardPermissions(inputs.AppCfg)
@@ -144,12 +148,19 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 		Secrets:                         secrets,
 	}
 
-	var buf bytes.Buffer
-	if err := t.Execute(&buf, awsInputs); err != nil {
-		return nil, "", errors.Wrap(err, "unable to execute aws template")
+	var inputsBuf bytes.Buffer
+	if err := inputsT.Execute(&inputsBuf, awsInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute aws inputs template")
+	}
+	var secretsBuf bytes.Buffer
+	if err := secretsT.Execute(&secretsBuf, awsInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute aws secrets template")
 	}
 
-	envelope := map[string]string{"tfvars": buf.String()}
+	envelope := map[string]string{
+		"inputs_tfvars":  inputsBuf.String(),
+		"secrets_tfvars": secretsBuf.String(),
+	}
 	res, err := json.Marshal(envelope)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to marshal aws tfvars envelope")

@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 func (s *Helpers) GetTerraformState(ctx context.Context, workspaceID string) (*app.TerraformWorkspaceState, error) {
@@ -26,8 +27,10 @@ func (s *Helpers) InsertTerraformState(ctx context.Context, workspaceID string, 
 	tfState := app.TerraformWorkspaceState{
 		TerraformWorkspaceID: workspaceID,
 		Contents:             contents,
+		ContentsBlob:         &blobstore.Blob{},
 		RunnerJobID:          jobID,
 	}
+	tfState.ContentsBlob.Set(string(contents))
 
 	res := s.db.WithContext(ctx).Create(&tfState)
 	if res.Error != nil {

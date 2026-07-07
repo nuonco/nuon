@@ -141,6 +141,7 @@
 							"guides/managing-apps",
 							"guides/managing-components",
 							"guides/component-dependencies",
+							"guides/toggleable-components",
 							"guides/configuring-inputs-and-secrets",
 							"guides/configuring-sandboxes",
 							"guides/using-variables",
@@ -164,8 +165,12 @@
 						"pages": [
 							"guides/vendor-customers",
 							"guides/install-configs",
+							"guides/component-overrides",
 							"guides/runner-kill-switch",
-							"guides/custom-domains"
+							"guides/custom-domains",
+							"guides/provision-stacks-with-cloudformation",
+							"guides/provision-stacks-with-terraform",
+							"guides/provision-stacks-with-spacelift"
 						]
 					},
 					{
@@ -174,6 +179,7 @@
 						"pages": [
 							"guides/actions",
 							"guides/adhoc-actions",
+							"guides/runbooks",
 							"guides/configuring-policies",
 							"guides/operation-roles",
 							"guides/runner-management-mode",
@@ -197,7 +203,6 @@
 						"pages": [
 							"guides/using-readmes",
 							"guides/programmable-readmes",
-							"guides/runbooks",
 							"guides/custom-nested-stacks",
 							"guides/customizing-terraform-stack-templates",
 							"guides/cli-extensions",
@@ -287,6 +292,8 @@
 				"icon": "clock-rotate-left",
 				"pages": [
 					"updates/updates",
+					"updates/037-split-install-stack-tfvars",
+					"updates/036-toggleable-components",
 					"updates/035-runbooks-and-readmes",
 					"updates/034-aws-terraform-install-stack",
 					"updates/033-Workflow-Policy-and-improved-cloud-support",

@@ -22,6 +22,8 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"inputs":              InputsConfigSchema,
 	"install":             InstallSchema,
 	"installer":           InstallerConfigSchema,
+	"kubernetes-context":  KubernetesContextSchema,
+	"kubernetes-contexts": KubernetesContextsConfigSchema,
 	"kubernetes-manifest": KubernetesManifestConfigSchema,
 	"metadata":            MetadataConfigSchema,
 	"permissions":         PermissionsConfigSchema,
@@ -169,6 +171,32 @@ func InstallerConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.InstallerConfig{}), nil
+}
+
+func KubernetesContextSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.KubernetesContext{}); err != nil {
+		return nil, errors.Wrap(err, "KubernetesContext validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.KubernetesContext{}), nil
+}
+
+func KubernetesContextsConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.KubernetesContextsConfig{}); err != nil {
+		return nil, errors.Wrap(err, "KubernetesContextsConfig validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.KubernetesContextsConfig{}), nil
 }
 
 func KubernetesManifestConfigSchema() (*jsonschema.Schema, error) {

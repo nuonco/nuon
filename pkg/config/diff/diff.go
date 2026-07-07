@@ -17,8 +17,10 @@ type Diffable interface {
 }
 
 type DiffKey struct {
-	Op   Op     `json:"op"`
-	Diff string `json:"diff"`
+	Op     Op     `json:"op"`
+	Diff   string `json:"diff"`
+	Before string `json:"before,omitempty"`
+	After  string `json:"after,omitempty"`
 }
 
 type Diff struct {

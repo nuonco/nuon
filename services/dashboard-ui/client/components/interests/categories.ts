@@ -16,7 +16,7 @@
 
 import type { ResourceCfg, ResourceKind } from './types'
 
-export type EventCategory = 'lifecycle' | 'approvals' | 'drift'
+export type EventCategory = 'lifecycle' | 'approvals' | 'drift' | 'config_synced'
 
 export const RESOURCE_CATEGORIES: Record<ResourceKind, EventCategory[]> = {
   installs: ['lifecycle', 'approvals'],
@@ -26,12 +26,14 @@ export const RESOURCE_CATEGORIES: Record<ResourceKind, EventCategory[]> = {
   install_configurations: ['lifecycle', 'approvals'],
   runners: ['lifecycle'],
   actions: ['lifecycle'],
+  app_branches: ['lifecycle', 'config_synced'],
 }
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {
   lifecycle: 'lifecycle events',
   approvals: 'approvals',
   drift: 'drift detected',
+  config_synced: 'config synced',
 }
 
 export const isCategoryOn = (
@@ -46,6 +48,8 @@ export const isCategoryOn = (
       return !!cfg.approval_requests || !!cfg.approval_responses
     case 'drift':
       return !!cfg.drift_detected
+    case 'config_synced':
+      return !!cfg.config_synced
   }
 }
 
@@ -62,6 +66,8 @@ export const setCategoryOn = (
       return { ...base, approval_requests: on, approval_responses: on }
     case 'drift':
       return { ...base, drift_detected: on }
+    case 'config_synced':
+      return { ...base, config_synced: on }
   }
 }
 

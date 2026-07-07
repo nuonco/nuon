@@ -12,7 +12,7 @@ const sandboxBuildOwnerType = "app_sandbox_builds"
 
 type CreateSandboxBuildJobRequest struct {
 	BuildID     string `json:"build_id" validate:"required"`
-	RunnerID    string `json:"runner_id" validate:"required"`
+	RunnerID    string `json:"runner_id,omitempty"`
 	LogStreamID string `json:"log_stream_id" validate:"required"`
 }
 
@@ -20,15 +20,23 @@ type CreateSandboxBuildJobRequest struct {
 // @start-to-close-timeout 1m
 func (a *Activities) CreateSandboxBuildJob(ctx context.Context, req CreateSandboxBuildJobRequest) (*app.RunnerJob, error) {
 	var build app.AppSandboxBuild
-	if res := a.db.WithContext(ctx).First(&build, "id = ?", req.BuildID); res.Error != nil {
+	if res := a.db.WithContext(ctx).Where(&app.AppSandboxBuild{ID: req.BuildID}).First(&build); res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox build: %w", res.Error)
 	}
 
 	ctx = cctx.SetOrgIDContext(ctx, build.OrgID)
 	ctx = cctx.SetAccountIDContext(ctx, build.CreatedByID)
+	executor, runnerID, err := a.runnerHelpers.BuildExecutorForOrg(ctx, &app.Org{ID: build.OrgID}, app.RunnerJobTypeSandboxBuild)
+	if err != nil {
+		return nil, fmt.Errorf("unable to choose build executor: %w", err)
+	}
+	if executor == app.RunnerJobExecutorOrgRunner && req.RunnerID != "" {
+		runnerID = req.RunnerID
+	}
 
 	job, err := a.runnerHelpers.CreateBuildJob(ctx,
-		req.RunnerID,
+		runnerID,
+		executor,
 		sandboxBuildOwnerType,
 		build.ID,
 		app.RunnerJobTypeSandboxBuild,

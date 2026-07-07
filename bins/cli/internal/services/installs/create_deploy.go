@@ -9,15 +9,16 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
-func (s *Service) CreateDeploy(ctx context.Context, installID, buildID string, deployDeps, asJSON bool) error {
+func (s *Service) CreateDeploy(ctx context.Context, installID, buildID string, deployDeps, deployDependencies, asJSON bool) error {
 	installID, err := lookup.InstallID(ctx, s.api, installID)
 	if err != nil {
 		return ui.PrintError(err)
 	}
 
 	req := &models.ServiceCreateInstallDeployRequest{
-		BuildID:          buildID,
-		DeployDependents: deployDeps,
+		BuildID:            buildID,
+		DeployDependents:   deployDeps,
+		DeployDependencies: deployDependencies,
 	}
 
 	aid, err := s.api.CreateInstallDeploy(ctx, installID, req)

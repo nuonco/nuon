@@ -7,6 +7,7 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -122,8 +123,36 @@ func (s *service) genCLIInstallConfig(ctx context.Context, installID string) (*c
 
 	installCfg.InputGroups = s.buildInputGroupsFromInputs(appInputCfg.AppInputs, installInputs.Values, s.l)
 	installCfg.Components = buildComponentOverridesFromInputs(installInputs.Values)
+	installCfg.ComponentToggles = buildComponentTogglesFromInputs(installInputs.Values)
 
 	return &installCfg, nil
+}
+
+// buildComponentTogglesFromInputs reconstructs the install config's
+// [component_toggles] section from the reserved synthetic enabled inputs, so a
+// generated config round-trips symmetrically with what the user authored.
+// Components left at their default (no explicit enabled input) are omitted.
+func buildComponentTogglesFromInputs(installInputValues map[string]*string) map[string]bool {
+	toggles := make(map[string]bool)
+	for name, val := range installInputValues {
+		kind, compName, ok := config.ParseComponentOverrideInputName(name)
+		if !ok || kind != config.ComponentOverrideKindEnabled {
+			continue
+		}
+		v := generics.FromPtrStr(val)
+		if v == "" {
+			continue
+		}
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			continue
+		}
+		toggles[compName] = b
+	}
+	if len(toggles) == 0 {
+		return nil
+	}
+	return toggles
 }
 
 // buildComponentOverridesFromInputs reconstructs the install config's
@@ -135,6 +164,10 @@ func buildComponentOverridesFromInputs(installInputValues map[string]*string) ma
 	for name, val := range installInputValues {
 		kind, compName, ok := config.ParseComponentOverrideInputName(name)
 		if !ok {
+			continue
+		}
+		// Enabled toggles round-trip via [component_toggles], not [components.<name>].
+		if kind == config.ComponentOverrideKindEnabled {
 			continue
 		}
 		v := generics.FromPtrStr(val)

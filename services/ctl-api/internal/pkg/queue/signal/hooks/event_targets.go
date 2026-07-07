@@ -52,6 +52,14 @@ func EventTargetsFromEvent(ctx context.Context, db *gorm.DB, event signal.Signal
 		t.ActionID = data.Workflow.OwnerID
 	}
 
+	// App branch id -------------------------------------------------------
+	switch {
+	case event.OwnerType == "app_branches" && event.OwnerID != "":
+		t.AppBranchID = event.OwnerID
+	case data.Workflow.OwnerType == "app_branches" && data.Workflow.OwnerID != "":
+		t.AppBranchID = data.Workflow.OwnerID
+	}
+
 	// Step-derived enrichment. The enrichment in webhook.go has already
 	// surfaced ComponentID and SandboxID on data.Step where applicable; we
 	// fan out from those plus the step's TargetType to derive install and

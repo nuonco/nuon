@@ -26,11 +26,11 @@ type ExecuteResponse struct{}
 func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *ExecuteResponse, retErr error) {
 	l, _ := log.WorkflowLogger(ctx)
 	h.executing = true
-	defer func() {
-		h.executing = false
-		h.executingCtx = nil
-		h.executingCancel = nil
 
+	// apply the terminal status only after the completion callback is sent: setting h.finished sooner lets run() complete the workflow and abandon the in-flight callback activity, dropping the callback the dispatcher awaits (wedges the queue)
+	var finStatus app.Status
+	var finDesc string
+	defer func() {
 		status := "success"
 		desc := ""
 		if retErr != nil {
@@ -38,6 +38,12 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 			desc = retErr.Error()
 		}
 		callback.Send(ctx, l, cb, callback.Result{Status: status, StatusDescription: desc})
+		if finStatus != "" {
+			h.setFinished(finStatus, finDesc)
+		}
+		h.executing = false
+		h.executingCtx = nil
+		h.executingCancel = nil
 	}()
 
 	// Increment execution count to track how many times this signal has been executed.
@@ -50,7 +56,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 	}
 
 	if h.canceled {
-		h.setFinished(app.StatusCancelled, "signal was canceled")
+		finStatus, finDesc = app.StatusCancelled, "signal was canceled"
 		return nil, errors.New("signal was canceled")
 	}
 
@@ -68,7 +74,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		h.setFinished(app.StatusError, blockedErr.Error())
+		finStatus, finDesc = app.StatusError, blockedErr.Error()
 		return nil, blockedErr
 	}
 
@@ -111,13 +117,13 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 					"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 				},
 			})
-			h.setFinished(app.StatusError, panicErr.Error())
+			finStatus, finDesc = app.StatusError, panicErr.Error()
 			return nil, panicErr
 		}
 
 		if h.canceled {
 			// canceled mid-execute — cancelHandler already wrote StatusCancelled
-			h.setFinished(app.StatusCancelled, "signal was canceled during execution")
+			finStatus, finDesc = app.StatusCancelled, "signal was canceled during execution"
 			return nil, errors.Wrap(err, "signal was canceled during execution")
 		}
 
@@ -131,7 +137,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 				"execute_finished_at": workflow.Now(ctx).UTC().Format(time.RFC3339),
 			},
 		})
-		h.setFinished(app.StatusError, humanDesc)
+		finStatus, finDesc = app.StatusError, humanDesc
 		return nil, temporal.NewNonRetryableApplicationError(
 			"signal failure",
 			humanDesc,
@@ -147,7 +153,7 @@ func (h *handler) executeHandler(ctx workflow.Context, cb callback.Ref) (resp *E
 		},
 	})
 
-	h.setFinished(app.StatusSuccess, "")
+	finStatus, finDesc = app.StatusSuccess, ""
 	return nil, nil
 }
 
@@ -174,6 +180,32 @@ func (h *handler) emitExecuteMetrics(event signal.SignalPhaseEvent, err error, d
 	})
 
 	h.mw.Timing("queue.signal.latency", dur, tags)
+}
+
+// startAutoRewarm self-drives validate→execute for a resident host that is
+// re-warming from a terminal-success QueueSignal (see run.go). It mirrors the
+// dispatcher's phase order — Validate stamps execute-flow fields that Execute
+// relies on — but runs in a child coroutine so run()'s Await still observes
+// mgr.Stopped/Restarted/h.finished. A nil callback.Ref is passed so no stale
+// completion signal is sent for this internal re-run.
+func (h *handler) startAutoRewarm(ctx workflow.Context) {
+	if h.autoRewarmStarted || h.finished || h.canceled || h.validating || h.executing {
+		return
+	}
+	h.autoRewarmStarted = true
+
+	workflow.Go(ctx, func(gctx workflow.Context) {
+		if h.finished || h.canceled {
+			return
+		}
+		if _, err := h.validateHandler(gctx, callback.Ref{}); err != nil {
+			return
+		}
+		if h.finished || h.canceled {
+			return
+		}
+		_, _ = h.executeHandler(gctx, callback.Ref{})
+	})
 }
 
 // runSignalExecute calls the user-provided signal Execute in a panic-safe boundary.

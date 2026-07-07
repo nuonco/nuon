@@ -71,6 +71,13 @@ func (i *InstallState) Indexes(db *gorm.DB) []migrations.Index {
 				"install_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallState{}, "install_id_created_at"),
+			Columns: []string{
+				"install_id",
+				"created_at",
+			},
+		},
 	}
 }
 

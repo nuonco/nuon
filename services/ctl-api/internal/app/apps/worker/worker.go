@@ -13,9 +13,11 @@ import (
 	pkgworkflows "github.com/nuonco/nuon/pkg/workflows"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	syncappconfiginstalls "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/ecrrepository"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
 const (
@@ -29,11 +31,12 @@ type Worker struct {
 type WorkerParams struct {
 	fx.In
 
-	Cfg        *internal.Config
-	Tclient    temporalclient.Client
-	Wkflows    *Workflows
-	Acts       *activities.Activities
-	BranchActs *branchactivities.Activities
+	Cfg                   *internal.Config
+	Tclient               temporalclient.Client
+	Wkflows               *Workflows
+	Acts                  *activities.Activities
+	BranchActs            *branchactivities.Activities
+	SyncInstallConfigActs *syncappconfiginstalls.Activities
 
 	SharedActs      *workflows.Activities
 	SharedWorkflows *workflows.Workflows
@@ -66,9 +69,21 @@ func New(params WorkerParams) (*Worker, error) {
 		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 	})
 
+	// Sandbox builds run their ExecuteControlPlaneJob as a child workflow in the
+	// apps namespace, which pins the RunJob activity to the control-plane build
+	// task queue in this namespace. Run a worker for that queue here so those
+	// activities get picked up instead of hanging.
+	cpWkr := controlplanejob.NewWorker(client, controlplanejob.WorkerConfig{
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalCPBuildMaxConcurrentActivities,
+		MaxConcurrentActivityTaskPollers:   params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
+		Interceptors:                       params.Interceptors,
+		WorkflowPanicPolicy:                panicPolicy,
+	}, params.SharedActs.AllActivities()...)
+
 	// register activities
 	wkr.RegisterActivity(params.Acts)
 	wkr.RegisterActivity(params.BranchActs)
+	wkr.RegisterActivity(params.SyncInstallConfigActs)
 	for _, acts := range params.SharedActs.AllActivities() {
 		wkr.RegisterActivity(acts)
 	}
@@ -91,6 +106,9 @@ func New(params WorkerParams) (*Worker, error) {
 			params.L.Info("starting apps worker")
 			go func() {
 				wkr.Run(worker.InterruptCh())
+			}()
+			go func() {
+				cpWkr.Run(worker.InterruptCh())
 			}()
 			return nil
 		},

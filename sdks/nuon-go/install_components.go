@@ -48,6 +48,19 @@ func (c *client) GetInstallComponentDeploys(ctx context.Context, installID strin
 	return resp.Payload, hasNextPage(hr), nil
 }
 
+func (c *client) GetInstallComponent(ctx context.Context, installID string, componentID string) (*models.AppInstallComponent, error) {
+	resp, err := c.genClient.Operations.GetInstallComponent(&operations.GetInstallComponentParams{
+		ComponentID: componentID,
+		InstallID:   installID,
+		Context:     ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *client) GetInstallComponentLatestDeploy(ctx context.Context, installID string, componentID string) (*models.AppInstallDeploy, error) {
 	resp, err := c.genClient.Operations.GetInstallComponentLatestDeploy(&operations.GetInstallComponentLatestDeployParams{
 		ComponentID: componentID,
@@ -66,6 +79,20 @@ func (c *client) GetInstallComponentOutputs(ctx context.Context, installID, comp
 		InstallID:   installID,
 		ComponentID: componentID,
 		Context:     ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) ToggleInstallComponent(ctx context.Context, installID, componentID string, req *models.ServiceToggleInstallComponentRequest) (*models.AppWorkflowResponse, error) {
+	resp, err := c.genClient.Operations.ToggleInstallComponent(&operations.ToggleInstallComponentParams{
+		InstallID:   installID,
+		ComponentID: componentID,
+		Context:     ctx,
+		Req:         req,
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
 		return nil, err

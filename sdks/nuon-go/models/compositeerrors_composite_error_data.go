@@ -20,8 +20,15 @@ import (
 // swagger:model compositeerrors.CompositeErrorData
 type CompositeerrorsCompositeErrorData struct {
 
-	// data
-	Data []int64 `json:"data"`
+	// Data is the typed, per-error-type payload: WHAT the error is. Closed
+	// schema per Type. Read to render sections and by any future view.
+	Data any `json:"data,omitempty"`
+
+	// Hints is the open annotation/directive bag: HOW to handle or present the
+	// error. Canonical keys (Hint*) are honored by specific consumers.
+	Hints struct {
+		CompositeerrorsHints
+	} `json:"hints,omitempty"`
 
 	// message
 	Message string `json:"message,omitempty"`
@@ -32,13 +39,29 @@ type CompositeerrorsCompositeErrorData struct {
 	// severity
 	Severity CompositeerrorsSeverity `json:"severity,omitempty"`
 
+	// SourceID / SourceType identify the row this error originated on
+	// (polymorphic, same shape as OwnerID/OwnerType). Set at the record site,
+	// e.g. ("runner_job_execution_results", "<result id>"). Enables a future
+	// JOINable view without a separate error table.
+	SourceID string `json:"source_id,omitempty"`
+
+	// source type
+	SourceType string `json:"source_type,omitempty"`
+
 	// type
 	Type string `json:"type,omitempty"`
+
+	// Version is the payload schema version (SchemaVersion at write time).
+	Version int64 `json:"version,omitempty"`
 }
 
 // Validate validates this compositeerrors composite error data
 func (m *CompositeerrorsCompositeErrorData) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateHints(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateSections(formats); err != nil {
 		res = append(res, err)
@@ -51,6 +74,14 @@ func (m *CompositeerrorsCompositeErrorData) Validate(formats strfmt.Registry) er
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CompositeerrorsCompositeErrorData) validateHints(formats strfmt.Registry) error {
+	if swag.IsZero(m.Hints) { // not required
+		return nil
+	}
+
 	return nil
 }
 
@@ -109,6 +140,10 @@ func (m *CompositeerrorsCompositeErrorData) validateSeverity(formats strfmt.Regi
 func (m *CompositeerrorsCompositeErrorData) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateHints(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateSections(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -120,6 +155,11 @@ func (m *CompositeerrorsCompositeErrorData) ContextValidate(ctx context.Context,
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *CompositeerrorsCompositeErrorData) contextValidateHints(ctx context.Context, formats strfmt.Registry) error {
+
 	return nil
 }
 

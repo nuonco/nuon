@@ -16,6 +16,7 @@ export interface IPropertyGrid<T = Record<string, any>> extends React.HTMLAttrib
   columns?: IPropertyGridColumn<T>[]
   emptyStateProps?: IEmptyState
   gridTemplate?: string  // Custom grid-template-columns CSS value
+  align?: 'start' | 'center'
 }
 
 export const PropertyGrid = <T extends Record<string, any>>({
@@ -23,6 +24,7 @@ export const PropertyGrid = <T extends Record<string, any>>({
   values,
   columns,
   gridTemplate,
+  align = 'center',
   emptyStateProps = { variant: 'table', size: 'sm' },
   ...props
 }: IPropertyGrid<T>) => {
@@ -92,7 +94,8 @@ export const PropertyGrid = <T extends Record<string, any>>({
             <div
               key={`${itemIndex}-${String(column.key)}`}
               className={cn(
-                'py-2 break-all flex items-center',
+                'py-2 break-all flex',
+                align === 'start' ? 'items-start' : 'items-center',
                 columnIndex > 0 && 'pl-8',
                 !isLast && 'border-b',
                 column.className

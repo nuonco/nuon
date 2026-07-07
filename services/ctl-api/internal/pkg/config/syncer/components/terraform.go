@@ -13,14 +13,16 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 // SyncTerraformModuleComponent creates or updates a Terraform module component configuration.
 // Duplicates logic from services/ctl-api/internal/app/components/service/create_terraform_module_component_config.go
-func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, compHelpers *componenthelpers.Helpers, tfClient terraform.Client, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	// Validate Terraform component
 	if err := validateTerraformComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
@@ -79,10 +81,16 @@ func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *v
 		}
 	}
 
-	// Resolve component dependencies
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
-		// TODO: Implement GetComponentIDs helper
+		var err error
+		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
 	}
 
 	// Build variables map
@@ -122,10 +130,16 @@ func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *v
 		}
 	}
 
-	// Get version (default to v1.7.5 if not provided - handled by GORM default tag)
 	version := comp.TerraformModule.TerraformVersion
 	if version == "" {
-		version = "v1.7.5" // This matches the GORM default, but ideally should get latest
+		latestVersion, err := tfClient.GetLatestVersion()
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: "unable to fetch latest terraform version",
+				Err:         err,
+			}
+		}
+		version = latestVersion
 	}
 
 	// Create Terraform module component config
@@ -155,6 +169,7 @@ func SyncTerraformModuleComponent(ctx context.Context, db *gorm.DB, vcsHelper *v
 	// Create component config connection
 	componentConfigConnection := app.ComponentConfigConnection{
 		TerraformModuleComponentConfig: &cfg,
+		KubernetesContextName:          comp.KubernetesContext,
 		ComponentID:                    componentID,
 		AppConfigID:                    appConfigID,
 		ComponentDependencyIDs:         pq.StringArray(depIDs),
@@ -197,12 +212,7 @@ func validateTerraformComponent(comp *config.Component) error {
 		}
 	}
 
-	// Validate Terraform version if provided
-	// Note: In the API, if version is empty it defaults to latest from tfClient.GetLatestVersion()
-	// For now, we'll allow empty and let GORM default handle it
 	if comp.TerraformModule.TerraformVersion != "" {
-		// Validate only the minimum version bound; no upper bound since the DB syncer
-		// does not have access to tfClient.GetLatestVersion().
 		if err := validation.ValidateTerraformMinVersion(comp.TerraformModule.TerraformVersion); err != nil {
 			return err
 		}

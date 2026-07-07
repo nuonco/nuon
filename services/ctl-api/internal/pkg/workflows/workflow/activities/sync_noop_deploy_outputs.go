@@ -8,6 +8,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
 
 type SyncNoopDeployOutputsRequest struct {
@@ -53,6 +55,9 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 		return nil
 	}
 
+	// the blob upload in RunnerJobExecutionOutputs' BeforeCreate hook requires org_id on the context
+	ctx = cctx.SetOrgIDContext(ctx, planJob.OrgID)
+
 	// Create a finished apply job with the plan's outputs so the deploy
 	// has outputs in the same structure the rest of the system expects.
 	applyJob := &app.RunnerJob{
@@ -90,7 +95,9 @@ func (a *Activities) SyncNoopDeployOutputs(ctx context.Context, req *SyncNoopDep
 			RunnerJobExecutionID: execution.ID,
 			OrgID:                planJob.OrgID,
 			Outputs:              outputsJSON,
+			OutputsBlob:          &blobstore.Blob{},
 		}
+		executionOutputs.OutputsBlob.Set(string(outputsJSON))
 		if err := tx.Create(executionOutputs).Error; err != nil {
 			return errors.Wrap(err, "unable to create noop apply outputs")
 		}

@@ -12,9 +12,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws"     // register AWS provider-layer parsers
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic" // register the generic fallback parser
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
 type CreateRunnerJobExecutionResultRequest struct {
@@ -154,6 +159,185 @@ func (s *service) applyComponentBuildSourceIdentity(ctx context.Context, runnerJ
 	return nil
 }
 
+// metricCompositeErrorParse counts every failed-result parse attempt, tagged
+// with the execution tool, job group, and matched composite-error type (or
+// "miss"/"generic"). A high rate of matched_type:generic for a given tool is
+// the data-driven backlog signal for which specific parser to write next.
+const metricCompositeErrorParse = "runner.composite_error_parse"
+
+// parseResultCompositeError parses a failed result into a typed CompositeError
+// and records the parse-outcome metric. It delegates the pure parsing to
+// parseCompositeError and emits exactly one metric per failed result so parse
+// coverage is observable without any per-parser wiring.
+func (s *service) parseResultCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+	ce := parseCompositeError(req, runnerJob)
+	if !req.Success {
+		// Default empty facets to "unknown" so Datadog never sees a bare
+		// "tool:" tag; matched_type stays "miss" for a nil/typeless parse.
+		tool := string(runnerJobTool(runnerJob))
+		if tool == "" {
+			tool = "unknown"
+		}
+		group := string(runnerJob.Group)
+		if group == "" {
+			group = "unknown"
+		}
+		matched := "miss"
+		if ce != nil && ce.Type != "" {
+			matched = string(ce.Type)
+		}
+		s.mw.Incr(metricCompositeErrorParse, []string{
+			"tool:" + tool,
+			"group:" + group,
+			"matched_type:" + matched,
+		})
+	}
+	return ce
+}
+
+// parseCompositeError parses a failed execution's untruncated error message
+// into a typed CompositeError at write time. This is the single runner-driven
+// chokepoint: every flow (builds, deploys, sandbox runs, action runs, ...)
+// reports failure here, so parsing once covers them all with no per-flow
+// wiring. The result row is strictly 1:1 with the attempt, so the stored error
+// can never go stale across retries.
+//
+// It is best-effort: a success, a missing message, or a parse miss yields nil,
+// leaving the plain-string status description in place. Source is set to the
+// runner job's owner so a future view can join errors back to their subject.
+func parseCompositeError(req *CreateRunnerJobExecutionResultRequest, runnerJob *app.RunnerJob) *compositeerrors.CompositeErrorData {
+	if req.Success {
+		return nil
+	}
+
+	raw := rawErrorText(req.ErrorMetadata)
+	if raw == "" {
+		return nil
+	}
+
+	ce := errparse.Parse(&errparse.ParseContext{
+		Raw:       raw,
+		Tool:      runnerJobTool(runnerJob),
+		Operation: string(runnerJob.Operation),
+		Group:     string(runnerJob.Group),
+		Owner:     errparse.Owner{Type: runnerJob.OwnerType, ID: runnerJob.OwnerID},
+		Meta:      flattenErrorMetadata(req.ErrorMetadata),
+	})
+	if ce == nil {
+		return nil
+	}
+
+	return compositeerrors.New(ce, compositeerrors.WithSource(runnerJob.OwnerType, runnerJob.OwnerID))
+}
+
+const (
+	// errMetaKeyOutput is the captured error output (rich, multi-line: the tool's
+	// diagnostics). The runner populates it so parsers see the real cause rather
+	// than a thin wrapper. Preferred over errMetaKeyMessage when present.
+	errMetaKeyOutput = "error_output"
+	// errMetaKeyMessage is the wrapped Go error string (often just "exit status 1"
+	// for tools whose detail goes to the log stream). The fallback input.
+	errMetaKeyMessage = "message"
+)
+
+// rawErrorText picks the richest error text the runner sent: the captured
+// output when present, else the wrapped message.
+func rawErrorText(meta map[string]*string) string {
+	for _, k := range []string{errMetaKeyOutput, errMetaKeyMessage} {
+		if v := meta[k]; v != nil && *v != "" {
+			return *v
+		}
+	}
+	return ""
+}
+
+// runnerJobTool maps a runner job's type to the execution tool errparse uses as
+// a facet, so tool-layer parsers are only considered for the matching tool.
+// Provider-layer parsers are tool-agnostic and are unaffected by ToolUnknown.
+func runnerJobTool(runnerJob *app.RunnerJob) errparse.Tool {
+	switch runnerJob.Type {
+	case app.RunnerJobTypeTerraformDeploy,
+		app.RunnerJobTypeTerraformModuleBuild,
+		app.RunnerJobTypeSandboxTerraform,
+		app.RunnerJobTypeSandboxTerraformPlan,
+		app.RunnerJobTypeRunnerTerraform:
+		return errparse.ToolTerraform
+	case app.RunnerJobTypeHelmChartDeploy,
+		app.RunnerJobTypeHelmChartBuild,
+		app.RunnerJobTypeRunnerHelm:
+		return errparse.ToolHelm
+	case app.RunnerJobTypePulumiDeploy,
+		app.RunnerJobTypePulumiBuild,
+		app.RunnerJobTypeSandboxPulumi:
+		return errparse.ToolPulumi
+	case app.RunnerJobTypeDockerBuild:
+		return errparse.ToolDocker
+	case app.RunnerJobTypeKubrenetesManifestDeploy,
+		app.RunnerJobTypeKubernetesManifestBuild:
+		return errparse.ToolKubernetes
+	case app.RunnerJobTypeContainerImageBuild,
+		app.RunnerJobTypeOCISync:
+		return errparse.ToolOCI
+	default:
+		return errparse.ToolUnknown
+	}
+}
+
+// flattenErrorMetadata converts the runner-sent hstore metadata into the plain
+// string map errparse parsers read, dropping nil values.
+func flattenErrorMetadata(meta map[string]*string) map[string]string {
+	if len(meta) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(meta))
+	for k, v := range meta {
+		if v != nil {
+			out[k] = *v
+		}
+	}
+	return out
+}
+
+// refreshOwnerCompositeError mirrors a runner job execution's parsed composite
+// error onto its owner aggregate row so the dashboard can render it without a
+// read-time join. Each execution result refreshes the column: a failure sets
+// the parsed error, and a success or parse miss (ce == nil) clears it — which
+// is what keeps fail→retry→success from leaving a stale card on the reused
+// aggregate row. Deploy/sandbox executions are serialized by their workflow, so
+// results arrive in order and the last write wins correctly.
+//
+// Only owner types that carry a composite_error column are updated; others are
+// skipped. Best-effort: a failure logs and is swallowed, never failing the
+// runner's result POST.
+func (s *service) refreshOwnerCompositeError(ctx context.Context, runnerJob *app.RunnerJob, ce *compositeerrors.CompositeErrorData) {
+	if runnerJob.OwnerID == "" {
+		return
+	}
+
+	var res *gorm.DB
+	switch runnerJob.OwnerType {
+	case "install_deploys":
+		res = s.db.WithContext(ctx).
+			Model(&app.InstallDeploy{ID: runnerJob.OwnerID}).
+			Select("composite_error").
+			Updates(app.InstallDeploy{CompositeError: ce})
+	case "install_sandbox_runs":
+		res = s.db.WithContext(ctx).
+			Model(&app.InstallSandboxRun{ID: runnerJob.OwnerID}).
+			Select("composite_error").
+			Updates(app.InstallSandboxRun{CompositeError: ce})
+	default:
+		return
+	}
+
+	if res.Error != nil {
+		s.l.Warn("unable to refresh owner composite error",
+			zap.String("owner_type", runnerJob.OwnerType),
+			zap.String("owner_id", runnerJob.OwnerID),
+			zap.Error(res.Error))
+	}
+}
+
 func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Context, runnerJobID, runnerJobExecutionID string, req *CreateRunnerJobExecutionResultRequest) (*app.RunnerJobExecutionResult, error) {
 	runnerJob, err := s.getRunnerJob(ctx, runnerJobID)
 	if err != nil {
@@ -178,12 +362,15 @@ func (s *service) createRunnerJobExecutionResultFromCompressed(ctx context.Conte
 		ContentsDisplayGzip:  contentsDisplayGzip,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+		CompositeError:       s.parseResultCompositeError(req, runnerJob),
 	}
 
 	res := s.db.WithContext(ctx).Create(&result)
 	if res.Error != nil {
 		return nil, errors.Wrap(res.Error, "unable to write runner job execution result: %w")
 	}
+
+	s.refreshOwnerCompositeError(ctx, runnerJob, result.CompositeError)
 
 	return &result, nil
 }
@@ -201,6 +388,7 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 		Contents:             req.Contents,
 		ErrorCode:            req.ErrorCode,
 		ErrorMetadata:        pgtype.Hstore(req.ErrorMetadata),
+		CompositeError:       s.parseResultCompositeError(req, runnerJob),
 	}
 
 	res := s.db.WithContext(ctx).Create(&result)
@@ -225,6 +413,8 @@ func (s *service) createRunnerJobExecutionResult(ctx context.Context, runnerJobI
 			return &result, errors.Wrap(res.Error, "failed to set display content on runner job execution")
 		}
 	}
+
+	s.refreshOwnerCompositeError(ctx, runnerJob, result.CompositeError)
 
 	return &result, nil
 }

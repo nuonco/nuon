@@ -34,6 +34,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -42,6 +45,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 	// drift schedule
 	DriftSchedule string `json:"drift_schedule,omitempty"`
+
+	// kubernetes context
+	KubernetesContext string `json:"kubernetes_context,omitempty"`
 
 	// Kustomize configuration (mutually exclusive with Manifest)
 	Kustomize struct {
@@ -68,6 +74,9 @@ type ServiceCreateKubernetesManifestComponentConfigRequest struct {
 
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 }
 
 // Validate validates this service create kubernetes manifest component config request

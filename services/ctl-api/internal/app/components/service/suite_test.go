@@ -140,6 +140,18 @@ func (s *ComponentsServiceTestSuite) setupTestData() {
 	s.testAppConfig = s.deps.Seeder.CreateAppConfig(s.ctx, s.T(), s.testApp.ID)
 }
 
+func (s *ComponentsServiceTestSuite) enableOrgFeature(feature app.OrgFeature) {
+	features := s.testOrg.Features
+	if features == nil {
+		features = make(map[string]bool)
+	}
+	features[string(feature)] = true
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.Org{ID: s.testOrg.ID}).
+		Update("features", features).Error)
+	s.testOrg.Features = features
+}
+
 // makeRequest sends an HTTP request through the test router and returns the recorder.
 // Pass nil for body on requests that have no body (GET, no-body POST).
 func (s *ComponentsServiceTestSuite) makeRequest(method, path string, body interface{}) *httptest.ResponseRecorder {

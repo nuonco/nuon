@@ -1,0 +1,26 @@
+---
+title: 037 - Split install stack tfvars
+description: Install stack Terraform config is now split into inputs.auto.tfvars and secrets.auto.tfvars.
+---
+
+_July 3, 2026_
+
+## Split install stack tfvars
+
+The Terraform install stack config is now generated as two separate, auto-loaded files instead of a single
+`install.tfvars`:
+
+- **`inputs.auto.tfvars`** — install identity, runner settings, IAM operation roles, and `install_inputs`.
+- **`secrets.auto.tfvars`** — `secrets` and `auto_generate_secrets`.
+
+Both use the `.auto.tfvars` suffix, so Terraform loads them automatically. The apply command drops the `-var-file`
+flag:
+
+```bash
+terraform init && terraform apply
+```
+
+The provision workflow's "await install stack" step in the dashboard now shows each file in its own block, each with
+its own copy and download buttons, so you can hand the non-secret config and the secrets to different owners.
+
+This applies to both the [AWS](/platform-support/aws) and [GCP](/platform-support/gcp) Terraform install stacks.

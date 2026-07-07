@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/invopop/jsonschema"
 	"github.com/nuonco/nuon/pkg/config/diff"
@@ -158,6 +159,11 @@ type Install struct {
 
 	StackOverrides *InstallStackOverrides `mapstructure:"stack_overrides,omitempty" toml:"stack_overrides,omitempty"`
 
+	// ComponentToggles controls which toggleable components are enabled or disabled
+	// for this install, keyed by component name. true = enabled, false = disabled.
+	// Absent keys fall through to the component's default_enabled setting.
+	ComponentToggles map[string]bool `mapstructure:"component_toggles,omitempty" toml:"component_toggles,omitempty"`
+
 	// Components holds per-component install-level overrides, keyed by component
 	// name. Each override deep-merges over the component's app-config values and
 	// wins. It is carried through the install input system under a reserved
@@ -265,6 +271,12 @@ func (i *Install) FlattenedInputs() map[string]string {
 		if override.TFVars != "" {
 			flattened[TFVarsOverrideInputName(compName)] = override.TFVars
 		}
+	}
+	// Component enable/disable toggles are likewise carried through a reserved
+	// synthetic enabled input per component, so [component_toggles] flows through
+	// the same install-input update + reconcile path as everything else.
+	for compName, enabled := range i.ComponentToggles {
+		flattened[EnabledOverrideInputName(compName)] = strconv.FormatBool(enabled)
 	}
 	return flattened
 }

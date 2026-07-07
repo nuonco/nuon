@@ -110,6 +110,18 @@ const (
 
 	// AppActionWorkflowTriggerTypeRoleDashDisabled captures enum value "role-disabled"
 	AppActionWorkflowTriggerTypeRoleDashDisabled AppActionWorkflowTriggerType = "role-disabled"
+
+	// AppActionWorkflowTriggerTypePreDashEnableDashComponent captures enum value "pre-enable-component"
+	AppActionWorkflowTriggerTypePreDashEnableDashComponent AppActionWorkflowTriggerType = "pre-enable-component"
+
+	// AppActionWorkflowTriggerTypePostDashEnableDashComponent captures enum value "post-enable-component"
+	AppActionWorkflowTriggerTypePostDashEnableDashComponent AppActionWorkflowTriggerType = "post-enable-component"
+
+	// AppActionWorkflowTriggerTypePreDashDisableDashComponent captures enum value "pre-disable-component"
+	AppActionWorkflowTriggerTypePreDashDisableDashComponent AppActionWorkflowTriggerType = "pre-disable-component"
+
+	// AppActionWorkflowTriggerTypePostDashDisableDashComponent captures enum value "post-disable-component"
+	AppActionWorkflowTriggerTypePostDashDisableDashComponent AppActionWorkflowTriggerType = "post-disable-component"
 )
 
 // for schema
@@ -117,7 +129,7 @@ var appActionWorkflowTriggerTypeEnum []any
 
 func init() {
 	var res []AppActionWorkflowTriggerType
-	if err := json.Unmarshal([]byte(`["manual","cron","adhoc","pre-deploy-component","post-deploy-component","pre-teardown-component","post-teardown-component","pre-secrets-sync","post-secrets-sync","pre-provision","post-provision","pre-reprovision","post-reprovision","pre-deprovision","post-deprovision","pre-deploy-all-components","post-deploy-all-components","pre-teardown-all-components","post-teardown-all-components","pre-deprovision-sandbox","post-deprovision-sandbox","pre-reprovision-sandbox","post-reprovision-sandbox","pre-update-inputs","post-update-inputs","role-enabled","role-disabled"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["manual","cron","adhoc","pre-deploy-component","post-deploy-component","pre-teardown-component","post-teardown-component","pre-secrets-sync","post-secrets-sync","pre-provision","post-provision","pre-reprovision","post-reprovision","pre-deprovision","post-deprovision","pre-deploy-all-components","post-deploy-all-components","pre-teardown-all-components","post-teardown-all-components","pre-deprovision-sandbox","post-deprovision-sandbox","pre-reprovision-sandbox","post-reprovision-sandbox","pre-update-inputs","post-update-inputs","role-enabled","role-disabled","pre-enable-component","post-enable-component","pre-disable-component","post-disable-component"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

@@ -55,6 +55,12 @@ type AppAppRunnerConfig struct {
 	// org id
 	OrgID string `json:"org_id,omitempty"`
 
+	// PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks.
+	PublicAPIURL string `json:"public_api_url,omitempty"`
+
+	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
+	RunnerAPIURL string `json:"runner_api_url,omitempty"`
+
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
 }

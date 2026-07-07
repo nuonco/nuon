@@ -16,6 +16,7 @@ function getApprovalPlanSkeleton(planType: TApprovalType): ReactNode {
     kubernetes_manifest_approval: <KubernetesPlanSkeleton />,
     terraform_plan: <TerraformPlanSkeleton />,
     pulumi_plan: <Skeleton height="350px" width="100%" />,
+    app_branch_plan: <Skeleton height="200px" width="100%" />,
   }
 
   return diffSkeletons[planType]
@@ -27,6 +28,7 @@ function getApprovalPlanDiff(step: TWorkflowStep, plan: any): ReactNode {
     kubernetes_manifest_approval: <KubernetesDiff plan={plan?.plan} />,
     terraform_plan: <TerraformDiff plan={plan} />,
     pulumi_plan: <PulumiDiff plan={plan} />,
+    app_branch_plan: null,
   }
 
   return diffs[step?.approval?.type]

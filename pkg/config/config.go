@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/invopop/jsonschema"
+	"github.com/nuonco/nuon/pkg/generics"
 )
 
 type AppConfig struct {
@@ -18,6 +19,8 @@ type AppConfig struct {
 	SlackWebhookURL string `mapstructure:"slack_webhook_url" toml:"slack_webhook_url"`
 	// Readme for the app
 	Readme string `mapstructure:"readme,omitempty" toml:"readme,omitempty" features:"get,template"`
+	// Color codes for label keys
+	LabelColors map[string]string `mapstructure:"label_colors,omitempty" toml:"label_colors,omitempty"`
 
 	// Default App Branch config
 	Branch *AppBranchConfig `mapstructure:"branch,omitempty" toml:"branch,omitempty"`
@@ -41,6 +44,8 @@ type AppConfig struct {
 	Stack *StackConfig `mapstructure:"stack,omitempty" toml:"stack,omitempty"`
 	// Operation rules
 	OperationRoles *OperationRolesConfig `mapstructure:"operation_roles,omitempty" toml:"operation_roles,omitempty"`
+	// Kubernetes contexts
+	KubernetesContexts *KubernetesContextsConfig `mapstructure:"kubernetes_contexts,omitempty" toml:"kubernetes_contexts,omitempty"`
 
 	// NOTE: in order to prevent users having to declare multiple arrays of _different_ component types:
 	// eg: [[terraform_module_components]]
@@ -86,6 +91,8 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Optional Slack webhook URL to send app notifications and alerts to a channel").
 		Field("readme").Short("readme file for the app").
 		Long("Markdown file with app documentation. Supports templating and external file sources: HTTP(S) URLs (https://example.com/readme.md), git repositories (git::https://github.com/org/repo//readme.md), file paths (file:///path/to/readme.md), and relative paths (./readme.md)").
+		Field("label_colors").Short("label key color codes").
+		Long("Map of label key names to hex color codes for customizing label display in the dashboard").
 		Field("branch").Short("default app branch configuration").
 		Long("Default branch configuration for all installs. Can be overridden per install").
 		Field("inputs").Short("input configuration").
@@ -106,6 +113,8 @@ func (a AppConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Configure break-glass roles for emergency access to installs").
 		Field("stack").Short("stack configuration").
 		Long("Stack configuration for infrastructure orchestration").
+		Field("kubernetes_contexts").Short("kubernetes context bindings").
+		Long("Named bindings to peer components that produce cluster connection details. Components opt in via their top-level kubernetes_context field").
 		Field("components").Short("component configurations").
 		Long("List of components (terraform, helm, containers, etc) to deploy").
 		Field("installs").Short("install configurations").
@@ -169,6 +178,12 @@ func (a *AppConfig) Parse() error {
 			a.Stack.parse,
 		})
 	}
+	if a.KubernetesContexts != nil {
+		parseFns = append(parseFns, parseFn{
+			"kubernetes_contexts",
+			a.KubernetesContexts.parse,
+		})
+	}
 
 	for idx, action := range a.Actions {
 		parseFns = append(parseFns, parseFn{
@@ -207,6 +222,72 @@ func (a *AppConfig) Parse() error {
 	// Default cloud_platform on all roles from runner type if not explicitly set
 	if err := a.defaultCloudPlatformFromRunner(); err != nil {
 		return err
+	}
+
+	// Resolve kubernetes_contexts <-> component wiring after both are parsed.
+	if err := a.resolveKubernetesContexts(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// resolveKubernetesContexts cross-validates the kubernetes_contexts block
+// against the components list and injects an implicit dependency from each
+// component using a context to that context's source component, so build /
+// deploy ordering works without users also listing the cluster component in
+// `dependencies`.
+//
+// TODO(apps-sync-validate): warn (but don't fail) when a referenced source
+// component's TF/Pulumi source doesn't declare cluster.{name,endpoint,...}
+// outputs. Static validation belongs at apps-sync time; runtime template
+// failure during deploy planning is acceptable for now.
+func (a *AppConfig) resolveKubernetesContexts() error {
+	componentsByName := make(map[string]*Component, len(a.Components))
+	for _, c := range a.Components {
+		if c == nil {
+			continue
+		}
+		componentsByName[c.Name] = c
+	}
+
+	contextsByName := map[string]*KubernetesContext{}
+	if a.KubernetesContexts != nil {
+		for _, ctx := range a.KubernetesContexts.Contexts {
+			if ctx == nil {
+				continue
+			}
+			source, ok := componentsByName[ctx.Component]
+			if !ok {
+				return fmt.Errorf("kubernetes_context %q references unknown component %q", ctx.Name, ctx.Component)
+			}
+			if source.Type != TerraformModuleComponentType && source.Type != PulumiComponentType {
+				return fmt.Errorf("kubernetes_context %q source component %q must be terraform_module or pulumi (got %q)", ctx.Name, ctx.Component, source.Type)
+			}
+			contextsByName[ctx.Name] = ctx
+		}
+	}
+
+	for _, c := range a.Components {
+		if c == nil || c.KubernetesContext == "" {
+			continue
+		}
+		ctx, ok := contextsByName[c.KubernetesContext]
+		if !ok {
+			return fmt.Errorf("component %q references unknown kubernetes_context %q", c.Name, c.KubernetesContext)
+		}
+		c.AddDependency(ctx.Component)
+	}
+
+	for _, action := range a.Actions {
+		if action == nil || action.KubernetesContext == "" {
+			continue
+		}
+		ctx, ok := contextsByName[action.KubernetesContext]
+		if !ok {
+			return fmt.Errorf("action %q references unknown kubernetes_context %q", action.Name, action.KubernetesContext)
+		}
+		action.Dependencies = generics.UniqueSlice(append(action.Dependencies, ctx.Component))
 	}
 
 	return nil

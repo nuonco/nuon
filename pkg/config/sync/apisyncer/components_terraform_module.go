@@ -23,6 +23,7 @@ func (s *syncer) createTerraformModuleComponentConfig(ctx context.Context, resou
 		Version:                  obj.TerraformVersion,
 		BuildTimeout:             obj.BuildTimeout,
 		DeployTimeout:            obj.DeployTimeout,
+		KubernetesContext:        comp.KubernetesContext,
 	}
 
 	if obj.MaxAutoRetries != nil {
@@ -30,6 +31,12 @@ func (s *syncer) createTerraformModuleComponentConfig(ctx context.Context, resou
 	}
 	if obj.SkipNoops != nil {
 		configRequest.SkipNoops = *obj.SkipNoops
+	}
+	if comp.Toggleable != nil {
+		configRequest.Toggleable = *comp.Toggleable
+	}
+	if comp.DefaultEnabled != nil {
+		configRequest.DefaultEnabled = *comp.DefaultEnabled
 	}
 	if obj.AutoApproveOnPoliciesPassing != nil {
 		configRequest.AutoApproveOnPoliciesPassing = *obj.AutoApproveOnPoliciesPassing

@@ -125,6 +125,15 @@ const InstallTemplate = () => {
       iconVariant: 'SneakerMoveIcon' as const,
       text: 'Install runner',
     },
+    ...(org?.features?.['enable-versions-ui']
+      ? [
+          {
+            path: `/versions`,
+            iconVariant: 'ClockCounterClockwiseIcon' as const,
+            text: 'Versions',
+          },
+        ]
+      : []),
   ]
   const isChildRoute = !!useMatch('/:orgId/installs/:installId/:section/:rest/*')
 
@@ -157,7 +166,7 @@ const InstallTemplate = () => {
                   </Text>
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} />
+                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={install?.app?.label_colors?.[key]} />
                     ))}
                 </div>
                 <ID>{install.id}</ID>

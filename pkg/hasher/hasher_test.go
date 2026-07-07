@@ -159,7 +159,7 @@ func TestHashStructMapConsistency(t *testing.T) {
 			t.Fatalf("HashStruct failed for config.Component: %v", err)
 		}
 
-		expectedHash := "2dd69a4f4452a2055e6fd0b86e9024fbece81868f92ad5b60cbccf336a00da5e"
+		expectedHash := "77265101f2461af6d57920cdafb6ead1de2876607142c5820a85774b3087a8a2"
 		if hash != expectedHash {
 			t.Errorf("Expected hash %s, got %s", expectedHash, hash)
 		} else {

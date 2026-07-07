@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	executeflow "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
@@ -18,9 +19,10 @@ import (
 )
 
 type CreateInstallComponentDeployRequest struct {
-	BuildID          string `json:"build_id"`
-	DeployDependents bool   `json:"deploy_dependents"`
-	Role             string `json:"role,omitempty"`
+	BuildID            string `json:"build_id"`
+	DeployDependents   bool   `json:"deploy_dependents"`
+	DeployDependencies bool   `json:"deploy_dependencies"`
+	Role               string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -54,11 +56,35 @@ func (c *CreateInstallComponentDeployRequest) Validate(v *validator.Validate) er
 func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 	installID := ctx.Param("install_id")
 	componentID := ctx.Param("component_id")
-	_, er := s.helpers.GetComponent(ctx, componentID)
+	component, er := s.helpers.GetComponent(ctx, componentID)
 	if er != nil {
 		ctx.Error(fmt.Errorf("unable to get component %s: %w", componentID, er))
 		return
 	}
+
+	if len(component.ComponentConfigs) > 0 {
+		latestConfig := &component.ComponentConfigs[0]
+		if latestConfig.IsToggleable() {
+			// Enabled-state is the synthetic enabled install input; fall back to
+			// the component's default_enabled when no value is set.
+			enabled := latestConfig.GetDefaultEnabled()
+			if ii, err := s.getLatestInstallInputs(ctx, installID); err == nil && ii != nil {
+				if v, ok := ii.Values[config.EnabledOverrideInputName(component.Name)]; ok && v != nil {
+					if parsed, perr := strconv.ParseBool(*v); perr == nil {
+						enabled = parsed
+					}
+				}
+			}
+			if !enabled {
+				ctx.Error(stderr.ErrUser{
+					Err:         fmt.Errorf("component is disabled"),
+					Description: "This component is disabled on this install. Enable it in your install config ([component_toggles] " + component.Name + " = true) or via the dashboard before deploying.",
+				})
+				return
+			}
+		}
+	}
+
 	var req CreateInstallDeployRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.Error(stderr.NewInvalidRequest(err))
@@ -84,6 +110,7 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
+			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
 		},
 		req.PlanOnly,
 		req.Role,
@@ -115,9 +142,10 @@ func (s *service) CreateInstallComponentDeploy(ctx *gin.Context) {
 }
 
 type CreateInstallDeployRequest struct {
-	BuildID          string `json:"build_id"`
-	DeployDependents bool   `json:"deploy_dependents"`
-	Role             string `json:"role,omitempty"`
+	BuildID            string `json:"build_id"`
+	DeployDependents   bool   `json:"deploy_dependents"`
+	DeployDependencies bool   `json:"deploy_dependencies"`
+	Role               string `json:"role,omitempty"`
 
 	PlanOnly bool `json:"plan_only"`
 }
@@ -176,6 +204,7 @@ func (s *service) CreateInstallDeploy(ctx *gin.Context) {
 			app.WorkflowMetadataKeyWorkflowNameSuffix: deploy.InstallComponent.Component.Name,
 			"install_deploy_id":                       deploy.ID,
 			"deploy_dependents":                       strconv.FormatBool(req.DeployDependents),
+			"deploy_dependencies":                     strconv.FormatBool(req.DeployDependencies),
 		},
 		req.PlanOnly,
 		req.Role,

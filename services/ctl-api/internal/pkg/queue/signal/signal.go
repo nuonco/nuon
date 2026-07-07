@@ -26,6 +26,21 @@ type SleepAfter interface {
 	SleepAfter() time.Duration
 }
 
+// AutoExecuteOnTerminalStart is an optional interface for resident signals
+// whose Handler must re-enter Execute when it is (re)started by an
+// update-with-start after the signal already completed successfully.
+//
+// A resident signal's Execute() parks instead of returning, then idles out and
+// closes the Handler with the QueueSignal marked StatusSuccess. A later
+// update-with-start (e.g. append-step / retry-step) starts a fresh Handler run,
+// but the queue dispatcher never re-drives ready/validate/execute on a terminal
+// signal — so without this hook the conductor loop never restarts and the
+// appended/retried work is never consumed. Returning true lets the Handler
+// self-drive validate→execute exactly once on such a re-warm.
+type AutoExecuteOnTerminalStart interface {
+	AutoExecuteOnTerminalStart() bool
+}
+
 const DefaultSleepAfter = 1 * time.Minute
 
 // Raw is a signal envelope for enqueueing without importing the concrete signal

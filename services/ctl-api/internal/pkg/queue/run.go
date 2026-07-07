@@ -1,8 +1,10 @@
 package queue
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
@@ -83,8 +85,10 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	if q.cfg != nil && q.cfg.QueueContinueAsNewHintPeriod > 0 {
 		hintPeriod = q.cfg.QueueContinueAsNewHintPeriod
 	}
+	terminateThreshold := historyMax + canDefaultTerminateOverhead
 	mgr := workflowmanager.New(
 		workflowmanager.WithHistoryMax(historyMax),
+		workflowmanager.WithTerminateThreshold(terminateThreshold),
 		workflowmanager.WithCheckInterval(hintPeriod),
 		workflowmanager.WithMetricsWriter(q.mw),
 		workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
@@ -96,6 +100,22 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 				return true, nil // transient error, keep going
 			}
 			return true, nil
+		}),
+		workflowmanager.WithOnTerminated(func(gCtx workflow.Context, historyLen int) {
+			l.Error("queue terminated: workflow history exceeded safety threshold",
+				zap.String("queue_id", q.queueID),
+				zap.Int("history_length", historyLen),
+				zap.Int("terminate_threshold", terminateThreshold))
+			q.setStatus(gCtx, l, QueueStatusStopped)
+
+			tags := []string{"workflow_type:Queue"}
+			q.mw.Incr(gCtx, "workflow.terminated", tags...)
+			q.mw.Event(gCtx, &statsd.Event{
+				Title:     "Queue workflow terminated due to excessive history",
+				Text:      fmt.Sprintf("Queue %s terminated at %d events (threshold: %d)", q.queueID, historyLen, terminateThreshold),
+				AlertType: statsd.Error,
+				Tags:      tags,
+			})
 		}),
 		workflowmanager.WithCANHintChecker(workflowmanager.CANHintCheckerFunc{
 			CheckFn: func(gCtx workflow.Context) (bool, error) {
@@ -115,8 +135,11 @@ func (q *queue) run(ctx workflow.Context) (bool, error) {
 	// Bridge manager state to queue fields.
 	workflow.Go(ctx, func(gCtx workflow.Context) {
 		_ = workflow.Await(gCtx, func() bool {
-			return mgr.Stopped || mgr.Restarted
+			return mgr.Stopped || mgr.Restarted || mgr.Terminated
 		})
+		if mgr.Terminated {
+			q.stopped = true
+		}
 		if mgr.Stopped {
 			q.stopped = true
 		}

@@ -8,6 +8,8 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
 // @ID						GetInstallRoleUsages
@@ -16,6 +18,9 @@ import (
 // @Tags					installs
 // @Param					install_id	path	string	true	"install ID"
 // @Param					role_name	query	string	true	"unrendered role name template"
+// @Param					offset		query	int		false	"offset of results to return"	Default(0)
+// @Param					limit		query	int		false	"limit of results to return"	Default(10)
+// @Param					page		query	int		false	"page number of results to return"	Default(0)
 // @Accept					json
 // @Produce				json
 // @Security				APIKey
@@ -61,12 +66,19 @@ func (s *service) GetInstallRoleUsages(ctx *gin.Context) {
 
 	var usages []app.InstallRoleUsage
 	res = s.db.WithContext(ctx).
+		Scopes(scopes.WithOffsetPagination).
 		Preload("RunnerJob").
 		Where("install_role_id IN ? AND org_id = ?", installRoleIDs, org.ID).
 		Order("created_at DESC").
 		Find(&usages)
 	if res.Error != nil {
 		ctx.Error(fmt.Errorf("unable to get install role usages: %w", res.Error))
+		return
+	}
+
+	usages, err = db.HandlePaginatedResponse(ctx, usages)
+	if err != nil {
+		ctx.Error(fmt.Errorf("unable to handle paginated response: %w", err))
 		return
 	}
 

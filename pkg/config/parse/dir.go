@@ -33,6 +33,9 @@ type ConfigDir struct {
 
 	OperationRolesConfig *config.OperationRolesConfig `name:"operation_roles"`
 
+	KubernetesContexts    *config.KubernetesContextsConfig `name:"kubernetes_contexts"`
+	KubernetesContextsDir []*config.KubernetesContext      `name:"kubernetes_contexts"`
+
 	BreakGlass    *config.BreakGlass      `name:"break_glass"`
 	BreakGlassDir []*config.AppAWSIAMRole `name:"break_glass"`
 
@@ -92,7 +95,7 @@ func (c *ConfigDir) getOperationRoles() (*config.OperationRolesConfig, error) {
 }
 
 func (c *ConfigDir) getInputs() (*config.AppInputConfig, error) {
-	if c.Inputs == nil && len(c.InputsDir) < 1 && (len(c.InputGroupsDir) < 1 && len(c.InputsDir) < 1) {
+	if c.Inputs == nil && len(c.InputsDir) < 1 && len(c.InputGroupsDir) < 1 {
 		return nil, nil
 	}
 	if c.Inputs != nil && (len(c.InputsDir) > 0 || len(c.InputGroupsDir) > 0) {
@@ -130,6 +133,27 @@ func (c *ConfigDir) getPermissions() (*config.PermissionsConfig, error) {
 
 	return &config.PermissionsConfig{
 		Roles: c.PermissionsDir,
+	}, nil
+}
+
+func (c *ConfigDir) getKubernetesContexts() (*config.KubernetesContextsConfig, error) {
+	if c.KubernetesContexts == nil && len(c.KubernetesContextsDir) < 1 {
+		return nil, nil
+	}
+
+	if c.KubernetesContexts != nil && len(c.KubernetesContextsDir) > 0 {
+		return nil, ParseErr{
+			Description: "Can not provide kubernetes_contexts both with a kubernetes_contexts.toml and kubernetes_contexts/ directory",
+			Err:         errors.New("Can not provide kubernetes_contexts both with a kubernetes_contexts.toml and kubernetes_contexts/ directory"),
+		}
+	}
+
+	if c.KubernetesContexts != nil {
+		return c.KubernetesContexts, nil
+	}
+
+	return &config.KubernetesContextsConfig{
+		Contexts: c.KubernetesContextsDir,
 	}, nil
 }
 
@@ -194,23 +218,28 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 	if err != nil {
 		return nil, err
 	}
+	kubernetesContexts, err := c.getKubernetesContexts()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &config.AppConfig{
-		Components:     c.Components,
-		Actions:        c.Actions,
-		Runbooks:       c.Runbooks,
-		Installs:       c.Installs,
-		BreakGlass:     breakGlass,
-		Secrets:        secrets,
-		Branch:         branch,
-		Branches:       branches,
-		Inputs:         inputs,
-		Sandbox:        c.Sandbox,
-		Runner:         c.Runner,
-		Permissions:    permissions,
-		Stack:          c.Stack,
-		Policies:       policies,
-		OperationRoles: operationRoles,
+		Components:         c.Components,
+		Actions:            c.Actions,
+		Runbooks:           c.Runbooks,
+		Installs:           c.Installs,
+		BreakGlass:         breakGlass,
+		Secrets:            secrets,
+		Branch:             branch,
+		Branches:           branches,
+		Inputs:             inputs,
+		Sandbox:            c.Sandbox,
+		Runner:             c.Runner,
+		Permissions:        permissions,
+		Stack:              c.Stack,
+		Policies:           policies,
+		OperationRoles:     operationRoles,
+		KubernetesContexts: kubernetesContexts,
 	}
 
 	if c.Metadata != nil {
@@ -219,6 +248,7 @@ func (c *ConfigDir) toAppConfig() (*config.AppConfig, error) {
 		cfg.DisplayName = c.Metadata.DisplayName
 		cfg.SlackWebhookURL = c.Metadata.SlackWebhookURL
 		cfg.Readme = c.Metadata.Readme
+		cfg.LabelColors = c.Metadata.LabelColors
 	}
 
 	return cfg, nil

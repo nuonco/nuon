@@ -1,26 +1,55 @@
+import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
 import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
 import { DeployComponentButton } from '@/components/install-components/management/DeployComponent'
 import { DriftScanComponentButton } from '@/components/install-components/management/DriftScanComponent'
 import { ForgetComponentButton } from '@/components/install-components/management/Forget'
 import { TeardownComponentButton } from '@/components/install-components/management/TeardownComponent'
+import { ToggleComponentButton } from '@/components/install-components/management/ToggleComponent'
 import { UnlockTerraformWorkspaceButton } from '@/components/terraform-workspace/UnlockTerraformWorkspace'
-import type { TComponent, TInstallComponent } from '@/types'
+import type { TComponent, TComponentConfig, TInstallComponent } from '@/types'
+
+const DisabledMenuItem = ({
+  label,
+  icon,
+  reason,
+}: {
+  label: string
+  icon: 'CloudArrowDownIcon' | 'TrashIcon'
+  reason: string
+}) => (
+  <Tooltip className="block !w-full" position="left" tipContent={reason}>
+    <Button isMenuButton disabled className="pointer-events-none w-full">
+      {label}
+      <Icon variant={icon} />
+    </Button>
+  </Tooltip>
+)
 
 export const ManagementDropdown = ({
   component,
+  componentConfig,
   currentBuildId,
   currentDeployStatus,
   installComponent,
+  isConfigLoading,
 }: {
   component: TComponent
+  componentConfig?: TComponentConfig
   currentBuildId?: string
   currentDeployStatus?: string
   installComponent?: TInstallComponent
+  isConfigLoading?: boolean
 }) => {
   const workspaceId = installComponent?.terraform_workspace?.id
+  const isToggleable = componentConfig?.toggleable === true
+  const isDisabled = currentDeployStatus === 'disabled'
+
+  const isTornDown = currentDeployStatus === 'inactive'
+  const isInConfig = !!componentConfig
 
   return (
     <Dropdown
@@ -35,17 +64,28 @@ export const ManagementDropdown = ({
     >
       <Menu>
         <Text>Controls</Text>
-        <DriftScanComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          isMenuButton
-        />
-        <DeployComponentButton
-          component={component}
-          currentBuildId={currentBuildId}
-          currentDeployStatus={currentDeployStatus}
-          isMenuButton
-        />
+        {isToggleable ? (
+          <ToggleComponentButton
+            component={component}
+            enabling={isDisabled}
+            isMenuButton
+          />
+        ) : null}
+        {!isDisabled ? (
+          <>
+            <DriftScanComponentButton
+              component={component}
+              currentBuildId={currentBuildId}
+              isMenuButton
+            />
+            <DeployComponentButton
+              component={component}
+              currentBuildId={currentBuildId}
+              currentDeployStatus={currentDeployStatus}
+              isMenuButton
+            />
+          </>
+        ) : null}
         {(component?.type === 'terraform_module' || component?.type === 'pulumi') && workspaceId ? (
           <UnlockTerraformWorkspaceButton
             workspaceId={workspaceId}
@@ -55,11 +95,22 @@ export const ManagementDropdown = ({
         ) : null}
         <hr />
         <Text>Remove</Text>
-        {currentDeployStatus === 'inactive' ? (
-          <ForgetComponentButton component={component} isMenuButton />
+        {isTornDown ? (
+          <DisabledMenuItem
+            label="Teardown component"
+            icon="CloudArrowDownIcon"
+            reason="This component is already torn down."
+          />
         ) : (
           <TeardownComponentButton component={component} isMenuButton />
         )}
+        <ForgetComponentButton
+          component={component}
+          isMenuButton
+          isTornDown={isTornDown}
+          isInConfig={isInConfig}
+          isConfigLoading={isConfigLoading}
+        />
       </Menu>
     </Dropdown>
   )

@@ -39,6 +39,11 @@ const APPROVAL_BANNER_COPY: Record<
     message:
       'This Pulumi plan is ready for your review. Inspect the proposed infrastructure changes before applying them.',
   },
+  app_branch_plan: {
+    title: 'Install group plan requires review',
+    message:
+      'This install group plan is ready for review. Inspect the changes before deploying to the install group.',
+  },
 }
 
 interface IApprovalBanner {

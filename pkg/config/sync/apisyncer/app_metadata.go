@@ -13,6 +13,7 @@ func (s *syncer) syncApp(ctx context.Context, resource string) error {
 		Description:     s.cfg.Description,
 		DisplayName:     s.cfg.DisplayName,
 		SlackWebhookURL: s.cfg.SlackWebhookURL,
+		LabelColors:     s.cfg.LabelColors,
 	})
 	if err != nil {
 		return sync.SyncAPIErr{

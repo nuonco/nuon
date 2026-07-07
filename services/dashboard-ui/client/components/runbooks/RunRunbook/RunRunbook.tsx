@@ -262,7 +262,6 @@ export const RunRunbookModal = ({
                 ['inputs', 'steps'].slice(0, page) as string[]
               )
             }
-            onboardingV2={false}
             skipHref={null}
             onGoToStep={(index) => {
               if (index <= page) setPage(index as 0 | 1 | 2)

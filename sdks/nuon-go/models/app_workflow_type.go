@@ -89,6 +89,12 @@ const (
 
 	// AppWorkflowTypeRunbookRun captures enum value "runbook_run"
 	AppWorkflowTypeRunbookRun AppWorkflowType = "runbook_run"
+
+	// AppWorkflowTypeComponentEnabled captures enum value "component_enabled"
+	AppWorkflowTypeComponentEnabled AppWorkflowType = "component_enabled"
+
+	// AppWorkflowTypeComponentDisabled captures enum value "component_disabled"
+	AppWorkflowTypeComponentDisabled AppWorkflowType = "component_disabled"
 )
 
 // for schema
@@ -96,7 +102,7 @@ var appWorkflowTypeEnum []any
 
 func init() {
 	var res []AppWorkflowType
-	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","app_branch_config_update","reprovision","app_config_build","runbook_run"]`), &res); err != nil {
+	if err := json.Unmarshal([]byte(`["provision","deprovision","deprovision_sandbox","manual_deploy","input_update","deploy_components","teardown_component","teardown_components","reprovision_sandbox","drift_run_reprovision_sandbox","action_workflow_run","sync_secrets","drift_run","app_branches_manual_update","app_branches_config_repo_update","app_branches_component_repo_update","app_branch_config_update","reprovision","app_config_build","runbook_run","component_enabled","component_disabled"]`), &res); err != nil {
 		panic(err)
 	}
 	for _, v := range res {

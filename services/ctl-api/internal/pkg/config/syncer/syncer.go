@@ -9,7 +9,9 @@ import (
 
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	actionshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/helpers"
+	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	runbookshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/runbooks/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
@@ -19,6 +21,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/breakglass"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/components"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/inputs"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/kubernetescontexts"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/operationroles"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/permissions"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/policies"
@@ -26,6 +29,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/sandbox"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/secrets"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/stack"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/terraform"
 )
 
 // syncer implements sync.Syncer using direct database access.
@@ -34,10 +38,12 @@ import (
 type syncer struct {
 	db               *gorm.DB
 	cfg              *config.AppConfig
+	appsHelpers      *appshelpers.Helpers
 	componentHelpers *componenthelpers.Helpers
 	actionsHelpers   *actionshelpers.Helpers
 	runbooksHelpers  *runbookshelpers.Helpers
 	vcsHelpers       *vcshelpers.Helpers
+	tfClient         terraform.Client
 
 	appID       string
 	appConfigID string
@@ -59,14 +65,16 @@ type Params struct {
 
 // NewDBSyncer creates a database-backed syncer for use in Temporal workflows.
 // The context must contain org and account information before calling Sync().
-func NewDBSyncer(db *gorm.DB, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, vcsHelpers *vcshelpers.Helpers, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
+func NewDBSyncer(db *gorm.DB, appsHelpers *appshelpers.Helpers, componentHelpers *componenthelpers.Helpers, actionsHelpers *actionshelpers.Helpers, runbooksHelpers *runbookshelpers.Helpers, vcsHelpers *vcshelpers.Helpers, tfClient terraform.Client, appID string, cfg *config.AppConfig, appConfigID string) sync.Syncer {
 	return &syncer{
 		db:               db,
 		cfg:              cfg,
+		appsHelpers:      appsHelpers,
 		componentHelpers: componentHelpers,
 		actionsHelpers:   actionsHelpers,
 		runbooksHelpers:  runbooksHelpers,
 		vcsHelpers:       vcsHelpers,
+		tfClient:         tfClient,
 		appID:            appID,
 		appConfigID:      appConfigID,
 	}
@@ -104,6 +112,9 @@ func (s *syncer) Sync(ctx context.Context) error {
 		}
 	}
 	s.orgID = orgID
+	if err := s.validateFeatureCompatibility(ctx); err != nil {
+		return err
+	}
 
 	// Initialize state
 	s.state = &sync.State{
@@ -135,6 +146,25 @@ func (s *syncer) Sync(ctx context.Context) error {
 	return nil
 }
 
+func (s *syncer) validateFeatureCompatibility(ctx context.Context) error {
+	var org app.Org
+	res := s.db.WithContext(ctx).
+		Select("id", "features").
+		Where(&app.Org{ID: s.orgID}).
+		First(&org)
+	if res.Error != nil {
+		return sync.SyncInternalErr{
+			Description: "unable to check org feature compatibility",
+			Err:         res.Error,
+		}
+	}
+	if !org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
+		return nil
+	}
+
+	return sync.RejectDockerBuildComponentsForFeature(s.cfg)
+}
+
 type syncStep struct {
 	Resource string
 	Method   func(context.Context) error
@@ -155,7 +185,7 @@ func (s *syncer) syncSteps() []syncStep {
 		{
 			Resource: "app-branches",
 			Method: func(ctx context.Context) error {
-				return branches.Sync(ctx, s.db, s.vcsHelpers, s.cfg, s.appID)
+				return branches.Sync(ctx, s.db, s.appsHelpers, s.cfg, s.appID)
 			},
 		},
 		{
@@ -244,10 +274,19 @@ func (s *syncer) syncSteps() []syncStep {
 		steps = append(steps, syncStep{
 			Resource: fmt.Sprintf("component-sync-%s", c.Name),
 			Method: func(ctx context.Context) error {
-				return components.SyncComponent(ctx, s.db, s.componentHelpers, s.vcsHelpers, c, s.appID, s.appConfigID, s.state)
+				return components.SyncComponent(ctx, s.db, s.componentHelpers, s.vcsHelpers, s.tfClient, c, s.appID, s.appConfigID, s.state)
 			},
 		})
 	}
+
+	// Sync kubernetes contexts after components: each context resolves its
+	// source-component name to an ID, which only exists once components are synced.
+	steps = append(steps, syncStep{
+		Resource: "app-kubernetes-contexts",
+		Method: func(ctx context.Context) error {
+			return kubernetescontexts.Sync(ctx, s.db, s.cfg, s.appID, s.appConfigID)
+		},
+	})
 
 	// Ensure all actions exist (with full initialization: install action workflows)
 	for _, action := range s.cfg.Actions {

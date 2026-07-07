@@ -1,0 +1,82 @@
+---
+title: 'Toggleable Components'
+description: "Turn components on and off per install, with the install config as the source of truth."
+icon: "toggle-on"
+keywords: ["toggleable components", "component toggles", "enable component", "disable component", "default_enabled", "component_toggles", "per-install components", "optional components"]
+---
+
+Some components are optional: a customer on one tier gets observability, another doesn't; one install needs a certificate, another brings its own. Toggleable components let each install decide which components are enabled, without forking your app config.
+
+## Marking a component toggleable
+
+Set `toggleable = true` on a component in your app config, with an optional `default_enabled` for its starting state:
+
+```toml components/observability.toml
+name            = "observability"
+type            = "helm_chart"
+toggleable      = true
+default_enabled = false
+```
+
+If you omit `default_enabled`, it defaults to `false` — the component starts disabled until an install enables it.
+
+A non-toggleable component is always enabled and cannot be turned off. Only toggleable components can be enabled or disabled per install.
+
+## Toggling per install
+
+A toggleable component's enabled state is stored as an [install input](/guides/configuring-inputs-and-secrets). That input is the source of truth, and there are several ways to set it: the install config, the dashboard, and the CLI all write the same underlying input.
+
+If you manage the install with an install config, set the state per component in a `[component_toggles]` section, keyed by component name:
+
+```toml install.toml
+name = "customer-acme"
+
+[component_toggles]
+observability = true
+certificate   = false
+```
+
+`true` enables the component on this install; `false` disables it. A component you don't list falls back to its `default_enabled` value from the app config.
+
+When you run `nuon installs sync`, Nuon reconciles every toggle in one pass: newly enabled components are deployed and newly disabled components are torn down, all within a single workflow. Enabling or disabling a component also runs its `pre`/`post` enable and disable [lifecycle actions](/guides/actions) when defined.
+
+## Dependencies
+
+Toggle state has to stay consistent with the [component dependency graph](/guides/component-dependencies). Nuon enforces two rules whenever you sync:
+
+- An enabled component cannot depend on a disabled one.
+- A component cannot be disabled while a component that depends on it is still enabled.
+
+These run before any change is applied, so an inconsistent config is rejected up front rather than producing a broken install. Both declared `dependencies` and implicit output references (`{{.nuon.components.<name>.outputs...}}`) count as edges in the graph.
+
+For example, given `api_gateway` depends on `certificate`, syncing a config that enables the gateway while the certificate is disabled fails with:
+
+```
+component "api_gateway" is enabled but its dependency "certificate" is disabled
+  Enable "certificate", or disable "api_gateway", so the install reaches a consistent state.
+```
+
+Fix the config — enable the dependency or disable the dependent — and sync again.
+
+## Dashboard and CLI
+
+Each toggleable component's enabled state is exposed through the API, the dashboard, and the CLI:
+
+```bash
+nuon installs components list --install-id <install-id>
+```
+
+You can also toggle a component imperatively from the dashboard or CLI, which sets the same enabled input directly:
+
+```bash
+nuon installs components toggle --install-id <install-id> --component-id <component> --enable
+nuon installs components toggle --install-id <install-id> --component-id <component> --disable
+```
+
+`--component-id` accepts a component ID or name. If you omit both `--enable` and `--disable`, the CLI prompts you to choose.
+
+For installs managed by an install config, the dashboard toggles are disabled, since the config file is the place these inputs are managed and a later `nuon installs sync` would overwrite an out-of-band change.
+
+<Note>
+Config sync reconciles all toggles in a single workflow. An imperative per-component toggle runs a dedicated enable or disable workflow for that one component.
+</Note>

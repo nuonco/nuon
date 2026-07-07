@@ -128,5 +128,21 @@ func (m *Migrations) All() []migrations.Migration {
 			Name: "113-backfill-runner-healthcheck-emitter",
 			Fn:   m.Migration113BackfillRunnerHealthcheckEmitter,
 		},
+		{
+			Name: "114-helm-releases-drop-body-column",
+			SQL:  `ALTER TABLE helm_releases DROP COLUMN IF EXISTS body;`,
+		},
+		{
+			Name: "115-vcs-connection-unique-with-deleted-at",
+			Fn:   m.Migration115VcsConnectionUniqueWithDeletedAt,
+		},
+		{
+			Name: "116-install-app-config-version-metadata-backfill",
+			Fn:   m.Migration116InstallAppConfigVersionMetadataBackfill,
+		},
+		{
+			Name: "117-app-branch-unique-with-deleted-at",
+			Fn:   m.Migration117AppBranchUniqueWithDeletedAt,
+		},
 	}
 }

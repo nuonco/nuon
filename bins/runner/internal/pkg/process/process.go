@@ -15,18 +15,18 @@ import (
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/strace"
-	"github.com/nuonco/nuon/bins/runner/internal/version"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/settings"
+	"github.com/nuonco/nuon/pkg/runner/version"
 )
 
 type Params struct {
 	fx.In
 
 	APIClient  nuonrunner.Client
-	Cfg        *internal.Config
+	Cfg        *runnerconfig.Config
 	LC         fx.Lifecycle
 	Settings   *settings.Settings
 	Shutdowner fx.Shutdowner
@@ -45,7 +45,7 @@ type Registrar struct {
 	processID   string
 	processType string
 	apiClient   nuonrunner.Client
-	cfg         *internal.Config
+	cfg         *runnerconfig.Config
 	settings    *settings.Settings
 	shutdowner  fx.Shutdowner
 

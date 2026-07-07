@@ -243,6 +243,9 @@ func (b *Blob) Set(value string) {
 
 // Get returns the blob value, loading from S3 if needed
 func (b *Blob) Get(ctx context.Context) (string, error) {
+	if b == nil {
+		return "", nil
+	}
 	if b.loaded && b.value != nil {
 		return *b.value, nil
 	}

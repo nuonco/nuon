@@ -40,6 +40,7 @@ func (s *Signal) reconcileDriftSandboxEmitter(
 		Description:  fmt.Sprintf("sandbox drift check for install %s", install.ID),
 		Mode:         app.QueueEmitterModeCron,
 		CronSchedule: schedule,
+		JitterWindow: driftJitterWindow,
 		SignalType:   driftchecksandbox.SignalType,
 		SignalTemplate: &driftchecksandbox.Signal{
 			InstallID: install.ID,

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/refs"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -63,9 +65,17 @@ type ComponentConfigConnection struct {
 	MaxAutoRetries                    *int                               `json:"max_auto_retries,omitempty" gorm:"default:null" temporaljson:"max_auto_retries,omitzero,omitempty"`
 	SkipNoops                         *bool                              `json:"skip_noops,omitempty" gorm:"default:null" temporaljson:"skip_noops,omitzero,omitempty"`
 	AutoApproveOnPoliciesPassing      *bool                              `json:"auto_approve_on_policies_passing,omitempty" gorm:"default:null" temporaljson:"auto_approve_on_policies_passing,omitzero,omitempty"`
+	Toggleable                        *bool                              `json:"toggleable,omitempty" gorm:"default:null" temporaljson:"toggleable,omitzero,omitempty"`
+	DefaultEnabled                    *bool                              `json:"default_enabled,omitempty" gorm:"default:null" temporaljson:"default_enabled,omitzero,omitempty"`
 
 	// Operation roles map: operation type -> role name
 	OperationRoles pgtype.Hstore `json:"operation_roles,omitzero" gorm:"type:hstore" swaggertype:"object,string" temporaljson:"operation_roles,omitzero,omitempty"`
+
+	// KubernetesContextName is the name of an AppKubernetesContextConfig on
+	// the same AppConfig. Empty means fall back to the implicit sandbox
+	// default. Stored as a name (not an FK) so it remains stable across
+	// AppConfig versions, mirroring how component dependencies are tracked.
+	KubernetesContextName string `json:"kubernetes_context_name,omitzero" gorm:"default null" temporaljson:"kubernetes_context_name,omitzero,omitempty"`
 
 	// loaded via after query
 	VCSConnectionType        VCSConnectionType         `json:"-" gorm:"-" temporaljson:"vcs_connection_type,omitzero,omitempty"`
@@ -244,4 +254,36 @@ func (c *ComponentConfigConnection) GetAutoApproveOnPoliciesPassing() bool {
 		return *c.AutoApproveOnPoliciesPassing
 	}
 	return false // default to not auto-approving — opt-in
+}
+
+func (c *ComponentConfigConnection) IsToggleable() bool {
+	if c.Toggleable != nil {
+		return *c.Toggleable
+	}
+	return false
+}
+
+func (c *ComponentConfigConnection) GetDefaultEnabled() bool {
+	if c.DefaultEnabled != nil {
+		return *c.DefaultEnabled
+	}
+	return false
+}
+
+// ComponentEnabledFromInputs resolves whether a toggleable component is enabled
+// from a set of install input values. The synthetic enabled input
+// (config.EnabledOverrideInputName) is the source of truth; when unset it falls
+// back to the component's default_enabled. Non-toggleable components are always
+// enabled.
+func ComponentEnabledFromInputs(enabledInputs map[string]*string, ccc *ComponentConfigConnection) bool {
+	if ccc == nil || !ccc.IsToggleable() {
+		return true
+	}
+	name := config.EnabledOverrideInputName(ccc.Component.Name)
+	if v, ok := enabledInputs[name]; ok && v != nil {
+		if enabled, err := strconv.ParseBool(*v); err == nil {
+			return enabled
+		}
+	}
+	return ccc.GetDefaultEnabled()
 }

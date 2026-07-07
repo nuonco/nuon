@@ -148,22 +148,26 @@ func (m *model) updateViewportContent() {
 		fieldLines[0] = lineCount
 	}
 
-	// Region field (focusIndex 1)
-	sections = appendSection(sections, labelStyle.Render("AWS Region"))
-	sections = appendSection(sections, styles.TextError.Render(" *"))
-	sections = appendSection(sections, descStyle.Render("AWS region for the installation (use left/right arrows to change)"))
+	// Region field (focusIndex 1), only shown for AWS installs — GCP and Azure
+	// installs have their region determined automatically after provisioning.
+	regionOffset := m.regionOffset()
+	if m.needsRegion() {
+		sections = appendSection(sections, labelStyle.Render("AWS Region"))
+		sections = appendSection(sections, styles.TextError.Render(" *"))
+		sections = appendSection(sections, descStyle.Render("AWS region for the installation (use left/right arrows to change)"))
 
-	regionDisplay := fmt.Sprintf("  %s  ", awsRegions[m.regionIndex])
-	if m.focusIndex == 1 {
-		regionDisplay = focusedInputStyle.Render(regionDisplay)
-	} else {
-		regionDisplay = blurredInputStyle.Render(regionDisplay)
+		regionDisplay := fmt.Sprintf("  %s  ", awsRegions[m.regionIndex])
+		if m.focusIndex == 1 {
+			regionDisplay = focusedInputStyle.Render(regionDisplay)
+		} else {
+			regionDisplay = blurredInputStyle.Render(regionDisplay)
+		}
+		sections = appendSection(sections, regionDisplay)
+		fieldLines[1] = lineCount
+		sections = appendSection(sections, "\n")
 	}
-	sections = appendSection(sections, regionDisplay)
-	fieldLines[1] = lineCount
-	sections = appendSection(sections, "\n")
 
-	// Dynamic input fields (focusIndex 2+), grouped
+	// Dynamic input fields, grouped
 	ghStyle := groupHeaderStyle(width)
 	giStyle := groupInputsStyle(width)
 	lastGroupID := ""
@@ -196,7 +200,7 @@ func (m *model) updateViewportContent() {
 		}
 
 		fieldContent := m.inputs[i].View()
-		if m.focusIndex == i+1 {
+		if m.focusIndex == i+regionOffset {
 			inputSections = append(inputSections, focusedInputStyle.Render(fieldContent))
 		} else {
 			inputSections = append(inputSections, blurredInputStyle.Render(fieldContent))
@@ -208,7 +212,7 @@ func (m *model) updateViewportContent() {
 			),
 		)
 		sections = appendSection(sections, rendered)
-		fieldLines[i+1] = lineCount
+		fieldLines[i+regionOffset] = lineCount
 	}
 
 	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))

@@ -109,3 +109,10 @@ nuon installs components
 When an install is deprovisioned, Nuon will generate a graph of all the deployed components on the install, and walk
 them in reverse, to deprovision them properly. In the previous example, this means the helm component would be
 deprovisioned _before_ the database.
+
+## Toggleable components
+
+If a component is [toggleable](/guides/toggleable-components), its enabled state has to stay consistent with the
+dependency graph: an enabled component cannot depend on a disabled one, and a component cannot be disabled while a
+dependent is still enabled. Nuon validates this on every sync. See the
+[Toggleable Components guide](/guides/toggleable-components#dependencies) for details.

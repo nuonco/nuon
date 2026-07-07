@@ -198,6 +198,42 @@ func (s *service) handleSubscribeModalComponentsBlockSuggestion(
 	return buildSuggestionOptions(items)
 }
 
+// handleSubscribeModalAppBranchesBlockSuggestion serves the app branches
+// picker's external_select dynamic options. App branches belong to an app,
+// so the picker is scoped to the user-selected app.
+func (s *service) handleSubscribeModalAppBranchesBlockSuggestion(
+	ctx context.Context,
+	payload slackInteractionPayload,
+) map[string]any {
+	empty := map[string]any{"options": []any{}}
+
+	_, a, ok := s.resolveSubscribeSuggestionApp(ctx, payload, "subscribe modal suggest app branches")
+	if !ok {
+		return empty
+	}
+
+	tx := s.db.WithContext(ctx).
+		Model(&app.AppBranch{}).
+		Where(&app.AppBranch{AppID: a.ID}).
+		Order("name ASC").
+		Limit(suggestionOptionsMaxResults)
+	if q := payload.Value; q != "" {
+		tx = tx.Where("name ILIKE ?", "%"+q+"%")
+	}
+
+	var branches []app.AppBranch
+	if err := tx.Find(&branches).Error; err != nil {
+		s.l.Warn("subscribe modal suggest app branches: list failed", zap.Error(err))
+		return empty
+	}
+
+	items := make([]suggestionItem, 0, len(branches))
+	for _, b := range branches {
+		items = append(items, suggestionItem{ID: b.ID, Name: b.Name})
+	}
+	return buildSuggestionOptions(items)
+}
+
 // handleSubscribeModalActionsBlockSuggestion serves the actions picker's
 // external_select dynamic options. Action workflows belong to an app, so
 // the picker is scoped to the user-selected app. resolveSubscribeSuggestionApp

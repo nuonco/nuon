@@ -35,6 +35,9 @@ type AppAppBranch struct {
 	// id
 	ID string `json:"id,omitempty"`
 
+	// managed by
+	ManagedBy string `json:"managed_by,omitempty"`
+
 	// name
 	Name string `json:"name,omitempty"`
 
@@ -46,6 +49,9 @@ type AppAppBranch struct {
 
 	// updated at
 	UpdatedAt string `json:"updated_at,omitempty"`
+
+	// workflow count
+	WorkflowCount int64 `json:"workflow_count,omitempty"`
 
 	// workflows
 	Workflows []*AppWorkflow `json:"workflows"`

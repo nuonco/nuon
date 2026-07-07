@@ -84,6 +84,15 @@ const (
 	OrgFeatureNativeAWSProvisioner OrgFeature = "native-aws-provisioner"
 	OrgFeatureStackManagerCLI      OrgFeature = "stack-manager-cli"
 	OrgFeatureStackCLI             OrgFeature = "stack-cli"
+	OrgFeatureVersionsUI           OrgFeature = "enable-versions-ui"
+	// OrgFeatureSpaceliftInstallStacks surfaces the Spacelift options
+	// (blueprint and administrative stack) on the install stack "await"
+	// step in the dashboard, letting customers provision the Terraform
+	// install stack through Spacelift instead of running Terraform locally.
+	OrgFeatureSpaceliftInstallStacks OrgFeature = "spacelift-install-stacks"
+	// OrgFeatureControlPlaneBuilds runs component/sandbox builds on
+	// Temporal-backed control-plane workers instead of the org runner.
+	OrgFeatureControlPlaneBuilds OrgFeature = "control-plane-builds"
 )
 
 type Org struct {
@@ -208,6 +217,8 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNativeAWSProvisioner:    false,
 		OrgFeatureStackManagerCLI:         false,
 		OrgFeatureStackCLI:                false,
+		OrgFeatureSpaceliftInstallStacks:  false,
+		OrgFeatureControlPlaneBuilds:      false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -219,6 +230,14 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureLogTailLongPoll:    true,
 		OrgFeatureRunnerJobLongPoll:  true,
 	}
+
+	// When configured, new orgs build on the control plane and therefore skip
+	// org runner provisioning; installs still use their own install runner groups.
+	if cfg := configFromContext(tx.Statement.Context); cfg != nil && cfg.ControlPlaneBuildsDefaultEnabled {
+		defaultFeatures[OrgFeatureControlPlaneBuilds] = true
+		defaultFeatures[OrgFeatureOrgRunner] = false
+	}
+
 	for _, feature := range GetFeatures() {
 		if _, ok := o.Features[string(feature)]; !ok {
 			o.Features[string(feature)] = defaultFeatures[feature]
@@ -261,6 +280,9 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureNativeAWSProvisioner,
 		OrgFeatureStateGenV2,
 		OrgFeatureStackCLI,
+		OrgFeatureVersionsUI,
+		OrgFeatureSpaceliftInstallStacks,
+		OrgFeatureControlPlaneBuilds,
 	}
 }
 
@@ -298,6 +320,9 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureNativeAWSProvisioner:    "When enabled, creating an install does not start a provision workflow. Persists the install and an install stack version only; the AWS-native SDK provisioner drives provisioning out-of-band.",
 		OrgFeatureStackManagerCLI:         "Enable the stack-manager CLI flow: surface the CLI provisioning tab on install stacks, embed per-run logs, and skip starting a provision workflow on install creation (the stack-manager CLI drives provisioning out-of-band).",
 		OrgFeatureStackCLI:                "Enable the stack-cli CLI flow: surface the CLI provisioning tab on install stacks, embed per-run logs, and skip starting a provision workflow on install creation (the stack-cli CLI drives provisioning out-of-band).",
+		OrgFeatureVersionsUI:              "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
+		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
+		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
 	}
 }
 

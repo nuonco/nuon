@@ -26,6 +26,10 @@ type CreateAppConfigRequest struct {
 	AppBranchID string `json:"app_branch_id,omitempty"`
 	// PlanOnly creates a preview run (plan without apply). Only used with AppBranchID.
 	PlanOnly bool `json:"plan_only,omitempty"`
+
+	// SkipNotification suppresses the app-config-synced signal emission.
+	// Used when creating a config as part of app deletion cleanup.
+	SkipNotification bool `json:"skip_notification,omitempty"`
 }
 
 func (c *CreateAppConfigRequest) Validate(v *validator.Validate) error {
@@ -98,6 +102,10 @@ func (s *service) CreateAppConfig(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app inputs config: %w", err))
 		return
+	}
+
+	if !req.SkipNotification {
+		s.emitAppConfigSyncedSignal(ctx, org.ID, appID, req.AppBranchID)
 	}
 
 	ctx.JSON(http.StatusCreated, cfg)

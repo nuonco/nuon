@@ -19,6 +19,7 @@ export const SUB_OPS: Record<ResourceKind, string[]> = {
   install_configurations: ['inputs', 'secrets'],
   runners: ['provision', 'reprovision', 'inactive'],
   actions: ['run'],
+  app_branches: ['run'],
 }
 
 // Resources whose workflows can produce a drift_detected event. Mirrors the Go

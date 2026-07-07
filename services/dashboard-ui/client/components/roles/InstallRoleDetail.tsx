@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { Badge } from '@/components/common/Badge'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
@@ -19,6 +19,9 @@ import { getInstallRoleUsages } from '@/lib'
 import type { TInstallRoleUsage } from '@/types'
 import { IAMRolePoliciesCard, IAMRoleBoundaryExpand } from './IAMRoles'
 import type { TInstallRole } from '@/lib/ctl-api/installs/get-latest-install-roles'
+
+const USAGE_LIMIT = 10
+const USAGE_OFFSET_PARAM = 'usage_offset'
 
 const principalLabel = (usage: TInstallRoleUsage): string => {
   const job = usage.runner_job
@@ -51,19 +54,28 @@ export const InstallRoleDetail = ({
   const { org } = useOrg()
   const { panels, removePanel } = useSurfaces()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const role = installRole.app_role_config
   const roleName = role?.name ?? ''
   const installId = installRole.install_id ?? ''
+  const offset = Number(searchParams.get(USAGE_OFFSET_PARAM) ?? 0)
 
-  const { data: usages, isLoading: usagesLoading } = useQuery<
-    TInstallRoleUsage[]
-  >({
-    queryKey: ['install-role-usages', org?.id, installId, roleName],
+  const { data: result, isLoading: usagesLoading } = useQuery({
+    queryKey: ['install-role-usages', org?.id, installId, roleName, offset],
     queryFn: () =>
-      getInstallRoleUsages({ installId, orgId: org.id, roleName }),
+      getInstallRoleUsages({
+        installId,
+        orgId: org.id,
+        roleName,
+        offset,
+        limit: USAGE_LIMIT,
+      }),
     enabled: !!org?.id && !!installId && !!roleName,
+    placeholderData: keepPreviousData,
   })
+
+  const usages = result?.data
 
   const columns = useMemo<ColumnDef<TInstallRoleUsage, unknown>[]>(
     () => [
@@ -217,6 +229,12 @@ export const InstallRoleDetail = ({
             isLoading={usagesLoading}
             enableSearch={false}
             emptyMessage="This role has not been used yet"
+            pagination={{
+              hasNext: result?.pagination?.hasNext ?? false,
+              offset,
+              limit: USAGE_LIMIT,
+              param: USAGE_OFFSET_PARAM,
+            }}
           />
         </div>
       </Card>

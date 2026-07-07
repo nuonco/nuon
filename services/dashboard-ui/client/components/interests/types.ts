@@ -14,6 +14,7 @@ export type ResourceKind =
   | 'install_configurations'
   | 'runners'
   | 'actions'
+  | 'app_branches'
 
 export type Outcome = 'none' | 'all' | 'completion' | 'failures'
 
@@ -29,6 +30,10 @@ export interface ResourceCfg {
   // are unconditionally suppressed by the matcher — this flag is the only
   // knob that surfaces drift to subscribers.
   drift_detected?: boolean
+  // config_synced fires when app config is synced to an app branch,
+  // independent of lifecycle outcome. Only meaningful for app_branches
+  // (see SupportsConfigSynced); harmless but never matches on others.
+  config_synced?: boolean
 }
 
 export interface Interests {
@@ -46,6 +51,7 @@ export const ALL_RESOURCES: ResourceKind[] = [
   'install_configurations',
   'runners',
   'actions',
+  'app_branches',
 ]
 
 // Human label per resource. Sentence-case.
@@ -57,6 +63,7 @@ export const RESOURCE_LABELS: Record<ResourceKind, string> = {
   install_configurations: 'Install configurations',
   runners: 'Runners',
   actions: 'Actions',
+  app_branches: 'App branches',
 }
 
 export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
@@ -67,6 +74,7 @@ export const RESOURCE_DESCRIPTIONS: Record<ResourceKind, string> = {
   install_configurations: 'Install input updates and secret syncs.',
   runners: 'Runner provision and reprovision.',
   actions: 'Action workflow runs.',
+  app_branches: 'App branch runs triggered manually or by VCS updates.',
 }
 
 export const OUTCOME_LABELS: Record<Outcome, string> = {

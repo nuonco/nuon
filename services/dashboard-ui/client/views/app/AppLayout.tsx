@@ -62,6 +62,7 @@ const AppTemplate = () => {
     { path: `/roles`, iconVariant: 'FileLockIcon' as const, text: 'Roles' },
     { path: `/policies`, iconVariant: 'ShieldCheckIcon' as const, text: 'Policies' },
     { path: `/installs`, iconVariant: 'CubeIcon' as const, text: 'Installs' },
+    { path: `/labels`, iconVariant: 'TagIcon' as const, text: 'Labels' },
     { path: `/readme`, iconVariant: 'BookOpenIcon' as const, text: 'README' },
   ].filter(Boolean) as TNavLink[]
 

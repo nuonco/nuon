@@ -1,0 +1,66 @@
+---
+title: "Provision Stacks with Terraform"
+description: "Provision the Nuon Terraform install stack locally with the Terraform CLI — clone the module, configure remote state, and apply your generated tfvars."
+icon: "terminal"
+boost: 10
+keywords: ["terraform", "install-stacks", "install stack", "terraform apply", "inputs.auto.tfvars", "secrets.auto.tfvars", "aws", "gcp", "backend", "remote state"]
+---
+
+The Terraform install stack provisions the runner in your customer's cloud account. When an install uses a Terraform
+stack, the **await install stack** step in the dashboard generates two tfvars files — `inputs.auto.tfvars` and
+`secrets.auto.tfvars` — and this guide walks through applying them with the Terraform CLI.
+
+The stack is the public [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module, with a directory
+per cloud (`aws/`, `gcp/`).
+
+## Prerequisites
+
+- **Install Terraform** — install [Terraform](https://developer.hashicorp.com/terraform/install). The required version
+  is shown on the await install stack step in the dashboard.
+- **Authenticate to your cloud** — configure credentials for the target cloud so Terraform can provision resources
+
+## Provision the stack
+
+<Steps>
+  <Step title="Clone the install stack module">
+    Clone the repo and enter the directory for your cloud (`aws` or `gcp`):
+
+    ```bash
+    git clone https://github.com/nuonco/install-stacks.git
+    cd install-stacks/<cloud>
+    ```
+  </Step>
+  <Step title="Configure remote state (recommended)">
+    Store Terraform state in a remote backend so it survives and can be shared. Create a `backend.tf` in the cloud
+    directory pointing at a bucket or container you control — for example, GCS:
+
+    ```hcl
+    terraform {
+      backend "gcs" {
+        bucket = "<your-state-bucket>"
+        prefix = "nuon/<install-id>"
+      }
+    }
+    ```
+
+    Use the equivalent backend for your cloud. See the
+    [Terraform backend docs](https://developer.hashicorp.com/terraform/language/settings/backends/configuration).
+  </Step>
+  <Step title="Save the install configuration">
+    From the dashboard's await install stack step, copy or download the two generated files into the cloud directory:
+
+    - **`inputs.auto.tfvars`** — install identity, runner settings, operation roles, and install inputs.
+    - **`secrets.auto.tfvars`** — secrets and auto-generated secret declarations.
+
+    Both use the `.auto.tfvars` suffix, so Terraform loads them automatically — no `-var-file` flag needed.
+  </Step>
+  <Step title="Apply with Terraform">
+    Initialize and apply:
+
+    ```bash
+    terraform init && terraform apply
+    ```
+
+    This provisions the runner in your customer's cloud account. Once it's up, the install continues.
+  </Step>
+</Steps>

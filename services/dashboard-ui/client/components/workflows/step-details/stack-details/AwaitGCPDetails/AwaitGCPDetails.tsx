@@ -1,17 +1,34 @@
 import { useMemo } from 'react'
+import { strToU8, zipSync } from 'fflate'
+import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
 import { Code } from '@/components/common/Code'
 import { Divider } from '@/components/common/Divider'
+import { Link } from '@/components/common/Link'
 import { Skeleton } from '@/components/common/Skeleton'
 import { Tabs } from '@/components/common/Tabs'
 import { Text } from '@/components/common/Text'
 import { useConfig } from '@/hooks/use-config'
 import { useOrg } from '@/hooks/use-org'
+import { createFileDownload } from '@/utils/file-download'
 import type { IStackDetails } from '../types'
 
-function parseTfvars(contents: unknown): string {
-  if (!contents) return ''
+interface StackEnvelope {
+  inputs: string
+  secrets: string
+  spaceliftAdminTf: string
+  spaceliftBlueprintYaml: string
+}
+
+function parseEnvelope(contents: unknown): StackEnvelope {
+  const empty: StackEnvelope = {
+    inputs: '',
+    secrets: '',
+    spaceliftAdminTf: '',
+    spaceliftBlueprintYaml: '',
+  }
+  if (!contents) return empty
 
   let raw = contents
   if (typeof raw === 'string') {
@@ -21,59 +38,98 @@ function parseTfvars(contents: unknown): string {
       try {
         raw = JSON.parse(atob(raw as string))
       } catch {
-        return ''
+        return empty
       }
     }
   }
 
-  if (typeof raw === 'object' && raw !== null && 'tfvars' in raw) {
-    return String((raw as Record<string, unknown>).tfvars ?? '')
+  if (typeof raw === 'object' && raw !== null) {
+    const rec = raw as Record<string, unknown>
+    return {
+      inputs: String(rec.inputs_tfvars ?? ''),
+      secrets: String(rec.secrets_tfvars ?? ''),
+      spaceliftAdminTf: String(rec.spacelift_admin_tf ?? ''),
+      spaceliftBlueprintYaml: String(rec.spacelift_blueprint_yaml ?? ''),
+    }
   }
 
-  return ''
+  return empty
 }
 
 interface IAwaitGCPDetails extends IStackDetails {
   installId?: string
+  spaceliftEnabled?: boolean
 }
 
-export const AwaitGCPDetails = ({ stack, installId }: IAwaitGCPDetails) => {
+export const AwaitGCPDetails = ({
+  stack,
+  installId,
+  spaceliftEnabled,
+}: IAwaitGCPDetails) => {
   const { org } = useOrg()
   const stackV2 = !!org?.features?.['stack-cli']
   const version = stack?.versions?.at(0)
-  const tfvarsContent = useMemo(
-    () => parseTfvars(version?.contents),
+  const envelope = useMemo(
+    () => parseEnvelope(version?.contents),
     [version?.contents]
   )
+  const hasSpacelift =
+    !!spaceliftEnabled &&
+    (envelope.spaceliftAdminTf.length > 0 ||
+      envelope.spaceliftBlueprintYaml.length > 0)
 
-  if (!stackV2) {
-    return <TerraformTab tfvarsContent={tfvarsContent} installId={installId} />
-  }
+  const terraformTab = (
+    <TerraformTab
+      inputsTfvars={envelope.inputs}
+      secretsTfvars={envelope.secrets}
+      installId={installId}
+    />
+  )
 
-  return (
-    <div className="flex flex-col gap-4">
-      <Text variant="base" weight="strong">
-        Setup instructions
-      </Text>
-
-      <Tabs
-        initActiveTab="cli"
-        tabLabels={{ cli: 'CLI' }}
-        tabs={{
+  const tabs = {
+    ...(stackV2
+      ? {
           cli: (
             <CLITab
               phoneHomeId={version?.phone_home_id}
               runnerAPIURL={version?.runner_api_url}
             />
           ),
-          terraform: (
-            <TerraformTab
-              tfvarsContent={tfvarsContent}
+        }
+      : {}),
+    terraform: terraformTab,
+    ...(hasSpacelift
+      ? {
+          spacelift: (
+            <SpaceliftTab
+              adminTf={envelope.spaceliftAdminTf}
+              blueprintYaml={envelope.spaceliftBlueprintYaml}
+              inputsTfvars={envelope.inputs}
+              secretsTfvars={envelope.secrets}
               installId={installId}
             />
           ),
-        }}
-      />
+        }
+      : {}),
+  }
+
+  const showTabs = stackV2 || hasSpacelift
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Text variant="base" weight="strong">
+        Setup your install stack
+      </Text>
+
+      {showTabs ? (
+        <Tabs
+          initActiveTab={stackV2 ? 'cli' : 'terraform'}
+          tabLabels={{ cli: 'CLI' }}
+          tabs={tabs}
+        />
+      ) : (
+        terraformTab
+      )}
     </div>
   )
 }
@@ -115,11 +171,16 @@ const CLITab = ({ phoneHomeId, runnerAPIURL }: ICLITab) => {
 }
 
 interface ITerraformTab {
-  tfvarsContent: string
+  inputsTfvars: string
+  secretsTfvars: string
   installId?: string
 }
 
-const TerraformTab = ({ tfvarsContent, installId }: ITerraformTab) => {
+const TerraformTab = ({
+  inputsTfvars,
+  secretsTfvars,
+  installId,
+}: ITerraformTab) => {
   const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/gcp`
 
@@ -130,7 +191,7 @@ cd install-stacks/gcp`
   }
 }`
 
-  const applyCmd = `terraform init && terraform apply -var-file=install.tfvars`
+  const applyCmd = `terraform init && terraform apply`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -177,11 +238,42 @@ cd install-stacks/gcp`
         <Card>
           <span className="flex justify-between items-center">
             <Text>
-              Save this as <code>install.tfvars</code>
+              Save this as <code>inputs.auto.tfvars</code>
             </Text>
-            <ClickToCopyButton textToCopy={tfvarsContent} />
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={inputsTfvars} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(inputsTfvars, 'inputs.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
           </span>
-          <Code variant="preformated">{tfvarsContent}</Code>
+          <Code variant="preformated">{inputsTfvars}</Code>
+        </Card>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>secrets.auto.tfvars</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={secretsTfvars} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(secretsTfvars, 'secrets.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{secretsTfvars}</Code>
         </Card>
       </div>
 
@@ -199,6 +291,326 @@ cd install-stacks/gcp`
           </span>
           <Code variant="preformated">{applyCmd}</Code>
         </Card>
+      </div>
+    </div>
+  )
+}
+
+interface ISpaceliftTab {
+  adminTf: string
+  blueprintYaml: string
+  inputsTfvars: string
+  secretsTfvars: string
+  installId?: string
+}
+
+const SpaceliftTab = ({
+  adminTf,
+  blueprintYaml,
+  inputsTfvars,
+  secretsTfvars,
+  installId,
+}: ISpaceliftTab) => {
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <Text variant="subtext" theme="neutral">
+        Manage the install stack in Spacelift, using either a{' '}
+        <Link
+          href="https://docs.spacelift.io/concepts/blueprint/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Blueprint
+        </Link>{' '}
+        or{' '}
+        <Link
+          href="https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Terraform
+        </Link>{' '}
+        . If the customer is managing Spacelift through the Web UI, use the
+        Blueprint. If the customer is managing Spacelift using Terraform, use
+        the Terraform config.
+      </Text>
+
+      <Tabs
+        initActiveTab="blueprint"
+        tabs={{
+          blueprint: <BlueprintSubTab blueprintYaml={blueprintYaml} />,
+          terraform: (
+            <TerraformSubTab
+              adminTf={adminTf}
+              inputsTfvars={inputsTfvars}
+              secretsTfvars={secretsTfvars}
+              installId={installId}
+            />
+          ),
+        }}
+      />
+    </div>
+  )
+}
+
+interface ITerraformSubTab {
+  adminTf: string
+  inputsTfvars: string
+  secretsTfvars: string
+  installId?: string
+}
+
+const TerraformSubTab = ({
+  adminTf,
+  inputsTfvars,
+  secretsTfvars,
+  installId,
+}: ITerraformSubTab) => {
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="flex flex-col gap-4">
+        <span className="flex justify-between items-center">
+          <Text variant="base" weight="strong">
+            1. Add these files to your Spacelift terraform project
+          </Text>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              const zipped = zipSync({
+                'spacelift.tf': strToU8(adminTf),
+                'inputs.auto.tfvars': strToU8(inputsTfvars),
+                'secrets.auto.tfvars': strToU8(secretsTfvars),
+              })
+              createFileDownload(
+                new Blob([zipped], { type: 'application/zip' }),
+                `nuon-spacelift-${installId ?? 'stack'}.zip`,
+                'application/zip'
+              )
+            }}
+          >
+            Download all (.zip)
+          </Button>
+        </span>
+        <Text variant="subtext" theme="neutral">
+          Unpack all three into one directory, then edit before applying: set{' '}
+          <code>space_id</code> in <code>spacelift.tf</code> to the Spacelift
+          space this stack should live in (already have your own GCP
+          integration for this stack? set <code>attach_gcp_service_account</code>{' '}
+          to <code>false</code> instead), fill in <code>inputs.auto.tfvars</code>,
+          and replace the placeholders in <code>secrets.auto.tfvars</code> with
+          your real secrets.
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>spacelift.tf</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={adminTf} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => createFileDownload(adminTf, 'spacelift.tf')}
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{adminTf}</Code>
+        </Card>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>inputs.auto.tfvars</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={inputsTfvars} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(inputsTfvars, 'inputs.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{inputsTfvars}</Code>
+        </Card>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>
+              Save this as <code>secrets.auto.tfvars</code>
+            </Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={secretsTfvars} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(secretsTfvars, 'secrets.auto.tfvars')
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{secretsTfvars}</Code>
+        </Card>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          2. Authenticate the provider to Spacelift
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Create a{' '}
+          <Link
+            href="https://docs.spacelift.io/integrations/api#spacelift-api-key"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Spacelift API key
+          </Link>{' '}
+          and export it as <code>SPACELIFT_API_KEY_ENDPOINT</code>,{' '}
+          <code>SPACELIFT_API_KEY_ID</code>, and{' '}
+          <code>SPACELIFT_API_KEY_SECRET</code> before applying.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          3. Apply with Terraform
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Run in the directory with all three files</Text>
+            <ClickToCopyButton textToCopy="terraform init && terraform apply" />
+          </span>
+          <Code variant="preformated">terraform init && terraform apply</Code>
+        </Card>
+        <Text variant="subtext" theme="neutral">
+          This creates the install stack, mounts your tfvars, and (unless you
+          set <code>attach_gcp_service_account</code> to <code>false</code>)
+          attaches Spacelift&apos;s native GCP integration, no manual{' '}
+          <strong>Settings → Integrations</strong> step needed.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          4. Grant access, then run the install stack
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          If you attached the GCP integration (the default), grant the
+          printed <code>gcp_service_account_email</code> output an IAM role on
+          your target GCP project. If you attached your own integration
+          instead, confirm its identity already has that access. Then trigger
+          the stack&apos;s first run, it&apos;s set to auto-deploy, so it
+          plans and applies your runner without further approval.
+        </Text>
+      </div>
+    </div>
+  )
+}
+
+interface IBlueprintSubTab {
+  blueprintYaml: string
+}
+
+const BlueprintSubTab = ({ blueprintYaml }: IBlueprintSubTab) => {
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          1. Create the blueprint
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          In Spacelift, go to <strong>Blueprints → Create blueprint</strong> and
+          paste this YAML as the template body.
+        </Text>
+        <Card>
+          <span className="flex justify-between items-center">
+            <Text>Blueprint template body</Text>
+            <span className="flex gap-2 items-center">
+              <ClickToCopyButton textToCopy={blueprintYaml} />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() =>
+                  createFileDownload(blueprintYaml, 'blueprint.yaml')
+                }
+              >
+                Download
+              </Button>
+            </span>
+          </span>
+          <Code variant="preformated">{blueprintYaml}</Code>
+        </Card>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          2. Publish it
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Click <strong>Publish</strong> to move the blueprint from draft to
+          published. Publishing is one-way — to change a published blueprint you
+          clone it, edit, and publish again.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          3. Create a stack and fill in the inputs
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          On the published blueprint, click <strong>Create stack</strong> and
+          fill in the inputs and secrets. This creates the stack but
+          doesn&apos;t run it.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          4. Configure credentials
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          If you haven't already, configure the{' '}
+          <Link
+            href="https://docs.spacelift.io/integrations/cloud-providers"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Spacelift Integration
+          </Link>{' '}
+          for the cloud you want to deploy to.
+        </Text>
+      </div>
+
+      <Divider />
+
+      <div className="flex flex-col gap-4">
+        <Text variant="base" weight="strong">
+          4. Run the stack
+        </Text>
+        <Text variant="subtext" theme="neutral">
+          Click <strong>Trigger</strong> on the stack page to run the stack.
+        </Text>
       </div>
     </div>
   )

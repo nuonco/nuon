@@ -9,6 +9,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/helm"
 )
 
@@ -79,7 +80,7 @@ func (s *service) createHelmRelease(ctx *gin.Context, helmChartID, namespace, ke
 		HelmChartID: helmChartID,
 		Key:         key,
 		Type:        "helm.sh/release.v1",
-		Body:        body,
+		Body:        &blobstore.Blob{},
 		Name:        rls.Name,
 		Namespace:   namespace,
 		Version:     int(rls.Version),
@@ -88,8 +89,10 @@ func (s *service) createHelmRelease(ctx *gin.Context, helmChartID, namespace, ke
 		CreatedAt:   time.Now().UTC(),
 		Labels:      rls.Labels,
 	}
+	helmRelease.Body.Set(body)
 
-	res := s.db.WithContext(ctx).Model(&app.HelmRelease{}).Create(&helmRelease)
+	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
+	res := s.db.WithContext(dbCtx).Model(&app.HelmRelease{}).Create(&helmRelease)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create helm release: %w", res.Error)
 	}

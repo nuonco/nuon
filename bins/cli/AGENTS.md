@@ -378,6 +378,67 @@ internal/ui/v3/<feature>/
 └── selector/        # Sub-components if needed
 ```
 
+### Output format (`--output table|json|agent`)
+
+The global `--output` flag selects the output format (default `table`). `--json`/`-j` is a **deprecated** shorthand for
+`--output json` (still works, warns on use, removed in a future release). `resolveOutput` in `cmd/cli.go` resolves the
+format with precedence `--output` → `--json` → `NUON_OUTPUT` → `NUON_AGENT` → default, then sets `PrintJSON` and/or
+`internal/agentmode` accordingly.
+
+`agent` is the machine-friendly format for LLM/agent callers: it forces non-interactive and turns on
+`internal/agentmode`. When on, **stdout carries exactly one JSON envelope** and all progress/human output is routed to
+stderr:
+
+- Success: `{"ok":true,"data":<command output>}` — wraps whatever the command passes to `ui.PrintJSON`.
+- Error: `{"ok":false,"error":{"code":"<code>","message":"..."}}` with a non-zero exit. Codes come from
+  `classifyError` in `internal/ui/agent.go` (`not_found`, `unauthorized`, `forbidden`, `invalid_request`,
+  `server_error`, `user_error`, `api_error`, `error`).
+
+Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabled). Any new command output must go
+through `ui.PrintJSON` / `ui.PrintError` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass
+the envelope. `--output json` is unchanged from the old `--json` — raw output, no envelope.
+
+#### Output annotations (REQUIRED when adding commands)
+
+Commands declare which `--output` formats they support via the annotations system (`cmd/annotations.go`). No
+annotation = supports all of `table,json,agent`. A command that can't honor a format (TUI-only, raw text, protocol
+on stdout like `nuon mcp`) MUST declare what it does support:
+
+```go
+Annotations: outputsAnnotation(OutputTable)                          // table only
+Annotations: annotations(tuiAnnotation(TUIAltScreen), outputsAnnotation(OutputTable, OutputJSON))
+```
+
+`resolveOutput` enforces this — requesting an unsupported format errors with the supported list. **When adding or
+changing a command, set this annotation; it is metadata LLMs and completion rely on and is not inferred.**
+
+### Read-only mode (`--read-only` / `NUON_READ_ONLY=1`)
+
+Safety guardrail for agent-driven use: blocks any command that may mutate remote state. Enforced in
+`guardReadOnly` (`cmd/readonly.go`) via a **default-deny allowlist** of read-only leaf command names — a new read
+command must be added to `readOnlyCommands` or it will be blocked in this mode. Local-only operations (`select`,
+`config`-style targeting, `init`, `generate-config`) are allowed; anything that creates/updates/deletes remote
+resources exits 2 with a clear error.
+
+### MCP server (`nuon mcp`)
+
+`nuon mcp` runs a stdio Model Context Protocol server (official `modelcontextprotocol/go-sdk`) so LLM clients
+(Claude Code, Claude Desktop) can drive Nuon. Implementation: `internal/services/mcpserver/`. Auth reuses the
+standard CLI config (`~/.nuon`).
+
+- **Read-only by default**: `whoami`, `list_apps`, `get_app`, `list_installs`, `get_install`,
+  `list_install_components`, `list_components`.
+- **Context-aware**: tools default to the CLI's selected app/install (`nuon apps select` / `nuon installs select`,
+  same context `nuon -h` shows); `whoami` reports it; list tools take `all=true` for org-wide.
+- `--allow-writes` additionally exposes `create_install` and `deploy_component` (resolves the component's latest
+  build when `build_id` is omitted).
+- Tools return **trimmed summaries** (see `toolsummary` structs in `tools.go`) — full API models are far too large
+  for LLM context; keep new tools trimmed the same way.
+- stdout carries the MCP protocol: tool handlers must never print; call the SDK directly (not the CLI services,
+  which write to stdout).
+
+Claude Code config: `{"mcpServers": {"nuon": {"command": "nuon", "args": ["mcp"]}}}`
+
 ### No-TTY / Non-Interactive Support
 
 The CLI supports non-interactive environments (CI, pipes, cron). All `tea.NewProgram` call sites check `cfg.Interactive`

@@ -1,12 +1,14 @@
 package gcp
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -96,13 +98,25 @@ func testInputWithCustomRoles() *stacks.TemplateInput {
 	return inp
 }
 
-// extractTfvars parses the JSON envelope and returns the tfvars string.
+// extractTfvars parses the JSON envelope and returns the inputs tfvars string
+// (standard vars, permissions, roles, install_inputs).
 func extractTfvars(t *testing.T, out []byte) string {
 	t.Helper()
 	var envelope map[string]string
 	require.NoError(t, json.Unmarshal(out, &envelope))
-	tfvars, ok := envelope["tfvars"]
-	require.True(t, ok, "envelope must contain 'tfvars' key")
+	tfvars, ok := envelope["inputs_tfvars"]
+	require.True(t, ok, "envelope must contain 'inputs_tfvars' key")
+	return tfvars
+}
+
+// extractSecretsTfvars parses the JSON envelope and returns the secrets tfvars
+// string (auto_generate_secrets, secrets).
+func extractSecretsTfvars(t *testing.T, out []byte) string {
+	t.Helper()
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	tfvars, ok := envelope["secrets_tfvars"]
+	require.True(t, ok, "envelope must contain 'secrets_tfvars' key")
 	return tfvars
 }
 
@@ -317,7 +331,7 @@ func TestRenderSecrets(t *testing.T) {
 		out, _, err := Render(inp)
 		require.NoError(t, err)
 
-		tfvars := extractTfvars(t, out)
+		tfvars := extractSecretsTfvars(t, out)
 
 		// auto-gen should be in the list
 		assert.Contains(t, tfvars, `auto_generate_secrets = ["db_password", ]`)
@@ -338,11 +352,155 @@ func TestRenderSecrets(t *testing.T) {
 		out, _, err := Render(testInput())
 		require.NoError(t, err)
 
-		tfvars := extractTfvars(t, out)
+		tfvars := extractSecretsTfvars(t, out)
 
 		assert.Contains(t, tfvars, "auto_generate_secrets = []")
 		assert.Contains(t, tfvars, "secrets = {\n}")
 	})
+}
+
+func extractEnvelopeKey(t *testing.T, out []byte, key string) string {
+	t.Helper()
+	var envelope map[string]string
+	require.NoError(t, json.Unmarshal(out, &envelope))
+	val, ok := envelope[key]
+	require.True(t, ok, "envelope must contain %q key", key)
+	return val
+}
+
+func TestRenderSpaceliftArtifacts(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.InputConfig = app.AppInputConfig{
+		AppInputs: []app.AppInput{
+			{Name: "cluster_name", Source: app.AppInputSourceCustomer},
+		},
+	}
+	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+		Secrets: []app.AppSecretConfig{
+			{Name: "stripe_key", Description: "Your Stripe API key", Required: true},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	adminTF := extractEnvelopeKey(t, out, "spacelift_admin_tf")
+	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
+
+	require.NotEmpty(t, adminTF)
+	require.NotEmpty(t, blueprint)
+
+	for _, artifact := range []string{adminTF, blueprint} {
+		assert.Contains(t, artifact, inp.Install.ID)
+		assert.Contains(t, artifact, "install-stacks")
+	}
+
+	// The admin stack reads the tfvars from sibling files so the customer can
+	// edit inputs and replace secrets before applying.
+	assert.Contains(t, adminTF, "spacelift_stack")
+	assert.Contains(t, adminTF, `project_root`)
+	assert.Contains(t, adminTF, `"gcp"`)
+	assert.Contains(t, adminTF, "raw_git {")
+	assert.Contains(t, adminTF, `url       = "https://github.com/nuonco/install-stacks.git"`)
+	assert.Contains(t, adminTF, `relative_path = "source/gcp/inputs.auto.tfvars"`)
+	assert.Contains(t, adminTF, `relative_path = "source/gcp/secrets.auto.tfvars"`)
+	assert.Contains(t, adminTF, `write_only    = false`, "inputs mounted file should be plain")
+	assert.Contains(t, adminTF, `write_only    = true`, "secrets mounted file should be secret")
+	assert.Contains(t, adminTF, `filebase64("${path.module}/inputs.auto.tfvars")`)
+	assert.Contains(t, adminTF, `filebase64("${path.module}/secrets.auto.tfvars")`)
+	assert.Contains(t, adminTF, `variable "space_id"`, "admin stack should require an explicit space_id")
+	assert.Contains(t, adminTF, `space_id          = var.space_id`)
+	assert.Contains(t, adminTF, `variable "attach_gcp_service_account"`, "GCP integration attach should be toggleable for customers with their own integration")
+	assert.Contains(t, adminTF, `resource "spacelift_gcp_service_account" "nuon"`, "admin stack should auto-attach the GCP cloud integration by default")
+	assert.Contains(t, adminTF, `count        = var.attach_gcp_service_account ? 1 : 0`)
+
+	assert.Contains(t, blueprint, "project_root: gcp")
+	assert.Contains(t, blueprint, "provider: RAW_GIT")
+	assert.Contains(t, blueprint, "repository_url: https://github.com/nuonco/install-stacks.git")
+	assert.Contains(t, blueprint, "vendor:")
+	assert.NotContains(t, blueprint, "trigger_run", "blueprint must not auto-trigger: GCP creds aren't attachable via blueprint, so the first run would fail auth")
+
+	// GCP project/region, customer install inputs, and secrets are exposed as
+	// blueprint inputs and interpolated into the (plaintext) mounted tfvars via CEL.
+	assert.Contains(t, blueprint, "inputs:")
+	assert.Contains(t, blueprint, "id: gcp_project_id")
+	assert.Contains(t, blueprint, `default: "my-gcp-project"`)
+	assert.Contains(t, blueprint, "id: gcp_region")
+	assert.Contains(t, blueprint, `default: "us-central1"`)
+	assert.Contains(t, blueprint, "id: input_cluster_name")
+	assert.Contains(t, blueprint, "type: short_text")
+	assert.Contains(t, blueprint, "id: secret_stripe_key")
+	assert.Contains(t, blueprint, "type: secret")
+	assert.Contains(t, blueprint, `description: "Your Stripe API key"`)
+
+	assert.Contains(t, blueprint, `gcp_project_id           = "${{ inputs.gcp_project_id }}"`)
+	assert.Contains(t, blueprint, `gcp_region               = "${{ inputs.gcp_region }}"`)
+	assert.Contains(t, blueprint, `"cluster_name" = "${{ inputs.input_cluster_name }}"`)
+	assert.Contains(t, blueprint, `value       = "${{ inputs.secret_stripe_key }}"`)
+
+	// Content is plaintext (not base64) so CEL interpolation works.
+	assert.Contains(t, blueprint, "nuon_install_id")
+	assert.NotContains(t, blueprint, base64.StdEncoding.EncodeToString([]byte("nuon_install_id")))
+}
+
+func TestRenderSpaceliftDefaults(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.InputConfig = app.AppInputConfig{
+		AppInputs: []app.AppInput{
+			{Name: "cluster_name", Source: app.AppInputSourceCustomer, Default: "my-default-cluster"},
+		},
+	}
+	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+		Secrets: []app.AppSecretConfig{
+			{Name: "stripe_key", Description: "Your Stripe API key", Required: true, Default: "sk_default"},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	inputsTfvars := extractEnvelopeKey(t, out, "inputs_tfvars")
+	secretsTfvars := extractEnvelopeKey(t, out, "secrets_tfvars")
+	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
+
+	// The normal (admin-TF sibling) tfvars pre-fill install-input and secret
+	// defaults as literals.
+	assert.Contains(t, inputsTfvars, `"cluster_name" = "my-default-cluster"`)
+	assert.Contains(t, secretsTfvars, `value       = "sk_default"`)
+
+	// The blueprint surfaces those same defaults as the blueprint input `default`,
+	// so the Spacelift UI is pre-populated.
+	assert.Contains(t, blueprint, `default: "my-default-cluster"`)
+	assert.Contains(t, blueprint, `default: "sk_default"`)
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(blueprint), &parsed))
+}
+
+func TestRenderSpaceliftBlueprintYAMLValid(t *testing.T) {
+	inp := testInput()
+	inp.AppCfg.InputConfig = app.AppInputConfig{
+		AppInputs: []app.AppInput{
+			{Name: "cluster_name", Source: app.AppInputSourceCustomer},
+		},
+	}
+	inp.AppCfg.SecretsConfig = app.AppSecretsConfig{
+		Secrets: []app.AppSecretConfig{
+			// Description contains ": " which, if interpolated unquoted, makes YAML
+			// read it as a nested mapping ("mapping values are not allowed in this
+			// context"). This mirrors the byoc slack secret descriptions.
+			{Name: "slack_signing_secret", Description: "Signing Secret. Managed out-of-band: the central AWS Secrets Manager entry is the source of truth.", Required: false},
+		},
+	}
+
+	out, _, err := Render(inp)
+	require.NoError(t, err)
+
+	blueprint := extractEnvelopeKey(t, out, "spacelift_blueprint_yaml")
+
+	var parsed map[string]any
+	require.NoError(t, yaml.Unmarshal([]byte(blueprint), &parsed),
+		"rendered blueprint must be valid YAML even when input descriptions contain ': '")
 }
 
 func TestRenderPredefinedRoleValues(t *testing.T) {

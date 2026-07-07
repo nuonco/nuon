@@ -252,7 +252,7 @@ export const ErrorHandling = () => (
         placeholder="Choose category"
         labelProps={{ labelText: 'Category' }}
         error
-        errorMessage="Invalid selection, please choose again"
+        errorMessage="Invalid selection. Choose again."
       />
     </div>
 

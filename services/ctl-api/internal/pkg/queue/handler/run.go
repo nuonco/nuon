@@ -1,21 +1,32 @@
 package handler
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/DataDog/datadog-go/v5/statsd"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/workflow"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/metrics"
 	tmetrics "github.com/nuonco/nuon/pkg/temporal/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
-	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	dbgenerics "github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/workflowmanager"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
+)
+
+const (
+	handlerCANHistoryMax = 10000
+	// overhead keeps terminateThreshold above historyMax so CAN always fires before the hard kill (matches queue.canDefaultTerminateOverhead).
+	handlerCANTerminateOverhead = 5000
+
+	handlerTerminateThreshold = handlerCANHistoryMax + handlerCANTerminateOverhead
 )
 
 func (h *handler) run(ctx workflow.Context) (bool, error) {
@@ -61,7 +72,7 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	// Handler signals have explicit callbacks for completion, so the alive
 	// checker only needs to detect deletion/expiry. A longer interval reduces
 	// local activity overhead for long-running signals.
-	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(5*time.Minute))
+	mgrOpts = append(mgrOpts, workflowmanager.WithCheckInterval(1*time.Hour))
 
 	// don't continue-as-new mid-phase: it orphans the in-flight update and the
 	// successor run fails the signal while the work is still alive.
@@ -69,12 +80,37 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 		return h.validating || h.executing
 	}))
 
-	// Create a temporal metrics writer for workflow size reporting.
-	if h.mw != nil && h.v != nil {
-		if tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw)); err == nil {
-			mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
-		}
+	mgrOpts = append(mgrOpts, workflowmanager.WithHistoryMax(handlerCANHistoryMax))
+	mgrOpts = append(mgrOpts, workflowmanager.WithTerminateThreshold(handlerTerminateThreshold))
+	mgrOpts = append(mgrOpts, workflowmanager.WithOnTerminated(func(gCtx workflow.Context, historyLen int) {
+		desc := fmt.Sprintf("handler terminated: workflow history (%d) exceeded safety threshold (%d)", historyLen, handlerTerminateThreshold)
+		l.Error(desc,
+			zap.String("queue_signal_id", h.queueSignalID),
+			zap.Int("history_length", historyLen))
+		_ = statusactivities.LocalAwaitUpdateQueueSignalStatusV2(gCtx, statusactivities.UpdateQueueSignalStatusV2Request{
+			QueueSignalID:     h.queueSignalID,
+			Status:            app.StatusError,
+			StatusDescription: desc,
+		})
+
+		tags := metrics.ToTags(map[string]string{
+			"workflow_type": "Handler",
+			"signal_type":   string(h.sig.Type()),
+		})
+		h.mw.Incr("workflow.terminated", tags)
+		h.mw.Event(&statsd.Event{
+			Title:     "Handler workflow terminated due to excessive history",
+			Text:      fmt.Sprintf("Handler %s (signal: %s) terminated at %d events (threshold: %d)", h.queueSignalID, h.sig.Type(), historyLen, handlerTerminateThreshold),
+			AlertType: statsd.Error,
+			Tags:      tags,
+		})
+	}))
+
+	tmw, err := tmetrics.New(h.v, tmetrics.WithMetricsWriter(h.mw))
+	if err != nil {
+		return false, errors.Wrap(err, "unable to create temporal metrics writer")
 	}
+	mgrOpts = append(mgrOpts, workflowmanager.WithMetricsWriter(tmw))
 
 	mgrOpts = append(mgrOpts, workflowmanager.WithAliveChecker(func(gCtx workflow.Context) (bool, error) {
 		qs, err := activities.LocalAwaitGetQueueSignalByQueueSignalID(gCtx, h.queueSignalID)
@@ -102,18 +138,35 @@ func (h *handler) run(ctx workflow.Context) (bool, error) {
 	mgr := workflowmanager.New(mgrOpts...)
 	mgr.Start(ctx)
 
+	// Re-warm a resident host that already completed successfully. When such a
+	// host idles out, its Handler closes with the QueueSignal marked
+	// StatusSuccess. A later update-with-start (append-step / retry-step) starts
+	// this fresh Handler run but the queue dispatcher never re-drives execute on
+	// a terminal signal, so the conductor loop would never restart. Self-drive
+	// validate→execute once so the parked-loop semantics resume and the
+	// appended/retried work runs. qs is the durable gate: only the terminal-
+	// success resident case reaches here (cold/in-progress dispatch and warm
+	// hosts are never StatusSuccess at boot), giving execute-exactly-once.
+	if r, ok := h.sig.(signal.AutoExecuteOnTerminalStart); ok &&
+		r.AutoExecuteOnTerminalStart() &&
+		qs.Status.Status == app.StatusSuccess &&
+		!h.finished {
+		h.startAutoRewarm(ctx)
+	}
+
 	// execute the handler and handle a restart or stop
 	if err := workflow.Await(ctx, func() bool {
-		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, h.finished)
+		return generics.AnyTrue(mgr.Stopped, mgr.Restarted, mgr.Terminated, h.finished)
 	}); err != nil {
 		return false, err
 	}
 
-	// drain in-flight phase updates first: ending the run mid-handler drops its deferred completion callback and wedges the dispatcher. bounded so a stuck handler can't leak the workflow
-	if _, err := workflow.AwaitWithTimeout(ctx, callback.QuickTimeout, func() bool {
-		return workflow.AllHandlersFinished(ctx)
-	}); err != nil {
-		return false, err
+	// Terminated = emergency exit. Write error status, send callbacks, exit
+	// immediately with no drain wait.
+	if mgr.Terminated {
+		h.setFinished(app.StatusError, "handler terminated due to excessive workflow history")
+		h.sendCompletionCallbacks(ctx)
+		return true, nil
 	}
 
 	if mgr.Restarted {

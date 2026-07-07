@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
 	apiPkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/heartbeater"
 )
@@ -38,6 +39,7 @@ type Params struct {
 	FeaturesClient       *features.Features
 	TemporalClient       temporalclient.Client
 	RunnerJobWake        *RunnerJobWakeRegistry
+	BlobSvc              blobstore.Service
 }
 
 type service struct {
@@ -55,6 +57,7 @@ type service struct {
 	featuresClient       *features.Features
 	temporalClient       temporalclient.Client
 	runnerJobWake        *RunnerJobWakeRegistry
+	blobSvc              blobstore.Service
 	// logStreamCache hits in front of getLogStream on the OTLP ingest
 	// hot path. The fields the writer reads (OwnerType, ParentLogStreamID)
 	// are effectively immutable for the life of the stream, so a 5min TTL
@@ -373,6 +376,7 @@ func New(params Params) *service {
 		featuresClient:       params.FeaturesClient,
 		temporalClient:       params.TemporalClient,
 		runnerJobWake:        params.RunnerJobWake,
+		blobSvc:              params.BlobSvc,
 		logStreamCache:       expirable.NewLRU[string, *app.LogStream](logStreamCacheSize, nil, logStreamCacheTTL),
 	}
 }

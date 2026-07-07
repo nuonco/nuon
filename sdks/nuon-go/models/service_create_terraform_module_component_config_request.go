@@ -35,6 +35,9 @@ type ServiceCreateTerraformModuleComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -47,6 +50,9 @@ type ServiceCreateTerraformModuleComponentConfigRequest struct {
 	// env vars
 	// Required: true
 	EnvVars map[string]string `json:"env_vars"`
+
+	// kubernetes context
+	KubernetesContext string `json:"kubernetes_context,omitempty"`
 
 	// max auto retries
 	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
@@ -62,6 +68,9 @@ type ServiceCreateTerraformModuleComponentConfigRequest struct {
 
 	// skip noops
 	SkipNoops bool `json:"skip_noops,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// variables
 	// Required: true

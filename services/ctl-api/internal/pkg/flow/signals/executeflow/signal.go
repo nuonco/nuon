@@ -43,12 +43,31 @@ type Signal struct {
 	// per-event DB lookup.
 	OwnerName string `json:"owner_name,omitempty"`
 
+	// Resident keeps the workflow alive after it runs 0->end: instead of
+	// completing, the execute loop parks to accept run-a-step-in-between
+	// updates (append/retry a step). Gated so ordinary workflows keep exact
+	// run-to-completion semantics. Bounded by residentIdleTimeout — on idle
+	// the loop returns cleanly and the workflow re-warms on the next dispatch.
+	Resident bool `json:"resident,omitempty"`
+
 	// Resume state — set by update handlers (approve/retry/skip) to wake the
 	// main execute loop when it is waiting after an approval pause or error.
 	resumeRequested bool
 	resumeRunType   app.WorkflowRunType
 	resumeStepID    string
 	resumeStartIdx  int
+
+	// appendRequested is set by the append-step update handler to wake a
+	// parked resident workflow and run a freshly-added step.
+	appendRequested bool
+
+	// updatesInFlight counts append-step and retry-step update handlers that
+	// are currently executing. Those handlers persist their step rows before
+	// they set appendRequested/resumeRequested, so a resident host that idles
+	// out on its timer alone could close while a step is still being written
+	// and orphan it until the next dispatch re-warms the host. parkResident
+	// will not idle out while this counter is non-zero.
+	updatesInFlight int
 
 	// Cancel state — set by cancel update handlers.
 	cancelRequested bool
@@ -63,6 +82,12 @@ type Signal struct {
 
 	// awaitingResume: true while the main loop is parked awaiting resume/cancel.
 	awaitingResume bool
+
+	// executeStarted: true once executeFlow() has begun running. A retry-step
+	// update that lands on a freshly re-warmed resident host (before the loop
+	// reaches its parked state) must still clone+queue the retry, so the retry
+	// handler treats "not started yet" like the parked case.
+	executeStarted bool
 
 	// Pause state — set by "pause-workflow" update handler. When true, the
 	// flow will pause after the current group completes.
@@ -80,6 +105,7 @@ var (
 	_ qsignal.SignalWithUpdateHandlers   = (*Signal)(nil)
 	_ qsignal.SignalWithLifecycleContext = (*Signal)(nil)
 	_ qsignal.SignalWithParams           = (*Signal)(nil)
+	_ qsignal.AutoExecuteOnTerminalStart = (*Signal)(nil)
 )
 
 func (s *Signal) WithParams(p *qsignal.Params) {
@@ -117,8 +143,25 @@ func (s *Signal) Cancel(ctx workflow.Context) error {
 	return nil
 }
 
-func (s *Signal) Type() qsignal.SignalType  { return SignalType }
-func (s *Signal) SleepAfter() time.Duration { return time.Second }
+func (s *Signal) Type() qsignal.SignalType { return SignalType }
+
+// SleepAfter caches a finished non-resident Handler briefly so a follow-up
+// signal can reuse it via update-with-start. A resident host returns 0: once its
+// Execute() returns the conductor loop is gone, so keeping the Handler alive
+// would let an append-step/retry-step land on a finished run that can never
+// consume it — the re-warm path (AutoExecuteOnTerminalStart) handles reuse
+// instead.
+func (s *Signal) SleepAfter() time.Duration {
+	if s.Resident {
+		return 0
+	}
+	return time.Second
+}
+
+// AutoExecuteOnTerminalStart re-enters Execute when a resident host is
+// (re)started by update-with-start after it idled out and completed. See the
+// queue handler's re-warm path.
+func (s *Signal) AutoExecuteOnTerminalStart() bool { return s.Resident }
 
 // LifecycleContext exposes the workflow identity + owner so lifecycle hooks
 // can emit workflow.lifecycle.* webhook events without leaking inner-signal
@@ -282,6 +325,10 @@ func (s *Signal) RegisterUpdateHandlers(ctx workflow.Context) error {
 		s.pauseWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
 		return err
 	}
-	return workflow.SetUpdateHandlerWithOptions(ctx, "unpause-workflow",
-		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{})
+	if err := workflow.SetUpdateHandlerWithOptions(ctx, "unpause-workflow",
+		s.unpauseWorkflowHandler, workflow.UpdateHandlerOptions{}); err != nil {
+		return err
+	}
+	return workflow.SetUpdateHandlerWithOptions(ctx, "append-step",
+		s.appendStepHandler, workflow.UpdateHandlerOptions{})
 }

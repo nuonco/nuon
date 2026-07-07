@@ -44,6 +44,8 @@ func (a *actInterceptor) ExecuteActivity(
 		"workflow_type": info.WorkflowType.Name,
 	}
 
+	a.mw.Gauge("temporal_activity.retry_count", float64(info.Attempt), metrics.ToTags(tags))
+
 	// Inject a MetricContext so the GORM metrics plugin can emit per-query metrics
 	// from worker activities (same key used by HTTP middleware).
 	metricCtx := &cctx.MetricContext{

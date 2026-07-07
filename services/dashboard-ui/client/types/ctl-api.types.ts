@@ -13,8 +13,13 @@ export type TVCSBranch = { name: string }
 export type TApp = components['schemas']['app.App']
 export type TAppConfig = components['schemas']['app.AppConfig']
 export type TAppInputConfig = components['schemas']['app.AppInputConfig']
+export type TAppInput = components['schemas']['app.AppInput']
 export type TAppRunnerConfig = components['schemas']['app.AppRunnerConfig']
 export type TAppSandboxConfig = components['schemas']['app.AppSandboxConfig']
+export type TAppKubernetesContextsConfig =
+  components['schemas']['app.AppKubernetesContextsConfig']
+export type TAppKubernetesContextConfig =
+  components['schemas']['app.AppKubernetesContextConfig']
 export type TAppSandboxBuild = {
   id: string
   created_by_id?: string
@@ -491,6 +496,10 @@ export type TInstallStackVersionRun =
 export type TInstallStackOutputs =
   components['schemas']['app.InstallStackOutputs']
 export type TAppStackConfig = components['schemas']['app.AppStackConfig']
+
+// install app config versions
+export type TInstallAppConfigVersion =
+  components['schemas']['app.InstallAppConfigVersion']
 
 // api version
 export type TAPIVersion = {

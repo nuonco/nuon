@@ -54,7 +54,7 @@ func (c *CreateAppBranchConfigRequest) Validate(v *validator.Validate) error {
 
 		// InstallIDs and LabelSelector are mutually exclusive
 		hasIDs := len(group.InstallIDs) > 0
-		hasSelector := group.LabelSelector != nil
+		hasSelector := group.LabelSelector != nil && len(group.LabelSelector.MatchLabels) > 0
 		if hasIDs && hasSelector {
 			return stderr.ErrUser{
 				Err:         fmt.Errorf("install group %q has both install_ids and label_selector", group.Name),
@@ -178,11 +178,15 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 	// Convert request install groups to model
 	installGroups := make([]app.AppBranchInstallGroup, len(req.InstallGroups))
 	for i, g := range req.InstallGroups {
+		selector := g.LabelSelector
+		if selector != nil && len(selector.MatchLabels) == 0 {
+			selector = nil
+		}
 		installGroups[i] = app.AppBranchInstallGroup{
 			Name:           g.Name,
 			Order:          g.Order,
 			InstallIDs:     g.InstallIDs,
-			LabelSelector:  g.LabelSelector,
+			LabelSelector:  selector,
 			UseForPreviews: g.UseForPreviews,
 		}
 	}

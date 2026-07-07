@@ -17,7 +17,7 @@ export const Default = () => (
       steps={steps}
       currentStepIndex={0}
       completedSteps={new Set()}
-      onboardingV2
+      showHeader
       skipHref={null}
       onGoToStep={() => {}}
     />
@@ -30,7 +30,7 @@ export const MidProgress = () => (
       steps={steps}
       currentStepIndex={2}
       completedSteps={new Set(['welcome', 'app-profile'])}
-      onboardingV2
+      showHeader
       skipHref="/org123"
       onGoToStep={() => {}}
     />

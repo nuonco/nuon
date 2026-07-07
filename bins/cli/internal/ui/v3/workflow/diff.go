@@ -94,6 +94,7 @@ const (
 	componentDiffTypeTerraform          componentDiffType = "terraform"
 	componentDiffTypeHelm               componentDiffType = "helm"
 	componentDiffTypeKubernetesManifest componentDiffType = "kubernetes_manifest"
+	componentDiffTypeAppBranchPlan      componentDiffType = "app_branch_plan"
 
 	helmDiffContextLines      = 1
 	helmDiffCollapseMinLines  = 12
@@ -288,6 +289,8 @@ func (m *model) stepDetailViewStepDiff() string {
 		sections = append(sections, m.stepDetailViewHelmDiff())
 	case componentDiffTypeKubernetesManifest:
 		sections = append(sections, m.stepDetailViewKubernetesManifestDiff())
+	case componentDiffTypeAppBranchPlan:
+		sections = append(sections, m.stepDetailViewAppBranchPlanDiff())
 	default:
 		if fullDiff := extractDisplayDiffText(m.approvalContents.raw); fullDiff != "" {
 			sections = append(sections, m.renderDiffText(fullDiff))
@@ -320,6 +323,8 @@ func (m model) selectedStepDiffType() componentDiffType {
 			return componentDiffTypeHelm
 		case models.AppWorkflowStepApprovalTypeKubernetesManifestApproval:
 			return componentDiffTypeKubernetesManifest
+		case models.AppWorkflowStepApprovalTypeAppBranchPlan:
+			return componentDiffTypeAppBranchPlan
 		}
 	}
 
@@ -843,6 +848,122 @@ func normalizeHelmAction(action string) string {
 	default:
 		return strings.ToLower(strings.TrimSpace(action))
 	}
+}
+
+func (m *model) stepDetailViewAppBranchPlanDiff() string {
+	if m.approvalContents.loading {
+		return styles.TextSubtle.Padding(1).Render(m.spinner.View() + " loading install group plan...")
+	}
+
+	contents := m.approvalContents.contents
+	if contents == nil {
+		return styles.TextSubtle.Padding(1).Render("No plan contents available")
+	}
+
+	groupName, _ := contents["install_group"].(string)
+	installs, _ := contents["installs"].([]any)
+
+	if len(installs) == 0 {
+		return styles.TextSubtle.Padding(1).Render("No installs in plan")
+	}
+
+	lines := []string{}
+	if groupName != "" {
+		lines = append(lines, lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("Install group: %s (%d installs)", groupName, len(installs))))
+		lines = append(lines, "")
+	}
+
+	for _, raw := range installs {
+		entry, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		installID, _ := entry["install_id"].(string)
+		installName, _ := entry["install_name"].(string)
+		diff, _ := entry["diff"].(map[string]any)
+
+		displayName := installName
+		if displayName == "" {
+			displayName = installID
+		}
+		header := lipgloss.NewStyle().Bold(true).Render(displayName)
+
+		if diff == nil {
+			lines = append(lines, header+" — no diff")
+			continue
+		}
+
+		added := diffEntryList(diff, "added")
+		changed := diffEntryList(diff, "changed")
+		removed := diffEntryList(diff, "removed")
+
+		summary := []string{}
+		if len(added) > 0 {
+			summary = append(summary, styles.TextSuccess.Render(fmt.Sprintf("+%d added", len(added))))
+		}
+		if len(changed) > 0 {
+			summary = append(summary, styles.TextWarning.Render(fmt.Sprintf("~%d changed", len(changed))))
+		}
+		if len(removed) > 0 {
+			summary = append(summary, styles.TextError.Render(fmt.Sprintf("-%d removed", len(removed))))
+		}
+		if sandboxChanged, _ := diff["sandbox_changed"].(bool); sandboxChanged {
+			summary = append(summary, styles.TextWarning.Render("sandbox"))
+		}
+		if stackChanged, _ := diff["stack_changed"].(bool); stackChanged {
+			summary = append(summary, styles.TextWarning.Render("stack"))
+		}
+
+		lines = append(lines, header+" — "+strings.Join(summary, ", "))
+
+		for _, name := range added {
+			lines = append(lines, styles.TextSuccess.Render("  + "+name))
+		}
+		for _, name := range changed {
+			lines = append(lines, styles.TextWarning.Render("  ~ "+name))
+		}
+		for _, name := range removed {
+			lines = append(lines, styles.TextError.Render("  - "+name))
+		}
+		lines = append(lines, "")
+	}
+
+	width := m.stepDetail.Width() - 4
+	if width < 20 {
+		width = 20
+	}
+
+	return lipgloss.NewStyle().
+		Border(lipgloss.NormalBorder()).
+		Padding(1).
+		Width(width).
+		Render(strings.Join(lines, "\n"))
+}
+
+func diffEntryList(diff map[string]any, key string) []string {
+	entries, ok := diff[key].([]any)
+	if !ok {
+		return nil
+	}
+	names := make([]string, 0, len(entries))
+	for _, raw := range entries {
+		entry, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		name, _ := entry["component_name"].(string)
+		if name == "" {
+			name, _ = entry["component_id"].(string)
+		}
+		if name != "" {
+			if compType, _ := entry["component_type"].(string); compType != "" {
+				name = name + " (" + compType + ")"
+			}
+			names = append(names, name)
+		}
+	}
+	return names
 }
 
 func isInteractivePlanDiffType(diffType componentDiffType) bool {

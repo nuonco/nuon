@@ -3,8 +3,8 @@ package workflow
 import (
 	"context"
 
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
 	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"

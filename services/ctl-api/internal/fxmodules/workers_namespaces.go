@@ -7,6 +7,7 @@ import (
 	actionsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker"
 	actionsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/actions/worker/activities"
 	appbranchesactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
+	syncappconfiginstallsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/syncappconfiginstalls"
 	appsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker"
 	appsactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/activities"
 	componentsworker "github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker"
@@ -49,6 +50,7 @@ var AppsWorkerModule = fx.Module("worker-apps",
 	fx.Provide(appsactivities.New),
 	fx.Provide(appsworker.NewWorkflows),
 	fx.Provide(appbranchesactivities.New),
+	fx.Provide(syncappconfiginstallsactivities.NewActivities),
 	fx.Provide(worker.AsWorker(appsworker.New)),
 )
 

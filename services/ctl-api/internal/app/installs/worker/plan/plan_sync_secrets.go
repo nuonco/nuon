@@ -121,9 +121,11 @@ func (p *Planner) createSyncSecretsPlan(ctx workflow.Context, req *CreateSyncSec
 		return nil, errors.New("secret sync not supported on current cloud provider")
 	}
 
-	clusterInfo, err := p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+	// Secret sync isn't bound to a specific component, so we always fall
+	// through to the sandbox-default context.
+	clusterInfo, err := p.resolveKubernetesContext(ctx, nil, appCfg, stack, state, cloudAuth)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to get cluster information")
+		return nil, errors.Wrap(err, "unable to resolve kubernetes context")
 	}
 
 	plan := &plantypes.SyncSecretsPlan{

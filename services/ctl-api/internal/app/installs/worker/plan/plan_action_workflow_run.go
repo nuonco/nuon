@@ -32,12 +32,12 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		return nil, nil, errors.Wrap(err, "unable to get run")
 	}
 
-	install, err := activities.AwaitGetByInstallID(ctx, run.InstallID)
+	slimInstall, err := activities.AwaitGetSlimInstallByInstallID(ctx, run.InstallID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get install")
 	}
 
-	appCfg, err := activities.AwaitGetAppConfigByID(ctx, install.AppConfigID)
+	appCfg, err := activities.AwaitGetAppConfigByID(ctx, slimInstall.AppConfigID)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "unable to get app config")
 	}
@@ -86,9 +86,12 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 	}
 	var clusterInfo *kube.ClusterInfo
 	if run.EnableKubeConfig.Valid && run.EnableKubeConfig.Bool {
-		clusterInfo, err = p.getKubeClusterInfo(ctx, stack, state, cloudAuth)
+		// Target the action's declared kubernetes_context, falling through to
+		// the sandbox default when it's empty (adhoc runs, or actions that
+		// don't declare a context).
+		clusterInfo, err = p.resolveKubernetesContextByName(ctx, run.KubernetesContextName, appCfg, stack, state, cloudAuth)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "unable to get cluster info")
+			return nil, nil, errors.Wrap(err, "unable to resolve kubernetes context")
 		}
 	}
 
@@ -129,7 +132,7 @@ func (p *Planner) createActionWorkflowRunPlan(ctx workflow.Context, runID string
 		plan.Steps = append(plan.Steps, stepPlan)
 	}
 
-	if install.SandboxMode.Bool {
+	if slimInstall.SandboxMode.Bool {
 		targetRefs := helpers.GetActionReferences(appCfg, run.ActionWorkflowConfig.ActionWorkflow.Name)
 
 		plan.SandboxMode = &plantypes.SandboxMode{

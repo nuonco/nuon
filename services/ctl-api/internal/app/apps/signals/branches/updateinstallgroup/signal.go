@@ -20,10 +20,13 @@ type Signal struct {
 
 	FlowID string `json:"flow_id,omitempty"`
 	StepID string `json:"step_id,omitempty"`
+
+	childWorkflowIDs []string
 }
 
 var _ signal.Signal = (*Signal)(nil)
 var _ signal.SignalWithStepContext = (*Signal)(nil)
+var _ signal.SignalWithCancel = (*Signal)(nil)
 
 func (s *Signal) SetStepContext(stepID, flowID string) {
 	s.StepID = stepID

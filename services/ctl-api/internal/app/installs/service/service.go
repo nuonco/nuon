@@ -11,7 +11,6 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/helpers"
-	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/replica"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/api"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	flowclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/client"
@@ -83,7 +82,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 	// individual installs
 	installs := ge.Group("/v1/installs/:install_id")
 	{
-		installs.GET("", replica.OptIn(), s.GetInstall)
+		installs.GET("", s.GetInstall)
 		installs.PATCH("", s.UpdateInstall)
 		installs.DELETE("", s.DeleteInstall)
 		installs.POST("/labels", s.AddInstallLabels)
@@ -141,6 +140,7 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			{
 				component.GET("", s.GetInstallComponent)
 				component.POST("/teardown", s.TeardownInstallComponent)
+				component.POST("/toggle", s.ToggleInstallComponent)
 				component.POST("/forget", s.ForgetInstallComponent)
 				component.GET("/deploys", s.GetInstallComponentDeploys)
 				component.GET("/outputs", s.GetInstallComponentOutputs)
@@ -207,7 +207,9 @@ func (s *service) RegisterPublicRoutes(ge *gin.Engine) error {
 			configs.PATCH("/:config_id", s.UpdateInstallConfig)
 		}
 
-		// install app config updates
+		// install app config versions
+		installs.GET("/app-config-versions", s.GetInstallAppConfigVersions)
+		installs.GET("/app-config-versions/:version_id/diff", s.GetInstallAppConfigVersionDiff)
 		installs.POST("/app-config-updates", s.CreateInstallAppConfigUpdate)
 
 		// install audit logs

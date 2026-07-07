@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 
 	"text/template"

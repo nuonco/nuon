@@ -22,6 +22,7 @@ import (
 // @Param					groups						query	string	false	"job groups"
 // @Param					status						query	string	false	"job status"
 // @Param					statuses					query	string	false	"job statuses"
+// @Param					executor				query	string	false	"job executor"
 // @Param					runner_id					path	string	true	"runner ID"
 // @Param					offset						query	int		false	"offset of jobs to return"	Default(0)
 // @Param					limit						query	int		false	"limit of jobs to return"	Default(10)
@@ -98,8 +99,9 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 		})
 		return
 	}
+	executor := app.RunnerJobExecutor(ctx.Query("executor"))
 
-	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, runnerID, statuses, groups, limit)
+	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, org.ID, runnerID, statuses, groups, executor, limit)
 	if err != nil {
 		ctx.Error(err)
 		return
@@ -108,11 +110,18 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, runnerJobs)
 }
 
-func (s *service) getRunnerJobsCtlAPI(ctx *gin.Context, runnerID string, statuses []app.RunnerJobStatus, groups []app.RunnerJobGroup, limit int) ([]*app.RunnerJob, error) {
+func (s *service) getRunnerJobsCtlAPI(ctx *gin.Context, orgID string, runnerID string, statuses []app.RunnerJobStatus, groups []app.RunnerJobGroup, executor app.RunnerJobExecutor, limit int) ([]*app.RunnerJob, error) {
 	runnerJobs := []*app.RunnerJob{}
 
 	where := app.RunnerJob{
+		OrgID:    orgID,
 		RunnerID: runnerID,
+	}
+	if executor != app.RunnerJobExecutorUnknown {
+		where.Executor = executor
+		if executor == app.RunnerJobExecutorControlPlane {
+			where.RunnerID = ""
+		}
 	}
 
 	tx := s.db.WithContext(ctx).

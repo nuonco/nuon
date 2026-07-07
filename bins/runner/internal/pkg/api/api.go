@@ -10,18 +10,18 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/version"
 	"github.com/nuonco/nuon/pkg/retry"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/version"
 )
 
 type Params struct {
 	fx.In
 
 	L     *zap.Logger `name:"dev"`
-	Cfg   *internal.Config
+	Cfg   *runnerconfig.Config
 	Token *auth.Token
 }
 
@@ -57,5 +57,6 @@ func New(params Params) (nuonrunner.Client, error) {
 		return nil, fmt.Errorf("unable to initialize runner: %w", err)
 	}
 
-	return api, nil
+	// Decorate so failed results carry the execution's captured error output.
+	return &resultCaptureClient{Client: api}, nil
 }

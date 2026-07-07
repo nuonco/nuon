@@ -159,7 +159,7 @@ export function parseInstallsToTableData(
           {Object.keys(lbls)
             .sort()
             .map((k) => (
-              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} />
+              <LabelBadge key={k} variant="code" size="sm" labelKey={k} labelValue={lbls[k]} customColor={install?.app?.label_colors?.[k]} />
             ))}
         </span>
       )

@@ -41,6 +41,34 @@ func MapDiff(key string, old, new map[string]string) *Diff {
 	)
 }
 
+// WithContentDiff creates a DiffOption for file-like content. It derives the op
+// from presence (add when old is empty, remove when new is empty, change otherwise),
+// stores a short label in Diff for text renderers, and carries the raw before/after
+// contents so consumers can render a line-by-line diff.
+func WithContentDiff(old, new string) DiffOption {
+	return func(dt *Diff) {
+		op := OpChange
+		label := "modified"
+		switch {
+		case old == new:
+			op = OpNoop
+			label = "unchanged"
+		case old == "":
+			op = OpAdd
+			label = "added"
+		case new == "":
+			op = OpRemove
+			label = "removed"
+		}
+		dt.Diff = &DiffKey{
+			Op:     op,
+			Diff:   label,
+			Before: old,
+			After:  new,
+		}
+	}
+}
+
 // WithBoolDiff creates a DiffOption that compares two bool values.
 func WithBoolDiff(old, new bool) DiffOption {
 	return WithStringDiff(fmt.Sprintf("%t", old), fmt.Sprintf("%t", new))

@@ -6,7 +6,15 @@ import {
   getInstallStatusTitle,
   getInputDisplayName,
   getComponentOverrideKind,
+  groupComponentOverrideInputs,
 } from './install-utils'
+
+// hex-encoded component names used by the reserved synthetic input naming scheme
+const HEX = {
+  certificate: '6365727469666963617465',
+  api_gateway: '6170695f67617465776179',
+  whoami: '77686f616d69',
+}
 
 describe('install-utils', () => {
   describe('getComponentOverrideKind', () => {
@@ -24,6 +32,14 @@ describe('install-utils', () => {
           'nuon_component_override_v1_tf_vars_6365727469666963617465'
         )
       ).toBe('tf_vars')
+    })
+
+    test('returns null for non-structured override kinds like enabled', () => {
+      expect(
+        getComponentOverrideKind(
+          'nuon_component_override_v1_enabled_6170695f67617465776179'
+        )
+      ).toBeNull()
     })
 
     test('returns null for normal inputs', () => {
@@ -46,6 +62,20 @@ describe('install-utils', () => {
       ).toBe('components.certificate.tf_vars')
     })
 
+    test('decodes enabled override input names', () => {
+      expect(
+        getInputDisplayName(
+          'nuon_component_override_v1_enabled_6170695f67617465776179'
+        )
+      ).toBe('components.api_gateway.enabled')
+    })
+
+    test('decodes unrecognized kinds generically rather than showing the raw id', () => {
+      expect(
+        getInputDisplayName('nuon_component_override_v1_unknown_77686f616d69')
+      ).toBe('components.whoami.unknown')
+    })
+
     test('decodes component names containing dashes', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_666f6f2d626172')
@@ -61,9 +91,6 @@ describe('install-utils', () => {
       expect(
         getInputDisplayName('nuon_component_override_v1_helm_values_zz')
       ).toBe('nuon_component_override_v1_helm_values_zz')
-      expect(
-        getInputDisplayName('nuon_component_override_v1_unknown_77686f616d69')
-      ).toBe('nuon_component_override_v1_unknown_77686f616d69')
     })
 
     test('returns invalid-utf8 hex names unchanged', () => {
@@ -281,6 +308,74 @@ describe('install-utils', () => {
       expect(result1).toBe('Runner status is unknown')
       expect(result2).toBe('Sandbox status is unknown')
       expect(result3).toBe('Deployment status is unknown')
+    })
+  })
+
+  describe('groupComponentOverrideInputs', () => {
+    test('merges enabled + tf_vars for the same component into one card', () => {
+      const cards = groupComponentOverrideInputs([
+        { name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`, index: 3 },
+        { name: `nuon_component_override_v1_enabled_${HEX.certificate}`, index: 4 },
+      ])
+
+      expect(cards).toHaveLength(1)
+      expect(cards[0].component).toBe('certificate')
+      expect(cards[0].enabledInput).not.toBeNull()
+      expect(cards[0].configInput).not.toBeNull()
+      expect(cards[0].configKind).toBe('tf_vars')
+      expect(cards[0].componentType).toBe('terraform_module')
+    })
+
+    test('non-toggleable component (config only) has no enabled input', () => {
+      const cards = groupComponentOverrideInputs([
+        { name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`, index: 1 },
+      ])
+
+      expect(cards).toHaveLength(1)
+      expect(cards[0].enabledInput).toBeNull()
+      expect(cards[0].configInput).not.toBeNull()
+      expect(cards[0].componentType).toBe('terraform_module')
+    })
+
+    test('toggle-only component (enabled only) has no config input or type', () => {
+      const cards = groupComponentOverrideInputs([
+        { name: `nuon_component_override_v1_enabled_${HEX.whoami}`, index: 1 },
+      ])
+
+      expect(cards).toHaveLength(1)
+      expect(cards[0].enabledInput).not.toBeNull()
+      expect(cards[0].configInput).toBeNull()
+      expect(cards[0].configKind).toBeNull()
+      expect(cards[0].componentType).toBeUndefined()
+    })
+
+    test('helm_values maps to helm_chart type', () => {
+      const cards = groupComponentOverrideInputs([
+        { name: `nuon_component_override_v1_helm_values_${HEX.whoami}`, index: 1 },
+      ])
+
+      expect(cards[0].configKind).toBe('helm_values')
+      expect(cards[0].componentType).toBe('helm_chart')
+    })
+
+    test('ignores non-override inputs', () => {
+      const cards = groupComponentOverrideInputs([
+        { name: 'domain', index: 0 },
+        { name: `nuon_component_override_v1_enabled_${HEX.certificate}`, index: 1 },
+      ])
+
+      expect(cards).toHaveLength(1)
+      expect(cards[0].component).toBe('certificate')
+    })
+
+    test('orders cards by each component earliest input index', () => {
+      const cards = groupComponentOverrideInputs([
+        { name: `nuon_component_override_v1_enabled_${HEX.api_gateway}`, index: 10 },
+        { name: `nuon_component_override_v1_tf_vars_${HEX.certificate}`, index: 2 },
+        { name: `nuon_component_override_v1_tf_vars_${HEX.api_gateway}`, index: 9 },
+      ])
+
+      expect(cards.map((c) => c.component)).toEqual(['certificate', 'api_gateway'])
     })
   })
 })

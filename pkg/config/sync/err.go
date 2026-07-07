@@ -1,6 +1,10 @@
 package sync
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/nuonco/nuon/pkg/config"
+)
 
 type SyncInternalErr struct {
 	Description string
@@ -32,4 +36,27 @@ type SyncAPIErr struct {
 
 func (s SyncAPIErr) Error() string {
 	return fmt.Sprintf("unable to sync %s - %s", s.Resource, s.Err.Error())
+}
+
+func RejectDockerBuildComponentsForFeature(cfg *config.AppConfig) error {
+	if cfg == nil {
+		return nil
+	}
+
+	for _, comp := range cfg.Components {
+		if comp == nil || comp.Type != config.DockerBuildComponentType {
+			continue
+		}
+
+		return SyncErr{
+			Resource: "app config",
+			Description: fmt.Sprintf(
+				"component %q uses docker_build, but docker_build components have been deprecated and are no longer supported. "+
+					"Use a container_image component to reference a pre-built image instead.",
+				comp.Name,
+			),
+		}
+	}
+
+	return nil
 }

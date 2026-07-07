@@ -336,8 +336,9 @@ export const ViewCurrentInputsModal = ({
                 className="border rounded-md"
                 headerClassName="!px-4"
               >
-                <div className="p-4 border-t bg-code">
+                <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
                   <PropertyGrid
+                    align="start"
                     columns={[
                       { key: 'name', header: 'Name' },
                       { key: 'value', header: 'Current value' },

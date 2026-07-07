@@ -57,18 +57,18 @@ const Providers = ({ children, wizard = mockWizard, config = mockConfig }: {
 
 export const Default = () => (
   <Providers>
-    <OnboardingWizardLayout onboardingV2={false} skipHref="/org-123/apps" />
+    <OnboardingWizardLayout skipHref="/org-123/apps" />
   </Providers>
 )
 
-export const V2 = () => (
-  <Providers config={{ ...mockConfig, onboardingV2: true }}>
-    <OnboardingWizardLayout onboardingV2={true} skipHref={null} />
+export const NoSkip = () => (
+  <Providers>
+    <OnboardingWizardLayout skipHref={null} />
   </Providers>
 )
 
 export const MidProgress = () => (
   <Providers wizard={{ ...mockWizard, currentStepIndex: 1, completedSteps: new Set(['welcome']) }}>
-    <OnboardingWizardLayout onboardingV2={false} skipHref="/org-123/apps" />
+    <OnboardingWizardLayout skipHref="/org-123/apps" />
   </Providers>
 )

@@ -31,8 +31,8 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	var diff *app.InstallConfigDiff
 	if installConfigUpdateID != "" {
-		diff, err = activities.AwaitGetInstallConfigUpdateDiff(ctx, &activities.GetInstallConfigUpdateDiffInput{
-			InstallConfigUpdateID: installConfigUpdateID,
+		diff, err = activities.AwaitGetInstallAppConfigVersionDiff(ctx, &activities.GetInstallAppConfigVersionDiffInput{
+			InstallAppConfigVersionID: installConfigUpdateID,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get pre-computed config diff")
@@ -89,7 +89,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 			return nil, errors.Wrap(err, "unable to get action workflows")
 		}
 
-		dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
+		dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 		sandboxSteps, err := getSandboxReprovisionSteps(ctx, dg, install)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to generate sandbox reprovision steps")
@@ -118,7 +118,7 @@ func AppBranchConfigUpdate(ctx workflow.Context, flw *app.Workflow) (*app.Genera
 
 	deployComponentIDs := filterComponentsByDiff(componentIDs, newAppCfg, diff)
 
-	dg := newGenCtx(sg, flw, installID, newAppCfg, awData)
+	dg := newGenCtx(sg, flw, installID, newAppCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 	deploySteps, err := getComponentDeploySteps(ctx, dg, deployComponentIDs)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to generate component deploy steps")

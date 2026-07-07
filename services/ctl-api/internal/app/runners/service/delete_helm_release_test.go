@@ -19,6 +19,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
 	"github.com/nuonco/nuon/services/ctl-api/tests/testseed"
@@ -139,7 +140,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release",
 					Namespace:   namespace,
 					Version:     1,
@@ -186,7 +187,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release",
 					Namespace:   "production",
 					Version:     1,
@@ -225,7 +226,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release",
 					Namespace:   namespace,
 					Version:     1,
@@ -265,7 +266,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release",
 					Namespace:   namespace,
 					Version:     1,
@@ -310,7 +311,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "release-1",
 					Namespace:   namespace,
 					Version:     1,
@@ -327,7 +328,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "release-2",
 					Namespace:   namespace,
 					Version:     1,
@@ -404,7 +405,7 @@ func (s *DeleteHelmReleaseTestSuite) TestDeleteHelmReleaseSoftDelete() {
 		CreatedByID: s.testAcc.ID,
 		OrgID:       s.testOrg.ID,
 		Type:        "helm.sh/release.v1",
-		Body:        "",
+		Body:        &blobstore.Blob{},
 		Name:        "test-release",
 		Namespace:   namespace,
 		Version:     1,

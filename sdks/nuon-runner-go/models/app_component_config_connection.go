@@ -50,6 +50,9 @@ type AppComponentConfigConnection struct {
 	// created by id
 	CreatedByID string `json:"created_by_id,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// Duration string for deploy operations (e.g., "30m", "1h"). Max 1h.
 	DeployTimeout string `json:"deploy_timeout,omitempty"`
 
@@ -70,6 +73,12 @@ type AppComponentConfigConnection struct {
 
 	// job
 	Job *AppJobComponentConfig `json:"job,omitempty"`
+
+	// KubernetesContextName is the name of an AppKubernetesContextConfig on
+	// the same AppConfig. Empty means fall back to the implicit sandbox
+	// default. Stored as a name (not an FK) so it remains stable across
+	// AppConfig versions, mirroring how component dependencies are tracked.
+	KubernetesContextName string `json:"kubernetes_context_name,omitempty"`
 
 	// kubernetes manifest
 	KubernetesManifest *AppKubernetesManifestComponentConfig `json:"kubernetes_manifest,omitempty"`
@@ -94,6 +103,9 @@ type AppComponentConfigConnection struct {
 
 	// terraform module
 	TerraformModule *AppTerraformModuleComponentConfig `json:"terraform_module,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// type
 	Type AppComponentType `json:"type,omitempty"`

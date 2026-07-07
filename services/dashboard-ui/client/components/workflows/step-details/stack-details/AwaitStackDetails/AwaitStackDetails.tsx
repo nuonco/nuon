@@ -25,6 +25,7 @@ interface IAwaitStackDetails extends IStackDetails {
   runnerType?: string
   hideStatusCard?: boolean
   outputsAbove?: boolean
+  spaceliftEnabled?: boolean
 }
 
 export const AwaitStackDetails = ({
@@ -32,6 +33,7 @@ export const AwaitStackDetails = ({
   runnerType,
   hideStatusCard,
   outputsAbove,
+  spaceliftEnabled,
   ...props
 }: IAwaitStackDetails) => {
   const outputValues = useMemo(
@@ -88,7 +90,11 @@ export const AwaitStackDetails = ({
       {runnerType?.startsWith('aws') ? (
         <AwaitAWSDetails stack={stack} {...props} />
       ) : runnerType === 'gcp' ? (
-        <AwaitGCPDetails stack={stack} {...props} />
+        <AwaitGCPDetails
+          stack={stack}
+          spaceliftEnabled={spaceliftEnabled}
+          {...props}
+        />
       ) : (
         <AwaitAzureDetails stack={stack} {...props} />
       )}

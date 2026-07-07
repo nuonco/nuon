@@ -60,6 +60,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	}
 
 	deployDependents := flw.Metadata["deploy_dependents"]
+	deployDependencies := flw.Metadata["deploy_dependencies"]
 
 	installDeploy, err := activities.AwaitGetDeployByDeployID(ctx, generics.FromPtrStr(installDeployID))
 	if err != nil {
@@ -76,7 +77,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 		return nil, errors.Wrap(err, "unable to get action workflows")
 	}
 
-	dg := newGenCtx(sg, flw, installID, appCfg, awData)
+	dg := newGenCtx(sg, flw, installID, appCfg, awData, WithInstallInputs(install.CurrentInstallInputs))
 
 	// first, provision the deploy with before and after triggers
 	comp, err := activities.AwaitGetComponentByComponentID(ctx, installDeploy.ComponentID)
@@ -109,7 +110,7 @@ func ManualDeploySteps(ctx workflow.Context, flw *app.Workflow) (*app.GenerateSt
 	//
 	// dg.addedImageDepSyncs is shared with the dependents call below so a
 	// shared image dep is only synced once across both call sites.
-	if !flw.PlanOnly && !comp.Type.IsImage() {
+	if !flw.PlanOnly && !comp.Type.IsImage() && generics.FromPtrStr(deployDependencies) == strconv.FormatBool(true) {
 		depSyncSteps, err := getImageDepSyncSteps(ctx, dg, comp.ID, 0, map[string]int{comp.ID: 0})
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to prepend image-dep sync steps for primary")

@@ -31,15 +31,18 @@ type CreateHelmComponentConfigRequest struct {
 	DeployTimeout                string             `json:"deploy_timeout,omitempty"` // Duration string for deploy operations (e.g., "30m", "1h")
 	MaxAutoRetries               *int               `json:"max_auto_retries,omitempty"`
 	SkipNoops                    *bool              `json:"skip_noops,omitempty"`
+	Toggleable                   *bool              `json:"toggleable,omitempty"`
+	DefaultEnabled               *bool              `json:"default_enabled,omitempty"`
 	AutoApproveOnPoliciesPassing *bool              `json:"auto_approve_on_policies_passing,omitempty"`
 
 	AppConfigID string `json:"app_config_id"`
 
-	Dependencies   []string                      `json:"dependencies"`
-	References     []string                      `json:"references"`
-	Checksum       string                        `json:"checksum"`
-	DriftSchedule  *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
-	OperationRoles map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	Dependencies      []string                      `json:"dependencies"`
+	References        []string                      `json:"references"`
+	Checksum          string                        `json:"checksum"`
+	DriftSchedule     *string                       `json:"drift_schedule,omitempty" validate:"omitempty,cron_schedule"`
+	OperationRoles    map[app.OperationType]*string `json:"operation_roles,omitempty"`
+	KubernetesContext string                        `json:"kubernetes_context,omitempty"`
 }
 
 type HelmRepoConfigRequest struct {
@@ -229,8 +232,11 @@ func (s *service) createHelmComponentConfig(ctx context.Context, cmpID string, r
 		DeployTimeout:                req.DeployTimeout,
 		MaxAutoRetries:               req.MaxAutoRetries,
 		SkipNoops:                    req.SkipNoops,
+		Toggleable:                   req.Toggleable,
+		DefaultEnabled:               req.DefaultEnabled,
 		AutoApproveOnPoliciesPassing: req.AutoApproveOnPoliciesPassing,
 		OperationRoles:               operationRoles,
+		KubernetesContextName:        req.KubernetesContext,
 	}
 	if req.DriftSchedule != nil {
 		componentConfigConnection.DriftSchedule = *req.DriftSchedule

@@ -11,7 +11,7 @@ export const Default = () => (
   <ModalStory>
     <AdminConfirmationModal
       title="Confirm action"
-      message="Are you sure you want to proceed with this action?"
+      message="This will run the selected action immediately."
       onConfirm={noop}
       onCancel={noop}
     />

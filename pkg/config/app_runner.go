@@ -23,6 +23,12 @@ type AppRunnerConfig struct {
 	// InstanceType sets the cloud machine/instance type for the install runner host.
 	InstanceType string `mapstructure:"instance_type,omitempty" toml:"instance_type,omitempty"`
 
+	// RunnerAPIURL overrides the Nuon runner API endpoint for installs using this config.
+	RunnerAPIURL string `mapstructure:"runner_api_url,omitempty" toml:"runner_api_url,omitempty"`
+
+	// PublicAPIURL overrides the Nuon public API endpoint used for phone-home callbacks.
+	PublicAPIURL string `mapstructure:"public_api_url,omitempty" toml:"public_api_url,omitempty"`
+
 	// Deprecated
 	EnvVars []EnvironmentVariable `mapstructure:"env_var,omitempty" toml:"env_var"`
 }
@@ -49,6 +55,12 @@ func (a AppRunnerConfig) JSONSchemaExtend(schema *jsonschema.Schema) {
 		Long("Cloud machine/instance type used for the install runner host. Cloud-specific value mapped per runner_type (e.g. an EC2 instance type for aws). Defaults to the platform default when unset").
 		Example("t3a.medium").
 		Example("t3.large").
+		Field("runner_api_url").Short("custom runner API endpoint").
+		Long("Set this to proxy all runner API calls (heartbeats, job polling, logs) through your own domain instead of Nuon's.").
+		Example("https://runner-api.example.com").
+		Field("public_api_url").Short("custom public API endpoint").
+		Long("Set this to proxy phone-home calls through your own domain instead of Nuon's.").
+		Example("https://runner-api.example.com").
 		Field("env_var").Short("deprecated: use env_vars map instead").
 		Long("Deprecated: Array of name/value pairs for environment variables. Use the env_vars map instead")
 }

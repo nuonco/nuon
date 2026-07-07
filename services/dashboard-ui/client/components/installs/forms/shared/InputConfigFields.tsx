@@ -3,8 +3,28 @@ import { Input } from '@/components/common/form/Input'
 import { CodeInput } from '@/components/common/form/CodeInput'
 import { Text } from '@/components/common/Text'
 import { Expand } from '@/components/common/Expand'
+import { COMPONENT_OVERRIDE_INPUT_GROUP } from '@/utils/install-utils'
 import type { TAppInputConfig, TInstall } from '@/types'
 import type { IInputConfigFields } from './types'
+import { ComponentOverridesSection } from './ComponentOverridesSection'
+
+const CODE_INPUT_TYPES = {
+  json: {
+    language: 'json',
+    placeholder: 'Enter JSON configuration...',
+    helperText: 'Enter valid JSON configuration',
+  },
+  yaml: {
+    language: 'yaml',
+    placeholder: 'Enter YAML configuration...',
+    helperText: 'Enter valid YAML configuration',
+  },
+  hcl: {
+    language: 'hcl',
+    placeholder: 'Enter HCL (.tfvars) configuration...',
+    helperText: 'Enter valid HCL (.tfvars) configuration',
+  },
+} as const
 
 const FieldWrapper = ({
   children,
@@ -112,6 +132,11 @@ const InputGroupFields = ({
       )
     }
 
+    const codeInputType =
+      input?.type && input.type in CODE_INPUT_TYPES
+        ? CODE_INPUT_TYPES[input.type as keyof typeof CODE_INPUT_TYPES]
+        : undefined
+
     return (
       <FieldWrapper
         key={input?.id}
@@ -141,14 +166,14 @@ const InputGroupFields = ({
         }
         helpText={input?.description}
       >
-        {input?.type === 'json' ? (
+        {codeInputType ? (
           <CodeInput
-            language="json"
+            language={codeInputType.language}
             name={disabled ? undefined : `inputs:${input?.name}`}
             required={disabled ? false : input?.required}
             defaultValue={mergedValues?.[input?.name || ''] ?? input?.default}
-            placeholder="Enter JSON configuration..."
-            helperText="Enter valid JSON configuration"
+            placeholder={codeInputType.placeholder}
+            helperText={codeInputType.helperText}
             minHeight={120}
             disabled={disabled}
           />
@@ -260,16 +285,26 @@ export const InputConfigFields = ({
 
   return (
     <>
-      {/* Render vendor input groups normally */}
-      {vendorGroups.map((group) => (
-        <InputGroupFields
-          key={`vendor-${group.id}`}
-          groupInputs={group}
-          install={install}
-          disabled={false}
-          draftValues={draftValues}
-        />
-      ))}
+      {/* Render vendor input groups normally, except the reserved
+          component-overrides group which renders as per-component cards. */}
+      {vendorGroups.map((group) =>
+        group.name === COMPONENT_OVERRIDE_INPUT_GROUP ? (
+          <ComponentOverridesSection
+            key={`vendor-${group.id}`}
+            group={group}
+            install={install}
+            draftValues={draftValues}
+          />
+        ) : (
+          <InputGroupFields
+            key={`vendor-${group.id}`}
+            groupInputs={group}
+            install={install}
+            disabled={false}
+            draftValues={draftValues}
+          />
+        )
+      )}
 
       {/* Render customer input groups with header */}
       {customerGroups.length > 0 && (

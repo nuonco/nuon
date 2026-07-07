@@ -20,6 +20,7 @@ import (
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/helm"
 	"github.com/nuonco/nuon/services/ctl-api/tests"
@@ -151,7 +152,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release-1",
 					Namespace:   namespace,
 					Version:     1,
@@ -167,7 +168,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release-2",
 					Namespace:   namespace,
 					Version:     1,
@@ -209,7 +210,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 						CreatedByID: s.testAcc.ID,
 						OrgID:       s.testOrg.ID,
 						Type:        "helm.sh/release.v1",
-						Body:        "",
+						Body:        &blobstore.Blob{},
 						Name:        "test-release",
 						Namespace:   namespace,
 						Version:     i,
@@ -249,7 +250,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "app-release",
 					Namespace:   namespace,
 					Version:     1,
@@ -265,7 +266,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "db-release",
 					Namespace:   namespace,
 					Version:     1,
@@ -305,7 +306,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release",
 					Namespace:   namespace,
 					Version:     1,
@@ -347,7 +348,7 @@ func (s *QueryHelmReleaseTestSuite) TestQueryHelmRelease() {
 					CreatedByID: s.testAcc.ID,
 					OrgID:       s.testOrg.ID,
 					Type:        "helm.sh/release.v1",
-					Body:        "",
+					Body:        &blobstore.Blob{},
 					Name:        "test-release",
 					Namespace:   namespace,
 					Version:     1,

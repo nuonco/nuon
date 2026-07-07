@@ -7,6 +7,7 @@ import (
 	queueemitter "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/enqueuer"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/handler"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow"
 )
@@ -20,6 +21,7 @@ type WorkflowParams struct {
 	QueueEmitterWorkflows *queueemitter.Workflows
 	EnqueuerWorkflows     *enqueuer.Workflows
 	HandlerWorkflows      *handler.Workflows
+	ControlPlaneWorkflows *controlplanejob.Workflows
 }
 
 type Workflows struct {
@@ -29,11 +31,13 @@ type Workflows struct {
 	queueemitterWorkflows *queueemitter.Workflows
 	enqueuerWorkflows     *enqueuer.Workflows
 	handlerWorkflows      *handler.Workflows
+	controlPlaneWorkflows *controlplanejob.Workflows
 }
 
 func (w *Workflows) AllWorkflows() []interface{} {
 	wkflows := []interface{}{
 		w.jobWorkflows.ExecuteJob,
+		w.controlPlaneWorkflows.ExecuteControlPlaneJob,
 		w.workflowWorkflows.GenerateWorkflowSteps,
 		w.workflowWorkflows.WaitForApprovalResponse,
 	}
@@ -54,5 +58,6 @@ func NewWorkflows(params WorkflowParams) *Workflows {
 		queueemitterWorkflows: params.QueueEmitterWorkflows,
 		enqueuerWorkflows:     params.EnqueuerWorkflows,
 		handlerWorkflows:      params.HandlerWorkflows,
+		controlPlaneWorkflows: params.ControlPlaneWorkflows,
 	}
 }

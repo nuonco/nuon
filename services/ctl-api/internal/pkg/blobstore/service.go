@@ -4,14 +4,20 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
+	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/go-playground/validator/v10"
 
 	"github.com/nuonco/nuon/pkg/aws/s3downloader"
 	"github.com/nuonco/nuon/pkg/aws/s3uploader"
+	"github.com/nuonco/nuon/pkg/metrics"
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 )
 
@@ -39,11 +45,21 @@ type service struct {
 	cfg        *internal.Config
 	uploader   s3uploader.Uploader
 	downloader s3downloader.Downloader
-	awsConfig  aws.Config
+	s3Client   *s3.Client
+	mw         metrics.Writer
+
+	// dlInFlight tracks the number of blob downloads currently open (from
+	// GetObject until the caller closes the body). Emitted as a gauge so a
+	// cron burst that saturates the S3 fetch path is observable.
+	dlInFlight int64
 }
 
 // NewService creates a new blob storage service
-func NewService(cfg *internal.Config) (Service, error) {
+func NewService(cfg *internal.Config, mw metrics.Writer) (Service, error) {
+	if cfg.BlobStorageProvider == "gcs" {
+		return newGCSService(context.Background(), cfg, mw)
+	}
+
 	v := validator.New()
 
 	// Create uploader
@@ -63,9 +79,19 @@ func NewService(cfg *internal.Config) (Service, error) {
 		return nil, fmt.Errorf("failed to create s3 downloader: %w", err)
 	}
 
-	// Load AWS config for direct S3 operations
+	// Load AWS config for direct S3 operations. A shared HTTP client with a
+	// pooled transport lets every blob download reuse TCP/TLS connections
+	// instead of opening a new one per request; a fresh s3.NewFromConfig per
+	// call would otherwise get its own connection pool and churn connections
+	// under load.
+	httpClient := awshttp.NewBuildableClient().WithTransportOptions(func(t *http.Transport) {
+		t.MaxIdleConns = 200
+		t.MaxIdleConnsPerHost = 200
+		t.IdleConnTimeout = 90 * time.Second
+	})
 	awsConfig, err := awsconfig.LoadDefaultConfig(context.Background(),
 		awsconfig.WithRegion(cfg.BlobStorageRegion),
+		awsconfig.WithHTTPClient(httpClient),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load aws config: %w", err)
@@ -75,7 +101,8 @@ func NewService(cfg *internal.Config) (Service, error) {
 		cfg:        cfg,
 		uploader:   uploader,
 		downloader: downloader,
-		awsConfig:  awsConfig,
+		s3Client:   s3.NewFromConfig(awsConfig),
+		mw:         mw,
 	}, nil
 }
 
@@ -97,29 +124,54 @@ func (s *service) UploadStream(ctx context.Context, s3Key string, reader io.Read
 }
 
 func (s *service) DownloadStream(ctx context.Context, s3Key string) (io.ReadCloser, error) {
-	client := s3.NewFromConfig(s.awsConfig)
+	inFlight := atomic.AddInt64(&s.dlInFlight, 1)
+	s.mw.Gauge("blobstore.s3.download.in_flight", float64(inFlight), nil)
 
-	resp, err := client.GetObject(ctx, &s3.GetObjectInput{
+	start := time.Now()
+	resp, err := s.s3Client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.cfg.BlobStorageBucket),
 		Key:    aws.String(s3Key),
 	})
 	if err != nil {
+		// GetObject failed: nothing to read, so release the in-flight slot now.
+		s.mw.Gauge("blobstore.s3.download.in_flight", float64(atomic.AddInt64(&s.dlInFlight, -1)), nil)
+		s.mw.Timing("blobstore.s3.get_object.latency", time.Since(start), []string{"status:error"})
+		s.mw.Incr("blobstore.s3.get_object", []string{"status:error"})
 		return nil, fmt.Errorf("failed to get object: %w", err)
 	}
 
-	return resp.Body, nil
+	// GetObject latency = connection setup + time-to-first-byte, isolated from
+	// the body read that the caller drives below.
+	s.mw.Timing("blobstore.s3.get_object.latency", time.Since(start), []string{"status:success"})
+	s.mw.Incr("blobstore.s3.get_object", []string{"status:success"})
+
+	// The body read (and thus the bulk of the download time) happens in the
+	// caller. Wrap it so the total download duration, byte count, and in-flight
+	// gauge are recorded when the caller closes the stream.
+	return &meteredBody{
+		rc:    resp.Body,
+		start: start,
+		onClose: func(nbytes int64, dur time.Duration) {
+			s.mw.Gauge("blobstore.s3.download.in_flight", float64(atomic.AddInt64(&s.dlInFlight, -1)), nil)
+			s.mw.Timing("blobstore.s3.download.latency", dur, nil)
+			s.mw.Distribution("blobstore.s3.download.bytes", float64(nbytes), nil)
+		},
+	}, nil
 }
 
 func (s *service) GetMetadata(ctx context.Context, s3Key string) (int64, string, error) {
-	client := s3.NewFromConfig(s.awsConfig)
-
-	resp, err := client.HeadObject(ctx, &s3.HeadObjectInput{
+	start := time.Now()
+	resp, err := s.s3Client.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(s.cfg.BlobStorageBucket),
 		Key:    aws.String(s3Key),
 	})
 	if err != nil {
+		s.mw.Timing("blobstore.s3.head_object.latency", time.Since(start), []string{"status:error"})
+		s.mw.Incr("blobstore.s3.head_object", []string{"status:error"})
 		return 0, "", fmt.Errorf("failed to get metadata: %w", err)
 	}
+	s.mw.Timing("blobstore.s3.head_object.latency", time.Since(start), []string{"status:success"})
+	s.mw.Incr("blobstore.s3.head_object", []string{"status:success"})
 
 	contentType := "application/octet-stream"
 	if resp.ContentType != nil {
@@ -132,4 +184,27 @@ func (s *service) GetMetadata(ctx context.Context, s3Key string) (int64, string,
 	}
 
 	return size, contentType, nil
+}
+
+// meteredBody wraps an S3 GetObject body to record the total download duration
+// and byte count when the caller closes the stream. onClose runs exactly once.
+type meteredBody struct {
+	rc      io.ReadCloser
+	start   time.Time
+	nbytes  int64
+	once    sync.Once
+	onClose func(nbytes int64, dur time.Duration)
+}
+
+func (m *meteredBody) Read(p []byte) (int, error) {
+	n, err := m.rc.Read(p)
+	m.nbytes += int64(n)
+	return n, err
+}
+
+func (m *meteredBody) Close() error {
+	m.once.Do(func() {
+		m.onClose(m.nbytes, time.Since(m.start))
+	})
+	return m.rc.Close()
 }

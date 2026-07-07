@@ -4,6 +4,7 @@ import { CodeBlock } from '../CodeBlock'
 import { JSONViewer } from '../JSONViewer'
 import { Link } from '../Link'
 import { buildNuonComponents, nuonTagNames, type MarkdownMode } from './nuon-components'
+import type { MarkdownVariant } from './Markdown'
 
 const MermaidFlowGraph = lazy(() => import('../MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph })))
 
@@ -11,7 +12,15 @@ const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-surface-rendered'])
 
 const isFlowchart = (code: string) => /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(code.trim().split('\n')[0])
 
-function renderCodeBlock(language: string, codeString: string) {
+function renderCodeBlock(language: string, codeString: string, compact = false) {
+  if (compact) {
+    return (
+      <pre className="overflow-x-auto rounded-md border p-3 my-0 bg-code text-xs font-mono">
+        <code>{codeString}</code>
+      </pre>
+    )
+  }
+
   if (language === 'mermaid') {
     if (isFlowchart(codeString)) {
       return (
@@ -57,7 +66,8 @@ function hasBlockChild(node: any): boolean {
   )
 }
 
-export function getMarkdownComponents(mode: MarkdownMode): Record<string, any> {
+export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVariant = 'default'): Record<string, any> {
+  const compact = variant === 'compact'
   return {
   ...nuonComponentsByMode[mode],
   p({ node, children, ...props }: any) {
@@ -173,13 +183,13 @@ export function getMarkdownComponents(mode: MarkdownMode): Record<string, any> {
       const match = /language-(\w+)/.exec(child.props.className)
       if (match) {
         const codeString = String(child.props.children).replace(/\n$/, '')
-        return renderCodeBlock(match[1], codeString)
+        return renderCodeBlock(match[1], codeString, compact)
       }
     }
 
     if (child?.props?.children != null) {
       const codeString = String(child.props.children).replace(/\n$/, '')
-      return renderCodeBlock('text', codeString)
+      return renderCodeBlock('text', codeString, compact)
     }
 
     return <pre style={style} {...props}>{children}</pre>

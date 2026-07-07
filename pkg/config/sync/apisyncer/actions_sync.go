@@ -74,6 +74,7 @@ func (s *syncer) syncAction(ctx context.Context, resource string, action *config
 		BreakGlassRoleArn: action.BreakGlassRole,
 		Role:              action.Role,
 		EnableKubeConfig:  &enableKubeConfig,
+		KubernetesContext: action.KubernetesContext,
 	}
 
 	for _, ref := range action.References {

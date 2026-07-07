@@ -17,7 +17,7 @@ import (
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 )
 
-type CreateInstallConfigUpdateWorkflowInput struct {
+type CreateInstallAppConfigVersionWorkflowInput struct {
 	InstallID      string       `json:"install_id"`
 	NewAppConfigID string       `json:"new_app_config_id"`
 	AppBranchRunID string       `json:"app_branch_run_id"`
@@ -26,14 +26,14 @@ type CreateInstallConfigUpdateWorkflowInput struct {
 	Callback       callback.Ref `json:"callback,omitempty"`
 }
 
-type CreateInstallConfigUpdateWorkflowOutput struct {
-	WorkflowID            string `json:"workflow_id"`
-	InstallConfigUpdateID string `json:"install_config_update_id"`
+type CreateInstallAppConfigVersionWorkflowOutput struct {
+	WorkflowID                string `json:"workflow_id"`
+	InstallAppConfigVersionID string `json:"install_config_update_id"`
 }
 
 // @temporal-gen-v2 activity
 // @start-to-close-timeout 1m
-func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, input *CreateInstallConfigUpdateWorkflowInput) (*CreateInstallConfigUpdateWorkflowOutput, error) {
+func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, input *CreateInstallAppConfigVersionWorkflowInput) (*CreateInstallAppConfigVersionWorkflowOutput, error) {
 	var install app.Install
 	if err := a.db.WithContext(ctx).First(&install, "id = ?", input.InstallID).Error; err != nil {
 		return nil, fmt.Errorf("unable to get install: %w", err)
@@ -44,9 +44,9 @@ func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, inpu
 		return nil, fmt.Errorf("unable to compute config diff: %w", err)
 	}
 
-	update := app.InstallConfigUpdate{
-		AppBranchRunID: input.AppBranchRunID,
-		InstallGroupID: input.InstallGroupID,
+	update := app.InstallAppConfigVersion{
+		AppBranchRunID: &input.AppBranchRunID,
+		InstallGroupID: &input.InstallGroupID,
 		InstallID:      input.InstallID,
 		OldAppConfigID: install.AppConfigID,
 		NewAppConfigID: input.NewAppConfigID,
@@ -97,9 +97,9 @@ func (a *Activities) CreateInstallConfigUpdateWorkflow(ctx context.Context, inpu
 		return nil, fmt.Errorf("unable to enqueue workflow for install %s: %w", input.InstallID, err)
 	}
 
-	return &CreateInstallConfigUpdateWorkflowOutput{
-		WorkflowID:            wf.ID,
-		InstallConfigUpdateID: update.ID,
+	return &CreateInstallAppConfigVersionWorkflowOutput{
+		WorkflowID:                wf.ID,
+		InstallAppConfigVersionID: update.ID,
 	}, nil
 }
 
@@ -107,6 +107,14 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 	var newAppCfg app.AppConfig
 	if err := a.db.WithContext(ctx).
 		Preload("ComponentConfigConnections").
+		Preload("ComponentConfigConnections.Component").
+		Preload("ComponentConfigConnections.HelmComponentConfig").
+		Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnections.DockerBuildComponentConfig").
+		Preload("ComponentConfigConnections.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnections.JobComponentConfig").
+		Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
+		Preload("ComponentConfigConnections.PulumiComponentConfig").
 		Preload("SandboxConfig").
 		Preload("StackConfig").
 		First(&newAppCfg, "id = ?", newAppConfigID).Error; err != nil {
@@ -130,6 +138,14 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 		var oldAppCfg app.AppConfig
 		if err := a.db.WithContext(ctx).
 			Preload("ComponentConfigConnections").
+			Preload("ComponentConfigConnections.Component").
+			Preload("ComponentConfigConnections.HelmComponentConfig").
+			Preload("ComponentConfigConnections.TerraformModuleComponentConfig").
+			Preload("ComponentConfigConnections.DockerBuildComponentConfig").
+			Preload("ComponentConfigConnections.ExternalImageComponentConfig").
+			Preload("ComponentConfigConnections.JobComponentConfig").
+			Preload("ComponentConfigConnections.KubernetesManifestComponentConfig").
+			Preload("ComponentConfigConnections.PulumiComponentConfig").
 			Preload("SandboxConfig").
 			Preload("StackConfig").
 			First(&oldAppCfg, "id = ?", oldAppConfigID).Error; err == nil {
@@ -146,6 +162,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 					diff.Removed = append(diff.Removed, app.ComponentDiffEntry{
 						ComponentID:   componentID,
 						ComponentName: oldConn.ComponentName,
+						ComponentType: string(oldConn.Type),
 						OldChecksum:   oldConn.Checksum,
 					})
 					continue
@@ -155,6 +172,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 					diff.Unchanged = append(diff.Unchanged, app.ComponentDiffEntry{
 						ComponentID:   componentID,
 						ComponentName: newConn.ComponentName,
+						ComponentType: string(newConn.Type),
 						OldChecksum:   oldConn.Checksum,
 						NewChecksum:   newConn.Checksum,
 					})
@@ -162,6 +180,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 					diff.Changed = append(diff.Changed, app.ComponentDiffEntry{
 						ComponentID:   componentID,
 						ComponentName: newConn.ComponentName,
+						ComponentType: string(newConn.Type),
 						OldChecksum:   oldConn.Checksum,
 						NewChecksum:   newConn.Checksum,
 					})
@@ -174,6 +193,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 				diff.Added = append(diff.Added, app.ComponentDiffEntry{
 					ComponentID:   componentID,
 					ComponentName: newConn.ComponentName,
+					ComponentType: string(newConn.Type),
 					NewChecksum:   newConn.Checksum,
 				})
 			}
@@ -197,6 +217,7 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 			diff.Added = append(diff.Added, app.ComponentDiffEntry{
 				ComponentID:   componentID,
 				ComponentName: newConn.ComponentName,
+				ComponentType: string(newConn.Type),
 				NewChecksum:   newConn.Checksum,
 			})
 		}
@@ -245,8 +266,8 @@ func (a *Activities) saveDiffBlob(ctx context.Context, installConfigUpdateID str
 	}
 
 	res := a.db.WithContext(ctx).
-		Model(&app.InstallConfigUpdate{}).
-		Where(app.InstallConfigUpdate{ID: installConfigUpdateID}).
+		Model(&app.InstallAppConfigVersion{}).
+		Where(app.InstallAppConfigVersion{ID: installConfigUpdateID}).
 		Update("diff", string(metadataJSON))
 	if res.Error != nil {
 		return fmt.Errorf("unable to save diff: %w", res.Error)

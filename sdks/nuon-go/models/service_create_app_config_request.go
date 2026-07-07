@@ -29,6 +29,10 @@ type ServiceCreateAppConfigRequest struct {
 
 	// not required Readme
 	Readme string `json:"readme,omitempty"`
+
+	// SkipNotification suppresses the app-config-synced signal emission.
+	// Used when creating a config as part of app deletion cleanup.
+	SkipNotification bool `json:"skip_notification,omitempty"`
 }
 
 // Validate validates this service create app config request

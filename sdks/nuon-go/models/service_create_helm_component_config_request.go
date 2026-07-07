@@ -41,6 +41,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 	// connected github vcs config
 	ConnectedGithubVcsConfig *ServiceConnectedGithubVCSConfigRequest `json:"connected_github_vcs_config,omitempty"`
 
+	// default enabled
+	DefaultEnabled bool `json:"default_enabled,omitempty"`
+
 	// dependencies
 	Dependencies []string `json:"dependencies"`
 
@@ -52,6 +55,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 
 	// helm repo config
 	HelmRepoConfig *ServiceHelmRepoConfigRequest `json:"helm_repo_config,omitempty"`
+
+	// kubernetes context
+	KubernetesContext string `json:"kubernetes_context,omitempty"`
 
 	// max auto retries
 	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
@@ -76,6 +82,9 @@ type ServiceCreateHelmComponentConfigRequest struct {
 
 	// take ownership
 	TakeOwnership bool `json:"take_ownership,omitempty"`
+
+	// toggleable
+	Toggleable bool `json:"toggleable,omitempty"`
 
 	// values
 	// Required: true

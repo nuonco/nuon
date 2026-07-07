@@ -3,6 +3,8 @@ export default {
 }
 
 import { InstallComponentsTable, type InstallComponentRow } from './InstallComponentsTable'
+import { Badge } from '@/components/common/Badge'
+import { Icon } from '@/components/common/Icon'
 import { Text } from '@/components/common/Text'
 
 const mockRows: InstallComponentRow[] = [
@@ -10,6 +12,7 @@ const mockRows: InstallComponentRow[] = [
     componentId: 'comp-abc123',
     componentName: 'web-server',
     componentType: <Text variant="subtext">helm_chart</Text>,
+    toggleStatus: <Badge size="sm" theme="success">Enabled</Badge>,
     deployStatus: <Text variant="subtext">active</Text>,
     driftStatus: <Text variant="subtext">-</Text>,
     href: '/org1/installs/inst1/components/comp-abc123',
@@ -21,6 +24,7 @@ const mockRows: InstallComponentRow[] = [
     componentId: 'comp-def456',
     componentName: 'database',
     componentType: <Text variant="subtext">terraform_module</Text>,
+    toggleStatus: <Icon variant="MinusIcon" />,
     deployStatus: <Text variant="subtext">active</Text>,
     driftStatus: <Text variant="subtext">drifted</Text>,
     href: '/org1/installs/inst1/components/comp-def456',

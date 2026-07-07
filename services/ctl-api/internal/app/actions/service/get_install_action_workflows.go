@@ -13,6 +13,15 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
+// currentAppConfigActionFilter keeps only actions present in the install's current app config.
+const currentAppConfigActionFilter = `EXISTS (
+	SELECT 1 FROM action_workflow_configs awc
+	JOIN installs i ON i.id = install_action_workflows.install_id
+	WHERE awc.action_workflow_id = install_action_workflows.action_workflow_id
+		AND awc.app_config_id = i.app_config_id
+		AND awc.deleted_at = 0
+)`
+
 // @ID						GetInstallActions
 // @Summary				get an installs action workflows
 // @Description.markdown	get_install_action_workflows.md
@@ -80,6 +89,7 @@ func (s *service) getInstallActionWorkflows(ctx *gin.Context, installID string) 
 		Preload("InstallActionWorkflows", func(db *gorm.DB) *gorm.DB {
 			return db.
 				Scopes(scopes.WithOffsetPagination).
+				Where(currentAppConfigActionFilter).
 				Order("install_action_workflows.created_at DESC")
 		}).
 		Preload("InstallActionWorkflows.ActionWorkflow").

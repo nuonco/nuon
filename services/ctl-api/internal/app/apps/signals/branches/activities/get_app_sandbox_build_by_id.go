@@ -13,7 +13,10 @@ import (
 // @by-field buildID
 func (a *Activities) getAppSandboxBuildByID(ctx context.Context, buildID string) (*app.AppSandboxBuild, error) {
 	var build app.AppSandboxBuild
-	res := a.db.WithContext(ctx).First(&build, "id = ?", buildID)
+	res := a.db.WithContext(ctx).
+		Preload("AppSandboxConfig").
+		Where(&app.AppSandboxBuild{ID: buildID}).
+		First(&build)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get sandbox build: %w", res.Error)
 	}

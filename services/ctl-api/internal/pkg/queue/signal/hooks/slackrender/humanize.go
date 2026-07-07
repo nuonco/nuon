@@ -91,10 +91,16 @@ func titleFromWorkflowType(wfType string) string {
 		return "Reprovisioning sandbox"
 	case WorkflowTypeAppConfigBuild:
 		return "Building app config"
-	case WorkflowTypeAppBranchesRun:
+	case WorkflowTypeAppBranchesRun,
+		WorkflowTypeAppBranchesConfigRepoUpdate,
+		WorkflowTypeAppBranchesComponentRepoUpdate:
 		return "Running app branch"
 	case WorkflowTypeRunbookRun:
 		return "Running runbook"
+	case WorkflowTypeComponentEnabled:
+		return "Enabling component"
+	case WorkflowTypeComponentDisabled:
+		return "Disabling component"
 	}
 	return ""
 }

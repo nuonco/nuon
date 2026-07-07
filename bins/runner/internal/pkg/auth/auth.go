@@ -8,8 +8,8 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
 	fetchtoken "github.com/nuonco/nuon/bins/runner/internal/jobs/management/fetch_token"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 )
 
@@ -23,7 +23,7 @@ type Token struct {
 type Params struct {
 	fx.In
 
-	Cfg *internal.Config
+	Cfg *runnerconfig.Config
 	L   *zap.Logger `name:"dev"`
 }
 

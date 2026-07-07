@@ -31,6 +31,7 @@ const (
 	ResourceInstallConfigurations ResourceKind = "install_configurations"
 	ResourceRunners               ResourceKind = "runners"
 	ResourceActions               ResourceKind = "actions"
+	ResourceAppBranches           ResourceKind = "app_branches"
 )
 
 // AllResources is the canonical, ordered list of resource kinds. UI code
@@ -43,6 +44,7 @@ var AllResources = []ResourceKind{
 	ResourceInstallConfigurations,
 	ResourceRunners,
 	ResourceActions,
+	ResourceAppBranches,
 }
 
 // Outcome filters lifecycle events on terminal status. Approval events are
@@ -84,6 +86,7 @@ var SubOps = map[ResourceKind][]string{
 	ResourceInstallConfigurations: {"inputs", "secrets"},
 	ResourceRunners:               {"provision", "reprovision", "inactive"},
 	ResourceActions:               {"run"},
+	ResourceAppBranches:           {"run"},
 }
 
 // SupportsDriftDetected reports whether DriftDetected is meaningful for the
@@ -99,6 +102,10 @@ func SupportsRoleChanges(kind ResourceKind) bool {
 
 func SupportsInputsUpdated(kind ResourceKind) bool {
 	return kind == ResourceStacks
+}
+
+func SupportsConfigSynced(kind ResourceKind) bool {
+	return kind == ResourceAppBranches
 }
 
 // Interests is the full per-subscriber config. Stored as JSONB on both
@@ -140,6 +147,7 @@ type ResourceCfg struct {
 	DriftDetected     bool     `json:"drift_detected,omitempty"`
 	RoleChanges       bool     `json:"role_changes,omitempty"`
 	InputsUpdated     bool     `json:"inputs_updated,omitempty"`
+	ConfigSynced      bool     `json:"config_synced,omitempty"`
 }
 
 // IsZero is true for the zero-value Interests (no AllEvents, no resources).

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/views"
@@ -30,7 +31,8 @@ type TerraformWorkspaceState struct {
 	OrgID string `json:"org_id,omitzero" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
 
-	Contents []byte `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
+	Contents     []byte          `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
+	ContentsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	TerraformWorkspaceID string             `json:"terraform_workspace_id,omitzero" temporaljson:"terraform_workspace_id,omitzero,omitempty"`
 	TerraformWorkspace   TerraformWorkspace `json:"terraform_workspace,omitzero" gorm:"-" temporaljson:"terraform_workspace,omitzero,omitempty"`
@@ -64,6 +66,11 @@ func (t *TerraformWorkspaceState) BeforeCreate(tx *gorm.DB) (err error) {
 	if t.OrgID == "" {
 		t.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
+
+	if err := t.ContentsBlob.BeforeCreate(tx); err != nil {
+		return err
+	}
+
 	return nil
 }
 

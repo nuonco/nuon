@@ -51,12 +51,13 @@ type Client interface {
 	GetAppBranch(ctx context.Context, appID, appBranchID string) (*models.AppAppBranch, error)
 	CreateAppBranch(ctx context.Context, appID string, req *models.ServiceCreateAppBranchRequest) (*models.AppAppBranch, error)
 	UpdateAppBranch(ctx context.Context, appID, appBranchID string, req *models.ServiceUpdateAppBranchRequest) (*models.AppAppBranch, error)
+	DeleteAppBranch(ctx context.Context, appID, appBranchID string) error
 	CreateAppBranchConfig(ctx context.Context, appID, appBranchID string, req *models.ServiceCreateAppBranchConfigRequest) (*models.AppAppBranchConfig, error)
 	GetAppBranchLatestConfig(ctx context.Context, appID, appBranchID string) (*models.AppAppBranchConfig, error)
 	TriggerAppBranchRun(ctx context.Context, appID, appBranchID string, req *models.ServiceTriggerAppBranchRunRequest) (*models.AppAppBranchRun, error)
 	GetAppBranchRuns(ctx context.Context, appID, appBranchID string) ([]*models.AppWorkflow, error)
 	GetAppBranchRunBuilds(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppComponentBuild, error)
-	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallConfigUpdate, error)
+	GetAppBranchRunInstallGroups(ctx context.Context, appID, appBranchID, runID string) ([]*models.AppInstallAppConfigVersion, error)
 
 	// app sandbox config methods
 	CreateAppSandboxConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSandboxConfigRequest) (*models.AppAppSandboxConfig, error)
@@ -89,6 +90,9 @@ type Client interface {
 	CreateAppSecretsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppSecretsConfigRequest) (*models.AppAppSecretsConfig, error)
 	GetLatestAppSecretsConfig(ctx context.Context, appID string) (*models.AppAppSecretsConfig, error)
 	GetAppSecretsConfig(ctx context.Context, appID, appSecretConfigID string) (*models.AppAppSecretsConfig, error)
+
+	// app kubernetes contexts config methods
+	CreateAppKubernetesContextsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppKubernetesContextsConfigRequest) (*models.AppAppKubernetesContextsConfig, error)
 
 	// app permissions config methods
 	CreateAppPermissionsConfig(ctx context.Context, appID string, req *models.ServiceCreateAppPermissionsConfigRequest) (*models.AppAppPermissionsConfig, error)
@@ -166,10 +170,12 @@ type Client interface {
 
 	// install components
 	GetInstallComponents(ctx context.Context, installID string, query *models.GetPaginatedQuery) ([]*models.AppInstallComponent, bool, error)
+	ToggleInstallComponent(ctx context.Context, installID, componentID string, req *models.ServiceToggleInstallComponentRequest) (*models.AppWorkflowResponse, error)
 	TeardownInstallComponent(ctx context.Context, installID, componentID string, roleName string) (*models.AppWorkflowResponse, error)
 	TeardownInstallComponents(ctx context.Context, installID string) (*models.AppWorkflowResponse, error)
 	DeployInstallComponents(ctx context.Context, installID string, roleName string, planOnly bool) (*models.AppWorkflowResponse, error)
 	GetInstallComponentDeploys(ctx context.Context, installID, componentID string, query *models.GetPaginatedQuery) ([]*models.AppInstallDeploy, bool, error)
+	GetInstallComponent(ctx context.Context, installID, componentID string) (*models.AppInstallComponent, error)
 	GetInstallComponentLatestDeploy(ctx context.Context, installID, componentID string) (*models.AppInstallDeploy, error)
 	GetInstallComponentOutputs(ctx context.Context, installID, componentID string) (any, error)
 

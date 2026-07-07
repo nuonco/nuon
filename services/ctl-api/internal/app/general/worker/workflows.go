@@ -25,6 +25,10 @@ func (w Workflows) All() []any {
 	wkflows := []any{
 		w.Metrics,
 		w.CleanupQueueSignals,
+		w.BackfillBlobs,
+		w.BackfillBlobsDay,
+		w.VerifyBlobs,
+		w.VerifyBlobsDay,
 	}
 	return wkflows
 }
@@ -34,6 +38,10 @@ func (w *Workflows) ListWorkflowFns() []any {
 	return []any{
 		w.Metrics,
 		w.CleanupQueueSignals,
+		w.BackfillBlobs,
+		w.BackfillBlobsDay,
+		w.VerifyBlobs,
+		w.VerifyBlobsDay,
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
@@ -20,7 +21,7 @@ import (
 
 // SyncHelmComponent creates or updates a Helm component configuration.
 // Duplicates logic from services/ctl-api/internal/app/components/service/create_helm_component_config.go
-func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, compHelpers *componenthelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	// Validate Helm component
 	if err := validateHelmComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
@@ -82,7 +83,13 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.H
 	// Resolve component dependencies
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
-		// TODO: Implement GetComponentIDs helper
+		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
 	}
 
 	// Build values map
@@ -158,6 +165,7 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.H
 	// Create component config connection
 	componentConfigConnection := app.ComponentConfigConnection{
 		HelmComponentConfig:    &cfg,
+		KubernetesContextName:  comp.KubernetesContext,
 		ComponentID:            componentID,
 		AppConfigID:            appConfigID,
 		ComponentDependencyIDs: pq.StringArray(depIDs),

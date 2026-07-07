@@ -47,6 +47,52 @@ export const Failed = () => (
   />
 )
 
+export const CommitStepShell = () => (
+  <WorkflowStepDetail
+    step={{
+      id: 'step-commit',
+      name: 'Commit',
+      group_idx: 0,
+      execution_type: 'system',
+      status: {
+        status: 'success',
+        metadata: {
+          commit_sha: 'a1b2c3d4e5f6',
+          commit_message: 'feat: add deployment plan editor',
+          author_name: 'Ada Lovelace',
+          branch: 'feature/deploy-plans',
+          base_branch: 'main',
+          files_changed: 2,
+          additions: 120,
+          deletions: 8,
+        },
+      },
+    } as any}
+    onClose={noop}
+  />
+)
+
+export const BuildStepShell = () => (
+  <WorkflowStepDetail
+    step={{
+      id: 'step-build',
+      name: 'Build components',
+      group_idx: 1,
+      execution_type: 'system',
+      status: {
+        status: 'success',
+        metadata: {
+          builds: [
+            { component_id: 'c1', component_name: 'api', status: 'success', cache_status: 'cache hit', duration: 2.4 },
+            { component_id: 'c2', component_name: 'web', status: 'success', cache_status: 'no cache', duration: 41.7 },
+          ],
+        },
+      },
+    } as any}
+    onClose={noop}
+  />
+)
+
 export const Minimal = () => (
   <WorkflowStepDetail
     step={{ id: 'step-min', name: 'Basic step', status: { status: 'pending' } } as any}
