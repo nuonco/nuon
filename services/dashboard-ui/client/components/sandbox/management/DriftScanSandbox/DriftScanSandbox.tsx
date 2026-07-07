@@ -19,7 +19,7 @@ export const DriftScanSandboxModal = ({
 }: IDriftScanSandboxModal) => {
   return (
     <Modal
-      heading="Drift scan sandbox?"
+      heading="Drift scan sandbox"
       primaryActionTrigger={{
         children: isPending ? (
           <span className="flex items-center gap-2">

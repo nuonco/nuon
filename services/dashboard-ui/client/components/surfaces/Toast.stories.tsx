@@ -40,7 +40,7 @@ export const BasicUsage = () => (
         <div className="p-4 border rounded-lg">
           <ToastTrigger 
             theme="default"
-            heading="Welcome!"
+            heading="Welcome"
             content="This is a simple toast notification that demonstrates the basic functionality."
           >
             Show Default Toast
@@ -86,10 +86,10 @@ export const ToastThemes = () => (
         <h4 className="text-sm font-medium">Available Themes</h4>
         <div className="p-4 border rounded-lg">
           <div className="flex flex-wrap gap-3 mb-6">
-            <ToastTrigger theme="brand" heading="Brand Update" content="Your brand settings have been updated successfully.">Brand</ToastTrigger>
-            <ToastTrigger theme="success" heading="Success!" content="Your changes have been saved successfully.">Success</ToastTrigger>
+            <ToastTrigger theme="brand" heading="Brand updated" content="Your brand settings have been updated.">Brand</ToastTrigger>
+            <ToastTrigger theme="success" heading="Changes saved" content="Your changes have been saved.">Success</ToastTrigger>
             <ToastTrigger theme="info" heading="Information" content="Here's some helpful information for you.">Info</ToastTrigger>
-            <ToastTrigger theme="warn" heading="Warning" content="Please review your settings before continuing.">Warning</ToastTrigger>
+            <ToastTrigger theme="warn" heading="Warning" content="Review your settings before continuing.">Warning</ToastTrigger>
             <ToastTrigger theme="error" heading="Error" content="An error occurred while processing your request.">Error</ToastTrigger>
             <ToastTrigger theme="neutral" heading="Notification" content="You have a new notification.">Neutral</ToastTrigger>
             <ToastTrigger theme="default" heading="Default" content="This is a default notification.">Default</ToastTrigger>
@@ -190,16 +190,16 @@ export const ToastUsageExamples = () => (
           <Text variant="base" className="font-medium">User Registration Form</Text>
           <div className="flex gap-3">
             <ToastTrigger 
-              theme="success" 
-              heading="Registration Successful!" 
-              content="Welcome to Nuon! Your account has been created and you're now logged in."
+              theme="success"
+              heading="Account created"
+              content="Your account was created and you're now logged in."
             >
               Register Success
             </ToastTrigger>
             <ToastTrigger 
-              theme="error" 
-              heading="Registration Failed" 
-              content="Email address is already in use. Please try with a different email."
+              theme="error"
+              heading="Registration failed"
+              content="Email address is already in use. Try a different email."
             >
               Register Error
             </ToastTrigger>

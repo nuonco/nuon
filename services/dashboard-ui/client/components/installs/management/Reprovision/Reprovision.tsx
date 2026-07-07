@@ -28,7 +28,7 @@ export const ReprovisionModal = ({
           className="gap-4"
           variant="h3"
           weight="strong"
-          theme="info"
+          theme="warn"
         >
           <Icon variant="ArrowURightUpIcon" size="24" />
           Reprovision install?
@@ -43,23 +43,27 @@ export const ReprovisionModal = ({
           'Reprovision install'
         ),
         onClick: onSubmit,
-        variant: 'primary',
+        variant: 'danger',
       }}
       {...props}
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-4">
         {error ? (
           <Banner theme="error">
             {error?.error ||
               'Something went wrong. Try refreshing the page.'}
           </Banner>
         ) : null}
-        <div className="flex flex-col gap-1">
-          <Text variant="base">
-            Reprovisioning will recreate all resources and deploy all components
-            again.
+        <Text variant="base">
+          Reprovisioning {installName} will recreate all resources and redeploy
+          all components.
+        </Text>
+        <Banner theme="warn">
+          <Text variant="body">
+            <strong>Warning:</strong> This will cause downtime while resources
+            are recreated.
           </Text>
-        </div>
+        </Banner>
 
         {roleSelector}
       </div>
