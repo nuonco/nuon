@@ -42,6 +42,23 @@ type Config struct {
 	TerraformModuleURL    string `json:"terraform_module_url,omitempty"`
 	TerraformModuleSubdir string `json:"terraform_module_subdir,omitempty"`
 
+	// TerraformExecPath, when set, is an existing terraform binary to run
+	// instead of downloading one via hc-install. Lets locked-down or airgapped
+	// callers (e.g. the Terraform provider) avoid the releases.hashicorp.com
+	// fetch.
+	TerraformExecPath string `json:"terraform_exec_path,omitempty"`
+
+	// TerraformWorkDir, when set, is the directory the terraform method assembles
+	// the module + tfvars in and runs terraform from. Empty means a fresh
+	// per-run temp dir. State lives in the remote backend, so the work dir is
+	// disposable.
+	TerraformWorkDir string `json:"terraform_work_dir,omitempty"`
+
+	// TerraformBackend, when set, configures a remote state backend for the
+	// terraform method (S3 for AWS, GCS for GCP). Empty leaves terraform on its
+	// default local state.
+	TerraformBackend *TerraformBackend `json:"terraform_backend,omitempty"`
+
 	// InstallInputs, AutoGenerateSecrets and Secrets are cloud-agnostic in
 	// both shape and semantics: every cloud's module consumes the same
 	// install_inputs map and the same auto_generate_secrets / secrets inputs.
@@ -59,6 +76,29 @@ type Config struct {
 	AWS *AWSConfig `json:"aws,omitempty"`
 	// GCP carries the GCP-specific inputs; populated when Cloud is gcp.
 	GCP *GCPConfig `json:"gcp,omitempty"`
+}
+
+// TerraformBackend configures the remote state backend for the terraform
+// method. It is stored in the customer's target account: S3 for AWS, GCS for
+// GCP, keyed per install so state survives across applies and ephemeral hosts.
+// The customer supplies an existing bucket.
+type TerraformBackend struct {
+	// Bucket is the S3 (AWS) or GCS (GCP) bucket holding state. Required.
+	Bucket string `json:"bucket,omitempty"`
+
+	// Key is the S3 object key (AWS only). Empty defaults to
+	// nuon/<install_id>/terraform.tfstate.
+	Key string `json:"key,omitempty"`
+	// Region is the S3 bucket region (AWS only). Empty falls back to the
+	// install's AWS region.
+	Region string `json:"region,omitempty"`
+	// DynamoDBTable is an optional S3 state-lock table (AWS only). Empty relies
+	// on S3 native locking.
+	DynamoDBTable string `json:"dynamodb_table,omitempty"`
+
+	// Prefix is the GCS object prefix (GCP only). Empty defaults to
+	// nuon/<install_id>.
+	Prefix string `json:"prefix,omitempty"`
 }
 
 // SecretInput mirrors the customer-provided secret shape. Identical across

@@ -31,6 +31,14 @@ import (
 // values that make up the phone-home payload. Re-exported from internal/core.
 type Outputs = core.Outputs
 
+// AWSOutputs and GCPOutputs are the cloud-specific resolved values on Outputs,
+// re-exported so consumers (e.g. the Terraform provider) can inspect and
+// construct them without reaching into internal packages.
+type (
+	AWSOutputs = core.AWSOutputs
+	GCPOutputs = core.GCPOutputs
+)
+
 // Installer provisions and tears down an install stack in a customer cloud
 // account. It drives a single provisioning method selected at construction.
 type Installer struct {
@@ -102,10 +110,15 @@ func FromURL(ctx context.Context, in URLOptions) (*Installer, error) {
 	}
 
 	opts := Options{
-		InstallID: resp.Config.InstallID,
-		Cloud:     cloud,
-		Method:    in.Method,
-		GCP:       in.GCP,
+		InstallID:         resp.Config.InstallID,
+		Cloud:             cloud,
+		Method:            in.Method,
+		GCP:               in.GCP,
+		InstallInputs:     in.InstallInputs,
+		Secrets:           in.Secrets,
+		Backend:           in.Backend,
+		WorkDir:           in.WorkDir,
+		TerraformExecPath: in.TerraformExecPath,
 		stackRun: &stackRunConfig{
 			CtlAPIURL:   base,
 			PhoneHomeID: phoneHomeID,
@@ -257,6 +270,90 @@ func (i *Installer) applyCloudOptions() {
 			g.GKENodePoolSAEmail = o.GKENodePoolSAEmail
 		}
 	}
+}
+
+// applyTerraformOptions overlays the caller-supplied terraform-method controls
+// (remote backend, work dir, pre-installed binary) onto the hydrated Config.
+// ctl-api does not carry these — they are execution-environment concerns the
+// caller (e.g. the Terraform provider) supplies. The backend key/prefix default
+// to an install-scoped path, and the S3 region falls back to the AWS region.
+func (i *Installer) applyTerraformOptions() {
+	if i.cfg == nil {
+		return
+	}
+	if i.opts.WorkDir != "" {
+		i.cfg.TerraformWorkDir = i.opts.WorkDir
+	}
+	if i.opts.TerraformExecPath != "" {
+		i.cfg.TerraformExecPath = i.opts.TerraformExecPath
+	}
+	if i.opts.Backend.Bucket == "" {
+		return
+	}
+	be := i.opts.Backend
+	switch i.resolveCloud() {
+	case core.CloudAWS:
+		if be.Key == "" {
+			be.Key = fmt.Sprintf("nuon/%s/terraform.tfstate", i.opts.InstallID)
+		}
+		if be.Region == "" {
+			be.Region = i.opts.AWSRegion
+		}
+	case core.CloudGCP:
+		if be.Prefix == "" {
+			be.Prefix = fmt.Sprintf("nuon/%s", i.opts.InstallID)
+		}
+	}
+	i.cfg.TerraformBackend = &be
+}
+
+// overlayInputsAndSecrets applies caller-supplied install-input and secret
+// values onto the hydrated Config. The Config from ctl-api declares which keys
+// exist; the caller supplies values. Unknown keys are rejected, and a value for
+// an auto-generated secret is rejected — the module generates those.
+func (i *Installer) overlayInputsAndSecrets() error {
+	if i.cfg == nil {
+		return nil
+	}
+
+	if len(i.opts.InstallInputs) > 0 {
+		known := make(map[string]struct{}, len(i.cfg.InstallInputs)+len(i.cfg.RequiredInputs))
+		for k := range i.cfg.InstallInputs {
+			known[k] = struct{}{}
+		}
+		for _, k := range i.cfg.RequiredInputs {
+			known[k] = struct{}{}
+		}
+		if i.cfg.InstallInputs == nil {
+			i.cfg.InstallInputs = map[string]string{}
+		}
+		for k, v := range i.opts.InstallInputs {
+			if _, ok := known[k]; !ok {
+				return fmt.Errorf("unknown install input %q", k)
+			}
+			i.cfg.InstallInputs[k] = v
+		}
+	}
+
+	if len(i.opts.Secrets) > 0 {
+		autoGen := make(map[string]struct{}, len(i.cfg.AutoGenerateSecrets))
+		for _, name := range i.cfg.AutoGenerateSecrets {
+			autoGen[name] = struct{}{}
+		}
+		for k, v := range i.opts.Secrets {
+			if _, isAuto := autoGen[k]; isAuto {
+				return fmt.Errorf("secret %q is auto-generated and cannot be set", k)
+			}
+			sec, ok := i.cfg.Secrets[k]
+			if !ok {
+				return fmt.Errorf("unknown secret %q", k)
+			}
+			sec.Value = v
+			i.cfg.Secrets[k] = sec
+		}
+	}
+
+	return nil
 }
 
 // validateProvisionConfig checks the resolved Config has the cloud's required
@@ -424,6 +521,7 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 		// Overlay the caller-supplied cloud inputs (e.g. GCP project/region,
 		// AWS region) the ctl-api Config doesn't carry.
 		i.applyCloudOptions()
+		i.applyTerraformOptions()
 		// Validate the bootstrap fields before any resources change. The
 		// runner's init script reads nuon_runner_id / nuon_runner_api_url
 		// from EC2 instance tags via IMDSv2 — empty values would let
@@ -471,8 +569,13 @@ func (i *Installer) run(ctx context.Context, kind Kind) (*Outputs, error) {
 		// still be exercised end-to-end.
 		i.cfg = &Config{InstallID: i.opts.InstallID}
 		i.applyCloudOptions()
+		i.applyTerraformOptions()
 	}
 
+	if err := i.overlayInputsAndSecrets(); err != nil {
+		i.reportRun(ctx, rc, runID, "failed", err.Error(), nil)
+		return nil, err
+	}
 	if err := i.validateProvisionConfig(); err != nil {
 		i.reportRun(ctx, rc, runID, "failed", err.Error(), nil)
 		return nil, err
@@ -608,6 +711,7 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 		i.cfg = &Config{InstallID: i.opts.InstallID}
 	}
 	i.applyCloudOptions()
+	i.applyTerraformOptions()
 	if err := i.validateProvisionConfig(); err != nil {
 		return err
 	}
@@ -623,6 +727,7 @@ func (i *Installer) Deprovision(ctx context.Context) error {
 func (i *Installer) Status(ctx context.Context) (*Outputs, error) {
 	i.cfg = &Config{InstallID: i.opts.InstallID, Method: i.opts.Method}
 	i.applyCloudOptions()
+	i.applyTerraformOptions()
 	provisioner, err := i.selectProvisioner(ctx, i.cfg)
 	if err != nil {
 		return nil, err

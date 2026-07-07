@@ -87,10 +87,10 @@ func (p *Provisioner) Status(ctx context.Context, cfg *core.Config) (*core.Outpu
 	return p.readOutputs(ctx, tf)
 }
 
-// prepare assembles the work dir (module + tfvars), resolves the terraform
-// binary, wires logging, and runs init.
+// prepare assembles the work dir (module + tfvars + backend), resolves the
+// terraform binary, wires logging, and runs init.
 func (p *Provisioner) prepare(ctx context.Context, log, sysLog *slog.Logger, cfg *core.Config) (*tfexec.Terraform, error) {
-	workDir, err := workDirFor(cfg.InstallID)
+	workDir, err := p.workDir(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -109,11 +109,12 @@ func (p *Provisioner) prepare(ctx context.Context, log, sysLog *slog.Logger, cfg
 		return nil, fmt.Errorf("write tfvars: %w", err)
 	}
 
-	binDir, err := binCacheDir()
+	initOpts, err := p.writeBackend(cfg, workDir)
 	if err != nil {
 		return nil, err
 	}
-	execPath, err := resolveTerraform(ctx, cfg.TerraformVersion, binDir)
+
+	execPath, err := p.resolveBinary(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -126,11 +127,60 @@ func (p *Provisioner) prepare(ctx context.Context, log, sysLog *slog.Logger, cfg
 	tf.SetStderr(&slogWriter{l: sysLog})
 
 	log.Info("terraform init starting")
-	if err := tf.Init(ctx); err != nil {
+	if err := tf.Init(ctx, initOpts...); err != nil {
 		return nil, fmt.Errorf("terraform init: %w", err)
 	}
 	log.Info("terraform init complete")
 	return tf, nil
+}
+
+// workDir returns the directory to assemble the module and run terraform in. A
+// Config-supplied dir is used as-is (created if missing); otherwise a fresh temp
+// dir — state lives in the remote backend, so the work dir is disposable.
+func (p *Provisioner) workDir(cfg *core.Config) (string, error) {
+	if cfg.TerraformWorkDir != "" {
+		if err := os.MkdirAll(cfg.TerraformWorkDir, 0o755); err != nil {
+			return "", fmt.Errorf("create terraform work dir: %w", err)
+		}
+		return cfg.TerraformWorkDir, nil
+	}
+	dir, err := os.MkdirTemp("", "nuon-stack-tf-")
+	if err != nil {
+		return "", fmt.Errorf("create terraform work dir: %w", err)
+	}
+	return dir, nil
+}
+
+// resolveBinary returns the terraform binary to run: a Config-supplied path is
+// used as-is (no download); otherwise one is fetched/cached via hc-install.
+func (p *Provisioner) resolveBinary(ctx context.Context, cfg *core.Config) (string, error) {
+	if cfg.TerraformExecPath != "" {
+		return cfg.TerraformExecPath, nil
+	}
+	binDir, err := binCacheDir()
+	if err != nil {
+		return "", err
+	}
+	return resolveTerraform(ctx, cfg.TerraformVersion, binDir)
+}
+
+// writeBackend renders a partial backend block into the work dir and returns the
+// `terraform init` options carrying the backend config. When no remote backend
+// is configured it writes nothing and terraform uses local state.
+func (p *Provisioner) writeBackend(cfg *core.Config, workDir string) ([]tfexec.InitOption, error) {
+	be := cfg.TerraformBackend
+	if be == nil || be.Bucket == "" {
+		return nil, nil
+	}
+	block := fmt.Sprintf("terraform {\n  backend %q {}\n}\n", p.adapter.BackendType())
+	if err := os.WriteFile(filepath.Join(workDir, "nuon_backend.tf"), []byte(block), 0o600); err != nil {
+		return nil, fmt.Errorf("write backend config: %w", err)
+	}
+	var opts []tfexec.InitOption
+	for _, kv := range p.adapter.BackendConfigKV(be) {
+		opts = append(opts, tfexec.BackendConfig(kv))
+	}
+	return opts, nil
 }
 
 func (p *Provisioner) readOutputs(ctx context.Context, tf *tfexec.Terraform) (*core.Outputs, error) {
@@ -148,18 +198,6 @@ func (p *Provisioner) moduleSubdir(cfg *core.Config) string {
 		return cfg.TerraformModuleSubdir
 	}
 	return p.adapter.ModuleSubdir()
-}
-
-func workDirFor(installID string) (string, error) {
-	cache, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	dir := filepath.Join(cache, "nuon", "installer-sdk", installID, "tf")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fmt.Errorf("create terraform work dir: %w", err)
-	}
-	return dir, nil
 }
 
 func binCacheDir() (string, error) {

@@ -24,6 +24,13 @@ type moduleAdapter interface {
 	// MapOutputs translates the module's `terraform output` result into the
 	// cloud-agnostic core.Outputs.
 	MapOutputs(meta map[string]tfexec.OutputMeta) (*core.Outputs, error)
+
+	// BackendType is the terraform remote-state backend name for the cloud
+	// ("s3" for AWS, "gcs" for GCP).
+	BackendType() string
+	// BackendConfigKV returns the `key=value` pairs configuring the backend,
+	// passed to `terraform init -backend-config`.
+	BackendConfigKV(be *core.TerraformBackend) []string
 }
 
 // adapterFor returns the module adapter for the given cloud.

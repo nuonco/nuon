@@ -23,6 +23,27 @@ type Options struct {
 	// (aws→sdk, others→terraform). Lets stack-cli force a method from the CLI.
 	Method Method
 
+	// InstallInputs and Secrets carry customer-supplied VALUES for the install
+	// inputs and secrets the ctl-api Config declares. Overlaid onto the hydrated
+	// Config before provisioning. Keys not declared by the app config are
+	// rejected; a value for an auto-generated secret is rejected. Secrets are
+	// write-only (never read back).
+	InstallInputs map[string]string
+	Secrets       map[string]string
+
+	// Backend configures the terraform method's remote state backend (S3/GCS in
+	// the target account). Ignored by the SDK method. Bucket is required to
+	// enable a remote backend; empty leaves terraform on local state.
+	Backend TerraformBackend
+
+	// WorkDir overrides the terraform method's work directory. Empty uses a
+	// fresh per-run temp dir (state is remote, so the dir is disposable).
+	WorkDir string
+
+	// TerraformExecPath, when set, runs an existing terraform binary instead of
+	// downloading one via hc-install.
+	TerraformExecPath string
+
 	// logStream / stackRun are populated by FromURL. They aren't part of the
 	// public construction API because callers using New only need the
 	// install ID + region; the URL flow is the only one that needs ctl-api
@@ -49,6 +70,23 @@ type URLOptions struct {
 	// ctl-api Config specifies, falling back to the per-cloud default
 	// (aws→sdk, others→terraform).
 	Method Method
+
+	// InstallInputs and Secrets carry customer-supplied VALUES for the install
+	// inputs and secrets the ctl-api Config declares. Forwarded onto Options.
+	InstallInputs map[string]string
+	Secrets       map[string]string
+
+	// Backend configures the terraform method's remote state backend. Forwarded
+	// onto Options.Backend.
+	Backend TerraformBackend
+
+	// WorkDir overrides the terraform method's work directory. Forwarded onto
+	// Options.WorkDir.
+	WorkDir string
+
+	// TerraformExecPath runs an existing terraform binary instead of downloading
+	// one. Forwarded onto Options.TerraformExecPath.
+	TerraformExecPath string
 }
 
 // GCPOptions holds the customer-supplied GCP inputs the module requires that

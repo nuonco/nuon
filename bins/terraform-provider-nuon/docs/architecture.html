@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>nuon Terraform provider — architecture</title>
+    <style>
+      :root {
+        --bg: #0d1117;
+        --panel: #161b22;
+        --ink: #e6edf3;
+        --muted: #8b949e;
+        --line: #30363d;
+        --host: #1f6feb;
+        --nuon: #a371f7;
+        --cloud: #f0883e;
+        --ext: #3fb950;
+        --accent: #58a6ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      }
+      main { max-width: 1160px; margin: 0 auto; padding: 40px 24px 80px; }
+      h1 { font-size: 28px; margin: 0 0 4px; }
+      h2 { font-size: 19px; margin: 40px 0 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+      h3 { font-size: 14px; margin: 22px 0 8px; color: var(--ink); }
+      h3 code { font-size: 13px; }
+      .sub { color: var(--muted); margin: 0 0 28px; }
+      .diagram { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; }
+      svg { display: block; width: 100%; height: auto; min-width: 900px; }
+      .legend { display: flex; flex-wrap: wrap; gap: 18px; margin: 16px 2px 0; color: var(--muted); font-size: 13px; }
+      .legend span { display: inline-flex; align-items: center; gap: 7px; }
+      .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+      ol.steps { padding-left: 0; list-style: none; counter-reset: step; }
+      ol.steps li { position: relative; padding: 10px 0 10px 44px; border-bottom: 1px solid var(--line); }
+      ol.steps li::before {
+        counter-increment: step; content: counter(step);
+        position: absolute; left: 0; top: 10px;
+        width: 28px; height: 28px; border-radius: 50%;
+        background: var(--accent); color: #0d1117; font-weight: 700;
+        display: grid; place-items: center; font-size: 13px;
+      }
+      ol.steps li.cloud::before { background: var(--cloud); }
+      ol.steps li.cloud b.k { color: var(--cloud); }
+      code { background: #010409; border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; font-size: 13px; color: #c9d1d9; }
+      pre { background: #010409; border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+      pre code { background: none; border: 0; padding: 0; color: #c9d1d9; font-size: 13px; }
+      pre .c { color: var(--muted); }
+      pre .kw { color: #ff7b72; }
+      pre .s { color: #a5d6ff; }
+      pre .a { color: #79c0ff; }
+      .tabs input { position: absolute; opacity: 0; pointer-events: none; }
+      .tabs label { display: inline-block; padding: 7px 16px; border: 1px solid var(--line); border-bottom: none; border-radius: 7px 7px 0 0; color: var(--muted); cursor: pointer; font-size: 13px; margin-right: 4px; }
+      .tabs input:checked + label { color: var(--ink); background: #010409; }
+      .tabs .tabpanel { display: none; }
+      .tabs .tabpanel pre { margin-top: 0; border-top-left-radius: 0; }
+      #ex-aws:checked ~ .panel-aws { display: block; }
+      #ex-gcp:checked ~ .panel-gcp { display: block; }
+      b.k { color: var(--accent); }
+      .note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+      table.map { border-collapse: collapse; width: 100%; margin: 4px 0 12px; font-size: 14px; }
+      table.map th, table.map td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+      table.map th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+      table.map td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>nuon Terraform provider</h1>
+      <p class="sub">
+        How the <code>nuon</code> provider's <code>nuon_stack</code> resource drives the stack SDK to
+        provision an install stack: it talks to the Nuon control plane for config, fetches and runs the
+        Terraform module from <code>nuonco/install-stacks</code>, and applies resources into the
+        customer's own cloud account (BYOC / local execution).
+      </p>
+
+      <h2>Example usage</h2>
+      <div class="tabs">
+        <input type="radio" name="ex" id="ex-aws" checked /><label for="ex-aws">AWS</label>
+        <input type="radio" name="ex" id="ex-gcp" /><label for="ex-gcp">GCP</label>
+
+        <div class="tabpanel panel-aws">
+          <pre><code><span class="kw">terraform</span> {
+  <span class="a">required_providers</span> {
+    nuon = {
+      <span class="a">source</span> = <span class="s">"nuonco/nuon"</span>
+    }
+  }
+}
+
+<span class="kw">provider</span> <span class="s">"nuon"</span> {
+  <span class="a">api_url</span> = <span class="s">"https://api.nuon.co"</span>
+}
+
+<span class="kw">resource</span> <span class="s">"nuon_stack"</span> <span class="s">"example"</span> {
+  <span class="a">phone_home_id</span> = <span class="a">var</span>.phone_home_id
+
+  <span class="kw">aws</span> {
+    <span class="a">state_bucket</span> = <span class="s">"my-nuon-tf-state"</span>
+  }
+
+  <span class="a">inputs</span> = {
+    domain = <span class="s">"example.com"</span>
+  }
+
+  <span class="a">secrets</span> = {
+    db_password = <span class="a">var</span>.db_password
+  }
+}</code></pre>
+        </div>
+
+        <div class="tabpanel panel-gcp">
+          <pre><code><span class="kw">terraform</span> {
+  <span class="a">required_providers</span> {
+    nuon = {
+      <span class="a">source</span> = <span class="s">"nuonco/nuon"</span>
+    }
+  }
+}
+
+<span class="kw">provider</span> <span class="s">"nuon"</span> {
+  <span class="a">api_url</span> = <span class="s">"https://api.nuon.co"</span>
+}
+
+<span class="kw">resource</span> <span class="s">"nuon_stack"</span> <span class="s">"example"</span> {
+  <span class="a">phone_home_id</span> = <span class="a">var</span>.phone_home_id
+
+  <span class="kw">gcp</span> {
+    <span class="a">project_id</span>   = <span class="s">"my-gcp-project"</span>
+    <span class="a">region</span>       = <span class="s">"us-central1"</span>
+    <span class="a">state_bucket</span> = <span class="s">"my-nuon-tf-state"</span>
+  }
+
+  <span class="a">inputs</span> = {
+    domain = <span class="s">"example.com"</span>
+  }
+
+  <span class="a">secrets</span> = {
+    db_password = <span class="a">var</span>.db_password
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <h2>Schema</h2>
+
+      <h3><code>provider "nuon"</code></h3>
+      <table class="map">
+        <thead><tr><th>Attribute</th><th>Type</th><th>Requirement</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>api_url</td><td>string</td><td>optional</td><td>Base URL of the Nuon API, up to but excluding <code>/v1</code>. Defaults to <code>https://api.nuon.co</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>resource "nuon_stack"</code></h3>
+      <table class="map">
+        <thead><tr><th>Attribute</th><th>Type</th><th>Requirement</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>phone_home_id</td><td>string</td><td>required</td><td>Per-stack-version identifier from the control plane. Changing it replaces the resource.</td></tr>
+          <tr><td>terraform_version</td><td>string</td><td>optional</td><td>Terraform version to run (hc-install pin). Empty resolves the latest stable release.</td></tr>
+          <tr><td>module_ref</td><td>string</td><td>optional</td><td>Override for the install-stacks module ref/URL. Empty uses the default main archive.</td></tr>
+          <tr><td>inputs</td><td>map(string)</td><td>optional</td><td>Customer install-input values. Keys must be declared by the app config.</td></tr>
+          <tr><td>secrets</td><td>map(string)</td><td>optional, sensitive</td><td>Customer secret values (write-only). Declared keys only; auto-generated secrets are rejected.</td></tr>
+          <tr><td>aws</td><td>block (max 1)</td><td>optional</td><td>AWS target and remote-state configuration. Exactly one cloud block, matching the target cloud.</td></tr>
+          <tr><td>gcp</td><td>block (max 1)</td><td>optional</td><td>GCP target and remote-state configuration. Exactly one cloud block, matching the target cloud.</td></tr>
+          <tr><td>install_id</td><td>string</td><td>computed</td><td>Nuon install ID resolved by the control plane. Also the resource ID.</td></tr>
+          <tr><td>outputs</td><td>map(string)</td><td>computed</td><td>Flattened install-stack outputs (ARNs, IDs, resolved inputs).</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>aws</code> block</h3>
+      <table class="map">
+        <thead><tr><th>Attribute</th><th>Type</th><th>Requirement</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>state_bucket</td><td>string</td><td>required</td><td>Existing S3 bucket in the target account for remote Terraform state.</td></tr>
+          <tr><td>region</td><td>string</td><td>optional, computed</td><td>AWS region. Resolved from the control plane when omitted.</td></tr>
+          <tr><td>account_id</td><td>string</td><td>optional, computed</td><td>AWS account ID. Validated against the resolved account; resolved when omitted.</td></tr>
+          <tr><td>state_key</td><td>string</td><td>optional, computed</td><td>S3 state object key. Defaults to <code>nuon/&lt;install_id&gt;/terraform.tfstate</code>.</td></tr>
+          <tr><td>dynamodb_table</td><td>string</td><td>optional</td><td>DynamoDB table for state locking, or rely on S3 native locking.</td></tr>
+        </tbody>
+      </table>
+
+      <h3><code>gcp</code> block</h3>
+      <table class="map">
+        <thead><tr><th>Attribute</th><th>Type</th><th>Requirement</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>project_id</td><td>string</td><td>required</td><td>Target GCP project (not known server-side).</td></tr>
+          <tr><td>region</td><td>string</td><td>required</td><td>Target GCP region (not known server-side).</td></tr>
+          <tr><td>state_bucket</td><td>string</td><td>required</td><td>Existing GCS bucket in the target project for remote Terraform state.</td></tr>
+          <tr><td>state_prefix</td><td>string</td><td>optional, computed</td><td>GCS state prefix. Defaults to <code>nuon/&lt;install_id&gt;</code>.</td></tr>
+          <tr><td>runner_machine_type</td><td>string</td><td>optional</td><td>Runner VM machine type. Empty uses the module default.</td></tr>
+          <tr><td>has_gke_node_pool</td><td>bool</td><td>optional</td><td>Whether to create a GKE node pool. Empty uses the module default.</td></tr>
+          <tr><td>gke_node_pool_sa_email</td><td>string</td><td>optional</td><td>Service-account email for the GKE node pool.</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Architecture</h2>
+      <div class="diagram">
+        <svg viewBox="0 0 1160 820" role="img" aria-label="Architecture diagram">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#8b949e" />
+            </marker>
+            <marker id="arrowAccent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#58a6ff" />
+            </marker>
+            <marker id="arrowCloud" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#f0883e" />
+            </marker>
+          </defs>
+
+          <!-- ===== Nuon control plane (LEFT) ===== -->
+          <rect x="24" y="70" width="316" height="300" rx="12" fill="#1c1230" stroke="#a371f7" stroke-width="1.5" />
+          <text x="44" y="98" fill="#c297ff" font-size="14" font-weight="700">Nuon control plane — ctl-api</text>
+          <rect x="42" y="112" width="280" height="46" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="58" y="132" fill="#e6edf3" font-size="12.5" font-weight="600">create-run endpoint</text>
+          <text x="58" y="148" fill="#8b949e" font-size="10.5">/v1/stack-runs/{phone_home_id} → Config</text>
+          <rect x="42" y="170" width="134" height="46" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="58" y="190" fill="#e6edf3" font-size="12" font-weight="600">phone-home</text>
+          <text x="58" y="205" fill="#8b949e" font-size="10.5">run status</text>
+          <rect x="188" y="170" width="134" height="46" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="204" y="190" fill="#e6edf3" font-size="12" font-weight="600">log stream</text>
+          <text x="204" y="205" fill="#8b949e" font-size="10.5">OTLP job logs</text>
+          <text x="44" y="252" fill="#8b949e" font-size="10.5">Config: install_id · cloud · region ·</text>
+          <text x="44" y="267" fill="#8b949e" font-size="10.5">input/secret schema · runner_id ·</text>
+          <text x="44" y="282" fill="#8b949e" font-size="10.5">runner_api_url · log-stream creds ·</text>
+          <text x="44" y="297" fill="#8b949e" font-size="10.5">phone_home_url</text>
+
+          <!-- ===== Apply host (CENTER) ===== -->
+          <rect x="420" y="46" width="320" height="426" rx="12" fill="#0d1a33" stroke="#1f6feb" stroke-width="1.5" />
+          <text x="440" y="74" fill="#58a6ff" font-size="14" font-weight="700">Apply host — laptop / CI runner</text>
+          <rect x="438" y="90" width="284" height="44" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="454" y="110" fill="#e6edf3" font-size="13" font-weight="600">terraform CLI</text>
+          <text x="454" y="125" fill="#8b949e" font-size="11">terraform apply / destroy</text>
+          <rect x="438" y="146" width="284" height="46" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="454" y="166" fill="#e6edf3" font-size="12.5" font-weight="600">nuon provider &rsaquo; nuon_stack</text>
+          <text x="454" y="182" fill="#8b949e" font-size="10.5">CRUD → SDK; api_url + phone_home_id</text>
+          <rect x="438" y="204" width="284" height="58" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="454" y="224" fill="#e6edf3" font-size="12.5" font-weight="600">stack SDK (sdks/stack)</text>
+          <text x="454" y="240" fill="#8b949e" font-size="10.5">FromURL/New · Provision/Reprovision/</text>
+          <text x="454" y="254" fill="#8b949e" font-size="10.5">Deprovision/Status · overlay inputs/secrets</text>
+          <rect x="438" y="278" width="137" height="56" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="454" y="299" fill="#e6edf3" font-size="12" font-weight="600">terraform binary</text>
+          <text x="454" y="315" fill="#8b949e" font-size="10.5">hc-install or</text>
+          <text x="454" y="328" fill="#8b949e" font-size="10.5">pre-installed</text>
+          <rect x="585" y="278" width="137" height="56" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="601" y="299" fill="#e6edf3" font-size="12" font-weight="600">ephemeral workdir</text>
+          <text x="601" y="315" fill="#8b949e" font-size="10.5">module + tfvars</text>
+          <text x="601" y="328" fill="#8b949e" font-size="10.5">+ nuon_backend.tf</text>
+          <rect x="438" y="348" width="284" height="52" rx="8" fill="#0d1117" stroke="#30363d" stroke-dasharray="4 3" />
+          <text x="454" y="368" fill="#8b949e" font-size="10.5">ambient cloud credentials (env / instance</text>
+          <text x="454" y="383" fill="#8b949e" font-size="10.5">profile / ADC) — inherited by nested terraform</text>
+          <line x1="580" y1="134" x2="580" y2="144" stroke="#58a6ff" stroke-width="1.3" marker-end="url(#arrowAccent)" />
+          <line x1="580" y1="192" x2="580" y2="202" stroke="#58a6ff" stroke-width="1.3" marker-end="url(#arrowAccent)" />
+          <line x1="580" y1="262" x2="580" y2="276" stroke="#58a6ff" stroke-width="1.3" marker-end="url(#arrowAccent)" />
+
+          <!-- ===== Target cloud account (RIGHT) ===== -->
+          <rect x="820" y="70" width="316" height="330" rx="12" fill="#2a1a0d" stroke="#f0883e" stroke-width="1.5" />
+          <text x="840" y="98" fill="#f0a862" font-size="13.5" font-weight="700">Target cloud account (BYOC) — AWS / GCP</text>
+          <rect x="838" y="114" width="280" height="116" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="854" y="135" fill="#e6edf3" font-size="12.5" font-weight="600">remote state backend</text>
+          <text x="854" y="153" fill="#8b949e" font-size="10.5">S3 (AWS) / GCS (GCP)</text>
+          <text x="854" y="168" fill="#8b949e" font-size="10.5">key nuon/&lt;install_id&gt;/</text>
+          <text x="854" y="183" fill="#8b949e" font-size="10.5">native locking</text>
+          <text x="854" y="205" fill="#8b949e" font-size="10.5">customer-supplied bucket</text>
+          <rect x="838" y="244" width="280" height="140" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="854" y="265" fill="#e6edf3" font-size="12.5" font-weight="600">install-stack resources</text>
+          <text x="854" y="285" fill="#8b949e" font-size="10.5">VPC + subnets · IAM roles /</text>
+          <text x="854" y="300" fill="#8b949e" font-size="10.5">service accounts · Secrets Manager</text>
+          <text x="854" y="315" fill="#8b949e" font-size="10.5">entries · runner compute</text>
+          <text x="854" y="330" fill="#8b949e" font-size="10.5">(EC2 ASG / GKE node pool)</text>
+          <text x="854" y="360" fill="#8b949e" font-size="10.5">module phone-home reports the</text>
+          <text x="854" y="375" fill="#8b949e" font-size="10.5">run back to ctl-api</text>
+
+          <!-- ===== External sources (BOTTOM) ===== -->
+          <rect x="360" y="560" width="440" height="150" rx="12" fill="#0f2417" stroke="#3fb950" stroke-width="1.5" />
+          <text x="380" y="588" fill="#56d364" font-size="14" font-weight="700">External sources</text>
+          <rect x="378" y="602" width="194" height="90" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="394" y="624" fill="#e6edf3" font-size="12.5" font-weight="600">releases.hashicorp</text>
+          <text x="394" y="642" fill="#8b949e" font-size="10.5">terraform binary</text>
+          <text x="394" y="656" fill="#8b949e" font-size="10.5">(if not pre-installed)</text>
+          <rect x="588" y="602" width="194" height="90" rx="8" fill="#161b22" stroke="#30363d" />
+          <text x="604" y="624" fill="#e6edf3" font-size="12.5" font-weight="600">github.com</text>
+          <text x="604" y="642" fill="#8b949e" font-size="10.5">nuonco/</text>
+          <text x="604" y="656" fill="#8b949e" font-size="10.5">install-stacks (tar.gz)</text>
+
+          <!-- ===== arrows ===== -->
+          <!-- 1: SDK -> create-run (center to left) -->
+          <path d="M438,214 L324,140" stroke="#58a6ff" stroke-width="2" fill="none" marker-end="url(#arrowAccent)" />
+          <circle cx="368" cy="171" r="11" fill="#58a6ff" /><text x="368" y="175" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">1</text>
+          <!-- 6: SDK -> log stream (logs stream before phone-home) -->
+          <path d="M438,252 L324,200" stroke="#58a6ff" stroke-width="1.4" fill="none" marker-end="url(#arrowAccent)" />
+          <circle cx="366" cy="230" r="11" fill="#58a6ff" /><text x="366" y="234" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">6</text>
+          <!-- 2: workdir -> github (fetch request; arrow toward source) -->
+          <path d="M640,338 L660,600" stroke="#58a6ff" stroke-width="1.5" fill="none" marker-end="url(#arrowAccent)" />
+          <circle cx="655" cy="474" r="11" fill="#58a6ff" /><text x="655" y="478" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">2</text>
+          <!-- 3: terraform binary -> releases (fetch request; arrow toward source) -->
+          <path d="M520,338 L500,600" stroke="#58a6ff" stroke-width="1.4" fill="none" marker-end="url(#arrowAccent)" />
+          <circle cx="508" cy="474" r="11" fill="#58a6ff" /><text x="508" y="478" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">3</text>
+          <!-- 4: init -> state backend (center to right) -->
+          <path d="M724,300 L836,168" stroke="#58a6ff" stroke-width="2" fill="none" marker-end="url(#arrowAccent)" />
+          <circle cx="784" cy="230" r="11" fill="#58a6ff" /><text x="784" y="234" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">4</text>
+          <!-- 5: apply -> resources (center to right) -->
+          <path d="M724,320 L836,300" stroke="#58a6ff" stroke-width="2" fill="none" marker-end="url(#arrowAccent)" />
+          <circle cx="782" cy="304" r="11" fill="#58a6ff" /><text x="782" y="308" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">5</text>
+          <!-- 7: resources -> phone-home (wide rounded U, clears the External sources box) -->
+          <path d="M1000,384 C1000,960 110,960 110,218" stroke="#f0883e" stroke-width="1.5" fill="none" marker-end="url(#arrowCloud)" />
+          <circle cx="555" cy="795" r="11" fill="#f0883e" /><text x="555" y="799" fill="#0d1117" font-size="12" font-weight="700" text-anchor="middle">7</text>
+        </svg>
+
+        <div class="legend">
+          <span><i class="dot" style="background:#1f6feb"></i>Apply host (local execution)</span>
+          <span><i class="dot" style="background:#a371f7"></i>Nuon control plane</span>
+          <span><i class="dot" style="background:#f0883e"></i>Target cloud account (BYOC)</span>
+          <span><i class="dot" style="background:#3fb950"></i>External sources</span>
+        </div>
+      </div>
+
+      <h2>Walkthrough</h2>
+      <ol class="steps">
+        <li>
+          <b class="k">Bootstrap &amp; fetch config.</b> On <code>terraform apply</code>, the resource builds
+          <code>{api_url}/v1/stack-runs/{phone_home_id}</code> and the SDK's <code>FromURL</code> POSTs a run
+          to the Nuon control plane. ctl-api returns the rendered <b class="k">Config</b> — install_id, cloud,
+          region, the declared input/secret schema, runner IDs, log-stream credentials, and the phone-home URL.
+          The resource overlays customer <code>inputs</code>/<code>secrets</code> onto it (unknown keys rejected;
+          secrets write-only).
+        </li>
+        <li>
+          <b class="k">Fetch the module.</b> The SDK downloads the <code>nuonco/install-stacks</code> archive over
+          HTTPS (tarball, not <code>git clone</code>) and extracts the cloud's subdir (<code>aws</code>/<code>gcp</code>)
+          into an ephemeral work dir, then writes the rendered <code>terraform.tfvars.json</code>.
+        </li>
+        <li>
+          <b class="k">Resolve the terraform binary.</b> Either a pre-installed binary (offline / locked-down) or one
+          downloaded via hc-install from <code>releases.hashicorp.com</code>.
+        </li>
+        <li>
+          <b class="k">Init against remote state.</b> The SDK writes a partial <code>nuon_backend.tf</code> and runs
+          <code>terraform init -backend-config=…</code> pointing at the <b class="k">state backend in the target
+          account</b> (S3 or GCS, keyed <code>nuon/&lt;install_id&gt;</code>). State lives with the customer, so the
+          work dir stays disposable and ephemeral runners just work.
+        </li>
+        <li>
+          <b class="k">Apply.</b> <code>terraform apply</code> (or <code>destroy</code>) creates the install-stack
+          resources — VPC/subnets, IAM roles or service accounts, secret entries, and the runner compute — using
+          the apply host's <b class="k">ambient cloud credentials</b>.
+        </li>
+        <li>
+          <b class="k">Stream logs.</b> The SDK streams job output to the ctl-api log stream using the credentials
+          minted for this run, so progress shows in the Nuon dashboard. Logs start streaming as the run begins,
+          before the module's phone-home reports completion.
+        </li>
+        <li class="cloud">
+          <b class="k">Phone-home.</b> The install-stacks module reports run status back to ctl-api directly (the SDK
+          does not double-report for the Terraform method).
+        </li>
+      </ol>
+      <h2>SDK &harr; Terraform operations</h2>
+      <p class="sub" style="margin-top:0">
+        Each Terraform lifecycle operation maps to a stack SDK call.
+      </p>
+      <table class="map">
+        <thead>
+          <tr><th>Terraform</th><th>SDK call</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Create</td>
+            <td><code>FromURL(Kind: Provision)</code> &rarr; <code>Provision()</code></td>
+          </tr>
+          <tr>
+            <td>Read</td>
+            <td><code>New(...)</code> &rarr; <code>Status()</code></td>
+          </tr>
+          <tr>
+            <td>Update</td>
+            <td><code>FromURL(Kind: Reprovision)</code> &rarr; <code>Reprovision()</code></td>
+          </tr>
+          <tr>
+            <td>Delete</td>
+            <td><code>FromURL(Kind: Deprovision)</code> &rarr; <code>Deprovision()</code></td>
+          </tr>
+          <tr>
+            <td>Import</td>
+            <td><code>install_id:region</code> &rarr; Read</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </main>
+  </body>
+</html>

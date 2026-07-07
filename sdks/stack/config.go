@@ -24,6 +24,9 @@ type (
 	Method = core.Method
 	// Cloud selects which cloud provider an install stack targets.
 	Cloud = core.Cloud
+	// TerraformBackend configures the terraform method's remote state backend
+	// (S3 for AWS, GCS for GCP) in the customer's target account.
+	TerraformBackend = core.TerraformBackend
 )
 
 // Provisioning methods.

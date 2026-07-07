@@ -18,3 +18,12 @@ func (gcpAdapter) RenderTFVars(cfg *core.Config) ([]byte, error) { return render
 func (gcpAdapter) MapOutputs(meta map[string]tfexec.OutputMeta) (*core.Outputs, error) {
 	return gcpOutputsToCore(meta)
 }
+
+func (gcpAdapter) BackendType() string { return "gcs" }
+
+func (gcpAdapter) BackendConfigKV(be *core.TerraformBackend) []string {
+	return []string{
+		"bucket=" + be.Bucket,
+		"prefix=" + be.Prefix,
+	}
+}

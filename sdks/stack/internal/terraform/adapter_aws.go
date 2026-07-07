@@ -19,3 +19,19 @@ func (awsAdapter) RenderTFVars(cfg *core.Config) ([]byte, error) { return render
 func (awsAdapter) MapOutputs(meta map[string]tfexec.OutputMeta) (*core.Outputs, error) {
 	return outputsToCore(meta)
 }
+
+func (awsAdapter) BackendType() string { return "s3" }
+
+func (awsAdapter) BackendConfigKV(be *core.TerraformBackend) []string {
+	kv := []string{
+		"bucket=" + be.Bucket,
+		"key=" + be.Key,
+	}
+	if be.Region != "" {
+		kv = append(kv, "region="+be.Region)
+	}
+	if be.DynamoDBTable != "" {
+		kv = append(kv, "dynamodb_table="+be.DynamoDBTable)
+	}
+	return kv
+}
