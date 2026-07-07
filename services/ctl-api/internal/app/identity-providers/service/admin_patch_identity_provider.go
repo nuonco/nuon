@@ -42,6 +42,7 @@ func (r *AdminPatchIdentityProviderRequest) Validate(v *validator.Validate) erro
 // @Accept					json
 // @Produce				json
 // @Failure				400	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
 // @Failure				404	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				200	{object}	app.IdentityProvider

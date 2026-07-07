@@ -33,11 +33,13 @@ func (m *middleware) Handler() gin.HandlerFunc {
 
 		if err := m.setAccount(ctx); err != nil {
 			ctx.Error(err)
+			ctx.Abort()
 			return
 		}
 
 		if err := m.setOrgID(ctx); err != nil {
 			ctx.Error(err)
+			ctx.Abort()
 			return
 		}
 
