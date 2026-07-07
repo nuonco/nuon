@@ -8,7 +8,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	appshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -70,27 +69,13 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 
 	ctx = a.resolvePusherAccount(ctx, branch.OrgID, req.PusherEmails, req.FallbackCreatedByID)
 
-	// Build labels for the run
-	runLabels := labels.Labels{}
-	if len(req.PusherEmails) > 0 {
-		runLabels["pusher_email"] = req.PusherEmails[0]
-	}
-	if req.SenderLogin != "" {
-		runLabels["sender"] = req.SenderLogin
-	}
-	if req.HeadSHA != "" {
-		runLabels["commit"] = req.HeadSHA
-	}
-	if req.PRNumber != nil {
-		runLabels["pr"] = strconv.Itoa(*req.PRNumber)
-	}
-	if req.EventType != "" {
-		runLabels["event_type"] = req.EventType
-	}
+	runType := RunTypeFromEventType(req.EventType)
+	runLabels := BuildRunLabels(&req)
 
 	run, err := a.helpers.CreateAppBranchRun(ctx, &appshelpers.CreateAppBranchRunRequest{
 		AppBranchID:       appBranchID,
 		AppBranchConfigID: appBranchConfigID,
+		RunType:           runType,
 		Force:             false,
 		PlanOnly:          req.PlanOnly,
 		EventType:         req.EventType,
@@ -111,6 +96,7 @@ func (a *Activities) TriggerAppBranchRunFromVCSPush(ctx context.Context, req Tri
 		"force":         "false",
 		"event_type":    req.EventType,
 		"commit_sha":    run.CommitSHA,
+		"run_type":      string(runType),
 	}
 	if req.PRNumber != nil {
 		metadata["pr_number"] = strconv.Itoa(*req.PRNumber)

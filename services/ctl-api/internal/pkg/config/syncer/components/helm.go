@@ -80,9 +80,9 @@ func SyncHelmComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.H
 		}
 	}
 
-	// Resolve component dependencies
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
+		var err error
 		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
 		if err != nil {
 			return "", "", sync.SyncInternalErr{

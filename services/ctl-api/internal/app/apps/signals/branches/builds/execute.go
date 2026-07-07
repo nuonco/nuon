@@ -33,15 +33,21 @@ type buildEntry struct {
 func (s *Signal) Execute(ctx workflow.Context) error {
 	l := workflow.GetLogger(ctx)
 
-	// Load the run to get the AppConfigID (set by the appconfig step)
 	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 	if err != nil {
 		return fmt.Errorf("unable to get app branch run: %w", err)
 	}
 
+	if run.NoConfigChanges {
+		l.Info("no config changes, skipping builds")
+		return nil
+	}
+
 	if run.AppConfigID == "" {
 		return fmt.Errorf("app branch run %s has no app config ID", s.RunID)
 	}
+
+	isPreview := run.RunType == app.AppBranchRunTypeGitPreview
 
 	// Get app config with component IDs
 	appConfig, err := activities.AwaitGetAppConfigByIDByAppConfigID(ctx, run.AppConfigID)
@@ -68,13 +74,14 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		}
 	}
 
-	// Build all components — tracks progress via parent step metadata
 	builds, err := s.buildComponents(ctx, l, appConfig, run.AppConfigID, previousAppConfigID)
 	if err != nil {
+		if isPreview && run.PRNumber != nil {
+			s.finalizePreview(ctx, l, run, err)
+		}
 		return fmt.Errorf("component builds failed: %w", err)
 	}
 
-	// Build sandbox infrastructure (terraform)
 	sandboxEntry := buildEntry{
 		ComponentID:   "sandbox",
 		ComponentName: "Sandbox",
@@ -88,10 +95,17 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	if err := s.buildSandbox(ctx, l); err != nil {
 		s.setBuildStatus(builds, "sandbox", "error")
 		s.updateBuildMetadata(ctx, builds)
+		if isPreview && run.PRNumber != nil {
+			s.finalizePreview(ctx, l, run, err)
+		}
 		return fmt.Errorf("sandbox build failed: %w", err)
 	}
 	s.setBuildStatus(builds, "sandbox", "success")
 	s.updateBuildMetadata(ctx, builds)
+
+	if isPreview && run.PRNumber != nil {
+		s.finalizePreview(ctx, l, run, nil)
+	}
 
 	l.Info("all builds completed successfully")
 	return nil
@@ -296,11 +310,93 @@ func (s *Signal) updateBuildMetadata(ctx workflow.Context, builds []buildEntry) 
 	})
 }
 
+func (s *Signal) finalizePreview(ctx workflow.Context, l log.Logger, run *app.AppBranchRun, buildErr error) {
+	if run.PRNumber == nil {
+		return
+	}
+
+	branch, err := activities.AwaitGetAppBranchByIDByAppBranchID(ctx, s.AppBranchID)
+	if err != nil {
+		l.Warn("unable to get branch for preview finalization", "error", err)
+		return
+	}
+
+	var vcsConfigID string
+	if len(branch.Configs) > 0 {
+		if cfg := branch.Configs[0].ConnectedGithubVCSConfig; cfg != nil {
+			vcsConfigID = cfg.ID
+		} else if cfg := branch.Configs[0].PublicGitVCSConfig; cfg != nil {
+			vcsConfigID = cfg.ID
+		}
+	}
+	if vcsConfigID == "" {
+		return
+	}
+
+	status := activities.PRCommentStatusSuccess
+	commitState := "success"
+	commitDesc := "Preview complete"
+	var errMsg string
+
+	if buildErr != nil {
+		status = activities.PRCommentStatusFailed
+		commitState = "failure"
+		commitDesc = "Preview failed"
+		errMsg = buildErr.Error()
+	}
+
+	var diff *activities.ComputeAppConfigDiffOutput
+	if run.AppConfigID != "" {
+		baseline, baselineErr := activities.AwaitFindLatestNonPreviewAppConfig(ctx, &activities.FindLatestNonPreviewAppConfigInput{
+			AppID: branch.AppID,
+		})
+		var oldConfigID string
+		if baselineErr == nil && baseline.AppConfigID != "" {
+			oldConfigID = baseline.AppConfigID
+		}
+
+		computed, diffErr := activities.AwaitComputeAppConfigDiff(ctx, &activities.ComputeAppConfigDiffInput{
+			AppID:       branch.AppID,
+			NewConfigID: run.AppConfigID,
+			OldConfigID: oldConfigID,
+		})
+		if diffErr == nil {
+			diff = computed
+		}
+	}
+
+	commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
+		AppName:      branch.Name,
+		RunID:        s.RunID,
+		Status:       status,
+		Diff:         diff,
+		ErrorMessage: errMsg,
+	})
+
+	_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+		VcsConfigID:       vcsConfigID,
+		PRNumber:          *run.PRNumber,
+		ExistingCommentID: run.GithubCommentID,
+		Body:              commentBody,
+	})
+
+	if run.HeadSHA != "" {
+		_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
+			VcsConfigID: vcsConfigID,
+			CommitSHA:   run.HeadSHA,
+			State:       commitState,
+			Context:     "nuon/preview",
+			Description: commitDesc,
+		})
+	}
+}
+
 func (s *Signal) buildSandbox(ctx workflow.Context, l log.Logger) error {
 	cb := callback.New(ctx, s.AppBranchID+"-sandbox-infra")
 	_, err := sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
 		OwnerID:         s.AppBranchID,
 		OwnerType:       "app_branches",
+		QueueName:       "app-branch-sandbox-builds",
 		SignalOwnerID:   s.AppBranchID,
 		SignalOwnerType: "app_branches",
 		Signal: &sandboxbuild.Signal{

@@ -153,7 +153,73 @@ func (a *Activities) FetchCommitDiffStats(ctx context.Context, input *FetchCommi
 	return stats, nil
 }
 
-// resolveGithubClient loads the VCS config and returns an authenticated GitHub client.
+// resolveAuthenticatedGithubClient returns an authenticated GitHub client for the given VCS config.
+// For ConnectedGithubVCSConfig, uses its VCS connection directly.
+// For PublicGitVCSConfig, looks up a VCS connection in the same org that has a GitHub App
+// installation for the repo's owner (e.g., finds a "nuonco" connection for a nuonco/* repo).
+func (a *Activities) resolveAuthenticatedGithubClient(ctx context.Context, vcsConfigID string) (owner, repo string, client *github.Client, err error) {
+	vcsHelpers := a.helpers.VCSHelpers()
+
+	var connectedCfg app.ConnectedGithubVCSConfig
+	connectedRes := a.db.WithContext(ctx).
+		Preload("VCSConnection").
+		First(&connectedCfg, "id = ?", vcsConfigID)
+
+	if connectedRes.Error == nil {
+		client, err = vcsHelpers.GetVCSConnectionClient(ctx, &connectedCfg.VCSConnection)
+		if err != nil {
+			return "", "", nil, fmt.Errorf("unable to get VCS client: %w", err)
+		}
+		return connectedCfg.RepoOwner, connectedCfg.RepoName, client, nil
+	}
+
+	var publicCfg app.PublicGitVCSConfig
+	publicRes := a.db.WithContext(ctx).First(&publicCfg, "id = ?", vcsConfigID)
+	if publicRes.Error != nil {
+		return "", "", nil, fmt.Errorf("VCS config not found: %s", vcsConfigID)
+	}
+
+	repoOwner, repoName, parseErr := parseGithubRepo(publicCfg.Repo)
+	if parseErr != nil {
+		return "", "", nil, fmt.Errorf("unable to parse repo URL: %w", parseErr)
+	}
+
+	var vcsConn app.VCSConnection
+	connErr := a.db.WithContext(ctx).
+		Where(app.VCSConnection{
+			OrgID:             publicCfg.OrgID,
+			GithubAccountName: repoOwner,
+		}).
+		First(&vcsConn).Error
+	if connErr != nil {
+		return "", "", nil, fmt.Errorf("no VCS connection found for GitHub account %q in org %s", repoOwner, publicCfg.OrgID)
+	}
+
+	client, err = vcsHelpers.GetVCSConnectionClient(ctx, &vcsConn)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("unable to get VCS client from org connection: %w", err)
+	}
+
+	return repoOwner, repoName, client, nil
+}
+
+func parseGithubRepo(repoURL string) (owner, name string, err error) {
+	raw := repoURL
+	raw = strings.TrimPrefix(raw, "https://github.com/")
+	raw = strings.TrimPrefix(raw, "http://github.com/")
+	raw = strings.TrimPrefix(raw, "/")
+	raw = strings.TrimSuffix(raw, ".git")
+
+	parts := strings.SplitN(raw, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("unable to parse GitHub repo: %s", repoURL)
+	}
+	return parts[0], parts[1], nil
+}
+
+// resolveGithubClient loads the VCS config and returns a GitHub client.
+// For ConnectedGithubVCSConfig, returns an authenticated client.
+// For PublicGitVCSConfig, returns an unauthenticated client (read-only).
 func (a *Activities) resolveGithubClient(ctx context.Context, vcsConfigID string) (owner, repo string, client *github.Client, err error) {
 	vcsHelpers := a.helpers.VCSHelpers()
 

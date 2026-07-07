@@ -5,10 +5,12 @@ import (
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/callback"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/flow/signals/executeflow"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/activities"
+	workflowactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
 
 func (s *Signal) Execute(ctx workflow.Context) error {
@@ -83,7 +85,36 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("workflow execution failed: %w", err)
 	}
 
-	// Mark as success
+	// Re-fetch the workflow to check actual status — the callback completing
+	// doesn't mean all steps succeeded (cancelled/errored steps are terminal).
+	wf, wfErr := workflowactivities.AwaitPkgWorkflowsFlowGetFlowByID(ctx, *run.WorkflowID)
+	if wfErr == nil && wf.Status.Status != "" {
+		switch wf.Status.Status {
+		case app.StatusCancelled:
+			if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
+				RunID:        run.ID,
+				Status:       "cancelled",
+				ErrorMessage: "workflow was cancelled",
+			}); updateErr != nil {
+				logger.Error("unable to update run status to cancelled", "error", updateErr)
+			}
+			return nil
+		case app.StatusError:
+			errMsg := "workflow completed with errors"
+			if wf.Status.StatusHumanDescription != "" {
+				errMsg = wf.Status.StatusHumanDescription
+			}
+			if _, updateErr := activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
+				RunID:        run.ID,
+				Status:       "failed",
+				ErrorMessage: errMsg,
+			}); updateErr != nil {
+				logger.Error("unable to update run status to failed", "error", updateErr)
+			}
+			return nil
+		}
+	}
+
 	if _, err = activities.AwaitUpdateAppBranchRunStatus(ctx, &activities.UpdateAppBranchRunStatusRequest{
 		RunID:  run.ID,
 		Status: "success",
