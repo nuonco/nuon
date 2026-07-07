@@ -279,18 +279,11 @@ func (w *Workflows) GenerateInstallStackVersion(ctx workflow.Context, sreq Gener
 		checksum = renderedTemplate.Checksum
 	}
 
-	// TemplateURL is only set when the S3 template bucket is configured; skip
-	// the upload instead of failing the whole workflow when it isn't (e.g. an
-	// un-onboarded BYOC-on-GCP control plane).
-	if stackVersion.TemplateURL != "" {
-		if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
-			BucketKey: stackVersion.AWSBucketKey,
-			Template:  tmplByts,
-		}); err != nil {
-			return errors.Wrap(err, "unable to upload cloudformation stack")
-		}
-	} else {
-		workflow.GetLogger(ctx).Warn("cloudformation template bucket not configured, skipping upload", "install_id", install.ID)
+	if err := activities.AwaitUploadAWSCloudFormationStackVersionTemplate(ctx, &activities.UploadAWSCloudFormationStackVersionTemplateRequest{
+		BucketKey: stackVersion.AWSBucketKey,
+		Template:  tmplByts,
+	}); err != nil {
+		return errors.Wrap(err, "unable to upload cloudformation stack")
 	}
 
 	if err := activities.AwaitSaveInstallStackVersionTemplate(ctx, &activities.SaveInstallStackVersionTemplateRequest{
