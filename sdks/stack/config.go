@@ -3,7 +3,7 @@ package stack
 import "github.com/nuonco/nuon/sdks/stack/internal/core"
 
 // The per-install configuration types live in internal/core so the
-// provisioning method packages (internal/awssdk, internal/terraform, …) can
+// provisioning method packages (internal/terraform) can
 // share them without importing this package. They are re-exported here as
 // aliases to keep the public SDK surface stable for embedders and stack-cli.
 type (
@@ -31,7 +31,6 @@ type (
 
 // Provisioning methods.
 const (
-	MethodSDK       = core.MethodSDK
 	MethodTerraform = core.MethodTerraform
 )
 

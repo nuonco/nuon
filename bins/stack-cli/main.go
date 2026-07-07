@@ -32,10 +32,10 @@ var Version = "dev"
 const usage = `stack-cli — provision/reprovision/deprovision a Nuon install stack.
 
 Usage:
-  stack-cli provision    [--method sdk|terraform] [gcp flags] <create-run-url>
-  stack-cli reprovision  [--method sdk|terraform] [gcp flags] <create-run-url>
-  stack-cli deprovision  [--method sdk|terraform] [gcp flags] <create-run-url>
-  stack-cli status       --install-id <id> --region <region> [--method sdk|terraform]
+  stack-cli provision    [gcp flags] <create-run-url>
+  stack-cli reprovision  [gcp flags] <create-run-url>
+  stack-cli deprovision  [gcp flags] <create-run-url>
+  stack-cli status       --install-id <id> --region <region>
   stack-cli version      [--json]
 
 The <create-run-url> is the POST endpoint the Nuon dashboard renders, e.g.
@@ -73,7 +73,6 @@ func main() {
 func runFromURL(verb string) {
 	fs := flag.NewFlagSet(verb, flag.ExitOnError)
 	nonInteractive := fs.Bool("non-interactive", false, "skip the interactive walkthrough even on a TTY")
-	method := fs.String("method", "", "provisioning method: sdk or terraform (default: chosen by the server)")
 	gcpProject := fs.String("gcp-project", "", "GCP project ID (required for GCP installs)")
 	gcpRegion := fs.String("gcp-region", "", "GCP region (required for GCP installs)")
 	gcpMachineType := fs.String("gcp-machine-type", "", "GCE machine type for the runner (optional; defaults to the module default)")
@@ -98,11 +97,6 @@ func runFromURL(verb string) {
 	}
 	url := args[0]
 
-	m, err := parseMethod(*method)
-	if err != nil {
-		fail(err)
-	}
-
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
@@ -117,7 +111,7 @@ func runFromURL(verb string) {
 		gcpOpts.HasGKENodePool = &no
 	}
 
-	inst, err := stack.FromURL(ctx, stack.URLOptions{URL: url, Kind: stack.Kind(verb), Method: m, GCP: gcpOpts})
+	inst, err := stack.FromURL(ctx, stack.URLOptions{URL: url, Kind: stack.Kind(verb), GCP: gcpOpts})
 	if err != nil {
 		fail(err)
 	}
@@ -172,7 +166,6 @@ func runStatus() {
 	fs := flag.NewFlagSet("status", flag.ExitOnError)
 	installID := fs.String("install-id", "", "install identifier (required)")
 	region := fs.String("region", "us-east-1", "AWS region")
-	method := fs.String("method", "", "provisioning method: sdk or terraform (default: sdk)")
 	fs.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: stack-cli status [flags]\n\nflags:\n")
 		fs.PrintDefaults()
@@ -181,11 +174,7 @@ func runStatus() {
 	if *installID == "" {
 		fail(fmt.Errorf("--install-id is required"))
 	}
-	m, err := parseMethod(*method)
-	if err != nil {
-		fail(err)
-	}
-	opts := stack.Options{InstallID: *installID, AWSRegion: *region, Method: m}
+	opts := stack.Options{InstallID: *installID, AWSRegion: *region}
 	inst, err := stack.New(context.Background(), opts)
 	if err != nil {
 		fail(err)
@@ -209,17 +198,6 @@ func runVersion() {
 		return
 	}
 	fmt.Println(Version)
-}
-
-// parseMethod validates the --method flag. Empty means "let the server /
-// default decide" and is passed through as-is.
-func parseMethod(s string) (stack.Method, error) {
-	switch stack.Method(s) {
-	case "", stack.MethodSDK, stack.MethodTerraform:
-		return stack.Method(s), nil
-	default:
-		return "", fmt.Errorf("invalid --method %q (want %q or %q)", s, stack.MethodSDK, stack.MethodTerraform)
-	}
 }
 
 func fail(err error) {

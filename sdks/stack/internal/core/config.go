@@ -1,6 +1,6 @@
 // Package core holds the method-agnostic types shared between the public
 // stack package and the individual provisioning method implementations
-// (internal/awssdk, internal/terraform, internal/cloudformation). It carries
+// (internal/terraform). It carries
 // no cloud-provider SDK dependencies so that every method package — and the
 // public API — can import it without creating an import cycle.
 package core
@@ -26,15 +26,13 @@ type Config struct {
 	RunnerAPIURL string `json:"runner_api_url,omitempty"`
 
 	// PhoneHomeURL is the endpoint the Terraform module's phone-home reports
-	// to. The Terraform method renders it into tfvars and lets the module
-	// report the run; the AWS SDK method ignores it (the SDK reports directly).
+	// to. The module renders it into tfvars and reports the run.
 	PhoneHomeURL string `json:"phone_home_url,omitempty"`
 
-	// Method selects the provisioning implementation (sdk or terraform).
-	// Empty falls back to the cloud's default (see DefaultMethodForCloud).
+	// Method is retained for wire compatibility; Terraform is currently the
+	// only provisioning implementation. Empty falls back to the default.
 	Method Method `json:"method,omitempty"`
 
-	// Terraform* configure the terraform method; ignored by other methods.
 	// TerraformVersion empty resolves the latest stable release at runtime.
 	// TerraformModuleURL empty defaults to the install-stacks main archive,
 	// TerraformModuleSubdir empty defaults to the cloud's module subdir.

@@ -90,7 +90,6 @@ func awsSteps(ctx context.Context, kind stack.Kind, cfg *stack.Config) []stepEnt
 		{"Secrets", newSecretsStep(cfg)},
 		{"Network", newNetworkStep(cfg)},
 		{"Roles", newRolesStep(cfg)},
-		{"Method", newMethodStep(cfg)},
 		{"Provision", newConfirmStep(cfg)},
 	}
 }

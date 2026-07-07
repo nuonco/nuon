@@ -3,11 +3,10 @@
 // Secrets Manager entries, runner EC2 ASG) and reports run status back to
 // ctl-api over the public phone-home endpoint.
 //
-// The actual resource lifecycle is delegated to a provisioning method
-// (see internal/core.Provisioner): the AWS SDK implementation lives in
-// internal/awssdk, with Terraform and CloudFormation methods to follow. This
-// package owns the cross-cutting concerns — run reporting, log-stream wiring,
-// and config hydration — and selects which method to drive.
+// The actual resource lifecycle is delegated to the Terraform provisioner
+// (see internal/core.Provisioner and internal/terraform). This package owns
+// the cross-cutting concerns — run reporting, log-stream wiring, and config
+// hydration.
 //
 // Customer-facing clients (stack-cli, embedded Go consumers) construct an
 // Installer with FromURL when bootstrapping from a dashboard-rendered URL,
@@ -21,7 +20,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/nuonco/nuon/sdks/stack/internal/awssdk"
 	"github.com/nuonco/nuon/sdks/stack/internal/core"
 	"github.com/nuonco/nuon/sdks/stack/internal/logstream"
 	"github.com/nuonco/nuon/sdks/stack/internal/terraform"
@@ -406,13 +404,11 @@ func (i *Installer) locationAttr() (string, string) {
 	return "aws_region", i.opts.AWSRegion
 }
 
-// selectProvisioner constructs the provisioning method for this run from the
-// (cloud, method) pair. Each is resolved from Options (explicit CLI override)
-// first, then the ctl-api Config, then the default (cloud→aws, method→the
-// cloud's default). The pair is validated against the supported matrix before
-// construction. Construction is deferred until the Config is hydrated because
-// ctl-api decides the cloud and method per install.
-func (i *Installer) selectProvisioner(ctx context.Context, cfg *Config) (core.Provisioner, error) {
+// selectProvisioner constructs the Terraform provisioner for this run. The
+// target cloud is resolved from Options (explicit override), then the ctl-api
+// Config, then the default. Construction is deferred until the Config is
+// hydrated because ctl-api decides the cloud per install.
+func (i *Installer) selectProvisioner(_ context.Context, cfg *Config) (core.Provisioner, error) {
 	cloud := i.opts.Cloud
 	if cloud == "" {
 		cloud = cfg.Cloud
@@ -420,33 +416,10 @@ func (i *Installer) selectProvisioner(ctx context.Context, cfg *Config) (core.Pr
 	if cloud == "" {
 		cloud = core.DefaultCloud
 	}
-
-	method := i.opts.Method
-	if method == "" {
-		method = cfg.Method
-	}
-	if method == "" {
-		method = core.DefaultMethodForCloud(cloud)
-	}
-
-	if err := core.ValidateCloudMethod(cloud, method); err != nil {
+	if err := core.ValidateCloud(cloud); err != nil {
 		return nil, err
 	}
-
-	switch cloud {
-	case core.CloudAWS:
-		switch method {
-		case core.MethodTerraform:
-			return terraform.New(cloud)
-		case core.MethodSDK:
-			return awssdk.New(ctx, i.opts.AWSRegion)
-		}
-	case core.CloudGCP:
-		// GCP supports the Terraform method only (enforced by
-		// ValidateCloudMethod above).
-		return terraform.New(cloud)
-	}
-	return nil, fmt.Errorf("unsupported cloud/method combination: cloud %q, method %q", cloud, method)
+	return terraform.New(cloud)
 }
 
 // PreparedConfig returns the rendered Config attached to the pre-created run

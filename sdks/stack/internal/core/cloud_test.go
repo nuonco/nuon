@@ -3,34 +3,27 @@ package core
 import "testing"
 
 func TestDefaultMethodForCloud(t *testing.T) {
-	cases := map[Cloud]Method{
-		CloudAWS: MethodSDK,
-		CloudGCP: MethodTerraform,
-	}
-	for cloud, want := range cases {
-		if got := DefaultMethodForCloud(cloud); got != want {
-			t.Errorf("DefaultMethodForCloud(%q) = %q, want %q", cloud, got, want)
+	for _, cloud := range []Cloud{CloudAWS, CloudGCP} {
+		if got := DefaultMethodForCloud(cloud); got != MethodTerraform {
+			t.Errorf("DefaultMethodForCloud(%q) = %q, want %q", cloud, got, MethodTerraform)
 		}
 	}
 }
 
-func TestValidateCloudMethod(t *testing.T) {
+func TestValidateCloud(t *testing.T) {
 	cases := []struct {
 		cloud   Cloud
-		method  Method
 		wantErr bool
 	}{
-		{CloudAWS, MethodSDK, false},
-		{CloudAWS, MethodTerraform, false},
-		{CloudGCP, MethodTerraform, false},
-		{CloudGCP, MethodSDK, true},
-		{CloudAzure, MethodTerraform, true},
-		{Cloud("bogus"), MethodTerraform, true},
+		{CloudAWS, false},
+		{CloudGCP, false},
+		{CloudAzure, true},
+		{Cloud("bogus"), true},
 	}
 	for _, c := range cases {
-		err := ValidateCloudMethod(c.cloud, c.method)
+		err := ValidateCloud(c.cloud)
 		if (err != nil) != c.wantErr {
-			t.Errorf("ValidateCloudMethod(%q, %q) err = %v, wantErr = %v", c.cloud, c.method, err, c.wantErr)
+			t.Errorf("ValidateCloud(%q) err = %v, wantErr = %v", c.cloud, err, c.wantErr)
 		}
 	}
 }

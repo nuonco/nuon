@@ -78,8 +78,7 @@ func (s *introStep) Main(w, h int) string {
 			"  " + stepActive.Render("3.") + " " + kvKeyStyle.Render("Secrets") + "  — set required secrets",
 			"  " + stepActive.Render("4.") + " " + kvKeyStyle.Render("Network") + "  — review the VPC plan",
 			"  " + stepActive.Render("5.") + " " + kvKeyStyle.Render("Roles") + "    — pick which IAM roles to create",
-			"  " + stepActive.Render("6.") + " " + kvKeyStyle.Render("Method") + "   — choose how the stack is provisioned",
-			"  " + stepActive.Render("7.") + " " + kvKeyStyle.Render("Provision") + " — confirm the plan and apply it",
+			"  " + stepActive.Render("6.") + " " + kvKeyStyle.Render("Provision") + " — confirm the plan and apply it",
 		}, "\n")
 	}
 
@@ -159,153 +158,6 @@ func (s *introStep) Detail(w, h int) string {
 
 func (s *introStep) Help() string               { return "" }
 func (s *introStep) CanAdvance() (bool, string) { return true, "" }
-
-// ─── Method ───────────────────────────────────────────────────────────────────
-
-type methodOption struct {
-	method stack.Method
-	label  string
-	desc   []string
-}
-
-type methodStep struct {
-	cfg      *stack.Config
-	options  []methodOption
-	selected int // index into options that is currently chosen
-	cursor   int // 0..len(options)-1 = options, then Previous, then Next
-}
-
-func newMethodStep(cfg *stack.Config) *methodStep {
-	options := []methodOption{
-		{
-			method: stack.MethodSDK,
-			label:  "AWS SDK",
-			desc: []string{
-				"Provisions resources directly via the AWS SDK.",
-				"No CLI tooling required on this machine — the",
-				"stack drives every API call itself.",
-			},
-		},
-		{
-			method: stack.MethodTerraform,
-			label:  "Terraform module",
-			desc: []string{
-				"Applies the install-stacks/aws Terraform module.",
-				"Terraform is fetched automatically; no local",
-				"install required. Phone-home stays in the module.",
-			},
-		},
-	}
-
-	s := &methodStep{cfg: cfg, options: options, cursor: 0}
-	s.selected = 0
-	for i, o := range options {
-		if o.method == cfg.Method {
-			s.selected = i
-			s.cursor = i
-			break
-		}
-	}
-	return s
-}
-
-func (s *methodStep) Init() tea.Cmd { return nil }
-
-func (s *methodStep) prevIdx() int { return len(s.options) }
-func (s *methodStep) nextIdx() int { return len(s.options) + 1 }
-
-func (s *methodStep) Update(msg tea.Msg) (stepModel, tea.Cmd) {
-	k, ok := msg.(tea.KeyPressMsg)
-	if !ok {
-		return s, nil
-	}
-	switch k.String() {
-	case "down", "j":
-		if s.cursor < s.nextIdx() {
-			s.cursor++
-		}
-	case "up", "k":
-		if s.cursor > 0 {
-			s.cursor--
-		}
-	case "right", "l":
-		if s.cursor == s.prevIdx() {
-			s.cursor = s.nextIdx()
-		}
-	case "left", "h":
-		if s.cursor == s.nextIdx() {
-			s.cursor = s.prevIdx()
-		}
-	case "space", "x":
-		if s.cursor < len(s.options) {
-			s.selected = s.cursor
-		}
-	case "enter":
-		switch s.cursor {
-		case s.prevIdx():
-			return s, func() tea.Msg { return prevStepMsg{} }
-		case s.nextIdx():
-			s.apply()
-			return s, func() tea.Msg { return nextStepMsg{} }
-		default:
-			s.selected = s.cursor
-		}
-	}
-	return s, nil
-}
-
-func (s *methodStep) apply() {
-	s.cfg.Method = s.options[s.selected].method
-}
-
-func (s *methodStep) Main(w, h int) string {
-	title := titleStyle.Render("Provisioning method")
-	intro := dimStyle.Render("Choose how the stack's AWS resources are created. Both")
-	intro2 := dimStyle.Render("methods run self-contained — no CLI tools needed here.")
-
-	var lines []string
-	for i, o := range s.options {
-		radio := checkboxOff.Render("( )")
-		if i == s.selected {
-			radio = checkboxOn.Render("(•)")
-		}
-		focused := i == s.cursor
-		marker := "  "
-		label := o.label
-		if focused {
-			marker = focusedStyle.Render("▸ ")
-			label = focusedStyle.Render(label)
-		}
-		lines = append(lines, fmt.Sprintf("%s%s %s", marker, radio, label))
-	}
-
-	prev := renderButton(" ◂ Previous ", s.cursor == s.prevIdx(), false)
-	next := renderButton(" Next ▸ ", s.cursor == s.nextIdx(), false)
-	buttons := lipgloss.JoinHorizontal(lipgloss.Top, prev, "  ", next)
-
-	body := strings.Join(lines, "\n")
-	return title + "\n\n" + intro + "\n" + intro2 + "\n\n" + body + "\n\n" + buttons
-}
-
-func (s *methodStep) Detail(w, h int) string {
-	idx := s.cursor
-	if idx >= len(s.options) {
-		idx = s.selected
-	}
-	o := s.options[idx]
-	lines := []string{kvKeyStyle.Render("Details"), "", kvKeyStyle.Render(o.label), ""}
-	for _, dl := range o.desc {
-		lines = append(lines, dimStyle.Render(wrap(dl, w)))
-	}
-	return strings.Join(lines, "\n")
-}
-
-func (s *methodStep) Help() string { return "↑↓ move · space select" }
-
-func (s *methodStep) CanAdvance() (bool, string) {
-	s.apply()
-	return true, ""
-}
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
@@ -1209,7 +1061,6 @@ func (s *confirmStep) Main(w, h int) string {
 			rows = append(rows, kvRow("Project", g.ProjectID))
 			rows = append(rows, kvRow("Region", g.Region))
 		}
-		rows = append(rows, kvRow("Method", "Terraform module"))
 		warnText = "GCP resources will be created in your project. Activate Provision to begin."
 	} else {
 		if s.accountID != "" {
@@ -1218,7 +1069,6 @@ func (s *confirmStep) Main(w, h int) string {
 		if s.cfg.AWS != nil {
 			rows = append(rows, kvRow("Region", s.cfg.AWS.Region))
 		}
-		rows = append(rows, kvRow("Method", methodLabel(s.cfg.Method)))
 		warnText = "AWS resources will be created in your account. Activate Provision to begin."
 	}
 
@@ -1359,17 +1209,6 @@ func kvRow(k, v string) string {
 		v = dimStyle.Render("—")
 	}
 	return kvKeyStyle.Render(fmt.Sprintf("%-14s", k+":")) + "  " + v
-}
-
-func methodLabel(m stack.Method) string {
-	switch m {
-	case stack.MethodTerraform:
-		return "Terraform module"
-	case stack.MethodSDK:
-		return "AWS SDK"
-	default:
-		return "AWS SDK (default)"
-	}
 }
 
 func yesNo(b bool) string {

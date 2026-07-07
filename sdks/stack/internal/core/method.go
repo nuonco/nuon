@@ -4,12 +4,10 @@ package core
 type Method string
 
 const (
-	// MethodSDK provisions resources directly via the AWS SDK (internal/awssdk).
-	MethodSDK Method = "sdk"
-	// MethodTerraform provisions by applying the install-stacks/aws Terraform
-	// module (internal/terraform).
+	// MethodTerraform provisions by applying the install-stacks Terraform
+	// module (internal/terraform). It is currently the only supported method.
 	MethodTerraform Method = "terraform"
 )
 
 // DefaultMethod is used when neither Config nor Options specifies one.
-const DefaultMethod = MethodSDK
+const DefaultMethod = MethodTerraform

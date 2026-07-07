@@ -2,10 +2,8 @@ package core
 
 import "fmt"
 
-// Cloud selects which cloud provider an install stack targets. It is
-// orthogonal to Method: a provisioner is chosen by the (Cloud, Method) pair.
-// AWS supports both the SDK and Terraform methods; GCP (and, later, Azure)
-// support Terraform only.
+// Cloud selects which cloud provider an install stack targets. Every cloud is
+// provisioned with the Terraform method (internal/terraform).
 type Cloud string
 
 const (
@@ -17,37 +15,20 @@ const (
 	CloudAzure Cloud = "azure"
 )
 
-// DefaultCloud is used when neither Config nor Options specifies one. AWS keeps
-// the historical default so existing runs (whose Config omits cloud) behave
-// exactly as before.
+// DefaultCloud is used when neither Config nor Options specifies one.
 const DefaultCloud = CloudAWS
 
 // DefaultMethodForCloud returns the provisioning method to use when none is
-// explicitly set. AWS defaults to the SDK method (its historical default);
-// every other cloud defaults to Terraform, the only method it supports.
-func DefaultMethodForCloud(cloud Cloud) Method {
-	if cloud == CloudAWS {
-		return MethodSDK
-	}
+// explicitly set. Terraform is currently the only method for every cloud.
+func DefaultMethodForCloud(_ Cloud) Method {
 	return MethodTerraform
 }
 
-// ValidateCloudMethod reports whether the (cloud, method) pair is supported.
-// It is the single source of truth for the selection matrix; selectProvisioner
-// relies on it so unsupported combinations fail with a clear, uniform message
-// rather than constructing a half-wired provisioner.
-func ValidateCloudMethod(cloud Cloud, method Method) error {
+// ValidateCloud reports whether the cloud is supported by the Terraform method.
+func ValidateCloud(cloud Cloud) error {
 	switch cloud {
-	case CloudAWS:
-		switch method {
-		case MethodSDK, MethodTerraform:
-			return nil
-		}
-	case CloudGCP:
-		if method == MethodTerraform {
-			return nil
-		}
-		return fmt.Errorf("cloud %q does not support method %q; use %q", cloud, method, MethodTerraform)
+	case CloudAWS, CloudGCP:
+		return nil
 	}
-	return fmt.Errorf("unsupported cloud/method combination: cloud %q, method %q", cloud, method)
+	return fmt.Errorf("unsupported cloud %q", cloud)
 }
