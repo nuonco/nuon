@@ -8,7 +8,7 @@ import type { MarkdownVariant } from './Markdown'
 
 const MermaidFlowGraph = lazy(() => import('../MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph })))
 
-const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-surface-rendered'])
+const BLOCK_TAG_NAMES = new Set([...nuonTagNames, 'nuon-surface-rendered', 'nuon-table-rendered'])
 
 const isFlowchart = (code: string) => /^(?:graph|flowchart)\s+(?:TD|TB|LR|RL|BT)\s*$/im.test(code.trim().split('\n')[0])
 

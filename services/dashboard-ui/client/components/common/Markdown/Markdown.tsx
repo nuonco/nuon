@@ -9,6 +9,8 @@ import { ModalBase } from '@/components/surfaces/Modal'
 import { PanelBase } from '@/components/surfaces/Panel'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { extractTabs, extractSurfaces, type ExtractedTabs, type ExtractedSurface, type MarkdownMode } from './nuon-components'
+import { extractTables, type ExtractedTable } from './markdown-table'
+import { MarkdownTable } from './MarkdownTable'
 import { getMarkdownComponents } from './markdown-renderers'
 import { preprocessContent } from './markdown-preprocessing'
 import { markdownStyles, proseClassName, compactProseClassName } from './markdown-styles'
@@ -74,11 +76,24 @@ function SurfacePlaceholder({
   )
 }
 
+function TablePlaceholder({
+  tableMap,
+  dataId,
+}: {
+  tableMap: Map<string, ExtractedTable>
+  dataId: string
+}) {
+  const table = tableMap.get(dataId)
+  if (!table) return null
+  return <MarkdownTable {...table} />
+}
+
 export const Markdown = React.memo(({ content = '', mode = 'app', variant = 'default' }: { content?: string; mode?: MarkdownMode; variant?: MarkdownVariant }) => {
-  const { content: processedContent, tabsMap, surfaceMap } = useMemo(() => {
+  const { content: processedContent, tabsMap, surfaceMap, tableMap } = useMemo(() => {
     const { content: afterTabs, tabsMap } = extractTabs(content)
     const { content: afterSurfaces, surfaceMap } = extractSurfaces(afterTabs)
-    return { content: afterSurfaces, tabsMap, surfaceMap }
+    const { content: afterTables, tableMap } = extractTables(afterSurfaces)
+    return { content: afterTables, tabsMap, surfaceMap, tableMap }
   }, [content])
   const processed = preprocessContent(processedContent)
 
@@ -94,8 +109,13 @@ export const Markdown = React.memo(({ content = '', mode = 'app', variant = 'def
         <SurfacePlaceholder surfaceMap={surfaceMap} mode={mode} dataId={attrs['data-id']} />
       )
     }
+    if (tableMap.size > 0) {
+      base['nuon-table-rendered'] = ({ node, ...attrs }: any) => (
+        <TablePlaceholder tableMap={tableMap} dataId={attrs['data-id']} />
+      )
+    }
     return base
-  }, [mode, variant, tabsMap, surfaceMap])
+  }, [mode, variant, tabsMap, surfaceMap, tableMap])
 
   return (
     <>
