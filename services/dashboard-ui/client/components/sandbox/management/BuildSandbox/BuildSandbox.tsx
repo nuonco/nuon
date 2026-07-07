@@ -28,7 +28,7 @@ export const BuildSandboxModal = ({
           theme="info"
         >
           <Icon variant="HammerIcon" size="24" />
-          Build sandbox?
+          Build sandbox
         </Text>
       }
       primaryActionTrigger={{
