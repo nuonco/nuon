@@ -25,7 +25,7 @@ func New(params Params) converter.PayloadCodec {
 		l:             params.L,
 		db:            params.DB,
 		mw:            params.MW,
-		encodeEnabled: params.Cfg.LargePayloadType != "blob",
+		encodeEnabled: params.Cfg.LargePayloadType == "largepayload",
 	}
 }
 

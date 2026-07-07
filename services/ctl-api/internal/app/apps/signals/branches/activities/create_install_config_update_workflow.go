@@ -90,9 +90,11 @@ func (a *Activities) CreateInstallAppConfigVersionWorkflow(ctx context.Context, 
 	}
 
 	if _, err := a.queueClient.EnqueueSignal(ctx, &queueclient.EnqueueSignalRequest{
-		QueueID:  queue.ID,
-		Signal:   &executeflow.Signal{WorkflowID: wf.ID},
-		Callback: input.Callback,
+		QueueID:   queue.ID,
+		OwnerID:   wf.ID,
+		OwnerType: "install_workflows",
+		Signal:    &executeflow.Signal{WorkflowID: wf.ID},
+		Callback:  input.Callback,
 	}); err != nil {
 		return nil, fmt.Errorf("unable to enqueue workflow for install %s: %w", input.InstallID, err)
 	}
@@ -209,6 +211,8 @@ func (a *Activities) computeInstallConfigDiff(ctx context.Context, oldAppConfigI
 				diff.StackOldID = oldAppCfg.StackConfig.ID
 				diff.StackNewID = newAppCfg.StackConfig.ID
 			}
+
+			// TODO: sandbox/stack should compare content, not just IDs (same as compute_install_config_diff.go)
 		}
 	}
 

@@ -12,9 +12,14 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 )
 
-// AppBranchRun represents a single execution of an app branch workflow.
-// Each run is triggered manually or automatically and processes the branch's
-// configuration through the install groups.
+type AppBranchRunType string
+
+const (
+	AppBranchRunTypeManual     AppBranchRunType = "manual-run"
+	AppBranchRunTypeGit        AppBranchRunType = "git-run"
+	AppBranchRunTypeGitPreview AppBranchRunType = "git-preview-run"
+)
+
 type AppBranchRun struct {
 	ID          string                `gorm:"primary_key;check:id_checker,char_length(id)=26" json:"id,omitzero" temporaljson:"id,omitzero,omitempty"`
 	CreatedByID string                `json:"created_by_id,omitzero" gorm:"not null;default:null" temporaljson:"created_by_id,omitzero,omitempty"`
@@ -39,20 +44,22 @@ type AppBranchRun struct {
 	// Values: pending, running, success, failed, cancelled
 	Status string `json:"status,omitzero" gorm:"notnull;default:'pending'" temporaljson:"status,omitzero,omitempty"`
 
-	// Force indicates if this run was forced (bypassing change detection)
+	RunType AppBranchRunType `json:"run_type,omitzero" gorm:"notnull;default:'manual-run'" temporaljson:"run_type,omitzero,omitempty"`
+
 	Force bool `json:"force,omitzero" temporaljson:"force,omitzero,omitempty"`
 
-	// PlanOnly indicates this is a preview run (e.g., PR preview) that should
-	// only plan changes without applying them.
+	// PlanOnly indicates this is a preview run. Kept for backward compat; new code uses RunType.
 	PlanOnly bool `json:"plan_only,omitzero" temporaljson:"plan_only,omitzero,omitempty"`
 
-	// EventType indicates what triggered this run (push, pull_request, manual).
+	// EventType indicates what triggered this run. Kept for backward compat; new code uses RunType.
 	EventType string `json:"event_type,omitempty" temporaljson:"event_type,omitzero,omitempty"`
 
-	// PR metadata — populated when EventType is "pull_request"
 	PRNumber   *int   `json:"pr_number,omitempty" temporaljson:"pr_number,omitzero,omitempty"`
 	HeadSHA    string `json:"head_sha,omitempty" temporaljson:"head_sha,omitzero,omitempty"`
 	BaseBranch string `json:"base_branch,omitempty" temporaljson:"base_branch,omitzero,omitempty"`
+
+	GithubCommentID *int64 `json:"github_comment_id,omitempty" temporaljson:"github_comment_id,omitzero,omitempty"`
+	NoConfigChanges bool   `json:"no_config_changes,omitempty" temporaljson:"no_config_changes,omitzero,omitempty"`
 
 	// StartedAt tracks when execution actually began
 	StartedAt *time.Time `json:"started_at,omitempty" temporaljson:"started_at,omitzero,omitempty"`

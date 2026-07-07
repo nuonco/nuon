@@ -13,6 +13,7 @@ type CreateAppBranchRunRequest struct {
 	AppBranchConfigID string
 	AppConfigID       string
 	Force             bool
+	RunType           app.AppBranchRunType
 	PlanOnly          bool
 	EventType         string
 	PRNumber          *int
@@ -36,10 +37,16 @@ func (h *Helpers) CreateAppBranchRun(ctx context.Context, req *CreateAppBranchRu
 		previousRunID = &prevRun.ID
 	}
 
+	runType := req.RunType
+	if runType == "" {
+		runType = app.AppBranchRunTypeManual
+	}
+
 	run := &app.AppBranchRun{
 		AppBranchID:       req.AppBranchID,
 		AppBranchConfigID: req.AppBranchConfigID,
 		AppConfigID:       req.AppConfigID,
+		RunType:           runType,
 		Force:             req.Force,
 		PlanOnly:          req.PlanOnly,
 		EventType:         req.EventType,

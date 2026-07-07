@@ -17,9 +17,12 @@ import (
 )
 
 type CreateAppConfigRequest struct {
-	// not required Readme
 	Readme     string `json:"readme,omitempty"`
 	CLIVersion string `json:"cli_version,omitempty"`
+
+	// IntermediateConfigJSON is the serialized intermediate config (parsed nuon.toml).
+	// When provided, stored on the AppConfig for diffing in PR previews.
+	IntermediateConfigJSON string `json:"intermediate_config_json,omitempty"`
 
 	// AppBranchID optionally links this config to an app branch.
 	// When set, triggers an app branch run after sync.
@@ -126,8 +129,12 @@ func (s *service) createAppConfig(ctx context.Context, orgID, appID string, req 
 		CLIVersion:         req.CLIVersion,
 		IntermediateConfig: &blobstore.Blob{},
 	}
+	if req.IntermediateConfigJSON != "" {
+		inputs.IntermediateConfig.Set(req.IntermediateConfigJSON)
+	}
 
-	res := s.db.WithContext(ctx).Create(&inputs)
+	dbCtx := blobstore.WithBlobService(ctx, s.blobSvc)
+	res := s.db.WithContext(dbCtx).Create(&inputs)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to create app inputs: %w", res.Error)
 	}

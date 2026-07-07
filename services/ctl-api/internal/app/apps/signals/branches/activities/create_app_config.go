@@ -5,16 +5,18 @@ import (
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/generics"
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 )
 
 type CreateAppConfigInput struct {
-	AppID                  string `json:"app_id" validate:"required"`
-	OrgID                  string `json:"org_id" validate:"required"`
-	AppBranchID            string `json:"app_branch_id" validate:"required"`
-	CreatedByID            string `json:"created_by_id" validate:"required"`
-	IntermediateConfigJSON string `json:"intermediate_config_json" validate:"required"`
+	AppID                  string        `json:"app_id" validate:"required"`
+	OrgID                  string        `json:"org_id" validate:"required"`
+	AppBranchID            string        `json:"app_branch_id" validate:"required"`
+	CreatedByID            string        `json:"created_by_id" validate:"required"`
+	IntermediateConfigJSON string        `json:"intermediate_config_json" validate:"required"`
+	Labels                 labels.Labels `json:"labels,omitempty"`
 }
 
 type CreateAppConfigOutput struct {
@@ -41,6 +43,9 @@ func (a *Activities) createAppConfig(ctx context.Context, req *CreateAppConfigIn
 		StatusDescription:  "pending sync",
 		StatusV2:           pendingStatus,
 		IntermediateConfig: &blobstore.Blob{},
+	}
+	if req.Labels != nil {
+		appConfig.Labels = req.Labels
 	}
 	appConfig.IntermediateConfig.Set(req.IntermediateConfigJSON)
 
