@@ -61,7 +61,7 @@ export const ShutdownRunnerModal = ({
         ),
         disabled: isPending,
         onClick: () => onSubmit(force),
-        variant: 'primary' as const,
+        variant: 'danger' as const,
       }}
       onClose={handleClose}
       {...props}

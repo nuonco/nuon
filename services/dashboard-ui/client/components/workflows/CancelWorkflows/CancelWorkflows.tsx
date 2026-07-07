@@ -48,7 +48,7 @@ export const CancelWorkflowsModal = ({
         ),
         disabled: isPending,
         onClick: onSubmit,
-        variant: 'primary',
+        variant: 'danger',
       }}
       {...props}
     >

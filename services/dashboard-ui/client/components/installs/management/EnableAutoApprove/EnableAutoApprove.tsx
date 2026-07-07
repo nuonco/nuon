@@ -35,7 +35,7 @@ export const EnableAutoApproveModal = ({
           theme="info"
         >
           <Icon variant={isApproveAll ? "ToggleRightIcon" : "ToggleLeftIcon"} size="24" />
-          {buttonText}?
+          {buttonText}
         </Text>
       }
       primaryActionTrigger={{

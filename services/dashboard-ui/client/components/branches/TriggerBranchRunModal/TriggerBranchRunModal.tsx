@@ -17,7 +17,7 @@ export const TriggerBranchRunModal = ({
 }: ITriggerBranchRunModal) => {
   return (
     <Modal
-      heading={planOnly ? 'Trigger preview run?' : 'Trigger run?'}
+      heading={planOnly ? 'Trigger preview run' : 'Trigger run'}
       primaryActionTrigger={{
         children: isPending
           ? 'Triggering...'

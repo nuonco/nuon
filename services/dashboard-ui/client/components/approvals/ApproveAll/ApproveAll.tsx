@@ -24,7 +24,7 @@ export const ApproveAllModal = ({
     <Modal
       heading={
         <Text flex className="gap-4" variant="h3" weight="stronger">
-          Approve all plans?
+          Approve all plans
         </Text>
       }
       primaryActionTrigger={{
