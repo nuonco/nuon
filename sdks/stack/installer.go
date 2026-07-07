@@ -154,6 +154,32 @@ func FromURL(ctx context.Context, in URLOptions) (*Installer, error) {
 	return inst, nil
 }
 
+// FetchConfig reads the rendered install-stack configuration for the stack
+// version identified by the create-run URL, without creating a run or mutating
+// any state. It is the read-only counterpart to FromURL: callers that only need
+// the config (e.g. the Terraform provider's nuon_stack data source, which feeds
+// it to an install-stacks module in place of tfvars) use this instead of
+// provisioning. The URL is the same /v1/stack-runs/{phone_home_id} form FromURL
+// accepts.
+func FetchConfig(ctx context.Context, url string) (*Config, error) {
+	base, phoneHomeID, err := parseURL(url)
+	if err != nil {
+		return nil, err
+	}
+	client := newRunClient(runClientConfig{
+		CtlAPIURL:   base,
+		PhoneHomeID: phoneHomeID,
+	})
+	cfg, err := client.fetchConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("fetch stack config: %w", err)
+	}
+	if cfg == nil {
+		return nil, fmt.Errorf("fetch stack config: ctl-api returned no config block")
+	}
+	return cfg, nil
+}
+
 // New builds an Installer from explicit Options. Use this for offline state
 // inspection (Status); use FromURL for actual provisioning. Caller must call
 // Close to flush logs.

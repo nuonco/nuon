@@ -329,6 +329,7 @@ func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
 	// /v1/installs/:install_id/phone-home/:phone_home_id endpoint.
 	api.POST("/v1/stack-runs/:phone_home_id/kind/:kind", s.CreateInstallStackVersionRun)
 	api.PATCH("/v1/stack-runs/:phone_home_id/:run_id", s.UpdateInstallStackVersionRun)
+	api.GET("/v1/stack-runs/:phone_home_id/config", s.GetInstallStackVersionConfig)
 	return nil
 }
 

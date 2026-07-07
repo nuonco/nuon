@@ -34,6 +34,7 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	// same threat model as the legacy phone-home endpoint.
 	{"POST", "/v1/stack-runs/:phone_home_id/kind/:kind"}: {},
 	{"PATCH", "/v1/stack-runs/:phone_home_id/:run_id"}:   {},
+	{"GET", "/v1/stack-runs/:phone_home_id/config"}:      {},
 
 	// runner auth: must be accessible w/out a token
 	{"POST", "/v1/runner-auth/aws"}:                   {},

@@ -91,6 +91,28 @@ func (c *runClient) createRun(ctx context.Context, kind Kind) (*createRunRespons
 	return &out, nil
 }
 
+// configResponse mirrors the ctl-api GET /config response: just the rendered
+// config block, no run. Used by FetchConfig for read-only callers (the
+// Terraform provider's nuon_stack data source).
+type configResponse struct {
+	Config *Config `json:"config"`
+}
+
+// fetchConfig reads the rendered install-stack config for the stack version
+// without creating a run or mutating any state (GET, side-effect free).
+func (c *runClient) fetchConfig(ctx context.Context) (*Config, error) {
+	url := fmt.Sprintf(
+		"%s/v1/stack-runs/%s/config",
+		strings.TrimSuffix(c.cfg.CtlAPIURL, "/"),
+		c.cfg.PhoneHomeID,
+	)
+	var out configResponse
+	if err := c.doWithRetry(ctx, http.MethodGet, url, nil, &out); err != nil {
+		return nil, err
+	}
+	return out.Config, nil
+}
+
 // updateRunRequest is the PATCH body. Status must be "succeeded" or "failed".
 type updateRunRequest struct {
 	Status            string         `json:"status"`
