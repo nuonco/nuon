@@ -106,12 +106,12 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 
 	switch comp.Type.APIType() {
 	case "docker_build":
-		configID, checksum, err = SyncDockerBuildComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncDockerBuildComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
 	case "helm_chart":
-		configID, checksum, err = SyncHelmComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncHelmComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
@@ -121,7 +121,7 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 			return err
 		}
 	case "external_image":
-		configID, checksum, err = SyncExternalImageComponent(ctx, db, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncExternalImageComponent(ctx, db, helpers, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 			}
 		}
 	case "pulumi":
-		configID, checksum, err = SyncPulumiComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncPulumiComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
@@ -150,7 +150,7 @@ func SyncComponent(ctx context.Context, db *gorm.DB, helpers *componenthelpers.H
 		configID = ""
 		checksum = ""
 	case "kubernetes_manifest":
-		configID, checksum, err = SyncKubernetesManifestComponent(ctx, db, vcsHelper, comp, apiComp.ID, appID, appConfigID)
+		configID, checksum, err = SyncKubernetesManifestComponent(ctx, db, vcsHelper, helpers, comp, apiComp.ID, appID, appConfigID)
 		if err != nil {
 			return err
 		}
