@@ -27,6 +27,7 @@ import (
 	terraformbuild "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
 	imagemetadatasync "github.com/nuonco/nuon/pkg/runner/jobs/sync/imagemetadata"
 	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
+	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
 	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
@@ -88,6 +89,7 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 	v := validator.New()
 	recorder := errs.NewRecorder(errs.Params{L: l, Settings: &settings.Settings{}, LC: noopLifecycle{}})
 	copier := ocicopy.New(ocicopy.CopierParams{V: v, Cfg: runnerCfg})
+	resolver := ociresolve.New(ociresolve.ResolverParams{V: v, Cfg: runnerCfg})
 	apiClient := &clientAdapter{Client: client}
 
 	handlers := make([]jobs.JobHandler, 0, 8)
@@ -98,7 +100,7 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 		handlers = append(handlers, handler)
 		return nil
 	}
-	if err := add(containerimagebuild.New(containerimagebuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
+	if err := add(containerimagebuild.New(containerimagebuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, OCIResolve: resolver, ErrRecorder: recorder})); err != nil {
 		return nil, err
 	}
 	if err := add(helmbuild.New(helmbuild.HandlerParams{V: v, APIClient: apiClient, Config: runnerCfg, OCICopy: copier, ErrRecorder: recorder})); err != nil {
@@ -127,11 +129,6 @@ func NewExecutor(client Client, l *zap.Logger, cfg Config) (*Executor, error) {
 }
 
 func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execution *models.AppRunnerJobExecution) error {
-	handler, err := e.handler(job)
-	if err != nil {
-		return err
-	}
-
 	l := e.l
 	logProvider, traceProvider := e.telemetryProviders(job)
 	if logProvider != nil {
@@ -146,6 +143,13 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		zap.String("runner_job_execution.id", execution.ID),
 		zap.String("log_stream.id", job.LogStreamID),
 	)
+
+	handler, err := e.handler(job)
+	if err != nil {
+		l.Error("unable to resolve job handler", zap.Error(err))
+		return err
+	}
+
 	ctx = runnerctx.SetJobMetadata(ctx, runnerctx.JobMetadata{RunnerJobID: job.ID, RunnerJobExecutionID: execution.ID})
 	var tracer trace.Tracer
 	var rootSpan trace.Span
@@ -225,6 +229,7 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 		stepCtx = runnerctx.SetLogger(stepCtx, stepL)
 		stepL.Info("executing job step "+step.name, zap.String("step", step.name))
 		if err := step.fn(stepCtx); err != nil {
+			stepL.Error("job step "+step.name+" failed", zap.String("step", step.name), zap.Error(err))
 			if stepSpan != nil {
 				stepSpan.RecordError(err)
 				stepSpan.SetStatus(codes.Error, err.Error())
