@@ -34,6 +34,18 @@ export function getWorkflowBadge(workflow: TWorkflow): TBadgeCfg {
   return status && WORKFLOW_BADGE_MAP[status] ? WORKFLOW_BADGE_MAP[status] : {}
 }
 
+export function getWorkflowHref(orgId: string, workflow: TWorkflow): string {
+  if (workflow?.owner_type === 'app_branches') {
+    const run = workflow?.app_branch_runs?.[0]
+    const appId = run?.app_branch?.app_id
+    const branchId = run?.app_branch?.id ?? workflow?.owner_id
+    if (appId && branchId && workflow?.id) {
+      return `/${orgId}/apps/${appId}/branches/${branchId}/runs/${workflow.id}`
+    }
+  }
+  return `/${orgId}/installs/${workflow?.owner_id}/workflows/${workflow?.id}`
+}
+
 // The retry "lineage" badge — how this attempt relates to its retries. Distinct
 // from the outcome badge (below) so a retry row can show both.
 function getStepLineageBadge(step: TWorkflowStep): TBadgeCfg | undefined {
