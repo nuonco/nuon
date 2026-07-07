@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 	sharedactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/workflow/activities"
 )
@@ -53,6 +54,7 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 	// Create a fetch-image-metadata job on the runner
 	metadataJob, err := activities.AwaitCreateFetchImageMetadataJob(ctx, &activities.CreateFetchImageMetadataJobRequest{
 		BuildID:     buildID,
+		ParentJobID: buildJobID,
 		RunnerID:    runnerID,
 		LogStreamID: logStreamID,
 		Metadata: map[string]string{
@@ -79,11 +81,17 @@ func (w *Workflows) evaluateExternalImagePolicy(ctx workflow.Context, buildID, b
 
 	// Execute the job (queue and poll for completion)
 	w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusPlanning, "fetching image metadata")
-	_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
-		RunnerID:   runnerID,
-		JobID:      metadataJob.ID,
-		WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
-	})
+	if metadataJob.Executor == app.RunnerJobExecutorControlPlane {
+		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: metadataJob.ID}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		})
+	} else {
+		_, err = job.AwaitExecuteJob(ctx, &job.ExecuteJobRequest{
+			RunnerID:   runnerID,
+			JobID:      metadataJob.ID,
+			WorkflowID: fmt.Sprintf("%s-fetch-image-metadata", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		})
+	}
 	if err != nil {
 		w.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, truncateErrorMessage("unable to fetch image metadata", err))
 		w.updateJobStatusForPolicyFailure(ctx, buildJobID, "unable to fetch image metadata")

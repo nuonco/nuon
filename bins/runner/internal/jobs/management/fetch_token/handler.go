@@ -9,9 +9,9 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 type handler struct {

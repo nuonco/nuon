@@ -11,6 +11,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	workerplan "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/worker/plan"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/signal"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 	jobpkg "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/job"
 )
 
@@ -81,12 +82,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to get sandbox config: %w", err)
 	}
 
-	// Get org runner
-	runner, err := activities.AwaitGetOrgRunner(ctx, activities.GetOrgRunnerRequest{OrgID: appConfig.OrgID})
-	if err != nil {
-		return fmt.Errorf("unable to get org runner: %w", err)
-	}
-
 	// Get or create the sandbox build record
 	build, err := s.getOrCreateBuild(ctx, appConfig, sandboxConfig)
 	if err != nil {
@@ -116,7 +111,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	// Create runner job
 	runnerJob, err := activities.AwaitCreateSandboxBuildJob(ctx, activities.CreateSandboxBuildJobRequest{
 		BuildID:     build.ID,
-		RunnerID:    runner.ID,
 		LogStreamID: logStreamID,
 	})
 	if err != nil {
@@ -152,11 +146,18 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 	updateStatus(ctx, build.ID, app.AppSandboxBuildStatusPlanning, "planning sandbox build")
 
 	// Execute the runner job
-	_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
-		RunnerID:   runner.ID,
-		JobID:      runnerJob.ID,
-		WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
-	})
+	updateStatus(ctx, build.ID, app.AppSandboxBuildStatusBuilding, "building sandbox")
+	if runnerJob.Executor == app.RunnerJobExecutorControlPlane {
+		err = controlplanejob.AwaitExecuteControlPlaneJob(ctx, &controlplanejob.ExecuteRequest{JobID: runnerJob.ID}, &workflow.ChildWorkflowOptions{
+			WorkflowID: fmt.Sprintf("control-plane-%s-execute-job-%s", build.ID, runnerJob.ID),
+		})
+	} else {
+		_, err = jobpkg.AwaitExecuteJob(ctx, &jobpkg.ExecuteJobRequest{
+			RunnerID:   runnerJob.RunnerID,
+			JobID:      runnerJob.ID,
+			WorkflowID: fmt.Sprintf("queue-signal-%s-execute-job-%s", build.ID, runnerJob.ID),
+		})
+	}
 	if err != nil {
 		updateStatus(ctx, build.ID, app.AppSandboxBuildStatusError, "sandbox build job failed")
 		return fmt.Errorf("sandbox build job failed: %w", err)

@@ -10,11 +10,11 @@ import (
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/health"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	pkgshutdown "github.com/nuonco/nuon/bins/runner/internal/pkg/shutdown"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 	nuonrunner "github.com/nuonco/nuon/sdks/nuon-runner-go"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 )
@@ -29,7 +29,7 @@ type ShutdownPollerParams struct {
 	fx.In
 
 	APIClient  nuonrunner.Client
-	Cfg        *internal.Config
+	Cfg        *runnerconfig.Config
 	L          *zap.Logger `name:"system"`
 	LC         fx.Lifecycle
 	Registrar  *Registrar

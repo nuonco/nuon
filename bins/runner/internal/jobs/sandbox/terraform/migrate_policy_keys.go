@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/pkg/policies"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )
 

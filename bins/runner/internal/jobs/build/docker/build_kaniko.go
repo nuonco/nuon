@@ -11,8 +11,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/registry/local"
 	"github.com/nuonco/nuon/pkg/command"
+	"github.com/nuonco/nuon/pkg/runner/registry/local"
 	"github.com/nuonco/nuon/pkg/zapwriter"
 )
 

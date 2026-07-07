@@ -8,8 +8,8 @@ import (
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
 	"github.com/nuonco/nuon/pkg/plugins/configs"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
 )
 
 // health check: iterate through all the job loops and check their stats, set a value, and log the response

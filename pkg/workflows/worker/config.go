@@ -10,6 +10,8 @@ const (
 	defaultMaxConcurrentWorkflowTaskExecutionSize int = 10000
 	defaultMaxConcurrentActivityTaskPollers       int = 20
 	defaultMaxConcurrentWorkflowTaskPollers       int = 20
+
+	defaultCPBuildMaxConcurrentActivities int = 30
 )
 
 //nolint:gochecknoinits
@@ -20,6 +22,7 @@ func init() {
 	config.RegisterDefault("temporal_max_concurrent_workflow_task_execution_size", defaultMaxConcurrentWorkflowTaskExecutionSize)
 	config.RegisterDefault("temporal_max_concurrent_activity_task_pollers", defaultMaxConcurrentActivityTaskPollers)
 	config.RegisterDefault("temporal_max_concurrent_workflow_task_pollers", defaultMaxConcurrentWorkflowTaskPollers)
+	config.RegisterDefault("temporal_cp_build_max_concurrent_activities", defaultCPBuildMaxConcurrentActivities)
 }
 
 // Config defines the standard workflow worker config, which all workers should embed as part of their application.
@@ -39,6 +42,11 @@ type Config struct {
 	TemporalMaxConcurrentWorkflowTaskExecutionSize int    `config:"temporal_max_concurrent_workflow_task_execution_size" validate:"required" faker:"oneof: 10,20"`
 	TemporalMaxConcurrentActivityTaskPollers       int    `config:"temporal_max_concurrent_activity_task_pollers" validate:"required" faker:"oneof: 10,20"`
 	TemporalMaxConcurrentWorkflowTaskPollers       int    `config:"temporal_max_concurrent_workflow_task_pollers" validate:"required" faker:"oneof: 10,20"`
+	// TemporalCPBuildMaxConcurrentActivities caps how many control-plane build
+	// activities (git clone + OCI pack) a single worker pod runs at once. It is
+	// deliberately separate from TemporalMaxConcurrentActivities so builds do
+	// not inherit the 10k orchestration default and exhaust pod CPU/disk.
+	TemporalCPBuildMaxConcurrentActivities int `config:"temporal_cp_build_max_concurrent_activities" validate:"required" faker:"oneof: 10,20"`
 
 	// observability configuration
 	HostIP               string `config:"host_ip" validate:"required"`

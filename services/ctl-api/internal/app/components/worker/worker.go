@@ -15,6 +15,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/components/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/controlplanejob"
 )
 
 const (
@@ -63,6 +64,12 @@ func New(params WorkerParams) (*Worker, error) {
 		DeadlockDetectionTimeout:               params.Cfg.TemporalDeadlockDetectionTimeout,
 		EnableSessionWorker:                    true,
 	})
+	cpWkr := controlplanejob.NewWorker(client, controlplanejob.WorkerConfig{
+		MaxConcurrentActivityExecutionSize: params.Cfg.TemporalCPBuildMaxConcurrentActivities,
+		MaxConcurrentActivityTaskPollers:   params.Cfg.TemporalMaxConcurrentActivityTaskPollers,
+		Interceptors:                       params.Interceptors,
+		WorkflowPanicPolicy:                panicPolicy,
+	}, params.SharedActs.AllActivities()...)
 
 	// register activities
 	wkr.RegisterActivity(params.Acts)
@@ -83,6 +90,9 @@ func New(params WorkerParams) (*Worker, error) {
 			params.L.Info("starting components worker")
 			go func() {
 				wkr.Run(worker.InterruptCh())
+			}()
+			go func() {
+				cpWkr.Run(worker.InterruptCh())
 			}()
 			return nil
 		},

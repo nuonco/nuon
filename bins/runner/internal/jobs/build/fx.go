@@ -3,16 +3,16 @@ package build
 import (
 	"go.uber.org/fx"
 
-	"github.com/nuonco/nuon/bins/runner/internal/jobs"
-	containerimagebuild "github.com/nuonco/nuon/bins/runner/internal/jobs/build/containerimage"
 	docker "github.com/nuonco/nuon/bins/runner/internal/jobs/build/docker"
-	helm "github.com/nuonco/nuon/bins/runner/internal/jobs/build/helm"
-	kubernetesmanifest "github.com/nuonco/nuon/bins/runner/internal/jobs/build/kubernetes_manifest"
-	noop "github.com/nuonco/nuon/bins/runner/internal/jobs/build/noop"
-	pulumibuild "github.com/nuonco/nuon/bins/runner/internal/jobs/build/pulumi"
-	sandbox "github.com/nuonco/nuon/bins/runner/internal/jobs/build/sandbox"
-	terraform "github.com/nuonco/nuon/bins/runner/internal/jobs/build/terraform"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/jobloop"
+	"github.com/nuonco/nuon/pkg/runner/jobs"
+	containerimagebuild "github.com/nuonco/nuon/pkg/runner/jobs/build/containerimage"
+	helm "github.com/nuonco/nuon/pkg/runner/jobs/build/helm"
+	kubernetesmanifest "github.com/nuonco/nuon/pkg/runner/jobs/build/kubernetes_manifest"
+	noop "github.com/nuonco/nuon/pkg/runner/jobs/build/noop"
+	pulumibuild "github.com/nuonco/nuon/pkg/runner/jobs/build/pulumi"
+	sandbox "github.com/nuonco/nuon/pkg/runner/jobs/build/sandbox"
+	terraform "github.com/nuonco/nuon/pkg/runner/jobs/build/terraform"
 )
 
 func GetJobs() []fx.Option {

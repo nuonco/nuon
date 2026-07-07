@@ -72,6 +72,32 @@ func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildUseLatest() {
 	})
 }
 
+func (s *ComponentsServiceTestSuite) TestCreateAppComponentBuildRejectsDockerBuildWhenControlPlaneBuildsEnabled() {
+	s.enableOrgFeature(app.OrgFeatureControlPlaneBuilds)
+	cmp := s.getSeededComponent(app.ComponentTypeDockerBuild)
+
+	var before int64
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.ComponentBuild{}).
+		Count(&before).Error)
+
+	path := fmt.Sprintf("/v1/apps/%s/components/%s/builds", s.testApp.ID, cmp.ID)
+	rr := s.makeRequest(http.MethodPost, path, CreateComponentBuildRequest{
+		UseLatest: true,
+	})
+
+	require.Equal(s.T(), http.StatusBadRequest, rr.Code)
+	assert.Contains(s.T(), rr.Body.String(), "docker_build components are not supported")
+	assert.Contains(s.T(), rr.Body.String(), string(app.OrgFeatureControlPlaneBuilds))
+
+	var after int64
+	require.NoError(s.T(), s.deps.DB.WithContext(s.ctx).
+		Model(&app.ComponentBuild{}).
+		Count(&after).Error)
+	assert.Equal(s.T(), before, after)
+	assert.Empty(s.T(), tests.GetQueueSignals(s.T(), s.deps.DB))
+}
+
 // ---------------------------------------------------------------------------
 // Validation error cases
 // ---------------------------------------------------------------------------

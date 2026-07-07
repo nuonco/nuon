@@ -12,10 +12,10 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/op"
 	"github.com/nuonco/nuon/pkg/kube/config"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/log"
+	"github.com/nuonco/nuon/pkg/runner/op"
 	"github.com/nuonco/nuon/pkg/terraform/run"
 	"github.com/nuonco/nuon/pkg/terraform/workspace"
 )

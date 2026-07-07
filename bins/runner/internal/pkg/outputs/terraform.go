@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	pkgctx "github.com/nuonco/nuon/bins/runner/internal/pkg/ctx"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
+	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
+	"github.com/nuonco/nuon/pkg/runner/log"
 	"github.com/nuonco/nuon/pkg/terraform/outputs"
 	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )

@@ -4,20 +4,20 @@ import (
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/api"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/auth"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/drain"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/errs"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/heartbeater"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/log"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/metrics"
-	ocicopy "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/copy"
-	ociresolve "github.com/nuonco/nuon/bins/runner/internal/pkg/oci/resolve"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/process"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
 	"github.com/nuonco/nuon/bins/runner/internal/pkg/slog"
 	"github.com/nuonco/nuon/bins/runner/internal/registry"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/errs"
+	"github.com/nuonco/nuon/pkg/runner/log"
+	ocicopy "github.com/nuonco/nuon/pkg/runner/oci/copy"
+	ociresolve "github.com/nuonco/nuon/pkg/runner/oci/resolve"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 type cli struct{}
@@ -25,7 +25,7 @@ type cli struct{}
 func (c *cli) commonProviders() []fx.Option {
 	// providers for both runner modes: mng and (org |install)
 	return []fx.Option{
-		fx.Provide(internal.NewConfig),
+		fx.Provide(runnerconfig.NewConfig),
 		fx.Provide(validator.New),
 		// logging and error handling
 		fx.Provide(slog.AsSystemProvider(slog.NewSystemProvider)),

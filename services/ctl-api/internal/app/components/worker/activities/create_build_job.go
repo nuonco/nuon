@@ -13,8 +13,8 @@ const (
 )
 
 type CreateBuildJobRequest struct {
-	BuildID     string                     `validate:"required"`
-	RunnerID    string                     `validate:"required"`
+	BuildID     string `validate:"required"`
+	RunnerID    string
 	Op          app.RunnerJobOperationType `validate:"required"`
 	Type        app.RunnerJobType          `validate:"required"`
 	LogStreamID string                     `validate:"required"`
@@ -30,9 +30,17 @@ func (a *Activities) CreateBuildJob(ctx context.Context, req *CreateBuildJobRequ
 
 	ctx = cctx.SetAccountIDContext(ctx, bld.CreatedByID)
 	ctx = cctx.SetOrgIDContext(ctx, bld.OrgID)
+	executor, runnerID, err := a.runnersHelpers.BuildExecutorForOrg(ctx, &app.Org{ID: bld.OrgID}, req.Type)
+	if err != nil {
+		return nil, fmt.Errorf("unable to choose build executor: %w", err)
+	}
+	if executor == app.RunnerJobExecutorOrgRunner && req.RunnerID != "" {
+		runnerID = req.RunnerID
+	}
 
 	job, err := a.runnersHelpers.CreateBuildJob(ctx,
-		req.RunnerID,
+		runnerID,
+		executor,
 		buildOwnerType,
 		bld.ID,
 		req.Type,

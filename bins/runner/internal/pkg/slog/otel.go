@@ -8,15 +8,15 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
 	"go.opentelemetry.io/otel/sdk/log"
 
-	"github.com/nuonco/nuon/bins/runner/internal"
-	"github.com/nuonco/nuon/bins/runner/internal/pkg/settings"
+	runnerconfig "github.com/nuonco/nuon/pkg/runner/config"
+	"github.com/nuonco/nuon/pkg/runner/settings"
 )
 
 const (
 	defaultOTLPLogsEndpointTmpl string = "%s/v1/log-streams/%s/logs"
 )
 
-func NewOTELProvider(cfg *internal.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
+func NewOTELProvider(cfg *runnerconfig.Config, set *settings.Settings, logStreamID string) (*log.LoggerProvider, error) {
 	if !set.EnableLogging {
 		return log.NewLoggerProvider(), nil
 	}
