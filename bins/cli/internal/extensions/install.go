@@ -561,13 +561,24 @@ func extensionBinaryName(name string) string {
 	return binName
 }
 
-// InstallLocal installs an extension from a local directory.
-// The directory must contain a nuon-ext.toml and a pre-built binary named nuon-ext-<name>.
-// The binary is symlinked (not copied) so rebuilds take effect immediately.
+// InstallLocal installs an extension from a local directory or a local binary file.
+//
+// When given a directory, it must contain a nuon-ext.toml and a pre-built binary
+// named nuon-ext-<name>. The directory is symlinked so rebuilds take effect immediately.
+//
+// When given a binary file path (e.g. ~/bin/nuon-ext-linter), the binary is copied
+// into the extensions directory. The binary name must use the nuon-ext-<name> convention.
 func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to resolve path: %w", err)
+	}
+	// Expand ~ if filepath.Abs didn't resolve it (shouldn't happen from CLI, but be safe)
+	if strings.HasPrefix(path, "~") {
+		home, _ := os.UserHomeDir()
+		if home != "" {
+			absPath = filepath.Join(home, path[1:])
+		}
 	}
 	ui.PrintDebug(fmt.Sprintf("resolved local path: %s", absPath))
 
@@ -575,8 +586,10 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	if err != nil {
 		return nil, fmt.Errorf("path does not exist: %w", err)
 	}
+
+	// If it's a file (not a directory), use the binary install path
 	if !info.IsDir() {
-		return nil, fmt.Errorf("path is not a directory: %s", absPath)
+		return m.installLocalBinary(absPath, info)
 	}
 
 	// Read and validate nuon-ext.toml from the local directory
@@ -667,5 +680,114 @@ func (m *Manager) InstallLocal(path string) (*InstalledExtension, error) {
 	}
 
 	ui.PrintDebug(fmt.Sprintf("installed %s (%s, dev) from %s to %s", name, extType, absPath, extDir))
+	return installed, nil
+}
+
+// installLocalBinary installs an extension from a single binary file.
+// The binary name must follow the nuon-ext-<name> convention (e.g. nuon-ext-linter).
+// The binary is copied into the extensions directory.
+func (m *Manager) installLocalBinary(absPath string, info os.FileInfo) (*InstalledExtension, error) {
+	baseName := filepath.Base(absPath)
+
+	// Strip .exe suffix for name extraction on Windows
+	cleanName := strings.TrimSuffix(baseName, ".exe")
+
+	if !strings.HasPrefix(cleanName, "nuon-ext-") {
+		return nil, fmt.Errorf("binary name %q must use the nuon-ext-<name> convention (e.g. nuon-ext-linter)", baseName)
+	}
+
+	name := strings.TrimPrefix(cleanName, "nuon-ext-")
+	ui.PrintDebug(fmt.Sprintf("detected extension name %q from binary %s", name, baseName))
+
+	// Check if executable
+	if info.Mode()&0111 == 0 {
+		return nil, fmt.Errorf("binary %s is not executable", absPath)
+	}
+
+	// Check if already installed
+	extDir := filepath.Join(m.dir, "nuon-ext-"+name)
+	if _, err := os.Stat(extDir); err == nil {
+		return nil, fmt.Errorf("extension %q is already installed (use `nuon ext remove %s` first)", name, name)
+	}
+
+	// Create extension directory
+	ui.PrintDebug(fmt.Sprintf("creating extension directory: %s", extDir))
+	if err := os.MkdirAll(extDir, 0o755); err != nil {
+		return nil, fmt.Errorf("unable to create extension directory: %w", err)
+	}
+
+	// Copy the binary into the extension directory
+	binaryName := extensionBinaryName(name)
+	destPath := filepath.Join(extDir, binaryName)
+	ui.PrintDebug(fmt.Sprintf("copying binary %s -> %s", absPath, destPath))
+
+	srcFile, err := os.Open(absPath)
+	if err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to read binary: %w", err)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.Create(destPath)
+	if err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to create binary: %w", err)
+	}
+
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		dstFile.Close()
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to copy binary: %w", err)
+	}
+	dstFile.Close()
+
+	if err := os.Chmod(destPath, 0o755); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to make binary executable: %w", err)
+	}
+
+	// Try to read nuon-ext.toml from the same directory as the binary (optional)
+	description := fmt.Sprintf("Extension: %s", name)
+	var requiresToken, requiresOrg, requiresApp, requiresInstall bool
+
+	tomlPath := filepath.Join(filepath.Dir(absPath), "nuon-ext.toml")
+	if tomlData, err := os.ReadFile(tomlPath); err == nil {
+		ui.PrintDebug(fmt.Sprintf("found nuon-ext.toml at %s", tomlPath))
+		if manifest, err := ParseManifest(tomlData); err == nil {
+			if manifest.Extension.Description != "" {
+				description = manifest.Extension.Description
+			}
+			requiresToken = manifest.Extension.Auth.RequiresToken
+			requiresOrg = manifest.Extension.Auth.RequiresOrg
+			requiresApp = manifest.Extension.Auth.RequiresApp
+			requiresInstall = manifest.Extension.Auth.RequiresInstall
+		}
+	}
+
+	// Write manifest.json
+	now := time.Now().UTC().Format(time.RFC3339)
+	installed := &InstalledExtension{
+		Name:            name,
+		Description:     description,
+		Repo:            "local:" + absPath,
+		Version:         "dev",
+		Tag:             "dev",
+		InstalledAt:     now,
+		UpdatedAt:       now,
+		Binary:          binaryName,
+		Type:            ExtTypeBinary,
+		Platform:        runtime.GOOS + "/" + runtime.GOARCH,
+		RequiresToken:   requiresToken,
+		RequiresOrg:     requiresOrg,
+		RequiresApp:     requiresApp,
+		RequiresInstall: requiresInstall,
+	}
+
+	if err := writeManifestJSON(extDir, installed); err != nil {
+		os.RemoveAll(extDir)
+		return nil, fmt.Errorf("unable to write manifest: %w", err)
+	}
+
+	ui.PrintDebug(fmt.Sprintf("installed %s (binary, dev) from %s to %s", name, absPath, extDir))
 	return installed, nil
 }

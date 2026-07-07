@@ -72,8 +72,9 @@ readme       = "./README.md"
 
 ## Tables
 
-Markdown tables render with styled headers and auto-scroll horizontally when
-the content is wider than the page.
+Markdown tables render as interactive data tables with styled headers,
+click-to-sort columns, and horizontal auto-scroll when the content is wider than
+the page.
 
 ```markdown README.md
 | Component | Type | Port | Health check |
@@ -83,6 +84,36 @@ the content is wider than the page.
 | ingress-nginx | helm_chart | 443 | /ready |
 | networking | terraform_module | — | — |
 ```
+
+Cell content is full inline markdown, so links, **bold**, and `inline code`
+render inside cells. Column alignment from the delimiter row (`:---`, `:---:`,
+`---:`) is preserved.
+
+### Searchable tables
+
+Add a `<nuon-table-search>` tag directly before a table to render a search box
+that filters the rows client-side as the viewer types.
+
+```markdown README.md
+<nuon-table-search column="name"></nuon-table-search>
+
+| Name | Status | Region |
+|------|--------|--------|
+| prod-us-east | Active | us-east-1 |
+| prod-eu-west | Active | eu-west-1 |
+| staging-us-west | Updating | us-west-2 |
+| dev-central | Inactive | us-central1 |
+```
+
+The tag must be the line immediately before the table (blank lines between are
+fine). Matching is case-insensitive substring, and searches the value of each
+cell — not its rendered markdown.
+
+Attributes:
+- `column` — which column(s) to search, by header name. Comma-separate for
+  multiple (e.g. `column="name,region"`). Omit to search every column.
+- `placeholder` — custom placeholder text for the search box (defaults to
+  "Search table…").
 
 ## Collapsible sections
 

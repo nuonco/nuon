@@ -3,9 +3,11 @@ package appconfig
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	statusactivities "github.com/nuonco/nuon/services/ctl-api/internal/pkg/workflows/status/activities"
@@ -125,6 +127,85 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to serialize intermediate config: %w", err)
 	}
 
+	isPreview := run.RunType == app.AppBranchRunTypeGitPreview
+
+	// For preview runs, diff intermediate configs before creating the DB AppConfig.
+	// If nothing changed, short-circuit and skip the rest of the workflow.
+	var previewDiff *activities.ComputeAppConfigDiffOutput
+	var previewBaselineConfigID string
+	if isPreview {
+		var oldConfigID string
+		baseline, baselineErr := activities.AwaitFindLatestNonPreviewAppConfig(ctx, &activities.FindLatestNonPreviewAppConfigInput{
+			AppID: branch.AppID,
+		})
+		if baselineErr == nil && baseline.AppConfigID != "" {
+			oldConfigID = baseline.AppConfigID
+			previewBaselineConfigID = oldConfigID
+		}
+
+		diffResult, diffErr := activities.AwaitDiffIntermediateConfigs(ctx, &activities.DiffIntermediateConfigsInput{
+			AppID:                     branch.AppID,
+			NewIntermediateConfigJSON: string(configJSON),
+			OldAppConfigID:            oldConfigID,
+		})
+		if diffErr != nil {
+			l.Warn("unable to diff intermediate configs, continuing", "error", diffErr)
+		} else if !diffResult.Changed {
+			_ = activities.AwaitUpdateAppBranchRunNoConfigChanges(ctx, &activities.UpdateAppBranchRunNoConfigChangesInput{
+				RunID: s.RunID,
+			})
+
+			if run.PRNumber != nil {
+				commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
+					AppName: branch.Name,
+					RunID:   s.RunID,
+					Status:  activities.PRCommentStatusSkipped,
+				})
+				_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+					VcsConfigID:       vcsConfigID,
+					PRNumber:          *run.PRNumber,
+					ExistingCommentID: run.GithubCommentID,
+					Body:              commentBody,
+				})
+				_ = activities.AwaitSetGithubCommitStatus(ctx, &activities.SetGithubCommitStatusInput{
+					VcsConfigID: vcsConfigID,
+					CommitSHA:   run.HeadSHA,
+					State:       "success",
+					Context:     "nuon/preview",
+					Description: "No config changes detected",
+				})
+			}
+
+			if s.StepID != "" {
+				_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
+					ID: s.StepID,
+					Status: app.CompositeStatus{
+						Status:                 app.StatusSuccess,
+						StatusHumanDescription: "no config changes detected",
+					},
+				})
+			}
+
+			closeLogStream()
+			return nil
+		}
+
+		if diffResult.Diff != nil {
+			previewDiff = diffResult.Diff
+		}
+	}
+
+	configLabels := labels.Labels{
+		"source": string(run.RunType),
+	}
+	if run.HeadSHA != "" {
+		configLabels["commit"] = run.HeadSHA
+	}
+	if run.PRNumber != nil {
+		configLabels["pr"] = strconv.Itoa(*run.PRNumber)
+	}
+	configLabels.Merge(run.Labels)
+
 	createResp, err := activities.AwaitCreateAppConfig(ctx, activities.CreateAppConfigRequest{
 		Req: &activities.CreateAppConfigInput{
 			AppID:                  branch.AppID,
@@ -132,6 +213,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			AppBranchID:            branch.ID,
 			CreatedByID:            branch.CreatedByID,
 			IntermediateConfigJSON: string(configJSON),
+			Labels:                 configLabels,
 		},
 	})
 	if err != nil {
@@ -181,7 +263,6 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to update run with app config ID: %w", err)
 	}
 
-	// Update step metadata with config info for the UI
 	if s.StepID != "" {
 		meta := map[string]any{
 			"app_config_id":   syncResp.AppConfigID,
@@ -189,26 +270,37 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			"action_count":    len(syncResp.ActionIDs),
 		}
 
-		// Best-effort: compute structured config diff for the UI
-		var oldConfigID string
-		if run.PreviousRunID != nil && *run.PreviousRunID != "" {
-			prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
-			if prevErr == nil && prevRun.AppConfigID != "" {
-				oldConfigID = prevRun.AppConfigID
+		var configDiff *activities.ComputeAppConfigDiffOutput
+		if previewDiff != nil {
+			configDiff = previewDiff
+		} else {
+			var oldConfigID string
+			if run.PreviousRunID != nil && *run.PreviousRunID != "" {
+				prevRun, prevErr := activities.AwaitGetAppBranchRunByIDByRunID(ctx, *run.PreviousRunID)
+				if prevErr == nil && prevRun.AppConfigID != "" {
+					oldConfigID = prevRun.AppConfigID
+				}
+			}
+
+			computed, diffErr := activities.AwaitComputeAppConfigDiff(ctx, &activities.ComputeAppConfigDiffInput{
+				AppID:       branch.AppID,
+				NewConfigID: syncResp.AppConfigID,
+				OldConfigID: oldConfigID,
+			})
+			if diffErr == nil {
+				configDiff = computed
 			}
 		}
 
-		configDiff, diffErr := activities.AwaitComputeAppConfigDiff(ctx, &activities.ComputeAppConfigDiffInput{
-			AppID:       branch.AppID,
-			NewConfigID: syncResp.AppConfigID,
-			OldConfigID: oldConfigID,
-		})
-		if diffErr == nil && configDiff != nil {
+		if configDiff != nil {
 			meta["config_file"] = configDiff.ConfigFile
 			meta["diff_additions"] = configDiff.Additions
 			meta["diff_removals"] = configDiff.Removals
 			meta["diff_changed"] = configDiff.Changed
 			meta["diff_sections"] = configDiff.Sections
+		}
+		if previewBaselineConfigID != "" {
+			meta["baseline_app_config_id"] = previewBaselineConfigID
 		}
 
 		_ = statusactivities.AwaitPkgStatusUpdateFlowStepStatus(ctx, statusactivities.UpdateStatusRequest{
@@ -219,6 +311,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 				Metadata:               meta,
 			},
 		})
+
+		if isPreview && run.PRNumber != nil {
+			commentBody := activities.BuildPRCommentBody(&activities.PRCommentParams{
+				AppName: branch.Name,
+				RunID:   s.RunID,
+				Status:  activities.PRCommentStatusPending,
+				Diff:    configDiff,
+			})
+			_, _ = activities.AwaitCreateOrUpdatePRComment(ctx, &activities.CreateOrUpdatePRCommentInput{
+				VcsConfigID:       vcsConfigID,
+				PRNumber:          *run.PRNumber,
+				ExistingCommentID: run.GithubCommentID,
+				Body:              commentBody,
+			})
+		}
 	}
 
 	closeLogStream()

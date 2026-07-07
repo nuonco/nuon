@@ -50,11 +50,14 @@ type AppAppBranchRun struct {
 	// ErrorMessage stores any error that occurred during execution
 	ErrorMessage string `json:"error_message,omitempty"`
 
-	// EventType indicates what triggered this run (push, pull_request, manual).
+	// EventType indicates what triggered this run. Kept for backward compat; new code uses RunType.
 	EventType string `json:"event_type,omitempty"`
 
-	// Force indicates if this run was forced (bypassing change detection)
+	// force
 	Force bool `json:"force,omitempty"`
+
+	// github comment id
+	GithubCommentID int64 `json:"github_comment_id,omitempty"`
 
 	// head sha
 	HeadSha string `json:"head_sha,omitempty"`
@@ -71,11 +74,13 @@ type AppAppBranchRun struct {
 	// LogStreamID is the log stream created during this run for event tracking
 	LogStreamID string `json:"log_stream_id,omitempty"`
 
-	// PlanOnly indicates this is a preview run (e.g., PR preview) that should
-	// only plan changes without applying them.
+	// no config changes
+	NoConfigChanges bool `json:"no_config_changes,omitempty"`
+
+	// PlanOnly indicates this is a preview run. Kept for backward compat; new code uses RunType.
 	PlanOnly bool `json:"plan_only,omitempty"`
 
-	// PR metadata — populated when EventType is "pull_request"
+	// pr number
 	PrNumber int64 `json:"pr_number,omitempty"`
 
 	// previous run
@@ -89,6 +94,9 @@ type AppAppBranchRun struct {
 	QueueSignal struct {
 		AppQueueSignal
 	} `json:"queue_signal,omitempty"`
+
+	// run type
+	RunType AppAppBranchRunType `json:"run_type,omitempty"`
 
 	// StartedAt tracks when execution actually began
 	StartedAt string `json:"started_at,omitempty"`
@@ -139,6 +147,10 @@ func (m *AppAppBranchRun) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateQueueSignal(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRunType(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -302,6 +314,27 @@ func (m *AppAppBranchRun) validateQueueSignal(formats strfmt.Registry) error {
 	return nil
 }
 
+func (m *AppAppBranchRun) validateRunType(formats strfmt.Registry) error {
+	if swag.IsZero(m.RunType) { // not required
+		return nil
+	}
+
+	if err := m.RunType.Validate(formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("run_type")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("run_type")
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 func (m *AppAppBranchRun) validateVcsConnectionCommit(formats strfmt.Registry) error {
 	if swag.IsZero(m.VcsConnectionCommit) { // not required
 		return nil
@@ -377,6 +410,10 @@ func (m *AppAppBranchRun) ContextValidate(ctx context.Context, formats strfmt.Re
 	}
 
 	if err := m.contextValidateQueueSignal(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateRunType(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -542,6 +579,28 @@ func (m *AppAppBranchRun) contextValidatePreviousRun(ctx context.Context, format
 }
 
 func (m *AppAppBranchRun) contextValidateQueueSignal(ctx context.Context, formats strfmt.Registry) error {
+
+	return nil
+}
+
+func (m *AppAppBranchRun) contextValidateRunType(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.RunType) { // not required
+		return nil
+	}
+
+	if err := m.RunType.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("run_type")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("run_type")
+		}
+
+		return err
+	}
 
 	return nil
 }

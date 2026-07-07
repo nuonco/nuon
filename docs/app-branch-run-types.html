@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Branch Run Types — Propagation Diagram</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface2: #334155;
+  --border: #475569;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --dim: #64748b;
+
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.12);
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.12);
+  --purple: #a78bfa;
+  --purple-bg: rgba(167,139,250,0.12);
+  --yellow: #eab308;
+  --yellow-bg: rgba(234,179,8,0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --cyan: #06b6d4;
+  --cyan-bg: rgba(6,182,212,0.12);
+  --orange: #f97316;
+  --orange-bg: rgba(249,115,22,0.12);
+  --pink: #ec4899;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.page-header {
+  padding: 40px 32px 32px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.page-header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+.page-header p { color: var(--muted); font-size: 0.95rem; max-width: 640px; margin: 0 auto; }
+
+.container { max-width: 1300px; margin: 0 auto; padding: 32px 24px; }
+
+/* ─── Section ─── */
+.section { margin-bottom: 48px; }
+.section-title {
+  font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.8rem;
+}
+
+/* ─── Trigger row ─── */
+.trigger-row {
+  display: flex; gap: 16px; margin-bottom: 32px;
+}
+.trigger-card {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px 18px; position: relative;
+}
+.trigger-card::before {
+  content: attr(data-label);
+  position: absolute; top: -10px; left: 14px;
+  background: var(--bg); padding: 0 8px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.trigger-card.manual::before { color: var(--blue); }
+.trigger-card.git::before { color: var(--green); }
+.trigger-card.preview::before { color: var(--purple); }
+.trigger-card.manual { border-color: rgba(59,130,246,0.4); }
+.trigger-card.git { border-color: rgba(34,197,94,0.4); }
+.trigger-card.preview { border-color: rgba(167,139,250,0.4); }
+
+.trigger-event {
+  font-family: "SF Mono", "Fira Code", monospace; font-size: 0.82rem;
+  color: var(--text); margin-bottom: 6px;
+}
+.trigger-desc { font-size: 0.8rem; color: var(--muted); }
+
+/* ─── Shared entry point ─── */
+.shared-entry {
+  text-align: center; margin-bottom: 24px;
+}
+.shared-entry .box {
+  display: inline-block; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 24px; font-size: 0.85rem; font-weight: 500;
+}
+.shared-entry .box code { color: var(--cyan); }
+
+/* ─── Columns ─── */
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  position: relative;
+}
+.column { position: relative; }
+.col-header {
+  text-align: center; margin-bottom: 12px; padding: 10px 12px;
+  border-radius: 8px; font-weight: 700; font-size: 0.85rem;
+}
+.col-header.manual { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+.col-header.git { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+.col-header.preview { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(167,139,250,0.3); }
+.col-header .type-code {
+  font-family: monospace; font-size: 0.75rem; font-weight: 400;
+  opacity: 0.8; display: block; margin-top: 2px;
+}
+
+/* ─── Step cards ─── */
+.step {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  position: relative;
+  transition: border-color 0.15s;
+}
+.step:hover { border-color: var(--muted); }
+.step.shared { border-style: solid; }
+.step.new { border-color: rgba(167,139,250,0.5); border-style: dashed; background: rgba(167,139,250,0.04); }
+.step.skipped { opacity: 0.35; border-style: dotted; }
+.step.hidden { border-color: rgba(167,139,250,0.3); background: rgba(167,139,250,0.06); }
+
+.step-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+}
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 700; flex-shrink: 0;
+}
+.step-num.blue { background: var(--blue-bg); color: var(--blue); }
+.step-num.green { background: var(--green-bg); color: var(--green); }
+.step-num.purple { background: var(--purple-bg); color: var(--purple); }
+.step-num.dim { background: rgba(100,116,139,0.2); color: var(--dim); }
+
+.step-title { font-weight: 600; font-size: 0.82rem; }
+.step-badge {
+  font-size: 0.65rem; font-weight: 600; padding: 1px 6px;
+  border-radius: 8px; margin-left: auto;
+}
+.badge-shared { background: var(--surface2); color: var(--muted); }
+.badge-new { background: var(--purple-bg); color: var(--purple); }
+.badge-hidden { background: rgba(167,139,250,0.15); color: var(--purple); }
+.badge-skip { background: rgba(100,116,139,0.15); color: var(--dim); }
+
+.step-body {
+  font-size: 0.78rem; color: var(--muted); margin-top: 4px;
+  padding-left: 30px;
+}
+.step-body code { color: var(--cyan); font-size: 0.76rem; }
+.step-body .outcome {
+  margin-top: 4px; font-size: 0.76rem;
+}
+.outcome-item {
+  display: flex; align-items: flex-start; gap: 6px; margin: 2px 0;
+}
+.outcome-dot {
+  width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+}
+.dot-green { background: var(--green); }
+.dot-yellow { background: var(--yellow); }
+.dot-purple { background: var(--purple); }
+.dot-blue { background: var(--blue); }
+.dot-red { background: var(--red); }
+.dot-dim { background: var(--dim); }
+
+/* ─── Arrow between steps ─── */
+.arrow {
+  display: flex; justify-content: center; padding: 2px 0;
+  color: var(--dim); font-size: 0.9rem;
+}
+.arrow svg { width: 16px; height: 16px; }
+.arrow.preview-arrow svg { color: var(--purple); }
+
+/* ─── Decision diamond ─── */
+.decision {
+  display: flex; justify-content: center; margin: 4px 0;
+}
+.diamond {
+  width: 100px; height: 54px; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.diamond-bg {
+  position: absolute; inset: 0;
+  background: var(--yellow-bg);
+  border: 1.5px solid rgba(234,179,8,0.5);
+  transform: rotate(45deg) scale(0.7);
+  border-radius: 6px;
+}
+.diamond-text {
+  position: relative; z-index: 1;
+  font-size: 0.72rem; font-weight: 600; color: var(--yellow);
+  text-align: center; line-height: 1.2;
+}
+
+/* ─── Branch paths ─── */
+.branch-paths {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-top: 4px;
+}
+.branch-label {
+  text-align: center; font-size: 0.68rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.branch-label.yes { color: var(--green); }
+.branch-label.no { color: var(--yellow); }
+
+/* ─── Connectors ─── */
+.connector {
+  text-align: center; padding: 4px 0;
+  color: var(--dim); font-size: 0.75rem;
+}
+.connector .line {
+  width: 1px; height: 12px; background: var(--border);
+  margin: 0 auto;
+}
+
+/* ─── Legend ─── */
+.legend {
+  display: flex; gap: 20px; flex-wrap: wrap;
+  padding: 16px 20px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  margin-top: 24px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; color: var(--muted);
+}
+.legend-swatch {
+  width: 28px; height: 16px; border-radius: 4px;
+}
+.swatch-shared { background: var(--surface); border: 1px solid var(--border); }
+.swatch-new { background: rgba(167,139,250,0.06); border: 1.5px dashed rgba(167,139,250,0.5); }
+.swatch-skipped { background: var(--surface); border: 1.5px dotted var(--border); opacity: 0.4; }
+.swatch-hidden { background: rgba(167,139,250,0.06); border: 1px solid rgba(167,139,250,0.3); }
+
+/* ─── GitHub outcome box ─── */
+.gh-outcome {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.gh-outcome-title {
+  font-size: 0.78rem; font-weight: 600; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.gh-outcome-title .icon { font-size: 1rem; }
+.gh-outcome-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.78rem; color: var(--muted); padding: 3px 0;
+}
+.gh-outcome-row code { color: var(--cyan); font-size: 0.76rem; }
+
+/* ─── Propagation flow (top section) ─── */
+.flow-diagram {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+.flow-title {
+  font-size: 0.9rem; font-weight: 600; margin-bottom: 16px;
+  color: var(--text);
+}
+.flow-row {
+  display: flex; align-items: center; gap: 0; margin-bottom: 12px;
+}
+.flow-box {
+  padding: 8px 14px; border-radius: 6px; font-size: 0.8rem;
+  font-weight: 500; white-space: nowrap; border: 1px solid;
+}
+.flow-arrow {
+  padding: 0 8px; color: var(--dim); font-size: 0.9rem;
+  display: flex; align-items: center;
+}
+.flow-arrow svg { width: 18px; height: 18px; }
+.flow-box.webhook { background: var(--cyan-bg); border-color: rgba(6,182,212,0.3); color: var(--cyan); }
+.flow-box.signal { background: var(--orange-bg); border-color: rgba(249,115,22,0.3); color: var(--orange); }
+.flow-box.activity { background: var(--blue-bg); border-color: rgba(59,130,246,0.3); color: var(--blue); }
+.flow-box.model { background: var(--green-bg); border-color: rgba(34,197,94,0.3); color: var(--green); }
+.flow-box.workflow { background: var(--purple-bg); border-color: rgba(167,139,250,0.3); color: var(--purple); }
+.flow-box.cli { background: var(--yellow-bg); border-color: rgba(234,179,8,0.3); color: var(--yellow); }
+
+.flow-label {
+  font-size: 0.7rem; color: var(--dim); margin-bottom: 4px;
+  font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.flow-note {
+  font-size: 0.75rem; color: var(--dim); font-style: italic;
+  margin-left: 12px;
+}
+
+.flow-branch {
+  margin-left: 40px; padding-left: 16px;
+  border-left: 2px solid var(--border);
+}
+.flow-branch-label {
+  font-size: 0.72rem; font-weight: 600; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 6px;
+}
+.flow-branch-label .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>App Branch Run Types</h1>
+  <p>How the three run types propagate from trigger to workflow execution, and the step differences between them.</p>
+</div>
+
+<div class="container">
+
+<!-- ─── Section 1: Entry Propagation ─── -->
+<div class="section">
+  <div class="section-title">Trigger &rarr; Signal &rarr; Run Creation</div>
+
+  <div class="flow-diagram">
+    <div class="flow-title">Shared entry path (all run types)</div>
+
+    <div class="flow-label">Git-triggered (push or PR)</div>
+    <div class="flow-row">
+      <div class="flow-box webhook">GitHub Webhook</div>
+      <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+      <div class="flow-box signal">github_event signal</div>
+      <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+      <div class="flow-box activity">FindMatchingAppBranches</div>
+      <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+      <div class="flow-box signal">vcspush signal</div>
+      <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+      <div class="flow-box activity" style="min-width: 220px;">TriggerAppBranchRunFromVCSPush</div>
+    </div>
+
+    <div class="flow-branch" style="margin-top: 8px;">
+      <div class="flow-branch-label">
+        <div class="dot" style="background:var(--green)"></div>
+        <span style="color:var(--green)">push event &rarr; RunType = <code style="color:var(--cyan)">git-run</code></span>
+      </div>
+      <div class="flow-row" style="margin-bottom:8px;">
+        <div class="flow-box model">AppBranchRun</div>
+        <span class="flow-note">PlanOnly=false, EventType="push"</span>
+      </div>
+
+      <div class="flow-branch-label">
+        <div class="dot" style="background:var(--purple)"></div>
+        <span style="color:var(--purple)">pull_request event (opened/synchronize) &rarr; RunType = <code style="color:var(--cyan)">git-preview-run</code></span>
+      </div>
+      <div class="flow-row" style="margin-bottom:0;">
+        <div class="flow-box model">AppBranchRun</div>
+        <span class="flow-note">PlanOnly=true, PRNumber, HeadSHA, BaseBranch</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+      <div class="flow-label">Manual trigger (CLI or Dashboard)</div>
+      <div class="flow-row">
+        <div class="flow-box cli">nuon branches run</div>
+        <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+        <div class="flow-box activity">CreateAppBranchRun</div>
+        <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+        <div class="flow-box model">AppBranchRun</div>
+        <span class="flow-note">RunType = <code style="color:var(--cyan)">manual-run</code></span>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+      <div style="color:var(--dim); font-size: 0.78rem; margin-bottom: 8px;">All three converge into:</div>
+      <div class="flow-row" style="justify-content:center;">
+        <div class="flow-box signal">app-branch-run signal</div>
+        <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+        <div class="flow-box workflow">AppBranchRun workflow</div>
+        <span class="flow-note">Step generation varies by RunType</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Section 2: PR lifecycle ─── -->
+<div class="section">
+  <div class="section-title">PR Lifecycle &mdash; Which Events Trigger What</div>
+
+  <div class="flow-diagram">
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:var(--dim);margin-bottom:6px;font-weight:600;">PR OPENED</div>
+        <div class="flow-box webhook" style="display:inline-block;font-size:0.78rem;">pull_request<br><span style="opacity:0.7">action: opened</span></div>
+        <div style="margin:6px 0;color:var(--purple);">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg>
+        </div>
+        <div class="flow-box workflow" style="display:inline-block;font-size:0.75rem;">git-preview-run</div>
+      </div>
+
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:var(--dim);margin-bottom:6px;font-weight:600;">PR PUSHED</div>
+        <div class="flow-box webhook" style="display:inline-block;font-size:0.78rem;">pull_request<br><span style="opacity:0.7">action: synchronize</span></div>
+        <div style="margin:6px 0;color:var(--purple);">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg>
+        </div>
+        <div class="flow-box workflow" style="display:inline-block;font-size:0.75rem;">git-preview-run</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">Updates same comment</div>
+      </div>
+
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:var(--dim);margin-bottom:6px;font-weight:600;">PR MERGED</div>
+        <div class="flow-box webhook" style="display:inline-block;font-size:0.78rem;">pull_request<br><span style="opacity:0.7">action: closed</span></div>
+        <div style="margin:6px 0;color:var(--dim);">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg>
+        </div>
+        <div style="display:inline-block;font-size:0.75rem;padding:6px 12px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--dim);">ignored</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:8px;">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor" style="vertical-align:middle;"><path d="M10 4v12m-4-4l4 4 4-4"/></svg>
+          then...
+        </div>
+        <div style="margin-top:4px;">
+          <div class="flow-box webhook" style="display:inline-block;font-size:0.78rem;">push<br><span style="opacity:0.7">refs/heads/main</span></div>
+        </div>
+        <div style="margin:6px 0;color:var(--green);">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg>
+        </div>
+        <div class="flow-box" style="display:inline-block;font-size:0.75rem;background:var(--green-bg);border:1px solid rgba(34,197,94,0.3);color:var(--green);">git-run</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">Deploys to installs</div>
+      </div>
+
+      <div style="text-align:center;">
+        <div style="font-size:0.75rem;color:var(--dim);margin-bottom:6px;font-weight:600;">PR CLOSED</div>
+        <div class="flow-box webhook" style="display:inline-block;font-size:0.78rem;">pull_request<br><span style="opacity:0.7">action: closed</span></div>
+        <div style="margin:6px 0;color:var(--dim);">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg>
+        </div>
+        <div style="display:inline-block;font-size:0.75rem;padding:6px 12px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--dim);">ignored</div>
+        <div style="font-size:0.7rem;color:var(--muted);margin-top:4px;">No push follows</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Section 3: Side-by-side workflows ─── -->
+<div class="section">
+  <div class="section-title">Workflow Steps by Run Type</div>
+
+  <div class="columns">
+    <!-- ═══ Column 1: manual-run ═══ -->
+    <div class="column">
+      <div class="col-header manual">
+        Manual Run
+        <span class="type-code">manual-run</span>
+      </div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num blue">1</div>
+          <span class="step-title">Fetch Commit</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">Clone repo at commit SHA</div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num blue">2</div>
+          <span class="step-title">Fetch App Config</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">
+          Parse <code>nuon.toml</code> &rarr; create AppConfig &rarr; sync components
+        </div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num blue">3</div>
+          <span class="step-title">Build Components</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">Build changed components (checksum comparison)</div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num blue">4</div>
+          <span class="step-title">Plan Install Groups</span>
+        </div>
+        <div class="step-body">
+          Compute <code>InstallConfigDiff</code> per install.
+          Approval step for each group.
+        </div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num blue">5</div>
+          <span class="step-title">Deploy Install Groups</span>
+        </div>
+        <div class="step-body">
+          Roll out to installs in group order.
+          <div class="outcome">
+            <div class="outcome-item"><div class="outcome-dot dot-green"></div>Updates install AppConfigID</div>
+            <div class="outcome-item"><div class="outcome-dot dot-green"></div>Triggers component deploys</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Column 2: git-run ═══ -->
+    <div class="column">
+      <div class="col-header git">
+        Git Run
+        <span class="type-code">git-run</span>
+      </div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num green">1</div>
+          <span class="step-title">Fetch Commit</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">Clone repo at push commit SHA</div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num green">2</div>
+          <span class="step-title">Fetch App Config</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">
+          Parse <code>nuon.toml</code> &rarr; create AppConfig &rarr; sync components
+        </div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num green">3</div>
+          <span class="step-title">Build Components</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">Build changed components (checksum comparison)</div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num green">4</div>
+          <span class="step-title">Plan Install Groups</span>
+        </div>
+        <div class="step-body">
+          Compute <code>InstallConfigDiff</code> per install.
+          Approval step for each group.
+        </div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num green">5</div>
+          <span class="step-title">Deploy Install Groups</span>
+        </div>
+        <div class="step-body">
+          Roll out to installs in group order.
+          <div class="outcome">
+            <div class="outcome-item"><div class="outcome-dot dot-green"></div>Updates install AppConfigID</div>
+            <div class="outcome-item"><div class="outcome-dot dot-green"></div>Triggers component deploys</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Column 3: git-preview-run ═══ -->
+    <div class="column">
+      <div class="col-header preview">
+        Git Preview Run
+        <span class="type-code">git-preview-run</span>
+      </div>
+
+      <div class="step hidden">
+        <div class="step-header">
+          <div class="step-num purple">0</div>
+          <span class="step-title">Setup PR Preview</span>
+          <span class="step-badge badge-hidden">hidden</span>
+        </div>
+        <div class="step-body">
+          <div class="outcome">
+            <div class="outcome-item"><div class="outcome-dot dot-purple"></div>Find previous run's comment ID</div>
+            <div class="outcome-item"><div class="outcome-dot dot-purple"></div>Set commit status &rarr; <strong style="color:var(--yellow)">pending</strong></div>
+            <div class="outcome-item"><div class="outcome-dot dot-purple"></div>Post initial PR comment</div>
+            <div class="outcome-item"><div class="outcome-dot dot-purple"></div>Save comment ID on run</div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow preview-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step">
+        <div class="step-header">
+          <div class="step-num purple">1</div>
+          <span class="step-title">Fetch Commit</span>
+          <span class="step-badge badge-shared">shared</span>
+        </div>
+        <div class="step-body">Clone repo at <code>HeadSHA</code></div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step new">
+        <div class="step-header">
+          <div class="step-num purple">2</div>
+          <span class="step-title">Fetch App Config</span>
+          <span class="step-badge badge-new">modified</span>
+        </div>
+        <div class="step-body">
+          Parse <code>nuon.toml</code>, compare with previous config.
+        </div>
+      </div>
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="decision">
+        <div class="diamond">
+          <div class="diamond-bg"></div>
+          <div class="diamond-text">Config<br>changed?</div>
+        </div>
+      </div>
+
+      <div class="branch-paths">
+        <div>
+          <div class="branch-label no">No</div>
+          <div class="step" style="border-color:rgba(234,179,8,0.4);background:rgba(234,179,8,0.04);">
+            <div class="step-header">
+              <div class="step-num" style="background:var(--yellow-bg);color:var(--yellow);">&#x2298;</div>
+              <span class="step-title" style="font-size:0.78rem;">Skip</span>
+            </div>
+            <div class="step-body" style="padding-left:30px;">
+              <div class="outcome">
+                <div class="outcome-item"><div class="outcome-dot dot-yellow"></div><code>NoConfigChanges=true</code></div>
+                <div class="outcome-item"><div class="outcome-dot dot-yellow"></div>Comment: "No changes"</div>
+                <div class="outcome-item"><div class="outcome-dot dot-green"></div>Status &rarr; <strong style="color:var(--green)">success</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="branch-label yes">Yes</div>
+          <div class="step new" style="border-color:rgba(34,197,94,0.4);">
+            <div class="step-header">
+              <div class="step-num" style="background:var(--green-bg);color:var(--green);">&#10003;</div>
+              <span class="step-title" style="font-size:0.78rem;">Continue</span>
+            </div>
+            <div class="step-body" style="padding-left:30px;">
+              <div class="outcome">
+                <div class="outcome-item"><div class="outcome-dot dot-green"></div>Create AppConfig &amp; sync</div>
+                <div class="outcome-item"><div class="outcome-dot dot-purple"></div>Update comment with diff</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 4v12m-4-4l4 4 4-4"/></svg></div>
+
+      <div class="step new">
+        <div class="step-header">
+          <div class="step-num purple">3</div>
+          <span class="step-title">Build Components</span>
+          <span class="step-badge badge-new">modified</span>
+        </div>
+        <div class="step-body">
+          Skip if <code>NoConfigChanges</code>. Otherwise build.
+          <div class="outcome">
+            <div class="outcome-item"><div class="outcome-dot dot-purple"></div>Update comment: final status</div>
+            <div class="outcome-item"><div class="outcome-dot dot-green"></div>Status &rarr; <strong style="color:var(--green)">success</strong></div>
+            <div class="outcome-item"><div class="outcome-dot dot-red"></div>On error &rarr; status <strong style="color:var(--red)">failure</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div class="step skipped">
+          <div class="step-header">
+            <div class="step-num dim">4</div>
+            <span class="step-title" style="color:var(--dim);">Plan Install Groups</span>
+            <span class="step-badge badge-skip">not run</span>
+          </div>
+        </div>
+        <div class="step skipped">
+          <div class="step-header">
+            <div class="step-num dim">5</div>
+            <span class="step-title" style="color:var(--dim);">Deploy Install Groups</span>
+            <span class="step-badge badge-skip">not run</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- GitHub outcome -->
+      <div class="gh-outcome" style="border-color:rgba(167,139,250,0.3);">
+        <div class="gh-outcome-title" style="color:var(--purple);">
+          <span class="icon">&#x1F4AC;</span> GitHub PR Artifacts
+        </div>
+        <div class="gh-outcome-row">
+          <div class="outcome-dot dot-green" style="margin-top:0;"></div>
+          Commit status on <code>HeadSHA</code> (pending &rarr; success/failure)
+        </div>
+        <div class="gh-outcome-row">
+          <div class="outcome-dot dot-purple" style="margin-top:0;"></div>
+          PR comment with config diff (created once, updated on each push)
+        </div>
+        <div class="gh-outcome-row">
+          <div class="outcome-dot dot-blue" style="margin-top:0;"></div>
+          Link to run in dashboard: <code>/apps/:id/branches/:id/runs/:id</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch swatch-shared"></div>Shared step (all run types)</div>
+    <div class="legend-item"><div class="legend-swatch swatch-new"></div>New / modified for preview</div>
+    <div class="legend-item"><div class="legend-swatch swatch-hidden"></div>Hidden step (preview only)</div>
+    <div class="legend-item"><div class="legend-swatch swatch-skipped"></div>Not run (preview skips)</div>
+  </div>
+</div>
+
+<!-- ─── Section 4: Data model ─── -->
+<div class="section">
+  <div class="section-title">AppBranchRun — Fields by Run Type</div>
+
+  <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border);">
+          <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:0.75rem;text-transform:uppercase;">Field</th>
+          <th style="text-align:center;padding:10px 14px;color:var(--blue);font-size:0.75rem;text-transform:uppercase;">manual-run</th>
+          <th style="text-align:center;padding:10px 14px;color:var(--green);font-size:0.75rem;text-transform:uppercase;">git-run</th>
+          <th style="text-align:center;padding:10px 14px;color:var(--purple);font-size:0.75rem;text-transform:uppercase;">git-preview-run</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>RunType</code></td><td style="text-align:center;color:var(--blue);"><code>manual-run</code></td><td style="text-align:center;color:var(--green);"><code>git-run</code></td><td style="text-align:center;color:var(--purple);"><code>git-preview-run</code></td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>PlanOnly</code></td><td style="text-align:center;color:var(--dim);">false</td><td style="text-align:center;color:var(--dim);">false</td><td style="text-align:center;color:var(--purple);">true</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>EventType</code></td><td style="text-align:center;color:var(--dim);">manual</td><td style="text-align:center;color:var(--green);">push</td><td style="text-align:center;color:var(--purple);">pull_request</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>PRNumber</code></td><td style="text-align:center;color:var(--dim);">nil</td><td style="text-align:center;color:var(--dim);">nil</td><td style="text-align:center;color:var(--purple);">247</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>HeadSHA</code></td><td style="text-align:center;color:var(--dim);">""</td><td style="text-align:center;color:var(--dim);">""</td><td style="text-align:center;color:var(--purple);">abc1234</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>BaseBranch</code></td><td style="text-align:center;color:var(--dim);">""</td><td style="text-align:center;color:var(--dim);">""</td><td style="text-align:center;color:var(--purple);">main</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>GithubCommentID</code></td><td style="text-align:center;color:var(--dim);">nil</td><td style="text-align:center;color:var(--dim);">nil</td><td style="text-align:center;color:var(--purple);">1842903</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>NoConfigChanges</code></td><td style="text-align:center;color:var(--dim);">false</td><td style="text-align:center;color:var(--dim);">false</td><td style="text-align:center;color:var(--purple);">true/false</td></tr>
+        <tr style="border-bottom:1px solid rgba(71,85,105,0.4);"><td style="padding:8px 14px;"><code>VCSConnectionCommit</code></td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td></tr>
+        <tr><td style="padding:8px 14px;"><code>AppConfigID</code></td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003;</td><td style="text-align:center;">&#10003; (if changed)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─── Section 5: VCS resolution chain ─── -->
+<div class="section">
+  <div class="section-title">GitHub Client Resolution Chain</div>
+
+  <div class="flow-diagram">
+    <div class="flow-title">How the preview workflow gets an authenticated GitHub client</div>
+    <div class="flow-row">
+      <div class="flow-box model">AppBranchRun</div>
+      <div class="flow-arrow" style="flex-direction:column;padding:0 4px;">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M4 10h12m-4-4l4 4-4 4"/></svg>
+        <span style="font-size:0.65rem;color:var(--dim);">.VCSConnectionCommit</span>
+      </div>
+      <div class="flow-box model" style="background:var(--cyan-bg);border-color:rgba(6,182,212,0.3);color:var(--cyan);">VCSConnectionCommit</div>
+      <div class="flow-arrow" style="flex-direction:column;padding:0 4px;">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M4 10h12m-4-4l4 4-4 4"/></svg>
+        <span style="font-size:0.65rem;color:var(--dim);">.OwnerID (vcsConfigID)</span>
+      </div>
+      <div class="flow-box model" style="background:var(--orange-bg);border-color:rgba(249,115,22,0.3);color:var(--orange);">ConnectedGithubVCSConfig</div>
+      <div class="flow-arrow" style="flex-direction:column;padding:0 4px;">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M4 10h12m-4-4l4 4-4 4"/></svg>
+        <span style="font-size:0.65rem;color:var(--dim);">.VCSConnection</span>
+      </div>
+      <div class="flow-box activity">resolveGithubClient()</div>
+      <div class="flow-arrow"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 10h12m-4-4l4 4-4 4"/></svg></div>
+      <div class="flow-box" style="background:var(--green-bg);border:1px solid rgba(34,197,94,0.3);color:var(--green);">*github.Client</div>
+    </div>
+    <div style="margin-top:8px;font-size:0.78rem;color:var(--dim);">
+      For <code style="color:var(--cyan)">PublicGitVCSConfig</code> &rarr; returns unauthenticated client &rarr; GitHub API calls skip gracefully
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>
