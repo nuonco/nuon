@@ -12,11 +12,12 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 )
 
 // SyncKubernetesManifestComponent creates or updates a Kubernetes manifest component configuration.
-func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, compHelpers *componenthelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	if comp.KubernetesManifest == nil {
 		return "", "", sync.SyncErr{
 			Resource:    fmt.Sprintf("component-%s", comp.Name),
@@ -72,6 +73,18 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper
 		}
 	}
 
+	// Resolve component dependencies
+	depIDs := []string{}
+	if len(comp.Dependencies) > 0 {
+		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
+	}
+
 	// Build kustomize config if present
 	var kustomize *app.KustomizeConfig
 	if comp.KubernetesManifest.Kustomize != nil {
@@ -110,7 +123,7 @@ func SyncKubernetesManifestComponent(ctx context.Context, db *gorm.DB, vcsHelper
 		KubernetesContextName:             comp.KubernetesContext,
 		ComponentID:                       componentID,
 		AppConfigID:                       appConfigID,
-		ComponentDependencyIDs:            pq.StringArray{},
+		ComponentDependencyIDs:            pq.StringArray(depIDs),
 		References:                        pq.StringArray(references),
 		Checksum:                          comp.Checksum,
 		BuildTimeout:                      comp.KubernetesManifest.BuildTimeout,

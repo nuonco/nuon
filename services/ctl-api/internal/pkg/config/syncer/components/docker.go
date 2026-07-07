@@ -13,6 +13,7 @@ import (
 	"github.com/nuonco/nuon/pkg/config"
 	"github.com/nuonco/nuon/pkg/config/sync"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	componenthelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/components/helpers"
 	vcshelpers "github.com/nuonco/nuon/services/ctl-api/internal/app/vcs/helpers"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/config/syncer/validation"
@@ -20,7 +21,7 @@ import (
 
 // SyncDockerBuildComponent creates or updates a Docker build component configuration.
 // Duplicates logic from services/ctl-api/internal/app/components/service/create_docker_build_component_config.go
-func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
+func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshelpers.Helpers, compHelpers *componenthelpers.Helpers, comp *config.Component, componentID, appID, appConfigID string) (string, string, error) {
 	// Validate Docker build component
 	if err := validateDockerBuildComponent(comp); err != nil {
 		return "", "", sync.SyncErr{
@@ -82,9 +83,13 @@ func SyncDockerBuildComponent(ctx context.Context, db *gorm.DB, vcsHelper *vcshe
 	// Resolve component dependencies
 	depIDs := []string{}
 	if len(comp.Dependencies) > 0 {
-		// TODO: Implement GetComponentIDs helper
-		// For now, we'll leave dependencies empty
-		// depIDs, err = helpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		depIDs, err = compHelpers.GetComponentIDs(ctx, appID, comp.Dependencies)
+		if err != nil {
+			return "", "", sync.SyncInternalErr{
+				Description: fmt.Sprintf("unable to resolve dependencies for component %s", comp.Name),
+				Err:         err,
+			}
+		}
 	}
 
 	// Build env vars map
