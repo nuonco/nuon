@@ -9,6 +9,7 @@ import (
 	"github.com/distribution/reference"
 	"github.com/pkg/errors"
 
+	assumerole "github.com/nuonco/nuon/pkg/aws/assume-role"
 	"github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
@@ -85,19 +86,32 @@ func (b *Planner) getSourceRepository(cfg *app.ExternalImageComponentConfig) (*c
 	}
 
 	if cfg.AWSECRImageConfig != nil {
+		assumeRole := &credentials.AssumeRoleConfig{
+			RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
+			SessionName:            "container-image-build",
+			SessionDurationSeconds: 30 * 60,
+			UseGCPOIDC:             b.cloudProvider == "gcp",
+		}
+
+		// Control-plane builds run as the ctl-api pod identity, which the
+		// vendor's ECR pull role does not trust — vendors grant the Nuon
+		// management account, so hop through the management role first (the
+		// identity the org runner presented as). Org-runner builds run in the
+		// customer account and assume the pull role directly.
+		if b.isControlPlaneBuild && b.cloudProvider == "aws" && b.managementIAMRoleARN != "" {
+			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
+				IAMRoleARN: b.managementIAMRoleARN,
+			}
+		}
+
 		return &configs.OCIRegistryRepository{
 			RegistryType: configs.OCIRegistryTypeECR,
 			Repository:   cfg.ImageURL,
 			Region:       cfg.AWSECRImageConfig.AWSRegion,
 
 			ECRAuth: &credentials.Config{
-				Region: cfg.AWSECRImageConfig.AWSRegion,
-				AssumeRole: &credentials.AssumeRoleConfig{
-					RoleARN:                cfg.AWSECRImageConfig.IAMRoleARN,
-					SessionName:            "container-image-build",
-					SessionDurationSeconds: 30 * 60,
-					UseGCPOIDC:             b.cloudProvider == "gcp",
-				},
+				Region:     cfg.AWSECRImageConfig.AWSRegion,
+				AssumeRole: assumeRole,
 			},
 		}, nil
 	}
