@@ -126,7 +126,7 @@ func (c *cli) extInstallCmd() *cobra.Command {
   Local binary:   nuon ext install ~/bin/nuon-ext-linter
                   nuon ext install /usr/local/bin/nuon-ext-linter
                   (binary name must use nuon-ext-<name> convention; copies binary)`,
-		Args: cobra.ExactArgs(1),
+		Args:        cobra.ExactArgs(1),
 		Annotations: skipAuthAnnotation(),
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			mgr := extensions.New(extensionsDir())
