@@ -58,6 +58,7 @@ func (r *AdminCreateIdentityProviderRequest) Validate(v *validator.Validate) err
 // @Accept					json
 // @Produce				json
 // @Failure				400	{object}	stderr.ErrResponse
+// @Failure				403	{object}	stderr.ErrResponse
 // @Failure				409	{object}	stderr.ErrResponse
 // @Failure				500	{object}	stderr.ErrResponse
 // @Success				201	{object}	app.IdentityProvider
