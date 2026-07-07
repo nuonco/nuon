@@ -36,7 +36,7 @@ resource "spacelift_stack" "nuon" {
   description       = "Nuon runner install stack for {{.InstallID}}"
   space_id          = var.space_id
   repository        = "install-stacks"
-  branch            = "{{.InstallStacksRef}}"
+  branch            = "main"
   project_root      = "gcp"
   terraform_version = "{{.TerraformVersion}}"
   autodeploy        = true
@@ -99,7 +99,7 @@ stack:
   description: Nuon runner install stack for {{.InstallID}}
   space: root
   vcs:
-    branch: {{.InstallStacksRef}}
+    branch: main
     provider: RAW_GIT
     repository_url: https://github.com/nuonco/install-stacks.git
     project_root: gcp
