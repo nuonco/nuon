@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Banner } from '@/components/common/Banner'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { ClickToCopyButton } from '@/components/common/ClickToCopy'
@@ -150,6 +151,27 @@ const CloudFormationTab = ({
   const consoleUrl = region
     ? `https://console.aws.amazon.com/cloudformation/home?region=${region}#/stacks/events?filteringText=${stackName}&filteringStatus=active&viewNested=true`
     : `https://console.aws.amazon.com/cloudformation/home#/stacks?filteringText=${stackName}`
+
+  // Empty template URL and quick link means ctl-api has no S3 install-template
+  // bucket configured (e.g. an un-onboarded BYOC-on-GCP control plane).
+  if (!templateUrl && !version?.quick_link_url) {
+    return (
+      <div className="pt-4">
+        <Banner theme="warn">
+          <div className="flex flex-col gap-2">
+            <Text weight="strong">CloudFormation isn&apos;t available yet</Text>
+            <Text variant="subtext">
+              This control plane doesn&apos;t have an S3 install-template
+              bucket configured, so no CloudFormation template has been
+              generated for this install. Connect this BYOC install to a
+              template bucket to enable CloudFormation, or use Terraform
+              instead if available.
+            </Text>
+          </div>
+        </Banner>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4 pt-4">
