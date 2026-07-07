@@ -68,6 +68,9 @@ type AppAppConfig struct {
 	// kubernetes contexts
 	KubernetesContexts *AppAppKubernetesContextsConfig `json:"kubernetes_contexts,omitempty"`
 
+	// labels
+	Labels GithubComNuoncoNuonPkgLabelsLabels `json:"labels,omitempty"`
+
 	// operation role config
 	OperationRoleConfig *AppAppOperationRoleConfig `json:"operation_role_config,omitempty"`
 
@@ -142,6 +145,10 @@ func (m *AppAppConfig) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubernetesContexts(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLabels(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -334,6 +341,29 @@ func (m *AppAppConfig) validateKubernetesContexts(formats strfmt.Registry) error
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("kubernetes_contexts")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) validateLabels(formats strfmt.Registry) error {
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if m.Labels != nil {
+		if err := m.Labels.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("labels")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("labels")
 			}
 
 			return err
@@ -599,6 +629,10 @@ func (m *AppAppConfig) ContextValidate(ctx context.Context, formats strfmt.Regis
 		res = append(res, err)
 	}
 
+	if err := m.contextValidateLabels(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateOperationRoleConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -798,6 +832,28 @@ func (m *AppAppConfig) contextValidateKubernetesContexts(ctx context.Context, fo
 
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (m *AppAppConfig) contextValidateLabels(ctx context.Context, formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Labels) { // not required
+		return nil
+	}
+
+	if err := m.Labels.ContextValidate(ctx, formats); err != nil {
+		ve := new(errors.Validation)
+		if stderrors.As(err, &ve) {
+			return ve.ValidateName("labels")
+		}
+		ce := new(errors.CompositeError)
+		if stderrors.As(err, &ce) {
+			return ce.ValidateName("labels")
+		}
+
+		return err
 	}
 
 	return nil
