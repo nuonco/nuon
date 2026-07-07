@@ -28,7 +28,7 @@ export const SyncSecretsModal = ({
           theme="info"
         >
           <Icon variant="KeyIcon" size="24" />
-          Sync secrets?
+          Sync secrets
         </Text>
       }
       primaryActionTrigger={{

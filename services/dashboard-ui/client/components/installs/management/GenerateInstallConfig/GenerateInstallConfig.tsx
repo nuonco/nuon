@@ -31,7 +31,7 @@ export const GenerateInstallConfigModal = ({
           weight="strong"
         >
           <Icon variant="FileCodeIcon" size="24" />
-          Generate Install Config
+          Generate install config
         </Text>
       }
       primaryActionTrigger={

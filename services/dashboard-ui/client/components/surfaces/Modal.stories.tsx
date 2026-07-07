@@ -12,7 +12,7 @@ const SimpleModalDemo = () => {
 
   const openModal = () => {
     addModal(
-      <Modal heading="Welcome to Modals">
+      <Modal heading="Welcome to modals">
         <div className="p-6">
           <Text className="mb-4">
             This is a simple modal example that demonstrates basic functionality.
@@ -35,7 +35,7 @@ const ModalVariantsDemo = () => {
 
   const openBasicModal = () => {
     addModal(
-      <Modal heading="Basic Modal">
+      <Modal heading="Basic modal">
         <div className="p-6">
           <Text>This is a basic modal with just content and close functionality.</Text>
         </div>
@@ -46,10 +46,10 @@ const ModalVariantsDemo = () => {
   const openActionModal = () => {
     addModal(
       <Modal 
-        heading="Action Modal"
+        heading="Action modal"
         primaryActionTrigger={{
-          children: 'Save Changes',
-          onClick: () => alert('Changes saved successfully!'),
+          children: 'Save changes',
+          onClick: () => alert('Changes saved'),
         }}
       >
         <div className="p-6">
@@ -76,10 +76,10 @@ const ModalVariantsDemo = () => {
   const openFormModal = () => {
     addModal(
       <Modal 
-        heading="Create New Project"
+        heading="Create new project"
         primaryActionTrigger={{
-          children: 'Create Project',
-          onClick: () => alert('Project created successfully!'),
+          children: 'Create project',
+          onClick: () => alert('Project created'),
         }}
       >
         <div className="p-6">
@@ -117,14 +117,15 @@ const ModalVariantsDemo = () => {
   const openConfirmModal = () => {
     addModal(
       <Modal 
-        heading="Confirm Deletion"
+        heading="Delete item?"
         primaryActionTrigger={{
-          children: 'Delete',
-          onClick: () => alert('Item deleted successfully!'),
+          children: 'Delete item',
+          variant: 'danger',
+          onClick: () => alert('Item deleted'),
         }}
       >
         <div className="p-6">
-          <Text className="mb-2">Are you sure you want to delete this item?</Text>
+          <Text className="mb-2">Deleting this item removes it permanently.</Text>
           <Text variant="subtext" theme="neutral" className="text-red-600">
             This action cannot be undone.
           </Text>
@@ -150,10 +151,10 @@ const UserManagementDemo = () => {
   const openEditProfile = () => {
     addModal(
       <Modal 
-        heading="Edit Profile"
+        heading="Edit profile"
         primaryActionTrigger={{
-          children: 'Update Profile',
-          onClick: () => alert('Profile updated successfully!'),
+          children: 'Update profile',
+          onClick: () => alert('Profile updated'),
         }}
       >
         <div className="p-6">
@@ -191,10 +192,10 @@ const UserManagementDemo = () => {
   const openChangePassword = () => {
     addModal(
       <Modal 
-        heading="Change Password"
+        heading="Change password"
         primaryActionTrigger={{
-          children: 'Update Password',
-          onClick: () => alert('Password changed successfully!'),
+          children: 'Update password',
+          onClick: () => alert('Password changed'),
         }}
       >
         <div className="p-6">
@@ -244,10 +245,10 @@ const DataOperationsDemo = () => {
   const openCreateContent = () => {
     addModal(
       <Modal 
-        heading="Create New Article"
+        heading="Create new article"
         primaryActionTrigger={{
-          children: 'Publish Article',
-          onClick: () => alert('Article published successfully!'),
+          children: 'Publish article',
+          onClick: () => alert('Article published'),
         }}
       >
         <div className="p-6">
@@ -286,15 +287,17 @@ const DataOperationsDemo = () => {
   const openDeleteConfirm = () => {
     addModal(
       <Modal 
-        heading="Delete Article"
+        heading="Delete article?"
         primaryActionTrigger={{
-          children: 'Delete Forever',
-          onClick: () => alert('Article deleted successfully!'),
+          children: 'Delete article',
+          variant: 'danger',
+          onClick: () => alert('Article deleted'),
         }}
       >
         <div className="p-6">
           <Text className="mb-4">
-            Are you sure you want to delete &ldquo;How to Build Great UIs&rdquo;?
+            Deleting &ldquo;How to Build Great UIs&rdquo; removes it and all its
+            associated data.
           </Text>
           <div className="p-3 bg-red-50 border border-red-200 rounded">
             <Text variant="subtext" className="text-red-700">
@@ -309,10 +312,10 @@ const DataOperationsDemo = () => {
   const openBulkAction = () => {
     addModal(
       <Modal 
-        heading="Bulk Update Articles"
+        heading="Bulk update articles"
         primaryActionTrigger={{
-          children: 'Update 5 Articles',
-          onClick: () => alert('Bulk update completed!'),
+          children: 'Update 5 articles',
+          onClick: () => alert('Bulk update complete'),
         }}
       >
         <div className="p-6">
@@ -354,10 +357,10 @@ const FooterActionsDemo = () => {
   const openModalWithInfo = () => {
     addModal(
       <Modal 
-        heading="Deploy Component"
+        heading="Deploy component"
         primaryActionTrigger={{
-          children: 'Deploy Now',
-          onClick: () => alert('Component deployed successfully!'),
+          children: 'Deploy component',
+          onClick: () => alert('Component deployed'),
         }}
         footerActions={
           <div className="flex items-center gap-2">
@@ -390,19 +393,19 @@ const FooterActionsDemo = () => {
   const openModalWithActions = () => {
     addModal(
       <Modal 
-        heading="Save Draft"
+        heading="Save draft"
         primaryActionTrigger={{
-          children: 'Save & Continue',
-          onClick: () => alert('Draft saved successfully!'),
+          children: 'Save and continue',
+          onClick: () => alert('Draft saved'),
         }}
         footerActions={
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
-              onClick={() => alert('Auto-save enabled!')}
+              onClick={() => alert('Auto-save enabled')}
             >
               <Icon variant="LightningIcon" size={16} />
-              Enable Auto-save
+              Enable auto-save
             </Button>
             <div className="text-sm text-gray-500">|</div>
             <Text variant="subtext" theme="neutral">
@@ -428,10 +431,10 @@ const FooterActionsDemo = () => {
   const openModalWithStatus = () => {
     addModal(
       <Modal 
-        heading="Process File"
+        heading="Process file"
         primaryActionTrigger={{
-          children: 'Start Processing',
-          onClick: () => alert('File processing started!'),
+          children: 'Start processing',
+          onClick: () => alert('File processing started'),
         }}
         footerActions={
           <div className="flex items-center gap-2 text-green-600">
@@ -618,15 +621,16 @@ function DeleteButton({ itemName }) {
   
   const handleDelete = () => {
     addModal(
-      <Modal 
-        heading="Confirm Deletion"
+      <Modal
+        heading="Delete item?"
         primaryActionTrigger={{
-          children: "Delete",
+          children: "Delete item",
+          variant: "danger",
           onClick: () => performDelete()
         }}
       >
         <div className="p-6">
-          <p>Are you sure you want to delete "{itemName}"?</p>
+          <p>Deleting "{itemName}" removes it permanently.</p>
           <p className="text-red-600 text-sm mt-2">
             This action cannot be undone.
           </p>
@@ -709,10 +713,10 @@ export const FooterActions = () => (
         <div className="p-4 border rounded-lg">
           <Card>
             <pre className="bg-gray-50 dark:bg-gray-900 p-4 rounded text-sm overflow-x-auto">
-              {`<Modal 
-  heading="Deploy Component"
+              {`<Modal
+  heading="Deploy component"
   primaryActionTrigger={{
-    children: 'Deploy Now',
+    children: 'Deploy component',
     onClick: handleDeploy
   }}
   footerActions={
