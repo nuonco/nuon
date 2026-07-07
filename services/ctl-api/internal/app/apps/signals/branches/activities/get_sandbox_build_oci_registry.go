@@ -21,6 +21,7 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 	var currentApp app.App
 	if res := a.db.WithContext(ctx).
 		Preload("Repository").
+		Preload("Org").
 		First(&currentApp, "id = ?", req.AppID); res.Error != nil {
 		return nil, fmt.Errorf("unable to get app %s: %w", req.AppID, res.Error)
 	}
@@ -44,9 +45,19 @@ func (a *Activities) GetSandboxBuildOCIRegistry(ctx context.Context, req GetSand
 		}
 	default:
 		cfg.RegistryType = configs.OCIRegistryTypeECR
-		cfg.ECRAuth = &credentials.Config{
-			Region:     currentApp.Repository.Region,
-			UseDefault: true,
+		if currentApp.Org != nil && currentApp.Org.Features[string(app.OrgFeatureControlPlaneBuilds)] {
+			cfg.ECRAuth = &credentials.Config{
+				Region: currentApp.Repository.Region,
+				AssumeRole: &credentials.AssumeRoleConfig{
+					RoleARN:     a.cfg.ManagementIAMRoleARN,
+					SessionName: "sandbox-build",
+				},
+			}
+		} else {
+			cfg.ECRAuth = &credentials.Config{
+				Region:     currentApp.Repository.Region,
+				UseDefault: true,
+			}
 		}
 	}
 
