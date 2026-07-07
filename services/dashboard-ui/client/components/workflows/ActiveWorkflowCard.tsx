@@ -11,7 +11,10 @@ import { useWorkflowApprovals } from '@/hooks/use-workflow-approvals'
 import type { TInstall, TWorkflow } from '@/types'
 import { cn } from '@/utils/classnames'
 import { toSentenceCase, snakeToWords } from '@/utils/string-utils'
-import { getWorkflowPendingApprovals } from '@/utils/workflow-utils'
+import {
+  getWorkflowHref,
+  getWorkflowPendingApprovals,
+} from '@/utils/workflow-utils'
 import { CancelWorkflowButton } from './CancelWorkflow'
 
 export const ActiveWorkflowCard = ({
@@ -31,8 +34,9 @@ export const ActiveWorkflowCard = ({
 }) => {
   const { org } = useOrg()
   const { approvals } = useWorkflowApprovals()
-  const installId = workflow.owner_id
-  const installName = workflow.metadata?.owner_name
+  const workflowHref = getWorkflowHref(org.id, workflow)
+  const isAppBranchWorkflow = workflow?.owner_type === 'app_branches'
+  const ownerName = workflow.metadata?.owner_name
   const pendingWorkflowApprovals = getWorkflowPendingApprovals(
     approvals,
     workflow?.id
@@ -50,14 +54,11 @@ export const ActiveWorkflowCard = ({
 
   const titleAndBadges = (
     <>
-      <Link
-        href={`/${org.id}/installs/${installId}/workflows/${workflow.id}`}
-        className="min-w-0"
-      >
+      <Link href={workflowHref} className="min-w-0">
         <Text variant="base" weight="strong" className="truncate">
-          {installName && !install && (
+          {ownerName && !install && (
             <span className="text-cool-grey-500 dark:text-white/50 mr-1.5">
-              {installName} /
+              {ownerName} /
             </span>
           )}
           {workflow.name}
@@ -66,7 +67,11 @@ export const ActiveWorkflowCard = ({
       {pendingApprovals > 0 &&
         (pendingApprovalStep?.id ? (
           <Link
-            href={`/${org.id}/installs/${installId}/workflows/${workflow.id}?panel=${pendingApprovalStep.id}`}
+            href={
+              isAppBranchWorkflow
+                ? workflowHref
+                : `${workflowHref}?panel=${pendingApprovalStep.id}`
+            }
             className="shrink-0 hover:opacity-80 transition-opacity !text-inherit"
           >
             <Badge size="sm" theme="warn">
