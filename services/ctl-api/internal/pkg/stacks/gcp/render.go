@@ -34,11 +34,12 @@ type GCPSecretTemplateInput struct {
 }
 
 // GCPInstallInputTemplateInput holds a customer install input for the template.
-// Value is empty in the normal tfvars and a `${{ inputs.input_<name> }}` CEL
-// reference in the Spacelift blueprint.
+// Value is the input's Default in the normal tfvars and a
+// `${{ inputs.input_<name> }}` CEL reference in the Spacelift blueprint.
 type GCPInstallInputTemplateInput struct {
-	Name  string
-	Value string
+	Name    string
+	Default string
+	Value   string
 }
 
 // GCPTemplateInput extends TemplateInput with pre-marshaled GCP IAM permission lists.
@@ -85,7 +86,11 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	if inputs.AppCfg != nil {
 		for _, input := range inputs.AppCfg.InputConfig.AppInputs {
 			if input.Source == app.AppInputSourceCustomer {
-				installInputs = append(installInputs, GCPInstallInputTemplateInput{Name: input.Name})
+				installInputs = append(installInputs, GCPInstallInputTemplateInput{
+					Name:    input.Name,
+					Default: input.Default,
+					Value:   input.Default,
+				})
 			}
 		}
 	}
@@ -154,8 +159,9 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	blueprintTfvarsInput.InstallInputs = make([]GCPInstallInputTemplateInput, len(installInputs))
 	for i, in := range installInputs {
 		blueprintTfvarsInput.InstallInputs[i] = GCPInstallInputTemplateInput{
-			Name:  in.Name,
-			Value: fmt.Sprintf("${{ inputs.%s }}", blueprintInstallInputID(in.Name)),
+			Name:    in.Name,
+			Default: in.Default,
+			Value:   fmt.Sprintf("${{ inputs.%s }}", blueprintInstallInputID(in.Name)),
 		}
 	}
 	blueprintTfvarsInput.Secrets = make([]GCPSecretTemplateInput, len(secrets))
