@@ -39,10 +39,22 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
-	// Fetch the latest commit from GitHub (no DB interaction)
-	vcsCommit, err := activities.AwaitFetchLatestCommitByVcsConfigID(ctx, vcsConfigID)
+	run, err := activities.AwaitGetAppBranchRunByIDByRunID(ctx, s.RunID)
 	if err != nil {
-		return fmt.Errorf("unable to fetch latest commit: %w", err)
+		return fmt.Errorf("unable to get app branch run: %w", err)
+	}
+
+	var vcsCommit *app.VCSConnectionCommit
+	if run.RunType == app.AppBranchRunTypeGitPreview && run.HeadSHA != "" {
+		vcsCommit, err = activities.AwaitFetchCommitBySHA(ctx, &activities.FetchCommitBySHAInput{
+			VcsConfigID: vcsConfigID,
+			SHA:         run.HeadSHA,
+		})
+	} else {
+		vcsCommit, err = activities.AwaitFetchLatestCommitByVcsConfigID(ctx, vcsConfigID)
+	}
+	if err != nil {
+		return fmt.Errorf("unable to fetch commit: %w", err)
 	}
 
 	// Create the commit record in the database

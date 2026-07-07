@@ -24,6 +24,9 @@ type ServiceCreateAppConfigRequest struct {
 	// cli version
 	CliVersion string `json:"cli_version,omitempty"`
 
+	// IntermediateConfigJSON is the serialized intermediate config (parsed nuon.toml).
+	IntermediateConfigJSON string `json:"intermediate_config_json,omitempty"`
+
 	// PlanOnly creates a preview run (plan without apply). Only used with AppBranchID.
 	PlanOnly bool `json:"plan_only,omitempty"`
 

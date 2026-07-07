@@ -12,6 +12,7 @@ import (
 	builds "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/builds"
 	fetchcommit "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/fetchcommit"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/planinstallgroup"
+	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/setuppreview"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/updateinstallgroup"
 )
 
@@ -40,12 +41,24 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 
 	appConfigID := generics.FromPtrStr(flw.Metadata["app_config_id"])
 	skipBuilds := generics.FromPtrStr(flw.Metadata["skip_builds"]) == "true"
+	isPreview := generics.FromPtrStr(flw.Metadata["run_type"]) == string(app.AppBranchRunTypeGitPreview)
 
 	steps := make([]*app.WorkflowStep, 0)
 	sg := newStepGroup()
 
+	if isPreview {
+		sg.nextGroup()
+		step, err := sg.appBranchSignalStep(ctx, appBranchID, "setup preview", pgtype.Hstore{}, &setuppreview.Signal{
+			RunID:       runID,
+			AppBranchID: appBranchID,
+		}, WithSkippable(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to create setup preview step")
+		}
+		steps = append(steps, step)
+	}
+
 	if appConfigID == "" {
-		// Normal flow: fetch commit and parse config from VCS
 		sg.nextGroup()
 		step, err := sg.appBranchSignalStep(ctx, appBranchID, "fetch commit", pgtype.Hstore{}, &fetchcommit.Signal{
 			RunID:       runID,
@@ -102,32 +115,17 @@ func AppBranchRun(ctx workflow.Context, flw *app.Workflow) (*app.GenerateStepsRe
 		steps = append(steps, step)
 	}
 
-	// Step 4: Deploy to install groups in order
-	// Fetch install groups for this config, ordered by the order field
+	// Preview runs don't touch installs — skip install group steps entirely.
+	if isPreview {
+		return sg.Result(steps), nil
+	}
+
 	allInstallGroups, err := activities.AwaitGetInstallGroupsByConfigID(ctx, configID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to fetch install groups")
 	}
 
-	// For plan-only (preview) runs, only include groups marked UseForPreviews.
-	// If none are marked, fall back to the first group.
-	installGroups := allInstallGroups
-	if flw.PlanOnly && len(allInstallGroups) > 0 {
-		var previewGroups []*app.AppBranchInstallGroup
-		for _, g := range allInstallGroups {
-			if g.UseForPreviews {
-				previewGroups = append(previewGroups, g)
-			}
-		}
-		if len(previewGroups) > 0 {
-			installGroups = previewGroups
-		} else {
-			installGroups = allInstallGroups[:1]
-		}
-	}
-
-	// Create plan + deploy steps for each install group
-	for _, group := range installGroups {
+	for _, group := range allInstallGroups {
 		sg.nextGroup()
 		planStep, err := sg.appBranchSignalStep(ctx, appBranchID, "plan install group: "+group.Name, pgtype.Hstore{}, &planinstallgroup.Signal{
 			InstallGroupID: group.ID,
