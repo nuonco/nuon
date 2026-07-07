@@ -45,7 +45,7 @@ export const ShutdownInstanceModal = ({
         ),
         disabled: isLoading,
         onClick: onConfirm,
-        variant: 'primary' as const,
+        variant: 'danger' as const,
       }}
       {...props}
     >

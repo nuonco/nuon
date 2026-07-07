@@ -19,9 +19,9 @@ export const RevokeOrgInviteModal = ({
   return (
     <Modal
       heading={
-        <Text flex className="gap-4" variant="h3" weight="strong">
+        <Text flex className="gap-4" variant="h3" weight="strong" theme="error">
           <Icon variant="ProhibitIcon" size="24" />
-          Revoke invite
+          Revoke invite?
         </Text>
       }
       primaryActionTrigger={{
@@ -48,9 +48,8 @@ export const RevokeOrgInviteModal = ({
           </Banner>
         ) : null}
         <Text variant="base">
-          Revoke the invitation for <strong>{email}</strong>? They will no
-          longer be able to accept the invite. You can always send a new invite
-          later.
+          Revoking the invitation for <strong>{email}</strong> will prevent them
+          from accepting it. You can send a new invite later.
         </Text>
       </div>
     </Modal>

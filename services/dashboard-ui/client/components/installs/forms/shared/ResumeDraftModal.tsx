@@ -29,7 +29,7 @@ export const ResumeDraftModal = ({
 }: IResumeDraftModal) => {
   return (
     <Modal
-      heading="Resume draft?"
+      heading="Resume draft"
       primaryActionTrigger={{
         children: 'Resume draft',
         onClick: onResume,
