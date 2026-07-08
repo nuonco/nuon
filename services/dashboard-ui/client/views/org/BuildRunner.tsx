@@ -8,6 +8,7 @@ import { Text } from '@/components/common/Text'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PageHeadingGroup } from '@/components/layout/PageHeadingGroup'
 import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
@@ -15,6 +16,7 @@ import {
   ProcessCard,
   ProcessCardSkeleton,
 } from '@/components/runners/ProcessCard'
+import { ControlPlaneRecentActivity } from '@/components/runners/ControlPlaneRecentActivity'
 import { RunnerRecentActivity } from '@/components/runners/RunnerRecentActivity'
 import { ManagementDropdownContainer } from '@/components/runners/management/ManagementDropdown'
 import { useOrg } from '@/hooks/use-org'
@@ -91,11 +93,33 @@ export const BuildRunner = () => {
     </>
   )
 
+  if (controlPlaneBuilds) {
+    return (
+      <PageLayout className="pb-6">
+        {breadcrumbs}
+        <PageHeader>
+          <PageHeadingGroup
+            title="Builds"
+            subtitle="Component and sandbox builds run on Nuon's control plane."
+          />
+        </PageHeader>
+        <PageContent>
+          <PageSection>
+            <ControlPlaneRecentActivity
+              shouldPoll
+              jobDetailBasePath={`/${org?.id}/runner`}
+            />
+          </PageSection>
+        </PageContent>
+      </PageLayout>
+    )
+  }
+
   if (!runnerId) {
     return (
       <PageLayout>
         {breadcrumbs}
-        <RunnerHeading controlPlaneBuilds={controlPlaneBuilds} />
+        <RunnerHeading controlPlaneBuilds={false} />
         <PageContent>
           <Card>
             <EmptyState
@@ -115,62 +139,59 @@ export const BuildRunner = () => {
         <PageLayout className="pb-6">
           {breadcrumbs}
           <RunnerHeading
-            controlPlaneBuilds={controlPlaneBuilds}
+            controlPlaneBuilds={false}
             runnerId={runnerId}
             settings={settings}
           />
 
           <PageContent>
-            {!controlPlaneBuilds ? (
-              <PageSection>
-                <Text variant="base" weight="strong">
-                  Processes
-                </Text>
+            <PageSection>
+              <Text variant="base" weight="strong">
+                Processes
+              </Text>
 
-                {processesLoading ? (
-                  <div className="@container">
-                    <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
-                      <ProcessCardSkeleton />
-                      <ProcessCardSkeleton />
-                    </div>
+              {processesLoading ? (
+                <div className="@container">
+                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
+                    <ProcessCardSkeleton />
+                    <ProcessCardSkeleton />
                   </div>
-                ) : processes.length === 0 ? (
-                  <Card>
-                    <EmptyState
-                      emptyTitle="No active processes"
-                      emptyMessage="No runner processes are currently active or offline."
-                      variant="table"
-                    />
-                  </Card>
-                ) : processes.length === 1 ? (
-                  <ProcessCard
-                    process={processes[0]}
-                    settings={settings}
-                    shouldPoll
+                </div>
+              ) : processes.length === 0 ? (
+                <Card>
+                  <EmptyState
+                    emptyTitle="No active processes"
+                    emptyMessage="No runner processes are currently active or offline."
+                    variant="table"
                   />
-                ) : (
-                  <div className="@container">
-                    <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
-                      {processes.map((process) => (
-                        <ProcessCard
-                          key={process.id}
-                          process={process}
-                          settings={settings}
-                          shouldPoll
-                        />
-                      ))}
-                    </div>
+                </Card>
+              ) : processes.length === 1 ? (
+                <ProcessCard
+                  process={processes[0]}
+                  settings={settings}
+                  shouldPoll
+                />
+              ) : (
+                <div className="@container">
+                  <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 items-start">
+                    {processes.map((process) => (
+                      <ProcessCard
+                        key={process.id}
+                        process={process}
+                        settings={settings}
+                        shouldPoll
+                      />
+                    ))}
                   </div>
-                )}
-              </PageSection>
-            ) : null}
+                </div>
+              )}
+            </PageSection>
 
             <PageSection>
               <Text variant="base" weight="strong">
                 Recent jobs
               </Text>
               <RunnerRecentActivity
-                executor={controlPlaneBuilds ? 'control-plane' : undefined}
                 shouldPoll
                 jobDetailBasePath={`/${org?.id}/runner`}
               />
