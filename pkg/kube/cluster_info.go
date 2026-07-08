@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/impersonate"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -176,9 +177,22 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 	}
 
 	if cInfo.GCPAuth != nil {
-		ts, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
-		if err != nil {
-			return nil, fmt.Errorf("unable to get GCP token source for K8s auth: %w", err)
+		var ts oauth2.TokenSource
+		if cInfo.GCPAuth.ImpersonateServiceAccount != "" {
+			// K8s auth must run as the operation role SA, not the runner SA — the runner SA
+			// holds no container permissions.
+			ts, err = impersonate.CredentialsTokenSource(ctx, impersonate.CredentialsConfig{
+				TargetPrincipal: cInfo.GCPAuth.ImpersonateServiceAccount,
+				Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+			})
+			if err != nil {
+				return nil, fmt.Errorf("unable to get impersonated GCP token source for K8s auth: %w", err)
+			}
+		} else {
+			ts, err = google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
+			if err != nil {
+				return nil, fmt.Errorf("unable to get GCP token source for K8s auth: %w", err)
+			}
 		}
 
 		cfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -187,12 +201,21 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 
 		// Use gke-gcloud-auth-plugin if available (install runners in customer clusters),
 		// otherwise rely on oauth2 WrapTransport via Workload Identity (org runners in our cluster).
+		// The exec provider is what gets serialized into kubeconfigs for action workflows, so it
+		// carries the impersonation target via gcloud's env var.
 		if _, err := exec.LookPath("gke-gcloud-auth-plugin"); err == nil {
-			cfg.ExecProvider = &clientcmdapi.ExecConfig{
+			execCfg := &clientcmdapi.ExecConfig{
 				APIVersion:      "client.authentication.k8s.io/v1beta1",
 				Command:         "gke-gcloud-auth-plugin",
 				InteractiveMode: clientcmdapi.NeverExecInteractiveMode,
 			}
+			if cInfo.GCPAuth.ImpersonateServiceAccount != "" {
+				execCfg.Env = []clientcmdapi.ExecEnvVar{{
+					Name:  "CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT",
+					Value: cInfo.GCPAuth.ImpersonateServiceAccount,
+				}}
+			}
+			cfg.ExecProvider = execCfg
 		} else {
 			cfg.ExecProvider = nil
 		}
