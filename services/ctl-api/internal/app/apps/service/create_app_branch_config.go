@@ -126,7 +126,7 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 	if err := req.Validate(s.v); err != nil {
-		ctx.Error(fmt.Errorf("invalid request: %w", err))
+		ctx.Error(err)
 		return
 	}
 
@@ -165,13 +165,19 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 	// Build VCS configs (after validation passes)
 	connectedGithubVCSConfig, err := s.vcsHelpers.BuildConnectedGithubVCSConfig(ctx, req.ConnectedGithubVCSConfig, parentApp.Org)
 	if err != nil {
-		ctx.Error(fmt.Errorf("invalid connected github vcs config: %w", err))
+		ctx.Error(stderr.ErrUser{
+			Err:         err,
+			Description: "Invalid connected github VCS config. Ensure the repository and branch are correct.",
+		})
 		return
 	}
 
 	publicGitVCSConfig, err := s.vcsHelpers.BuildPublicGitVCSConfig(ctx, req.PublicGitVCSConfig)
 	if err != nil {
-		ctx.Error(fmt.Errorf("invalid public git vcs config: %w", err))
+		ctx.Error(stderr.ErrUser{
+			Err:         err,
+			Description: "Invalid public git VCS config. Ensure the repository URL and branch are correct.",
+		})
 		return
 	}
 

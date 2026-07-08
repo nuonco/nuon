@@ -1,9 +1,11 @@
 package sync
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/nuonco/nuon/pkg/config"
+	stderrerr "github.com/nuonco/nuon/sdks/nuon-go/models"
 )
 
 type SyncInternalErr struct {
@@ -34,7 +36,20 @@ type SyncAPIErr struct {
 	Err      error
 }
 
+type apiErrPayloader interface {
+	GetPayload() *stderrerr.StderrErrResponse
+}
+
 func (s SyncAPIErr) Error() string {
+	err := s.Err
+	for err != nil {
+		if p, ok := err.(apiErrPayloader); ok {
+			if payload := p.GetPayload(); payload != nil && payload.Description != "" {
+				return fmt.Sprintf("unable to sync %s - %s", s.Resource, payload.Description)
+			}
+		}
+		err = errors.Unwrap(err)
+	}
 	return fmt.Sprintf("unable to sync %s - %s", s.Resource, s.Err.Error())
 }
 

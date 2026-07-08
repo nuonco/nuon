@@ -11,7 +11,7 @@ import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { createBranchConfig, getAppInstalls } from '@/lib'
 import type { TCreateBranchConfigRequest } from '@/lib/ctl-api/apps/branches/create-branch-config'
-import type { TAppBranch, TAppBranchConfig } from '@/types'
+import type { TAPIError, TAppBranch, TAppBranchConfig } from '@/types'
 import { DeploymentPlanEditor } from './DeploymentPlanEditor'
 import type { IInstallGroup } from './types'
 
@@ -116,10 +116,10 @@ export const DeploymentPlanEditorContainer = ({
       onSuccess?.()
       removeModal(props.modalId)
     },
-    onError: (error: Error) => {
+    onError: (error: TAPIError) => {
       addToast(
         <Toast heading="Deployment plan save failed" theme="error">
-          <Text>{error.message || 'An unknown error occurred.'}</Text>
+          <Text>{error.description || error.error || 'Unable to save deployment plan.'}</Text>
         </Toast>
       )
     },

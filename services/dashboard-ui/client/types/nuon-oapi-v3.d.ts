@@ -3786,6 +3786,7 @@ export interface components {
        */
       kubernetes_context_name?: string;
       kubernetes_manifest?: components["schemas"]["app.KubernetesManifestComponentConfig"];
+      latest_build_id?: string;
       max_auto_retries?: number;
       /** @description Operation roles map: operation type -> role name */
       operation_roles?: {
@@ -4044,6 +4045,7 @@ export interface components {
     };
     "app.Install": {
       app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_connections?: components["schemas"]["app.InstallAppBranchConnection"][];
       app_branch_id?: string;
       app_config_id?: string;
       app_id?: string;
@@ -4166,6 +4168,18 @@ export interface components {
     };
     /** @enum {string} */
     "app.InstallActionWorkflowRunStepStatus": "finished" | "pending" | "in-progress" | "timed-out" | "error";
+    "app.InstallAppBranchConnection": {
+      activated_at?: string;
+      active?: boolean;
+      app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_id?: string;
+      created_at?: string;
+      created_by_id?: string;
+      deactivated_at?: string;
+      id?: string;
+      install_id?: string;
+      updated_at?: string;
+    };
     "app.InstallAppConfigVersion": {
       app_branch_run_id?: string;
       created_at?: string;

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -225,11 +226,22 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureRunnerJobLongPoll:  true,
 	}
 
+	cfg := configFromContext(tx.Statement.Context)
+
 	// When configured, new orgs build on the control plane and therefore skip
 	// org runner provisioning; installs still use their own install runner groups.
-	if cfg := configFromContext(tx.Statement.Context); cfg != nil && cfg.ControlPlaneBuildsDefaultEnabled {
+	if cfg != nil && cfg.ControlPlaneBuildsDefaultEnabled {
 		defaultFeatures[OrgFeatureControlPlaneBuilds] = true
 		defaultFeatures[OrgFeatureOrgRunner] = false
+	}
+
+	if cfg != nil && cfg.AutoEnabledFeatures != "" {
+		for _, name := range strings.Split(cfg.AutoEnabledFeatures, ",") {
+			name = strings.TrimSpace(name)
+			if name != "" {
+				defaultFeatures[OrgFeature(name)] = true
+			}
+		}
 	}
 
 	for _, feature := range GetFeatures() {
