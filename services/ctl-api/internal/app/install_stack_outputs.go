@@ -184,11 +184,11 @@ func (a *GCPStackOutputs) BreakGlassRoleID(name string) (string, error) {
 }
 
 func (a *GCPStackOutputs) CustomRoles() (map[string]string, error) {
-	return a.BreakGlassSAEmails, nil
+	return a.CustomSAEmails, nil
 }
 
 func (a *GCPStackOutputs) BreakGlassRoles() (map[string]string, error) {
-	return a.CustomSAEmails, nil
+	return a.BreakGlassSAEmails, nil
 }
 
 func (a *GCPStackOutputs) InstallInputValues() (map[string]string, error) {
