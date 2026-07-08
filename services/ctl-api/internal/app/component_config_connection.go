@@ -49,6 +49,8 @@ type ComponentConfigConnection struct {
 
 	ComponentBuilds []ComponentBuild `json:"-" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"component_builds,omitzero,omitempty"`
 
+	LatestBuildID generics.NullString `json:"latest_build_id,omitzero" gorm:"type:text;index;column:latest_build_id" swaggertype:"string" temporaljson:"latest_build_id,omitzero,omitempty"`
+
 	TerraformModuleComponentConfig    *TerraformModuleComponentConfig    `json:"terraform_module,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"terraform_module_component_config,omitzero,omitempty"`
 	HelmComponentConfig               *HelmComponentConfig               `json:"helm,omitempty,omitzero" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"helm_component_config,omitzero,omitempty"`
 	ExternalImageComponentConfig      *ExternalImageComponentConfig      `json:"external_image,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"external_image_component_config,omitzero,omitempty"`

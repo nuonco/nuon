@@ -18,6 +18,12 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		}
 	}
 
+	if h.state.ociArch != nil {
+		if err := h.state.ociArch.Cleanup(ctx); err != nil {
+			h.errRecorder.Record("unable to cleanup OCI archive", err)
+		}
+	}
+
 	if h.state.workspace != nil {
 		stateDir := h.state.workspace.StateDir()
 		if err := os.RemoveAll(stateDir); err != nil {

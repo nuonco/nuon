@@ -1,4 +1,5 @@
 import { Outlet, useParams, useMatch } from 'react-router'
+import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -164,6 +165,9 @@ const InstallTemplate = () => {
                   <Text variant="h3" weight="stronger" level={1}>
                     {install.name}
                   </Text>
+                  {install.app_branch?.name && (
+                    <Badge size="sm" theme="brand">{install.app_branch.name}</Badge>
+                  )}
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
                       <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={install?.app?.label_colors?.[key]} />

@@ -20,6 +20,12 @@ import (
 // swagger:model app.Install
 type AppInstall struct {
 
+	// app branch
+	AppBranch *AppAppBranch `json:"app_branch,omitempty"`
+
+	// app branch id
+	AppBranchID string `json:"app_branch_id,omitempty"`
+
 	// app config id
 	AppConfigID string `json:"app_config_id,omitempty"`
 

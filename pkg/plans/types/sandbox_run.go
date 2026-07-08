@@ -5,6 +5,7 @@ import (
 	awscredentials "github.com/nuonco/nuon/pkg/aws/credentials"
 	azurecredentials "github.com/nuonco/nuon/pkg/azure/credentials"
 	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
+	"github.com/nuonco/nuon/pkg/plugins/configs"
 	"github.com/nuonco/nuon/pkg/types/state"
 )
 
@@ -37,6 +38,11 @@ type PulumiBackend struct {
 	UpdatePlans   bool              `json:"update_plans,omitempty"`
 }
 
+type OCISource struct {
+	Registry *configs.OCIRegistryRepository `json:"registry"`
+	Tag      string                         `json:"tag"`
+}
+
 type SandboxRunPlan struct {
 	InstallID   string `json:"install_id"`
 	AppID       string `json:"app_id"`
@@ -46,6 +52,7 @@ type SandboxRunPlan struct {
 	EnvVars          map[string]string      `json:"env_vars"`
 	VarsFiles        []string               `json:"vars_files"`
 	GitSource        *GitSource             `json:"git_source"`
+	OCISource        *OCISource             `json:"oci_source,omitempty"`
 	LocalArchive     *TerraformLocalArchive `json:"local_archive"`
 	TerraformBackend *TerraformBackend      `json:"terraform_backend"`
 	PulumiBackend    *PulumiBackend         `json:"pulumi_backend,omitempty"`

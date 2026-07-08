@@ -105,8 +105,8 @@ export const BranchVcsConfigFields = ({
           disabled={isSubmitting || loadingRepos || loadingBranches}
           options={repos.map((repo) => ({
             value: repo.full_name,
-            label: repo.full_name,
-            badge: repo.private ? { label: 'private' } : undefined,
+            label: repo.name,
+            badge: repo.private ? { label: 'private' } : { label: repo.full_name.split('/')[0] },
           }))}
           labelProps={{ labelText: 'Repository' }}
           searchable

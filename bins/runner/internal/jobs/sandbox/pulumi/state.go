@@ -6,6 +6,7 @@ import (
 	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	pulumiworkspace "github.com/nuonco/nuon/pkg/pulumi/workspace"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 )
 
@@ -15,6 +16,7 @@ type handlerState struct {
 	auth *pkgplantypes.PlanAuth
 
 	srcWorkspace workspace.Workspace
+	ociArch      ociarchive.Archive
 	workspace    *pulumiworkspace.Workspace
 	timeout      time.Duration
 
