@@ -4,16 +4,23 @@ The `stack` Terraform provider. It lets an install-stacks Terraform module read
 its Nuon-rendered configuration from the control plane instead of receiving it
 as generated tfvars.
 
-The provider exposes a single data source:
+The provider exposes two surfaces:
 
 - **`stack_config` data source** — read-only fetch of a stack's rendered config
   (runner details, permissions, roles, install inputs, secrets) keyed by
   `phone_home_id`. Intended for use *inside* an install-stacks module (e.g.
   `nuonco/install-stacks//gcp`) so it reads config from the API rather than
   receiving it as generated tfvars. Provisions nothing.
+- **`stack_phone_home` resource** — reports the result of a run back to the
+  control plane, so the module reports run status through the provider instead
+  of building the phone-home HTTP request itself. The resource lifecycle drives
+  the phone-home `request_type` (Create/Update/Delete); the reported outputs are
+  passed as an opaque `jsonencode({...})` payload.
 
-It calls the stack SDK's read-only `FetchConfig` (`sdks/stack`), which hits the
-public, side-effect-free `GET /v1/stack-runs/{phone_home_id}/config` endpoint —
+The data source calls the stack SDK's read-only `FetchConfig` (`sdks/stack`),
+which hits the public, side-effect-free `GET /v1/stack-runs/{phone_home_id}/config`
+endpoint. The resource calls the SDK's `PhoneHome`, which POSTs to the public
+`/v1/installs/{install_id}/phone-home/{phone_home_id}` endpoint. In both cases
 the per-stack-version `phone_home_id` in the URL is the secret.
 
 ## Layout
@@ -21,14 +28,16 @@ the per-stack-version `phone_home_id` in the URL is the secret.
 ```
 main.go                          provider entry point (providerserver.Serve)
 internal/provider/
-  provider.go                    provider schema + api_url; registers the data source
+  provider.go                    provider schema + api_url; registers the data source + resource
   stack_data_source.go           stack_config data source: schema + read
   stack_data_source_model.go     data source model + config flattener
+  phone_home_resource.go         stack_phone_home resource: schema + lifecycle
+  phone_home_resource_model.go   resource model
   *_test.go                      schema validation + flatten unit tests
 examples/
-  data-source-gcp/main.tf        stack_config data source example (GCP)
+  data-source-gcp/main.tf        stack_config + stack_phone_home example (GCP)
 docs/
-  data-source.html               architecture/walkthrough for the data source
+  data-source.html               architecture/walkthrough for the data source + resource
 ```
 
 ## Provider configuration
@@ -70,5 +79,5 @@ Run the tests:
 go test ./...
 ```
 
-See `docs/data-source.html` for the architecture diagram, schema tables, and a
-step-by-step walkthrough.
+See `docs/data-source.html` for the architecture diagrams, schema tables, and
+step-by-step walkthroughs of both the data source and the resource.

@@ -65,3 +65,32 @@ module "stack" {
   auto_generate_secrets = data.stack_config.this.auto_generate_secrets
   secrets               = data.stack_config.this.secrets
 }
+
+# Report the run to the control plane through the provider, instead of the
+# module building and sending the phone-home HTTP request itself. The lifecycle
+# drives request_type: Create on first apply, Update when the outputs change,
+# Delete on destroy.
+resource "stack_phone_home" "this" {
+  install_id      = data.stack_config.this.install_id
+  phone_home_id   = var.phone_home_id
+  phone_home_type = "gcp"
+
+  # Keys match the GCPStackOutputs contract ctl-api decodes and the deploy
+  # templates read back via .nuon.install_stack.outputs.*.
+  payload = jsonencode({
+    project_id                   = var.gcp_project_id
+    region                       = var.gcp_region
+    network_name                 = module.stack.network_name
+    network_id                   = module.stack.network_id
+    public_subnet_name           = module.stack.public_subnet_name
+    private_subnet_name          = module.stack.private_subnet_name
+    runner_subnet_name           = module.stack.runner_subnet_name
+    runner_service_account_email = module.stack.runner_service_account_email
+    provision_sa_email           = module.stack.provision_sa_email
+    maintenance_sa_email         = module.stack.maintenance_sa_email
+    deprovision_sa_email         = module.stack.deprovision_sa_email
+    break_glass_sa_emails        = module.stack.break_glass_sa_emails
+    custom_sa_emails             = module.stack.custom_sa_emails
+    install_inputs               = data.stack_config.this.install_inputs
+  })
+}

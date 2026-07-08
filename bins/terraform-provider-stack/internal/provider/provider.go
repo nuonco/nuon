@@ -39,7 +39,7 @@ func (p *stackProvider) Metadata(_ context.Context, _ provider.MetadataRequest, 
 
 func (p *stackProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Read Nuon install-stack configuration from Terraform.",
+		MarkdownDescription: "Read Nuon install-stack configuration and report run status from Terraform.",
 		Attributes: map[string]schema.Attribute{
 			"api_url": schema.StringAttribute{
 				Optional:            true,
@@ -71,7 +71,9 @@ func (p *stackProvider) Configure(ctx context.Context, req provider.ConfigureReq
 }
 
 func (p *stackProvider) Resources(_ context.Context) []func() resource.Resource {
-	return nil
+	return []func() resource.Resource{
+		NewPhoneHomeResource,
+	}
 }
 
 func (p *stackProvider) DataSources(_ context.Context) []func() datasource.DataSource {
