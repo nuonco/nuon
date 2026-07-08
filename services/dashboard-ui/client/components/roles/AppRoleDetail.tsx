@@ -17,6 +17,8 @@ type TAppRole = {
     name?: string
     managed_policy_name?: string
     contents?: string
+    gcp_predefined_role?: string
+    gcp_permissions?: string[]
   }[]
   permissions_boundary?: string
 }
