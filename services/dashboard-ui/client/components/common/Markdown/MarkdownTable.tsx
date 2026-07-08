@@ -36,14 +36,17 @@ const INLINE_COMPONENTS = {
   ),
 }
 
-function CellContent({ markdown }: { markdown: string }) {
-  if (!markdown) return null
+function CellContent({ cell }: { cell: TableCell }) {
+  if (cell.content !== undefined) return <>{cell.content}</>
+  if (!cell.markdown) return null
   return (
     <ReactMarkdown remarkPlugins={INLINE_REMARK} components={INLINE_COMPONENTS}>
-      {markdown}
+      {cell.markdown}
     </ReactMarkdown>
   )
 }
+
+const EMPTY_CELL: TableCell = { text: '' }
 
 function alignClass(align: TableAlign) {
   if (align === 'center') return 'text-center'
@@ -81,7 +84,7 @@ export function MarkdownTable({ headers, rows, align, search }: ExtractedTable) 
           const cls = alignClass(align[i])
           return (
             <div className={cls}>
-              <CellContent markdown={rows[ctx.row.original.__i]?.[i]?.markdown ?? ''} />
+              <CellContent cell={rows[ctx.row.original.__i]?.[i] ?? EMPTY_CELL} />
             </div>
           )
         },
