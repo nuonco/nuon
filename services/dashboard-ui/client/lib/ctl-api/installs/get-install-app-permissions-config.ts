@@ -5,6 +5,8 @@ export type TInstallPermissionsRolePolicy = {
   name?: string
   managed_policy_name?: string
   contents?: string
+  gcp_predefined_role?: string
+  gcp_permissions?: string[]
 }
 
 export type TInstallPermissionsRoleStatus = {
