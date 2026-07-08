@@ -4,6 +4,9 @@ import { CodeBlock } from '../CodeBlock'
 import { JSONViewer } from '../JSONViewer'
 import { Link } from '../Link'
 import { buildNuonComponents, nuonTagNames, type MarkdownMode } from './nuon-components'
+import { makeSearchConfig } from './markdown-table'
+import { htmlTableToExtracted } from './markdown-html-table'
+import { MarkdownTable } from './MarkdownTable'
 import type { MarkdownVariant } from './Markdown'
 
 const MermaidFlowGraph = lazy(() => import('../MermaidFlowGraph').then((m) => ({ default: m.MermaidFlowGraph })))
@@ -107,10 +110,24 @@ export function getMarkdownComponents(mode: MarkdownMode, variant: MarkdownVaria
       )
     },
 
-    table({ children, ...props }: any) {
+    table({ node, children, ...props }: any) {
+      const {
+        ['data-nuon-search']: searchEnabled,
+        ['data-nuon-search-columns']: searchColumns,
+        ['data-nuon-search-placeholder']: searchPlaceholder,
+        ...rest
+      } = props
+
+      const search =
+        searchEnabled != null ? makeSearchConfig(searchColumns, searchPlaceholder) : null
+      const extracted = htmlTableToExtracted(children, search)
+      if (extracted) {
+        return <MarkdownTable {...extracted} />
+      }
+
       return (
         <div className="readme-table overflow-x-auto rounded-lg border my-4">
-          <table className="min-w-full text-sm !my-0" {...props}>{children}</table>
+          <table className="min-w-full text-sm !my-0" {...rest}>{children}</table>
         </div>
       )
     },

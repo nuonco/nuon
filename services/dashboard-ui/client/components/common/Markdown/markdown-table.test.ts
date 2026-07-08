@@ -145,6 +145,44 @@ test('normalizes ragged rows to the header column count', () => {
   expect(table.rows[1].map((c) => c.text)).toEqual(['1', '2', '3'])
 })
 
+test('injects search attributes into a marked HTML table', () => {
+  const { content, tableMap } = extractTables(
+    `<nuon-table-search column="monitor"></nuon-table-search>
+
+<table>
+<thead><tr><th>Monitor</th></tr></thead>
+<tbody><tr><td>api</td></tr></tbody>
+</table>`
+  )
+  expect(tableMap.size).toBe(0)
+  expect(content).toContain('data-nuon-search="1"')
+  expect(content).toContain('data-nuon-search-columns="monitor"')
+  expect(content).not.toContain('<nuon-table-search')
+})
+
+test('injects placeholder and preserves existing table attributes', () => {
+  const { content } = extractTables(
+    `<nuon-table-search placeholder="Find a monitor…"></nuon-table-search>
+
+<table style="width:100%">
+<tr><td>api</td></tr>
+</table>`
+  )
+  expect(content).toContain('data-nuon-search-placeholder="Find a monitor…"')
+  expect(content).toContain('style="width:100%"')
+  expect(content).not.toContain('data-nuon-search-columns')
+})
+
+test('leaves unmarked HTML tables untouched', () => {
+  const html = `<table>
+<tr><td>api</td></tr>
+</table>`
+  const { content, tableMap } = extractTables(html)
+  expect(tableMap.size).toBe(0)
+  expect(content).toBe(html)
+  expect(content).not.toContain('data-nuon-search')
+})
+
 test('extracts multiple tables independently', () => {
   const { tableMap } = extractTables(
     `| A |
