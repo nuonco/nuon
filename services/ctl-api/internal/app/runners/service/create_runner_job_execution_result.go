@@ -16,8 +16,9 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws"     // register AWS provider-layer parsers
-	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic" // register the generic fallback parser
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws"       // register AWS provider-layer parsers
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic"   // register the generic fallback parser
+	_ "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/terraform" // register terraform tool-layer parsers
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
