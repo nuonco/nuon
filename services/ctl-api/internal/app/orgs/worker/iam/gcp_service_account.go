@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
-	crm "google.golang.org/api/cloudresourcemanager/v1"
+	artifactregistry "google.golang.org/api/artifactregistry/v1"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
@@ -15,6 +16,7 @@ import (
 type CreateGCPServiceAccountRequest struct {
 	ProjectID             string `validate:"required"`
 	OrgID                 string `validate:"required"`
+	GARRepositoryURL      string `validate:"required"`
 	K8sNamespace          string // Runner ID used as namespace; empty skips WI binding
 	K8sServiceAccountName string // K8s SA name; empty skips WI binding
 }
@@ -102,9 +104,10 @@ func (a *Activities) CreateGCPServiceAccount(ctx context.Context, req *CreateGCP
 		}
 	}
 
-	// Grant the service account Artifact Registry writer at the project level
-	// so the org runner can push and pull build artifacts from GAR.
-	if err := addProjectIAMBinding(ctx, req.ProjectID, "roles/artifactregistry.writer", fmt.Sprintf("serviceAccount:%s", saEmail)); err != nil {
+	// Grant the service account Artifact Registry writer on the management
+	// repository only. A project-level grant would require ctl-api to hold
+	// projectIamAdmin, a one-hop escalation to owner.
+	if err := addGARRepositoryIAMBinding(ctx, req.GARRepositoryURL, "roles/artifactregistry.writer", fmt.Sprintf("serviceAccount:%s", saEmail)); err != nil {
 		return nil, fmt.Errorf("unable to grant GAR writer: %w", err)
 	}
 
@@ -113,36 +116,53 @@ func (a *Activities) CreateGCPServiceAccount(ctx context.Context, req *CreateGCP
 	}, nil
 }
 
-func addProjectIAMBinding(ctx context.Context, projectID, role, member string) error {
-	crmService, err := crm.NewService(ctx, option.WithScopes(crm.CloudPlatformScope))
+// garRepositoryResource converts a repository URL like
+// "us-west1-docker.pkg.dev/my-project/my-repo" into the API resource name
+// "projects/my-project/locations/us-west1/repositories/my-repo".
+func garRepositoryResource(repoURL string) (string, error) {
+	parts := strings.Split(strings.TrimSuffix(repoURL, "/"), "/")
+	if len(parts) < 3 || !strings.HasSuffix(parts[0], "-docker.pkg.dev") {
+		return "", fmt.Errorf("unexpected GAR repository URL %q", repoURL)
+	}
+	location := strings.TrimSuffix(parts[0], "-docker.pkg.dev")
+	return fmt.Sprintf("projects/%s/locations/%s/repositories/%s", parts[1], location, parts[2]), nil
+}
+
+func addGARRepositoryIAMBinding(ctx context.Context, repoURL, role, member string) error {
+	resource, err := garRepositoryResource(repoURL)
 	if err != nil {
-		return fmt.Errorf("unable to create CRM service: %w", err)
+		return err
 	}
 
-	policy, err := crmService.Projects.GetIamPolicy(projectID, &crm.GetIamPolicyRequest{}).Context(ctx).Do()
+	arService, err := artifactregistry.NewService(ctx, option.WithScopes(artifactregistry.CloudPlatformScope))
 	if err != nil {
-		return fmt.Errorf("unable to get project IAM policy: %w", err)
+		return fmt.Errorf("unable to create Artifact Registry service: %w", err)
 	}
 
-	// Check if binding already exists
+	repos := arService.Projects.Locations.Repositories
+	policy, err := repos.GetIamPolicy(resource).Context(ctx).Do()
+	if err != nil {
+		return fmt.Errorf("unable to get repository IAM policy: %w", err)
+	}
+
 	for _, binding := range policy.Bindings {
 		if binding.Role == role {
 			for _, m := range binding.Members {
 				if m == member {
-					return nil // already bound
+					return nil
 				}
 			}
 			binding.Members = append(binding.Members, member)
-			_, err := crmService.Projects.SetIamPolicy(projectID, &crm.SetIamPolicyRequest{Policy: policy}).Context(ctx).Do()
+			_, err := repos.SetIamPolicy(resource, &artifactregistry.SetIamPolicyRequest{Policy: policy}).Context(ctx).Do()
 			return err
 		}
 	}
 
-	policy.Bindings = append(policy.Bindings, &crm.Binding{
+	policy.Bindings = append(policy.Bindings, &artifactregistry.Binding{
 		Role:    role,
 		Members: []string{member},
 	})
-	_, err = crmService.Projects.SetIamPolicy(projectID, &crm.SetIamPolicyRequest{Policy: policy}).Context(ctx).Do()
+	_, err = repos.SetIamPolicy(resource, &artifactregistry.SetIamPolicyRequest{Policy: policy}).Context(ctx).Do()
 	return err
 }
 

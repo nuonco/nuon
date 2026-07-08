@@ -43,6 +43,7 @@ func (w Wkflow) ProvisionIAM(ctx workflow.Context, req *ProvisionIAMRequest) (*P
 		gcpReq := CreateGCPServiceAccountRequest{
 			ProjectID:             w.cfg.ManagementAccountID,
 			OrgID:                 req.OrgID,
+			GARRepositoryURL:      w.cfg.ManagementGARRepositoryURL,
 			K8sNamespace:          req.RunnerID,
 			K8sServiceAccountName: fmt.Sprintf("runner-%s", req.OrgID),
 		}

@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/impersonate"
 
 	"github.com/nuonco/nuon/pkg/plugins/configs"
 	pkgctx "github.com/nuonco/nuon/pkg/runner/ctx"
@@ -36,13 +39,26 @@ func FetchAccessInfo(ctx context.Context, cfg *configs.OCIRegistryRepository) (*
 		}, nil
 	}
 
-	l.Info("getting GAR access token using application default credentials")
-	creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
-	if err != nil {
-		return nil, fmt.Errorf("unable to find default credentials: %w", err)
+	var tokenSource oauth2.TokenSource
+	if cfg.ServiceAccountEmail != "" {
+		l.Info("getting GAR access token via impersonation", zap.String("service_account", cfg.ServiceAccountEmail))
+		tokenSource, err = impersonate.CredentialsTokenSource(ctx, impersonate.CredentialsConfig{
+			TargetPrincipal: cfg.ServiceAccountEmail,
+			Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("unable to create impersonated credentials: %w", err)
+		}
+	} else {
+		l.Info("getting GAR access token using application default credentials")
+		creds, err := google.FindDefaultCredentials(ctx, "https://www.googleapis.com/auth/cloud-platform")
+		if err != nil {
+			return nil, fmt.Errorf("unable to find default credentials: %w", err)
+		}
+		tokenSource = creds.TokenSource
 	}
 
-	token, err := creds.TokenSource.Token()
+	token, err := tokenSource.Token()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get access token: %w", err)
 	}
