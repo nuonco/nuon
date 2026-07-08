@@ -181,9 +181,15 @@ func ConfigForCluster(ctx context.Context, cInfo *ClusterInfo) (*rest.Config, er
 		if cInfo.GCPAuth.ImpersonateServiceAccount != "" {
 			// K8s auth must run as the operation role SA, not the runner SA — the runner SA
 			// holds no container permissions.
+			// userinfo.email is required for GKE to map the token to the SA's
+			// IAM identity; without it the apiserver sees an unmappable numeric
+			// principal and denies everything.
 			ts, err = impersonate.CredentialsTokenSource(ctx, impersonate.CredentialsConfig{
 				TargetPrincipal: cInfo.GCPAuth.ImpersonateServiceAccount,
-				Scopes:          []string{"https://www.googleapis.com/auth/cloud-platform"},
+				Scopes: []string{
+					"https://www.googleapis.com/auth/cloud-platform",
+					"https://www.googleapis.com/auth/userinfo.email",
+				},
 			})
 			if err != nil {
 				return nil, fmt.Errorf("unable to get impersonated GCP token source for K8s auth: %w", err)
