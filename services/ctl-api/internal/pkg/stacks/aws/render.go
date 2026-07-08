@@ -77,6 +77,10 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to parse aws secrets template")
 	}
+	providerT, err := template.New("aws-stack-provider-inputs").Parse(providerInputsTmpl)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to parse aws provider inputs template")
+	}
 
 	prov, maint, deprov, provMPAs, maintMPAs, deprovMPAs := extractAWSStandardPermissions(inputs.AppCfg)
 	provDoc, maintDoc, deprovDoc, err := extractAWSStandardInlinePolicies(inputs.AppCfg)
@@ -156,10 +160,15 @@ func Render(inputs *stacks.TemplateInput, supportIAMRoleARN string) ([]byte, str
 	if err := secretsT.Execute(&secretsBuf, awsInputs); err != nil {
 		return nil, "", errors.Wrap(err, "unable to execute aws secrets template")
 	}
+	var providerBuf bytes.Buffer
+	if err := providerT.Execute(&providerBuf, awsInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute aws provider inputs template")
+	}
 
 	envelope := map[string]string{
-		"inputs_tfvars":  inputsBuf.String(),
-		"secrets_tfvars": secretsBuf.String(),
+		"inputs_tfvars":   inputsBuf.String(),
+		"provider_tfvars": providerBuf.String(),
+		"secrets_tfvars":  secretsBuf.String(),
 	}
 	res, err := json.Marshal(envelope)
 	if err != nil {

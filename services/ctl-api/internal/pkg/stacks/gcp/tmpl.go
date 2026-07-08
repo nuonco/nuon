@@ -75,14 +75,14 @@ install_inputs = {
 // from the API via the stack_config data source, so only the API base URL, the
 // phone-home ID, the customer GCP project/region, and the install-input names
 // need to be supplied here.
-const providerInputsTmpl = `nuon_api_url  = "{{.Settings.RunnerAPIURL}}"
+const providerInputsTmpl = `api_url       = "{{.Settings.RunnerAPIURL}}"
 phone_home_id = "{{.CloudFormationStackVersion.PhoneHomeID}}"
-{{- if .GCPProjectID}}
-gcp_project_id = "{{.GCPProjectID}}"
-{{- end}}
-{{- if .GCPRegion}}
-gcp_region     = "{{.GCPRegion}}"
-{{- end}}
+
+gcp = {
+  project_id = "{{.GCPProjectID}}"
+  region     = "{{.GCPRegion}}"
+}
+
 install_inputs = {
 {{- range .InstallInputs}}
   "{{.Name}}" = "{{.Value}}"
@@ -90,8 +90,7 @@ install_inputs = {
 }
 `
 
-const secretsTmpl = `auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
-secrets = {
+const secretsTmpl = `secrets = {
 {{- range .Secrets}}
   "{{.Name}}" = {
     description = "{{.Description}}"
@@ -100,4 +99,6 @@ secrets = {
   }
 {{- end}}
 }
+
+auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
 `
