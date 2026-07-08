@@ -1,0 +1,10 @@
+╷
+│ Error: Reference to undeclared resource
+│
+│   on main.tf line 12, in resource "aws_instance" "web":
+│   12:   subnet_id = aws_subnet.main.id
+│
+│ A managed resource "aws_subnet" "main" has not been declared in the root module.
+╵
+terraform run errored
+job step errored unable to execute job: unable to execute apply-plan run: exit status 1

@@ -8,6 +8,7 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse"
 	awsparse "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/aws"
 	genericparse "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/generic"
+	tfparse "github.com/nuonco/nuon/services/ctl-api/internal/app/runners/errparse/terraform"
 )
 
 // This external test package imports both parser packages so their init()
@@ -38,5 +39,28 @@ func TestDefaultRegistry_GenericCatchesUnclassified(t *testing.T) {
 	}
 	if _, ok := ce.(*genericparse.GenericError); !ok {
 		t.Fatalf("expected generic fallback, got %T (type %q)", ce, ce.Type())
+	}
+}
+
+// TestDefaultRegistry_ToolLayerOrdering asserts the three-layer contract on a
+// terraform job: a terraform diagnostic that no provider parser recognises
+// yields the tool-layer parser (not the raw generic dump), while an AWS
+// permission blob on the same job is still won by the provider layer.
+func TestDefaultRegistry_ToolLayerOrdering(t *testing.T) {
+	tfDiag, err := os.ReadFile(filepath.Join("terraform", "testdata", "invalid_reference.txt"))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	ce := errparse.Parse(&errparse.ParseContext{Raw: string(tfDiag), Tool: errparse.ToolTerraform})
+	if _, ok := ce.(*tfparse.TerraformError); !ok {
+		t.Fatalf("expected terraform tool-layer parser to win over generic, got %T (type %q)", ce, ce.Type())
+	}
+
+	awsBlob := "Error: creating S3 Bucket (acme): AccessDenied: User: " +
+		"arn:aws:iam::123:role/nuon-runner is not authorized to perform: " +
+		"s3:CreateBucket on resource: arn:aws:s3:::acme"
+	ce = errparse.Parse(&errparse.ParseContext{Raw: awsBlob, Tool: errparse.ToolTerraform})
+	if _, ok := ce.(*awsparse.AWSPermissionError); !ok {
+		t.Fatalf("expected AWS provider layer to win over terraform tool layer, got %T (type %q)", ce, ce.Type())
 	}
 }

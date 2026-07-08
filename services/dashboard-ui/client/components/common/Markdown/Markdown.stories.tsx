@@ -823,6 +823,53 @@ ${CLUSTER_TABLE}`}
         />
       </div>
     </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">HTML table — rendered through the common Table</h4>
+      <p className="text-xs text-gray-500">
+        Raw HTML tables use the same common Table as markdown tables (sortable
+        headers, shared styling). Cell content — including emoji — is preserved.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<table>
+<thead>
+<tr><th></th><th>Monitor</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>🟢</td><td>api-healthcheck</td><td>finished</td></tr>
+<tr><td>🔴</td><td>db-healthcheck</td><td>error</td></tr>
+</tbody>
+</table>`}
+        />
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <h4 className="text-sm font-medium">HTML table — opted into search</h4>
+      <p className="text-xs text-gray-500">
+        Add a <code>{'<nuon-table-search>'}</code> marker before an HTML table to
+        convert it into the searchable common Table. Try “healthcheck” or filter
+        by monitor.
+      </p>
+      <div className="p-4 border rounded-lg">
+        <Markdown
+          content={`<nuon-table-search column="monitor"></nuon-table-search>
+
+<table>
+<thead>
+<tr><th>Monitor</th><th>Status</th><th>Latency</th></tr>
+</thead>
+<tbody>
+<tr><td>api-healthcheck</td><td>finished</td><td>42ms</td></tr>
+<tr><td>db-healthcheck</td><td>error</td><td>—</td></tr>
+<tr><td>cache-healthcheck</td><td>running</td><td>8ms</td></tr>
+<tr><td>queue-healthcheck</td><td>finished</td><td>15ms</td></tr>
+</tbody>
+</table>`}
+        />
+      </div>
+    </div>
   </div>
 )
 

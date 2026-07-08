@@ -1,0 +1,4 @@
+Error: creating S3 Bucket (acme-logs): BucketAlreadyOwnedByYou: Your previous request to create the named bucket succeeded and you already own it
+Error: creating S3 Bucket (acme-data): InvalidBucketName: The specified bucket is not valid.
+terraform run errored
+job step errored unable to execute job: unable to execute apply-plan run: unable to execute: error running apply: exit status 1

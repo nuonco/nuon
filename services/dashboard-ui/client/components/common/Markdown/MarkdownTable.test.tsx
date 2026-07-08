@@ -78,6 +78,71 @@ ${CLUSTER_TABLE}`}
   expect(rows[0]).toContain('staging-us')
 })
 
+const HTML_TABLE = `<table>
+<thead>
+<tr><th>Monitor</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>api-healthcheck</td><td>finished</td></tr>
+<tr><td>db-healthcheck</td><td>error</td></tr>
+<tr><td>cache-healthcheck</td><td>running</td></tr>
+</tbody>
+</table>`
+
+test('renders an unmarked HTML table through the common Table (sortable, no search box)', () => {
+  render(<Markdown content={HTML_TABLE} />)
+  expect(screen.getByText('api-healthcheck')).toBeInTheDocument()
+  expect(screen.queryByPlaceholderText(/search/i)).toBeNull()
+
+  const header = screen.getByText('Monitor').closest('th')
+  expect(header).not.toBeNull()
+  fireEvent.click(header!)
+  const rows = rowText()
+  expect(rows.length).toBe(3)
+  expect(rows[0]).toContain('api-healthcheck')
+})
+
+test('converts a marked HTML table into a searchable table', () => {
+  render(
+    <Markdown
+      content={`<nuon-table-search column="monitor"></nuon-table-search>
+
+${HTML_TABLE}`}
+    />
+  )
+
+  expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument()
+  expect(rowText().length).toBe(3)
+
+  const input = screen.getByPlaceholderText(/search/i)
+  fireEvent.change(input, { target: { value: 'db' } })
+
+  const rows = rowText()
+  expect(rows.length).toBe(1)
+  expect(rows[0]).toContain('db-healthcheck')
+})
+
+test('falls back to plain rendering for HTML tables with colspan', () => {
+  render(
+    <Markdown
+      content={`<nuon-table-search column="monitor"></nuon-table-search>
+
+<table>
+<thead>
+<tr><th>Monitor</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td colspan="2">grouped row</td></tr>
+<tr><td>api</td><td>ok</td></tr>
+</tbody>
+</table>`}
+    />
+  )
+
+  expect(screen.getByText('grouped row')).toBeInTheDocument()
+  expect(screen.queryByPlaceholderText(/search/i)).toBeNull()
+})
+
 test('renders formatted cell content and matches on its text', () => {
   render(
     <Markdown

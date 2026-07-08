@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react'
+
 export type TableAlign = 'left' | 'center' | 'right' | null
 
 export interface TableCell {
   text: string
-  markdown: string
+  markdown?: string
+  content?: ReactNode
 }
 
 export interface TableSearchConfig {
@@ -21,6 +24,19 @@ const FENCE = /^\s*(```|~~~)/
 const MARKER = /^\s*<nuon-table-search\b([^>]*)>(?:\s*<\/nuon-table-search>)?\s*$/
 const DELIM_CELL = /^:?-+:?$/
 
+export function parseColumns(raw?: string): string[] | null {
+  if (!raw) return null
+  const cols = raw
+    .split(',')
+    .map((c) => c.trim().toLowerCase())
+    .filter(Boolean)
+  return cols.length > 0 ? cols : null
+}
+
+export function makeSearchConfig(columns?: string, placeholder?: string): TableSearchConfig {
+  return { columns: parseColumns(columns), placeholder: placeholder || undefined }
+}
+
 function parseMarker(attrStr: string): TableSearchConfig {
   const attrs: Record<string, string> = {}
   const re = /(\w+)="([^"]*)"/g
@@ -28,17 +44,18 @@ function parseMarker(attrStr: string): TableSearchConfig {
   while ((m = re.exec(attrStr)) !== null) {
     attrs[m[1]] = m[2]
   }
-  const raw = attrs.column ?? attrs.columns
-  const columns = raw
-    ? raw
-        .split(',')
-        .map((c) => c.trim().toLowerCase())
-        .filter(Boolean)
-    : null
-  return {
-    columns: columns && columns.length > 0 ? columns : null,
-    placeholder: attrs.placeholder,
-  }
+  return makeSearchConfig(attrs.column ?? attrs.columns, attrs.placeholder)
+}
+
+function escapeAttr(value: string): string {
+  return value.replace(/"/g, '&quot;')
+}
+
+function buildSearchAttrs(cfg: TableSearchConfig): string {
+  const parts = ['data-nuon-search="1"']
+  if (cfg.columns) parts.push(`data-nuon-search-columns="${escapeAttr(cfg.columns.join(','))}"`)
+  if (cfg.placeholder) parts.push(`data-nuon-search-placeholder="${escapeAttr(cfg.placeholder)}"`)
+  return parts.join(' ')
 }
 
 function splitRow(line: string): string[] {
@@ -133,6 +150,7 @@ export function extractTables(content: string): {
       if (!inFence) {
         inFence = true
         fenceMarker = fence[1]
+        pendingSearch = null
       } else if (fence[1] === fenceMarker) {
         inFence = false
         fenceMarker = ''
@@ -150,6 +168,13 @@ export function extractTables(content: string): {
     const markerMatch = MARKER.exec(line)
     if (markerMatch) {
       pendingSearch = parseMarker(markerMatch[1])
+      i++
+      continue
+    }
+
+    if (pendingSearch && /^\s*<table[\s>]/i.test(line)) {
+      out.push(line.replace(/<table/i, `<table ${buildSearchAttrs(pendingSearch)}`))
+      pendingSearch = null
       i++
       continue
     }
