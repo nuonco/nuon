@@ -252,7 +252,7 @@ module "nuon_gar_access" {
 
   project_id          = "<your-gcp-project>"
   repository_location = "us-central1"
-  repository_id       = "<repo-name>"
+  repositories        = ["<repo-name>"]
 
   customer_principals = [
     "serviceAccount:ctl-api-<install>@<customer-project>.iam.gserviceaccount.com",
@@ -265,6 +265,10 @@ output "gar_access_sa_email" {
 ```
 
 Then set `service_account_email` in your component's `gcp_gar` block to the SA email the module emits.
+
+`repositories` accepts multiple entries, and entries ending in `*` grant access to every repository matching that
+prefix (e.g. `repositories = ["shared-images", "team-*"]`) — including repositories created later. Requires
+`nuonco/gar-access/google` version `0.3.0` or later; older versions take a single `repository_id` string.
 
 #### GAR for Nuon-hosted (AWS) customers
 
@@ -279,7 +283,7 @@ module "nuon_gar_access" {
 
   project_id          = "<your-gcp-project>"
   repository_location = "us-central1"
-  repository_id       = "<repo-name>"
+  repositories        = ["<repo-name>"]
 
   aws_principals = [
     { aws_account_id = "123456789012" },
