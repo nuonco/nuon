@@ -228,7 +228,7 @@ func TestRenderPermissions(t *testing.T) {
 		}
 		assert.Contains(t, tfvars, `"emergency-access"`)
 		assert.Contains(t, tfvars, `["iam.roles.get"]`)
-		assert.Contains(t, tfvars, "enabled         = false")
+		assert.Contains(t, tfvars, "enabled          = false")
 	})
 
 	t.Run("standard role policies stay separate", func(t *testing.T) {
@@ -253,7 +253,7 @@ func TestRenderPermissions(t *testing.T) {
 		tfvars := extractTfvars(t, out)
 		assert.Contains(t, tfvars, `"provision-network" = ["compute.networks.create"]`)
 		assert.Contains(t, tfvars, `"provision-dns" = ["dns.changes.create"]`)
-		assert.Contains(t, tfvars, `provision_predefined_role    = "roles/container.admin"`)
+		assert.Contains(t, tfvars, `provision_predefined_roles   = ["roles/container.admin"]`)
 	})
 }
 
@@ -269,7 +269,7 @@ func TestRenderMultipleBreakGlassRoles(t *testing.T) {
 	assert.Contains(t, tfvars, `["compute.instances.list","storage.buckets.list"]`)
 
 	// Both should be disabled by default
-	count := strings.Count(tfvars, "enabled         = false")
+	count := strings.Count(tfvars, "enabled          = false")
 	assert.Equal(t, 2, count, "both breakglass roles should be disabled by default")
 }
 
@@ -281,7 +281,7 @@ func TestRenderCustomRoles(t *testing.T) {
 
 	assert.Contains(t, tfvars, `"db-reader"`)
 	assert.Contains(t, tfvars, `["cloudsql.instances.list"]`)
-	assert.Contains(t, tfvars, "enabled         = true")
+	assert.Contains(t, tfvars, "enabled          = true")
 }
 
 func TestRenderPredefinedRoles(t *testing.T) {
@@ -291,7 +291,7 @@ func TestRenderPredefinedRoles(t *testing.T) {
 
 		tfvars := extractTfvars(t, out)
 
-		for _, v := range []string{"provision_predefined_role", "maintenance_predefined_role", "deprovision_predefined_role"} {
+		for _, v := range []string{"provision_predefined_roles", "maintenance_predefined_roles", "deprovision_predefined_roles"} {
 			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
 	})
@@ -317,7 +317,7 @@ func TestRenderPredefinedRoles(t *testing.T) {
 		tfvars := extractTfvars(t, out)
 
 		assert.Contains(t, tfvars, `"elevated-access"`)
-		assert.Contains(t, tfvars, `predefined_role = "roles/editor"`)
+		assert.Contains(t, tfvars, `predefined_roles = ["roles/editor"]`)
 	})
 }
 
@@ -549,8 +549,8 @@ func TestRenderPredefinedRoleValues(t *testing.T) {
 
 	// Find the line with provision_predefined_role and verify value.
 	for _, line := range strings.Split(tfvars, "\n") {
-		if strings.HasPrefix(strings.TrimSpace(line), "provision_predefined_role") {
-			assert.Contains(t, line, `"roles/editor"`)
+		if strings.HasPrefix(strings.TrimSpace(line), "provision_predefined_roles") {
+			assert.Contains(t, line, `["roles/editor"]`)
 		}
 	}
 }

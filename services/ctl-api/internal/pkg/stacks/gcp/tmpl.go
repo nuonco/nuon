@@ -34,9 +34,9 @@ deprovision_policies = {
   "{{.Name}}" = {{.Permissions}}
 {{- end}}
 }
-provision_predefined_role    = "{{.ProvisionPredefinedRole}}"
-maintenance_predefined_role  = "{{.MaintenancePredefinedRole}}"
-deprovision_predefined_role  = "{{.DeprovisionPredefinedRole}}"
+provision_predefined_roles   = {{.ProvisionPredefinedRoles}}
+maintenance_predefined_roles = {{.MaintenancePredefinedRoles}}
+deprovision_predefined_roles = {{.DeprovisionPredefinedRoles}}
 break_glass_roles = {
 {{- range .BreakGlassRoles}}
   "{{.Name}}" = {
@@ -45,8 +45,8 @@ break_glass_roles = {
       "{{.Name}}" = {{.Permissions}}
     {{- end}}
     }
-    predefined_role = "{{.PredefinedRole}}"
-    enabled         = false
+    predefined_roles = {{.PredefinedRoles}}
+    enabled          = false
   }
 {{- end}}
 }
@@ -58,8 +58,8 @@ custom_roles = {
       "{{.Name}}" = {{.Permissions}}
     {{- end}}
     }
-    predefined_role = "{{.PredefinedRole}}"
-    enabled         = true
+    predefined_roles = {{.PredefinedRoles}}
+    enabled          = true
   }
 {{- end}}
 }

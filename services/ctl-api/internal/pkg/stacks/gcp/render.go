@@ -23,9 +23,9 @@ type GCPPolicyTemplateInput struct {
 
 // GCPRoleTemplateInput holds the per-role data rendered into the template.
 type GCPRoleTemplateInput struct {
-	Name           string
-	Policies       []GCPPolicyTemplateInput
-	PredefinedRole string
+	Name            string
+	Policies        []GCPPolicyTemplateInput
+	PredefinedRoles string
 }
 
 // GCPSecretTemplateInput holds a non-auto-gen secret definition for the template.
@@ -63,9 +63,9 @@ type GCPTemplateInput struct {
 	MaintenancePolicies []GCPPolicyTemplateInput
 	DeprovisionPolicies []GCPPolicyTemplateInput
 
-	ProvisionPredefinedRole   string
-	MaintenancePredefinedRole string
-	DeprovisionPredefinedRole string
+	ProvisionPredefinedRoles   string
+	MaintenancePredefinedRoles string
+	DeprovisionPredefinedRoles string
 
 	BreakGlassRoles []GCPRoleTemplateInput
 	CustomRoles     []GCPRoleTemplateInput
@@ -127,20 +127,20 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	}
 
 	gcpInputs := &GCPTemplateInput{
-		TemplateInput:             inputs,
-		GCPProjectID:              gcpProjectID,
-		GCPRegion:                 gcpRegion,
-		ProvisionPolicies:         prov,
-		MaintenancePolicies:       maint,
-		DeprovisionPolicies:       deprov,
-		ProvisionPredefinedRole:   provPredefined,
-		MaintenancePredefinedRole: maintPredefined,
-		DeprovisionPredefinedRole: deprovPredefined,
-		BreakGlassRoles:           breakGlassRoles,
-		CustomRoles:               customRoles,
-		InstallInputs:             installInputs,
-		AutoGenerateSecrets:       autoGenerateSecrets,
-		Secrets:                   secrets,
+		TemplateInput:              inputs,
+		GCPProjectID:               gcpProjectID,
+		GCPRegion:                  gcpRegion,
+		ProvisionPolicies:          prov,
+		MaintenancePolicies:        maint,
+		DeprovisionPolicies:        deprov,
+		ProvisionPredefinedRoles:   provPredefined,
+		MaintenancePredefinedRoles: maintPredefined,
+		DeprovisionPredefinedRoles: deprovPredefined,
+		BreakGlassRoles:            breakGlassRoles,
+		CustomRoles:                customRoles,
+		InstallInputs:              installInputs,
+		AutoGenerateSecrets:        autoGenerateSecrets,
+		Secrets:                    secrets,
 	}
 
 	var inputsBuf bytes.Buffer
@@ -219,6 +219,8 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 
 // extractGCPStandardPolicies reads GCP IAM policies for the standard roles (provision, maintenance, deprovision).
 func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision []GCPPolicyTemplateInput, provPredefined, maintPredefined, deprovPredefined string) {
+	provPredefined, maintPredefined, deprovPredefined = "[]", "[]", "[]"
+
 	if appCfg == nil {
 		return
 	}
@@ -228,18 +230,18 @@ func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, 
 			continue
 		}
 
-		policies, predefinedRole := extractRolePolicies(role)
+		policies, predefinedRoles := extractRolePolicies(role)
 
 		switch role.Type {
 		case app.AWSIAMRoleTypeRunnerProvision:
 			provision = policies
-			provPredefined = predefinedRole
+			provPredefined = predefinedRoles
 		case app.AWSIAMRoleTypeRunnerMaintenance:
 			maintenance = policies
-			maintPredefined = predefinedRole
+			maintPredefined = predefinedRoles
 		case app.AWSIAMRoleTypeRunnerDeprovision:
 			deprovision = policies
-			deprovPredefined = predefinedRole
+			deprovPredefined = predefinedRoles
 		}
 	}
 
@@ -255,15 +257,15 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 			continue
 		}
 
-		policies, predefinedRole := extractRolePolicies(role)
-		if len(policies) == 0 && predefinedRole == "" {
+		policies, predefinedRoles := extractRolePolicies(role)
+		if len(policies) == 0 && predefinedRoles == "[]" {
 			continue
 		}
 
 		result = append(result, GCPRoleTemplateInput{
-			Name:           role.Name,
-			Policies:       policies,
-			PredefinedRole: predefinedRole,
+			Name:            role.Name,
+			Policies:        policies,
+			PredefinedRoles: predefinedRoles,
 		})
 	}
 
@@ -272,12 +274,13 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 
 // extractRolePolicies keeps each policy separate so the stack creates one
 // custom role per policy, matching the AWS one-policy-one-attachment shape.
+// Predefined roles accumulate into a JSON list — a role can bind several.
 func extractRolePolicies(role app.AppAWSIAMRoleConfig) ([]GCPPolicyTemplateInput, string) {
 	var policies []GCPPolicyTemplateInput
-	var predefinedRole string
+	var predefinedRoles []string
 	for i, policy := range role.Policies {
 		if policy.GCPPredefinedRole != "" {
-			predefinedRole = policy.GCPPredefinedRole
+			predefinedRoles = append(predefinedRoles, policy.GCPPredefinedRole)
 		}
 
 		if len(policy.GCPPermissions) == 0 {
@@ -299,5 +302,11 @@ func extractRolePolicies(role app.AppAWSIAMRoleConfig) ([]GCPPolicyTemplateInput
 			Permissions: string(b),
 		})
 	}
-	return policies, predefinedRole
+	predefined := "[]"
+	if len(predefinedRoles) > 0 {
+		if b, err := json.Marshal(predefinedRoles); err == nil {
+			predefined = string(b)
+		}
+	}
+	return policies, predefined
 }
