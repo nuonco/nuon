@@ -60,11 +60,27 @@ func (s *service) AddInstallLabels(ctx *gin.Context) {
 		return
 	}
 
+	merged := make(labels.Labels)
+	for k, v := range install.Labels {
+		merged[k] = v
+	}
+	merged.Merge(labels.Labels(req.Labels))
+
+	if err := s.appsHelpers.ValidateInstallBranchExclusivity(ctx, &install, merged); err != nil {
+		ctx.Error(err)
+		return
+	}
+
 	install.Labels.Merge(labels.Labels(req.Labels))
 
 	if err := s.db.WithContext(ctx).Model(&install).Select("labels").Updates(&install).Error; err != nil {
 		ctx.Error(fmt.Errorf("unable to update install labels: %w", err))
 		return
+	}
+
+	matches, _ := s.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
+	if len(matches) == 1 {
+		s.appsHelpers.SyncInstallBranchConnection(ctx, &install, matches[0].Branch.ID)
 	}
 
 	ctx.JSON(http.StatusOK, install)

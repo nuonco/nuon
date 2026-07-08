@@ -17,6 +17,7 @@ import (
 	"github.com/nuonco/nuon/pkg/render"
 	"github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
+	branchactivities "github.com/nuonco/nuon/services/ctl-api/internal/app/apps/signals/branches/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app/installs/worker/activities"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/generics"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/log"
@@ -146,10 +147,40 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		return nil, nil, errors.Wrap(err, "unable to get policies")
 	}
 
-	l.Info("fetching sandbox git source")
-	gitSource, err := activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
+	var gitSource *plantypes.GitSource
+	var ociSource *plantypes.OCISource
+	if req.OCISource != nil {
+		l.Info("using OCI source from caller")
+		ociSource = req.OCISource
+	} else {
+		l.Info("checking for active sandbox build OCI artifact")
+		sandboxBuild, sbErr := activities.AwaitGetLatestActiveSandboxBuildByAppConfigID(ctx, appCfg.ID)
+		if sbErr != nil {
+			l.Warn("unable to check for sandbox build, falling back to git source", zap.Error(sbErr))
+		}
+
+		if sandboxBuild != nil {
+			l.Info("found active sandbox build, resolving OCI source", zap.String("sandbox_build_id", sandboxBuild.ID))
+			registry, regErr := branchactivities.AwaitGetSandboxBuildOCIRegistry(ctx, branchactivities.GetSandboxBuildOCIRegistryRequest{
+				AppID: install.AppID,
+			})
+			if regErr != nil {
+				l.Warn("unable to get OCI registry, falling back to git source", zap.Error(regErr))
+			} else {
+				ociSource = &plantypes.OCISource{
+					Registry: registry,
+					Tag:      sandboxBuild.ID,
+				}
+			}
+		}
+
+		if ociSource == nil {
+			l.Info("fetching sandbox git source")
+			gitSource, err = activities.AwaitGetSandboxRunGitSourceByAppConfigID(ctx, appCfg.ID)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "unable to get sandbox run git source")
+			}
+		}
 	}
 
 	l.Info("getting auth with role selection")
@@ -167,6 +198,7 @@ func (p *Planner) createSandboxRunPlan(ctx workflow.Context, req *CreateSandboxR
 		EnvVars:            envVars,
 		VarsFiles:          appCfg.SandboxConfig.VariablesFiles,
 		GitSource:          gitSource,
+		OCISource:          ociSource,
 		State:              state,
 		Policies:           policies,
 		KyvernoPoliciesDir: fmt.Sprintf("kyverno-policies-%s", run.ID),

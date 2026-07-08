@@ -105,7 +105,12 @@ func (h *handler) getWorkspace() (workspace.Workspace, error) {
 	plan := h.state.plan
 	sandboxCfg := h.state.sandboxCfg
 
-	archDir := h.state.workspace.Source().AbsPath()
+	var archDir string
+	if h.state.ociArch != nil {
+		archDir = h.state.ociArch.BasePath()
+	} else {
+		archDir = h.state.workspace.Source().AbsPath()
+	}
 	if plan.LocalArchive != nil {
 		archDir = plan.LocalArchive.Path
 	}
@@ -193,7 +198,12 @@ func (h *handler) getWorkspaceWithPlan(planBytes []byte) (workspace.Workspace, e
 	plan := h.state.plan
 	sandboxCfg := h.state.sandboxCfg
 
-	archDir := h.state.workspace.Source().AbsPath()
+	var archDir string
+	if h.state.ociArch != nil {
+		archDir = h.state.ociArch.BasePath()
+	} else {
+		archDir = h.state.workspace.Source().AbsPath()
+	}
 	if plan.LocalArchive != nil {
 		archDir = plan.LocalArchive.Path
 	}
