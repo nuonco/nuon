@@ -48,16 +48,32 @@ type SyncOptions struct {
 	Preview bool
 	// PrintJSON emits a machine-readable result on success (--output json/agent).
 	PrintJSON bool
+	// NoWait skips waiting for scheduled component builds to complete; the
+	// exit code then reflects the sync only.
+	NoWait bool
 }
 
 // syncResult is the machine-readable summary emitted via ui.PrintJSON when
 // SyncOptions.PrintJSON is set, so --output agent gets a success envelope.
 type syncResult struct {
-	AppID    string `json:"app_id"`
-	Dir      string `json:"dir"`
-	BranchID string `json:"branch_id,omitempty"`
-	RunID    string `json:"run_id,omitempty"`
+	AppID    string            `json:"app_id"`
+	Dir      string            `json:"dir"`
+	BranchID string            `json:"branch_id,omitempty"`
+	RunID    string            `json:"run_id,omitempty"`
+	Builds   *syncBuildsResult `json:"builds,omitempty"`
 }
+
+// syncBuildsResult summarizes the component builds the sync scheduled.
+type syncBuildsResult struct {
+	Scheduled  int            `json:"scheduled"`
+	Waited     bool           `json:"waited"`
+	Components []BuildOutcome `json:"components,omitempty"`
+}
+
+// buildsFailedExitCode signals that the config synced but the scheduled
+// component builds failed, were policy-blocked, or timed out. Exit 1 remains
+// "sync failed" and exit 2 is the read-only guardrail.
+const buildsFailedExitCode = 3
 
 func (s *Service) DeprecatedSyncDir(ctx context.Context, dir string, version string, opts SyncOptions) error {
 	deprecatedWarning := config.ErrConfig{
@@ -168,20 +184,42 @@ func (s *Service) syncDir(ctx context.Context, dir string, version string, opts 
 	s.notifyOrphanedComponents(syncer.OrphanedComponents())
 	s.notifyOrphanedActions(syncer.OrphanedActions())
 
+	result := syncResult{AppID: appID, Dir: dir}
 	cmpsScheduled := syncer.GetComponentsScheduled()
 	if len(cmpsScheduled) == 0 {
 		if opts.PrintJSON {
-			ui.PrintJSON(syncResult{AppID: appID, Dir: dir})
+			ui.PrintJSON(result)
 		}
 		return nil
 	}
 
-	if err := s.pollComponentBuilds(ctx, cmpsScheduled); err != nil {
-		return errors.Wrap(err, "unable to poll builds")
+	result.Builds = &syncBuildsResult{
+		Scheduled: len(cmpsScheduled),
+		Waited:    !opts.NoWait,
 	}
 
+	if opts.NoWait {
+		ui.PrintLn(fmt.Sprintf("%d component build(s) scheduled; not waiting for completion (--no-wait)", len(cmpsScheduled)))
+		if opts.PrintJSON {
+			ui.PrintJSON(result)
+		}
+		return nil
+	}
+
+	ui.PrintLn(fmt.Sprintf("waiting for %d component build(s) to complete (timeout %s; use --no-wait to skip)", len(cmpsScheduled), defaultSyncTimeout))
+	outcomes, pollErr := s.pollComponentBuilds(ctx, cmpsScheduled)
+	result.Builds.Components = outcomes
+	if pollErr != nil {
+		return ui.PrintError(&ui.ErrExitCode{
+			Err:  errors.Wrap(pollErr, "app config synced, but component builds did not succeed"),
+			Code: "builds_failed",
+			Exit: buildsFailedExitCode,
+		})
+	}
+
+	ui.PrintSuccess("all component builds completed")
 	if opts.PrintJSON {
-		ui.PrintJSON(syncResult{AppID: appID, Dir: dir})
+		ui.PrintJSON(result)
 	}
 	return nil
 }

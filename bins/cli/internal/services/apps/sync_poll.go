@@ -3,26 +3,43 @@ package apps
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-go"
-	"github.com/pkg/errors"
 
-	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/config/sync"
 )
 
-func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) error {
-	// Early return if no components to build
+// BuildOutcome describes the terminal state of one scheduled component build.
+type BuildOutcome struct {
+	ComponentID   string `json:"component_id"`
+	ComponentName string `json:"component_name"`
+	Status        string `json:"status"`
+}
+
+const (
+	buildOutcomeBuilt        = "built"
+	buildOutcomeError        = "error"
+	buildOutcomePolicyFailed = "policy_failed"
+	buildOutcomeTimeout      = "timeout"
+	buildOutcomeUnknown      = "unknown"
+)
+
+// pollComponentBuilds waits for the scheduled component builds to reach a
+// terminal state and returns one outcome per component (in input order). The
+// returned error is non-nil when any build did not complete successfully.
+func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.ComponentState) ([]BuildOutcome, error) {
 	if len(comps) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	cmpByID := make(map[string]sync.ComponentState)
 	for _, cmp := range comps {
 		cmpByID[cmp.ID] = cmp
 	}
+	statusByID := make(map[string]string)
 
 	pollTimeout, cancel := context.WithTimeout(ctx, defaultSyncTimeout)
 	defer cancel()
@@ -41,21 +58,19 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 	// So we need to wait for the new component_builds to be created before we start to poll.
 	time.Sleep(time.Second * 5)
 
+poll:
 	for {
 		select {
 		case <-pollTimeout.Done():
-			err := fmt.Errorf("timeout waiting for components to build")
-			ui.PrintError(err)
 			for cmpID := range cmpByID {
 				cmp := cmpByID[cmpID]
+				statusByID[cmp.ID] = buildOutcomeTimeout
 				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("timeout waiting for component %s %s to build", cmp.ID, cmp.Name))
 			}
-			multiSpinner.Stop()
-			return err
+			break poll
 		default:
 		}
 
-		var groupError error
 		completedComponents := make([]sync.ComponentState, 0)
 
 		for cmpID := range cmpByID {
@@ -63,7 +78,8 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 			cmpBuild, err := s.api.GetComponentLatestBuild(ctx, cmp.ID)
 			if err != nil {
 				if nuon.IsServerError(err) {
-					multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
+					statusByID[cmp.ID] = buildOutcomeUnknown
+					multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("unable to check build status for component %s %s", cmp.ID, cmp.Name))
 					completedComponents = append(completedComponents, cmp)
 					continue
 				}
@@ -78,19 +94,20 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 				}
 			}
 			if cmpBuild.Status == componentBuildStatusError {
+				statusByID[cmp.ID] = buildOutcomeError
 				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("error building component %s %s", cmp.ID, cmp.Name))
 				completedComponents = append(completedComponents, cmp)
-				groupError = errors.New("at least one build failed")
 				continue
 			}
 			if cmpBuild.Status == componentBuildStatusPolicyFailed {
+				statusByID[cmp.ID] = buildOutcomePolicyFailed
 				multiSpinner.CompleteSpinner(cmp.ID, false, fmt.Sprintf("policy violation for component %s %s", cmp.ID, cmp.Name))
 				completedComponents = append(completedComponents, cmp)
-				groupError = errors.New("at least one build failed due to policy violation")
 				continue
 			}
 
 			if cmpBuild.Status == componentBuildStatusActive {
+				statusByID[cmp.ID] = buildOutcomeBuilt
 				multiSpinner.CompleteSpinner(cmp.ID, true, fmt.Sprintf("finished building component %s %s", cmp.ID, cmp.Name))
 				completedComponents = append(completedComponents, cmp)
 				continue
@@ -103,10 +120,40 @@ func (s *Service) pollComponentBuilds(ctx context.Context, comps []sync.Componen
 		}
 
 		if len(cmpByID) == 0 {
-			multiSpinner.Stop()
-			return groupError
+			break poll
 		}
 
 		time.Sleep(defaultSyncSleep)
 	}
+
+	multiSpinner.Stop()
+
+	outcomes := make([]BuildOutcome, 0, len(comps))
+	for _, cmp := range comps {
+		outcomes = append(outcomes, BuildOutcome{
+			ComponentID:   cmp.ID,
+			ComponentName: cmp.Name,
+			Status:        statusByID[cmp.ID],
+		})
+	}
+
+	return outcomes, buildOutcomesErr(outcomes)
+}
+
+// buildOutcomesErr summarizes non-successful outcomes into a single error, or
+// nil when every build completed.
+func buildOutcomesErr(outcomes []BuildOutcome) error {
+	failures := make([]string, 0)
+	for _, o := range outcomes {
+		if o.Status == buildOutcomeBuilt {
+			continue
+		}
+		failures = append(failures, fmt.Sprintf("%s (%s)", o.ComponentName, o.Status))
+	}
+	if len(failures) == 0 {
+		return nil
+	}
+
+	return fmt.Errorf("%d of %d component build(s) did not complete: %s",
+		len(failures), len(outcomes), strings.Join(failures, ", "))
 }
