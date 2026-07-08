@@ -51,14 +51,20 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 func (p *handler) fetchSecretValue(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, bool, error) {
 	var val string
 	var ts *time.Time
+	var err error
 
 	switch {
 	case secr.GCPSecretName != "":
-		val, ts, _ = p.fetchGCPSecret(ctx, secr)
+		val, ts, err = p.fetchGCPSecret(ctx, secr)
 	case secr.AzureKeyVaultSecretID != "":
-		val, ts, _ = p.fetchAzureSecret(ctx, secr)
+		val, ts, err = p.fetchAzureSecret(ctx, secr)
 	default:
-		val, ts, _ = p.fetchAWSSecret(ctx, secr)
+		val, ts, err = p.fetchAWSSecret(ctx, secr)
+	}
+
+	if err != nil {
+		l := pkgctx.LoggerOrDefault(ctx, zap.NewNop())
+		l.Error("unable to fetch secret value from cloud provider", zap.Error(err), sourceSecretField(secr))
 	}
 
 	exists := val != ""
@@ -91,15 +97,24 @@ func (p *handler) execSyncSecretV1(ctx context.Context, secr plantypes.Kubernete
 // per destination and recording one output per destination.
 func (p *handler) execSyncSecretV2(ctx context.Context, secr plantypes.KubernetesSecretSync, val string, ts *time.Time, exists bool) error {
 	l := pkgctx.LoggerOrDefault(ctx, zap.NewNop())
+	sourceField := sourceSecretField(secr)
 
 	for _, target := range secr.Targets {
 		for _, namespace := range target.Namespaces {
 			if exists {
 
-				l.Info(fmt.Sprintf("upserting secret value into %s:%s.%s", namespace, target.Name, target.Key), zap.String("name", target.Name), zap.String("namespace", namespace), zap.String("key", target.Key))
+				l.Info(fmt.Sprintf("upserting secret value into %s:%s.%s", namespace, target.Name, target.Key), zap.String("name", target.Name), zap.String("namespace", namespace), zap.String("key", target.Key), sourceField)
 				if err := p.upsertSecret(ctx, namespace, target.Name, target.Key, val); err != nil {
 					return err
 				}
+			} else {
+				l.Warn(fmt.Sprintf(
+					"secret does not exist in cloud provider - not upserting secret value into %s:%s.%s", namespace, target.Name, target.Key),
+					zap.String("name", target.Name),
+					zap.String("namespace", namespace),
+					zap.String("key", target.Key),
+					sourceField,
+				)
 			}
 
 			p.recordOutput(secr, namespace, target.Name, target.Key, val, ts, exists)
@@ -107,6 +122,19 @@ func (p *handler) execSyncSecretV2(ctx context.Context, secr plantypes.Kubernete
 	}
 
 	return nil
+}
+
+// sourceSecretField returns the log field identifying the cloud-provider source secret, keyed by provider type so the
+// value carries its own semantics: an ARN for AWS, a resource name for GCP, or a key vault secret URI for Azure.
+func sourceSecretField(secr plantypes.KubernetesSecretSync) zap.Field {
+	switch {
+	case secr.GCPSecretName != "":
+		return zap.String("gcp_secret_name", secr.GCPSecretName)
+	case secr.AzureKeyVaultSecretID != "":
+		return zap.String("azure_key_vault_secret_id", secr.AzureKeyVaultSecretID)
+	default:
+		return zap.String("arn", secr.SecretARN)
+	}
 }
 
 // recordOutput writes a per-destination output keyed uniquely by source secret name and Kubernetes destination, so v2
