@@ -1,0 +1,2 @@
+running helm install
+unable to upgrade helm release: ConfigMap "app-config" in namespace "default" exists and cannot be imported into the current release: invalid ownership metadata; label validation error: missing key "app.kubernetes.io/managed-by": must be set to "Helm"
