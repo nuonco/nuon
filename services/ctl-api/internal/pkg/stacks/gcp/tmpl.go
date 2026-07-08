@@ -19,16 +19,32 @@ runner_init_script_url   = "{{.RunnerInitScriptURL}}"
 runner_machine_type      = "{{.Settings.AWSInstanceType}}"
 {{- end}}
 phone_home_url           = "{{.CloudFormationStackVersion.PhoneHomeURL}}"
-provision_permissions    = {{.ProvisionPermissions}}
-maintenance_permissions  = {{.MaintenancePermissions}}
-deprovision_permissions  = {{.DeprovisionPermissions}}
+provision_policies = {
+{{- range .ProvisionPolicies}}
+  "{{.Name}}" = {{.Permissions}}
+{{- end}}
+}
+maintenance_policies = {
+{{- range .MaintenancePolicies}}
+  "{{.Name}}" = {{.Permissions}}
+{{- end}}
+}
+deprovision_policies = {
+{{- range .DeprovisionPolicies}}
+  "{{.Name}}" = {{.Permissions}}
+{{- end}}
+}
 provision_predefined_role    = "{{.ProvisionPredefinedRole}}"
 maintenance_predefined_role  = "{{.MaintenancePredefinedRole}}"
 deprovision_predefined_role  = "{{.DeprovisionPredefinedRole}}"
 break_glass_roles = {
 {{- range .BreakGlassRoles}}
   "{{.Name}}" = {
-    permissions     = {{.Permissions}}
+    policies = {
+    {{- range .Policies}}
+      "{{.Name}}" = {{.Permissions}}
+    {{- end}}
+    }
     predefined_role = "{{.PredefinedRole}}"
     enabled         = false
   }
@@ -37,7 +53,11 @@ break_glass_roles = {
 custom_roles = {
 {{- range .CustomRoles}}
   "{{.Name}}" = {
-    permissions     = {{.Permissions}}
+    policies = {
+    {{- range .Policies}}
+      "{{.Name}}" = {{.Permissions}}
+    {{- end}}
+    }
     predefined_role = "{{.PredefinedRole}}"
     enabled         = true
   }

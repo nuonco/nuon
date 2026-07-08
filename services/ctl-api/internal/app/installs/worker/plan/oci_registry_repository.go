@@ -137,6 +137,9 @@ func (p *Planner) getInstallRegistryRepositoryConfig(
 		}
 		cfg.LoginServer = loginServer
 		cfg.Region = stack.InstallStackOutputs.GCPStackOutputs.Region
+		if cloudAuth.GCP != nil {
+			cfg.ServiceAccountEmail = cloudAuth.GCP.ImpersonateServiceAccount
+		}
 	}
 
 	return cfg, nil

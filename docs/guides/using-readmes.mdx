@@ -115,6 +115,27 @@ Attributes:
 - `placeholder` — custom placeholder text for the search box (defaults to
   "Search table…").
 
+The same marker works on raw HTML `<table>` markup. HTML tables render through
+the same common table component as markdown tables (sortable headers, shared
+styling), and a `<nuon-table-search>` marker before one adds the search box:
+
+```markdown README.md
+<nuon-table-search column="monitor"></nuon-table-search>
+
+<table>
+  <thead>
+    <tr><th>Monitor</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>api-healthcheck</td><td>finished</td></tr>
+    <tr><td>db-healthcheck</td><td>error</td></tr>
+  </tbody>
+</table>
+```
+
+Tables that use `colspan`/`rowspan` or multiple header rows can't be represented
+this way, so they render as authored (with any custom markup preserved).
+
 ## Collapsible sections
 
 Use HTML `<details>` and `<summary>` tags to create expandable sections. These
