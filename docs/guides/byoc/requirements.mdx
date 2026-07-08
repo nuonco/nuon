@@ -57,9 +57,19 @@ Create a GitHub App so Nuon can clone code for components from private repos. Yo
 
 3. Set permissions:
 
-| Permission | Access    |
-| ---------- | --------- |
-| Contents   | Read-only |
+Repository permissions:
+
+| Permission    | Access         |
+| ------------- | -------------- |
+| Contents      | Read-only      |
+| Metadata      | Read-only      |
+| Pull requests | Read and write |
+
+Organization permissions:
+
+| Permission | Access         |
+| ---------- | -------------- |
+| Webhooks   | Read and write |
 
 4. Under "Where can this GitHub App be installed?", select **Only on this account** (unless you need to access repos in other GitHub organizations).
 
