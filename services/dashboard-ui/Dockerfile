@@ -81,9 +81,6 @@ COPY --from=build-server /dashboard-server /app/dashboard-server
 
 WORKDIR /app
 
-RUN adduser -D -u 65532 dashboard
-USER dashboard
-
 ARG VERSION
 ARG GIT_REF
 ENV VERSION=$VERSION
