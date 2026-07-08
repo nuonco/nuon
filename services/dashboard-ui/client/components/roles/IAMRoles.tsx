@@ -69,6 +69,8 @@ export type TPolicy = {
   name?: string
   managed_policy_name?: string
   contents?: string
+  gcp_predefined_role?: string
+  gcp_permissions?: string[]
 }
 
 export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
@@ -155,6 +157,64 @@ export const IAMRolePoliciesCard = ({ policies }: { policies?: TPolicy[] }) => (
                   />
                   <CodeBlock language="json">
                     {decodeAsString(policy?.contents)}
+                  </CodeBlock>
+                </div>
+              </Modal>
+            </>
+          ) : null}
+          {policy?.gcp_predefined_role ? (
+            <>
+              <Code variant="inline" className="!px-2">
+                <Text variant="subtext" family="mono">
+                  {policy?.gcp_predefined_role}
+                </Text>
+              </Code>
+
+              <Text variant="subtext" weight="strong">
+                GCP predefined
+              </Text>
+
+              <Button
+                className="!p-1"
+                href="https://cloud.google.com/iam/docs/understanding-roles"
+                size="sm"
+              >
+                <Icon variant="ArrowSquareOutIcon" />
+              </Button>
+            </>
+          ) : null}
+          {policy?.gcp_permissions?.length ? (
+            <>
+              <Code variant="inline" className="!px-2">
+                <Text variant="subtext" family="mono">
+                  {policy?.name}
+                </Text>
+              </Code>
+
+              <Text variant="subtext" weight="strong">
+                GCP custom
+              </Text>
+
+              <Modal
+                size="sm"
+                heading={<>{policy?.name} permissions</>}
+                triggerButton={{
+                  className: '!p-1',
+                  children: (
+                    <span>
+                      <Icon variant="BracketsCurlyIcon" />
+                    </span>
+                  ),
+                  size: 'sm',
+                }}
+              >
+                <div className="flex flex-col gap-2">
+                  <ClickToCopyButton
+                    className="!w-fit self-end"
+                    textToCopy={policy.gcp_permissions.join('\n')}
+                  />
+                  <CodeBlock language="text">
+                    {policy.gcp_permissions.join('\n')}
                   </CodeBlock>
                 </div>
               </Modal>
