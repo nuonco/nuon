@@ -14,6 +14,7 @@ import type { IStackDetails } from '../types'
 
 interface StackEnvelope {
   inputs: string
+  providerInputs: string
   secrets: string
   spaceliftAdminTf: string
   spaceliftBlueprintYaml: string
@@ -22,6 +23,7 @@ interface StackEnvelope {
 function parseEnvelope(contents: unknown): StackEnvelope {
   const empty: StackEnvelope = {
     inputs: '',
+    providerInputs: '',
     secrets: '',
     spaceliftAdminTf: '',
     spaceliftBlueprintYaml: '',
@@ -45,6 +47,7 @@ function parseEnvelope(contents: unknown): StackEnvelope {
     const rec = raw as Record<string, unknown>
     return {
       inputs: String(rec.inputs_tfvars ?? ''),
+      providerInputs: String(rec.provider_tfvars ?? ''),
       secrets: String(rec.secrets_tfvars ?? ''),
       spaceliftAdminTf: String(rec.spacelift_admin_tf ?? ''),
       spaceliftBlueprintYaml: String(rec.spacelift_blueprint_yaml ?? ''),
@@ -69,12 +72,14 @@ function withSpaceliftGCPPlaceholders(tfvars: string): string {
 interface IAwaitGCPDetails extends IStackDetails {
   installId?: string
   spaceliftEnabled?: boolean
+  tfProvider?: boolean
 }
 
 export const AwaitGCPDetails = ({
   stack,
   installId,
   spaceliftEnabled,
+  tfProvider = false,
 }: IAwaitGCPDetails) => {
   const version = stack?.versions?.at(0)
   const envelope = useMemo(
@@ -99,6 +104,8 @@ export const AwaitGCPDetails = ({
             terraform: (
               <TerraformTab
                 inputsTfvars={envelope.inputs}
+                providerTfvars={envelope.providerInputs}
+                tfProvider={tfProvider}
                 secretsTfvars={envelope.secrets}
                 installId={installId}
               />
@@ -117,6 +124,8 @@ export const AwaitGCPDetails = ({
       ) : (
         <TerraformTab
           inputsTfvars={envelope.inputs}
+          providerTfvars={envelope.providerInputs}
+          tfProvider={tfProvider}
           secretsTfvars={envelope.secrets}
           installId={installId}
         />
@@ -127,16 +136,25 @@ export const AwaitGCPDetails = ({
 
 interface ITerraformTab {
   inputsTfvars: string
+  providerTfvars: string
+  tfProvider: boolean
   secretsTfvars: string
   installId?: string
 }
 
 const TerraformTab = ({
   inputsTfvars,
+  providerTfvars,
+  tfProvider,
   secretsTfvars,
   installId,
 }: ITerraformTab) => {
-  const cloneCmd = `git clone https://github.com/nuonco/install-stacks.git
+  const inputsFile = tfProvider ? providerTfvars : inputsTfvars
+
+  const cloneCmd = tfProvider
+    ? `git clone -b ja/stack-sdk https://github.com/nuonco/install-stacks.git
+cd install-stacks/gcp`
+    : `git clone https://github.com/nuonco/install-stacks.git
 cd install-stacks/gcp`
 
   const backendSnippet = `terraform {
@@ -150,6 +168,17 @@ cd install-stacks/gcp`
 
   return (
     <div className="flex flex-col gap-4 pt-4">
+      {tfProvider ? (
+        <Text variant="subtext" theme="neutral">
+          This module reads its configuration from the Nuon API via the{' '}
+          <code>stack</code> Terraform provider, so the tfvars stay slim. The
+          provider isn&apos;t published to the Terraform registry yet — add a
+          dev override in <code>~/.terraformrc</code> pointing{' '}
+          <code>nuonco/stack</code> at your local build before running{' '}
+          <code>terraform init</code>.
+        </Text>
+      ) : null}
+
       <div className="flex flex-col gap-4">
         <Text variant="base" weight="strong">
           1. Clone the install stack module
@@ -196,19 +225,19 @@ cd install-stacks/gcp`
               Save this as <code>inputs.auto.tfvars</code>
             </Text>
             <span className="flex gap-2 items-center">
-              <ClickToCopyButton textToCopy={inputsTfvars} />
+              <ClickToCopyButton textToCopy={inputsFile} />
               <Button
                 size="sm"
                 variant="secondary"
                 onClick={() =>
-                  createFileDownload(inputsTfvars, 'inputs.auto.tfvars')
+                  createFileDownload(inputsFile, 'inputs.auto.tfvars')
                 }
               >
                 Download
               </Button>
             </span>
           </span>
-          <Code variant="preformated">{inputsTfvars}</Code>
+          <Code variant="preformated">{inputsFile}</Code>
         </Card>
         <Card>
           <span className="flex justify-between items-center">
