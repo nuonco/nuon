@@ -14,10 +14,17 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/stacks"
 )
 
+// GCPPolicyTemplateInput holds one policy rendered as its own custom role,
+// mirroring how AWS attaches each policy separately instead of merging.
+type GCPPolicyTemplateInput struct {
+	Name        string
+	Permissions string
+}
+
 // GCPRoleTemplateInput holds the per-role data rendered into the template.
 type GCPRoleTemplateInput struct {
 	Name           string
-	Permissions    string
+	Policies       []GCPPolicyTemplateInput
 	PredefinedRole string
 }
 
@@ -52,9 +59,9 @@ type GCPTemplateInput struct {
 	GCPProjectID string
 	GCPRegion    string
 
-	ProvisionPermissions   string
-	MaintenancePermissions string
-	DeprovisionPermissions string
+	ProvisionPolicies   []GCPPolicyTemplateInput
+	MaintenancePolicies []GCPPolicyTemplateInput
+	DeprovisionPolicies []GCPPolicyTemplateInput
 
 	ProvisionPredefinedRole   string
 	MaintenancePredefinedRole string
@@ -78,7 +85,7 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		return nil, "", errors.Wrap(err, "unable to parse gcp secrets template")
 	}
 
-	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPermissions(inputs.AppCfg)
+	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPolicies(inputs.AppCfg)
 	breakGlassRoles := extractGCPRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
 	customRoles := extractGCPRolesFromList(inputs.AppCfg.PermissionsConfig.CustomRoles)
 
@@ -123,9 +130,9 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 		TemplateInput:             inputs,
 		GCPProjectID:              gcpProjectID,
 		GCPRegion:                 gcpRegion,
-		ProvisionPermissions:      prov,
-		MaintenancePermissions:    maint,
-		DeprovisionPermissions:    deprov,
+		ProvisionPolicies:         prov,
+		MaintenancePolicies:       maint,
+		DeprovisionPolicies:       deprov,
 		ProvisionPredefinedRole:   provPredefined,
 		MaintenancePredefinedRole: maintPredefined,
 		DeprovisionPredefinedRole: deprovPredefined,
@@ -210,12 +217,8 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	return res, checksum, nil
 }
 
-// extractGCPStandardPermissions reads GCP IAM permissions for the standard roles (provision, maintenance, deprovision).
-func extractGCPStandardPermissions(appCfg *app.AppConfig) (provision, maintenance, deprovision, provPredefined, maintPredefined, deprovPredefined string) {
-	provision = "[]"
-	maintenance = "[]"
-	deprovision = "[]"
-
+// extractGCPStandardPolicies reads GCP IAM policies for the standard roles (provision, maintenance, deprovision).
+func extractGCPStandardPolicies(appCfg *app.AppConfig) (provision, maintenance, deprovision []GCPPolicyTemplateInput, provPredefined, maintPredefined, deprovPredefined string) {
 	if appCfg == nil {
 		return
 	}
@@ -225,33 +228,17 @@ func extractGCPStandardPermissions(appCfg *app.AppConfig) (provision, maintenanc
 			continue
 		}
 
-		perms, predefinedRole := extractRolePermissions(role)
-		if len(perms) == 0 && predefinedRole == "" {
-			continue
-		}
-
-		if len(perms) > 0 {
-			b, err := json.Marshal(perms)
-			if err != nil {
-				continue
-			}
-
-			switch role.Type {
-			case app.AWSIAMRoleTypeRunnerProvision:
-				provision = string(b)
-			case app.AWSIAMRoleTypeRunnerMaintenance:
-				maintenance = string(b)
-			case app.AWSIAMRoleTypeRunnerDeprovision:
-				deprovision = string(b)
-			}
-		}
+		policies, predefinedRole := extractRolePolicies(role)
 
 		switch role.Type {
 		case app.AWSIAMRoleTypeRunnerProvision:
+			provision = policies
 			provPredefined = predefinedRole
 		case app.AWSIAMRoleTypeRunnerMaintenance:
+			maintenance = policies
 			maintPredefined = predefinedRole
 		case app.AWSIAMRoleTypeRunnerDeprovision:
+			deprovision = policies
 			deprovPredefined = predefinedRole
 		}
 	}
@@ -268,23 +255,14 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 			continue
 		}
 
-		perms, predefinedRole := extractRolePermissions(role)
-		if len(perms) == 0 && predefinedRole == "" {
+		policies, predefinedRole := extractRolePolicies(role)
+		if len(policies) == 0 && predefinedRole == "" {
 			continue
-		}
-
-		permStr := "[]"
-		if len(perms) > 0 {
-			b, err := json.Marshal(perms)
-			if err != nil {
-				continue
-			}
-			permStr = string(b)
 		}
 
 		result = append(result, GCPRoleTemplateInput{
 			Name:           role.Name,
-			Permissions:    permStr,
+			Policies:       policies,
 			PredefinedRole: predefinedRole,
 		})
 	}
@@ -292,14 +270,34 @@ func extractGCPRolesFromList(roles []app.AppAWSIAMRoleConfig) []GCPRoleTemplateI
 	return result
 }
 
-func extractRolePermissions(role app.AppAWSIAMRoleConfig) ([]string, string) {
-	var perms []string
+// extractRolePolicies keeps each policy separate so the stack creates one
+// custom role per policy, matching the AWS one-policy-one-attachment shape.
+func extractRolePolicies(role app.AppAWSIAMRoleConfig) ([]GCPPolicyTemplateInput, string) {
+	var policies []GCPPolicyTemplateInput
 	var predefinedRole string
-	for _, policy := range role.Policies {
-		perms = append(perms, policy.GCPPermissions...)
+	for i, policy := range role.Policies {
 		if policy.GCPPredefinedRole != "" {
 			predefinedRole = policy.GCPPredefinedRole
 		}
+
+		if len(policy.GCPPermissions) == 0 {
+			continue
+		}
+
+		b, err := json.Marshal(policy.GCPPermissions)
+		if err != nil {
+			continue
+		}
+
+		name := policy.Name
+		if name == "" {
+			name = fmt.Sprintf("policy-%d", i)
+		}
+
+		policies = append(policies, GCPPolicyTemplateInput{
+			Name:        name,
+			Permissions: string(b),
+		})
 	}
-	return perms, predefinedRole
+	return policies, predefinedRole
 }

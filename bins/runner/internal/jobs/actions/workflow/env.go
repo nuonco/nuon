@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/nuonco/nuon/pkg/aws/credentials"
+	gcpcredentials "github.com/nuonco/nuon/pkg/gcp/credentials"
 	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/kube/config"
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -43,6 +44,19 @@ func (h *handler) getBuiltInEnv(ctx context.Context, cfg *models.AppActionWorkfl
 		}
 
 		env = generics.MergeMap(env, awsEnv)
+	}
+
+	if h.state.auth.GCPAuth != nil {
+		gcpEnv, err := gcpcredentials.FetchEnv(ctx, h.state.auth.GCPAuth)
+		if err != nil {
+			return nil, errors.Wrap(err, "unable to get GCP credentials")
+		}
+
+		if h.state.auth.GCPAuth.ImpersonateServiceAccount != "" {
+			gcpEnv["CLOUDSDK_AUTH_IMPERSONATE_SERVICE_ACCOUNT"] = h.state.auth.GCPAuth.ImpersonateServiceAccount
+		}
+
+		env = generics.MergeMap(env, gcpEnv)
 	}
 
 	return env, nil
