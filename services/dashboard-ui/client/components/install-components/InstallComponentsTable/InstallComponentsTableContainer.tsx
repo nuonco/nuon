@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
+import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTypeFilter'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
@@ -30,6 +31,7 @@ export const InstallComponentsTableContainer = ({
       searchParams.get('q'),
       searchParams.get('types'),
       searchParams.get('labels'),
+      searchParams.get('synced'),
     ],
     queryFn: () =>
       getInstallComponents({
@@ -40,6 +42,7 @@ export const InstallComponentsTableContainer = ({
         q: searchParams.get('q') || undefined,
         types: searchParams.get('types') || undefined,
         labels: searchParams.get('labels') || undefined,
+        orphans: searchParams.get('synced') === 'false' || undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -99,6 +102,7 @@ export const InstallComponentsTableContainer = ({
             queryKey={['component-label-keys', org.id, install?.app_id]}
             queryFn={() => getComponentLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
+          <SyncedFilterContainer />
           <ComponentTypeFilterDropdown />
         </div>
       }

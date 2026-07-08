@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallRunbooks } from '@/lib'
@@ -19,9 +20,10 @@ export const InstallRunbooksTableContainer = ({
   const { install } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
+  const orphans = searchParams.get('synced') === 'false' || undefined
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['install-runbooks', org?.id, install?.id, offset, q],
+    queryKey: ['install-runbooks', org?.id, install?.id, offset, q, orphans],
     queryFn: () =>
       getInstallRunbooks({
         orgId: org!.id,
@@ -29,6 +31,7 @@ export const InstallRunbooksTableContainer = ({
         offset,
         limit: LIMIT,
         q,
+        orphans,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,
@@ -44,6 +47,7 @@ export const InstallRunbooksTableContainer = ({
         install?.app?.label_colors
       )}
       isLoading={isLoading}
+      filterActions={<SyncedFilterContainer />}
       pagination={{
         hasNext: result?.pagination?.hasNext ?? false,
         offset,

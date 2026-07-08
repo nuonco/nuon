@@ -169,15 +169,17 @@ const columns: ColumnDef<TInstallRunbookRow>[] = [
 interface IInstallRunbooksTable {
   data: TInstallRunbookRow[]
   isLoading?: boolean
+  filterActions?: ReactNode
   pagination: { hasNext?: boolean; offset: number; limit: number }
 }
 
-export const InstallRunbooksTable = ({ data, isLoading, pagination }: IInstallRunbooksTable) => {
+export const InstallRunbooksTable = ({ data, isLoading, filterActions, pagination }: IInstallRunbooksTable) => {
   return (
     <Table<TInstallRunbookRow>
       columns={columns}
       data={data}
       isLoading={isLoading}
+      filterActions={filterActions}
       emptyStateProps={{
         variant: 'actions',
         emptyTitle: 'No runbooks yet',

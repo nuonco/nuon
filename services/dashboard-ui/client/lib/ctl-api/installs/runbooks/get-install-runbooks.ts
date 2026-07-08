@@ -46,15 +46,17 @@ export async function getInstallRunbooks({
   orgId,
   limit,
   offset,
+  orphans,
   q,
 }: {
   installId: string
   orgId: string
+  orphans?: boolean
   q?: string
 } & TPaginationParams) {
   return api<TInstallRunbook[]>({
     orgId,
-    path: `installs/${installId}/runbooks${buildQueryParams({ limit, offset, q })}`,
+    path: `installs/${installId}/runbooks${buildQueryParams({ limit, offset, q, orphans })}`,
     paginated: true,
   })
 }
