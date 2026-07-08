@@ -179,6 +179,30 @@ func (e *Executor) Execute(ctx context.Context, job *models.AppRunnerJob, execut
 	}
 	ctx = runnerctx.SetLogger(ctx, l)
 
+	if isSandboxableBuildHandler(handler) {
+		sandboxMode, err := e.getSandboxMode(ctx, job.ID)
+		if err != nil {
+			jobErr = fmt.Errorf("unable to check sandbox mode: %w", err)
+			_, _ = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+				Status:            statusForError(jobErr),
+				StatusDescription: jobErr.Error(),
+			})
+			return jobErr
+		}
+		if sandboxMode != nil {
+			l.Info("sandbox mode active for control-plane build; skipping real build execution")
+			if err := e.executeSandboxBuild(ctx, job, execution, sandboxMode); err != nil {
+				jobErr = fmt.Errorf("sandbox build: %w", err)
+				_, _ = e.client.UpdateJobExecution(ctx, job.ID, execution.ID, &models.ServiceUpdateRunnerJobExecutionRequest{
+					Status:            statusForError(jobErr),
+					StatusDescription: jobErr.Error(),
+				})
+				return jobErr
+			}
+			return nil
+		}
+	}
+
 	steps := []struct {
 		name   string
 		status models.AppRunnerJobExecutionStatus
