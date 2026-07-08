@@ -181,11 +181,14 @@ func (s *Signal) execBuild(ctx workflow.Context, compID, buildID string, current
 	}
 
 	cloudProvider, _ := activities.AwaitGetCloudProvider(ctx, &activities.GetCloudProviderRequest{})
+	managementIAMRoleARN, _ := activities.AwaitGetManagementIAMRoleARN(ctx, &activities.GetManagementIAMRoleARNRequest{})
 	runPlan, err := plan.AwaitCreateComponentBuildPlan(ctx, &plan.CreateComponentBuildPlanRequest{
-		ComponentID:      comp.ID,
-		ComponentBuildID: buildID,
-		WorkflowID:       fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
-		CloudProvider:    cloudProvider,
+		ComponentID:          comp.ID,
+		ComponentBuildID:     buildID,
+		WorkflowID:           fmt.Sprintf("%s-create-build-plan", workflow.GetInfo(ctx).WorkflowExecution.ID),
+		CloudProvider:        cloudProvider,
+		ManagementIAMRoleARN: managementIAMRoleARN,
+		IsControlPlaneBuild:  runnerJob.Executor == app.RunnerJobExecutorControlPlane,
 	})
 	if err != nil {
 		s.updateBuildStatus(ctx, buildID, app.ComponentBuildStatusError, "unable to get component build plan")
