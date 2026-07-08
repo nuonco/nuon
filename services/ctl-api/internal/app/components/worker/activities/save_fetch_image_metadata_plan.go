@@ -90,7 +90,7 @@ func (a *Activities) getSourceRepository(cfg *app.ExternalImageComponentConfig, 
 		// management account, so hop through the management role first (the
 		// identity the org runner presented as). Org-runner jobs run in the
 		// customer account and assume the pull role directly.
-		if isControlPlaneBuild && a.cfg.CloudProvider == "aws" && a.cfg.ManagementIAMRoleARN != "" {
+		if isControlPlaneBuild && a.cfg.IsAWS() && a.cfg.ManagementIAMRoleARN != "" {
 			assumeRole.TwoStepConfig = &assumerole.TwoStepConfig{
 				IAMRoleARN: a.cfg.ManagementIAMRoleARN,
 			}
