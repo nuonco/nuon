@@ -4043,6 +4043,8 @@ export interface components {
       version?: string;
     };
     "app.Install": {
+      app_branch?: components["schemas"]["app.AppBranch"];
+      app_branch_id?: string;
       app_config_id?: string;
       app_id?: string;
       app_runner_config?: components["schemas"]["app.AppRunnerConfig"];
@@ -6526,6 +6528,10 @@ export interface components {
       /** @description URL is the full artifact URL (e.g., registry.nuon.co/org_id/app_id) */
       url?: string;
     };
+    "plantypes.OCISource": {
+      registry?: components["schemas"]["configs.OCIRegistryRepository"];
+      tag?: string;
+    };
     "plantypes.PulumiBackend": {
       config?: {
         [key: string]: string;
@@ -6596,6 +6602,7 @@ export interface components {
       install_id?: string;
       kyverno_policies_dir?: string;
       local_archive?: components["schemas"]["plantypes.TerraformLocalArchive"];
+      oci_source?: components["schemas"]["plantypes.OCISource"];
       policies?: {
         [key: string]: string;
       };

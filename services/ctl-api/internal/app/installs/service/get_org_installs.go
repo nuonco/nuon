@@ -65,6 +65,7 @@ func (s *service) getOrgInstalls(ctx *gin.Context, orgID, q string, lbls labels.
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
+		Preload("AppBranch").
 		Preload("AppRunnerConfig").
 		Preload("App").
 		Preload("App.AppRunnerConfigs", func(db *gorm.DB) *gorm.DB {

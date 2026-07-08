@@ -175,6 +175,35 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 		return
 	}
 
+	// Collect label selectors and explicit install IDs for validation
+	var labelSelectors []*labels.Selector
+	var explicitInstallIDs []string
+	for _, g := range req.InstallGroups {
+		if g.LabelSelector != nil && len(g.LabelSelector.MatchLabels) > 0 {
+			labelSelectors = append(labelSelectors, g.LabelSelector)
+		}
+		explicitInstallIDs = append(explicitInstallIDs, g.InstallIDs...)
+	}
+
+	if len(labelSelectors) > 0 {
+		if err := s.helpers.ValidateBranchConfigLabelUniqueness(ctx, appID, appBranchID, labelSelectors); err != nil {
+			ctx.Error(err)
+			return
+		}
+
+		if err := s.helpers.ValidateBranchConfigInstallsNotOnOtherBranch(ctx, appID, appBranchID, labelSelectors); err != nil {
+			ctx.Error(err)
+			return
+		}
+	}
+
+	if len(explicitInstallIDs) > 0 {
+		if err := s.helpers.ValidateInstallIDsNotOnOtherBranch(ctx, appBranchID, explicitInstallIDs); err != nil {
+			ctx.Error(err)
+			return
+		}
+	}
+
 	// Convert request install groups to model
 	installGroups := make([]app.AppBranchInstallGroup, len(req.InstallGroups))
 	for i, g := range req.InstallGroups {
@@ -201,6 +230,15 @@ func (s *service) CreateAppBranchConfig(ctx *gin.Context) {
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to create app branch config: %w", err))
 		return
+	}
+
+	if len(explicitInstallIDs) > 0 {
+		for _, installID := range explicitInstallIDs {
+			var install app.Install
+			if err := s.db.WithContext(ctx).First(&install, "id = ?", installID).Error; err == nil {
+				s.helpers.SyncInstallBranchConnection(ctx, &install, appBranchID)
+			}
+		}
 	}
 
 	ctx.JSON(http.StatusCreated, config)

@@ -12,6 +12,7 @@ import { Text } from '@/components/common/Text'
 import { Time } from '@/components/common/Time'
 import { InstallStatuses } from '@/components/installs/InstallStatuses'
 import { QuickManagementDropdown } from '@/components/installs/management/QuickManagementDropdown'
+import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import type { TCloudPlatform, TInstall } from '@/types'
 
@@ -58,6 +59,7 @@ const ActionSkeleton = () => (
 export type InstallRow = {
   action: ReactNode
   activity: ReactNode
+  branch: ReactNode
   updatedAt: string
   appHref: string
   appName: string
@@ -164,6 +166,9 @@ export function parseInstallsToTableData(
         </span>
       )
     })(),
+    branch: install.app_branch?.name ? (
+      <Badge size="sm" theme="brand">{install.app_branch.name}</Badge>
+    ) : null,
     activity: <ActivityCell install={install} />,
     updatedAt: install?.updated_at ?? '',
     action: (
@@ -226,6 +231,12 @@ const columns: ColumnDef<InstallRow>[] = [
     cell: (info) => info.getValue() as ReactNode,
   },
   {
+    enableSorting: false,
+    accessorKey: 'branch',
+    header: 'Branch',
+    cell: (info) => info.getValue() as ReactNode,
+  },
+  {
     id: 'activity',
     accessorKey: 'updatedAt',
     header: 'Activity',
@@ -285,6 +296,7 @@ export const InstallsTableSkeleton = () => {
     statuses: <StatusesSkeleton />,
     platform: <PlatformSkeleton />,
     labels: <Skeleton height="14px" width="100px" />,
+    branch: <Skeleton height="14px" width="60px" />,
     activity: <Skeleton height="14px" width="80px" />,
     updatedAt: '',
     action: '',
@@ -324,6 +336,12 @@ export const InstallsTableSkeleton = () => {
       enableSorting: false,
       accessorKey: 'labels',
       header: 'Labels',
+      cell: (info) => info.getValue() as ReactNode,
+    },
+    {
+      enableSorting: false,
+      accessorKey: 'branch',
+      header: 'Branch',
       cell: (info) => info.getValue() as ReactNode,
     },
     {

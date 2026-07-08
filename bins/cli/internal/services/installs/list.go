@@ -52,6 +52,7 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 		{
 			"NAME",
 			"ID",
+			"BRANCH",
 			"SANDBOX",
 			"RUNNER",
 			"COMPONENTS",
@@ -68,9 +69,14 @@ func (s *Service) List(ctx context.Context, appID string, offset, limit int, lab
 				install.Name = " " + install.Name
 			}
 		}
+		branchName := "-"
+		if install.AppBranch != nil && install.AppBranch.Name != "" {
+			branchName = install.AppBranch.Name
+		}
 		data = append(data, []string{
 			install.Name,
 			install.ID,
+			branchName,
 			install.SandboxStatus,
 			install.RunnerStatus,
 			install.CompositeComponentStatus,
