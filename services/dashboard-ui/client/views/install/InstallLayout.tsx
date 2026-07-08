@@ -1,5 +1,4 @@
 import { Outlet, useParams, useMatch } from 'react-router'
-import { Badge } from '@/components/common/Badge'
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -168,9 +167,7 @@ const InstallTemplate = () => {
                   <Text variant="h3" weight="stronger" level={1}>
                     {install.name}
                   </Text>
-                  {install.app_branch?.name && (
-                    <Badge size="sm" theme="brand">{install.app_branch.name}</Badge>
-                  )}
+
                   {install.labels &&
                     Object.entries(install.labels).map(([key, value]) => (
                       <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
@@ -200,6 +197,18 @@ const InstallTemplate = () => {
                       <span className="flex items-center gap-1">
                         <Icon variant="FileCodeIcon" /> Install Config
                       </span>
+                    </Text>
+                  </LabeledValue>
+                )}
+                {install?.app_branch && (
+                  <LabeledValue label="Branch">
+                    <Text variant="subtext">
+                      <Link href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}>
+                        <span className="flex items-center gap-1">
+                          <Icon variant="GitBranchIcon" size={14} />
+                          {install.app_branch.name}
+                        </span>
+                      </Link>
                     </Text>
                   </LabeledValue>
                 )}
