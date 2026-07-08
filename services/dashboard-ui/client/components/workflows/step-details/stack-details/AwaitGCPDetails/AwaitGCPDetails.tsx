@@ -54,6 +54,18 @@ function parseEnvelope(contents: unknown): StackEnvelope {
   return empty
 }
 
+// Unlike `terraform apply`, which prompts for missing required vars, Spacelift
+// just uploads the file as-is — so surface these at the top as visible blanks.
+function withSpaceliftGCPPlaceholders(tfvars: string): string {
+  const rest = tfvars
+    .split('\n')
+    .filter((line) => !/^\s*gcp_project_id\s*=/.test(line))
+    .filter((line) => !/^\s*gcp_region\s*=/.test(line))
+    .join('\n')
+
+  return `gcp_project_id = ""\ngcp_region     = ""\n\n${rest}`
+}
+
 interface IAwaitGCPDetails extends IStackDetails {
   installId?: string
   spaceliftEnabled?: boolean
@@ -309,6 +321,11 @@ const TerraformSubTab = ({
   secretsTfvars,
   installId,
 }: ITerraformSubTab) => {
+  const spaceliftInputsTfvars = useMemo(
+    () => withSpaceliftGCPPlaceholders(inputsTfvars),
+    [inputsTfvars]
+  )
+
   return (
     <div className="flex flex-col gap-4 pt-4">
       <div className="flex flex-col gap-4">
@@ -322,7 +339,7 @@ const TerraformSubTab = ({
             onClick={() => {
               const zipped = zipSync({
                 'spacelift.tf': strToU8(adminTf),
-                'inputs.auto.tfvars': strToU8(inputsTfvars),
+                'inputs.auto.tfvars': strToU8(spaceliftInputsTfvars),
                 'secrets.auto.tfvars': strToU8(secretsTfvars),
               })
               createFileDownload(
@@ -340,9 +357,10 @@ const TerraformSubTab = ({
           <code>space_id</code> in <code>spacelift.tf</code> to the Spacelift
           space this stack should live in (already have your own GCP
           integration for this stack? set <code>attach_gcp_service_account</code>{' '}
-          to <code>false</code> instead), fill in <code>inputs.auto.tfvars</code>,
-          and replace the placeholders in <code>secrets.auto.tfvars</code> with
-          your real secrets.
+          to <code>false</code> instead), fill in <code>inputs.auto.tfvars</code>
+          (including <code>gcp_project_id</code>/<code>gcp_region</code> at the
+          top), and replace the placeholders in{' '}
+          <code>secrets.auto.tfvars</code> with your real secrets.
         </Text>
         <Card>
           <span className="flex justify-between items-center">
@@ -368,19 +386,22 @@ const TerraformSubTab = ({
               Save this as <code>inputs.auto.tfvars</code>
             </Text>
             <span className="flex gap-2 items-center">
-              <ClickToCopyButton textToCopy={inputsTfvars} />
+              <ClickToCopyButton textToCopy={spaceliftInputsTfvars} />
               <Button
                 size="sm"
                 variant="secondary"
                 onClick={() =>
-                  createFileDownload(inputsTfvars, 'inputs.auto.tfvars')
+                  createFileDownload(
+                    spaceliftInputsTfvars,
+                    'inputs.auto.tfvars'
+                  )
                 }
               >
                 Download
               </Button>
             </span>
           </span>
-          <Code variant="preformated">{inputsTfvars}</Code>
+          <Code variant="preformated">{spaceliftInputsTfvars}</Code>
         </Card>
         <Card>
           <span className="flex justify-between items-center">
