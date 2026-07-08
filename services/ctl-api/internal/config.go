@@ -91,6 +91,7 @@ func init() {
 	config.RegisterDefault("temporal_blob_cache_max_size_mb", 1024)
 	config.RegisterDefault("temporal_blob_s3_timeout", "30s")
 
+	config.RegisterDefault("auto_enabled_features", "")
 	config.RegisterDefault("enable_httpbin_debug_endpoints", false)
 	config.RegisterDefault("enable_endpoint_auditing", false)
 	config.RegisterDefault("org_default_user_journeys_enabled", false)
@@ -289,7 +290,8 @@ type Config struct {
 	// building on the control plane (control-plane-builds feature on) and skip
 	// org runner provisioning (org-runner feature off). Installs are unaffected
 	// since they use their own install runner groups.
-	ControlPlaneBuildsDefaultEnabled bool `config:"control_plane_builds_default_enabled"`
+	ControlPlaneBuildsDefaultEnabled bool   `config:"control_plane_builds_default_enabled"`
+	AutoEnabledFeatures              string `config:"auto_enabled_features"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`

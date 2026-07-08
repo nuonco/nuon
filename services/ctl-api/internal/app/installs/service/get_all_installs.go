@@ -58,6 +58,7 @@ func (s *service) getAllInstalls(ctx *gin.Context, limitVal int, orgTyp string) 
 		Preload("AWSAccount").
 		Preload("AzureAccount").
 		Preload("GCPAccount").
+		Preload("AppBranch").
 		Preload("App").
 		Preload("App.Org").
 		Preload("App.AppSandboxConfigs").

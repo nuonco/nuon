@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/common/Badge'
 import { Button, type IButtonAsButton } from '@/components/common/Button'
 import { Icon } from '@/components/common/Icon'
@@ -12,9 +12,55 @@ import { useOrg } from '@/hooks/use-org'
 import { useSurfaces } from '@/hooks/use-surfaces'
 import { useToast } from '@/hooks/use-toast'
 import { useVcsRepoBrowser } from '@/hooks/use-vcs-repo-browser'
-import { createAppBranch, createBranchConfig } from '@/lib'
-import type { TAPIError, TCreateAppBranchRequest } from '@/types'
+import { createAppBranch, createBranchConfig, getAppBranches } from '@/lib'
+import type { TAPIError, TAppBranchConfig, TCreateAppBranchRequest, TVCSConnectionRepo } from '@/types'
 import { CreateBranchModal } from './CreateBranchModal'
+
+function extractRepoFromConfig(config: TAppBranchConfig): {
+  repo: TVCSConnectionRepo
+  branch: string
+  directory: string
+  vcsConnectionId?: string
+} | null {
+  if (config.connected_github_vcs_config?.repo) {
+    const fullName = config.connected_github_vcs_config.repo
+    const parts = fullName.split('/')
+    return {
+      repo: {
+        id: 0,
+        name: parts.length > 1 ? parts.slice(1).join('/') : fullName,
+        full_name: fullName,
+        private: true,
+        fork: false,
+        html_url: `https://github.com/${fullName}`,
+        default_branch: config.connected_github_vcs_config.branch || 'main',
+        updated_at: '',
+      },
+      branch: config.connected_github_vcs_config.branch || '',
+      directory: config.connected_github_vcs_config.directory || '.',
+      vcsConnectionId: config.connected_github_vcs_config.vcs_connection_id,
+    }
+  }
+  if (config.public_git_vcs_config?.repo) {
+    const fullName = config.public_git_vcs_config.repo
+    const parts = fullName.split('/')
+    return {
+      repo: {
+        id: 0,
+        name: parts.length > 1 ? parts.slice(1).join('/') : fullName,
+        full_name: fullName,
+        private: false,
+        fork: false,
+        html_url: `https://github.com/${fullName}`,
+        default_branch: config.public_git_vcs_config.branch || 'main',
+        updated_at: '',
+      },
+      branch: config.public_git_vcs_config.branch || '',
+      directory: config.public_git_vcs_config.directory || '.',
+    }
+  }
+  return null
+}
 
 type ICreateBranchModalContainer = IModal
 
@@ -31,11 +77,59 @@ export const CreateBranchModalContainer = ({
   const vcsConnections = org?.vcs_connections || []
   const [vcsConnectionId, setVcsConnectionId] = useState(vcsConnections[0]?.id || '')
 
+  const { data: existingBranches } = useQuery({
+    queryKey: ['app-branches', org?.id, app?.id, 0],
+    queryFn: () => getAppBranches({ appId: app!.id, orgId: org!.id, limit: 20, offset: 0 }),
+    enabled: !!org?.id && !!app?.id,
+  })
+
+  const existingRepoInfo = useMemo(() => {
+    for (const branch of existingBranches?.data ?? []) {
+      for (const config of branch.configs ?? []) {
+        const info = extractRepoFromConfig(config)
+        if (info) return info
+      }
+    }
+    return null
+  }, [existingBranches])
+
   const vcsBrowser = useVcsRepoBrowser({
     orgId: org.id,
     vcsConnectionId,
     enabled: !!vcsConnectionId,
   })
+
+  const [didAutofill, setDidAutofill] = useState(false)
+
+  useEffect(() => {
+    if (didAutofill || !existingRepoInfo) return
+
+    if (existingRepoInfo.vcsConnectionId) {
+      setVcsConnectionId(existingRepoInfo.vcsConnectionId)
+    } else {
+      const repoOwner = existingRepoInfo.repo.full_name.split('/')[0]
+      const match = vcsConnections.find(
+        (c) => c.github_account_name?.toLowerCase() === repoOwner.toLowerCase()
+      )
+      if (match) {
+        setVcsConnectionId(match.id)
+      }
+    }
+
+    vcsBrowser.setSelectedRepo(existingRepoInfo.repo)
+    if (existingRepoInfo.branch) {
+      vcsBrowser.setSelectedBranch(existingRepoInfo.branch)
+    }
+    setDidAutofill(true)
+  }, [existingRepoInfo, didAutofill, vcsConnections, vcsBrowser.setSelectedRepo, vcsBrowser.setSelectedBranch])
+
+  const repos = useMemo(() => {
+    const list = vcsBrowser.repos ?? []
+    if (vcsBrowser.selectedRepo && !list.some((r) => r.full_name === vcsBrowser.selectedRepo!.full_name)) {
+      return [vcsBrowser.selectedRepo, ...list]
+    }
+    return list
+  }, [vcsBrowser.repos, vcsBrowser.selectedRepo])
 
   const { mutate, isPending: isLoading, error: submitError } = useMutation({
     mutationFn: async (
@@ -57,7 +151,6 @@ export const CreateBranchModalContainer = ({
     ) => {
       const branch = await createAppBranch({ appId: app.id, body: { name: body.name }, orgId: org.id })
 
-      // Create the branch config with VCS settings if provided
       if (body.connected_github_vcs_config) {
         await createBranchConfig({
           appId: app.id,
@@ -104,9 +197,9 @@ export const CreateBranchModalContainer = ({
   return (
     <CreateBranchModal
       vcsConnections={vcsConnections}
-      repos={vcsBrowser.repos}
+      repos={repos}
       branches={vcsBrowser.branches}
-      loadingRepos={vcsBrowser.loadingRepos}
+      loadingRepos={vcsBrowser.loadingRepos && !didAutofill}
       loadingBranches={vcsBrowser.loadingBranches}
       reposError={vcsBrowser.reposError}
       branchesError={vcsBrowser.branchesError}
@@ -116,6 +209,7 @@ export const CreateBranchModalContainer = ({
       onRepoChange={vcsBrowser.setSelectedRepo}
       selectedBranch={vcsBrowser.selectedBranch}
       onBranchChange={vcsBrowser.setSelectedBranch}
+      initialDirectory={existingRepoInfo?.directory}
       isSubmitting={isLoading}
       submitError={submitError}
       onSubmit={(body) => mutate(body)}

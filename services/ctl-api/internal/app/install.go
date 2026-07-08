@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 
+	"github.com/nuonco/nuon/pkg/generics"
 	"github.com/nuonco/nuon/pkg/labels"
 	"github.com/nuonco/nuon/pkg/lifecyclephase"
 	"github.com/nuonco/nuon/pkg/shortid/domains"
@@ -45,6 +46,11 @@ type Install struct {
 
 	AppConfigID string    `json:"app_config_id,omitzero" temporaljson:"app_config_id,omitzero,omitempty"`
 	AppConfig   AppConfig `json:"-" temporaljson:"app_config,omitzero,omitempty"`
+
+	AppBranchID generics.NullString `json:"app_branch_id,omitzero" gorm:"index" swaggertype:"string" temporaljson:"app_branch_id,omitzero,omitempty"`
+	AppBranch   *AppBranch          `json:"app_branch,omitempty" temporaljson:"app_branch,omitzero,omitempty"`
+
+	AppBranchConnections []InstallAppBranchConnection `json:"app_branch_connections,omitzero,omitempty" gorm:"constraint:OnDelete:CASCADE;" temporaljson:"app_branch_connections,omitzero,omitempty"`
 
 	AppSandboxConfigID string           `json:"-" swaggerignore:"true" temporaljson:"app_sandbox_config_id,omitzero,omitempty"`
 	AppSandboxConfig   AppSandboxConfig `json:"app_sandbox_config,omitzero" temporaljson:"app_sandbox_config,omitzero,omitempty"`

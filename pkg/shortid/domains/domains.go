@@ -42,6 +42,10 @@ func NewInstallGroupRunID() string {
 	return shortid.NewNanoID("igr")
 }
 
+func NewInstallAppBranchConnectionID() string {
+	return shortid.NewNanoID("ibc")
+}
+
 func NewAccountID() string {
 	return shortid.NewNanoID("acc")
 }

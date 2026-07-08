@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -69,6 +70,11 @@ func (s *service) getAppBranches(ctx *gin.Context, orgID, appID string) ([]app.A
 			"WHERE w.owner_type = 'app_branches' AND w.owner_id = app_branches.id AND w.deleted_at = 0) AS workflow_count",
 			(&app.Workflow{}).TableName())).
 		Scopes(scopes.WithOffsetPagination).
+		Preload("Configs", func(db *gorm.DB) *gorm.DB {
+			return db.Order("app_branch_configs_view_v1.created_at DESC").Limit(1)
+		}).
+		Preload("Configs.ConnectedGithubVCSConfig").
+		Preload("Configs.PublicGitVCSConfig").
 		Where(app.AppBranch{
 			OrgID: orgID,
 			AppID: appID,

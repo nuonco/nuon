@@ -66,5 +66,12 @@ func (s *service) RemoveInstallLabels(ctx *gin.Context) {
 		return
 	}
 
+	matches, _ := s.appsHelpers.FindBranchesMatchingLabels(ctx, install.AppID, install.Labels)
+	if len(matches) == 0 {
+		s.appsHelpers.DeactivateInstallBranchConnections(ctx, install.ID)
+	} else if len(matches) == 1 {
+		s.appsHelpers.SyncInstallBranchConnection(ctx, &install, matches[0].Branch.ID)
+	}
+
 	ctx.JSON(http.StatusOK, install)
 }
