@@ -77,6 +77,7 @@ func (s *service) RegisterPublicRoutes(api *gin.Engine) error {
 	api.GET("/v1/runners/:runner_id", s.GetRunnerCtlAPI)
 	api.GET("/v1/runners/:runner_id/connected", s.GetRunnerConnectStatus)
 	api.GET("/v1/runners/:runner_id/jobs", s.GetRunnerJobsCtlAPI)
+	api.GET("/v1/runner-jobs", s.ListRunnerJobsCtlAPI)
 	api.GET("/v1/runner-jobs/:runner_job_id/plan", s.GetRunnerJobPlanPublic)
 	api.GET("/v1/runner-jobs/:runner_job_id/composite-plan", s.GetRunnerJobCompositePlan)
 	api.POST("/v1/runner-jobs/:runner_job_id/cancel", s.CancelRunnerJob)
