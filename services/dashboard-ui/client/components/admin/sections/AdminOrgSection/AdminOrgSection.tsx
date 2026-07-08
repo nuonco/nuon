@@ -46,6 +46,9 @@ export const AdminOrgSection = ({
   runnerLoading,
 }: IAdminOrgSection) => {
   const runnerId = runner?.id ?? ''
+  // Orgs that build on the control plane have no org runner, so hide the
+  // (empty) Org Runner ID card for them.
+  const controlPlaneBuilds = Boolean(org?.features?.['control-plane-builds'])
   // Destructive org-level actions require typing the org's name (falling back
   // to the org id) so admins must explicitly confirm the exact target org.
   const orgConfirmText = org?.name || orgId
@@ -54,12 +57,14 @@ export const AdminOrgSection = ({
     <AdminMetadataPanel>
       <div className="flex justify-between items-start gap-4">
         <div className="flex flex-col gap-4">
-          <AdminInfoCard
-            title="Org Runner ID"
-            value={runner?.id}
-            copyable
-            loading={runnerLoading}
-          />
+          {!controlPlaneBuilds && (
+            <AdminInfoCard
+              title="Org Runner ID"
+              value={runner?.id}
+              copyable
+              loading={runnerLoading}
+            />
+          )}
           <AdminRunnersCard orgId={orgId} />
         </div>
         <div className="flex-shrink-0">

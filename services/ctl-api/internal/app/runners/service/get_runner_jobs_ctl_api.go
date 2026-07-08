@@ -53,6 +53,33 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 		return
 	}
 
+	filters, err := parseRunnerJobFilters(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+	executor := app.RunnerJobExecutor(ctx.Query("executor"))
+
+	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, org.ID, runnerID, filters.statuses, filters.groups, executor, filters.limit)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, runnerJobs)
+}
+
+// runnerJobFilters holds the group/status/limit query filters shared by the
+// runner-scoped and org-scoped runner job listing endpoints.
+type runnerJobFilters struct {
+	groups   []app.RunnerJobGroup
+	statuses []app.RunnerJobStatus
+	limit    int
+}
+
+// parseRunnerJobFilters reads the group(s), status(es) and limit query params
+// used to filter runner jobs.
+func parseRunnerJobFilters(ctx *gin.Context) (runnerJobFilters, error) {
 	groups := []app.RunnerJobGroup{}
 	groupStr := ctx.DefaultQuery("group", "")
 
@@ -93,21 +120,17 @@ func (s *service) GetRunnerJobsCtlAPI(ctx *gin.Context) {
 	limitStr := ctx.DefaultQuery("limit", "60")
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		ctx.Error(stderr.ErrUser{
+		return runnerJobFilters{}, stderr.ErrUser{
 			Err:         fmt.Errorf("invalid limit %s: %w", limitStr, err),
 			Description: "invalid limit",
-		})
-		return
-	}
-	executor := app.RunnerJobExecutor(ctx.Query("executor"))
-
-	runnerJobs, err := s.getRunnerJobsCtlAPI(ctx, org.ID, runnerID, statuses, groups, executor, limit)
-	if err != nil {
-		ctx.Error(err)
-		return
+		}
 	}
 
-	ctx.JSON(http.StatusOK, runnerJobs)
+	return runnerJobFilters{
+		groups:   groups,
+		statuses: statuses,
+		limit:    limit,
+	}, nil
 }
 
 func (s *service) getRunnerJobsCtlAPI(ctx *gin.Context, orgID string, runnerID string, statuses []app.RunnerJobStatus, groups []app.RunnerJobGroup, executor app.RunnerJobExecutor, limit int) ([]*app.RunnerJob, error) {
