@@ -8,19 +8,19 @@ export const getInstallActionsLatestRuns = ({
   limit,
   offset,
   orgId,
-  orphans,
   q,
+  synced,
   trigger_types,
 }: {
   installId: string
   labels?: string
   orgId: string
-  orphans?: boolean
   q?: string
+  synced?: boolean
   trigger_types?: string
 } & TPaginationParams) =>
   api<TInstallAction[]>({
-    path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q, trigger_types, labels, orphans })}`,
+    path: `installs/${installId}/action-workflows/latest-runs${buildQueryParams({ limit, offset, q, trigger_types, labels, synced })}`,
     orgId,
     paginated: true,
   })

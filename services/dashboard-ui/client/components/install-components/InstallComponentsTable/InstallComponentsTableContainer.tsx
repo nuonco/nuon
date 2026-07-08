@@ -42,7 +42,7 @@ export const InstallComponentsTableContainer = ({
         q: searchParams.get('q') || undefined,
         types: searchParams.get('types') || undefined,
         labels: searchParams.get('labels') || undefined,
-        orphans: searchParams.get('synced') === 'false' || undefined,
+        synced: searchParams.get('synced') === 'false' ? false : undefined,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,

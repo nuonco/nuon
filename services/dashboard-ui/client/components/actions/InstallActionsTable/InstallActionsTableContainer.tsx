@@ -46,7 +46,7 @@ export const InstallActionsTableContainer = ({
         q: searchParams.get('q') || undefined,
         trigger_types: searchParams.get('trigger_types') || undefined,
         labels: searchParams.get('labels') || undefined,
-        orphans: searchParams.get('synced') === 'false' || undefined,
+        synced: searchParams.get('synced') === 'false' ? false : undefined,
       }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,

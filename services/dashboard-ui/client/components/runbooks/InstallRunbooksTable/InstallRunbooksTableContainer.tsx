@@ -20,10 +20,10 @@ export const InstallRunbooksTableContainer = ({
   const { install } = useInstall()
   const offset = Number(searchParams.get('offset') ?? 0)
   const q = searchParams.get('q') || undefined
-  const orphans = searchParams.get('synced') === 'false' || undefined
+  const synced = searchParams.get('synced') === 'false' ? false : undefined
 
   const { data: result, isLoading } = useQuery({
-    queryKey: ['install-runbooks', org?.id, install?.id, offset, q, orphans],
+    queryKey: ['install-runbooks', org?.id, install?.id, offset, q, synced],
     queryFn: () =>
       getInstallRunbooks({
         orgId: org!.id,
@@ -31,7 +31,7 @@ export const InstallRunbooksTableContainer = ({
         offset,
         limit: LIMIT,
         q,
-        orphans,
+        synced,
       }),
     placeholderData: keepPreviousData,
     refetchInterval: shouldPoll ? pollInterval : false,

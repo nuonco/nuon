@@ -8,20 +8,20 @@ export async function getInstallComponents({
   limit,
   orgId,
   offset,
-  orphans,
   q,
+  synced,
   types,
 }: {
   installId: string
   labels?: string
   orgId: string
-  orphans?: boolean
   q?: string
+  synced?: boolean
   types?: string
 } & TPaginationParams) {
   return api<TInstallComponent[]>({
     orgId,
-    path: `installs/${installId}/components${buildQueryParams({ limit, offset, q, types, labels, orphans })}`,
+    path: `installs/${installId}/components${buildQueryParams({ limit, offset, q, types, labels, synced })}`,
     paginated: true,
   })
 }
