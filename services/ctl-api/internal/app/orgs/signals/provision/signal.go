@@ -69,11 +69,26 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	// The org runner group is normally created at org creation, but ensure it
+	// exists here as well so a re-enabled org-runner feature always has a runner
+	// to provision.
+	runnerID := ""
+	if len(org.RunnerGroup.Runners) > 0 {
+		runnerID = org.RunnerGroup.Runners[0].ID
+	} else {
+		resp, err := activities.AwaitEnsureOrgRunnerGroupByOrgID(ctx, s.OrgID)
+		if err != nil {
+			s.updateStatus(ctx, app.OrgStatusError, "unable to ensure org runner group")
+			return fmt.Errorf("unable to ensure org runner group: %w", err)
+		}
+		runnerID = resp.RunnerID
+	}
+
 	// Provision IAM roles for the org
 	if org.OrgType == app.OrgTypeDefault {
 		orgIAMReq := &orgiam.ProvisionIAMRequest{
 			OrgID:      s.OrgID,
-			RunnerID:   org.RunnerGroup.Runners[0].ID,
+			RunnerID:   runnerID,
 			WorkflowID: fmt.Sprintf("%s-provision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID),
 		}
 		iamResp, err := orgiam.AwaitProvisionIAM(ctx, orgIAMReq)
@@ -102,10 +117,10 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// Provision the runner via v2 queue signal
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   org.RunnerGroup.Runners[0].ID,
+		OwnerID:   runnerID,
 		OwnerType: "runners",
 		Signal: &runnerprovision.Signal{
-			RunnerID: org.RunnerGroup.Runners[0].ID,
+			RunnerID: runnerID,
 		},
 	})
 	if err != nil {
@@ -113,7 +128,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to enqueue runner provision signal: %w", err)
 	}
 
-	if err := s.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+	if err := s.pollRunner(ctx, runnerID); err != nil {
 		s.updateStatus(ctx, app.OrgStatusError, "organization did not provision runner")
 		return fmt.Errorf("runner did not provision correctly: %w", err)
 	}

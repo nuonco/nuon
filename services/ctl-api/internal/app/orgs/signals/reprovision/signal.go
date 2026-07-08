@@ -65,6 +65,21 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return nil
 	}
 
+	// The org runner group may be missing (e.g. the org was created with
+	// control-plane-builds and later had org-runner re-enabled), so create it
+	// before provisioning IAM and the runner.
+	runnerID := ""
+	if len(org.RunnerGroup.Runners) > 0 {
+		runnerID = org.RunnerGroup.Runners[0].ID
+	} else {
+		resp, err := activities.AwaitEnsureOrgRunnerGroupByOrgID(ctx, s.OrgID)
+		if err != nil {
+			s.updateStatus(ctx, app.OrgStatusError, "unable to ensure org runner group")
+			return fmt.Errorf("unable to ensure org runner group: %w", err)
+		}
+		runnerID = resp.RunnerID
+	}
+
 	// deprovision IAM roles
 	if org.OrgType == app.OrgTypeDefault {
 		_, err = orgiam.AwaitDeprovisionIAM(ctx, &orgiam.DeprovisionIAMRequest{OrgID: s.OrgID, WorkflowID: fmt.Sprintf("%s-deprovision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID)})
@@ -78,20 +93,31 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 
 	// provision IAM roles
 	if org.OrgType == app.OrgTypeDefault {
-		_, err = orgiam.AwaitProvisionIAM(ctx, &orgiam.ProvisionIAMRequest{OrgID: s.OrgID, Reprovision: true, WorkflowID: fmt.Sprintf("%s-provision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID)})
+		iamResp, err := orgiam.AwaitProvisionIAM(ctx, &orgiam.ProvisionIAMRequest{OrgID: s.OrgID, RunnerID: runnerID, Reprovision: true, WorkflowID: fmt.Sprintf("%s-provision-iam", workflow.GetInfo(ctx).WorkflowExecution.ID)})
 		if err != nil {
 			s.updateStatus(ctx, app.OrgStatusError, "unable to reprovision iam roles")
 			return fmt.Errorf("unable to reprovision iam roles: %w", err)
+		}
+
+		// Persist per-org Azure client ID so runner reprovision can read it back.
+		if iamResp.AzureClientID != "" {
+			if err := activities.AwaitUpdateRunnerGroupAzureClientID(ctx, activities.UpdateRunnerGroupAzureClientIDRequest{
+				OrgID:         s.OrgID,
+				AzureClientID: iamResp.AzureClientID,
+			}); err != nil {
+				s.updateStatus(ctx, app.OrgStatusError, "unable to update runner group azure client ID")
+				return fmt.Errorf("unable to update runner group azure client ID: %w", err)
+			}
 		}
 	} else {
 		l.Info("skipping await reprovision iam", zap.Any("org_type", org.OrgType), zap.String("org_id", org.ID), zap.String("org_name", org.Name))
 	}
 
 	_, err = sharedactivities.AwaitEnqueueSignalToOwner(ctx, &sharedactivities.EnqueueSignalToOwnerRequest{
-		OwnerID:   org.RunnerGroup.Runners[0].ID,
+		OwnerID:   runnerID,
 		OwnerType: "runners",
 		Signal: &runnerreprovision.Signal{
-			RunnerID: org.RunnerGroup.Runners[0].ID,
+			RunnerID: runnerID,
 		},
 	})
 	if err != nil {
@@ -99,7 +125,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 		return fmt.Errorf("unable to enqueue runner reprovision signal: %w", err)
 	}
 
-	if err := s.pollRunner(ctx, org.RunnerGroup.Runners[0].ID); err != nil {
+	if err := s.pollRunner(ctx, runnerID); err != nil {
 		s.updateStatus(ctx, app.OrgStatusError, "organization did not provision runner")
 		return fmt.Errorf("runner did not reprovision correctly: %w", err)
 	}
