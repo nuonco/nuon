@@ -51,14 +51,20 @@ func (p *handler) execSyncSecret(ctx context.Context, secr plantypes.KubernetesS
 func (p *handler) fetchSecretValue(ctx context.Context, secr plantypes.KubernetesSecretSync) (string, *time.Time, bool, error) {
 	var val string
 	var ts *time.Time
+	var err error
 
 	switch {
 	case secr.GCPSecretName != "":
-		val, ts, _ = p.fetchGCPSecret(ctx, secr)
+		val, ts, err = p.fetchGCPSecret(ctx, secr)
 	case secr.AzureKeyVaultSecretID != "":
-		val, ts, _ = p.fetchAzureSecret(ctx, secr)
+		val, ts, err = p.fetchAzureSecret(ctx, secr)
 	default:
-		val, ts, _ = p.fetchAWSSecret(ctx, secr)
+		val, ts, err = p.fetchAWSSecret(ctx, secr)
+	}
+
+	if err != nil {
+		l := pkgctx.LoggerOrDefault(ctx, zap.NewNop())
+		l.Error("unable to fetch secret value from cloud provider", zap.Error(err), sourceSecretField(secr))
 	}
 
 	exists := val != ""
