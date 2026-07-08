@@ -291,7 +291,7 @@ type Config struct {
 	// org runner provisioning (org-runner feature off). Installs are unaffected
 	// since they use their own install runner groups.
 	ControlPlaneBuildsDefaultEnabled bool   `config:"control_plane_builds_default_enabled"`
-	AutoEnabledFeatures string `config:"auto_enabled_features"`
+	AutoEnabledFeatures              string `config:"auto_enabled_features"`
 
 	// flags for controlling creation of integration users
 	IntegrationGithubInstallID string `config:"integration_github_install_id" validate:"required"`
