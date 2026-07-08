@@ -3,6 +3,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	"github.com/pkg/errors"
@@ -22,6 +23,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"inputs":              InputsConfigSchema,
 	"install":             InstallSchema,
 	"installer":           InstallerConfigSchema,
+	"job":                 JobConfigSchema,
 	"kubernetes-context":  KubernetesContextSchema,
 	"kubernetes-contexts": KubernetesContextsConfigSchema,
 	"kubernetes-manifest": KubernetesManifestConfigSchema,
@@ -38,8 +40,14 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"terraform":           TerraformModuleConfigSchema,
 }
 
+// normalizeSchemaType maps underscore-style names used in TOML component
+// types (e.g. docker_build, container_image) onto the hyphenated schema keys.
+func normalizeSchemaType(typ string) string {
+	return strings.ReplaceAll(typ, "_", "-")
+}
+
 func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
-	fn, ok := SchemaMapping[typ]
+	fn, ok := SchemaMapping[normalizeSchemaType(typ)]
 	if !ok {
 		return nil, nil
 	}
@@ -63,7 +71,7 @@ func GetSchemaTypes() []string {
 
 // IsValidSchemaType checks if a schema type is valid
 func IsValidSchemaType(typ string) bool {
-	_, ok := SchemaMapping[typ]
+	_, ok := SchemaMapping[normalizeSchemaType(typ)]
 	return ok
 }
 
@@ -253,6 +261,26 @@ func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
 		AllOf: []*jsonschema.Schema{
 			r.Reflect(config.Component{}),
 			r.Reflect(config.DockerBuildComponentConfig{}),
+		},
+	}
+
+	return &schema, nil
+}
+
+func JobConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.JobComponentConfig{}); err != nil {
+		return nil, errors.Wrap(err, "JobComponentConfig validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	schema := jsonschema.Schema{
+		AllOf: []*jsonschema.Schema{
+			r.Reflect(config.Component{}),
+			r.Reflect(config.JobComponentConfig{}),
 		},
 	}
 

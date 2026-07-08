@@ -46,6 +46,38 @@ func TestAllSchemasHaveJSONSchemaExtend(t *testing.T) {
 	}
 }
 
+func TestLookupSchemaTypeNormalizesUnderscores(t *testing.T) {
+	tests := []struct {
+		typ   string
+		found bool
+	}{
+		{"container-image", true},
+		{"container_image", true},
+		{"docker_build", true},
+		{"job", true},
+		{"runner", true},
+		{"unknown-type", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.typ, func(t *testing.T) {
+			schm, err := LookupSchemaType(tt.typ)
+			if err != nil {
+				t.Fatalf("unexpected error for %s: %v", tt.typ, err)
+			}
+			if tt.found && schm == nil {
+				t.Fatalf("expected schema for %s, got nil", tt.typ)
+			}
+			if !tt.found && schm != nil {
+				t.Fatalf("expected no schema for %s", tt.typ)
+			}
+			if got := IsValidSchemaType(tt.typ); got != tt.found {
+				t.Fatalf("IsValidSchemaType(%s) = %v, want %v", tt.typ, got, tt.found)
+			}
+		})
+	}
+}
+
 // TestValidateJSONSchemaExtendOnMissingImplementation verifies that the validator
 // correctly detects when a struct doesn't implement JSONSchemaExtend.
 func TestValidateJSONSchemaExtendDetectsMissing(t *testing.T) {

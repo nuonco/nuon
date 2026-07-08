@@ -16,6 +16,7 @@ import (
 // @Tags					general
 // @Accept					json
 // @Param			type query	string	false	"return a schema for a source file"
+// @Param			source query	string	false	"deprecated alias for type; responses include a Deprecation header when used"
 // @Produce				json
 // @Failure				400	{object}	stderr.ErrResponse
 // @Failure				401	{object}	stderr.ErrResponse
@@ -26,12 +27,22 @@ import (
 // @Router					/v1/general/config-schema [GET]
 func (s *service) GetConfigSchema(ctx *gin.Context) {
 	typ := ctx.DefaultQuery("type", "")
+	deprecatedSource := false
+	if typ == "" {
+		typ = ctx.DefaultQuery("source", "")
+		deprecatedSource = typ != ""
+	}
 	if typ == "" {
 		ctx.Error(stderr.ErrUser{
 			Err:         fmt.Errorf("type query parameter is required"),
 			Description: "type query parameter is required",
 		})
 		return
+	}
+
+	if deprecatedSource {
+		ctx.Header("Deprecation", "true")
+		ctx.Header("Warning", `299 - "the source query parameter is deprecated; use type instead"`)
 	}
 
 	schm, err := schema.LookupSchemaType(typ)
@@ -46,6 +57,10 @@ func (s *service) GetConfigSchema(ctx *gin.Context) {
 			Description: "the provided type does not match any known schema types",
 		})
 		return
+	}
+
+	if deprecatedSource {
+		schm.Comments = "the source query parameter is deprecated; update the #:schema URL to use type instead"
 	}
 
 	ctx.JSON(http.StatusOK, schm)
