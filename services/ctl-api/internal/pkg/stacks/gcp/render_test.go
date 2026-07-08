@@ -211,7 +211,7 @@ func TestRenderPermissions(t *testing.T) {
 
 		tfvars := extractTfvars(t, out)
 
-		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions"} {
+		for _, v := range []string{"provision_policies", "maintenance_policies", "deprovision_policies"} {
 			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
 		assert.Contains(t, tfvars, "break_glass_roles = {\n}")
@@ -223,12 +223,37 @@ func TestRenderPermissions(t *testing.T) {
 
 		tfvars := extractTfvars(t, out)
 
-		for _, v := range []string{"provision_permissions", "maintenance_permissions", "deprovision_permissions"} {
+		for _, v := range []string{"provision_policies", "maintenance_policies", "deprovision_policies"} {
 			assert.Contains(t, tfvars, v+" ", "tfvars should contain %s", v)
 		}
 		assert.Contains(t, tfvars, `"emergency-access"`)
 		assert.Contains(t, tfvars, `["iam.roles.get"]`)
 		assert.Contains(t, tfvars, "enabled         = false")
+	})
+
+	t.Run("standard role policies stay separate", func(t *testing.T) {
+		inp := testInput()
+		inp.AppCfg.PermissionsConfig = app.AppPermissionsConfig{
+			Roles: []app.AppAWSIAMRoleConfig{
+				{
+					CloudPlatform: "gcp",
+					Type:          app.AWSIAMRoleTypeRunnerProvision,
+					Policies: []app.AppAWSIAMPolicyConfig{
+						{Name: "provision-network", GCPPermissions: []string{"compute.networks.create"}},
+						{Name: "provision-dns", GCPPermissions: []string{"dns.changes.create"}},
+						{Name: "provision-gke", GCPPredefinedRole: "roles/container.admin"},
+					},
+				},
+			},
+		}
+
+		out, _, err := Render(inp)
+		require.NoError(t, err)
+
+		tfvars := extractTfvars(t, out)
+		assert.Contains(t, tfvars, `"provision-network" = ["compute.networks.create"]`)
+		assert.Contains(t, tfvars, `"provision-dns" = ["dns.changes.create"]`)
+		assert.Contains(t, tfvars, `provision_predefined_role    = "roles/container.admin"`)
 	})
 }
 
