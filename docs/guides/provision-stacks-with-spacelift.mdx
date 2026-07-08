@@ -1,121 +1,119 @@
 ---
 title: "Provision Stacks with Spacelift"
-description: "Provision the Nuon Terraform install stack through Spacelift instead of running Terraform locally — via a blueprint or the Spacelift Terraform provider."
+description: "Provision stacks using a Spacelift Blueprint or the Terraform provider."
 icon: "layer-group"
 boost: 10
-keywords: ["spacelift", "install-stacks", "terraform", "blueprint", "install stack", "aws", "gcp", "raw git", "spacelift blueprint", "spacelift terraform provider"]
+keywords: ["spacelift", "install-stacks", "terraform", "blueprint", "install stack", "stacks", "aws", "gcp", "raw git", "spacelift blueprint", "spacelift terraform provider"]
 ---
 
 <Note>Spacelift support for install stacks is gated behind a feature flag. [Reach out to Nuon](https://nuon.co/demo-request) to enable it for your org.</Note>
 
-The Terraform install stack provisions the runner in your customer's cloud account. It can be provisioned with the
-Terraform CLI, but customers can also manage it as a [Spacelift](https://spacelift.io/) stack. Spacelift provisioning
-currently generates configs for **GCP** install stacks; AWS support is planned.
+If a customer wants to manage their install stack using Spacelift, Nuon can generate code for them to use. There are two ways to install a Spacelift stack. Which one your customer uses depends on whether they want to use the Spacelift Web UI or Terraform.
 
-There are two ways to install a Spacelift stack. Which one your customer uses depends on whether they want to use the
-Spacelift web UI or the
-[Spacelift Terraform provider](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs).
+- **[Blueprint](https://docs.spacelift.io/concepts/blueprint)** — publish a Spacelift blueprint and use the web UI to provision the stack.
+- **[Terraform](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs)** — apply a generated `spacelift.tf` and use the Terraform provider to provision the stack.
 
-- **Blueprint** — publish a Spacelift blueprint and use the web UI to create the stack.
-- **Terraform** — apply a generated `spacelift.tf` that uses the Terraform provider to create the stack.
+Both paths use the [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) modules over **raw Git**, so no Spacelift VCS integration or GitHub App install is required.
 
-Both paths run the same [`nuonco/install-stacks`](https://github.com/nuonco/install-stacks) module over
-**raw Git**, so no Spacelift VCS integration or GitHub App install is required.
+## How it works
+
+Provisioning with Spacelift is a hand-off between you and your customer:
+
+1. You create the install. The install workflow pauses at the **await install stack** step.
+2. On that step's **Spacelift** tab, you copy the blueprint YAML or download the Terraform files.
+3. You send them to your customer.
+4. Your customer provisions the stack in their Spacelift account, into their cloud account.
+5. The stack boots up the runner. Once the runner connects, the await install stack step completes and the
+   install proceeds — no further action needed on your side.
 
 ## Prerequisites
 
-- **Enable the feature flag** — Spacelift support is gated behind a feature flag.
-  [Reach out to Nuon](https://nuon.co/demo-request) to enable it — the **Spacelift** tab then appears on the await
-  install stack step.
-- **Create a Spacelift account** — you need a [Spacelift](https://spacelift.io/) account with permission to create
-  blueprints and stacks.
-- **Configure a cloud integration** — set up Spacelift's
-  [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) for your target cloud
+Your customer will need the following in order to use Spacelift.
 
-## Use a blueprint
+- A [Spacelift](https://spacelift.io/) account with permission to create blueprints and stacks
+- The [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) set up for the cloud account they want to install your app in.
+
+## Using a blueprint
+
+Follow these steps to provision a stack using a Spacelift Blueprint.
 
 <Steps>
+  <Step title="Create an install">
+    Create an install as you usually would, and wait for the provision workflow to get to the **await install stack** step.
+  </Step>
+  <Step title="Send your customer the blueprint">
+    On the **await install stack** step, open the **Spacelift** tab and copy or download the blueprint YAML.
+    Send this to your customer.
+
+    The remaining steps are for your customer.
+  </Step>
   <Step title="Create the blueprint">
-    In Spacelift, go to **Blueprints → Create blueprint** and paste the generated YAML from the dashboard as the
-    template body. It starts as a draft you can edit freely. See
-    [Blueprints](https://docs.spacelift.io/concepts/blueprint/).
+    In Spacelift, go to **Blueprints → Create blueprint** and paste the YAML from your vendor as the template body.
+    The template is configured to put the stack in the `root` space by default.
+    Edit the `space:` line while it's a draft if the stack should live elsewhere.
   </Step>
   <Step title="Publish it">
-    Click **Publish** to move the blueprint from draft to published. The template clones the public `install-stacks`
-    repository over raw Git, so no VCS integration setup is required. Publishing is one-way — to change a published
-    blueprint, clone it, edit, and publish again.
-  </Step>
+    Click **Publish** to move the blueprint from draft to published.
+    Once published, the blueprint cannot be edited.
+    </Step>
   <Step title="Create a stack and fill in the inputs">
-    On the published blueprint, click **Create stack** and fill in the cloud settings (such as the account, project, or
-    region for your target cloud) and any install inputs and secrets. These are declared as blueprint
-    [inputs](https://docs.spacelift.io/concepts/blueprint#inputs); secrets use the `secret` input type. This creates
-    the stack but doesn't run it yet.
+    On the published blueprint, click **Create stack** and fill in the inputs and secrets.
+    Click **Create** to create the stack.
   </Step>
-  <Step title="Attach cloud credentials, then trigger the run">
-    Open the new stack's **Settings → Integrations** and attach your
-    [cloud integration](https://docs.spacelift.io/integrations/cloud-providers). Then trigger the stack's first run — it
-    provisions the runner. The run isn't triggered automatically because cloud credentials can't be attached from the
-    blueprint itself.
+  <Step title="Attach cloud credentials">
+    Open the new stack's **Settings → Integrations**. Attach the [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) to grant Spacelift access to the cloud account.
+  </Step>
+  <Step title="Provision the stack">
+    Trigger a run.
+    This will provision the Nuon Stack.
+    Once the runner phones home, the await install stack step in Nuon will complete.
   </Step>
 </Steps>
 
 ## Use terraform
 
-This path applies a generated `spacelift.tf` alongside its `inputs.auto.tfvars` and `secrets.auto.tfvars` sibling
-files. All three are meant to be edited before applying, so every value you need to fill in is edited into a file
-up front, and the `terraform apply` command itself never changes between steps.
+Follow these steps to provision a Nuon install stack using the Spacelift Terraform provider.
 
 <Steps>
-  <Step title="Save and configure the files">
-    Click **Download all** on the dashboard to get `spacelift.tf`, `inputs.auto.tfvars`, and `secrets.auto.tfvars` as
-    a single zip (or download them individually), and unpack all three into one directory.
+  <Step title="Send your customer the files">
+    Click **Download all (.zip)** on the **Spacelift** tab to get `spacelift.tf`, `inputs.auto.tfvars`, and
+    `secrets.auto.tfvars` as a single zip (or download them individually), then send them to your customer.
 
-    Before applying, edit:
-
-    - **`spacelift.tf`**: set the `space_id` variable's `default` to the Spacelift space this stack should live in
-      (find the ID under **Spaces** in the Spacelift dashboard). Already manage your own GCP integration for this
-      stack? Set `attach_gcp_service_account`'s default to `false` instead of using the one this config creates for
-      you.
-    - **`inputs.auto.tfvars`**: fill in any install-specific values, such as `gcp_project_id` and `gcp_region`.
-    - **`secrets.auto.tfvars`**: replace the placeholder values with your real secrets.
-
-    Keep these files somewhere private once edited, the secrets file is plaintext at rest.
+    The remaining steps are for your customer.
   </Step>
-  <Step title="Authenticate the provider to Spacelift">
-    The [`spacelift-io/spacelift`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs) provider
-    needs Spacelift API credentials:
-
-    - Create an [API key](https://docs.spacelift.io/integrations/api#spacelift-api-key).
-    - Export it as `SPACELIFT_API_KEY_ENDPOINT`, `SPACELIFT_API_KEY_ID`, and `SPACELIFT_API_KEY_SECRET` before
-      applying, or prefix the apply command in the next step if you'd rather not export into your shell:
-
-    ```bash
-    SPACELIFT_API_KEY_ENDPOINT=... SPACELIFT_API_KEY_ID=... SPACELIFT_API_KEY_SECRET=... \
-      terraform init && terraform apply
-    ```
-
-    See the [provider authentication](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs#authentication)
-    docs for details.
+  <Step title="Configure `spacelift.tf`">
+    Unpack all three files into one directory. In `spacelift.tf`, set the `space_id` variable's `default` to the
+    Spacelift space this stack should live in.
   </Step>
-  <Step title="Apply with Terraform">
+  <Step title="Authenticate with GCP">
+    By default, the config attaches Spacelift's GCP integration to the stack — a dedicated service account created
+    during the apply. If you already manage your own GCP integration, set `attach_gcp_service_account`'s
+    default to `false` in `spacelift.tf`.
+  </Step>
+  <Step title="Configure `inputs.auto.tfvars`">
+    Fill in the inputs in the `inputs.auto.tfavrs` file.
+    Leave this file alongside the stack if you want to manage these values in version control.
+    Alternatively, you can save the contents to a mounted, non-secret file in Spacelift.
+  </Step>
+  <Step title="Configure `secrets.auto.tfvars`">
+    If saving this as a secret mounted file, fill in the inputs in `secrets.auto.tfvars`.
+    Alternatively, store the secret values in a secret store and pass them to terraform using environment variables.
+  </Step>
+  <Step title="Authenticate the Spacelift provider">
+    The [`spacelift-io/spacelift`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs)
+    provider needs Spacelift API credentials.
+    If the terraform is being run within Spacelift, then these will automatically be populated in the environment.
+    Otherwise, [configure authentication for the Spacelift provider](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs#authentication).
+  </Step>
+  <Step title="Apply the stack">
+    Initialize the terraform workspace and apply.
     ```bash
     terraform init && terraform apply
     ```
-
-    This creates the install stack via
-    [`spacelift_stack`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/stack),
-    mounts your tfvars via
-    [`spacelift_mounted_file`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/mounted_file),
-    and, unless you disabled it in step 1, attaches Spacelift's native GCP integration via
-    [`spacelift_gcp_service_account`](https://registry.terraform.io/providers/spacelift-io/spacelift/latest/docs/resources/gcp_service_account)
-    so there's no manual **Settings → Integrations** step.
   </Step>
-  <Step title="Grant access, then run the install stack">
-    - If you attached the GCP integration (the default): grant the printed `gcp_service_account_email` output an IAM
-      role on your target GCP project.
-    - If you attached your own integration instead: confirm its identity already has that access.
-
-    A newly created stack doesn't run on its own, so trigger its first run. It's set to auto-deploy, so it plans and
-    applies your runner without further approval.
+  <Step title="Trigger the first run">
+    Trigger the first run.
+    This will provision the Nuon stack.
+    Once the runner phones home, the await install stack step in Nuon completes.
   </Step>
 </Steps>
