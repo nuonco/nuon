@@ -29,6 +29,14 @@ func (h *handler) Cleanup(ctx context.Context, job *models.AppRunnerJob, jobExec
 		l.Info("error cleaning up workspace", zap.Error(err))
 	}
 
+	if h.state.ociArch != nil {
+		l.Info("cleaning up OCI archive")
+		if err := h.state.ociArch.Cleanup(ctx); err != nil {
+			h.errRecorder.Record("unable to cleanup OCI archive", err)
+			l.Info("error cleaning up OCI archive", zap.Error(err))
+		}
+	}
+
 	h.state = nil
 	return nil
 }

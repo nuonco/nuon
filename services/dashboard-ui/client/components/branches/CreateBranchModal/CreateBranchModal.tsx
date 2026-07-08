@@ -26,6 +26,7 @@ interface ICreateBranchModal extends Omit<IModal, 'onSubmit'> {
   onRepoChange: (repo: TVCSConnectionRepo | null) => void
   selectedBranch: string
   onBranchChange: (branch: string) => void
+  initialDirectory?: string
   isSubmitting: boolean
   submitError?: TAPIError | Error | null
   onSubmit: (
@@ -62,6 +63,7 @@ export const CreateBranchModal = ({
   onRepoChange,
   selectedBranch,
   onBranchChange,
+  initialDirectory,
   isSubmitting,
   submitError,
   onSubmit,
@@ -70,7 +72,7 @@ export const CreateBranchModal = ({
 }: ICreateBranchModal) => {
   const [name, setName] = useState('')
   const [useVcs, setUseVcs] = useState(true)
-  const [directory, setDirectory] = useState('.')
+  const [directory, setDirectory] = useState(initialDirectory || '.')
   const [pathFilter, setPathFilter] = useState('')
 
   const formRef = useRef<HTMLFormElement>(null)

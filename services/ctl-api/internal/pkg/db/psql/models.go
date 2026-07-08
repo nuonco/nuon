@@ -91,6 +91,7 @@ func AllModels() []any {
 		&app.InstallSandboxRun{},
 		&app.InstallIntermediateData{},
 		&app.InstallConfig{},
+		&app.InstallAppBranchConnection{},
 		&app.InstallAuditLog{},
 
 		// install stacks

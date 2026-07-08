@@ -78,6 +78,13 @@ func (s *Helpers) createComponentBuild(ctx context.Context, buildID, cmpID strin
 		return nil, fmt.Errorf("unable to create build for component: %v", res.Error)
 	}
 
+	if err := s.db.WithContext(ctx).
+		Model(&app.ComponentConfigConnection{}).
+		Where("id = ?", cmp.LatestConfig.ID).
+		Update("latest_build_id", bld.ID).Error; err != nil {
+		return nil, fmt.Errorf("unable to set latest_build_id on config connection: %w", err)
+	}
+
 	// Check for duplicate builds (same commit SHA and config checksum).
 	// This is a warning only — the build still proceeds.
 	if vcsCommit != nil {

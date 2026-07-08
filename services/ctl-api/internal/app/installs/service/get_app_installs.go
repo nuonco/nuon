@@ -95,6 +95,7 @@ func (s *service) getAppInstalls(ctx *gin.Context, orgID, appID string, q string
 			return db.Order("install_sandbox_runs.created_at DESC")
 		}).
 		Preload("AWSAccount").
+		Preload("AppBranch").
 		Preload("AppRunnerConfig").
 		Preload("RunnerGroup").
 		Preload("RunnerGroup.Runners").

@@ -144,7 +144,7 @@ func (s *syncer) syncSingleBranch(ctx context.Context, resource string, branchCf
 	if err != nil {
 		return sync.SyncAPIErr{
 			Resource: resource,
-			Err:      fmt.Errorf("unable to create config for app branch %q: %w", branchCfg.Name, err),
+			Err:      fmt.Errorf("unable to create config for app branch %q: %s", branchCfg.Name, apiErrDescription(err)),
 		}
 	}
 
@@ -170,6 +170,19 @@ func (s *syncer) resolveInstallNames(ctx context.Context) (map[string]string, er
 		offset += len(installs)
 	}
 	return nameToID, nil
+}
+
+type errPayloader interface {
+	GetPayload() *models.StderrErrResponse
+}
+
+func apiErrDescription(err error) string {
+	if p, ok := err.(errPayloader); ok {
+		if payload := p.GetPayload(); payload != nil && payload.Description != "" {
+			return payload.Description
+		}
+	}
+	return err.Error()
 }
 
 func (s *syncer) getAllBranches() []*config.AppBranchConfig {

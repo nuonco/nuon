@@ -7,6 +7,7 @@ import (
 
 	pkgplantypes "github.com/nuonco/nuon/bins/runner/internal/pkg/plantypes"
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
+	ociarchive "github.com/nuonco/nuon/pkg/runner/oci/archive"
 	"github.com/nuonco/nuon/pkg/runner/workspace"
 	terraformworkspace "github.com/nuonco/nuon/pkg/terraform/workspace"
 )
@@ -17,6 +18,10 @@ const (
 
 type handlerState struct {
 	workspace workspace.Workspace
+
+	// ociArch is set when the plan uses OCI source instead of git.
+	// The unpacked archive directory is used as the source path.
+	ociArch ociarchive.Archive
 
 	timeout time.Duration
 
@@ -30,9 +35,4 @@ type handlerState struct {
 	sandboxCfg *models.AppAppSandboxConfig
 
 	auth *pkgplantypes.PlanAuth
-
-	// Legacy
-	// set during the fetch/validate phase
-	// plan    *planv1.Plan
-	// cfg     *configs.SandboxTerraform
 }
