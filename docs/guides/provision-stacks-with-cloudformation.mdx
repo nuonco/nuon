@@ -1,62 +1,78 @@
 ---
 title: "Provision Stacks with CloudFormation"
-description: "Provision the Nuon AWS install stack with CloudFormation — launch the generated template from the AWS console or the AWS CLI."
+description: "Provision Nuon install stacks on AWS with CloudFormation."
 icon: "aws"
 boost: 10
-keywords: ["cloudformation", "install-stacks", "install stack", "aws", "create-stack", "template", "quick create", "aws cli"]
+keywords: ["cloudformation", "install-stacks", "install stack", "stack", "aws", "create-stack", "template", "quick create", "aws cli"]
 ---
 
-The install stack provisions the runner in your customer's AWS account. AWS installs can use a **CloudFormation**
-stack, and this guide walks through launching the generated template. When an install uses a CloudFormation stack, the
-**await install stack** step in the dashboard surfaces a one-click launch link, the template URL, and ready-to-run AWS
-CLI commands.
+Nuon supports provisioning install stacks to AWS using [CloudFormation](https://aws.amazon.com/cloudformation/). A Cloudformation stack template is generated for every install, along with a Quick-create link and CLI commands. Which one you use will depend on whether your customer wants to use the AWS Web console, or the AWS CLI.
 
-<Note>CloudFormation is AWS-only. For AWS you can also use a [Terraform stack](/guides/provision-stacks-with-terraform); GCP and Azure use Terraform.</Note>
+- **[Quick-create](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html)** — open the quick-create link and create the stack in the AWS Web console.
+- **[AWS CLI](https://aws.amazon.com/cli/)** — run the generated `aws cloudformation create-stack` command.
+
+<Note>CloudFormation is AWS-only.</Note>
+
+## How it works
+
+Provisioning with CloudFormation is a hand-off between you and your customer:
+
+1. You create the install. The install workflow pauses at the **await install stack** step.
+2. On that step, you copy the quick-create link, or the CLI commands.
+3. You send them to your customer.
+4. Your customer launches the stack in their AWS account.
+5. The stack boots up the runner. Once the runner connects, the await install stack step completes.
 
 ## Prerequisites
 
-- **AWS access** — access to the target AWS account with permission to create CloudFormation stacks and the IAM
-  resources the template defines. The stack is created with the `CAPABILITY_NAMED_IAM` capability.
-- **AWS CLI (optional)** — to launch from the command line, install and configure the
-  [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) with credentials for the
-  target account.
+Your customer will need the following in order to launch the stack.
+
+- Access to the target AWS account with permission to create CloudFormation stacks.
+- If using the CLI, the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed and
+  configured.
 
 ## Launch from the AWS console
 
+Follow these steps to provision a stack using an AWS Quick-link URL.
+
 <Steps>
-  <Step title="Open the quick-launch link">
-    On the await install stack step, click **Quick launch in AWS console**. This opens CloudFormation's quick-create
-    flow with the template URL and stack name prefilled. If you don't see the link, open the AWS console in your target
-    region and create a stack from the template URL shown on the step.
+  <Step title="Create an install">
+    Create an install as you usually would, and wait for the provision workflow to get to the **await install stack** step.
   </Step>
-  <Step title="Create the stack">
-    Review the stack, acknowledge that it creates named IAM resources, and create it. CloudFormation provisions the
-    runner in your account.
+  <Step title="Send your customer the Quick-create link">
+    On the **await install stack** step, copy the **Quick launch in AWS console** link and send it to your customer.
+
+    The remaining steps are for your customer.
   </Step>
-  <Step title="Monitor progress">
-    Use **Open in AWS console** on the step (or the CloudFormation console) to watch the stack's events until it
-    reaches `CREATE_COMPLETE`. Once it's up, the install continues.
+  <Step title="Open the quick-create link">
+    Open the link while signed in to the target AWS account. It opens CloudFormation's quick-create flow with the
+    template URL and stack name prefilled.
+  </Step>
+  <Step title="Configure the install">
+    Fill in the required inputs and secrets.
+    Override any default values you want to change.
+
+    <Note>The secret values will be written directly to AWS Secret Store. They will not be saved in plaintext anywhere.</Note>
+  </Step>
+  <Step title="Provision the stack">
+    Check the boxes at the bottom of the page and click **Create stack**.
+    This will provision the Nuon stack.
+    Once the runner phones home, the await install stack step in Nuon will complete.
   </Step>
 </Steps>
 
 ## Launch with the AWS CLI
 
-The dashboard generates the exact commands with your stack name, template URL, and region filled in. Copy them from
-the await install stack step — the general form is:
+Follow these steps to provision a stack using the AWS CLI.
 
 <Steps>
-  <Step title="Create the stack">
-    ```bash
-    aws cloudformation create-stack \
-      --stack-name <stack-name> \
-      --template-url <template-url> \
-      --capabilities CAPABILITY_NAMED_IAM \
-      --region <region>
-    ```
-  </Step>
-  <Step title="Update an existing stack">
-    To apply a new template version to a stack you already created:
+  <Step title="Send your customer the command">
+    On the **await install stack** step, copy the generated **Create stack** command and send it to your customer.
 
+    The remaining steps are for your customer.
+  </Step>
+  <Step title="Configure and create the stack">
+    Run the command using credentials for the target AWS account. Use the `--parameters` flag to set input and secret values.
     ```bash
     aws cloudformation update-stack \
       --stack-name <stack-name> \
@@ -64,9 +80,8 @@ the await install stack step — the general form is:
       --capabilities CAPABILITY_NAMED_IAM \
       --region <region>
     ```
-  </Step>
-  <Step title="Verify">
-    Open the CloudFormation console (the **Open in AWS console** button on the step links straight to the stack's
-    events) and wait for `CREATE_COMPLETE` / `UPDATE_COMPLETE`.
+
+    This will provision the Nuon stack.
+    Once the runner phones home, the await install stack step in Nuon will complete.
   </Step>
 </Steps>
