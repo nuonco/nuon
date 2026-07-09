@@ -66,7 +66,7 @@ export const BranchDetailActions = ({
         <Tooltip
           isOpen={nudgeOpen}
           disableHover
-          position="left"
+          position="bottom"
           tipContent={
             <Text variant="subtext">Trigger a run to deploy this branch</Text>
           }
