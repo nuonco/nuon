@@ -82,6 +82,12 @@ type GetInstallRunbooksParams struct {
 	*/
 	Offset *int64
 
+	/* Orphans.
+
+	   only return runbooks no longer in the install's current app config
+	*/
+	Orphans *bool
+
 	/* Q.
 
 	   search by runbook name or ID
@@ -109,11 +115,14 @@ func (o *GetInstallRunbooksParams) SetDefaults() {
 		limitDefault = int64(10)
 
 		offsetDefault = int64(0)
+
+		orphansDefault = bool(false)
 	)
 
 	val := GetInstallRunbooksParams{
-		Limit:  &limitDefault,
-		Offset: &offsetDefault,
+		Limit:   &limitDefault,
+		Offset:  &offsetDefault,
+		Orphans: &orphansDefault,
 	}
 
 	val.timeout = o.timeout
@@ -188,6 +197,17 @@ func (o *GetInstallRunbooksParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
+// WithOrphans adds the orphans to the get install runbooks params
+func (o *GetInstallRunbooksParams) WithOrphans(orphans *bool) *GetInstallRunbooksParams {
+	o.SetOrphans(orphans)
+	return o
+}
+
+// SetOrphans adds the orphans to the get install runbooks params
+func (o *GetInstallRunbooksParams) SetOrphans(orphans *bool) {
+	o.Orphans = orphans
+}
+
 // WithQ adds the q to the get install runbooks params
 func (o *GetInstallRunbooksParams) WithQ(q *string) *GetInstallRunbooksParams {
 	o.SetQ(q)
@@ -241,6 +261,23 @@ func (o *GetInstallRunbooksParams) WriteToRequest(r runtime.ClientRequest, reg s
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Orphans != nil {
+
+		// query param orphans
+		var qrOrphans bool
+
+		if o.Orphans != nil {
+			qrOrphans = *o.Orphans
+		}
+		qOrphans := swag.FormatBool(qrOrphans)
+		if qOrphans != "" {
+
+			if err := r.SetQueryParam("orphans", qOrphans); err != nil {
 				return err
 			}
 		}

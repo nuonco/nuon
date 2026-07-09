@@ -88,6 +88,12 @@ type GetInstallActionsLatestRunsParams struct {
 	*/
 	Offset *int64
 
+	/* Orphans.
+
+	   only return actions no longer in the install's current app config
+	*/
+	Orphans *bool
+
 	/* Page.
 
 	   page number of results to return
@@ -128,13 +134,16 @@ func (o *GetInstallActionsLatestRunsParams) SetDefaults() {
 
 		offsetDefault = int64(0)
 
+		orphansDefault = bool(false)
+
 		pageDefault = int64(0)
 	)
 
 	val := GetInstallActionsLatestRunsParams{
-		Limit:  &limitDefault,
-		Offset: &offsetDefault,
-		Page:   &pageDefault,
+		Limit:   &limitDefault,
+		Offset:  &offsetDefault,
+		Orphans: &orphansDefault,
+		Page:    &pageDefault,
 	}
 
 	val.timeout = o.timeout
@@ -218,6 +227,17 @@ func (o *GetInstallActionsLatestRunsParams) WithOffset(offset *int64) *GetInstal
 // SetOffset adds the offset to the get install actions latest runs params
 func (o *GetInstallActionsLatestRunsParams) SetOffset(offset *int64) {
 	o.Offset = offset
+}
+
+// WithOrphans adds the orphans to the get install actions latest runs params
+func (o *GetInstallActionsLatestRunsParams) WithOrphans(orphans *bool) *GetInstallActionsLatestRunsParams {
+	o.SetOrphans(orphans)
+	return o
+}
+
+// SetOrphans adds the orphans to the get install actions latest runs params
+func (o *GetInstallActionsLatestRunsParams) SetOrphans(orphans *bool) {
+	o.Orphans = orphans
 }
 
 // WithPage adds the page to the get install actions latest runs params
@@ -312,6 +332,23 @@ func (o *GetInstallActionsLatestRunsParams) WriteToRequest(r runtime.ClientReque
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Orphans != nil {
+
+		// query param orphans
+		var qrOrphans bool
+
+		if o.Orphans != nil {
+			qrOrphans = *o.Orphans
+		}
+		qOrphans := swag.FormatBool(qrOrphans)
+		if qOrphans != "" {
+
+			if err := r.SetQueryParam("orphans", qOrphans); err != nil {
 				return err
 			}
 		}

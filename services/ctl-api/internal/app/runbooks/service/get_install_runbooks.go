@@ -13,14 +13,23 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/scopes"
 )
 
-// currentAppConfigRunbookFilter keeps only runbooks present in the install's current app config.
-const currentAppConfigRunbookFilter = `EXISTS (
+const currentAppConfigRunbookSubquery = `
 	SELECT 1 FROM runbook_configs rc
 	JOIN installs i ON i.id = install_runbooks.install_id
 	WHERE rc.runbook_id = install_runbooks.runbook_id
 		AND rc.app_config_id = i.app_config_id
 		AND rc.deleted_at = 0
-)`
+`
+
+// appConfigRunbookFilter keeps only runbooks present in the install's current app config
+// (synced) when syncedOnly is true, or only runbooks no longer in the current app config
+// when syncedOnly is false.
+func appConfigRunbookFilter(syncedOnly bool) string {
+	if syncedOnly {
+		return "EXISTS (" + currentAppConfigRunbookSubquery + ")"
+	}
+	return "NOT EXISTS (" + currentAppConfigRunbookSubquery + ")"
+}
 
 // @ID				GetInstallRunbooks
 // @Summary		get runbooks for an install
@@ -33,6 +42,7 @@ const currentAppConfigRunbookFilter = `EXISTS (
 // @Param			offset		query	int		false	"offset"	Default(0)
 // @Param			limit		query	int		false	"limit"		Default(10)
 // @Param			q			query	string	false	"search by runbook name or ID"
+// @Param			synced		query	bool	false	"return runbooks in the install's current app config; set false to return only runbooks no longer in it"	Default(true)
 // @Success		200			{array}	app.InstallRunbook
 // @Failure		400			{object}	stderr.ErrResponse
 // @Failure		401			{object}	stderr.ErrResponse
@@ -55,6 +65,7 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 	}
 
 	q := ctx.Query("q")
+	synced := ctx.Query("synced") != "false"
 
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
@@ -73,7 +84,7 @@ func (s *service) GetInstallRunbooks(ctx *gin.Context) {
 			return tx.Scopes(scopes.WithOverrideTable("install_runbook_runs_latest_view_v1"))
 		}).
 		Where(app.InstallRunbook{OrgID: org.ID, InstallID: installID}).
-		Where(currentAppConfigRunbookFilter).
+		Where(appConfigRunbookFilter(synced)).
 		Order("install_runbooks.created_at DESC")
 
 	if q != "" {

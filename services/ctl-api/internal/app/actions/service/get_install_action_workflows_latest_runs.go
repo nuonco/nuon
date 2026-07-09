@@ -24,6 +24,7 @@ import (
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param		 			q							query	string	false	"search query for action workflow name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					synced						query	bool	false	"return actions in the install's current app config; set false to return only actions no longer in it"	Default(true)
 // @Tags					actions
 // @Accept					json
 // @Produce					json
@@ -50,6 +51,7 @@ func (s *service) GetInstallActionsLatestRuns(ctx *gin.Context) {
 // @Param					page						query	int		false	"page number of results to return"	Default(0)
 // @Param		 			q							query	string	false	"search query for action workflow name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					synced						query	bool	false	"return actions in the install's current app config; set false to return only actions no longer in it"	Default(true)
 // @Tags					actions
 // @Accept					json
 // @Produce					json
@@ -74,12 +76,13 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	triggerTypes := ctx.Query("trigger_types")
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+	synced := ctx.Query("synced") != "false"
 	var triggerTypesSlice []string
 	if triggerTypes != "" {
 		triggerTypesSlice = []string{triggerTypes}
 	}
 
-	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice, q, lbls)
+	iaws, err := s.getInstallActionWorkflowsLatestRun(ctx, org.ID, installID, triggerTypesSlice, q, lbls, synced)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install action workflows: %w", err))
 		return
@@ -88,7 +91,7 @@ func (s *service) GetInstallActionWorkflowsLatestRuns(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, iaws)
 }
 
-func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string, q string, lbls labels.Labels) ([]*app.InstallActionWorkflow, error) {
+func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, installID string, triggerTypes []string, q string, lbls labels.Labels, syncedOnly bool) ([]*app.InstallActionWorkflow, error) {
 	iaws := []*app.InstallActionWorkflow{}
 
 	// Always join action_workflows for label filtering; the q filter also needs this join.
@@ -106,7 +109,7 @@ func (s *service) getInstallActionWorkflowsLatestRun(ctx *gin.Context, orgID, in
 		Preload("Runs.RunnerJob", func(db *gorm.DB) *gorm.DB {
 			return db.Scopes(scopes.WithDisableViews)
 		}).
-		Where(currentAppConfigActionFilter)
+		Where(appConfigActionFilter(syncedOnly))
 
 	if len(triggerTypes) > 0 {
 		tx = tx.

@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router'
 import { useQuery } from '@tanstack/react-query'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { LabelFilterDropdown } from '@/components/common/LabelFilterDropdown'
+import { SyncedFilterContainer } from '@/components/common/SyncedFilter'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallActionsLatestRuns, getActionLabelKeys } from '@/lib'
@@ -34,6 +35,7 @@ export const InstallActionsTableContainer = ({
       searchParams.get('q'),
       searchParams.get('trigger_types'),
       searchParams.get('labels'),
+      searchParams.get('synced'),
     ],
     queryFn: () =>
       getInstallActionsLatestRuns({
@@ -44,6 +46,7 @@ export const InstallActionsTableContainer = ({
         q: searchParams.get('q') || undefined,
         trigger_types: searchParams.get('trigger_types') || undefined,
         labels: searchParams.get('labels') || undefined,
+        synced: searchParams.get('synced') === 'false' ? false : undefined,
       }),
     refetchInterval: shouldPoll ? pollInterval : false,
     enabled: !!org?.id && !!install?.id,
@@ -68,6 +71,7 @@ export const InstallActionsTableContainer = ({
             queryFn={() => getActionLabelKeys({ orgId: org.id, appId: install.app_id })}
           />
           <AdminDashboardLink path={`/queues?owner_id=${install.id}`} label="View queues" />
+          <SyncedFilterContainer />
           <TriggeredByFilter />
         </div>
       }
