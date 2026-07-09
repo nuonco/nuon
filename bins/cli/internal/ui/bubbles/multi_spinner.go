@@ -8,6 +8,8 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
+	"github.com/nuonco/nuon/bins/cli/internal/agentmode"
 	"github.com/nuonco/nuon/pkg/cli/styles"
 )
 
@@ -282,7 +284,7 @@ func (v *MultiSpinnerView) AddSpinner(id, message string) {
 	v.model.AddSpinner(id, message)
 
 	if !v.interactive {
-		fmt.Printf("[%s] %s\n", id, message)
+		fmt.Fprintf(agentmode.HumanWriter(), "[%s] %s\n", id, message)
 		return
 	}
 
@@ -321,7 +323,7 @@ func (v *MultiSpinnerView) CompleteSpinner(id string, success bool, finalMsg str
 				msg = state.message
 			}
 		}
-		fmt.Printf("[%s] %s %s\n", id, icon, msg)
+		fmt.Fprintf(agentmode.HumanWriter(), "[%s] %s %s\n", id, icon, msg)
 		return
 	}
 

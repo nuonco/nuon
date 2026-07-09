@@ -443,7 +443,7 @@ require (
 	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
-	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/secure-systems-lab/go-securesystemslib v0.9.0 // indirect
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/segmentio/backo-go v1.0.0 // indirect

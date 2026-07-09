@@ -7,6 +7,20 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/services/version"
 )
 
+// syncLongHelp documents the sync → build-wait phases and exit codes; shared
+// by `nuon sync` and `nuon apps sync`.
+const syncLongHelp = `Sync local config files to Nuon.
+
+When the synced config changes components, the sync schedules component builds
+and waits for them to complete (up to 20m), reporting each build's outcome.
+Use --no-wait to skip waiting; the exit code then reflects the sync only.
+
+Exit codes:
+  0 - config synced (and all scheduled builds completed, unless --no-wait)
+  1 - sync failed
+  3 - config synced, but one or more component builds failed, were
+      policy-blocked, or timed out`
+
 func (c *cli) syncCmd() *cobra.Command {
 	var (
 		create    bool
@@ -15,10 +29,12 @@ func (c *cli) syncCmd() *cobra.Command {
 		branch    string
 		appBranch bool
 		preview   bool
+		noWait    bool
 	)
 	syncCmd := &cobra.Command{
 		Use:               "sync",
 		Short:             "Sync local config files to Nuon",
+		Long:              syncLongHelp,
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			opts := apps.SyncOptions{
@@ -29,6 +45,7 @@ func (c *cli) syncCmd() *cobra.Command {
 				AppBranch: appBranch,
 				Preview:   preview,
 				PrintJSON: PrintJSON,
+				NoWait:    noWait,
 			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if create {
@@ -44,6 +61,7 @@ func (c *cli) syncCmd() *cobra.Command {
 	syncCmd.Flags().StringVar(&branch, "branch", "", "Target a specific app branch for this sync")
 	syncCmd.Flags().BoolVar(&appBranch, "app-branch", false, "Select an app branch interactively and trigger a branch run after sync")
 	syncCmd.Flags().BoolVar(&preview, "preview", false, "Plan-only preview mode (no apply). Only used with --branch or --app-branch")
+	syncCmd.Flags().BoolVar(&noWait, "no-wait", false, "Do not wait for scheduled component builds to complete")
 
 	return syncCmd
 }
