@@ -112,6 +112,14 @@ func (i *InstallSandboxRun) Indexes(db *gorm.DB) []migrations.Index {
 				"org_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallSandboxRun{}, "drifted_sandbox_created_at"),
+			Columns: []string{
+				"install_sandbox_id",
+				"created_at DESC",
+			},
+			Option: "WHERE status = 'drifted'",
+		},
 	}
 }
 
