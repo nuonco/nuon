@@ -1,0 +1,2 @@
+calculating helm diff
+unable to execute with dry-run: template: mychart/templates/deployment.yaml:5:14: executing "mychart/templates/deployment.yaml" at <.Values.image.repository>: nil pointer evaluating interface {}.repository
