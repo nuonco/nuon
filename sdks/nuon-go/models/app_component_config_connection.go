@@ -83,6 +83,9 @@ type AppComponentConfigConnection struct {
 	// kubernetes manifest
 	KubernetesManifest *AppKubernetesManifestComponentConfig `json:"kubernetes_manifest,omitempty"`
 
+	// latest build id
+	LatestBuildID string `json:"latest_build_id,omitempty"`
+
 	// max auto retries
 	MaxAutoRetries int64 `json:"max_auto_retries,omitempty"`
 

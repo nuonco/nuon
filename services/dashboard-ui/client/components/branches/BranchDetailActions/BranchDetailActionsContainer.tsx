@@ -22,6 +22,7 @@ interface IBranchDetailActionsContainer {
   currentConfig?: TAppBranchConfig
   appId: string
   orgId: string
+  showTriggerNudge?: boolean
 }
 
 const DeleteBranchModal = ({
@@ -84,6 +85,7 @@ export const BranchDetailActionsContainer = ({
   currentConfig,
   appId,
   orgId,
+  showTriggerNudge,
 }: IBranchDetailActionsContainer) => {
   const { refresh } = useBranch()
   const { addModal } = useSurfaces()
@@ -132,8 +134,9 @@ export const BranchDetailActionsContainer = ({
           <Icon variant="TrashIcon" size={16} />
         </Button>
       }
-      hasConfig={!!currentConfig}
+      hasConfig={(currentConfig?.install_groups?.length ?? 0) > 0}
       isTriggerPending={false}
+      showTriggerNudge={showTriggerNudge}
       onTriggerRun={() => openTriggerModal(false)}
       onTriggerPreview={() => openTriggerModal(true)}
     />

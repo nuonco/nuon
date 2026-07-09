@@ -6,6 +6,9 @@ import './Tooltip.css'
 
 export interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
   isOpen?: boolean
+  defaultOpen?: boolean
+  disableHover?: boolean
+  onOpenChange?: (open: boolean) => void
   position?: 'top' | 'bottom' | 'left' | 'right'
   showIcon?: boolean
   tipContent: React.ReactNode
@@ -15,14 +18,24 @@ export interface ITooltip extends React.HTMLAttributes<HTMLSpanElement> {
 export const Tooltip = ({
   className,
   children,
-  isOpen: initIsOpen = false,
+  isOpen: controlledOpen,
+  defaultOpen = false,
+  disableHover = false,
+  onOpenChange,
   position = 'top',
   showIcon = false,
   tipContent,
   tipContentClassName,
   ...props
 }: ITooltip) => {
-  const [isOpen, setIsOpen] = useState(initIsOpen)
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
+  const isControlled = controlledOpen !== undefined
+  const isOpen = isControlled ? controlledOpen : uncontrolledOpen
+
+  const setOpen = (open: boolean) => {
+    if (!isControlled) setUncontrolledOpen(open)
+    onOpenChange?.(open)
+  }
   const [styles, setStyles] = useState<{
     top: string
     left: string
@@ -70,6 +83,10 @@ export const Tooltip = ({
     }
   }, [])
 
+  useEffect(() => {
+    if (isOpen) calculatePosition()
+  }, [isOpen])
+
   const tooltipContent = (
     <span
       ref={tooltipRef}
@@ -93,11 +110,13 @@ export const Tooltip = ({
       className={cn('tooltip-wrapper w-fit leading-none', className)}
       ref={triggerRef}
       onMouseEnter={() => {
+        if (disableHover) return
         calculatePosition()
-        setIsOpen(true)
+        setOpen(true)
       }}
       onMouseLeave={() => {
-        setIsOpen(false)
+        if (disableHover) return
+        setOpen(false)
       }}
       {...props}
     >
