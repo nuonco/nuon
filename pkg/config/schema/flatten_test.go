@@ -203,6 +203,30 @@ func TestCheckUnhandledConstraints(t *testing.T) {
 	}
 }
 
+func TestCheckComponentBranches(t *testing.T) {
+	expected := &jsonschema.Schema{OneOf: []*jsonschema.Schema{
+		{Required: []string{"helm_chart"}},
+		{Required: []string{"terraform_module"}},
+	}}
+	if err := checkComponentBranches(expected); err != nil {
+		t.Fatalf("nested-config branches should pass: %v", err)
+	}
+
+	unrelated := &jsonschema.Schema{OneOf: []*jsonschema.Schema{
+		{Required: []string{"some_new_field"}},
+	}}
+	if err := checkComponentBranches(unrelated); err == nil {
+		t.Fatal("expected error for a non-nested-config branch")
+	}
+
+	compound := &jsonschema.Schema{AnyOf: []*jsonschema.Schema{
+		{Required: []string{"helm_chart", "terraform_module"}},
+	}}
+	if err := checkComponentBranches(compound); err == nil {
+		t.Fatal("expected error for a multi-key branch")
+	}
+}
+
 // TestComponentSchemasAreFlattened guards against reintroducing the
 // unsatisfiable allOf composition.
 func TestComponentSchemasAreFlattened(t *testing.T) {

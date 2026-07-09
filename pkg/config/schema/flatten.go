@@ -56,6 +56,9 @@ func flattenedComponentSchema(typedConfig any) (*jsonschema.Schema, error) {
 	if err := checkUnhandledConstraints(typed, fmt.Sprintf("%T", typedConfig)); err != nil {
 		return nil, err
 	}
+	if err := checkComponentBranches(comp); err != nil {
+		return nil, err
+	}
 
 	merged := &jsonschema.Schema{
 		Version:              compRoot.Version,
@@ -128,6 +131,22 @@ func checkUnhandledConstraints(def *jsonschema.Schema, name string) error {
 	for _, u := range unhandled {
 		if u.set {
 			return fmt.Errorf("%s declares root-level %q, which flattenedComponentSchema does not merge; extend the flattening before using it", name, u.keyword)
+		}
+	}
+	return nil
+}
+
+// checkComponentBranches verifies Component's root oneOf/anyOf is exactly the
+// "one nested config block is required" constraint before it is dropped. If
+// Component ever grows an unrelated root-level branch, flattening must be
+// taught about it instead of discarding it.
+func checkComponentBranches(comp *jsonschema.Schema) error {
+	for _, branch := range append(append([]*jsonschema.Schema{}, comp.OneOf...), comp.AnyOf...) {
+		if len(branch.Required) != 1 {
+			return fmt.Errorf("config.Component has a root-level oneOf/anyOf branch that is not a single nested-config requirement; extend the flattening before dropping it")
+		}
+		if _, ok := componentNestedConfigKeys[branch.Required[0]]; !ok {
+			return fmt.Errorf("config.Component has a root-level oneOf/anyOf branch requiring %q, which is not a nested config key; extend the flattening before dropping it", branch.Required[0])
 		}
 	}
 	return nil
