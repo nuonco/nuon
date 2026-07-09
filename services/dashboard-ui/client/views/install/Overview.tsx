@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Banner } from '@/components/common/Banner'
+import { Expand } from '@/components/common/Expand'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { Markdown } from '@/components/common/Markdown'
 import { Text } from '@/components/common/Text'
@@ -52,7 +53,19 @@ export const Overview = () => {
       {readme?.readme ? (
         <div className="flex flex-col gap-4">
           <ReadmeWarnings warnings={readme.warnings} />
-          <Markdown content={readme.readme} mode="install" />
+          {readme.warnings?.length ? (
+            <Expand
+              id="incomplete-readme"
+              heading="View incomplete README"
+              className="border rounded-lg"
+            >
+              <div className="p-4 border-t max-h-[32rem] overflow-y-auto">
+                <Markdown content={readme.readme} mode="install" />
+              </div>
+            </Expand>
+          ) : (
+            <Markdown content={readme.readme} mode="install" />
+          )}
         </div>
       ) : (
         // Blue informative Banner (theme="info") replaces the previous
