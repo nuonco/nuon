@@ -85,7 +85,7 @@ func (m model) headerView() string {
 		unless it's loading, in which case we render a single row
 	*/
 	content := ""
-	if len(m.steps) == 0 {
+	if m.workflow == nil {
 		content += m.spinner.View() + " loading ..."
 		m.header.SetContent(content)
 		return appStyle.Render(m.header.View())
