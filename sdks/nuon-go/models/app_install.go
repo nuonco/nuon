@@ -23,6 +23,9 @@ type AppInstall struct {
 	// app branch
 	AppBranch *AppAppBranch `json:"app_branch,omitempty"`
 
+	// app branch connections
+	AppBranchConnections []*AppInstallAppBranchConnection `json:"app_branch_connections"`
+
 	// app branch id
 	AppBranchID string `json:"app_branch_id,omitempty"`
 
@@ -157,6 +160,14 @@ type AppInstall struct {
 func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateAppBranch(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAppBranchConnections(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateAppRunnerConfig(formats); err != nil {
 		res = append(res, err)
 	}
@@ -240,6 +251,59 @@ func (m *AppInstall) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstall) validateAppBranch(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppBranch) { // not required
+		return nil
+	}
+
+	if m.AppBranch != nil {
+		if err := m.AppBranch.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_branch")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_branch")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) validateAppBranchConnections(formats strfmt.Registry) error {
+	if swag.IsZero(m.AppBranchConnections) { // not required
+		return nil
+	}
+
+	for i := 0; i < len(m.AppBranchConnections); i++ {
+		if swag.IsZero(m.AppBranchConnections[i]) { // not required
+			continue
+		}
+
+		if m.AppBranchConnections[i] != nil {
+			if err := m.AppBranchConnections[i].Validate(formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("app_branch_connections" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("app_branch_connections" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 
@@ -777,6 +841,14 @@ func (m *AppInstall) validateWorkflows(formats strfmt.Registry) error {
 func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.contextValidateAppBranch(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateAppBranchConnections(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.contextValidateAppRunnerConfig(ctx, formats); err != nil {
 		res = append(res, err)
 	}
@@ -860,6 +932,60 @@ func (m *AppInstall) ContextValidate(ctx context.Context, formats strfmt.Registr
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *AppInstall) contextValidateAppBranch(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.AppBranch != nil {
+
+		if swag.IsZero(m.AppBranch) { // not required
+			return nil
+		}
+
+		if err := m.AppBranch.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("app_branch")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("app_branch")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *AppInstall) contextValidateAppBranchConnections(ctx context.Context, formats strfmt.Registry) error {
+
+	for i := 0; i < len(m.AppBranchConnections); i++ {
+
+		if m.AppBranchConnections[i] != nil {
+
+			if swag.IsZero(m.AppBranchConnections[i]) { // not required
+				return nil
+			}
+
+			if err := m.AppBranchConnections[i].ContextValidate(ctx, formats); err != nil {
+				ve := new(errors.Validation)
+				if stderrors.As(err, &ve) {
+					return ve.ValidateName("app_branch_connections" + "." + strconv.Itoa(i))
+				}
+				ce := new(errors.CompositeError)
+				if stderrors.As(err, &ce) {
+					return ce.ValidateName("app_branch_connections" + "." + strconv.Itoa(i))
+				}
+
+				return err
+			}
+		}
+
+	}
+
 	return nil
 }
 

@@ -1,8 +1,12 @@
-import { type ReactNode } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Button } from '@/components/common/Button'
 import { Dropdown } from '@/components/common/Dropdown'
 import { Icon } from '@/components/common/Icon'
 import { Menu } from '@/components/common/Menu'
+import { Text } from '@/components/common/Text'
+import { Tooltip } from '@/components/common/Tooltip'
+
+const NUDGE_DURATION_MS = 8000
 
 interface IBranchDetailActions {
   editButton: ReactNode
@@ -10,6 +14,7 @@ interface IBranchDetailActions {
   deleteButton: ReactNode
   hasConfig: boolean
   isTriggerPending: boolean
+  showTriggerNudge?: boolean
   onTriggerRun: () => void
   onTriggerPreview: () => void
 }
@@ -20,9 +25,22 @@ export const BranchDetailActions = ({
   deleteButton,
   hasConfig,
   isTriggerPending,
+  showTriggerNudge = false,
   onTriggerRun,
   onTriggerPreview,
 }: IBranchDetailActions) => {
+  const [nudgeOpen, setNudgeOpen] = useState(false)
+
+  useEffect(() => {
+    if (!showTriggerNudge) {
+      setNudgeOpen(false)
+      return
+    }
+    setNudgeOpen(true)
+    const timer = setTimeout(() => setNudgeOpen(false), NUDGE_DURATION_MS)
+    return () => clearTimeout(timer)
+  }, [showTriggerNudge])
+
   return (
     <div className="flex items-center gap-3">
       <Dropdown
@@ -45,20 +63,32 @@ export const BranchDetailActions = ({
       </Dropdown>
 
       <div className="flex items-center">
-        <Button
-          variant="primary"
-          disabled={!hasConfig || isTriggerPending}
-          onClick={onTriggerRun}
-          className="!rounded-r-none"
-          title={
-            !hasConfig
-              ? 'Create a deployment plan first to trigger a run'
-              : 'Trigger a new run with the current deployment plan'
+        <Tooltip
+          isOpen={nudgeOpen}
+          disableHover
+          position="left"
+          tipContent={
+            <Text variant="subtext">Trigger a run to deploy this branch</Text>
           }
         >
-          <Icon variant="PlayIcon" size={16} />
-          {isTriggerPending ? 'Triggering...' : 'Trigger run'}
-        </Button>
+          <Button
+            variant="primary"
+            disabled={!hasConfig || isTriggerPending}
+            onClick={() => {
+              setNudgeOpen(false)
+              onTriggerRun()
+            }}
+            className="!rounded-r-none"
+            title={
+              !hasConfig
+                ? 'Create a deployment plan first to trigger a run'
+                : 'Trigger a new run with the current deployment plan'
+            }
+          >
+            <Icon variant="PlayIcon" size={16} />
+            {isTriggerPending ? 'Triggering...' : 'Trigger run'}
+          </Button>
+        </Tooltip>
 
         <Dropdown
           id="trigger-run-options"

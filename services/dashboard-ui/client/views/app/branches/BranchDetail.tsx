@@ -79,6 +79,10 @@ const BranchDetailContent = () => {
 
   const runs = runsResult?.data ?? []
 
+  const hasDeploymentPlan = (currentConfig?.install_groups?.length ?? 0) > 0
+  const showTriggerNudge =
+    hasDeploymentPlan && !isLoadingRuns && runs.length === 0
+
   return (
     <PageSection>
       <PageTitle title={`${branch.name} | ${app.name}`} />
@@ -122,6 +126,7 @@ const BranchDetailContent = () => {
           currentConfig={currentConfig}
           appId={appId}
           orgId={orgId}
+          showTriggerNudge={showTriggerNudge}
         />
       </div>
 

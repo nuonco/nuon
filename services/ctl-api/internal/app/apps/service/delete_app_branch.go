@@ -3,8 +3,10 @@ package service
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
@@ -60,9 +62,34 @@ func (s *service) DeleteAppBranch(ctx *gin.Context) {
 		return
 	}
 
-	res = s.db.WithContext(ctx).Delete(&branch)
-	if res.Error != nil {
-		ctx.Error(fmt.Errorf("unable to delete app branch: %w", res.Error))
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		now := time.Now()
+
+		if err := tx.Model(&app.InstallAppBranchConnection{}).
+			Where(app.InstallAppBranchConnection{
+				AppBranchID: appBranchID,
+				Active:      true,
+			}).
+			Updates(map[string]interface{}{
+				"active":         false,
+				"deactivated_at": now,
+			}).Error; err != nil {
+			return fmt.Errorf("unable to deactivate install branch connections: %w", err)
+		}
+
+		if err := tx.Model(&app.Install{}).
+			Where("app_branch_id = ?", appBranchID).
+			Update("app_branch_id", nil).Error; err != nil {
+			return fmt.Errorf("unable to release installs from branch: %w", err)
+		}
+
+		if err := tx.Delete(&branch).Error; err != nil {
+			return fmt.Errorf("unable to delete app branch: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		ctx.Error(err)
 		return
 	}
 
