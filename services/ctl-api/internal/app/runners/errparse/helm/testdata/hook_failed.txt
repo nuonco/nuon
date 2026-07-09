@@ -1,0 +1,2 @@
+running helm install
+unable to install helm release: failed pre-install: warning: Hook pre-install mychart/templates/migrate-job.yaml failed: 1 error occurred: job "db-migrate" failed: BackoffLimitExceeded

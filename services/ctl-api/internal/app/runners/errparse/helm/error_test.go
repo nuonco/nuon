@@ -23,8 +23,8 @@ func parse(raw string) compositeerrors.CompositeError {
 	return errorParser{}.Parse(&errparse.ParseContext{Raw: raw})
 }
 
-func TestParse_StripsRunnerWrapper(t *testing.T) {
-	ce := parse(readFixture(t, "reuse_name.txt"))
+func helmErr(t *testing.T, ce compositeerrors.CompositeError) *HelmError {
+	t.Helper()
 	if ce == nil {
 		t.Fatal("expected a composite error, got nil")
 	}
@@ -32,31 +32,57 @@ func TestParse_StripsRunnerWrapper(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected *HelmError, got %T", ce)
 	}
+	return e
+}
+
+func TestParse_StripsRunnerWrapperAndClassifies(t *testing.T) {
+	ce := parse(readFixture(t, "reuse_name.txt"))
+	e := helmErr(t, ce)
 	if e.Summary != "cannot reuse a name that is still in use" {
 		t.Errorf("summary should be the SDK error with the runner wrapper stripped: %q", e.Summary)
 	}
 	if strings.Contains(e.Summary, "helm release") || strings.Contains(e.Summary, "unable to execute job") {
 		t.Errorf("summary should not carry the runner wrapper nesting: %q", e.Summary)
 	}
-	if ce.Type() != HelmErrorType {
-		t.Errorf("type = %q", ce.Type())
+	if ce.Type() != HelmNameInUseType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmNameInUseType)
+	}
+	if e.Reason != "name_in_use" {
+		t.Errorf("reason = %q", e.Reason)
 	}
 	if ce.Severity() != compositeerrors.SeverityError {
 		t.Errorf("severity = %q", ce.Severity())
+	}
+	if !e.Hints().SkipAutoRetry() {
+		t.Error("a name-in-use failure should set skip_auto_retry")
+	}
+}
+
+func TestParse_ImmutableField(t *testing.T) {
+	ce := parse(readFixture(t, "immutable_field.txt"))
+	e := helmErr(t, ce)
+	if ce.Type() != HelmImmutableFieldType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmImmutableFieldType)
+	}
+	if !strings.HasPrefix(e.Summary, `cannot patch "clickhouse"`) {
+		t.Errorf("summary = %q", e.Summary)
+	}
+	if !e.Hints().SkipAutoRetry() {
+		t.Error("an immutable-field failure should set skip_auto_retry")
 	}
 }
 
 func TestParse_OwnershipConflict(t *testing.T) {
 	ce := parse(readFixture(t, "ownership_conflict.txt"))
-	if ce == nil {
-		t.Fatal("expected a composite error, got nil")
+	e := helmErr(t, ce)
+	if ce.Type() != HelmOwnershipConflictType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmOwnershipConflictType)
 	}
-	e := ce.(*HelmError)
 	if !strings.HasPrefix(e.Summary, `ConfigMap "app-config"`) {
 		t.Errorf("summary = %q", e.Summary)
 	}
-	if !strings.Contains(e.Summary, "exists and cannot be imported into the current release") {
-		t.Errorf("summary missing the SDK cause: %q", e.Summary)
+	if !e.Hints().SkipAutoRetry() {
+		t.Error("an ownership conflict should set skip_auto_retry")
 	}
 
 	var output string
@@ -70,16 +96,27 @@ func TestParse_OwnershipConflict(t *testing.T) {
 	}
 }
 
+func TestParse_HookFailedIsRetryable(t *testing.T) {
+	ce := parse(readFixture(t, "hook_failed.txt"))
+	e := helmErr(t, ce)
+	if ce.Type() != HelmHookFailedType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmHookFailedType)
+	}
+	if e.Hints().SkipAutoRetry() {
+		t.Error("a hook failure can be transient and should stay auto-retryable")
+	}
+}
+
 // TestParse_WrapperWinsOverEarlierGenericLogLine is the key regression guard:
 // the generic phrase "timed out waiting for the condition" appears in earlier
 // streamed pod-log lines, but the headline must come from the runner's wrapper
 // line, not the first line that merely mentions a generic phrase.
 func TestParse_WrapperWinsOverEarlierGenericLogLine(t *testing.T) {
 	ce := parse(readFixture(t, "wait_timeout_with_pod_logs.txt"))
-	if ce == nil {
-		t.Fatal("expected a composite error, got nil")
+	e := helmErr(t, ce)
+	if ce.Type() != HelmWaitTimeoutType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmWaitTimeoutType)
 	}
-	e := ce.(*HelmError)
 	if e.Summary != "timed out waiting for the condition" {
 		t.Errorf("summary = %q", e.Summary)
 	}
@@ -89,16 +126,22 @@ func TestParse_WrapperWinsOverEarlierGenericLogLine(t *testing.T) {
 	if !strings.Contains(e.Output, "ImagePullBackOff") {
 		t.Errorf("Output should retain the streamed pod context: %q", e.Output)
 	}
+	if e.Hints().SkipAutoRetry() {
+		t.Error("a wait timeout is often transient and should stay auto-retryable")
+	}
 }
 
 func TestParse_DryRunTemplateError(t *testing.T) {
 	ce := parse(readFixture(t, "dry_run_template.txt"))
-	if ce == nil {
-		t.Fatal("expected a composite error, got nil")
+	e := helmErr(t, ce)
+	if ce.Type() != HelmRenderErrorType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmRenderErrorType)
 	}
-	e := ce.(*HelmError)
 	if !strings.HasPrefix(e.Summary, "template: mychart/templates/deployment.yaml") {
 		t.Errorf("summary should strip the dry-run wrapper and lead with the template error: %q", e.Summary)
+	}
+	if !e.Hints().SkipAutoRetry() {
+		t.Error("a render error is deterministic and should set skip_auto_retry")
 	}
 }
 
@@ -106,12 +149,26 @@ func TestParse_DryRunTemplateError(t *testing.T) {
 // runner wrapper but still carries a verified helm SDK cause string.
 func TestParse_CauseFallbackWithoutWrapper(t *testing.T) {
 	ce := parse("unable to build kubernetes objects from release manifest: error validating \"\": error validating data: apiVersion not set")
-	if ce == nil {
-		t.Fatal("expected a composite error, got nil")
+	e := helmErr(t, ce)
+	if ce.Type() != HelmRenderErrorType {
+		t.Errorf("type = %q, want %q", ce.Type(), HelmRenderErrorType)
 	}
-	e := ce.(*HelmError)
 	if !strings.HasPrefix(e.Summary, "unable to build kubernetes objects from release manifest") {
 		t.Errorf("summary = %q", e.Summary)
+	}
+}
+
+func TestParse_UnclassifiedHelmFailureFallsBackToGeneric(t *testing.T) {
+	ce := parse("unable to upgrade helm release: some novel helm failure we have not classified")
+	e := helmErr(t, ce)
+	if ce.Type() != HelmErrorType {
+		t.Errorf("type = %q, want the generic %q", ce.Type(), HelmErrorType)
+	}
+	if e.Reason != "" {
+		t.Errorf("generic fallback should have no reason, got %q", e.Reason)
+	}
+	if e.Hints().SkipAutoRetry() {
+		t.Error("generic helm failure should not force skip_auto_retry")
 	}
 }
 

@@ -12,6 +12,13 @@
 // dry-run: <sdk error>"). The parser leads the headline at the SDK error by
 // stripping that wrapper, and falls back to a set of verified helm v4 SDK cause
 // strings when the wrapper is absent from the captured output.
+//
+// The anchored cause is then classified into a specific helm failure type
+// (helm.immutable_field, helm.ownership_conflict, ...) which carries a distinct
+// discriminator (for UI badging and the parse-coverage metric) and retry hints
+// (deterministic config errors set skip_auto_retry so the orchestrator parks
+// the step for manual retry instead of burning attempts). An unclassified helm
+// failure still yields the generic helm.error so it beats the raw dump.
 package helm
 
 import (
@@ -21,9 +28,31 @@ import (
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/compositeerrors"
 )
 
-// HelmErrorType is the discriminator for a helm failure that no provider-layer
-// parser recognised.
-const HelmErrorType compositeerrors.Type = "helm.error"
+const (
+	// HelmErrorType is the fallback discriminator for a helm failure that no
+	// specific classifier recognised.
+	HelmErrorType compositeerrors.Type = "helm.error"
+	// HelmImmutableFieldType is a rejected patch to an immutable/forbidden field
+	// (e.g. a StatefulSet selector), which a blind retry can never fix.
+	HelmImmutableFieldType compositeerrors.Type = "helm.immutable_field"
+	// HelmOwnershipConflictType is a resource that already exists and is not
+	// owned by this release, so it cannot be adopted.
+	HelmOwnershipConflictType compositeerrors.Type = "helm.ownership_conflict"
+	// HelmNameInUseType is a release name still held by another (often stuck)
+	// release.
+	HelmNameInUseType compositeerrors.Type = "helm.name_in_use"
+	// HelmNoDeployedReleaseType is an upgrade with no prior deployed release.
+	HelmNoDeployedReleaseType compositeerrors.Type = "helm.no_deployed_release"
+	// HelmHookFailedType is a lifecycle hook (pre/post install/upgrade) that
+	// failed; this can be transient so it stays auto-retryable.
+	HelmHookFailedType compositeerrors.Type = "helm.hook_failed"
+	// HelmWaitTimeoutType is a --wait timeout on resources becoming ready; often
+	// transient (image pull, scheduling) so it stays auto-retryable.
+	HelmWaitTimeoutType compositeerrors.Type = "helm.wait_timeout"
+	// HelmRenderErrorType is a chart render / manifest build failure (template
+	// execution, YAML, unknown kind), a deterministic config error.
+	HelmRenderErrorType compositeerrors.Type = "helm.render_error"
+)
 
 const (
 	// maxHeadline bounds the one-line message; full detail lives in the output.
@@ -40,17 +69,20 @@ const (
 // deploy/helm (operation_install.go / operation_upgrade.go).
 var wrappers = []string{"helm release:", "with dry-run:"}
 
-// causes are verified helm v4 SDK (pkg/action) error substrings, used as a
-// backup anchor when the captured output does not carry the runner wrapper
+// causes are verified helm v4 SDK (pkg/action, pkg/kube) error substrings, used
+// as a backup anchor when the captured output does not carry the runner wrapper
 // (e.g. only a log line was retained). Every entry is helm-specific — generic
 // kubernetes phrases like "timed out waiting for the condition" are
 // deliberately excluded, since they can appear in streamed pod logs before the
-// real cause and would produce a misleading headline.
+// real cause and would produce a misleading headline. (That phrase is still
+// used to classify an already-anchored cause below, just never to anchor one.)
 var causes = []string{
 	"cannot reuse a name that is still in use",
 	"exists and cannot be imported into the current release",
 	"invalid ownership metadata",
 	"unable to build kubernetes objects from",
+	"cannot patch",
+	"unable to recognize",
 	"failed pre-install",
 	"failed post-install",
 	"pre-upgrade hooks failed",
@@ -59,23 +91,64 @@ var causes = []string{
 	"has no deployed releases",
 	"another operation (install/upgrade/rollback) is in progress",
 	"chart dependencies processing failed",
+	"YAML parse error",
 }
 
-// HelmError is the tool-layer payload: the helm failure summary (the SDK error
-// with the runner's wrapper stripped) plus the cleaned output for context.
+// classifier maps an anchored cause to a specific helm failure type. The first
+// classifier whose match hits wins, so more specific ones are listed first.
+type classifier struct {
+	typ   compositeerrors.Type
+	hints compositeerrors.Hints
+	match func(summary string) bool
+}
+
+// skipRetry marks a deterministic failure a blind retry cannot fix, so the
+// orchestrator parks the step for manual retry instead of burning attempts.
+var skipRetry = compositeerrors.Hints{compositeerrors.HintSkipAutoRetry: "true"}
+
+var classifiers = []classifier{
+	{HelmOwnershipConflictType, skipRetry, contains("exists and cannot be imported into the current release", "invalid ownership metadata")},
+	{HelmImmutableFieldType, skipRetry, contains("field is immutable", "Forbidden: updates to")},
+	{HelmNameInUseType, skipRetry, contains("cannot reuse a name that is still in use")},
+	{HelmNoDeployedReleaseType, skipRetry, contains("has no deployed releases")},
+	{HelmRenderErrorType, skipRetry, contains("unable to build kubernetes objects from", "YAML parse error", "template:", "unable to recognize")},
+	{HelmHookFailedType, nil, contains("hooks failed", "failed pre-install", "failed post-install")},
+	{HelmWaitTimeoutType, nil, contains("timed out waiting for the condition")},
+}
+
+// contains returns a matcher that hits when the summary contains any of subs.
+func contains(subs ...string) func(string) bool {
+	return func(summary string) bool {
+		for _, s := range subs {
+			if strings.Contains(summary, s) {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+// HelmError is the tool-layer payload: the classified helm failure. Summary is
+// the SDK error with the runner's wrapper stripped; Reason is the specific
+// failure class (empty for the generic fallback); Output is the cleaned context.
 type HelmError struct {
-	// Summary is the helm failure cause, with the runner's wrapper prefix
-	// removed so it leads with the SDK error rather than the nesting.
+	Reason  string `json:"reason,omitempty"`
 	Summary string `json:"summary"`
-	// Output is the cleaned, possibly-truncated diagnostic output.
-	Output string `json:"output,omitempty"`
+	Output  string `json:"output,omitempty"`
+
+	typ   compositeerrors.Type
+	hints compositeerrors.Hints
 }
 
-var _ compositeerrors.CompositeError = (*HelmError)(nil)
+var (
+	_ compositeerrors.CompositeError = (*HelmError)(nil)
+	_ compositeerrors.HintsProvider  = (*HelmError)(nil)
+)
 
 func (e *HelmError) Error() string                      { return truncate(e.Summary, maxHeadline) }
-func (e *HelmError) Type() compositeerrors.Type         { return HelmErrorType }
+func (e *HelmError) Type() compositeerrors.Type         { return e.typ }
 func (e *HelmError) Severity() compositeerrors.Severity { return compositeerrors.SeverityError }
+func (e *HelmError) Hints() compositeerrors.Hints       { return e.hints }
 
 func (e *HelmError) Sections() []compositeerrors.Section {
 	if e.Output == "" {
@@ -110,10 +183,24 @@ func (errorParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeEr
 		return nil
 	}
 
-	return &HelmError{
+	typ, hints := HelmErrorType, compositeerrors.Hints(nil)
+	for _, c := range classifiers {
+		if c.match(summary) {
+			typ, hints = c.typ, c.hints
+			break
+		}
+	}
+
+	e := &HelmError{
 		Summary: summary,
 		Output:  truncate(strings.Join(lines, "\n"), maxBody),
+		typ:     typ,
+		hints:   hints,
 	}
+	if typ != HelmErrorType {
+		e.Reason = strings.TrimPrefix(string(typ), "helm.")
+	}
+	return e
 }
 
 func init() {
