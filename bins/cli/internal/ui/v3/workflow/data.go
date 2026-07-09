@@ -83,12 +83,19 @@ func (m *model) handleWorkflowFetched(msg workflowFetchedMsg) tea.Cmd {
 	workflow := msg.workflow
 	err := msg.err
 	if err != nil {
+		// Surface the error so an initial load that never succeeds shows the
+		// error instead of spinning forever (viewContent renders m.error when
+		// no workflow has loaded yet).
+		if m.workflow == nil {
+			m.error = err
+		}
 		m.setLogMessage(fmt.Sprintf("[error] failed to fetch data: %s", err), "error")
 		return nil
 	} else if workflow == nil {
 		m.setLogMessage("something unexpected has taken place", "error")
 		return nil
 	}
+	m.error = nil
 	m.workflow = workflow
 	if msg.policies != nil {
 		policyNames := make(map[string]string)
