@@ -23,9 +23,9 @@ Provisioning with Terraform is a hand-off between you and your customer:
 Your customer will need the following in order to apply the stack.
 
 - The [Terraform](https://developer.hashicorp.com/terraform/install) CLI installed, or set up in their chosen automation platform.
-- Credentials for the target cloud account, so Terraform can provision resources
+- Credentials for the target cloud account, so Terraform can provision resources.
 
-## Provision the stack
+## Provisioning the stack
 
 Follow these steps to provision a stack using Terraform.
 
@@ -75,7 +75,7 @@ Follow these steps to provision a stack using Terraform.
     </CodeGroup>
   </Step>
   <Step title="Configure the install">
-    The `inputs.auto.tfvars` can be stored in version control alongside the terraform module.
+    The `inputs.auto.tfvars` file can be stored in version control alongside the terraform module.
     It can also be stored in the environment configuration of your chosen automation platform.
 
     `secrets.auto.tfvars` should be stored separately as a secret value.

@@ -6,9 +6,9 @@ boost: 10
 keywords: ["cloudformation", "install-stacks", "install stack", "stack", "aws", "create-stack", "template", "quick create", "aws cli"]
 ---
 
-Nuon supports provisioning install stacks to AWS using [CloudFormation](https://aws.amazon.com/cloudformation/). A Cloudformation stack template is generated for every install, along with a Quick-create link and CLI commands. Which one you use will depend on whether your customer wants to use the AWS Web console, or the AWS CLI.
+Nuon supports provisioning install stacks to AWS using [CloudFormation](https://aws.amazon.com/cloudformation/). A CloudFormation stack template is generated for every install, along with a quick-create link and CLI commands. Which one you use will depend on whether your customer wants to use the AWS web console or the AWS CLI.
 
-- **[Quick-create](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html)** — open the quick-create link and create the stack in the AWS Web console.
+- **[Quick-create](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stacks-quick-create-links.html)** — open the quick-create link and create the stack in the AWS web console.
 - **[AWS CLI](https://aws.amazon.com/cli/)** — run the generated `aws cloudformation create-stack` command.
 
 <Note>CloudFormation is AWS-only.</Note>
@@ -18,7 +18,7 @@ Nuon supports provisioning install stacks to AWS using [CloudFormation](https://
 Provisioning with CloudFormation is a hand-off between you and your customer:
 
 1. You create the install. The install workflow pauses at the **await install stack** step.
-2. On that step, you copy the quick-create link, or the CLI commands.
+2. On that step, you copy the quick-create link or the CLI commands.
 3. You send them to your customer.
 4. Your customer launches the stack in their AWS account.
 5. The stack boots up the runner. Once the runner connects, the await install stack step completes.
@@ -31,15 +31,15 @@ Your customer will need the following in order to launch the stack.
 - If using the CLI, the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed and
   configured.
 
-## Launch from the AWS console
+## Using the quick-create link
 
-Follow these steps to provision a stack using an AWS Quick-link URL.
+Follow these steps to provision a stack using a quick-create link.
 
 <Steps>
   <Step title="Create an install">
     Create an install as you usually would, and wait for the provision workflow to get to the **await install stack** step.
   </Step>
-  <Step title="Send your customer the Quick-create link">
+  <Step title="Send your customer the quick-create link">
     On the **await install stack** step, copy the **Quick launch in AWS console** link and send it to your customer.
 
     The remaining steps are for your customer.
@@ -52,7 +52,7 @@ Follow these steps to provision a stack using an AWS Quick-link URL.
     Fill in the required inputs and secrets.
     Override any default values you want to change.
 
-    <Note>The secret values will be written directly to AWS Secret Store. They will not be saved in plaintext anywhere.</Note>
+    <Note>The secret values will be written directly to AWS Secrets Manager. They will not be saved in plaintext anywhere.</Note>
   </Step>
   <Step title="Provision the stack">
     Check the boxes at the bottom of the page and click **Create stack**.
@@ -61,7 +61,7 @@ Follow these steps to provision a stack using an AWS Quick-link URL.
   </Step>
 </Steps>
 
-## Launch with the AWS CLI
+## Using the AWS CLI
 
 Follow these steps to provision a stack using the AWS CLI.
 
@@ -74,7 +74,7 @@ Follow these steps to provision a stack using the AWS CLI.
   <Step title="Configure and create the stack">
     Run the command using credentials for the target AWS account. Use the `--parameters` flag to set input and secret values.
     ```bash
-    aws cloudformation update-stack \
+    aws cloudformation create-stack \
       --stack-name <stack-name> \
       --template-url <template-url> \
       --capabilities CAPABILITY_NAMED_IAM \
