@@ -54,7 +54,13 @@ export const DeploymentPlanEditorContainer = ({
     enabled: !!org.id && !!app.id,
   })
 
-  const availableInstalls = installsResult?.data ?? []
+  const availableInstalls = useMemo(
+    () =>
+      (installsResult?.data ?? []).filter(
+        (i) => !i.app_branch_id || i.app_branch_id === branch.id
+      ),
+    [installsResult, branch.id]
+  )
 
   const initialGroups = useMemo(
     () => toEditorGroups(currentConfig),
