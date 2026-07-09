@@ -2353,6 +2353,13 @@ export interface paths {
      */
     get: operations["GetQueueStatus"];
   };
+  "/v1/runner-jobs": {
+    /**
+     * list org runner jobs
+     * @description list runner jobs for the current org that ran on the control plane. Used by orgs that build on the control plane and therefore have no org runner.
+     */
+    get: operations["ListRunnerJobs"];
+  };
   "/v1/runner-jobs/{runner_job_id}": {
     /**
      * get runner job
@@ -25536,6 +25543,64 @@ export interface operations {
       };
       /** @description Not Found */
       404: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+    };
+  };
+  /**
+   * list org runner jobs
+   * @description list runner jobs for the current org that ran on the control plane. Used by orgs that build on the control plane and therefore have no org runner.
+   */
+  ListRunnerJobs: {
+    parameters: {
+      query: {
+        /** @description job group */
+        group?: string;
+        /** @description job groups */
+        groups?: string;
+        /** @description job status */
+        status?: string;
+        /** @description job statuses */
+        statuses?: string;
+        /** @description job executor (must be control-plane) */
+        executor: string;
+        /** @description offset of jobs to return */
+        offset?: number;
+        /** @description limit of jobs to return */
+        limit?: number;
+        /** @description page number of results to return */
+        page?: number;
+      };
+    };
+    responses: {
+      /** @description OK */
+      200: {
+        content: {
+          "application/json": components["schemas"]["app.RunnerJob"][];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        content: {
+          "application/json": components["schemas"]["stderr.ErrResponse"];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
         content: {
           "application/json": components["schemas"]["stderr.ErrResponse"];
         };
