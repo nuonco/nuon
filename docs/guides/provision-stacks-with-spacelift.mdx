@@ -30,7 +30,7 @@ Provisioning with Spacelift is a hand-off between you and your customer:
 
 Your customer will need the following in order to use Spacelift.
 
-- A [Spacelift](https://spacelift.io/) account with permission to create blueprints and stacks
+- A [Spacelift](https://spacelift.io/) account with permission to create blueprints and stacks.
 - The [cloud integration](https://docs.spacelift.io/integrations/cloud-providers) set up for the cloud account they want to install your app in.
 
 ## Using a blueprint
@@ -55,7 +55,7 @@ Follow these steps to provision a stack using a Spacelift Blueprint.
   <Step title="Publish it">
     Click **Publish** to move the blueprint from draft to published.
     Once published, the blueprint cannot be edited.
-    </Step>
+  </Step>
   <Step title="Create a stack and fill in the inputs">
     On the published blueprint, click **Create stack** and fill in the inputs and secrets.
     Click **Create** to create the stack.
@@ -65,12 +65,12 @@ Follow these steps to provision a stack using a Spacelift Blueprint.
   </Step>
   <Step title="Provision the stack">
     Trigger a run.
-    This will provision the Nuon Stack.
+    This will provision the Nuon stack.
     Once the runner phones home, the await install stack step in Nuon will complete.
   </Step>
 </Steps>
 
-## Use terraform
+## Using terraform
 
 Follow these steps to provision a Nuon install stack using the Spacelift Terraform provider.
 
@@ -91,12 +91,12 @@ Follow these steps to provision a Nuon install stack using the Spacelift Terrafo
     default to `false` in `spacelift.tf`.
   </Step>
   <Step title="Configure `inputs.auto.tfvars`">
-    Fill in the inputs in the `inputs.auto.tfavrs` file.
+    Fill in the inputs in the `inputs.auto.tfvars` file.
     Leave this file alongside the stack if you want to manage these values in version control.
     Alternatively, you can save the contents to a mounted, non-secret file in Spacelift.
   </Step>
   <Step title="Configure `secrets.auto.tfvars`">
-    If saving this as a secret mounted file, fill in the inputs in `secrets.auto.tfvars`.
+    If saving this as a secret mounted file, fill in the secrets in `secrets.auto.tfvars`.
     Alternatively, store the secret values in a secret store and pass them to terraform using environment variables.
   </Step>
   <Step title="Authenticate the Spacelift provider">
