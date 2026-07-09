@@ -17,6 +17,29 @@ import (
 	"gorm.io/gorm"
 )
 
+// currentAppConfigComponentSubquery matches install components whose component is
+// present in the install's current app config. Membership is decided by the
+// denormalized app_configs.component_ids array (the authoritative set written on
+// every sync), not by component_config_connection rows — those are only pinned to
+// the app config that changed a component's checksum, so a no-op sync would falsely
+// exclude lineage-reused components.
+const currentAppConfigComponentSubquery = `
+	SELECT 1 FROM installs i
+	JOIN app_configs ac ON ac.id = i.app_config_id
+	WHERE i.id = install_components.install_id
+		AND install_components.component_id = ANY(ac.component_ids)
+`
+
+// appConfigComponentFilter keeps only components present in the install's current app
+// config (synced) when syncedOnly is true, or only components no longer in the current
+// app config when syncedOnly is false.
+func appConfigComponentFilter(syncedOnly bool) string {
+	if syncedOnly {
+		return "EXISTS (" + currentAppConfigComponentSubquery + ")"
+	}
+	return "NOT EXISTS (" + currentAppConfigComponentSubquery + ")"
+}
+
 // @ID						GetInstallComponents
 // @Summary				get an installs components
 // @Description.markdown	get_install_components.md
@@ -24,6 +47,7 @@ import (
 // @Param					types						query	string	false	"component types to filter by"
 // @Param         q					query	string	false	"search query for component name or ID"
 // @Param					labels						query	string	false	"label filter (key:value,key:value)"
+// @Param					synced						query	bool	false	"return components in the install's current app config; set false to return only components no longer in it"	Default(true)
 // @Param					offset						query	int		false	"offset of results to return"	Default(0)
 // @Param					limit						query	int		false	"limit of results to return"	Default(10)
 // @Tags					installs
@@ -43,11 +67,12 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 	types := ctx.Query("types")
 	q := ctx.Query("q")
 	lbls := labels.ParseLabelsQuery(ctx.Query("labels"))
+	synced := ctx.Query("synced") != "false"
 	var typesSlice []string
 	if types != "" {
 		typesSlice = pq.StringArray(strings.Split(types, ","))
 	}
-	installComponents, err := s.getInstallComponents(ctx, appID, q, typesSlice, lbls)
+	installComponents, err := s.getInstallComponents(ctx, appID, q, typesSlice, lbls, synced)
 	if err != nil {
 		ctx.Error(fmt.Errorf("unable to get install components: %w", err))
 		return
@@ -56,12 +81,13 @@ func (s *service) GetInstallComponents(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, installComponents)
 }
 
-func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, types []string, lbls labels.Labels) ([]app.InstallComponent, error) {
+func (s *service) getInstallComponents(ctx *gin.Context, installID, q string, types []string, lbls labels.Labels, syncedOnly bool) ([]app.InstallComponent, error) {
 	paginatedComponents := []app.InstallComponent{}
 	tx := s.db.WithContext(ctx).
 		Scopes(scopes.WithOffsetPagination).
 		Scopes(labels.WithLabels("components.labels", lbls)).
 		Joins("JOIN components ON components.id = install_components.component_id").
+		Where(appConfigComponentFilter(syncedOnly)).
 		Order("created_at DESC")
 
 	if len(types) > 0 {

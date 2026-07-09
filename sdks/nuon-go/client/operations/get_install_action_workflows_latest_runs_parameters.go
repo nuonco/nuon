@@ -88,6 +88,12 @@ type GetInstallActionWorkflowsLatestRunsParams struct {
 	*/
 	Offset *int64
 
+	/* Orphans.
+
+	   only return actions no longer in the install's current app config
+	*/
+	Orphans *bool
+
 	/* Page.
 
 	   page number of results to return
@@ -128,13 +134,16 @@ func (o *GetInstallActionWorkflowsLatestRunsParams) SetDefaults() {
 
 		offsetDefault = int64(0)
 
+		orphansDefault = bool(false)
+
 		pageDefault = int64(0)
 	)
 
 	val := GetInstallActionWorkflowsLatestRunsParams{
-		Limit:  &limitDefault,
-		Offset: &offsetDefault,
-		Page:   &pageDefault,
+		Limit:   &limitDefault,
+		Offset:  &offsetDefault,
+		Orphans: &orphansDefault,
+		Page:    &pageDefault,
 	}
 
 	val.timeout = o.timeout
@@ -218,6 +227,17 @@ func (o *GetInstallActionWorkflowsLatestRunsParams) WithOffset(offset *int64) *G
 // SetOffset adds the offset to the get install action workflows latest runs params
 func (o *GetInstallActionWorkflowsLatestRunsParams) SetOffset(offset *int64) {
 	o.Offset = offset
+}
+
+// WithOrphans adds the orphans to the get install action workflows latest runs params
+func (o *GetInstallActionWorkflowsLatestRunsParams) WithOrphans(orphans *bool) *GetInstallActionWorkflowsLatestRunsParams {
+	o.SetOrphans(orphans)
+	return o
+}
+
+// SetOrphans adds the orphans to the get install action workflows latest runs params
+func (o *GetInstallActionWorkflowsLatestRunsParams) SetOrphans(orphans *bool) {
+	o.Orphans = orphans
 }
 
 // WithPage adds the page to the get install action workflows latest runs params
@@ -312,6 +332,23 @@ func (o *GetInstallActionWorkflowsLatestRunsParams) WriteToRequest(r runtime.Cli
 		if qOffset != "" {
 
 			if err := r.SetQueryParam("offset", qOffset); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Orphans != nil {
+
+		// query param orphans
+		var qrOrphans bool
+
+		if o.Orphans != nil {
+			qrOrphans = *o.Orphans
+		}
+		qOrphans := swag.FormatBool(qrOrphans)
+		if qOrphans != "" {
+
+			if err := r.SetQueryParam("orphans", qOrphans); err != nil {
 				return err
 			}
 		}
