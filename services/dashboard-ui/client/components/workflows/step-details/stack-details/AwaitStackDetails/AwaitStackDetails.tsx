@@ -24,12 +24,14 @@ import type { IStackDetails } from '../types'
 interface IAwaitStackDetails extends IStackDetails {
   runnerType?: string
   spaceliftEnabled?: boolean
+  tfProvider?: boolean
 }
 
 export const AwaitStackDetails = ({
   stack,
   runnerType,
   spaceliftEnabled,
+  tfProvider,
   ...props
 }: IAwaitStackDetails) => {
   const outputValues = useMemo(
@@ -76,6 +78,7 @@ export const AwaitStackDetails = ({
         <AwaitGCPDetails
           stack={stack}
           spaceliftEnabled={spaceliftEnabled}
+          tfProvider={tfProvider}
           {...props}
         />
       ) : (

@@ -84,6 +84,10 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", errors.Wrap(err, "unable to parse gcp secrets template")
 	}
+	providerT, err := template.New("gcp-stack-provider-inputs").Parse(providerInputsTmpl)
+	if err != nil {
+		return nil, "", errors.Wrap(err, "unable to parse gcp provider inputs template")
+	}
 
 	prov, maint, deprov, provPredefined, maintPredefined, deprovPredefined := extractGCPStandardPolicies(inputs.AppCfg)
 	breakGlassRoles := extractGCPRolesFromList(inputs.AppCfg.BreakGlassConfig.Roles)
@@ -151,6 +155,10 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	if err = secretsT.Execute(&secretsBuf, gcpInputs); err != nil {
 		return nil, "", errors.Wrap(err, "unable to execute gcp secrets template")
 	}
+	var providerBuf bytes.Buffer
+	if err = providerT.Execute(&providerBuf, gcpInputs); err != nil {
+		return nil, "", errors.Wrap(err, "unable to execute gcp provider inputs template")
+	}
 
 	adminTF, err := renderSpaceliftAdminTF(inputs.Install.ID)
 	if err != nil {
@@ -202,6 +210,7 @@ func Render(inputs *stacks.TemplateInput) ([]byte, string, error) {
 	// The raw tfvars text is HCL, not valid JSON.
 	envelope := map[string]string{
 		"inputs_tfvars":            inputsBuf.String(),
+		"provider_tfvars":          providerBuf.String(),
 		"secrets_tfvars":           secretsBuf.String(),
 		"spacelift_admin_tf":       adminTF,
 		"spacelift_blueprint_yaml": blueprintYAML,

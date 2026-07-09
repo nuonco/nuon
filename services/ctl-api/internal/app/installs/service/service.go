@@ -320,6 +320,10 @@ func (s *service) RegisterInternalRoutes(api *gin.Engine) error {
 }
 
 func (s *service) RegisterRunnerRoutes(api *gin.Engine) error {
+	// Read-only, side-effect-free config fetch consumed by the Terraform
+	// provider's nuon_stack data source. Public: the per-stack-version
+	// phone_home_id in the URL path is the secret.
+	api.GET("/v1/stack-runs/:phone_home_id/config", s.GetInstallStackVersionConfig)
 	return nil
 }
 
