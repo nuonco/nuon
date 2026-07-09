@@ -58,6 +58,9 @@ type PlantypesSandboxRunPlan struct {
 	// local archive
 	LocalArchive *PlantypesTerraformLocalArchive `json:"local_archive,omitempty"`
 
+	// oci source
+	OciSource *PlantypesOCISource `json:"oci_source,omitempty"`
+
 	// policies
 	Policies map[string]string `json:"policies,omitempty"`
 
@@ -105,6 +108,10 @@ func (m *PlantypesSandboxRunPlan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateLocalArchive(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOciSource(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -268,6 +275,29 @@ func (m *PlantypesSandboxRunPlan) validateLocalArchive(formats strfmt.Registry) 
 	return nil
 }
 
+func (m *PlantypesSandboxRunPlan) validateOciSource(formats strfmt.Registry) error {
+	if swag.IsZero(m.OciSource) { // not required
+		return nil
+	}
+
+	if m.OciSource != nil {
+		if err := m.OciSource.Validate(formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("oci_source")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("oci_source")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (m *PlantypesSandboxRunPlan) validatePulumiBackend(formats strfmt.Registry) error {
 	if swag.IsZero(m.PulumiBackend) { // not required
 		return nil
@@ -385,6 +415,10 @@ func (m *PlantypesSandboxRunPlan) ContextValidate(ctx context.Context, formats s
 	}
 
 	if err := m.contextValidateLocalArchive(ctx, formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.contextValidateOciSource(ctx, formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -551,6 +585,31 @@ func (m *PlantypesSandboxRunPlan) contextValidateLocalArchive(ctx context.Contex
 			ce := new(errors.CompositeError)
 			if stderrors.As(err, &ce) {
 				return ce.ValidateName("local_archive")
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *PlantypesSandboxRunPlan) contextValidateOciSource(ctx context.Context, formats strfmt.Registry) error {
+
+	if m.OciSource != nil {
+
+		if swag.IsZero(m.OciSource) { // not required
+			return nil
+		}
+
+		if err := m.OciSource.ContextValidate(ctx, formats); err != nil {
+			ve := new(errors.Validation)
+			if stderrors.As(err, &ve) {
+				return ve.ValidateName("oci_source")
+			}
+			ce := new(errors.CompositeError)
+			if stderrors.As(err, &ce) {
+				return ce.ValidateName("oci_source")
 			}
 
 			return err
