@@ -43,6 +43,11 @@ func emitAgent(env agentEnvelope) {
 
 // classifyError maps an error to a stable machine code and a human message.
 func classifyError(err error) (string, string) {
+	var exitErr *ErrExitCode
+	if errors.As(err, &exitErr) && exitErr.Code != "" {
+		return exitErr.Code, exitErr.Error()
+	}
+
 	cliUserErr := &CLIUserError{}
 	if errors.As(err, &cliUserErr) {
 		return "user_error", cliUserErr.Msg

@@ -392,7 +392,13 @@ stderr:
 - Success: `{"ok":true,"data":<command output>}` — wraps whatever the command passes to `ui.PrintJSON`.
 - Error: `{"ok":false,"error":{"code":"<code>","message":"..."}}` with a non-zero exit. Codes come from
   `classifyError` in `internal/ui/agent.go` (`not_found`, `unauthorized`, `forbidden`, `invalid_request`,
-  `server_error`, `user_error`, `api_error`, `error`).
+  `server_error`, `user_error`, `api_error`, `builds_failed`, `error`).
+
+Commands can attach a stable code and a custom exit code to an error via `ui.ErrExitCode` (honored by `wrapCmd`).
+`nuon sync` / `nuon apps sync` use this to split outcomes: exit 0 = synced (+ builds completed), exit 1 = sync
+failed, exit 3 (`builds_failed`) = synced but scheduled component builds failed, were policy-blocked, or timed
+out. `--no-wait` skips the build wait entirely. The success envelope's `data.builds` reports
+`{scheduled, waited, components:[{component_id, component_name, status}]}`.
 
 Routing lives in `internal/agentmode` (`HumanWriter()` returns stderr when enabled). Any new command output must go
 through `ui.PrintJSON` / `ui.PrintError` to be enveloped; commands that write their own JSON or use `fmt.Println` bypass

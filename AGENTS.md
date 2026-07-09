@@ -335,7 +335,9 @@ mode" for details). When running `nuon` commands from a Claude session, prefer:
 
 - **`--output agent`** — stdout is exactly one `{"ok":true,"data":...}` / `{"ok":false,"error":{"code","message"}}`
   JSON envelope; progress goes to stderr. Error codes: `not_found`, `unauthorized`, `forbidden`, `invalid_request`,
-  `server_error`, `user_error`, `api_error`, `error`. (`--json` is deprecated; use `--output json` for raw JSON.)
+  `server_error`, `user_error`, `api_error`, `builds_failed`, `error`. (`--json` is deprecated; use `--output json`
+  for raw JSON.) `nuon apps sync` waits for scheduled component builds unless `--no-wait`; exit 3 = synced but
+  builds failed/timed out (exit 1 = sync failed).
 - **`--read-only`** (or `NUON_READ_ONLY=1`) — guardrail that blocks any command mutating remote state (exit 2).
   Use it by default unless the task explicitly requires writes.
 - **`nuon mcp`** — stdio MCP server with read tools (`whoami`, `list_apps`, `get_app`, `list_installs`,
