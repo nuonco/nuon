@@ -126,6 +126,14 @@ func (c *InstallDeploy) Indexes(db *gorm.DB) []migrations.Index {
 				"install_component_id",
 			},
 		},
+		{
+			Name: indexes.Name(db, &InstallDeploy{}, "drifted_component_created_at"),
+			Columns: []string{
+				"install_component_id",
+				"created_at DESC",
+			},
+			Option: "WHERE status = 'drifted'",
+		},
 	}
 }
 
