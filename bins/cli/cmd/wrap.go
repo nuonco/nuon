@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"os"
 	"strings"
 	"time"
@@ -24,9 +25,20 @@ func (c *cli) wrapCmd(f cobraRunECommand) cobraRunCommand {
 	fn := c.sentryWrapCmd(c.analyticsWrapCmd(f))
 	return func(cmd *cobra.Command, args []string) {
 		if err := fn(cmd, args); err != nil {
-			os.Exit(1)
+			os.Exit(exitCodeForErr(err))
 		}
 	}
+}
+
+// exitCodeForErr resolves the process exit code for a command error. Errors
+// carrying an ExitCode (e.g. ui.ErrExitCode) control their own code; anything
+// else exits 1.
+func exitCodeForErr(err error) int {
+	var ec interface{ ExitCode() int }
+	if errors.As(err, &ec) && ec.ExitCode() != 0 {
+		return ec.ExitCode()
+	}
+	return 1
 }
 
 // wrapCmdWithExitCode wraps CLI commands that return custom exit codes.

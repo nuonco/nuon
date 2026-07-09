@@ -3,6 +3,7 @@ package schema
 import (
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/invopop/jsonschema"
 	"github.com/pkg/errors"
@@ -22,6 +23,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"inputs":              InputsConfigSchema,
 	"install":             InstallSchema,
 	"installer":           InstallerConfigSchema,
+	"job":                 JobConfigSchema,
 	"kubernetes-context":  KubernetesContextSchema,
 	"kubernetes-contexts": KubernetesContextsConfigSchema,
 	"kubernetes-manifest": KubernetesManifestConfigSchema,
@@ -38,8 +40,14 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"terraform":           TerraformModuleConfigSchema,
 }
 
+// normalizeSchemaType maps underscore-style names used in TOML component
+// types (e.g. docker_build, container_image) onto the hyphenated schema keys.
+func normalizeSchemaType(typ string) string {
+	return strings.ReplaceAll(typ, "_", "-")
+}
+
 func LookupSchemaType(typ string) (*jsonschema.Schema, error) {
-	fn, ok := SchemaMapping[typ]
+	fn, ok := SchemaMapping[normalizeSchemaType(typ)]
 	if !ok {
 		return nil, nil
 	}
@@ -63,7 +71,7 @@ func GetSchemaTypes() []string {
 
 // IsValidSchemaType checks if a schema type is valid
 func IsValidSchemaType(typ string) bool {
-	_, ok := SchemaMapping[typ]
+	_, ok := SchemaMapping[normalizeSchemaType(typ)]
 	return ok
 }
 
@@ -204,19 +212,7 @@ func KubernetesManifestConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "KubernetesManifestComponentConfig validation failed")
 	}
 
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	schema := jsonschema.Schema{
-		AllOf: []*jsonschema.Schema{
-			r.Reflect(config.Component{}),
-			r.Reflect(config.KubernetesManifestComponentConfig{}),
-		},
-	}
-
-	return &schema, nil
+	return flattenedComponentSchema(config.KubernetesManifestComponentConfig{}, config.KubernetesManifestComponentType)
 }
 
 func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
@@ -224,19 +220,7 @@ func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "ExternalImageComponentConfig validation failed")
 	}
 
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-
-	schema := jsonschema.Schema{
-		AllOf: []*jsonschema.Schema{
-			r.Reflect(config.Component{}),
-			r.Reflect(config.ExternalImageComponentConfig{}),
-		},
-	}
-
-	return &schema, nil
+	return flattenedComponentSchema(config.ExternalImageComponentConfig{}, config.ContainerImageComponentType, config.ExternalImageComponentType)
 }
 
 func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
@@ -244,57 +228,31 @@ func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "DockerBuildComponentConfig validation failed")
 	}
 
-	r, err := reflector()
-	if err != nil {
-		return nil, err
+	return flattenedComponentSchema(config.DockerBuildComponentConfig{}, config.DockerBuildComponentType)
+}
+
+func JobConfigSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.JobComponentConfig{}); err != nil {
+		return nil, errors.Wrap(err, "JobComponentConfig validation failed")
 	}
 
-	schema := jsonschema.Schema{
-		AllOf: []*jsonschema.Schema{
-			r.Reflect(config.Component{}),
-			r.Reflect(config.DockerBuildComponentConfig{}),
-		},
-	}
-
-	return &schema, nil
+	return flattenedComponentSchema(config.JobComponentConfig{}, config.JobComponentType)
 }
 
 func HelmConfigSchema() (*jsonschema.Schema, error) {
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-	schema := jsonschema.Schema{
-		AllOf: []*jsonschema.Schema{
-			r.Reflect(config.Component{}),
-			r.Reflect(config.HelmChartComponentConfig{}),
-		},
-	}
-
-	if err := ValidateJSONSchemaExtend(schema); err != nil {
+	if err := ValidateJSONSchemaExtend(config.HelmChartComponentConfig{}); err != nil {
 		return nil, errors.Wrap(err, "HelmChartComponentConfig validation failed")
 	}
 
-	return &schema, nil
+	return flattenedComponentSchema(config.HelmChartComponentConfig{}, config.HelmChartComponentType)
 }
 
 func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
-	r, err := reflector()
-	if err != nil {
-		return nil, err
-	}
-	schema := jsonschema.Schema{
-		AllOf: []*jsonschema.Schema{
-			r.Reflect(config.Component{}),
-			r.Reflect(config.TerraformModuleComponentConfig{}),
-		},
-	}
-
-	if err := ValidateJSONSchemaExtend(schema); err != nil {
+	if err := ValidateJSONSchemaExtend(config.TerraformModuleComponentConfig{}); err != nil {
 		return nil, errors.Wrap(err, "TerraformModuleComponentConfig validation failed")
 	}
 
-	return &schema, nil
+	return flattenedComponentSchema(config.TerraformModuleComponentConfig{}, config.TerraformModuleComponentType)
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {

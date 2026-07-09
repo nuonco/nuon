@@ -11,7 +11,7 @@ title: 'Terraform'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"`, `"pulumi"` |
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required**<br/>`"terraform_module"` | - |
 | **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
 | **`terraform_version`**<br/>string | Terraform version Version of Terraform to use for deployments | **✅ Required** | `"1.5.0"`, `"1.6.0"`, `"latest"` |
 | **`var_name`**<br/>string | variable name for component output Optional name to use when storing component outputs as variables. If not specified, uses the component name | **Optional** | `"db_endpoint"`, `"api_host"` |

@@ -162,10 +162,12 @@ func (c *cli) appsCmd() *cobra.Command {
 		syncCreate bool
 		syncForce  bool
 		syncAppID  string
+		syncNoWait bool
 	)
 	syncCmd := &cobra.Command{
 		Use:               "sync [dir]",
 		Short:             "Sync nuon app directory",
+		Long:              syncLongHelp,
 		PersistentPreRunE: c.persistentPreRunE,
 		Run: c.wrapCmd(func(cmd *cobra.Command, args []string) error {
 			var dirName string
@@ -184,6 +186,7 @@ func (c *cli) appsCmd() *cobra.Command {
 				Force:     syncForce,
 				Create:    syncCreate,
 				PrintJSON: PrintJSON,
+				NoWait:    syncNoWait,
 			}
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			if syncCreate {
@@ -195,6 +198,7 @@ func (c *cli) appsCmd() *cobra.Command {
 	syncCmd.Flags().BoolVar(&syncCreate, "create", false, "Create the app if it doesn't exist")
 	syncCmd.Flags().BoolVar(&syncForce, "force", false, "Sync to the configured app even if the directory name does not match")
 	syncCmd.Flags().StringVarP(&syncAppID, "app-id", "a", "", "The ID or name of the app to sync this config with (defaults to the selected app)")
+	syncCmd.Flags().BoolVar(&syncNoWait, "no-wait", false, "Do not wait for scheduled component builds to complete")
 	appsCmd.AddCommand(syncCmd)
 
 	var (
