@@ -212,7 +212,7 @@ func KubernetesManifestConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "KubernetesManifestComponentConfig validation failed")
 	}
 
-	return flattenedComponentSchema(config.KubernetesManifestComponentConfig{})
+	return flattenedComponentSchema(config.KubernetesManifestComponentConfig{}, config.KubernetesManifestComponentType)
 }
 
 func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
@@ -220,7 +220,7 @@ func ContainerImageConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "ExternalImageComponentConfig validation failed")
 	}
 
-	return flattenedComponentSchema(config.ExternalImageComponentConfig{})
+	return flattenedComponentSchema(config.ExternalImageComponentConfig{}, config.ContainerImageComponentType, config.ExternalImageComponentType)
 }
 
 func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
@@ -228,7 +228,7 @@ func DockerBuildConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "DockerBuildComponentConfig validation failed")
 	}
 
-	return flattenedComponentSchema(config.DockerBuildComponentConfig{})
+	return flattenedComponentSchema(config.DockerBuildComponentConfig{}, config.DockerBuildComponentType)
 }
 
 func JobConfigSchema() (*jsonschema.Schema, error) {
@@ -236,7 +236,7 @@ func JobConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "JobComponentConfig validation failed")
 	}
 
-	return flattenedComponentSchema(config.JobComponentConfig{})
+	return flattenedComponentSchema(config.JobComponentConfig{}, config.JobComponentType)
 }
 
 func HelmConfigSchema() (*jsonschema.Schema, error) {
@@ -244,7 +244,7 @@ func HelmConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "HelmChartComponentConfig validation failed")
 	}
 
-	return flattenedComponentSchema(config.HelmChartComponentConfig{})
+	return flattenedComponentSchema(config.HelmChartComponentConfig{}, config.HelmChartComponentType)
 }
 
 func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
@@ -252,7 +252,7 @@ func TerraformModuleConfigSchema() (*jsonschema.Schema, error) {
 		return nil, errors.Wrap(err, "TerraformModuleComponentConfig validation failed")
 	}
 
-	return flattenedComponentSchema(config.TerraformModuleComponentConfig{})
+	return flattenedComponentSchema(config.TerraformModuleComponentConfig{}, config.TerraformModuleComponentType)
 }
 
 func MetadataConfigSchema() (*jsonschema.Schema, error) {

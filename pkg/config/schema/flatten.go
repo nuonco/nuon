@@ -32,7 +32,10 @@ var componentNestedConfigKeys = map[string]struct{}{
 // JSON Schema semantics: each branch set additionalProperties: false, and
 // additionalProperties cannot see properties declared in sibling branches, so
 // every branch rejected the other branch's keys.
-func flattenedComponentSchema(typedConfig any) (*jsonschema.Schema, error) {
+//
+// componentTypes pins the merged schema's "type" property to the values valid
+// for this file kind.
+func flattenedComponentSchema(typedConfig any, componentTypes ...config.ComponentType) (*jsonschema.Schema, error) {
 	r, err := reflector()
 	if err != nil {
 		return nil, err
@@ -92,6 +95,18 @@ func flattenedComponentSchema(typedConfig any) (*jsonschema.Schema, error) {
 	merged.Required = mergeRequired(comp.Required, typed.Required)
 	merged.OneOf = typed.OneOf
 	merged.AnyOf = typed.AnyOf
+
+	if len(componentTypes) > 0 {
+		if typProp, ok := merged.Properties.Get("type"); ok {
+			pinned := *typProp
+			pinned.Enum = make([]any, 0, len(componentTypes))
+			for _, ct := range componentTypes {
+				pinned.Enum = append(pinned.Enum, string(ct))
+			}
+			pinned.Examples = nil
+			merged.Properties.Set("type", &pinned)
+		}
+	}
 
 	for name, def := range compRoot.Definitions {
 		merged.Definitions[name] = def

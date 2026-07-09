@@ -176,6 +176,20 @@ func TestComponentSchemasStillRejectInvalidConfigs(t *testing.T) {
 			name:       "unknown property",
 			doc:        `{"name": "tf", "type": "terraform_module", "bogus": true}`,
 		},
+		{
+			schemaType: "container-image",
+			name:       "wrong component type value",
+			doc: `{
+				"name": "img",
+				"type": "helm_chart",
+				"public": {"image_url": "kennethreitz/httpbin", "tag": "latest"}
+			}`,
+		},
+		{
+			schemaType: "terraform",
+			name:       "wrong component type value",
+			doc:        `{"name": "tf", "type": "docker_build"}`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -185,6 +199,18 @@ func TestComponentSchemasStillRejectInvalidConfigs(t *testing.T) {
 				t.Fatal("expected document to fail validation")
 			}
 		})
+	}
+}
+
+// TestContainerImageSchemaAllowsBothTypeAliases covers the two valid type
+// values for the container-image schema.
+func TestContainerImageSchemaAllowsBothTypeAliases(t *testing.T) {
+	compiled := compileStrict(t, "container-image")
+	for _, typ := range []string{"container_image", "external_image"} {
+		doc := `{"name": "img", "type": "` + typ + `", "public": {"image_url": "kennethreitz/httpbin", "tag": "latest"}}`
+		if err := validateDoc(t, compiled, doc); err != nil {
+			t.Fatalf("expected type %q to validate: %v", typ, err)
+		}
 	}
 }
 

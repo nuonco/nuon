@@ -11,7 +11,7 @@ title: 'Job'
 
 | Property | Description | Values | Example |
 |----------|----------|----------|----------|
-| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required** | `"terraform_module"`, `"helm_chart"`, `"docker_build"`, `"container_image"`, `"kubernetes_manifest"`, `"pulumi"` |
+| **`type`**<br/>string | component type Type of component to deploy. Determines which configuration block is required (helm_chart, terraform_module, docker_build, container_image, kubernetes_manifest, or job) | **✅ Required**<br/>`"job"` | - |
 | **`name`**<br/>string | component name Unique identifier for the component within the app. Used for referencing in dependencies and templates | **✅ Required** | `"database"`, `"api-server"`, `"frontend"` |
 | **`image_url`**<br/>string | job container image URL Docker image URL to execute. Can be a public Docker registry or private registry | **✅ Required** | `"ubuntu:22.04"`, `"ghcr.io/myorg/myjob:v1.0.0"` |
 | **`tag`**<br/>string | image tag Docker image tag to use | **✅ Required** | `"latest"`, `"v1.0.0"` |
