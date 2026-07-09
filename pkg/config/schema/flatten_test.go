@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/invopop/jsonschema"
 	sjs "github.com/santhosh-tekuri/jsonschema/v6"
 )
 
@@ -184,6 +185,21 @@ func TestComponentSchemasStillRejectInvalidConfigs(t *testing.T) {
 				t.Fatal("expected document to fail validation")
 			}
 		})
+	}
+}
+
+func TestCheckUnhandledConstraints(t *testing.T) {
+	if err := checkUnhandledConstraints(&jsonschema.Schema{Type: "object"}, "clean"); err != nil {
+		t.Fatalf("clean schema should pass: %v", err)
+	}
+
+	bad := &jsonschema.Schema{DependentRequired: map[string][]string{"tag": {"image_url"}}}
+	err := checkUnhandledConstraints(bad, "config.Test")
+	if err == nil {
+		t.Fatal("expected error for unhandled dependentRequired")
+	}
+	if !strings.Contains(err.Error(), "dependentRequired") || !strings.Contains(err.Error(), "config.Test") {
+		t.Fatalf("unexpected error message: %v", err)
 	}
 }
 

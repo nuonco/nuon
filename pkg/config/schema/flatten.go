@@ -50,6 +50,13 @@ func flattenedComponentSchema(typedConfig any) (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
+	if err := checkUnhandledConstraints(comp, "config.Component"); err != nil {
+		return nil, err
+	}
+	if err := checkUnhandledConstraints(typed, fmt.Sprintf("%T", typedConfig)); err != nil {
+		return nil, err
+	}
+
 	merged := &jsonschema.Schema{
 		Version:              compRoot.Version,
 		Type:                 "object",
@@ -94,6 +101,36 @@ func flattenedComponentSchema(typedConfig any) (*jsonschema.Schema, error) {
 	pruneUnreachableDefinitions(merged)
 
 	return merged, nil
+}
+
+// checkUnhandledConstraints errors when a reflected root definition carries
+// validation keywords the flattening does not merge. Without this, a future
+// JSONSchemaExtend hook setting e.g. if/then or dependentRequired would be
+// silently dropped from the published schema, loosening it with no failure.
+func checkUnhandledConstraints(def *jsonschema.Schema, name string) error {
+	unhandled := []struct {
+		keyword string
+		set     bool
+	}{
+		{"allOf", len(def.AllOf) > 0},
+		{"not", def.Not != nil},
+		{"if", def.If != nil},
+		{"then", def.Then != nil},
+		{"else", def.Else != nil},
+		{"dependentSchemas", len(def.DependentSchemas) > 0},
+		{"dependentRequired", len(def.DependentRequired) > 0},
+		{"patternProperties", len(def.PatternProperties) > 0},
+		{"propertyNames", def.PropertyNames != nil},
+		{"enum", len(def.Enum) > 0},
+		{"const", def.Const != nil},
+		{"extras", len(def.Extras) > 0},
+	}
+	for _, u := range unhandled {
+		if u.set {
+			return fmt.Errorf("%s declares root-level %q, which flattenedComponentSchema does not merge; extend the flattening before using it", name, u.keyword)
+		}
+	}
+	return nil
 }
 
 func rootDefinition(schm *jsonschema.Schema) (*jsonschema.Schema, error) {
