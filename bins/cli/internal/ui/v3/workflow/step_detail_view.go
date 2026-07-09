@@ -213,11 +213,57 @@ func (m model) stepDetailViewInstallStack() string {
 	return s
 }
 
+// emptyStepsView renders a terminal message for a workflow that has been
+// fetched but has no steps, so the TUI does not spin indefinitely.
+func (m model) emptyStepsView() string {
+	status := ""
+	if m.workflow != nil && m.workflow.Status != nil {
+		status = string(m.workflow.Status.Status)
+	}
+
+	msg := "This workflow has no steps."
+	if isTerminalStatus(status) {
+		msg = fmt.Sprintf("This workflow finished with no steps (status: %s).", status)
+	} else if status != "" {
+		msg = fmt.Sprintf("This workflow has no steps yet (status: %s).", status)
+	}
+
+	body := lipgloss.JoinVertical(
+		lipgloss.Center,
+		msg,
+		"",
+		styles.HelpStyle.Render("Press [q] or [esc] to quit."),
+	)
+	return common.FullPageDialog(common.FullPageDialogRequest{
+		Width:   m.stepDetail.Width(),
+		Height:  m.stepDetail.Height(),
+		Padding: 2,
+		Content: body,
+		Level:   "info",
+	})
+}
+
+func isTerminalStatus(status string) bool {
+	switch models.AppStatus(status) {
+	case models.AppStatusSuccess, models.AppStatusError, models.AppStatusCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
 func (m *model) populateStepDetailView(goToTop bool) {
-	// loading states: exit early
-	if len(m.steps) == 0 {
+	// loading state: no workflow fetched yet
+	if m.workflow == nil {
 		s := "\n\n\tLoading ...\n"
 		m.stepDetail.SetContent(s)
+		return
+	}
+
+	// fetched, but the workflow has no steps: render a terminal empty state
+	// instead of spinning forever (e.g. a build workflow with no components).
+	if len(m.steps) == 0 {
+		m.stepDetail.SetContent(m.emptyStepsView())
 		return
 	}
 

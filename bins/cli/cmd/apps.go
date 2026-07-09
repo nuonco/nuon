@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/pkg/errors"
@@ -201,11 +202,20 @@ func (c *cli) appsCmd() *cobra.Command {
 		buildConfigID string
 	)
 	buildCmd := &cobra.Command{
-		Use:               "build",
-		Short:             "Build all components for an app config",
-		Long:              "Triggers a workflow that builds all components defined in the app config. If no config ID is provided, uses the latest config.",
-		PersistentPreRunE: c.persistentPreRunE,
-		Annotations:       tuiAnnotation(TUIAltScreen),
+		Use:         "build",
+		Short:       "Build all components for an app config [preview]",
+		Long:        "Triggers a workflow that builds all components defined in the app config. If no config ID is provided, uses the latest config.",
+		Hidden:      true,
+		Annotations: tuiAnnotation(TUIAltScreen),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if err := c.persistentPreRunE(cmd, args); err != nil {
+				return err
+			}
+			if !c.cfg.Preview {
+				return fmt.Errorf("[NUON_PREVIEW=false] apps build is a preview feature, set NUON_PREVIEW=true to enable")
+			}
+			return nil
+		},
 		Run: c.wrapCmd(func(cmd *cobra.Command, _ []string) error {
 			svc := apps.New(c.v, c.apiClient, c.cfg)
 			return svc.Build(cmd.Context(), buildAppID, buildConfigID)
