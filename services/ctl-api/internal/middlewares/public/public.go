@@ -29,6 +29,11 @@ var publicEndpointList map[[2]string]struct{} = map[[2]string]struct{}{
 	{"POST", "/v1/vcs/webhooks/:subscription_id/events"}:           {},
 	{"POST", "/v1/installs/:install_id/phone-home/:phone_home_id"}: {},
 
+	// stack-run config: read-only, side-effect free. The per-stack-version
+	// phone_home_id in the URL is the secret. Consumed by the Terraform
+	// provider's nuon_stack data source.
+	{"GET", "/v1/stack-runs/:phone_home_id/config"}: {},
+
 	// runner auth: must be accessible w/out a token
 	{"POST", "/v1/runner-auth/aws"}:                   {},
 	{"POST", "/v1/runner-auth/gcp"}:                   {},

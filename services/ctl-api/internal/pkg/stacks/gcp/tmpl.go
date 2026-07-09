@@ -70,8 +70,27 @@ install_inputs = {
 }
 `
 
-const secretsTmpl = `auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
-secrets = {
+// providerInputsTmpl is the slimmed-down tfvars for the Terraform-provider
+// flow: the install-stacks module reads runner details, permissions and roles
+// from the API via the stack_config data source, so only the API base URL, the
+// phone-home ID, the customer GCP project/region, and the install-input names
+// need to be supplied here.
+const providerInputsTmpl = `api_url       = "{{.Settings.RunnerAPIURL}}"
+phone_home_id = "{{.CloudFormationStackVersion.PhoneHomeID}}"
+
+gcp = {
+  project_id = "{{.GCPProjectID}}"
+  region     = "{{.GCPRegion}}"
+}
+
+install_inputs = {
+{{- range .InstallInputs}}
+  "{{.Name}}" = "{{.Value}}"
+{{- end}}
+}
+`
+
+const secretsTmpl = `secrets = {
 {{- range .Secrets}}
   "{{.Name}}" = {
     description = "{{.Description}}"
@@ -80,4 +99,6 @@ secrets = {
   }
 {{- end}}
 }
+
+auto_generate_secrets = [{{range .AutoGenerateSecrets}}"{{.}}", {{end}}]
 `

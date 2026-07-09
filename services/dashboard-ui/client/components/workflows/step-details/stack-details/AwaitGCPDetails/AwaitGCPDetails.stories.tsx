@@ -10,8 +10,10 @@ const mockStack = {
       contents: JSON.stringify({
         inputs_tfvars:
           'nuon_install_id = "install-1"\ninstall_inputs = {\n  "cluster_name" = ""\n}\n',
+        provider_tfvars:
+          'api_url       = "https://api.nuon.co"\nphone_home_id = "ph-1"\n\ngcp = {\n  project_id = "my-proj"\n  region     = "us-central1"\n}\n\ninstall_inputs = {\n  "cluster_name" = ""\n}\n',
         secrets_tfvars:
-          'auto_generate_secrets = ["db_password", ]\nsecrets = {\n  "stripe_key" = {\n    description = "Your Stripe API key"\n    required    = true\n    value       = ""\n  }\n}\n',
+          'secrets = {\n  "stripe_key" = {\n    description = "Your Stripe API key"\n    required    = true\n    value       = ""\n  }\n}\n\nauto_generate_secrets = ["db_password", ]\n',
         spacelift_admin_tf: `terraform {
   required_providers {
     spacelift = {
@@ -123,6 +125,17 @@ export const Default = () => (
 export const SpaceliftDisabled = () => (
   <div className="max-w-2xl p-4">
     <AwaitGCPDetails stack={mockStack} step={mockStep} installId="install-1" />
+  </div>
+)
+
+export const TerraformProvider = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitGCPDetails
+      stack={mockStack}
+      step={mockStep}
+      installId="install-1"
+      tfProvider
+    />
   </div>
 )
 

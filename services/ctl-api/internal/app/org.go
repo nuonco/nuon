@@ -91,6 +91,12 @@ const (
 	// OrgFeatureControlPlaneBuilds runs component/sandbox builds on
 	// Temporal-backed control-plane workers instead of the org runner.
 	OrgFeatureControlPlaneBuilds OrgFeature = "control-plane-builds"
+	// OrgFeatureStackTFProvider switches the install stack "await" step's
+	// Terraform directions to the provider-based flow: clone the ja/stack-sdk
+	// branch of install-stacks (which reads config from the API via the stack
+	// provider's stack_config data source) and use the slimmed-down tfvars
+	// instead of the full generated set.
+	OrgFeatureStackTFProvider OrgFeature = "stack-tf-provider"
 )
 
 type Org struct {
@@ -214,6 +220,7 @@ func (o *Org) BeforeCreate(tx *gorm.DB) error {
 		OrgFeatureNotebooks:               false,
 		OrgFeatureSpaceliftInstallStacks:  false,
 		OrgFeatureControlPlaneBuilds:      false,
+		OrgFeatureStackTFProvider:         false,
 
 		// Enabled by default
 		OrgFeatureParallelRunnerJobs: true,
@@ -286,6 +293,7 @@ func GetFeatures() []OrgFeature {
 		OrgFeatureVersionsUI,
 		OrgFeatureSpaceliftInstallStacks,
 		OrgFeatureControlPlaneBuilds,
+		OrgFeatureStackTFProvider,
 	}
 }
 
@@ -323,6 +331,7 @@ func GetFeatureDescriptions() map[OrgFeature]string {
 		OrgFeatureVersionsUI:              "Enable the install app config versions tab in the dashboard, showing the history of config updates and component diffs for each install.",
 		OrgFeatureSpaceliftInstallStacks:  "Surface the Spacelift options (blueprint and administrative stack) on the install stack await step, so customers can provision the Terraform install stack through Spacelift instead of running Terraform locally.",
 		OrgFeatureControlPlaneBuilds:      "Run component and sandbox builds on Temporal-backed control-plane workers instead of the org runner, so build-only work does not require a live org runner.",
+		OrgFeatureStackTFProvider:         "Use the Terraform-provider install stack flow: the await step's directions clone the ja/stack-sdk branch of install-stacks (which reads config from the API via the stack provider) and use the slimmed-down tfvars.",
 	}
 }
 

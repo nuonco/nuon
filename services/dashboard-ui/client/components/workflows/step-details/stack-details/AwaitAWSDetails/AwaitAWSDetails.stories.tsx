@@ -26,14 +26,15 @@ install_inputs = {
 }
 `
 
-const mockSecretsTfvars = `auto_generate_secrets = ["db_password", ]
-secrets = {
+const mockSecretsTfvars = `secrets = {
   "stripe_key" = {
     description = "Your Stripe API key"
     required    = true
     value       = ""
   }
 }
+
+auto_generate_secrets = ["db_password", ]
 `
 
 const mockStackWithBoth = {
@@ -42,6 +43,8 @@ const mockStackWithBoth = {
       ...mockStack.versions[0],
       terraform_contents: JSON.stringify({
         inputs_tfvars: mockInputsTfvars,
+        provider_tfvars:
+          'api_url       = "https://api.nuon.co"\nphone_home_id = "ph-1"\n\naws = {\n  region = "us-east-1"\n}\n\ninstall_inputs = {\n  "cluster_name" = ""\n}\n',
         secrets_tfvars: mockSecretsTfvars,
       }),
       terraform_checksum: 'sha256-abc',
@@ -72,6 +75,18 @@ export const WithBothOptions = () => (
       step={mockStep}
       orgId="org-1"
       installId="install-1"
+    />
+  </div>
+)
+
+export const TerraformProvider = () => (
+  <div className="max-w-2xl p-4">
+    <AwaitAWSDetails
+      stack={mockStackWithBoth}
+      step={mockStep}
+      orgId="org-1"
+      installId="install-1"
+      tfProvider
     />
   </div>
 )
