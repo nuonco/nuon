@@ -2,6 +2,7 @@ export default {
   title: 'Common/Tooltip',
 }
 
+import { useEffect, useState } from 'react'
 import { Button } from './Button'
 import { Icon } from './Icon'
 import { Status } from './Status'
@@ -235,6 +236,10 @@ export const InteractiveTooltips = () => (
         <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
           isOpen
         </code>{' '}
+        (controlled) or{' '}
+        <code className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+          defaultOpen
+        </code>{' '}
         prop to control tooltip visibility programmatically.
       </p>
     </div>
@@ -243,7 +248,7 @@ export const InteractiveTooltips = () => (
       <h4 className="text-sm font-medium">Complex Tooltip Example</h4>
       <div className="flex gap-6 p-6 border rounded-lg">
         <Tooltip
-          isOpen
+          defaultOpen
           position="right"
           tipContentClassName="!p-0"
           tipContent={
@@ -297,3 +302,35 @@ export const InteractiveTooltips = () => (
     </div>
   </div>
 )
+
+export const ControlledNudge = () => {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const timer = setTimeout(() => setOpen(false), 4000)
+    return () => clearTimeout(timer)
+  }, [open])
+
+  return (
+    <div className="flex flex-col gap-6 p-12">
+      <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md">
+        A controlled, hover-disabled tooltip used as a one-time nudge. It only
+        opens when <code>isOpen</code> is true and never reacts to hover because{' '}
+        <code>disableHover</code> is set.
+      </p>
+      <div>
+        <Tooltip
+          isOpen={open}
+          disableHover
+          position="bottom"
+          tipContent="Trigger a run to deploy this branch"
+        >
+          <Button variant="primary" onClick={() => setOpen(true)}>
+            Show nudge
+          </Button>
+        </Tooltip>
+      </div>
+    </div>
+  )
+}
