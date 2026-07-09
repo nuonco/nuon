@@ -18,6 +18,20 @@ type GCPOpRoleRaw struct {
 	PredefinedRole string
 }
 
+// extractRolePermissions flattens all policy permissions for a role into a
+// single list, alongside any predefined role, for the raw stack SDK payload.
+func extractRolePermissions(role app.AppAWSIAMRoleConfig) ([]string, string) {
+	var perms []string
+	var predefinedRole string
+	for _, policy := range role.Policies {
+		if policy.GCPPredefinedRole != "" {
+			predefinedRole = policy.GCPPredefinedRole
+		}
+		perms = append(perms, policy.GCPPermissions...)
+	}
+	return perms, predefinedRole
+}
+
 // ExtractGCPStandardRolesRaw returns the permissions/predefined-role for the
 // standard provision/maintenance/deprovision operation roles.
 func ExtractGCPStandardRolesRaw(appCfg *app.AppConfig) (provision, maintenance, deprovision GCPOpRoleRaw) {
