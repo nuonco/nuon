@@ -1,0 +1,4 @@
+running helm install
+pod api-server-0: ImagePullBackOff: Back-off pulling image "registry.example.com/api:v1.2.3"
+pod api-server-0: timed out waiting for the condition
+unable to upgrade helm release: timed out waiting for the condition
