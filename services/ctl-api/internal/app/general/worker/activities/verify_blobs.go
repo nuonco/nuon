@@ -68,8 +68,8 @@ func (a *Activities) VerifyBlobs(ctx context.Context, req VerifyBlobsRequest) (*
 	q := a.db.WithContext(ctx).
 		Table(req.Table).
 		Select(fmt.Sprintf("id, %s::text AS blob_meta, %s AS content", target.blobColumn, target.contentExpr())).
-		Where(fmt.Sprintf("%s IS NOT NULL", target.originColumn)).
-		Where("deleted_at = 0")
+		Where(fmt.Sprintf("%s IS NOT NULL", target.originColumn))
+	q = target.applyNotDeleted(q)
 	q, err := whereDay(q, req.Day)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (a *Activities) ListVerifyDays(ctx context.Context, req ListBlobDaysRequest
 		return nil, fmt.Errorf("unsupported blob verify table: %q", req.Table)
 	}
 
-	days, err := a.listBlobDays(ctx, req.Table, "", target.originColumn)
+	days, err := a.listBlobDays(ctx, req.Table, target, "")
 	if err != nil {
 		return nil, err
 	}

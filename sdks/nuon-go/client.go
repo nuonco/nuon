@@ -223,7 +223,9 @@ type Client interface {
 	GetRunnerRecentHealthChecks(ctx context.Context, runnerID string, processID string) ([]*models.AppRunnerHealthCheck, error)
 
 	// runner job plan
+	// Deprecated: use GetRunnerJobCompositePlan.
 	GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error)
+	GetRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*models.PlantypesCompositePlan, error)
 
 	// install stacks
 	GetInstallStack(ctx context.Context, installID string) (*models.AppInstallStack, error)

@@ -11,8 +11,36 @@ import (
 	"github.com/nuonco/nuon/bins/cli/internal/ui"
 	"github.com/nuonco/nuon/bins/cli/internal/ui/bubbles"
 	"github.com/nuonco/nuon/pkg/cli/styles"
+	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/sdks/nuon-go/models"
 )
+
+// getRunnerJobPlanJSON fetches the composite plan for a runner job and returns
+// the single populated inner plan as JSON, matching the shape the plan diff
+// formatter expects. Returns "" when there is no plan.
+func (s *Service) getRunnerJobPlanJSON(ctx context.Context, runnerJobID string) (string, error) {
+	cp, err := s.api.GetRunnerJobCompositePlan(ctx, runnerJobID)
+	if err != nil {
+		return "", err
+	}
+
+	composite, err := plantypes.CompositePlanFromAny(cp)
+	if err != nil {
+		return "", err
+	}
+
+	inner := composite.Inner()
+	if inner == nil {
+		return "", nil
+	}
+
+	planJSON, err := json.Marshal(inner)
+	if err != nil {
+		return "", err
+	}
+
+	return string(planJSON), nil
+}
 
 func (s *Service) workflowsJSON(ctx context.Context, installID, workflowID string) error {
 	if installID == "" {
@@ -197,7 +225,7 @@ func (s *Service) confirmStepAction(ctx context.Context, installID, workflowID, 
 		if err == nil {
 			deploy, err := s.api.GetInstallDeploy(ctx, resolvedInstallID, step.StepTargetID)
 			if err == nil && len(deploy.RunnerJobs) > 0 {
-				plan, err := s.api.GetRunnerJobPlan(ctx, deploy.RunnerJobs[0].ID)
+				plan, err := s.getRunnerJobPlanJSON(ctx, deploy.RunnerJobs[0].ID)
 				if err == nil && plan != "" {
 					formatted, err := plandiff.FormatPlan(plan)
 					if err == nil {
@@ -581,7 +609,7 @@ func (s *Service) WorkflowStepPlan(ctx context.Context, installID, workflowID, s
 	}
 
 	runnerJob := deploy.RunnerJobs[0]
-	plan, err := s.api.GetRunnerJobPlan(ctx, runnerJob.ID)
+	plan, err := s.getRunnerJobPlanJSON(ctx, runnerJob.ID)
 	if err != nil {
 		return view.Error(err)
 	}

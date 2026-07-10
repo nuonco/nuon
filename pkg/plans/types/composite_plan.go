@@ -19,6 +19,46 @@ type CompositePlan struct {
 	SandboxRunPlan         *SandboxRunPlan         `json:"sandbox_run_plan,omitempty"`
 }
 
+// CompositePlanFromAny converts any composite-plan-shaped value (e.g. a
+// generated SDK model) into a CompositePlan via a JSON round-trip. Both the SDK
+// models and this type derive from the same schema, so the tags line up.
+func CompositePlanFromAny(v any) (*CompositePlan, error) {
+	bytes, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	var cp CompositePlan
+	if err := json.Unmarshal(bytes, &cp); err != nil {
+		return nil, err
+	}
+
+	return &cp, nil
+}
+
+// Inner returns the single populated sub-plan, or nil when the composite plan is
+// empty. Exactly one sub-plan is set per job.
+func (cp *CompositePlan) Inner() any {
+	switch {
+	case cp.BuildPlan != nil:
+		return cp.BuildPlan
+	case cp.DeployPlan != nil:
+		return cp.DeployPlan
+	case cp.ActionWorkflowRunPlan != nil:
+		return cp.ActionWorkflowRunPlan
+	case cp.SyncSecretsPlan != nil:
+		return cp.SyncSecretsPlan
+	case cp.SyncOCIPlan != nil:
+		return cp.SyncOCIPlan
+	case cp.FetchImageMetadataPlan != nil:
+		return cp.FetchImageMetadataPlan
+	case cp.SandboxRunPlan != nil:
+		return cp.SandboxRunPlan
+	default:
+		return nil
+	}
+}
+
 func (cp CompositePlan) Value() (driver.Value, error) {
 	if cp.IsEmpty() {
 		return nil, nil

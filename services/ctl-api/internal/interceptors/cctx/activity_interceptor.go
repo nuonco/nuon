@@ -14,8 +14,9 @@ var _ interceptor.ActivityInboundInterceptor = (*actInterceptor)(nil)
 type actInterceptor struct {
 	interceptor.ActivityInboundInterceptorBase
 
-	blobSvc blobstore.Service
-	l       *zap.Logger
+	blobSvc         blobstore.Service
+	l               *zap.Logger
+	blobReadEnabled bool
 }
 
 func (a *actInterceptor) Init(outbound interceptor.ActivityOutboundInterceptor) error {
@@ -28,6 +29,7 @@ func (a *actInterceptor) ExecuteActivity(
 ) (interface{}, error) {
 	// Add blobstore service to context
 	ctx = blobstore.WithBlobService(ctx, a.blobSvc)
+	ctx = blobstore.WithBlobReadEnabled(ctx, a.blobReadEnabled)
 
 	// Continue with execution
 	return a.Next.ExecuteActivity(ctx, in)

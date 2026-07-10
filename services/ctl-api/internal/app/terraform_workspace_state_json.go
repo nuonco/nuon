@@ -1,9 +1,11 @@
 package app
 
 import (
+	"context"
 	"time"
 
 	"github.com/nuonco/nuon/pkg/shortid/domains"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/indexes"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/db/plugins/migrations"
 	"gorm.io/gorm"
@@ -17,7 +19,8 @@ type TerraformWorkspaceStateJSON struct {
 	CreatedAt time.Time `json:"created_at,omitzero" gorm:"notnull" temporaljson:"created_at,omitzero,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitzero" gorm:"notnull" temporaljson:"updated_at,omitzero,omitempty"`
 
-	Contents []byte `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
+	Contents     []byte          `json:"contents,omitzero" gorm:"type:bytea" temporaljson:"contents,omitzero,omitempty"`
+	ContentsBlob *blobstore.Blob `json:"-" temporaljson:"-"`
 
 	OrgID string `json:"org_id,omitzero" gorm:"default:null" temporaljson:"org_id,omitzero,omitempty"`
 	Org   Org    `json:"-" temporaljson:"org,omitzero,omitempty"`
@@ -54,5 +57,23 @@ func (t *TerraformWorkspaceStateJSON) BeforeCreate(tx *gorm.DB) (err error) {
 		t.OrgID = orgIDFromContext(tx.Statement.Context)
 	}
 
+	if err := t.ContentsBlob.BeforeCreate(tx); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// GetContents returns the state contents. When blobRead is enabled it prefers
+// the S3 blob, falling back to the legacy bytea column when the blob is unset or
+// unreadable. When disabled it always reads the legacy column. The second return
+// reports whether the contents came from the blob.
+func (t *TerraformWorkspaceStateJSON) GetContents(ctx context.Context, blobRead bool) ([]byte, bool) {
+	if blobRead {
+		if raw, err := t.ContentsBlob.Get(ctx); err == nil && raw != "" {
+			return []byte(raw), true
+		}
+	}
+
+	return t.Contents, false
 }

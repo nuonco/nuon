@@ -124,13 +124,14 @@ type Params struct {
 }
 
 type WebhookSignalLifecycleHook struct {
-	l            *zap.Logger
-	httpClient   *http.Client
-	webhookURLs  []string
-	db           *gorm.DB
-	appURL       string
-	publicAPIURL string
-	mw           metrics.Writer
+	l               *zap.Logger
+	httpClient      *http.Client
+	webhookURLs     []string
+	db              *gorm.DB
+	appURL          string
+	publicAPIURL    string
+	mw              metrics.Writer
+	blobReadEnabled bool
 
 	// workflowCreatorCache holds workflowCreatorRow values keyed by workflow
 	// id. The underlying row is write-once, so entries never expire.
@@ -165,10 +166,12 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 	webhookURLs := []string{}
 	appURL := ""
 	publicAPIURL := ""
+	blobReadEnabled := false
 	if params.Cfg != nil {
 		webhookURLs = params.Cfg.WebhookURLs
 		appURL = strings.TrimSpace(params.Cfg.AppURL)
 		publicAPIURL = strings.TrimSpace(params.Cfg.PublicAPIURL)
+		blobReadEnabled = params.Cfg.BlobReadEnabled
 	}
 
 	return &WebhookSignalLifecycleHook{
@@ -176,11 +179,12 @@ func NewWebhookSignalLifecycleHook(params Params) *WebhookSignalLifecycleHook {
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
-		webhookURLs:  normalizeWebhookURLs(webhookURLs),
-		db:           params.DB,
-		appURL:       appURL,
-		publicAPIURL: publicAPIURL,
-		mw:           params.MW,
+		webhookURLs:     normalizeWebhookURLs(webhookURLs),
+		db:              params.DB,
+		appURL:          appURL,
+		publicAPIURL:    publicAPIURL,
+		mw:              params.MW,
+		blobReadEnabled: blobReadEnabled,
 	}
 }
 
@@ -839,7 +843,7 @@ func (h *WebhookSignalLifecycleHook) buildApprovalEventData(ctx context.Context,
 		Approval: &approvalRef{
 			ID:          approval.ID,
 			Type:        string(approval.Type),
-			Plan:        truncateApprovalPlan(approval.Contents),
+			Plan:        truncateApprovalPlan(h.approvalContents(ctx, approval)),
 			RespondedBy: respondedBy,
 		},
 	}
@@ -897,6 +901,18 @@ func mapApprovalResponseTransition(t app.WorkflowStepResponseType) string {
 // truncateApprovalPlan trims a plan blob to approvalPlanExcerptMaxBytes,
 // appending an explicit "(truncated)" marker when truncation occurred so the
 // receiving consumer can render the right indicator.
+// approvalContents reads the approval plan, honoring the blob-read flag, and
+// logs when the read is served from the S3 blob.
+func (h *WebhookSignalLifecycleHook) approvalContents(ctx context.Context, approval *app.WorkflowStepApproval) string {
+	contents, fromBlob := approval.GetContents(ctx, h.blobReadEnabled)
+	if fromBlob {
+		h.l.Debug("read workflow step approval contents from blob",
+			zap.String("approval_id", approval.ID),
+			zap.Int("bytes", len(contents)))
+	}
+	return contents
+}
+
 func truncateApprovalPlan(plan string) string {
 	plan = strings.TrimSpace(plan)
 	if plan == "" {

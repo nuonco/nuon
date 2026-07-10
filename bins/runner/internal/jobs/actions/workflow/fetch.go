@@ -2,7 +2,6 @@ package workflow
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/pkg/errors"
 
@@ -22,17 +21,20 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 
 	// fetch the plan json
 	l.Info("fetching actions job plan")
-	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
+	cp, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job plan")
 	}
 
-	// parse the plan
-	var plan plantypes.ActionWorkflowRunPlan
-	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return errors.Wrap(err, "unable to parse action workflow run plan")
+	composite, err := plantypes.CompositePlanFromAny(cp)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse composite plan")
 	}
-	h.state.plan = &plan
+	if composite.ActionWorkflowRunPlan == nil {
+		return errors.New("composite plan missing action workflow run plan")
+	}
+	plan := composite.ActionWorkflowRunPlan
+	h.state.plan = plan
 
 	h.state.auth = &pkgplantypes.PlanAuth{
 		AWSAuth:   plan.AWSAuth,

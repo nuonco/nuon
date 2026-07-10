@@ -30,7 +30,7 @@ type AdminBackfillBlobsRequest struct {
 // @Summary				backfill dual-write blobs to S3
 // @Description			Starts an orchestrator workflow that enumerates the day-buckets of existing dual-write rows and mirrors each day's rows into S3 blob storage, throttled to the configured per-second S3 write rate. Re-running drains any remaining backlog; an already-running backfill is reused rather than duplicated.
 // @Description
-// @Description			Supported tables: install_states, install_workflow_step_approvals, runner_job_plans, runner_job_execution_outputs, terraform_workspace_states. Leave `tables` empty (or omit the body) to process all of them.
+// @Description			Supported tables: install_states, install_workflow_step_approvals, runner_job_plans, runner_job_execution_outputs, terraform_workspace_states, terraform_workspace_state_jsons. Leave `tables` empty (or omit the body) to process all of them.
 // @Tags					general/admin
 // @Accept					json
 // @Produce				json
