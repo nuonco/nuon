@@ -19,6 +19,10 @@ type CreateGCPServiceAccountRequest struct {
 	GARRepositoryURL      string `validate:"required"`
 	K8sNamespace          string // Runner ID used as namespace; empty skips WI binding
 	K8sServiceAccountName string // K8s SA name; empty skips WI binding
+	// SharedServiceAccountEmail switches to the shared org-runner SA: no SA is
+	// created and no GAR grant is made (both happen at install-stack /
+	// component-deploy time); only the per-org WI binding is appended.
+	SharedServiceAccountEmail string
 }
 
 type CreateGCPServiceAccountResponse struct {
@@ -39,23 +43,26 @@ func (a *Activities) CreateGCPServiceAccount(ctx context.Context, req *CreateGCP
 		return nil, fmt.Errorf("unable to create IAM service: %w", err)
 	}
 
-	saName := truncateGCPServiceAccountID(req.OrgID)
-	saEmail := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", saName, req.ProjectID)
-	projectResource := fmt.Sprintf("projects/%s", req.ProjectID)
+	saEmail := req.SharedServiceAccountEmail
+	if saEmail == "" {
+		saName := truncateGCPServiceAccountID(req.OrgID)
+		saEmail = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", saName, req.ProjectID)
+		projectResource := fmt.Sprintf("projects/%s", req.ProjectID)
 
-	// Create the service account. 409 means it already exists — that's fine.
-	_, createErr := iamService.Projects.ServiceAccounts.Create(projectResource, &iam.CreateServiceAccountRequest{
-		AccountId: saName,
-		ServiceAccount: &iam.ServiceAccount{
-			DisplayName: fmt.Sprintf("Nuon org runner %s", req.OrgID),
-		},
-	}).Context(ctx).Do()
-	if createErr != nil && !isGoogleAPIError(createErr, 409) {
-		return nil, fmt.Errorf("unable to create service account: %w", createErr)
-	}
-	// GCP IAM is eventually consistent — brief pause before setting bindings.
-	if createErr == nil {
-		time.Sleep(5 * time.Second)
+		// Create the service account. 409 means it already exists — that's fine.
+		_, createErr := iamService.Projects.ServiceAccounts.Create(projectResource, &iam.CreateServiceAccountRequest{
+			AccountId: saName,
+			ServiceAccount: &iam.ServiceAccount{
+				DisplayName: fmt.Sprintf("Nuon org runner %s", req.OrgID),
+			},
+		}).Context(ctx).Do()
+		if createErr != nil && !isGoogleAPIError(createErr, 409) {
+			return nil, fmt.Errorf("unable to create service account: %w", createErr)
+		}
+		// GCP IAM is eventually consistent — brief pause before setting bindings.
+		if createErr == nil {
+			time.Sleep(5 * time.Second)
+		}
 	}
 
 	// Add Workload Identity binding if K8s namespace and SA name are provided.
@@ -102,6 +109,13 @@ func (a *Activities) CreateGCPServiceAccount(ctx context.Context, req *CreateGCP
 		if err != nil {
 			return nil, fmt.Errorf("unable to set Workload Identity binding: %w", err)
 		}
+	}
+
+	// The shared SA carries its GAR access from deploy-time bindings.
+	if req.SharedServiceAccountEmail != "" {
+		return &CreateGCPServiceAccountResponse{
+			ServiceAccountEmail: saEmail,
+		}, nil
 	}
 
 	// Grant the service account Artifact Registry writer on the management
