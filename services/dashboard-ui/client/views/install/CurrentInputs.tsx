@@ -10,11 +10,15 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { EditInputsButton } from '@/components/installs/management/EditInputs'
 import { InputValue } from '@/components/installs/management/InputValue'
+import { ComponentOverridesList } from '@/components/install-overrides/ComponentOverridesList'
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getAppConfig, getInstallCurrentInputs } from '@/lib'
 import { normalizeAppInputGroups } from '@/utils/app-utils'
-import { getInputDisplayName } from '@/utils/install-utils'
+import {
+  COMPONENT_OVERRIDE_INPUT_GROUP,
+  getInputDisplayName,
+} from '@/utils/install-utils'
 
 export const CurrentInputs = () => {
   const { org } = useOrg()
@@ -103,6 +107,14 @@ export const CurrentInputs = () => {
                 className="border rounded-md"
                 headerClassName="!px-4"
               >
+                {group.name === COMPONENT_OVERRIDE_INPUT_GROUP ? (
+                  <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
+                    <ComponentOverridesList
+                      inputs={groupInputs}
+                      values={redacted}
+                    />
+                  </div>
+                ) : (
                 <div className="p-4 border-t bg-black/[0.0075] dark:bg-white/[0.0075]">
                   <PropertyGrid
                     align="start"
@@ -151,6 +163,7 @@ export const CurrentInputs = () => {
                     )}
                   />
                 </div>
+                )}
               </Expand>
             )
           })}
