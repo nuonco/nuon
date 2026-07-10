@@ -153,7 +153,10 @@ func (h *Helpers) CreateOrgRunnerGroup(ctx context.Context, org *app.Org) (*app.
 	var orgAzureClientID string
 	switch h.cfg.CloudProvider {
 	case string(app.CloudPlatformGCP):
-		orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
+		orgGCPServiceAccount = h.cfg.ManagementGCPOrgRunnerSAEmail
+		if orgGCPServiceAccount == "" {
+			orgGCPServiceAccount = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", org.ID, h.cfg.ManagementAccountID)
+		}
 	case string(app.CloudPlatformAzure):
 		// Azure per-org managed identity is created by ProvisionIAM workflow.
 		// OrgAzureClientID is populated after IAM provisioning completes.
