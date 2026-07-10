@@ -1,0 +1,2 @@
+running helm upgrade
+unable to upgrade helm release: cannot patch "clickhouse" with kind StatefulSet: StatefulSet.apps "clickhouse" is invalid: spec: Forbidden: updates to statefulset spec for fields other than 'replicas', 'ordinals', 'template', 'updateStrategy', 'persistentVolumeClaimRetentionPolicy' and 'minReadySeconds' are forbidden
