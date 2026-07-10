@@ -6,6 +6,7 @@ import { ComponentTypeFilterDropdown } from '@/components/components/ComponentTy
 import { useInstall } from '@/hooks/use-install'
 import { useOrg } from '@/hooks/use-org'
 import { getInstallComponents, getAppConfig, getComponentLabelKeys } from '@/lib'
+import { parseComponentOverrideInput } from '@/utils/install-utils'
 import { InstallComponentsTable, parseInstallComponentSummaryToTableData } from './InstallComponentsTable'
 
 const LIMIT = 10
@@ -85,6 +86,19 @@ export const InstallComponentsTableContainer = ({
   const configConnections = configResult?.component_config_connections
   const componentToggles = install?.install_config?.component_toggles
 
+  const installValues = install?.install_inputs?.at(0)?.values
+  const overriddenComponentNames = new Set<string>()
+  Object.entries(installValues ?? {}).forEach(([name, value]) => {
+    const parsed = parseComponentOverrideInput(name)
+    if (
+      parsed &&
+      (parsed.kind === 'helm_values' || parsed.kind === 'tf_vars') &&
+      value
+    ) {
+      overriddenComponentNames.add(parsed.component)
+    }
+  })
+
   return (
     <InstallComponentsTable
       data={parseInstallComponentSummaryToTableData(
@@ -94,7 +108,8 @@ export const InstallComponentsTableContainer = ({
         install?.id ?? '',
         configConnections,
         componentToggles,
-        install?.app?.label_colors
+        install?.app?.label_colors,
+        overriddenComponentNames
       )}
       filterActions={
         <div className="flex items-center gap-3">
