@@ -9,6 +9,7 @@ import { Policies } from './Policies'
 import { Runner } from './Runner'
 import { ProcessSystemLogs } from './ProcessSystemLogs'
 import { Sandbox } from './Sandbox'
+import { InstallBranches } from './InstallBranches'
 import { Stacks } from './Stacks'
 import { Versions } from './Versions'
 import { Workflows } from './Workflows'
@@ -104,6 +105,7 @@ export const installRoutes: RouteObject[] = [
       },
       { path: ':orgId/installs/:installId/stacks', element: <Stacks /> },
       { path: ':orgId/installs/:installId/versions', element: <Versions /> },
+      { path: ':orgId/installs/:installId/branches', element: <InstallBranches /> },
       { path: ':orgId/installs/:installId/workflows', element: <Workflows /> },
       { path: ':orgId/installs/:installId/readme', element: <Readme /> },
       {

@@ -13,6 +13,7 @@ interface LoadAppConfigsContainerProps {
   modalId?: string
   onLoadingChange?: (loading: boolean) => void
   onRegisterClearDraft?: (clearFn: () => void) => void
+  onInstallCreated?: () => void
 }
 
 export const LoadAppConfigsContainer = ({
@@ -23,6 +24,7 @@ export const LoadAppConfigsContainer = ({
   modalId,
   onLoadingChange,
   onRegisterClearDraft,
+  onInstallCreated,
 }: LoadAppConfigsContainerProps) => {
   const { org } = useOrg()
   const {
@@ -53,6 +55,7 @@ export const LoadAppConfigsContainer = ({
           modalId={modalId}
           onLoadingChange={onLoadingChange}
           onRegisterClearDraft={onRegisterClearDraft}
+          onInstallCreated={onInstallCreated}
         />
       )}
     </LoadAppConfigs>

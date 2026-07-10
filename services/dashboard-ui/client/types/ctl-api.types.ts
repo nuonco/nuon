@@ -583,6 +583,9 @@ export type TAppStackConfig = components['schemas']['app.AppStackConfig']
 export type TInstallAppConfigVersion =
   components['schemas']['app.InstallAppConfigVersion']
 
+export type TInstallAppBranchConnection =
+  components['schemas']['app.InstallAppBranchConnection']
+
 // api version
 export type TAPIVersion = {
   ui: { version: string; git_ref: string }

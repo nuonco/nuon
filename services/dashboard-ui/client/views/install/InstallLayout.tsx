@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 import { Outlet, useParams, useMatch, useSearchParams } from 'react-router'
-import { Badge } from '@/components/common/Badge'
-=======
-import { Outlet, useParams, useMatch } from 'react-router'
->>>>>>> e1b1f16cb (feat: show connected app branch on install page)
 import { LabelBadge } from '@/components/common/LabelBadge'
 import { HeadingGroup } from '@/components/common/HeadingGroup'
 import { ID } from '@/components/common/ID'
@@ -20,6 +15,7 @@ import {
   useOpenInstallSettings,
   INSTALL_SETTINGS_PANEL_KEY,
 } from '@/components/installs/InstallSettingsPanel'
+import { InstallManagementDropdown } from '@/components/installs/management/InstallManagementDropdown'
 import { AdminDashboardLink } from '@/components/admin/AdminDashboardLink'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { PageContent } from '@/components/layout/PageContent'
@@ -74,6 +70,11 @@ const InstallTemplate = () => {
       path: `/workflows`,
       iconVariant: 'TreeStructureIcon' as const,
       text: 'Workflows',
+    },
+    {
+      path: `/branches`,
+      iconVariant: 'GitBranchIcon' as const,
+      text: 'App branches',
     },
     {
       type: 'action',
@@ -178,99 +179,10 @@ const InstallTemplate = () => {
     install?.metadata?.managed_by === 'nuon/cli/install-config'
 
   return (
-<<<<<<< HEAD
     <>
       <InstallSettingsPanel />
       <PageLayout>
         {isChildRoute ? (
-=======
-    <PageLayout>    
-      {isChildRoute ? (
-        <PageContent className="border-t" variant="row">
-          <SubNav
-            basePath={`/${org?.id}/installs/${install?.id}`}
-            links={navLinks}
-          />
-          <div className="flex flex-col flex-1 min-w-0">
-            <Outlet />
-          </div>
-        </PageContent>
-      ) : (
-        <>
-          <PageHeader>
-                          <DeprovisionBanner />
-            <div className="@container flex flex-col gap-6 w-full md:flex-row md:justify-between">
-              <HeadingGroup className="gap-1.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Text variant="h3" weight="stronger" level={1}>
-                    {install.name}
-                  </Text>
-
-                  {install.labels &&
-                    Object.entries(install.labels).map(([key, value]) => (
-                      <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
-                    ))}
-                </div>
-                <ID>{install.id}</ID>
-                <div className="flex items-center gap-3">
-                  <Text variant="subtext" theme="info">
-                    Last updated{' '}
-                    <Time
-                      variant="subtext"
-                      time={install?.updated_at}
-                      format="relative"
-                    />
-                  </Text>
-                  <AdminDashboardLink
-                    path={`/queues?owner_id=${install.id}`}
-                    label="Admin panel"
-                  />
-                </div>
-              </HeadingGroup>
-
-              <div className="flex items-start flex-wrap gap-4 md:gap-8">
-                {isManagedByConfig && (
-                  <LabeledValue label="Managed By">
-                    <Text variant="subtext">
-                      <span className="flex items-center gap-1">
-                        <Icon variant="FileCodeIcon" /> Install Config
-                      </span>
-                    </Text>
-                  </LabeledValue>
-                )}
-                {install?.app_branch && (
-                  <LabeledValue label="Branch">
-                    <Text variant="subtext">
-                      <Link href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}>
-                        <span className="flex items-center gap-1">
-                          <Icon variant="GitBranchIcon" size={14} />
-                          {install.app_branch.name}
-                        </span>
-                      </Link>
-                    </Text>
-                  </LabeledValue>
-                )}
-                <LabeledValue label="App">
-                  <Text variant="subtext">
-                    <Link href={`/${org.id}/apps/${install.app_id}`}>
-                      {install?.app?.name}
-                    </Link>
-                  </Text>
-                </LabeledValue>
-                <InstallStatusesContainer collapsible />
-                <InstallManagementDropdown />
-              </div>
-            </div>
-            {install?.drifted_objects?.length ? (
-              <DriftedSummary
-                className="mt-4"
-                orgId={org.id}
-                installId={install.id}
-                driftedObjects={install.drifted_objects}
-              />
-            ) : null}
-          </PageHeader>
->>>>>>> e1b1f16cb (feat: show connected app branch on install page)
           <PageContent className="border-t" variant="row">
             <SubNav
               basePath={`/${org?.id}/installs/${install?.id}`}
@@ -290,21 +202,10 @@ const InstallTemplate = () => {
                     <Text variant="h3" weight="stronger" level={1}>
                       {install.name}
                     </Text>
-                    {install.app_branch?.name && (
-                      <Badge size="sm" theme="brand">
-                        {install.app_branch.name}
-                      </Badge>
-                    )}
+
                     {install.labels &&
                       Object.entries(install.labels).map(([key, value]) => (
-                        <LabelBadge
-                          key={key}
-                          size="sm"
-                          variant="code"
-                          labelKey={key}
-                          labelValue={value}
-                          customColor={labelColors?.[key]}
-                        />
+                        <LabelBadge key={key} size="sm" variant="code" labelKey={key} labelValue={value} customColor={labelColors?.[key]} />
                       ))}
                   </div>
                   <ID>{install.id}</ID>
@@ -334,6 +235,18 @@ const InstallTemplate = () => {
                       </Text>
                     </LabeledValue>
                   )}
+                  {install?.app_branch && (
+                    <LabeledValue label="Branch">
+                      <Text variant="subtext">
+                        <Link href={`/${org?.id}/apps/${install?.app_id}/branches/${install?.app_branch?.id}`}>
+                          <span className="flex items-center gap-1">
+                            <Icon variant="GitBranchIcon" size={14} />
+                            {install.app_branch.name}
+                          </span>
+                        </Link>
+                      </Text>
+                    </LabeledValue>
+                  )}
                   <LabeledValue label="App">
                     <Text variant="subtext">
                       <Link href={`/${org.id}/apps/${install.app_id}`}>
@@ -342,6 +255,7 @@ const InstallTemplate = () => {
                     </Text>
                   </LabeledValue>
                   <InstallStatusesContainer collapsible />
+                  <InstallManagementDropdown />
                 </div>
               </div>
               {install?.drifted_objects?.length ? (

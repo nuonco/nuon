@@ -13,6 +13,7 @@ import { PageSection } from '@/components/layout/PageSection'
 import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
+import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
 import { PlanGroupStep } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
@@ -160,6 +161,14 @@ const BranchRunDetailContent = () => {
             </div>
           </div>
         </div>
+
+        <BranchRunSummary
+          branchRun={branchRun}
+          appId={appId}
+          branchId={branchId}
+          runId={runId}
+          runStatus={status}
+        />
 
         {appConfigId && <AppConfigDiff appConfigId={appConfigId} focus={configFocus} />}
 
