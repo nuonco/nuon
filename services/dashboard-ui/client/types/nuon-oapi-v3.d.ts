@@ -5403,10 +5403,6 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
     "app.RunnerJobPlan": {
-      /**
-       * @description Deprecated: composite plans are read from CompositePlanBlob (S3). This
-       * jsonb column is retained only as a fallback for rows not yet backfilled.
-       */
       composite_plan?: components["schemas"]["plantypes.CompositePlan"];
       created_at?: string;
       created_by_id?: string;
@@ -17383,6 +17379,8 @@ export interface operations {
       query?: {
         /** @description return a schema for a source file */
         type?: string;
+        /** @description deprecated alias for type; responses include a Deprecation header when used */
+        source?: string;
       };
     };
     responses: {
@@ -18286,6 +18284,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description return actions in the install's current app config; set false to return only actions no longer in it */
+        synced?: boolean;
       };
       path: {
         /** @description install ID */
@@ -18865,6 +18865,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description return actions in the install's current app config; set false to return only actions no longer in it */
+        synced?: boolean;
       };
       path: {
         /** @description install ID */
@@ -19646,6 +19648,8 @@ export interface operations {
         q?: string;
         /** @description label filter (key:value,key:value) */
         labels?: string;
+        /** @description return components in the install's current app config; set false to return only components no longer in it */
+        synced?: boolean;
         /** @description offset of results to return */
         offset?: number;
         /** @description limit of results to return */
@@ -22453,6 +22457,8 @@ export interface operations {
         limit?: number;
         /** @description search by runbook name or ID */
         q?: string;
+        /** @description return runbooks in the install's current app config; set false to return only runbooks no longer in it */
+        synced?: boolean;
       };
       path: {
         /** @description install ID */
