@@ -106,9 +106,11 @@ func (errorParser) Parse(ctx *errparse.ParseContext) compositeerrors.CompositeEr
 		return nil
 	}
 
+	output := truncate(strings.Join(lines, "\n"), maxBody)
+
 	e := &TerraformError{
 		Summary: summaries[0],
-		Output:  truncate(strings.Join(lines, "\n"), maxBody),
+		Output:  output,
 	}
 	if len(summaries) > 1 {
 		e.Errors = summaries
