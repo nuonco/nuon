@@ -271,8 +271,7 @@ func MetadataConfigSchema() (*jsonschema.Schema, error) {
 
 // PermissionSchema is the schema for a single IAM role file, as used by the
 // permissions/ and break_glass/ directory forms (each file is one
-// AppAWSIAMRole). PermissionsConfigSchema, by contrast, covers the collection
-// form (a single permissions.toml holding provision_role/roles/etc.).
+// AppAWSIAMRole).
 func PermissionSchema() (*jsonschema.Schema, error) {
 	if err := ValidateJSONSchemaExtend(config.AppAWSIAMRole{}); err != nil {
 		return nil, errors.Wrap(err, "AppAWSIAMRole validation failed")
