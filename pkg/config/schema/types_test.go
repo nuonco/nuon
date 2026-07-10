@@ -46,6 +46,27 @@ func TestAllSchemasHaveJSONSchemaExtend(t *testing.T) {
 	}
 }
 
+// TestPermissionVsPermissionsSchemas guards the singular/collection split: the
+// permissions/ directory form is a single AppAWSIAMRole per file ("permission"),
+// while permissions.toml is the PermissionsConfig collection ("permissions").
+// They must be distinct schemas with distinct $ids.
+func TestPermissionVsPermissionsSchemas(t *testing.T) {
+	single, err := LookupSchemaType("permission")
+	if err != nil || single == nil {
+		t.Fatalf("permission schema unavailable: %v", err)
+	}
+	collection, err := LookupSchemaType("permissions")
+	if err != nil || collection == nil {
+		t.Fatalf("permissions schema unavailable: %v", err)
+	}
+	if single.ID == "" {
+		t.Fatal("permission schema must declare a root $id")
+	}
+	if single.ID == collection.ID {
+		t.Fatalf("permission and permissions must not share $id %q", single.ID)
+	}
+}
+
 func TestLookupSchemaTypeNormalizesUnderscores(t *testing.T) {
 	tests := []struct {
 		typ   string
