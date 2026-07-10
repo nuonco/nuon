@@ -41,11 +41,12 @@ func (w Wkflow) ProvisionIAM(ctx workflow.Context, req *ProvisionIAMRequest) (*P
 		ctx = workflow.WithActivityOptions(ctx, activityOpts)
 
 		gcpReq := CreateGCPServiceAccountRequest{
-			ProjectID:             w.cfg.ManagementAccountID,
-			OrgID:                 req.OrgID,
-			GARRepositoryURL:      w.cfg.ManagementGARRepositoryURL,
-			K8sNamespace:          req.RunnerID,
-			K8sServiceAccountName: fmt.Sprintf("runner-%s", req.OrgID),
+			ProjectID:                 w.cfg.ManagementAccountID,
+			OrgID:                     req.OrgID,
+			GARRepositoryURL:          w.cfg.ManagementGARRepositoryURL,
+			K8sNamespace:              req.RunnerID,
+			K8sServiceAccountName:     fmt.Sprintf("runner-%s", req.OrgID),
+			SharedServiceAccountEmail: w.cfg.ManagementGCPOrgRunnerSAEmail,
 		}
 		_, err := AwaitCreateGCPServiceAccount(ctx, &gcpReq)
 		if err != nil {

@@ -334,7 +334,10 @@ type Config struct {
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
-	GCSInstallTemplateBucket   string `config:"gcs_install_template_bucket"`
+	// When set, org runners share this stack-created SA (WI bindings appended
+	// per org) instead of ctl-api creating one SA per org at runtime.
+	ManagementGCPOrgRunnerSAEmail string `config:"management_gcp_org_runner_sa_email"`
+	GCSInstallTemplateBucket      string `config:"gcs_install_template_bucket"`
 
 	// Azure management (not required for AWS/GCP)
 	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
