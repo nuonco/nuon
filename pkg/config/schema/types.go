@@ -28,6 +28,7 @@ var SchemaMapping = map[string]func() (*jsonschema.Schema, error){
 	"kubernetes-contexts": KubernetesContextsConfigSchema,
 	"kubernetes-manifest": KubernetesManifestConfigSchema,
 	"metadata":            MetadataConfigSchema,
+	"permission":          PermissionSchema,
 	"permissions":         PermissionsConfigSchema,
 	"policy":              PolicyConfigSchema,
 	"policies":            PoliciesConfigSchema,
@@ -104,8 +105,8 @@ func AppConfigSchema() (*jsonschema.Schema, error) {
 }
 
 func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.AppAWSIAMRole{}); err != nil {
-		return nil, errors.Wrap(err, "AppAWSIAMRole validation failed")
+	if err := ValidateJSONSchemaExtend(config.BreakGlass{}); err != nil {
+		return nil, errors.Wrap(err, "BreakGlass validation failed")
 	}
 
 	r, err := reflector()
@@ -113,7 +114,7 @@ func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
-	return r.Reflect(config.AppAWSIAMRole{}), nil
+	return r.Reflect(config.BreakGlass{}), nil
 }
 
 func InputGroupSchema() (*jsonschema.Schema, error) {
@@ -266,6 +267,22 @@ func MetadataConfigSchema() (*jsonschema.Schema, error) {
 	}
 
 	return r.Reflect(config.MetadataConfig{}), nil
+}
+
+// PermissionSchema is the schema for a single IAM role file, as used by the
+// permissions/ and break_glass/ directory forms (each file is one
+// AppAWSIAMRole).
+func PermissionSchema() (*jsonschema.Schema, error) {
+	if err := ValidateJSONSchemaExtend(config.AppAWSIAMRole{}); err != nil {
+		return nil, errors.Wrap(err, "AppAWSIAMRole validation failed")
+	}
+
+	r, err := reflector()
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Reflect(config.AppAWSIAMRole{}), nil
 }
 
 func PermissionsConfigSchema() (*jsonschema.Schema, error) {

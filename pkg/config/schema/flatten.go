@@ -64,6 +64,9 @@ func flattenedComponentSchema(typedConfig any, componentTypes ...config.Componen
 	}
 
 	merged := &jsonschema.Schema{
+		// Carry the typed config's reflected root $id onto the merged schema.
+		// Schema-aware editors can key their schema cache by ID.
+		ID:                   typedRoot.ID,
 		Version:              compRoot.Version,
 		Type:                 "object",
 		Title:                typed.Title,
