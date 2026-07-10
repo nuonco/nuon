@@ -62,6 +62,11 @@ const InstallTemplate = () => {
       iconVariant: 'TreeStructureIcon' as const,
       text: 'Workflows',
     },
+    {
+      path: `/branches`,
+      iconVariant: 'GitBranchIcon' as const,
+      text: 'App branches',
+    },
     { type: 'section', label: 'App' },
     {
       path: `/components`,

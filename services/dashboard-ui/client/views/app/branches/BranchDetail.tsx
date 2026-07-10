@@ -19,6 +19,7 @@ import { useBranch } from '@/hooks/use-branch'
 import { BranchProvider } from '@/providers/branch-provider'
 
 import { BranchDetailActions } from '@/components/branches/BranchDetailActions'
+import { DeploymentPlanGraph } from '@/components/branches/DeploymentPlanGraph'
 import { InstallGroupsSection } from '@/components/branches/install-groups/InstallGroupsSection'
 import { WorkflowTimelineComponent } from '@/components/workflows/WorkflowTimeline'
 import { getBranchWorkflowRuns, getAppInstalls } from '@/lib'
@@ -48,6 +49,7 @@ const BranchDetailContent = () => {
     queryKey: ['app-installs', orgId, appId],
     queryFn: () => getAppInstalls({ appId, orgId, limit: 100 }),
     enabled: !!orgId && !!appId && !!currentConfig,
+    refetchInterval: 10000,
   })
 
   const installsById = useMemo(
@@ -151,7 +153,7 @@ const BranchDetailContent = () => {
             />
           </div>
         ) : (
-          <InstallGroupsSection
+          <DeploymentPlanGraph
             config={currentConfig}
             installsById={installsById}
             orgId={orgId}

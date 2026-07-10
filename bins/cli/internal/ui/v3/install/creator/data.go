@@ -269,6 +269,7 @@ func (m *model) submitForm() tea.Cmd {
 		req := &models.ServiceCreateInstallRequest{
 			Name:   &name,
 			Inputs: inputsMap,
+			Labels: m.presetLabels,
 		}
 		switch m.cloudPlatform {
 		case models.AppCloudPlatformGcp:
