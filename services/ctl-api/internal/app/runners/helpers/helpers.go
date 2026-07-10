@@ -8,6 +8,7 @@ import (
 
 	"github.com/nuonco/nuon/services/ctl-api/internal"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/account"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/features"
 	queueclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/client"
 	emitterclient "github.com/nuonco/nuon/services/ctl-api/internal/pkg/queue/emitter/client"
@@ -25,6 +26,7 @@ type Params struct {
 	QueueClient    *queueclient.Client
 	EmitterClient  *emitterclient.Client
 	FeaturesClient *features.Features
+	BlobSvc        blobstore.Service
 }
 
 type Helpers struct {
@@ -37,6 +39,7 @@ type Helpers struct {
 	queueClient    *queueclient.Client
 	emitterClient  *emitterclient.Client
 	featuresClient *features.Features
+	blobSvc        blobstore.Service
 }
 
 func New(params Params) *Helpers {
@@ -50,5 +53,6 @@ func New(params Params) *Helpers {
 		queueClient:    params.QueueClient,
 		emitterClient:  params.EmitterClient,
 		featuresClient: params.FeaturesClient,
+		blobSvc:        params.BlobSvc,
 	}
 }

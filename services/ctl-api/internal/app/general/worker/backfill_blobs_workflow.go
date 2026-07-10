@@ -27,6 +27,7 @@ var defaultBlobBackfillTables = []string{
 	"runner_job_plans",
 	"runner_job_execution_outputs",
 	"terraform_workspace_states",
+	"terraform_workspace_state_jsons",
 }
 
 // BackfillBlobs enumerates the day-buckets with un-mirrored rows and drains them

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"time"
@@ -72,6 +73,20 @@ func (t *TerraformWorkspaceState) BeforeCreate(tx *gorm.DB) (err error) {
 	}
 
 	return nil
+}
+
+// GetContents returns the state contents. When blobRead is enabled it prefers
+// the S3 blob, falling back to the legacy bytea column when the blob is unset or
+// unreadable. When disabled it always reads the legacy column. The second return
+// reports whether the contents came from the blob.
+func (t *TerraformWorkspaceState) GetContents(ctx context.Context, blobRead bool) ([]byte, bool) {
+	if blobRead {
+		if raw, err := t.ContentsBlob.Get(ctx); err == nil && raw != "" {
+			return []byte(raw), true
+		}
+	}
+
+	return t.Contents, false
 }
 
 func (i *TerraformWorkspaceState) UseView() bool {

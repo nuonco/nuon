@@ -421,6 +421,11 @@ type Config struct {
 	// BlobBackfillRatePerSecond caps how many S3 PUTs/sec the blob backfill activity issues. Defaults to 500 when unset.
 	BlobBackfillRatePerSecond int `config:"blob_backfill_rate_per_second"`
 
+	// BlobReadEnabled gates reading large fields from the S3 blob. When false
+	// (default) reads fall back to the legacy column. Currently gates composite
+	// plan reads.
+	BlobReadEnabled bool `config:"blob_read_enabled"`
+
 	// Slack auto-link reconciler. TeamID + OrgLabelKey must both be set;
 	// ChannelID is optional and seeds a default org-wide subscription per link.
 	SlackAutoLinkTeamID        string `config:"slack_auto_link_team_id"`

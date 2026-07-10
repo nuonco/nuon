@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -90,6 +91,20 @@ func (c *WorkflowStepApproval) AfterQuery(tx *gorm.DB) error {
 	c.WorkflowStepID = c.InstallWorkflowStep.ID
 	c.WorkflowStep = c.InstallWorkflowStep
 	return nil
+}
+
+// GetContents returns the approval contents. When blobRead is enabled it prefers
+// the S3 blob, falling back to the legacy column when the blob is unset or
+// unreadable. When disabled it always reads the legacy column. The second return
+// reports whether the contents came from the blob.
+func (c *WorkflowStepApproval) GetContents(ctx context.Context, blobRead bool) (string, bool) {
+	if blobRead {
+		if raw, err := c.ContentsBlob.Get(ctx); err == nil && raw != "" {
+			return raw, true
+		}
+	}
+
+	return c.Contents, false
 }
 
 func (c *WorkflowStepApproval) Indexes(db *gorm.DB) []migrations.Index {

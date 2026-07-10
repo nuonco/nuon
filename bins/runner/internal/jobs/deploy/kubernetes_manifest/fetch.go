@@ -2,7 +2,6 @@ package kubernetes_manifest
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/nuonco/nuon/sdks/nuon-runner-go/models"
@@ -23,17 +22,20 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state = &handlerState{}
 
 	l.Info("fetching kubernetes manifest job plan")
-	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
+	cp, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job plan")
 	}
 
-	// parse the plan
-	var plan plantypes.DeployPlan
-	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return errors.Wrap(err, "unable to parse sandbox workflow run plan")
+	composite, err := plantypes.CompositePlanFromAny(cp)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse composite plan")
 	}
-	h.state.plan = &plan
+	if composite.DeployPlan == nil {
+		return errors.New("composite plan missing deploy plan")
+	}
+	plan := composite.DeployPlan
+	h.state.plan = plan
 
 	h.state.auth = &pkgplantypes.PlanAuth{
 		AWSAuth:   plan.KubernetesManifestDeployPlan.AWSAuth,

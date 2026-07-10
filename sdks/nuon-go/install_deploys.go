@@ -63,6 +63,8 @@ func (c *client) GetInstallDeploy(ctx context.Context, installID string, deployI
 	return resp.Payload, nil
 }
 
+// Deprecated: use GetRunnerJobCompositePlan, which reads the composite plan
+// from blob storage. This returns the legacy plan_json column.
 func (c *client) GetRunnerJobPlan(ctx context.Context, runnerJobID string) (string, error) {
 	resp, err := c.genClient.Operations.GetRunnerJobPlan(&operations.GetRunnerJobPlanParams{
 		RunnerJobID: runnerJobID,
@@ -70,6 +72,18 @@ func (c *client) GetRunnerJobPlan(ctx context.Context, runnerJobID string) (stri
 	}, c.getOrgIDAuthInfo())
 	if err != nil {
 		return "", err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *client) GetRunnerJobCompositePlan(ctx context.Context, runnerJobID string) (*models.PlantypesCompositePlan, error) {
+	resp, err := c.genClient.Operations.GetRunnerJobCompositePlan(&operations.GetRunnerJobCompositePlanParams{
+		RunnerJobID: runnerJobID,
+		Context:     ctx,
+	}, c.getOrgIDAuthInfo())
+	if err != nil {
+		return nil, err
 	}
 
 	return resp.Payload, nil

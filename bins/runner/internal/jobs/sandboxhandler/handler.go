@@ -398,15 +398,19 @@ func (h *Handler) execActionSandboxStep(ctx context.Context, job *models.AppRunn
 	}
 
 	l.Info("fetching actions job plan")
-	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
+	cp, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
 	if err != nil {
 		return cockerrors.Wrap(err, "unable to get job plan")
 	}
 
-	var plan plantypes.ActionWorkflowRunPlan
-	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return cockerrors.Wrap(err, "unable to parse action workflow run plan")
+	composite, err := plantypes.CompositePlanFromAny(cp)
+	if err != nil {
+		return cockerrors.Wrap(err, "unable to parse composite plan")
 	}
+	if composite.ActionWorkflowRunPlan == nil {
+		return cockerrors.New("composite plan missing action workflow run plan")
+	}
+	plan := composite.ActionWorkflowRunPlan
 
 	run, err := h.apiClient.GetInstallActionWorkflowRun(ctx, plan.InstallID, plan.ID)
 	if err != nil {
@@ -525,14 +529,23 @@ func (h *Handler) writeSandboxResults(ctx context.Context) error {
 }
 
 func (h *Handler) getSandboxModePlan(ctx context.Context) (*plantypes.MinSandboxMode, error) {
-	var plan plantypes.MinSandboxMode
-
-	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, h.job.ID)
+	cp, err := h.apiClient.GetJobCompositePlan(ctx, h.job.ID)
 	if err != nil {
 		return nil, cockerrors.Wrap(err, "unable to get job plan")
 	}
 
-	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
+	composite, err := plantypes.CompositePlanFromAny(cp)
+	if err != nil {
+		return nil, cockerrors.Wrap(err, "unable to parse composite plan")
+	}
+
+	planJSON, err := json.Marshal(composite.Inner())
+	if err != nil {
+		return nil, cockerrors.Wrap(err, "unable to marshal sandbox plan")
+	}
+
+	var plan plantypes.MinSandboxMode
+	if err := json.Unmarshal(planJSON, &plan); err != nil {
 		return nil, cockerrors.Wrap(err, "unable to convert to sandbox plan")
 	}
 

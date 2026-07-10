@@ -7,7 +7,6 @@ package models
 
 import (
 	"context"
-	stderrors "errors"
 
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
@@ -19,8 +18,11 @@ import (
 // swagger:model app.RunnerJobPlan
 type AppRunnerJobPlan struct {
 
-	// composite plan
-	CompositePlan *PlantypesCompositePlan `json:"composite_plan,omitempty"`
+	// Deprecated: composite plans are read from CompositePlanBlob (S3). This
+	// jsonb column is retained only as a fallback for rows not yet backfilled.
+	CompositePlan struct {
+		PlantypesCompositePlan
+	} `json:"composite_plan,omitempty"`
 
 	// created at
 	CreatedAt string `json:"created_at,omitempty"`
@@ -63,21 +65,6 @@ func (m *AppRunnerJobPlan) validateCompositePlan(formats strfmt.Registry) error 
 		return nil
 	}
 
-	if m.CompositePlan != nil {
-		if err := m.CompositePlan.Validate(formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("composite_plan")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("composite_plan")
-			}
-
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -96,26 +83,6 @@ func (m *AppRunnerJobPlan) ContextValidate(ctx context.Context, formats strfmt.R
 }
 
 func (m *AppRunnerJobPlan) contextValidateCompositePlan(ctx context.Context, formats strfmt.Registry) error {
-
-	if m.CompositePlan != nil {
-
-		if swag.IsZero(m.CompositePlan) { // not required
-			return nil
-		}
-
-		if err := m.CompositePlan.ContextValidate(ctx, formats); err != nil {
-			ve := new(errors.Validation)
-			if stderrors.As(err, &ve) {
-				return ve.ValidateName("composite_plan")
-			}
-			ce := new(errors.CompositeError)
-			if stderrors.As(err, &ce) {
-				return ce.ValidateName("composite_plan")
-			}
-
-			return err
-		}
-	}
 
 	return nil
 }

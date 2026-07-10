@@ -70,9 +70,16 @@ func (r *RunnerJobExecutionOutputs) BeforeCreate(tx *gorm.DB) error {
 }
 
 func (r *RunnerJobExecutionOutputs) AfterQuery(tx *gorm.DB) error {
-	if len(r.Outputs) > 0 {
+	raw := r.Outputs
+	if blobstore.IsBlobReadEnabled(tx.Statement.Context) {
+		if v, err := r.OutputsBlob.Get(tx.Statement.Context); err == nil && v != "" {
+			raw = []byte(v)
+		}
+	}
+
+	if len(raw) > 0 {
 		var outputs map[string]interface{}
-		if err := json.Unmarshal(r.Outputs, &outputs); err != nil {
+		if err := json.Unmarshal(raw, &outputs); err != nil {
 			return errors.Wrap(err, "unable to parse outputs json")
 		}
 		r.ParsedOutputs = outputs

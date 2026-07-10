@@ -26,7 +26,12 @@ func (h *Helpers) GetInstallState(ctx context.Context, installID string, redacte
 
 	latestState, err := h.getLatestInstallStateRow(ctx, installID)
 	if err == nil {
-		es := latestState.State
+		es, fromBlob := latestState.GetState(ctx, h.cfg.BlobReadEnabled)
+		if fromBlob {
+			cctx.GetLogger(ctx, h.l).Debug("read install state from blob",
+				zap.String("install_id", installID),
+				zap.String("state_id", latestState.ID))
+		}
 		switch {
 		case !latestState.StaleAt.Empty() && len(latestState.StalePartials) > 0:
 			es, err = h.regenerateStalePartials(ctx, latestState, redacted, skipVersionCheck)
@@ -313,7 +318,11 @@ func (h *Helpers) getLatestInstallStateRow(ctx context.Context, installID string
 // regenerateStalePartials regenerates only the partials listed in row.StalePartials, merges them into
 // the cached state, persists the result in place (clearing the stale markers), and returns it.
 func (h *Helpers) regenerateStalePartials(ctx context.Context, row *app.InstallState, redacted, skipVersionCheck bool) (*state.State, error) {
-	is := row.State
+	is, fromBlob := row.GetState(ctx, h.cfg.BlobReadEnabled)
+	if fromBlob {
+		cctx.GetLogger(ctx, h.l).Debug("read install state from blob (stale partials)",
+			zap.String("state_id", row.ID))
+	}
 	if is == nil {
 		is = state.New()
 	}

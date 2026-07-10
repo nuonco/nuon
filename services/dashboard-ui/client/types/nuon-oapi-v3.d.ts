@@ -5403,6 +5403,10 @@ export interface components {
     /** @enum {string} */
     "app.RunnerJobOperationType": "exec" | "build" | "create-apply-plan" | "create-teardown-plan" | "apply-plan" | "unknown";
     "app.RunnerJobPlan": {
+      /**
+       * @description Deprecated: composite plans are read from CompositePlanBlob (S3). This
+       * jsonb column is retained only as a fallback for rows not yet backfilled.
+       */
       composite_plan?: components["schemas"]["plantypes.CompositePlan"];
       created_at?: string;
       created_by_id?: string;

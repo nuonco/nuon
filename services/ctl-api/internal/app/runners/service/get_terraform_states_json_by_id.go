@@ -12,7 +12,9 @@ import (
 	tfjson "github.com/hashicorp/terraform-json"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
 	"github.com/nuonco/nuon/services/ctl-api/internal/middlewares/stderr"
+	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/blobstore"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 )
 
 // @ID						GetTerraformWorkspaceStatesJSONByIDV2
@@ -109,6 +111,15 @@ func (s *service) GetTerraformStatesJSONById(ctx *gin.Context, workspaceID strin
 		Where("id = ? and workspace_id = ?", stateID, workspaceID).First(state)
 	if res.Error != nil {
 		return nil, fmt.Errorf("unable to get terraform state: %w", res.Error)
+	}
+
+	contents, fromBlob := state.GetContents(blobstore.WithBlobService(ctx, s.blobSvc), s.cfg.BlobReadEnabled)
+	state.Contents = contents
+	if fromBlob {
+		s.l.Debug("read terraform workspace state json contents from blob",
+			zap.String("workspace_id", workspaceID),
+			zap.String("state_id", state.ID),
+			zap.Int("bytes", len(contents)))
 	}
 
 	return state, nil
