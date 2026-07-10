@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"mime"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +16,10 @@ import (
 	"github.com/nuonco/nuon/services/dashboard-ui/server/internal"
 	authmw "github.com/nuonco/nuon/services/dashboard-ui/server/internal/middlewares/auth"
 )
+
+func init() {
+	_ = mime.AddExtensionType(".webmanifest", "application/manifest+json")
+}
 
 type clientConfig struct {
 	APIUrl                string `json:"apiUrl"`

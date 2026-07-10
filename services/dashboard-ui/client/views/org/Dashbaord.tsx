@@ -169,9 +169,9 @@ export const Dashboard = () => {
           </Banner>
         </div>
       )}
-      <PageContent>
-        <PageGrid className="md:divide-x flex-auto !grid-cols-1 md:!grid-cols-[1fr_400px]">
-          <PageSection className="flex-1 border-r !gap-12">
+      <PageContent className="@container">
+        <PageGrid className="@4xl:divide-x flex-auto !grid-cols-1 @4xl:!grid-cols-[1fr_400px]">
+          <PageSection className="flex-1 @4xl:border-r !gap-12">
             <div className="flex flex-col gap-4">
               <Text variant="h3" weight="strong">
                 Overview
@@ -200,7 +200,7 @@ export const Dashboard = () => {
               />
             </div>
           </PageSection>
-          <PageSection className="w-full">
+          <PageSection className="w-full hidden @4xl:flex">
             <AnnouncementsList announcements={announcementsData.announcements} />
           </PageSection>
         </PageGrid>
