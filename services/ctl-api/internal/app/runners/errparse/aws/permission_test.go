@@ -134,17 +134,17 @@ func TestParse_S3AccessDenied_PermissionsBoundary(t *testing.T) {
 		t.Errorf("resource %q still carries quotes", e.Resource)
 	}
 	// The generated policy statement must embed the clean ARN, not a quoted one.
-	fix := ""
+	policy := ""
 	for _, s := range e.Sections() {
-		if s.Heading == "How to fix" {
-			fix = s.Body
+		if s.Heading == "IAM policy statement" {
+			policy = s.Body
 		}
 	}
-	if !strings.Contains(fix, `"arn:aws:s3:::inlgckaypxrqqlbs1t7axp26p8-nuon-clickhouse"`) {
-		t.Errorf("How to fix section missing clean resource ARN: %q", fix)
+	if !strings.Contains(policy, `"arn:aws:s3:::inlgckaypxrqqlbs1t7axp26p8-nuon-clickhouse"`) {
+		t.Errorf("IAM policy statement section missing clean resource ARN: %q", policy)
 	}
-	if strings.Contains(fix, `\"arn:aws:s3`) {
-		t.Errorf("How to fix section has a doubly-quoted resource: %q", fix)
+	if strings.Contains(policy, `\"arn:aws:s3`) {
+		t.Errorf("IAM policy statement section has a doubly-quoted resource: %q", policy)
 	}
 }
 
@@ -186,15 +186,15 @@ func TestSections_FullyPopulated(t *testing.T) {
 		headings[s.Heading] = s.Body
 	}
 
-	for _, want := range []string{"Why", "AWS response", "Context", "How to fix"} {
+	for _, want := range []string{"Why", "AWS response", "Context", "How to fix", "IAM policy statement"} {
 		if _, ok := headings[want]; !ok {
 			t.Errorf("missing section %q; got sections %v", want, headings)
 		}
 	}
 
-	fix := headings["How to fix"]
-	if !strings.Contains(fix, "s3:CreateBucket") || !strings.Contains(fix, "arn:aws:s3:::acme-prod-assets") {
-		t.Errorf("How to fix section missing action/resource: %q", fix)
+	policy := headings["IAM policy statement"]
+	if !strings.Contains(policy, "s3:CreateBucket") || !strings.Contains(policy, "arn:aws:s3:::acme-prod-assets") {
+		t.Errorf("IAM policy statement section missing action/resource: %q", policy)
 	}
 	if !strings.Contains(headings["Context"], "arn:aws:iam::123456789012:role/nuon-runner") {
 		t.Errorf("Context section missing principal: %q", headings["Context"])

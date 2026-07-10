@@ -147,3 +147,28 @@ const policyViolationInfo: TCompositeError = {
 export const PolicyAdvisories = () => (
   <CompositeError error={policyViolationInfo} />
 )
+
+const sectionKinds: TCompositeError = {
+  type: 'terraform.state_lock',
+  severity: 'error',
+  message: 'Terraform could not acquire the state lock',
+  sections: [
+    {
+      heading: 'How to fix',
+      kind: 'markdown',
+      body: 'Force-unlock the workspace, then retry:\n\n```\nnuon terraform sandbox force-unlock <LOCK_ID>\n```',
+    },
+    {
+      heading: 'Context',
+      kind: 'text',
+      body: 'Principal: arn:aws:iam::123456789012:role/nuon-runner\nResource: arn:aws:s3:::acme-prod-assets',
+    },
+    {
+      heading: 'Output',
+      kind: 'code',
+      body: 'Error: Error acquiring the state lock\n\nLock Info:\n  ID:        9f3c1a2b-...\n  Operation: OperationTypeApply\n  Who:       root@ip-10-128-128-200',
+    },
+  ],
+}
+
+export const SectionKinds = () => <CompositeError error={sectionKinds} />

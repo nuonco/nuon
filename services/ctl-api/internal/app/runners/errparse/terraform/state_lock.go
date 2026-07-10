@@ -47,15 +47,11 @@ func (e *StateLockError) Hints() compositeerrors.Hints {
 }
 
 func (e *StateLockError) Sections() []compositeerrors.Section {
-	sections := []compositeerrors.Section{{
-		Heading: "How to fix",
-		Body:    stateLockRemediation(e.target),
-	}}
+	sections := []compositeerrors.Section{
+		compositeerrors.MarkdownSection("How to fix", stateLockRemediation(e.target)),
+	}
 	if e.Output != "" {
-		sections = append(sections, compositeerrors.Section{
-			Heading: "Output",
-			Body:    "```\n" + e.Output + "\n```",
-		})
+		sections = append(sections, compositeerrors.CodeSection("Output", e.Output))
 	}
 	return sections
 }

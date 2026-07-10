@@ -54,10 +54,7 @@ func (e *GenericError) Sections() []compositeerrors.Section {
 		return nil
 	}
 	return []compositeerrors.Section{
-		{
-			Heading: "Error output",
-			Body:    "```\n" + e.Body + "\n```",
-		},
+		compositeerrors.CodeSection("Error output", e.Body),
 	}
 }
 
