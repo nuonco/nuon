@@ -28,6 +28,7 @@ export type InstallComponentRow = {
   componentName: string
   componentType: ReactNode
   toggleStatus: ReactNode
+  overrideStatus: ReactNode
   deployStatus: ReactNode
   driftStatus: ReactNode
   href: string
@@ -43,7 +44,8 @@ export function parseInstallComponentSummaryToTableData(
   installId: string,
   configConnections?: TComponentConfig[],
   componentToggles?: { [key: string]: boolean },
-  labelColors?: Record<string, string>
+  labelColors?: Record<string, string>,
+  overriddenComponentNames?: Set<string>
 ): InstallComponentRow[] {
   return components.map((component) => {
     const depIndex = deps?.findIndex((dep) => dep?.id === component?.id)
@@ -80,6 +82,15 @@ export function parseInstallComponentSummaryToTableData(
         />
       ),
       toggleStatus: toggleStatusNode,
+      overrideStatus: overriddenComponentNames?.has(
+        component.component?.name ?? ''
+      ) ? (
+        <Badge size="sm" theme="info">
+          Customized
+        </Badge>
+      ) : (
+        <Icon variant="MinusIcon" />
+      ),
       deployStatus: (
         <Tooltip
           position="top"
@@ -200,6 +211,14 @@ const columns: ColumnDef<InstallComponentRow>[] = [
     enableSorting: false,
     accessorKey: 'toggleStatus',
     header: 'Toggle',
+    cell: (info) => (
+      <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
+    ),
+  },
+  {
+    enableSorting: false,
+    accessorKey: 'overrideStatus',
+    header: 'Overrides',
     cell: (info) => (
       <Text as="div" className="flex">{info.getValue() as ReactNode}</Text>
     ),

@@ -16,6 +16,8 @@ import {
 import { DeployTimeline } from '@/components/deploys/DeployTimeline'
 import { DriftedBanner } from '@/components/install-components/DriftedBanner'
 import { InstallComponentDependencies } from '@/components/install-components/InstallComponentDependencies'
+import { ComponentOverrideCard } from '@/components/install-overrides/ComponentOverrideCard'
+import { groupComponentOverrideInputs } from '@/utils/install-utils'
 import { Toggle } from '@/components/common/form/Toggle'
 import { ManagementDropdown } from '@/components/install-components/management/ManagementDropdown'
 import { ToggleComponentModalContainer } from '@/components/install-components/management/ToggleComponent/ToggleComponentContainer'
@@ -85,6 +87,14 @@ export const InstallComponentDetail = () => {
   const config = appConfig?.component_config_connections?.find(
     (c) => c.component_id === componentId
   )
+
+  const installValues = install?.install_inputs?.at(0)?.values
+  const overrideCard = groupComponentOverrideInputs(
+    appConfig?.input?.inputs ?? []
+  ).find((c) => c.component === component?.name)
+  const hasConfigOverride =
+    !!overrideCard?.configInput?.name &&
+    !!installValues?.[overrideCard.configInput.name]
 
   const isToggleable = config?.toggleable === true
   const isDisabled =
@@ -271,6 +281,25 @@ export const InstallComponentDetail = () => {
                 emptyMessage="This component has no configuration yet."
               />
             )}
+
+            {overrideCard && hasConfigOverride ? (
+              <div className="flex flex-col gap-2">
+                <HeadingGroup>
+                  <Text variant="body" weight="strong" level={5}>
+                    Install overrides
+                  </Text>
+                  <Text variant="subtext" theme="neutral">
+                    Configuration applied to this component on this install.
+                  </Text>
+                </HeadingGroup>
+                <ComponentOverrideCard
+                  card={overrideCard}
+                  values={installValues}
+                  readOnly
+                  showEnabled={false}
+                />
+              </div>
+            ) : null}
 
             {component?.type === 'terraform_module' || component?.type === 'pulumi' ? (
               <TerraformWorkspaceCard
