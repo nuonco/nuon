@@ -2013,3 +2013,66 @@ export const NuonGroup = () => (
   </div>
 )
 
+
+const NESTED_TABLE = `| Name | Status | Region |
+| ---- | ------ | ------ |
+| prod-us | Active | us-east-1 |
+| dev-eu | Inactive | eu-west-1 |
+| staging-us | Active | us-west-2 |`
+
+export const NestedTablesInTabs = () => (
+  <MockInstallProviders>
+    <div className="flex flex-col gap-3 max-w-3xl">
+      <h3 className="text-lg font-semibold">Table nested inside nuon-tabs</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Known-broken case: the table is wrapped in a &lt;p&gt; because
+        nuon-tabs-rendered is not treated as a block element, producing invalid
+        &lt;table&gt;-in-&lt;p&gt; nesting that the browser tears apart.
+      </p>
+      <Markdown
+        content={`<nuon-tabs>
+<nuon-tab name="clusters">
+${NESTED_TABLE}
+</nuon-tab>
+<nuon-tab name="notes">
+Just some text, no table here.
+</nuon-tab>
+</nuon-tabs>`}
+      />
+    </div>
+  </MockInstallProviders>
+)
+
+export const NestedTablesInModal = () => (
+  <MockInstallProviders>
+    <div className="flex flex-col gap-3 max-w-3xl">
+      <h3 className="text-lg font-semibold">Table nested inside nuon-modal</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Click the trigger to open the dialog and confirm the table renders
+        correctly inside it.
+      </p>
+      <Markdown
+        content={`<nuon-modal heading="Clusters" trigger="View clusters">
+${NESTED_TABLE}
+</nuon-modal>`}
+      />
+    </div>
+  </MockInstallProviders>
+)
+
+export const NestedTablesInPanel = () => (
+  <MockInstallProviders>
+    <div className="flex flex-col gap-3 max-w-3xl">
+      <h3 className="text-lg font-semibold">Table nested inside nuon-panel</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Click the trigger to open the panel and confirm the table renders
+        correctly inside it.
+      </p>
+      <Markdown
+        content={`<nuon-panel heading="Clusters" trigger="View clusters">
+${NESTED_TABLE}
+</nuon-panel>`}
+      />
+    </div>
+  </MockInstallProviders>
+)
