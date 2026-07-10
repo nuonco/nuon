@@ -104,8 +104,8 @@ func AppConfigSchema() (*jsonschema.Schema, error) {
 }
 
 func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
-	if err := ValidateJSONSchemaExtend(config.AppAWSIAMRole{}); err != nil {
-		return nil, errors.Wrap(err, "AppAWSIAMRole validation failed")
+	if err := ValidateJSONSchemaExtend(config.BreakGlass{}); err != nil {
+		return nil, errors.Wrap(err, "BreakGlass validation failed")
 	}
 
 	r, err := reflector()
@@ -113,7 +113,7 @@ func BreakGlassConfigSchema() (*jsonschema.Schema, error) {
 		return nil, err
 	}
 
-	return r.Reflect(config.AppAWSIAMRole{}), nil
+	return r.Reflect(config.BreakGlass{}), nil
 }
 
 func InputGroupSchema() (*jsonschema.Schema, error) {
