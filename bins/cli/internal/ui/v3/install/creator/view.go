@@ -215,6 +215,18 @@ func (m *model) updateViewportContent() {
 		fieldLines[i+regionOffset] = lineCount
 	}
 
+	if len(m.presetLabels) > 0 {
+		sections = appendSection(sections, "\n")
+		sections = appendSection(sections, labelStyle.Render("Labels"))
+		for k, v := range m.presetLabels {
+			labelLine := fmt.Sprintf("  %s = %s",
+				styles.TextAccent.Render(k),
+				styles.TextDim.Render(v),
+			)
+			sections = appendSection(sections, labelLine)
+		}
+	}
+
 	m.viewport.SetContent(lipgloss.JoinVertical(lipgloss.Top, sections...))
 	m.fieldEndLines = fieldLines
 }

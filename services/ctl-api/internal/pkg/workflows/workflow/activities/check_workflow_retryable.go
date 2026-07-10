@@ -30,6 +30,13 @@ func (a *Activities) CheckWorkflowRetryable(ctx context.Context, req CheckWorkfl
 		return &CheckWorkflowRetryableResponse{Retryable: false}, nil
 	}
 
+	// App-branch workflows are never retried — failed runs are replaced by
+	// triggering a new run, so parking the handler in "awaiting retry" just
+	// blocks the queue indefinitely.
+	if workflow.OwnerType == "app_branches" {
+		return &CheckWorkflowRetryableResponse{Retryable: false}, nil
+	}
+
 	// A workflow is not retryable if a newer workflow for the same owner has been started
 	var newerCount int64
 	res := a.db.WithContext(ctx).Model(&app.Workflow{}).

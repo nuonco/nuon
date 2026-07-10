@@ -38,9 +38,14 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 		}
 	}
 
-	// the preview TUI collects its own inputs, and pre-fills name/region from
-	// flags when passed, so it doesn't need (and shouldn't be blocked by) the
-	// flag-based request validation below
+	labelsMap, removeKeys, err := labels.ParseArgs(labelArgs)
+	if err != nil {
+		return ui.PrintError(err)
+	}
+	if len(removeKeys) > 0 {
+		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
+	}
+
 	if s.cfg.Preview && !asJSON {
 		installID, _ := creator.InstallCreatorApp(
 			ctx,
@@ -49,6 +54,7 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 			appID,
 			name,
 			region,
+			labelsMap,
 		)
 		if installID == "" {
 			ui.PrintLn("no install created")
@@ -70,14 +76,6 @@ func (s *Service) Create(ctx context.Context, appID, name, region string, inputs
 	for _, kv := range inputs {
 		kvT := strings.Split(kv, "=")
 		inputsMap[kvT[0]] = kvT[1]
-	}
-
-	labelsMap, removeKeys, err := labels.ParseArgs(labelArgs)
-	if err != nil {
-		return ui.PrintError(err)
-	}
-	if len(removeKeys) > 0 {
-		return ui.PrintError(fmt.Errorf("label removal (key-) is not allowed at install creation; use `nuon installs label` after the install exists"))
 	}
 
 	req, err := s.buildCreateInstallRequest(ctx, appID, name, region, inputsMap, labelsMap)

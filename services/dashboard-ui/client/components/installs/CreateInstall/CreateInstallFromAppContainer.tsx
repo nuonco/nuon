@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Text } from '@/components/common/Text'
@@ -10,6 +10,7 @@ import { getAppConfig, createAppInstall, type TCreateAppInstallBody } from '@/li
 import type { TApp } from '@/types'
 import { toSentenceCase } from '@/utils/string-utils'
 import { CreateInstallFromApp } from './CreateInstallFromApp'
+import { BranchConnectionStep } from './BranchConnectionStep'
 
 interface CreateInstallFromAppContainerProps {
   app: TApp
@@ -20,6 +21,7 @@ interface CreateInstallFromAppContainerProps {
   modalId?: string
   onLoadingChange?: (loading: boolean) => void
   onRegisterClearDraft?: (clearFn: () => void) => void
+  onInstallCreated?: () => void
 }
 
 export const CreateInstallFromAppContainer = ({
@@ -31,12 +33,14 @@ export const CreateInstallFromAppContainer = ({
   modalId,
   onLoadingChange,
   onRegisterClearDraft,
+  onInstallCreated,
 }: CreateInstallFromAppContainerProps) => {
   const { org } = useOrg()
   const navigate = useNavigate()
   const { removeModal } = useSurfaces()
   const { addToast } = useToast()
   const queryClient = useQueryClient()
+  const [createdInstall, setCreatedInstall] = useState<{ id: string; workflowId?: string; suffix: string } | null>(null)
 
   const {
     data: config,
@@ -77,10 +81,22 @@ export const CreateInstallFromAppContainer = ({
         installConfig!.runner_nested_template_url = runnerUrl
       }
 
+      const labels: Record<string, string> = {}
+      let labelIdx = 0
+      while (formDataObj[`label:${labelIdx}:key`] !== undefined) {
+        const key = (formDataObj[`label:${labelIdx}:key`] as string).trim()
+        const value = (formDataObj[`label:${labelIdx}:value`] as string).trim()
+        if (key) {
+          labels[key] = value
+        }
+        labelIdx++
+      }
+
       const body: TCreateAppInstallBody = {
         name: formDataObj.name as string,
         inputs: Object.keys(inputs).length > 0 ? inputs : undefined,
         install_config: installConfig,
+        labels: Object.keys(labels).length > 0 ? labels : undefined,
         metadata: { managed_by: 'nuon/dashboard' },
       }
 
@@ -109,14 +125,10 @@ export const CreateInstallFromAppContainer = ({
       )
       queryClient.invalidateQueries({ queryKey: ['workflow-approvals'] })
       queryClient.invalidateQueries({ queryKey: ['active-workflows'] })
-      removeModal(modalId)
       const workflowId = result.data.workflow_id
       const suffix = result.data?.install_number === 1 ? '?onboardingComplete=true' : ''
-      if (workflowId) {
-        navigate(`/${org?.id}/installs/${result.data.id}/workflows/${workflowId}${suffix}`)
-      } else {
-        navigate(`/${org?.id}/installs/${result.data.id}/workflows${suffix}`)
-      }
+      setCreatedInstall({ id: result.data.id, workflowId, suffix })
+      onInstallCreated?.()
     },
     onError: (error) => {
       addToast(
@@ -134,6 +146,27 @@ export const CreateInstallFromAppContainer = ({
   useEffect(() => {
     onLoadingChange?.(isSubmitting)
   }, [isSubmitting, onLoadingChange])
+
+  const navigateToInstall = () => {
+    removeModal(modalId)
+    if (!createdInstall) return
+    const { id, workflowId, suffix } = createdInstall
+    if (workflowId) {
+      navigate(`/${org?.id}/installs/${id}/workflows/${workflowId}${suffix}`)
+    } else {
+      navigate(`/${org?.id}/installs/${id}/workflows${suffix}`)
+    }
+  }
+
+  if (createdInstall) {
+    return (
+      <BranchConnectionStep
+        appId={app.id}
+        installId={createdInstall.id}
+        onDone={navigateToInstall}
+      />
+    )
+  }
 
   return (
     <CreateInstallFromApp
