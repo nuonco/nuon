@@ -68,22 +68,25 @@ func (h *handler) Exec(ctx context.Context, job *models.AppRunnerJob, jobExecuti
 	resolvedDigest := string(desc.Digest)
 	noOp := h.state.cfg.PreviousSourceDigest != "" && h.state.cfg.PreviousSourceDigest == resolvedDigest
 
+	// Each build gets its own result tag (the build id), so the copy must run
+	// even when the content is unchanged (noOp): it writes the manifest under
+	// this build's tag so the deploy can resolve it. oras skips blobs already
+	// present in the destination, so an unchanged image is a cheap manifest-only
+	// write. Skipping the copy strands the deploy on a build-id tag that was
+	// never pushed. noOp is retained purely as a drift/reporting signal.
 	if noOp {
-		l.Info(fmt.Sprintf(
-			"upstream digest %s matches previous build, skipping copy (no-op build)",
-			resolvedDigest,
-		))
+		l.Info(fmt.Sprintf("upstream digest %s matches previous build; writing manifest to this build's tag (unchanged content)", resolvedDigest))
 	} else {
 		l.Info(fmt.Sprintf("copying image from %s:%s to %s", h.state.cfg.Image, srcTag, h.state.plan.DstTag))
-		if _, err := h.ociCopy.Copy(ctx,
-			srcCfg,
-			srcTag,
-			dstCfg,
-			h.state.resultTag,
-		); err != nil {
-			h.writeErrorResult(ctx, "copy image", err)
-			return err
-		}
+	}
+	if _, err := h.ociCopy.Copy(ctx,
+		srcCfg,
+		srcTag,
+		dstCfg,
+		h.state.resultTag,
+	); err != nil {
+		h.writeErrorResult(ctx, "copy image", err)
+		return err
 	}
 
 	resolvedAt := time.Now().UTC()
