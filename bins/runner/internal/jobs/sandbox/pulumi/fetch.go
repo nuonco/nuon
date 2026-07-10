@@ -2,7 +2,6 @@ package pulumi
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/pkg/errors"
@@ -24,16 +23,20 @@ func (h *handler) Fetch(ctx context.Context, job *models.AppRunnerJob, jobExecut
 	h.state = &handlerState{}
 
 	l.Info("fetching pulumi sandbox job plan")
-	planJSON, err := h.apiClient.GetJobPlanJSON(ctx, job.ID)
+	cp, err := h.apiClient.GetJobCompositePlan(ctx, job.ID)
 	if err != nil {
 		return errors.Wrap(err, "unable to get job plan")
 	}
 
-	var plan plantypes.SandboxRunPlan
-	if err := json.Unmarshal([]byte(planJSON), &plan); err != nil {
-		return errors.Wrap(err, "unable to parse sandbox run plan")
+	composite, err := plantypes.CompositePlanFromAny(cp)
+	if err != nil {
+		return errors.Wrap(err, "unable to parse composite plan")
 	}
-	h.state.plan = &plan
+	if composite.SandboxRunPlan == nil {
+		return errors.New("composite plan missing sandbox run plan")
+	}
+	plan := composite.SandboxRunPlan
+	h.state.plan = plan
 
 	if plan.PulumiBackend == nil {
 		return errors.New("sandbox run plan does not contain a pulumi backend")

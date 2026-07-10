@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -38,10 +39,22 @@ func (s *service) GetTerraformCurrentStateData(ctx *gin.Context) {
 		return
 	}
 
-	if state == nil || state.Contents == nil || len(state.Contents) == 0 {
+	if state == nil {
 		ctx.JSON(http.StatusNoContent, "")
 		return
 	}
 
-	ctx.String(http.StatusOK, string(state.Contents))
+	contents, fromBlob := state.GetContents(ctx, s.cfg.BlobReadEnabled)
+	if fromBlob {
+		s.l.Debug("read terraform workspace state contents from blob",
+			zap.String("workspace_id", workspaceID),
+			zap.String("state_id", state.ID),
+			zap.Int("bytes", len(contents)))
+	}
+	if len(contents) == 0 {
+		ctx.JSON(http.StatusNoContent, "")
+		return
+	}
+
+	ctx.String(http.StatusOK, string(contents))
 }

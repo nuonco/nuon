@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	_ "github.com/nuonco/nuon/pkg/types/state"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -53,6 +54,16 @@ func (s *service) getInstallStateHistory(ctx *gin.Context, installID string) ([]
 	states, err := db.HandlePaginatedResponse(ctx, states)
 	if err != nil {
 		return nil, fmt.Errorf("unable to handle paginated response: %w", err)
+	}
+
+	for _, st := range states {
+		contents, fromBlob := st.GetState(ctx, s.cfg.BlobReadEnabled)
+		st.State = contents
+		if fromBlob {
+			s.l.Debug("read install state from blob",
+				zap.String("install_id", installID),
+				zap.String("state_id", st.ID))
+		}
 	}
 
 	return states, nil

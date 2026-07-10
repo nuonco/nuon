@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 
 	plantypes "github.com/nuonco/nuon/pkg/plans/types"
 	"github.com/nuonco/nuon/services/ctl-api/internal/app"
@@ -57,8 +58,14 @@ func (s *service) getRunnerJobCompositePlan(ctx context.Context, runnerJobID str
 		return nil, fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
-	if !runnerPlan.CompositePlan.IsEmpty() {
-		return &runnerPlan.CompositePlan, nil
+	cp, fromBlob := runnerPlan.GetCompositePlan(ctx, s.cfg.BlobReadEnabled)
+	if fromBlob {
+		s.l.Debug("read composite plan from blob",
+			zap.String("runner_job_id", runnerJobID),
+			zap.String("plan_id", runnerPlan.ID))
+	}
+	if !cp.IsEmpty() {
+		return cp, nil
 	}
 
 	// if empty derive from plan json
@@ -85,8 +92,15 @@ func (s *service) getOrgRunnerJobCompositePlan(ctx context.Context, runnerJobID 
 		return nil, fmt.Errorf("unable to get job plan: %w", res.Error)
 	}
 
-	if !runnerPlan.CompositePlan.IsEmpty() {
-		return &runnerPlan.CompositePlan, nil
+	cp, fromBlob := runnerPlan.GetCompositePlan(ctx, s.cfg.BlobReadEnabled)
+	if fromBlob {
+		s.l.Debug("read composite plan from blob",
+			zap.String("runner_job_id", runnerJobID),
+			zap.String("org_id", orgID),
+			zap.String("plan_id", runnerPlan.ID))
+	}
+	if !cp.IsEmpty() {
+		return cp, nil
 	}
 
 	// if empty derive from plan json

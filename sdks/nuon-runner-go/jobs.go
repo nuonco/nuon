@@ -85,6 +85,8 @@ func (c *client) GetJobCompositePlan(ctx context.Context, jobID string) (*models
 	return resp.Payload, nil
 }
 
+// Deprecated: use GetJobCompositePlan, which reads the composite plan from blob
+// storage. This returns the legacy plan_json column.
 func (c *client) GetJobPlanJSON(ctx context.Context, jobID string) (string, error) {
 	resp, err := c.genClient.Operations.GetRunnerJobPlan(&operations.GetRunnerJobPlanParams{
 		RunnerJobID: jobID,

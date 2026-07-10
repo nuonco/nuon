@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"go.uber.org/zap"
 
 	"github.com/nuonco/nuon/services/ctl-api/internal/pkg/cctx"
 )
@@ -57,8 +58,15 @@ func (s *service) GetWorkflowStepApprovalContents(ctx *gin.Context) {
 	var buf bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buf)
 
+	contents, fromBlob := approval.GetContents(ctx, s.cfg.BlobReadEnabled)
+	if fromBlob {
+		s.l.Debug("read workflow step approval contents from blob",
+			zap.String("approval_id", approvalID),
+			zap.Int("bytes", len(contents)))
+	}
+
 	// Write the contents to the gzip writer
-	_, err = gzipWriter.Write([]byte(approval.Contents))
+	_, err = gzipWriter.Write([]byte(contents))
 	if err != nil {
 		ctx.Error(errors.Wrap(err, "unable to gzip approval contents"))
 		return

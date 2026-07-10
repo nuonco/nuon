@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"encoding/json"
 	"time"
 
 	"gorm.io/gorm"
@@ -27,7 +29,9 @@ type RunnerJobPlan struct {
 
 	RunnerJobID string `json:"runner_job_id,omitzero" gorm:"defaultnull;notnull;index:idx_runner_job_plan,unique" temporaljson:"runner_job_id,omitzero,omitempty"`
 
-	PlanJSON          string                  `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
+	PlanJSON string `json:"plan_json,omitzero" temporaljson:"plan_json,omitzero,omitempty"`
+	// Deprecated: composite plans are read from CompositePlanBlob (S3). This
+	// jsonb column is retained only as a fallback for rows not yet backfilled.
 	CompositePlan     plantypes.CompositePlan `json:"composite_plan,omitzero" gorm:"type:jsonb" temporaljson:"composite_plan,omitzero,omitempty"`
 	CompositePlanBlob *blobstore.Blob         `json:"-" temporaljson:"-"`
 }
@@ -61,4 +65,22 @@ func (r *RunnerJobPlan) BeforeCreate(tx *gorm.DB) error {
 	}
 
 	return nil
+}
+
+// GetCompositePlan returns the composite plan. When blobRead is enabled it reads
+// from the S3 blob, falling back to the legacy jsonb column when the blob is
+// unset or unreadable (rows not yet backfilled). When disabled it always reads
+// the legacy column. The second return reports whether the plan came from the
+// blob.
+func (r *RunnerJobPlan) GetCompositePlan(ctx context.Context, blobRead bool) (*plantypes.CompositePlan, bool) {
+	if blobRead {
+		if raw, err := r.CompositePlanBlob.Get(ctx); err == nil && raw != "" {
+			var cp plantypes.CompositePlan
+			if err := json.Unmarshal([]byte(raw), &cp); err == nil {
+				return &cp, true
+			}
+		}
+	}
+
+	return &r.CompositePlan, false
 }

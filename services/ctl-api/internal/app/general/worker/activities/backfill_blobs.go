@@ -28,6 +28,7 @@ var blobBackfillTargets = map[string]blobBackfillTarget{
 	"runner_job_plans":                {originColumn: "composite_plan", blobColumn: "composite_plan_blob", jsonSemantic: true},
 	"runner_job_execution_outputs":    {originColumn: "outputs", blobColumn: "outputs_blob", jsonSemantic: true},
 	"terraform_workspace_states":      {originColumn: "contents", blobColumn: "contents_blob", binary: true},
+	"terraform_workspace_state_jsons": {originColumn: "contents", blobColumn: "contents_blob", binary: true, noSoftDelete: true},
 }
 
 type blobBackfillTarget struct {
@@ -41,6 +42,9 @@ type blobBackfillTarget struct {
 	// text (a ::text cast would yield Postgres hex escapes, not the bytes), and
 	// compared byte-for-byte.
 	binary bool
+	// noSoftDelete marks a table without a deleted_at column, so the
+	// "deleted_at = 0" predicate must be skipped (it would be a SQL error).
+	noSoftDelete bool
 }
 
 // contentExpr selects the origin column's bytes: raw for bytea, ::text otherwise.
@@ -49,6 +53,15 @@ func (t blobBackfillTarget) contentExpr() string {
 		return t.originColumn
 	}
 	return t.originColumn + "::text"
+}
+
+// applyNotDeleted adds the soft-delete predicate unless the target's table has
+// no deleted_at column.
+func (t blobBackfillTarget) applyNotDeleted(q *gorm.DB) *gorm.DB {
+	if t.noSoftDelete {
+		return q
+	}
+	return q.Where("deleted_at = 0")
 }
 
 type BackfillBlobsRequest struct {
@@ -109,8 +122,8 @@ func (a *Activities) BackfillBlobs(ctx context.Context, req BackfillBlobsRequest
 		Table(req.Table).
 		Select(fmt.Sprintf("id, org_id, created_by_id, %s AS content", target.contentExpr())).
 		Where(fmt.Sprintf("%s IS NULL", target.blobColumn)).
-		Where(fmt.Sprintf("%s IS NOT NULL", target.originColumn)).
-		Where("deleted_at = 0")
+		Where(fmt.Sprintf("%s IS NOT NULL", target.originColumn))
+	q = target.applyNotDeleted(q)
 	q, err := whereDay(q, req.Day)
 	if err != nil {
 		return nil, err
@@ -188,7 +201,7 @@ func (a *Activities) ListBackfillDays(ctx context.Context, req ListBlobDaysReque
 		return nil, fmt.Errorf("unsupported blob backfill table: %q", req.Table)
 	}
 
-	days, err := a.listBlobDays(ctx, req.Table, fmt.Sprintf("%s IS NULL", target.blobColumn), target.originColumn)
+	days, err := a.listBlobDays(ctx, req.Table, target, fmt.Sprintf("%s IS NULL", target.blobColumn))
 	if err != nil {
 		return nil, err
 	}
@@ -198,12 +211,12 @@ func (a *Activities) ListBackfillDays(ctx context.Context, req ListBlobDaysReque
 // listBlobDays returns the distinct UTC days with a non-null origin column,
 // optionally narrowed by blobPredicate. table/predicate/column come only from the
 // whitelist map — never request input — since they are interpolated into SQL.
-func (a *Activities) listBlobDays(ctx context.Context, table, blobPredicate, originColumn string) ([]string, error) {
+func (a *Activities) listBlobDays(ctx context.Context, table string, target blobBackfillTarget, blobPredicate string) ([]string, error) {
 	q := a.db.WithContext(ctx).
 		Table(table).
 		Distinct(fmt.Sprintf("to_char(created_at AT TIME ZONE 'UTC', '%s') AS day", pgDayFormat)).
-		Where(fmt.Sprintf("%s IS NOT NULL", originColumn)).
-		Where("deleted_at = 0")
+		Where(fmt.Sprintf("%s IS NOT NULL", target.originColumn))
+	q = target.applyNotDeleted(q)
 	if blobPredicate != "" {
 		q = q.Where(blobPredicate)
 	}
