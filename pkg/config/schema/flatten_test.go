@@ -287,3 +287,29 @@ func TestComponentSchemasAreFlattened(t *testing.T) {
 		})
 	}
 }
+
+// TestComponentSchemasHaveUniqueIDs guards against the flattened component
+// schemas shipping without a root $id. Reflected schemas each carry a unique
+// package-derived $id, but the hand-built merged component schemas previously
+// had none. Schema-aware editors key their schema cache by $id; several
+// $id-less schemas collapse into one entry and the wrong schema gets applied
+// to unrelated files.
+func TestComponentSchemasHaveUniqueIDs(t *testing.T) {
+	seen := make(map[string]string)
+	for _, schemaType := range []string{
+		"container-image", "docker-build", "helm", "job", "kubernetes-manifest", "terraform",
+	} {
+		schm, err := LookupSchemaType(schemaType)
+		if err != nil {
+			t.Fatal(err)
+		}
+		id := string(schm.ID)
+		if id == "" {
+			t.Fatalf("%s schema must declare a root $id", schemaType)
+		}
+		if prev, ok := seen[id]; ok {
+			t.Fatalf("%s and %s share $id %q; each schema type must be unique", prev, schemaType, id)
+		}
+		seen[id] = schemaType
+	}
+}
