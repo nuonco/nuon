@@ -9,7 +9,10 @@ import (
 
 type AppAWSIAMPolicy struct {
 	ManagedPolicyName string `mapstructure:"managed_policy_name,omitempty" toml:"managed_policy_name,omitempty"`
-	Name              string `mapstructure:"name" toml:"name" jsonschema:"required"`
+	// Name is optional: a managed_policy_name attachment identifies itself, so a
+	// bare AWS managed policy needs no separate name. The runtime does not
+	// require it (see parse below).
+	Name string `mapstructure:"name,omitempty" toml:"name,omitempty"`
 
 	Contents string `mapstructure:"contents" toml:"contents" features:"template,get"`
 
@@ -19,8 +22,8 @@ type AppAWSIAMPolicy struct {
 
 func (a AppAWSIAMPolicy) JSONSchemaExtend(schema *jsonschema.Schema) {
 	NewSchemaBuilder(schema).
-		Field("name").Short("policy name").Required().
-		Long("Name for the policy. Used across all cloud platforms when creating the permission grant. Supports Nuon templating").
+		Field("name").Short("policy name").
+		Long("Name for the policy. Used across all cloud platforms when creating the permission grant. Optional for a bare AWS managed_policy_name attachment, which needs no separate name. Supports Nuon templating").
 		Example("app-{{.nuon.install.id}}-policy").
 		Example("s3-access-policy").
 		Field("managed_policy_name").Short("[AWS] managed policy name").OneOfRequired("aws_policy").
