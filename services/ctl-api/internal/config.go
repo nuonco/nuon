@@ -78,9 +78,7 @@ func init() {
 	config.RegisterDefault("org_runner_instance_type", "t3a.medium")
 
 	config.RegisterDefault("aws_cloudformation_stack_template_bucket_region", "us-east-1")
-	config.RegisterDefault("gcp_stack_template_bucket", "nuon-install-templates-gcp")
 	config.RegisterDefault("blob_storage_provider", "s3")
-	config.RegisterDefault("gcp_stack_template_base_url", "https://storage.googleapis.com/nuon-install-templates-gcp")
 	config.RegisterDefault("org_creation_email_allow_list", "nuon.co")
 	config.RegisterDefault("temporal_dataconverter_large_payload_size", 1024*128)
 	config.RegisterDefault("large_payload_type", "blob")
@@ -334,7 +332,6 @@ type Config struct {
 
 	// GCP management (not required for AWS)
 	ManagementGARRepositoryURL string `config:"management_gar_repository_url"`
-	GCSInstallTemplateBucket   string `config:"gcs_install_template_bucket"`
 
 	// Azure management (not required for AWS/GCP)
 	ManagementACRRegistryURL      string `config:"management_acr_registry_url"`
