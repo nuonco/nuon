@@ -23,6 +23,7 @@ func (h *Helpers) GetInstallAuditLogs(ctx context.Context, installID string, sta
 	res := h.db.WithContext(ctx).
 		Scopes(
 			scopes.WithOverrideTable(views.CurrentViewName(h.db, &app.InstallAuditLog{})),
+			scopes.ForceReplica,
 		).
 		Order("time_stamp ASC").
 		Limit(defaultInstallAuditLogsLimit).
