@@ -72,6 +72,13 @@ func (s *service) GetAppBranchRunBuilds(ctx *gin.Context) {
 	res = s.db.WithContext(ctx).
 		Preload("ComponentConfigConnection").
 		Preload("ComponentConfigConnection.Component").
+		Preload("ComponentConfigConnection.HelmComponentConfig").
+		Preload("ComponentConfigConnection.TerraformModuleComponentConfig").
+		Preload("ComponentConfigConnection.DockerBuildComponentConfig").
+		Preload("ComponentConfigConnection.ExternalImageComponentConfig").
+		Preload("ComponentConfigConnection.JobComponentConfig").
+		Preload("ComponentConfigConnection.KubernetesManifestComponentConfig").
+		Preload("ComponentConfigConnection.PulumiComponentConfig").
 		Where("app_branch_run_id = ?", runID).
 		Order("created_at ASC").
 		Find(&builds)

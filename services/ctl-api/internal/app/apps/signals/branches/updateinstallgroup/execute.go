@@ -280,6 +280,7 @@ func (s *Signal) recordAppConfigVersions(
 				NewAppConfigID: run.AppConfigID,
 				AppBranchRunID: s.RunID,
 				InstallGroupID: s.InstallGroupID,
+				TriggeredBy:    "app-branch",
 				Metadata:       map[string]string{"source": "app-branch"},
 			},
 		}); err != nil {

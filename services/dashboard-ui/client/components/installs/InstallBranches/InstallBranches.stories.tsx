@@ -92,12 +92,13 @@ export const WithBranches = () => (
       branches={mockBranches}
       orgId="org123"
       appId="app123"
+      installId="inst-001"
     />
   </div>
 )
 
 export const Empty = () => (
   <div className="max-w-2xl p-4">
-    <InstallBranches branches={[]} orgId="org123" appId="app123" />
+    <InstallBranches branches={[]} orgId="org123" appId="app123" installId="inst-001" />
   </div>
 )

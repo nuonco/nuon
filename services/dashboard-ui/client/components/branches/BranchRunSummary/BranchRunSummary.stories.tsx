@@ -6,6 +6,10 @@ export default {
 
 const mockBranchRun = {
   id: 'abrn1234567890abcdef12345',
+  pr_number: 42,
+  base_branch: 'main',
+  event_type: 'pull_request',
+  head_sha: 'abc123def456789012345678',
   vcs_connection_commit: {
     sha: 'abc123def456789012345678',
     message: 'feat: update deployment config for staging\n\nAdded new environment variables',
@@ -19,12 +23,14 @@ const mockBuilds = [
     id: 'bld1234567890abcdef123456',
     component_name: 'web-frontend',
     component_id: 'cmp1234567890abcdef123456',
+    component_type: 'helm_chart',
     status_v2: { status: 'active' },
   },
   {
     id: 'bld2345678901abcdef234567',
     component_name: 'api-server',
     component_id: 'cmp2345678901abcdef234567',
+    component_type: 'docker_build',
     status_v2: { status: 'active' },
   },
 ]
