@@ -23,30 +23,45 @@ const mockBuilds = [
     id: 'bld1234567890abcdef123456',
     component_name: 'web-frontend',
     component_id: 'cmp1234567890abcdef123456',
-    component_type: 'helm_chart',
+    component_config_connection: { type: 'helm_chart' },
     status_v2: { status: 'active' },
   },
   {
     id: 'bld2345678901abcdef234567',
     component_name: 'api-server',
     component_id: 'cmp2345678901abcdef234567',
-    component_type: 'docker_build',
+    component_config_connection: { type: 'docker_build' },
     status_v2: { status: 'active' },
   },
 ]
 
-const mockInstallUpdates = [
+const mockInstallGroupRuns = [
   {
-    id: 'iacv123456789012345678901',
-    install_id: 'inst12345678901234567890',
-    workflow_id: 'wf12345678901234567890ab',
+    id: 'igr1234567890abcdef123456',
+    install_group_name: 'staging',
+    install_group_id: 'ig-staging',
     status: { status: 'success' },
+    total_installs: 2,
+    completed_installs: 2,
+    failed_installs: 0,
+    installs: [
+      { install_id: 'inst12345678901234567890', status: 'success', workflow_id: 'wf-1' },
+      { install_id: 'inst23456789012345678901', status: 'success', workflow_id: 'wf-2' },
+    ],
   },
   {
-    id: 'iacv234567890123456789012',
-    install_id: 'inst23456789012345678901',
-    workflow_id: 'wf23456789012345678901ab',
-    status: { status: 'active' },
+    id: 'igr2345678901abcdef234567',
+    install_group_name: 'production',
+    install_group_id: 'ig-prod',
+    status: { status: 'in-progress' },
+    total_installs: 3,
+    completed_installs: 1,
+    failed_installs: 0,
+    installs: [
+      { install_id: 'inst34567890123456789012', status: 'success', workflow_id: 'wf-3' },
+      { install_id: 'inst45678901234567890123', status: 'in-progress', workflow_id: 'wf-4' },
+      { install_id: 'inst56789012345678901234', status: 'pending', workflow_id: 'wf-5' },
+    ],
   },
 ]
 
@@ -55,7 +70,8 @@ export const Success = () => (
     <BranchRunSummary
       branchRun={mockBranchRun as any}
       builds={mockBuilds as any}
-      installUpdates={mockInstallUpdates as any}
+      installUpdates={[]}
+      installGroupRuns={mockInstallGroupRuns as any}
       orgId="org123"
       appId="app123"
       branchId="branch123"
@@ -70,6 +86,7 @@ export const Failed = () => (
       branchRun={mockBranchRun as any}
       builds={mockBuilds as any}
       installUpdates={[]}
+      installGroupRuns={[]}
       orgId="org123"
       appId="app123"
       branchId="branch123"
@@ -84,6 +101,7 @@ export const Empty = () => (
       branchRun={undefined}
       builds={[]}
       installUpdates={[]}
+      installGroupRuns={[]}
       orgId="org123"
       appId="app123"
       branchId="branch123"
