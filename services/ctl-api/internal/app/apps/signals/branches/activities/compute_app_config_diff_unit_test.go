@@ -81,57 +81,160 @@ func TestDiffNodeToSection(t *testing.T) {
 		require.NotNil(t, section)
 		require.Empty(t, section.Entries)
 	})
-}
 
-func TestCollectEntries(t *testing.T) {
-	t.Run("nested children attributed to top-level item", func(t *testing.T) {
+	t.Run("ungrouped section counts as single entity", func(t *testing.T) {
 		node := &diff.Diff{
-			Key: "ctl-api",
+			Key: "sandbox",
+			Children: []*diff.Diff{
+				{Key: "terraform_version", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "'' -> '1.5.0'"}},
+				{Key: "drift_schedule", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "'' -> '0 * * * *'"}},
+			},
+		}
+
+		section := diffNodeToSection(node)
+		require.NotNil(t, section)
+		require.Equal(t, "Sandbox", section.Name)
+		require.Equal(t, 1, section.Additions)
+		require.Equal(t, 0, section.Removals)
+		require.Equal(t, 0, section.Changed)
+		require.Len(t, section.Entries, 1)
+	})
+
+	t.Run("ungrouped section with adds and changes but no removes counts as add", func(t *testing.T) {
+		node := &diff.Diff{
+			Key: "runner",
+			Children: []*diff.Diff{
+				{Key: "runner_type", Diff: &diff.DiffKey{Op: diff.OpChange, Diff: "'false' -> 'true'"}},
+				{Key: "helm_driver", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "'' -> 'secrets'"}},
+			},
+		}
+
+		section := diffNodeToSection(node)
+		require.NotNil(t, section)
+		require.Equal(t, "Runner", section.Name)
+		require.Equal(t, 1, section.Additions)
+		require.Equal(t, 0, section.Removals)
+		require.Equal(t, 0, section.Changed)
+	})
+
+	t.Run("ungrouped section with adds and removes counts as change", func(t *testing.T) {
+		node := &diff.Diff{
+			Key: "runner",
+			Children: []*diff.Diff{
+				{Key: "runner_type", Diff: &diff.DiffKey{Op: diff.OpRemove, Diff: "'eks' -> ''"}},
+				{Key: "helm_driver", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "'' -> 'secrets'"}},
+			},
+		}
+
+		section := diffNodeToSection(node)
+		require.NotNil(t, section)
+		require.Equal(t, "Runner", section.Name)
+		require.Equal(t, 0, section.Additions)
+		require.Equal(t, 0, section.Removals)
+		require.Equal(t, 1, section.Changed)
+	})
+
+	t.Run("grouped entity with nested children counts correctly", func(t *testing.T) {
+		node := &diff.Diff{
+			Key: "components",
 			Children: []*diff.Diff{
 				{
-					Key: "env",
+					Key: "component.api",
 					Children: []*diff.Diff{
-						{Key: "DATABASE_URL", Diff: &diff.DiffKey{Op: diff.OpChange, Diff: "old -> new"}},
+						{Key: "type", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "'' -> 'helm_chart'"}},
+						{Key: "var_name", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "'' -> 'api'"}},
 					},
 				},
 			},
 		}
 
-		section := &ConfigDiffSection{Name: "Components"}
-		collectEntries(node, "", section)
-
+		section := diffNodeToSection(node)
+		require.NotNil(t, section)
+		require.Equal(t, 1, section.Additions)
+		require.Equal(t, 0, section.Changed)
 		require.Len(t, section.Entries, 1)
-		require.Equal(t, "ctl-api", section.Entries[0].Name)
-		require.Contains(t, section.Entries[0].Description, "DATABASE_URL")
-		require.Equal(t, 1, section.Changed)
-	})
-
-	t.Run("nil node is safe", func(t *testing.T) {
-		section := &ConfigDiffSection{Name: "test"}
-		collectEntries(nil, "", section)
-		require.Empty(t, section.Entries)
 	})
 }
 
-func TestSectionDisplayName(t *testing.T) {
+func TestEntityAggregateOp(t *testing.T) {
+	t.Run("nil node returns empty", func(t *testing.T) {
+		require.Equal(t, diff.Op(""), entityAggregateOp(nil))
+	})
+
+	t.Run("all adds returns add", func(t *testing.T) {
+		node := &diff.Diff{
+			Children: []*diff.Diff{
+				{Key: "a", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "added"}},
+				{Key: "b", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "added"}},
+			},
+		}
+		require.Equal(t, diff.OpAdd, entityAggregateOp(node))
+	})
+
+	t.Run("all removes returns remove", func(t *testing.T) {
+		node := &diff.Diff{
+			Children: []*diff.Diff{
+				{Key: "a", Diff: &diff.DiffKey{Op: diff.OpRemove, Diff: "removed"}},
+			},
+		}
+		require.Equal(t, diff.OpRemove, entityAggregateOp(node))
+	})
+
+	t.Run("adds with changes but no removes returns add", func(t *testing.T) {
+		node := &diff.Diff{
+			Children: []*diff.Diff{
+				{Key: "a", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "added"}},
+				{Key: "b", Diff: &diff.DiffKey{Op: diff.OpChange, Diff: "'false' -> 'true'"}},
+			},
+		}
+		require.Equal(t, diff.OpAdd, entityAggregateOp(node))
+	})
+
+	t.Run("adds and removes returns change", func(t *testing.T) {
+		node := &diff.Diff{
+			Children: []*diff.Diff{
+				{Key: "a", Diff: &diff.DiffKey{Op: diff.OpAdd, Diff: "added"}},
+				{Key: "b", Diff: &diff.DiffKey{Op: diff.OpRemove, Diff: "removed"}},
+			},
+		}
+		require.Equal(t, diff.OpChange, entityAggregateOp(node))
+	})
+
+	t.Run("only noops returns empty", func(t *testing.T) {
+		node := &diff.Diff{
+			Children: []*diff.Diff{
+				{Key: "a", Diff: &diff.DiffKey{Op: diff.OpNoop, Diff: "unchanged"}},
+			},
+		}
+		require.Equal(t, diff.Op(""), entityAggregateOp(node))
+	})
+}
+
+func TestSectionDisplayNameAndGrouped(t *testing.T) {
 	tests := []struct {
-		key      string
-		expected string
+		key             string
+		expectedName    string
+		expectedGrouped bool
 	}{
-		{"components", "Components"},
-		{"actions", "Actions"},
-		{"inputs", "Install inputs"},
-		{"secrets", "Secrets"},
-		{"sandbox", "Sandbox"},
-		{"runner", "Runner"},
-		{"permissions", "Permissions"},
-		{"stack", "Stack"},
-		{"unknown", ""},
+		{"components", "Components", true},
+		{"actions", "Actions", true},
+		{"inputs", "Install inputs", true},
+		{"secrets", "Secrets", true},
+		{"policies", "Policies", true},
+		{"sandbox", "Sandbox", false},
+		{"runner", "Runner", false},
+		{"permissions", "Permissions", false},
+		{"stack", "Stack", false},
+		{"break_glass", "Break glass", false},
+		{"operation_roles", "Operation roles", false},
+		{"unknown", "", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.key, func(t *testing.T) {
-			require.Equal(t, tt.expected, sectionDisplayName(tt.key))
+			name, grouped := sectionDisplayNameAndGrouped(tt.key)
+			require.Equal(t, tt.expectedName, name)
+			require.Equal(t, tt.expectedGrouped, grouped)
 		})
 	}
 }

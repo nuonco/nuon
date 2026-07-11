@@ -150,24 +150,19 @@ function getEntityOp(node: TDiffNode): 'add' | 'remove' | 'change' {
 
   let hasAdd = false
   let hasRemove = false
-  let hasChange = false
-  let allAdd = true
-  let allRemove = true
 
   const walk = (n: TDiffNode) => {
     if (n.diff && n.diff.op !== 'noop' && n.diff.op !== '') {
       if (n.diff.op === 'add') hasAdd = true
-      else { allAdd = false }
       if (n.diff.op === 'remove') hasRemove = true
-      else { allRemove = false }
-      if (n.diff.op === 'change') hasChange = true
     }
     if (n.children) n.children.forEach(walk)
   }
   node.children.forEach(walk)
 
-  if (hasAdd && allAdd) return 'add'
-  if (hasRemove && allRemove) return 'remove'
+  if (hasAdd && !hasRemove) return 'add'
+  if (hasRemove && !hasAdd) return 'remove'
+  if (!hasAdd && !hasRemove) return 'change'
   return 'change'
 }
 
@@ -272,10 +267,11 @@ export function extractSections(node?: TDiffNode): DiffSectionData[] {
       const { fields, files } = collectEntries(child)
       section.fields = fields
       section.files = files
-      for (const op of [...fields, ...files].map((e) => e.op)) {
-        if (op === 'add') section.additions++
-        else if (op === 'remove') section.removals++
-        else if (op === 'change') section.changed++
+      const sectionOp = getEntityOp(child)
+      if (fields.length > 0 || files.length > 0) {
+        if (sectionOp === 'add') section.additions = 1
+        else if (sectionOp === 'remove') section.removals = 1
+        else section.changed = 1
       }
     }
 

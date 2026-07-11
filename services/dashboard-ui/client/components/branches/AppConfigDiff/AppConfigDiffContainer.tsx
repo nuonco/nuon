@@ -21,7 +21,7 @@ export const AppConfigDiffContainer = ({ appConfigId, className, focus }: IAppCo
   const { org } = useOrg()
   const { app } = useApp()
   const cardRef = useRef<HTMLDivElement>(null)
-  const [cardOpen, setCardOpen] = useState(false)
+  const [cardOpen, setCardOpen] = useState(true)
 
   const { data: recentConfigs } = useQuery({
     queryKey: ['app-configs', org?.id, app?.id],

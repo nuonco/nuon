@@ -70,6 +70,7 @@ func (s *Signal) Execute(ctx workflow.Context) error {
 			Signal: &updateappconfig.Signal{
 				InstallID:      installID,
 				NewAppConfigID: s.NewAppConfigID,
+				TriggeredBy:    "sync",
 				Metadata:       map[string]string{"source": "sync"},
 			},
 		}); err != nil {
