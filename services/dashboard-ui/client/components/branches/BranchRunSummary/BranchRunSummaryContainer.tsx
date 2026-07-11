@@ -8,36 +8,36 @@ interface IBranchRunSummaryContainer {
   branchRun?: TAppBranchRun
   appId: string
   branchId: string
-  runId: string
+  branchRunId?: string
   runStatus: string
 }
 
-const TERMINAL_STATUSES = ['success', 'failed', 'cancelled']
+const TERMINAL = new Set(['success', 'failed', 'cancelled'])
 
 export const BranchRunSummaryContainer = ({
   branchRun,
   appId,
   branchId,
-  runId,
+  branchRunId,
   runStatus,
 }: IBranchRunSummaryContainer) => {
   const { org } = useOrg()
   const orgId = org?.id ?? ''
-  const isTerminal = TERMINAL_STATUSES.includes(runStatus)
+  const isTerminal = TERMINAL.has(runStatus)
 
   const { data: builds } = useQuery({
-    queryKey: ['branch-run-builds', orgId, appId, branchId, runId],
-    queryFn: () => getBranchRunBuilds({ orgId: orgId!, appId, branchId, runId }),
-    enabled: !!orgId && isTerminal,
+    queryKey: ['branch-run-builds', orgId, appId, branchId, branchRunId],
+    queryFn: () => getBranchRunBuilds({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
+    enabled: !!orgId && !!branchRunId,
+    refetchInterval: isTerminal ? false : 5000,
   })
 
   const { data: installUpdates } = useQuery({
-    queryKey: ['branch-run-install-groups', orgId, appId, branchId, runId],
-    queryFn: () => getBranchRunInstallGroups({ orgId: orgId!, appId, branchId, runId }),
-    enabled: !!orgId && isTerminal,
+    queryKey: ['branch-run-install-groups', orgId, appId, branchId, branchRunId],
+    queryFn: () => getBranchRunInstallGroups({ orgId: orgId!, appId, branchId, runId: branchRunId! }),
+    enabled: !!orgId && !!branchRunId,
+    refetchInterval: isTerminal ? false : 5000,
   })
-
-  if (!isTerminal) return null
 
   return (
     <BranchRunSummary

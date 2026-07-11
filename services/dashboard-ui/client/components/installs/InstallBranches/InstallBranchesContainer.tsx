@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { useOrg } from '@/hooks/use-org'
-import { getBranchWorkflowRuns, getBranchRunBuilds, getBranchRunInstallGroups } from '@/lib'
+import { getBranchWorkflowRuns, getBranchRunBuilds, getBranchRunInstallGroups, getInstallAppConfigVersions } from '@/lib'
 import { InstallBranches, type IBranchEntry } from './InstallBranches'
 import type { TInstall } from '@/types'
 
@@ -84,6 +84,13 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
     })),
   })
 
+  const installId = install?.id ?? ''
+  const { data: configVersions } = useQuery({
+    queryKey: ['install-app-config-versions', orgId, installId],
+    queryFn: () => getInstallAppConfigVersions({ installId: installId!, orgId: orgId! }),
+    enabled: !!orgId && !!installId,
+  })
+
   const branches: IBranchEntry[] = useMemo(
     () =>
       runsWithIds.map(({ conn, run, branchRun }, idx) => {
@@ -91,6 +98,10 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
           (s: any) => s.name?.toLowerCase().includes('config') && !s.name?.toLowerCase().includes('diff')
         )
         const appConfigId = configStep?.status?.metadata?.app_config_id as string | undefined
+
+        const branchVersions = (configVersions ?? []).filter(
+          (v) => v.app_branch_run_id && branchRun?.id && v.app_branch_run_id === branchRun.id
+        )
 
         return {
           branchId: conn.app_branch_id ?? '',
@@ -102,10 +113,11 @@ export const InstallBranchesSection = ({ install }: IInstallBranchesContainer) =
           builds: buildQueries[idx]?.data ?? [],
           installUpdates: installGroupQueries[idx]?.data ?? [],
           appConfigId,
+          configVersions: branchVersions,
         }
       }),
-    [runsWithIds, buildQueries, installGroupQueries]
+    [runsWithIds, buildQueries, installGroupQueries, configVersions]
   )
 
-  return <InstallBranches branches={branches} orgId={orgId} appId={appId} />
+  return <InstallBranches branches={branches} orgId={orgId} appId={appId} installId={installId} />
 }

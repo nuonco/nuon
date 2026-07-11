@@ -23,11 +23,13 @@ export interface IBranchEntry {
   builds: TComponentBuild[]
   installUpdates: TInstallAppConfigVersion[]
   appConfigId?: string
+  configVersions?: TInstallAppConfigVersion[]
 }
 
 interface IBranchCard extends IBranchEntry {
   orgId: string
   appId: string
+  installId: string
 }
 
 const CommitSection = ({ branchRun }: { branchRun?: TAppBranchRun }) => {
@@ -134,6 +136,41 @@ const InstallUpdatesList = ({
   )
 }
 
+const ConfigVersionSummary = ({
+  version,
+  orgId,
+  installId,
+}: {
+  version: TInstallAppConfigVersion
+  orgId: string
+  installId: string
+}) => {
+  const status = version.status?.status || 'unknown'
+
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-1.5 rounded-md bg-cool-grey-50 dark:bg-dark-grey-700">
+      <div className="flex items-center gap-2 min-w-0">
+        <Icon variant="ArrowsClockwiseIcon" size={12} className="shrink-0 text-cool-grey-400" />
+        <Text variant="subtext" className="truncate">
+          {version.metadata?.triggered_by || 'config update'}
+        </Text>
+        <Time time={version.created_at} format="relative" variant="subtext" />
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Status status={status} />
+        {version.workflow_id && (
+          <Link
+            href={`/${orgId}/installs/${installId}/workflows/${version.workflow_id}`}
+            className="text-[11px]"
+          >
+            Workflow
+          </Link>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const BranchCard = ({
   branchId,
   branchName,
@@ -144,8 +181,10 @@ const BranchCard = ({
   builds,
   installUpdates,
   appConfigId,
+  configVersions,
   orgId,
   appId,
+  installId,
 }: IBranchCard) => {
   const runStatus = latestRun?.status?.status || 'unknown'
 
@@ -196,6 +235,23 @@ const BranchCard = ({
           <CommitSection branchRun={branchRun} />
           <BuildsList builds={builds} orgId={orgId} />
           <InstallUpdatesList installUpdates={installUpdates} orgId={orgId} />
+          {(configVersions?.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <Text variant="subtext" weight="strong" theme="neutral">
+                Config updates ({configVersions!.length})
+              </Text>
+              <div className="flex flex-col gap-1">
+                {configVersions!.map((version) => (
+                  <ConfigVersionSummary
+                    key={version.id}
+                    version={version}
+                    orgId={orgId}
+                    installId={installId}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="border-t border-cool-grey-100 dark:border-dark-grey-700 pt-3">
@@ -212,9 +268,10 @@ interface IInstallBranches {
   branches: IBranchEntry[]
   orgId: string
   appId: string
+  installId: string
 }
 
-export const InstallBranches = ({ branches, orgId, appId }: IInstallBranches) => {
+export const InstallBranches = ({ branches, orgId, appId, installId }: IInstallBranches) => {
   if (branches.length === 0) {
     return (
       <EmptyState
@@ -237,6 +294,7 @@ export const InstallBranches = ({ branches, orgId, appId }: IInstallBranches) =>
             {...entry}
             orgId={orgId}
             appId={appId}
+            installId={installId}
           />
         ))}
       </div>

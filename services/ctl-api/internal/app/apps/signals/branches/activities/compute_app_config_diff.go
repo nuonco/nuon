@@ -56,21 +56,19 @@ func (a *Activities) ComputeAppConfigDiff(ctx context.Context, input *ComputeApp
 	}
 
 	d := newCfg.Diff(oldCfg)
-	summary := d.Summary()
 
 	output := &ComputeAppConfigDiffOutput{
 		ConfigFile: "nuon.toml",
-		Additions:  summary.Added,
-		Removals:   summary.Removed,
-		Changed:    summary.Changed,
 	}
 
-	// Walk the diff tree to extract sections we care about
 	if d.Children != nil {
 		for _, child := range d.Children {
 			section := diffNodeToSection(child)
-			if section != nil && len(section.Entries) > 0 {
+			if section != nil && (section.Additions > 0 || section.Removals > 0 || section.Changed > 0) {
 				output.Sections = append(output.Sections, *section)
+				output.Additions += section.Additions
+				output.Removals += section.Removals
+				output.Changed += section.Changed
 			}
 		}
 	}
@@ -79,13 +77,14 @@ func (a *Activities) ComputeAppConfigDiff(ctx context.Context, input *ComputeApp
 }
 
 // diffNodeToSection converts a top-level diff node (like "components", "actions", etc.)
-// into a flat ConfigDiffSection for the UI.
+// into a flat ConfigDiffSection for the UI. Counts are at the entity level:
+// grouped sections count per-entity, ungrouped sections count as a single entity.
 func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 	if node == nil {
 		return nil
 	}
 
-	sectionName := sectionDisplayName(node.Key)
+	sectionName, grouped := sectionDisplayNameAndGrouped(node.Key)
 	if sectionName == "" {
 		return nil
 	}
@@ -94,85 +93,123 @@ func diffNodeToSection(node *diff.Diff) *ConfigDiffSection {
 		Name: sectionName,
 	}
 
-	for _, child := range node.Children {
-		collectEntries(child, "", section)
+	if grouped {
+		for _, entityNode := range node.Children {
+			op := entityAggregateOp(entityNode)
+			if op == "" {
+				continue
+			}
+
+			entry := ConfigDiffEntry{
+				Op:   string(op),
+				Name: entityNode.Key,
+			}
+			section.Entries = append(section.Entries, entry)
+
+			switch op {
+			case diff.OpAdd:
+				section.Additions++
+			case diff.OpRemove:
+				section.Removals++
+			case diff.OpChange:
+				section.Changed++
+			}
+		}
+	} else {
+		op := entityAggregateOp(node)
+		if op != "" {
+			section.Entries = append(section.Entries, ConfigDiffEntry{
+				Op:   string(op),
+				Name: node.Key,
+			})
+			switch op {
+			case diff.OpAdd:
+				section.Additions = 1
+			case diff.OpRemove:
+				section.Removals = 1
+			case diff.OpChange:
+				section.Changed = 1
+			}
+		}
 	}
 
 	return section
 }
 
-// collectEntries recursively walks a diff subtree and collects leaf entries.
-// itemName is the top-level item name (e.g., "ctl-api" for a component) that
-// persists through the entire recursion so leaf entries are attributed to the
-// right parent regardless of nesting depth.
-func collectEntries(node *diff.Diff, itemName string, section *ConfigDiffSection) {
+// entityAggregateOp determines the overall operation for a diff subtree.
+// If there are adds but no removes → add (changes from zero-value defaults
+// like false→true are treated as part of the add).
+// If there are removes but no adds → remove.
+// Otherwise → change.
+// Returns "" if no changes exist.
+func entityAggregateOp(node *diff.Diff) diff.Op {
 	if node == nil {
-		return
+		return ""
 	}
 
-	if node.Diff != nil && node.Diff.Op != diff.OpNoop {
-		entry := ConfigDiffEntry{
-			Op:   string(node.Diff.Op),
-			Name: node.Key,
+	hasAdd := false
+	hasRemove := false
+	hasChange := false
+
+	var walk func(n *diff.Diff)
+	walk = func(n *diff.Diff) {
+		if n.Diff != nil && n.Diff.Op != diff.OpNoop && n.Diff.Op != diff.OpUnknown {
+			switch n.Diff.Op {
+			case diff.OpAdd:
+				hasAdd = true
+			case diff.OpRemove:
+				hasRemove = true
+			case diff.OpChange:
+				hasChange = true
+			}
 		}
-		if itemName != "" {
-			entry.Name = itemName
-			entry.Description = node.Key + ": " + node.Diff.Diff
-		} else {
-			entry.Description = node.Diff.Diff
+		for _, c := range n.Children {
+			walk(c)
 		}
-
-		switch node.Diff.Op {
-		case diff.OpAdd:
-			section.Additions++
-		case diff.OpRemove:
-			section.Removals++
-		case diff.OpChange:
-			section.Changed++
-		}
-
-		section.Entries = append(section.Entries, entry)
-		return
 	}
+	walk(node)
 
-	if len(node.Children) == 0 {
-		return
+	if !hasAdd && !hasRemove && !hasChange {
+		return ""
 	}
-
-	// Collect all leaf diffs from the subtree, preserving itemName through
-	// the recursion so deeply nested changes (e.g., step env vars) are still
-	// attributed to the top-level item (e.g., the action name).
-	resolvedName := itemName
-	if resolvedName == "" {
-		resolvedName = node.Key
+	if hasAdd && !hasRemove {
+		return diff.OpAdd
 	}
-
-	for _, c := range node.Children {
-		collectEntries(c, resolvedName, section)
+	if hasRemove && !hasAdd {
+		return diff.OpRemove
 	}
+	return diff.OpChange
 }
 
-// sectionDisplayName maps diff tree keys to UI section names.
-func sectionDisplayName(key string) string {
+// sectionDisplayNameAndGrouped maps diff tree keys to UI section names and
+// whether the section contains multiple named entities (grouped) or is a
+// single logical entity (ungrouped).
+func sectionDisplayNameAndGrouped(key string) (string, bool) {
 	switch key {
 	case "components":
-		return "Components"
+		return "Components", true
 	case "actions":
-		return "Actions"
+		return "Actions", true
 	case "inputs":
-		return "Install inputs"
+		return "Install inputs", true
 	case "secrets":
-		return "Secrets"
+		return "Secrets", true
+	case "policies":
+		return "Policies", true
 	case "sandbox":
-		return "Sandbox"
+		return "Sandbox", false
 	case "runner":
-		return "Runner"
+		return "Runner", false
 	case "permissions":
-		return "Permissions"
+		return "Permissions", false
 	case "stack":
-		return "Stack"
+		return "Stack", false
+	case "break_glass":
+		return "Break glass", false
+	case "operation_roles":
+		return "Operation roles", false
 	default:
-		return ""
+		return "", false
 	}
 }
 
