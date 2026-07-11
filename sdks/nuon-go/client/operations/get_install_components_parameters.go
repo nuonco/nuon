@@ -88,17 +88,19 @@ type GetInstallComponentsParams struct {
 	*/
 	Offset *int64
 
-	/* Orphans.
-
-	   only return components no longer in the install's current app config
-	*/
-	Orphans *bool
-
 	/* Q.
 
 	   search query for component name or ID
 	*/
 	Q *string
+
+	/* Synced.
+
+	   return components in the install's current app config; set false to return only components no longer in it
+
+	   Default: true
+	*/
+	Synced *bool
 
 	/* Types.
 
@@ -128,13 +130,13 @@ func (o *GetInstallComponentsParams) SetDefaults() {
 
 		offsetDefault = int64(0)
 
-		orphansDefault = bool(false)
+		syncedDefault = bool(true)
 	)
 
 	val := GetInstallComponentsParams{
-		Limit:   &limitDefault,
-		Offset:  &offsetDefault,
-		Orphans: &orphansDefault,
+		Limit:  &limitDefault,
+		Offset: &offsetDefault,
+		Synced: &syncedDefault,
 	}
 
 	val.timeout = o.timeout
@@ -220,17 +222,6 @@ func (o *GetInstallComponentsParams) SetOffset(offset *int64) {
 	o.Offset = offset
 }
 
-// WithOrphans adds the orphans to the get install components params
-func (o *GetInstallComponentsParams) WithOrphans(orphans *bool) *GetInstallComponentsParams {
-	o.SetOrphans(orphans)
-	return o
-}
-
-// SetOrphans adds the orphans to the get install components params
-func (o *GetInstallComponentsParams) SetOrphans(orphans *bool) {
-	o.Orphans = orphans
-}
-
 // WithQ adds the q to the get install components params
 func (o *GetInstallComponentsParams) WithQ(q *string) *GetInstallComponentsParams {
 	o.SetQ(q)
@@ -240,6 +231,17 @@ func (o *GetInstallComponentsParams) WithQ(q *string) *GetInstallComponentsParam
 // SetQ adds the q to the get install components params
 func (o *GetInstallComponentsParams) SetQ(q *string) {
 	o.Q = q
+}
+
+// WithSynced adds the synced to the get install components params
+func (o *GetInstallComponentsParams) WithSynced(synced *bool) *GetInstallComponentsParams {
+	o.SetSynced(synced)
+	return o
+}
+
+// SetSynced adds the synced to the get install components params
+func (o *GetInstallComponentsParams) SetSynced(synced *bool) {
+	o.Synced = synced
 }
 
 // WithTypes adds the types to the get install components params
@@ -317,23 +319,6 @@ func (o *GetInstallComponentsParams) WriteToRequest(r runtime.ClientRequest, reg
 		}
 	}
 
-	if o.Orphans != nil {
-
-		// query param orphans
-		var qrOrphans bool
-
-		if o.Orphans != nil {
-			qrOrphans = *o.Orphans
-		}
-		qOrphans := swag.FormatBool(qrOrphans)
-		if qOrphans != "" {
-
-			if err := r.SetQueryParam("orphans", qOrphans); err != nil {
-				return err
-			}
-		}
-	}
-
 	if o.Q != nil {
 
 		// query param q
@@ -346,6 +331,23 @@ func (o *GetInstallComponentsParams) WriteToRequest(r runtime.ClientRequest, reg
 		if qQ != "" {
 
 			if err := r.SetQueryParam("q", qQ); err != nil {
+				return err
+			}
+		}
+	}
+
+	if o.Synced != nil {
+
+		// query param synced
+		var qrSynced bool
+
+		if o.Synced != nil {
+			qrSynced = *o.Synced
+		}
+		qSynced := swag.FormatBool(qrSynced)
+		if qSynced != "" {
+
+			if err := r.SetQueryParam("synced", qSynced); err != nil {
 				return err
 			}
 		}
