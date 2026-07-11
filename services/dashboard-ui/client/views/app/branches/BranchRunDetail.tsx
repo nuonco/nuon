@@ -16,7 +16,6 @@ import { Breadcrumbs } from '@/components/navigation/Breadcrumb'
 import { PageTitle } from '@/components/navigation/PageTitle'
 import { AppConfigDiff } from '@/components/branches/AppConfigDiff'
 import { BranchRunSummary } from '@/components/branches/BranchRunSummary'
-import { PlanGroupStep } from '@/components/branches/WorkflowStepDetail/steps/PlanGroupStep'
 import { WorkflowRunPanelButton } from '@/components/branches/WorkflowRunPanel'
 import { CancelWorkflowButton } from '@/components/workflows/CancelWorkflow'
 import { useOrg } from '@/hooks/use-org'
@@ -72,10 +71,6 @@ const BranchRunDetailContent = () => {
   )
   const appConfigId =
     branchRun?.app_config_id || (configStep?.status?.metadata?.app_config_id as string | undefined)
-
-  const planSteps = (run.steps || []).filter((s) =>
-    s.name?.toLowerCase().includes('plan install group')
-  )
 
   return (
     <ConfigDiffFocusContext.Provider value={{ requestFocus: requestConfigFocus }}>
@@ -260,17 +255,6 @@ const BranchRunDetailContent = () => {
         />
 
         {appConfigId && <AppConfigDiff appConfigId={appConfigId} focus={configFocus} />}
-
-        {planSteps.length > 0 && (
-          <div className="flex flex-col gap-4">
-            <Text variant="h3" weight="strong">
-              Affected installs
-            </Text>
-            {planSteps.map((step) => (
-              <PlanGroupStep key={step.id} step={step} metadata={step.status?.metadata || {}} />
-            ))}
-          </div>
-        )}
       </PageSection>
     </ConfigDiffFocusContext.Provider>
   )

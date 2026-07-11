@@ -28,7 +28,9 @@ const GROUP_COLORS = [
 ]
 
 const NODE_WIDTH = 280
+const NODE_WIDTH_COMPACT = 160
 const NODE_MIN_HEIGHT = 100
+const NODE_MIN_HEIGHT_COMPACT = 50
 
 interface GroupNodeData {
   groupName: string
@@ -37,12 +39,57 @@ interface GroupNodeData {
   labelEntries: [string, string][]
   maxParallel: number
   orgId: string
+  compact?: boolean
   [key: string]: unknown
 }
 
 const GroupNode = memo(({ data }: NodeProps<Node<GroupNodeData>>) => {
   const color = GROUP_COLORS[data.colorIndex % GROUP_COLORS.length]
   const installs = data.installs ?? []
+  const compact = data.compact
+
+  if (compact) {
+    return (
+      <>
+        <Handle type="target" position={Position.Left} style={{ opacity: 0 }} />
+        <div
+          className="rounded overflow-hidden"
+          style={{
+            background: color.bg,
+            border: `1px solid ${color.border}`,
+            minWidth: NODE_WIDTH_COMPACT,
+            fontFamily: 'var(--font-hack)',
+            fontSize: '10px',
+          }}
+        >
+          <div
+            className="px-2 py-1 flex items-center justify-between gap-1"
+            style={{ borderBottom: `1px solid ${color.border}40` }}
+          >
+            <span className="truncate" style={{ color: color.text, fontWeight: 600 }}>{data.groupName}</span>
+            <span className="text-[9px] shrink-0" style={{ color: `${color.text}99` }}>
+              {installs.length}
+            </span>
+          </div>
+          <div className="px-2 py-1 flex flex-col gap-0.5">
+            {installs.slice(0, 3).map((inst) => (
+              <div key={inst.id} className="flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full shrink-0" style={{ background: color.border }} />
+                <span className="truncate text-[9px]" style={{ color: '#d1d5db' }}>{inst.name}</span>
+              </div>
+            ))}
+            {installs.length > 3 && (
+              <span className="text-[9px]" style={{ color: `${color.text}70` }}>+{installs.length - 3} more</span>
+            )}
+            {installs.length === 0 && (
+              <span className="text-[9px]" style={{ color: `${color.text}60` }}>empty</span>
+            )}
+          </div>
+        </div>
+        <Handle type="source" position={Position.Right} style={{ opacity: 0 }} />
+      </>
+    )
+  }
 
   return (
     <>
@@ -115,15 +162,22 @@ GroupNode.displayName = 'GroupNode'
 
 const nodeTypes = { groupNode: GroupNode }
 
-function getLayoutedElements(nodes: Node[], edges: Edge[]) {
+function getLayoutedElements(nodes: Node[], edges: Edge[], opts?: { compact?: boolean }) {
+  const w = opts?.compact ? NODE_WIDTH_COMPACT : NODE_WIDTH
+  const minH = opts?.compact ? NODE_MIN_HEIGHT_COMPACT : NODE_MIN_HEIGHT
+  const installRowH = opts?.compact ? 14 : 24
+  const baseH = opts?.compact ? 36 : 60
+  const ranksep = opts?.compact ? 40 : 80
+  const nodesep = opts?.compact ? 20 : 40
+
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
-  dagreGraph.setGraph({ rankdir: 'LR', ranksep: 80, nodesep: 40 })
+  dagreGraph.setGraph({ rankdir: 'LR', ranksep, nodesep })
 
   nodes.forEach((node) => {
-    const installCount = ((node.data as GroupNodeData).installs?.length ?? 0)
-    const height = Math.max(NODE_MIN_HEIGHT, 60 + installCount * 24)
-    dagreGraph.setNode(node.id, { width: NODE_WIDTH, height })
+    const installCount = Math.min((node.data as GroupNodeData).installs?.length ?? 0, opts?.compact ? 4 : 999)
+    const height = Math.max(minH, baseH + installCount * installRowH)
+    dagreGraph.setNode(node.id, { width: w, height })
   })
 
   edges.forEach((edge) => {
@@ -132,34 +186,47 @@ function getLayoutedElements(nodes: Node[], edges: Edge[]) {
 
   dagre.layout(dagreGraph)
 
-  return {
-    nodes: nodes.map((node) => {
-      const pos = dagreGraph.node(node.id)
-      const installCount = ((node.data as GroupNodeData).installs?.length ?? 0)
-      const height = Math.max(NODE_MIN_HEIGHT, 60 + installCount * 24)
-      return {
-        ...node,
-        position: { x: pos.x - NODE_WIDTH / 2, y: pos.y - height / 2 },
-      }
-    }),
-    edges,
+  const positioned = nodes.map((node) => {
+    const pos = dagreGraph.node(node.id)
+    const installCount = Math.min((node.data as GroupNodeData).installs?.length ?? 0, opts?.compact ? 4 : 999)
+    const height = Math.max(minH, baseH + installCount * installRowH)
+    return {
+      ...node,
+      position: { x: pos.x - w / 2, y: pos.y - height / 2 },
+    }
+  })
+
+  const minX = Math.min(...positioned.map((n) => n.position.x))
+  for (const node of positioned) {
+    node.position.x -= minX - 32
   }
+
+  const minY = Math.min(...positioned.map((n) => n.position.y))
+  for (const node of positioned) {
+    node.position.y -= minY - 25
+  }
+
+  return { nodes: positioned, edges }
 }
 
 interface IDeploymentPlanGraph {
   config: TAppBranchConfig
   installsById: Record<string, TInstall>
   orgId: string
+  compact?: boolean
 }
 
 export const DeploymentPlanGraph = ({
   config,
   installsById,
   orgId,
+  compact = false,
 }: IDeploymentPlanGraph) => {
   const groups = config.install_groups ?? []
+  const nodeWidth = compact ? NODE_WIDTH_COMPACT : NODE_WIDTH
+  const nodeMinHeight = compact ? NODE_MIN_HEIGHT_COMPACT : NODE_MIN_HEIGHT
 
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
+  const { nodes: initialNodes, edges: initialEdges, graphHeight } = useMemo(() => {
     if (groups.length === 0) return { nodes: [] as Node[], edges: [] as Edge[] }
 
     const nodes: Node<GroupNodeData>[] = groups.map((group, idx) => {
@@ -187,6 +254,7 @@ export const DeploymentPlanGraph = ({
           labelEntries,
           maxParallel: group.max_parallel ?? 1,
           orgId,
+          compact,
         },
       }
     })
@@ -205,8 +273,21 @@ export const DeploymentPlanGraph = ({
       })
     }
 
-    return getLayoutedElements(nodes, edges)
-  }, [groups, installsById, orgId])
+    const laid = getLayoutedElements(nodes, edges, { compact })
+
+    const installRowH = compact ? 14 : 24
+    const baseH = compact ? 36 : 60
+    const minH = compact ? NODE_MIN_HEIGHT_COMPACT : NODE_MIN_HEIGHT
+
+    let maxBottom = 0
+    for (const node of laid.nodes) {
+      const ic = Math.min((node.data as GroupNodeData).installs?.length ?? 0, compact ? 4 : 999)
+      const nh = Math.max(minH, baseH + ic * installRowH)
+      maxBottom = Math.max(maxBottom, node.position.y + nh)
+    }
+
+    return { ...laid, graphHeight: maxBottom + 10 }
+  }, [groups, installsById, orgId, compact])
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
@@ -230,18 +311,9 @@ export const DeploymentPlanGraph = ({
     )
   }
 
-  const maxInstalls = Math.max(...groups.map((g) => {
-    const labelEntries = Object.entries(g.label_selector?.match_labels ?? {})
-    if (labelEntries.length > 0) {
-      return Object.values(installsById).filter((i) => matchesSelector(i.labels, g.label_selector)).length
-    }
-    return (g.install_ids ?? []).length
-  }), 0)
-  const graphHeight = Math.max(300, 100 + maxInstalls * 28 + 40)
-
   return (
     <div
-      className="w-full border rounded-lg bg-dark-grey-900 dark:bg-dark-grey-900"
+      className={compact ? 'w-full border rounded bg-dark-grey-900 dark:bg-dark-grey-900' : 'w-full border rounded-lg bg-dark-grey-900 dark:bg-dark-grey-900'}
       style={{ height: `${graphHeight}px` }}
     >
       <ReactFlow
@@ -250,18 +322,19 @@ export const DeploymentPlanGraph = ({
         nodeTypes={memoizedNodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.5}
-        maxZoom={1.5}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        minZoom={compact ? 0.6 : 0.5}
+        maxZoom={compact ? 1 : 1.5}
         proOptions={{ hideAttribution: true }}
-        style={{ borderRadius: '8px' }}
+        style={{ borderRadius: compact ? '4px' : '8px' }}
       >
-        <Controls
-          position="top-right"
-          orientation="horizontal"
-          style={{ color: '#121212' }}
-        />
+        {!compact && (
+          <Controls
+            position="top-right"
+            orientation="horizontal"
+            style={{ color: '#121212' }}
+          />
+        )}
       </ReactFlow>
     </div>
   )
