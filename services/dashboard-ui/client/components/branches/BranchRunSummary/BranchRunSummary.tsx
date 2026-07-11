@@ -4,12 +4,20 @@ import { Link } from '@/components/common/Link'
 import { Status } from '@/components/common/Status'
 import { Text } from '@/components/common/Text'
 import { ComponentType } from '@/components/components/ComponentType'
-import type { TComponentBuild, TInstallAppConfigVersion, TAppBranchRun, TComponentType } from '@/types'
+import { RunDeploymentGraph } from '@/components/branches/RunDeploymentGraph'
+import type {
+  TComponentBuild,
+  TInstallAppConfigVersion,
+  TAppBranchRun,
+  TInstallGroupRun,
+  TComponentType,
+} from '@/types'
 
 interface IBranchRunSummary {
   branchRun?: TAppBranchRun
   builds: TComponentBuild[]
   installUpdates: TInstallAppConfigVersion[]
+  installGroupRuns: TInstallGroupRun[]
   orgId: string
   appId: string
   branchId: string
@@ -89,53 +97,21 @@ const BuildsSection = ({
   )
 }
 
-const InstallUpdatesSection = ({
-  installUpdates,
+const InstallsSection = ({
+  installGroupRuns,
   orgId,
 }: {
-  installUpdates: TInstallAppConfigVersion[]
+  installGroupRuns: TInstallGroupRun[]
   orgId: string
 }) => {
-  if (installUpdates.length === 0) return null
+  if (installGroupRuns.length === 0) return null
 
   return (
     <div className="flex flex-col gap-3">
       <Text variant="base" weight="strong">
-        Installs updated ({installUpdates.length})
+        Updated installs
       </Text>
-      <div className="flex flex-col border rounded-lg divide-y overflow-hidden">
-        {installUpdates.map((update) => (
-          <div
-            key={update.id}
-            className="flex items-center justify-between gap-3 px-4 py-3"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <Icon variant="CloudIcon" size={16} className="shrink-0 text-cool-grey-400" />
-              <div className="flex flex-col gap-0.5 min-w-0">
-                <Text variant="body" weight="strong" className="truncate">
-                  {update.install_id}
-                </Text>
-                {update.workflow_id && (
-                  <Text variant="subtext" theme="neutral" family="mono">
-                    {update.workflow_id}
-                  </Text>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <Status status={update.status?.status || 'unknown'} variant="badge" />
-              {update.install_id && (
-                <Link
-                  href={`/${orgId}/installs/${update.install_id}`}
-                  className="text-xs"
-                >
-                  View
-                </Link>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <RunDeploymentGraph installGroupRuns={installGroupRuns} orgId={orgId} />
     </div>
   )
 }
@@ -144,17 +120,18 @@ export const BranchRunSummary = ({
   branchRun,
   builds,
   installUpdates,
+  installGroupRuns,
   orgId,
   appId,
   branchId,
   runStatus,
 }: IBranchRunSummary) => {
-  if (builds.length === 0 && installUpdates.length === 0) return null
+  if (builds.length === 0 && installGroupRuns.length === 0) return null
 
   return (
     <div className="flex flex-col gap-6">
       <BuildsSection builds={builds} orgId={orgId} appId={appId} />
-      <InstallUpdatesSection installUpdates={installUpdates} orgId={orgId} />
+      <InstallsSection installGroupRuns={installGroupRuns} orgId={orgId} />
     </div>
   )
 }

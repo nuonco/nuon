@@ -586,6 +586,11 @@ export type TInstallAppConfigVersion =
 export type TInstallAppBranchConnection =
   components['schemas']['app.InstallAppBranchConnection']
 
+// install group runs
+export type TInstallGroupRun = components['schemas']['app.InstallGroupRun']
+export type TInstallGroupRunInstall =
+  components['schemas']['app.InstallGroupRunInstall']
+
 // api version
 export type TAPIVersion = {
   ui: { version: string; git_ref: string }
