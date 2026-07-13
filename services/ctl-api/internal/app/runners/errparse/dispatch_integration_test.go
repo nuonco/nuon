@@ -66,6 +66,21 @@ func TestDefaultRegistry_ToolLayerOrdering(t *testing.T) {
 	}
 }
 
+// TestDefaultRegistry_StateLockBeatsTerraformCatchAll asserts that the
+// state-lock parser wins over the generic terraform catch-all: both are
+// candidates for a lock failure (each signals on the same diagnostic), and the
+// state-lock parser's more-specific layer must break the tie.
+func TestDefaultRegistry_StateLockBeatsTerraformCatchAll(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("terraform", "testdata", "state_lock.txt"))
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	ce := errparse.Parse(&errparse.ParseContext{Raw: string(raw), Tool: errparse.ToolTerraform})
+	if _, ok := ce.(*tfparse.StateLockError); !ok {
+		t.Fatalf("expected state-lock parser to win over the terraform catch-all, got %T (type %q)", ce, ce.Type())
+	}
+}
+
 // TestDefaultRegistry_HelmToolLayer asserts the same three-layer contract on a
 // helm job: a recognised helm failure yields the tool-layer parser, while an
 // AWS permission blob on the same job is still won by the provider layer.

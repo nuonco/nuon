@@ -28,7 +28,13 @@ type Layer int
 const (
 	// LayerProvider is the cloud-provider layer (AWS/Azure/GCP error codes).
 	LayerProvider Layer = 0
-	// LayerTool is the execution-tool layer (terraform/helm/pulumi/docker).
+	// LayerToolSpecific is for a specific, recognised cause within a tool (e.g.
+	// terraform's state-lock failure). It is tried before LayerTool so a
+	// specific classifier wins over the tool's catch-all, while a provider
+	// cause still wins over both.
+	LayerToolSpecific Layer = 9
+	// LayerTool is the execution-tool layer catch-all (terraform/helm/pulumi/
+	// docker): a recognised-but-unclassified diagnostic for that tool.
 	LayerTool Layer = 10
 	// LayerGeneric is the always-matches fallback that emits the cleaned error
 	// body when no specific parser recognises the failure.
